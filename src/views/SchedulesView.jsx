@@ -686,27 +686,57 @@ const SchedulesView = ({ openModal, setView }) => {
                     transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                     className="w-full flex-1 flex flex-col p-2 md:p-4 lg:px-6 mx-auto h-full overflow-hidden">
 
-                    {/* ── Controls: branch selector + week nav + publish ── */}
+                    {/* ── Controls: filter pill (branch + week) + publish action ── */}
                     <div className="flex flex-wrap items-center gap-2 md:gap-3 pb-4 shrink-0">
-                        <LiquidSelect
-                            value={filterBranch}
-                            onChange={setFilterBranch}
-                            options={validBranches.map(b => ({ value: String(b.id), label: b.name }))}
-                            compact clearable={false} icon={Building2} bare
-                        />
-                        <div className={`group/week flex items-center bg-white/60 backdrop-blur-md rounded-full border shadow-sm p-1 hover:shadow-md shrink-0 overflow-visible transition-all duration-500 cursor-default h-10 ${!isDefaultWeek ? 'border-amber-200 bg-amber-50/30' : 'border-white/80'}`}>
-                            <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:ml-1 transition-all duration-500">
-                                <button onClick={() => changeWeek(-7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#0052CC] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ChevronLeft size={16} strokeWidth={3} /></button>
+
+                        {/* Filter pill — same standard as VentasView */}
+                        <div className="flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible">
+
+                            {/* Branch selector */}
+                            <div className="px-2 py-2 overflow-visible">
+                                <LiquidSelect
+                                    value={filterBranch}
+                                    onChange={setFilterBranch}
+                                    options={validBranches.map(b => ({ value: String(b.id), label: b.name }))}
+                                    compact clearable={false} icon={Building2} bare
+                                />
                             </div>
-                            <div className="flex flex-col justify-center items-center px-4 whitespace-nowrap h-full">
-                                <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-amber-600' : 'text-slate-400'}`}>{!isDefaultWeek ? 'Semana Filtrada' : 'Semana actual'}</span>
-                                <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-amber-600' : 'text-[#0052CC]'}`}>{formatWeekRange(startDate)}</span>
+
+                            <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                            {/* Week navigator */}
+                            <div className="flex items-center px-2 py-1.5">
+                                <button onClick={() => changeWeek(-7)}
+                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-[#0052CC] active:scale-[0.97] transition-all shrink-0">
+                                    <ChevronLeft size={15} strokeWidth={2.5} />
+                                </button>
+                                <div className="flex flex-col justify-center items-center px-3 whitespace-nowrap">
+                                    <span className={`text-[7px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 ${!isDefaultWeek ? 'text-amber-600' : 'text-slate-400'}`}>
+                                        {!isDefaultWeek ? 'Semana filtrada' : 'Semana actual'}
+                                    </span>
+                                    <span className={`text-[11px] md:text-[12px] font-black uppercase tracking-tight leading-none ${!isDefaultWeek ? 'text-amber-600' : 'text-[#0052CC]'}`}>
+                                        {formatWeekRange(startDate)}
+                                    </span>
+                                </div>
+                                <button onClick={() => changeWeek(7)}
+                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-[#0052CC] active:scale-[0.97] transition-all shrink-0">
+                                    <ArrowRight size={15} strokeWidth={2.5} />
+                                </button>
                             </div>
-                            {!isDefaultWeek && <button onClick={handleResetFilters} title="Resetear fecha" className="w-5 h-5 rounded-full bg-red-50 border border-red-100 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all mr-1 animate-in zoom-in active:scale-[0.97]"><X size={10} strokeWidth={4} /></button>}
-                            <div className="w-0 opacity-0 overflow-hidden group-hover/week:w-8 group-hover/week:opacity-100 group-hover/week:mr-1 transition-all duration-500">
-                                <button onClick={() => changeWeek(7)} className="w-7 h-7 rounded-full flex items-center justify-center text-[#0052CC] hover:bg-white active:scale-[0.97] transition-transform shadow-sm"><ArrowRight size={16} strokeWidth={3} /></button>
-                            </div>
+
+                            {/* Reset X — only when week is not current */}
+                            {!isDefaultWeek && (
+                                <>
+                                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                    <button onClick={handleResetFilters} title="Volver a semana actual"
+                                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                                        <X size={11} strokeWidth={3} />
+                                    </button>
+                                </>
+                            )}
                         </div>
+
+                        {/* Publish — action button, outside the filter pill */}
                         {canEdit && getScope('schedules') !== 'BRANCH' && (
                             <button
                                 onClick={weekIsPublished ? undefined : triggerPublishAudit}

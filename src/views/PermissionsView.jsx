@@ -140,6 +140,9 @@ const MODULE_GROUPS = [
             { key: 'dash_cotizaciones',   label: 'Widget: Cotizaciones activas',  desc: 'Resumen de cotizaciones activas del mes con montos en el dashboard',       icon: Receipt,         hasApprove: false, hasScope: true },
             { key: 'dash_facturacion',    label: 'Widget: Facturación hoy',       desc: 'Documentos emitidos hoy (CCF/FCF) con total facturado en el dashboard',   icon: FileText,        hasApprove: false, hasScope: true },
             { key: 'dash_top_productos',  label: 'Widget: Top Productos del mes', desc: 'Ranking de los 10 productos más vendidos en el mes actual',               icon: Package,         hasApprove: false, hasScope: true },
+            { key: 'dash_inv_search',     label: 'Widget: Consulta de Inventario',desc: 'Buscar productos en inventario multi-sucursal con desglose de lotes y vencimientos', icon: Package,    hasApprove: false, hasScope: true },
+            { key: 'dash_annulment_req',  label: 'Widget: Solicitud de Anulación',desc: 'Crear solicitudes de anulación de facturas dentro del período de gracia de 3 días',  icon: Receipt,    hasApprove: false, hasScope: true },
+            { key: 'dash_srs_inv',        label: 'Widget: Búsqueda SRS + Stock',  desc: 'Consultar el registro SRS de medicamentos y cruzar con inventario propio',            icon: FlaskConical,hasApprove: false, hasScope: true },
         ],
     },
     {

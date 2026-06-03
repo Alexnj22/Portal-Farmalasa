@@ -6,6 +6,7 @@ const GlassViewLayout = ({
     liveIndicator = false,
     filtersContent,
     headerLeft,
+    subContent,
     transparentBody = false,
     fixedScrollMode = false,
     children
@@ -116,6 +117,13 @@ const GlassViewLayout = ({
                         </div>
                     )}
                 </div>
+
+                {/* Sub-content: between header and body (e.g. chart + filter pill) */}
+                {subContent && (
+                    <div className="px-2 lg:px-6 xl:px-8 pt-3 xl:pt-4">
+                        {subContent}
+                    </div>
+                )}
 
                 {/* Content body */}
                 <div className="px-2 lg:px-6 xl:px-8 pt-4 xl:pt-5">

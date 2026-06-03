@@ -11,13 +11,16 @@ import {
   Settings2, Activity, Flame,
   AlertTriangle, LayoutDashboard, CheckCircle2,
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
-  FileText, Package, Receipt, ShoppingCart
+  FileText, Package, Receipt, ShoppingCart, Zap, FlaskConical
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '../utils/scheduleHelpers';
 import { useAuth } from '../context/AuthContext';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { supabase } from '../supabaseClient';
 import GlassViewLayout from '../components/GlassViewLayout';
+import WidgetInventorySearch from './dashboard/WidgetInventorySearch';
+import WidgetSrsInventory from './dashboard/WidgetSrsInventory';
+import WidgetAnnulmentRequest from './dashboard/WidgetAnnulmentRequest';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { getTodayAttendanceStatus } from '../utils/helpers';
@@ -77,6 +80,9 @@ const WIDGET_SIZES = {
   cotizaciones:  { minCols: 1, minRows: 2, label: 'Cotizaciones' },
   facturacion:   { minCols: 2, minRows: 2, label: 'Facturación'  },
   top_productos: { minCols: 2, minRows: 3, label: 'Top Productos'},
+  inv_search:    { minCols: 2, minRows: 3, label: 'Inventario'   },
+  annulment_req: { minCols: 2, minRows: 3, label: 'Anulaciones'  },
+  srs_inv:       { minCols: 2, minRows: 3, label: 'Búsqueda SRS' },
 };
 
 const getWidgetSize = (id) => {
@@ -91,13 +97,15 @@ const TABS = [
   { id: 'general',   label: 'General',   icon: LayoutDashboard },
   { id: 'comercial', label: 'Comercial', icon: ShoppingCart    },
   { id: 'rrhh',      label: 'RRHH',      icon: Users           },
+  { id: 'operacion', label: 'Operación', icon: Zap             },
 ];
 
-const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos'];
+const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos','inv_search','annulment_req','srs_inv'];
 const TAB_WIDGETS = {
   general:   ALL_WIDGET_IDS,
   comercial: ['kpi','cotizaciones','facturacion','top_productos','sales'],
   rrhh:      ['kpi','trend','shifts','absences','requests','calendar','announcements','birthdays'],
+  operacion: ['inv_search','annulment_req','srs_inv'],
 };
 
 // Resolve collisions after a drop: dragged widget wins its target position,
@@ -186,6 +194,9 @@ const WIDGET_DEFS = [
   { id: 'cotizaciones',  label: 'Cotizaciones activas',    permission: 'dash_cotizaciones',  icon: Receipt,      category: 'ventas'    },
   { id: 'facturacion',   label: 'Facturación hoy',         permission: 'dash_facturacion',   icon: FileText,     category: 'ventas'    },
   { id: 'top_productos', label: 'Top productos del mes',   permission: 'dash_top_productos', icon: Package,      category: 'productos' },
+  { id: 'inv_search',   label: 'Consulta de Inventario',  permission: 'dash_inv_search',    icon: Package,      category: 'productos' },
+  { id: 'annulment_req',label: 'Solicitud de Anulación',  permission: 'dash_annulment_req', icon: Receipt,      category: 'ventas'    },
+  { id: 'srs_inv',      label: 'Búsqueda SRS + Inventario',permission: 'dash_srs_inv',      icon: FlaskConical, category: 'productos' },
 ];
 
 const MONTH_NAMES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -1773,6 +1784,42 @@ const DashboardView = ({ openModal }) => {
       , staggerIdx);
     }
 
+    /* ── INV SEARCH ── */
+    if (wid === 'inv_search') {
+      if (!showWidget('inv_search', 'dash_inv_search')) return null;
+      return wrapWidget('inv_search',
+        <WidgetCard title="Consulta de Inventario" icon={Package} category="productos">
+          <div className="px-4 pb-4 pt-2 h-full">
+            <WidgetInventorySearch />
+          </div>
+        </WidgetCard>
+      , staggerIdx);
+    }
+
+    /* ── ANNULMENT REQUEST ── */
+    if (wid === 'annulment_req') {
+      if (!showWidget('annulment_req', 'dash_annulment_req')) return null;
+      return wrapWidget('annulment_req',
+        <WidgetCard title="Solicitud de Anulación" icon={Receipt} category="ventas">
+          <div className="px-4 pb-4 pt-2 h-full">
+            <WidgetAnnulmentRequest />
+          </div>
+        </WidgetCard>
+      , staggerIdx);
+    }
+
+    /* ── SRS INVENTORY ── */
+    if (wid === 'srs_inv') {
+      if (!showWidget('srs_inv', 'dash_srs_inv')) return null;
+      return wrapWidget('srs_inv',
+        <WidgetCard title="Búsqueda SRS + Inventario" icon={FlaskConical} category="productos">
+          <div className="px-4 pb-4 pt-2 h-full">
+            <WidgetSrsInventory />
+          </div>
+        </WidgetCard>
+      , staggerIdx);
+    }
+
     return null;
   };
 
@@ -1912,6 +1959,14 @@ const DashboardView = ({ openModal }) => {
                 <KpiCard icon={UserX}         label="Ausencias activas"     value={absences.length}         color="#F04438" sub={absences.length===0?'Sin ausencias':undefined} onClick={canManage('dash_absences')?()=>navigate('/requests'):undefined}/>
                 <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#F79009" sub={pendingReqs.length===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
               </div>
+        )}
+        {activeTab === 'operacion' && (
+          <div key="kpi-operacion" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <KpiCard icon={Package}      label="Widgets operativos"    value={3}                       color="#F79009" sub="disponibles"/>
+            <KpiCard icon={Receipt}      label="Período de gracia"     value="3 días"                  color="#0052CC" sub="para anulaciones"/>
+            <KpiCard icon={FlaskConical} label="Registro SRS"          value="Activo"                  color="#12B76A" sub="consulta en línea"/>
+            <KpiCard icon={Zap}          label="Módulo"                value="Operación"               color="#6929C4" sub="inventario · DTE"/>
+          </div>
         )}
 
         {/* Main widget grid — 4 cols desktop, 2 cols mobile */}

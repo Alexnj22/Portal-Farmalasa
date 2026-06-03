@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.35';
+export const APP_VERSION = '1.4.36';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.36 — MinMax: clasificación ABC×XYZ, ciclo uniforme 45 días, panel de configuración (stock_config), CoverageBar, matriz filtrable
 // v1.4.35 — AuthContext: Realtime subscription a role_permissions → menú y PermissionGuard reactivos al instante
 // v1.4.34 — MinMaxView: módulo independiente en menú Inventario (/minmax); removido de ProductosView tabs
 // v1.4.33 — WidgetInventorySearch: overscroll-contain (no body scroll bleed); glass card separation (shadow+border, no colored left border)

@@ -10,7 +10,7 @@ const ScheduleChart = ({
     openModal
 }) => {
     return (
-        <div className="bg-white/[0.14] backdrop-blur-2xl border border-white/60 rounded-2xl px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)] flex flex-col h-full min-h-[120px] hover:bg-white/[0.22] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] transition-all duration-300 group/chart relative overflow-visible z-10">
+        <div className="bg-white/[0.14] backdrop-blur-2xl border border-white/60 rounded-2xl px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)] flex flex-col h-full min-h-[90px] hover:bg-white/[0.22] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] transition-all duration-300 group/chart relative overflow-visible z-10">
 
             {/* Header: title + legend + toggle — compact single row */}
             <div className="flex items-center justify-between gap-3 mb-2 shrink-0">
@@ -101,7 +101,7 @@ const ScheduleChart = ({
                                 style={{ height: item.height, backgroundColor: item.color }}
                             />
                             {/* Label below */}
-                            <span className="text-[6.5px] font-bold text-slate-400 absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap group-hover/bar:text-cyan-500 transition-colors duration-200 z-10">
+                            <span className="text-[8px] font-black text-slate-500 absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap group-hover/bar:text-[#0052CC] transition-colors duration-200 z-10">
                                 {item.label}
                             </span>
                         </div>

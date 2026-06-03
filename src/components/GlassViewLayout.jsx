@@ -38,7 +38,7 @@ const GlassViewLayout = ({
             {/* ── Scroll container ── */}
             <div
                 ref={scrollContainerRef}
-                className={`lg:absolute lg:inset-0 lg:w-full lg:h-full pb-10 [&::-webkit-scrollbar]:hidden ${
+                className={`lg:absolute lg:inset-0 lg:w-full lg:h-full pb-10 lg:flex lg:flex-col [&::-webkit-scrollbar]:hidden ${
                     fixedScrollMode ? 'lg:overflow-hidden lg:overscroll-contain scroll-smooth' : 'lg:overflow-y-auto lg:overscroll-contain scroll-smooth'
                 }`}
                 onScroll={handleInternalScroll}
@@ -126,9 +126,9 @@ const GlassViewLayout = ({
                 )}
 
                 {/* Content body */}
-                <div className="px-2 lg:px-6 xl:px-8 pt-4 xl:pt-5">
+                <div className="px-2 lg:px-6 xl:px-8 pt-4 xl:pt-5 lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
                     <div data-surface={transparentBody ? undefined : 'card'}
-                        className={`group/table flex flex-col ${bodyCardCls}`}>
+                        className={`group/table flex flex-col lg:flex-1 ${bodyCardCls}`}>
                         {children}
                     </div>
                 </div>

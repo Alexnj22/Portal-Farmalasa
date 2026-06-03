@@ -10,7 +10,7 @@ const ScheduleChart = ({
     openModal
 }) => {
     return (
-        <div className="col-span-1 lg:col-span-2 bg-white/40 backdrop-blur-3xl backdrop-saturate-[180%] border border-white/80 rounded-[2rem] p-4 shadow-[inset_0_2px_15px_rgba(255,255,255,0.7),0_10px_40px_rgba(0,0,0,0.05)] flex flex-col justify-between hover:shadow-[0_15px_50px_rgba(0,0,0,0.08)] transition-all duration-300 group/chart relative overflow-visible min-h-[180px] z-10">
+        <div className="col-span-1 lg:col-span-2 bg-white/[0.14] backdrop-blur-2xl border border-white/60 rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)] flex flex-col justify-between hover:bg-white/[0.22] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] transition-all duration-300 group/chart relative overflow-visible h-full z-10">
 
             <div className="absolute top-3 right-3 opacity-0 group-hover/chart:opacity-100 transition-opacity duration-200 z-20">
                 <button onClick={() => openModal && openModal('viewWfmAnalytics')}
@@ -20,13 +20,22 @@ const ScheduleChart = ({
                 </button>
             </div>
 
-            <div className="flex items-center justify-between mb-4 pr-10 relative z-10">
-                <h3 className="text-[13px] font-black text-slate-800 tracking-tight flex items-center gap-1.5">
-                    <div className="w-6 h-6 rounded-full bg-cyan-50 text-cyan-600 flex items-center justify-center shadow-sm border border-cyan-100/50">
-                        <TrendingUp size={12} strokeWidth={2.5} />
+            <div className="flex items-center justify-between mb-3 pr-10 relative z-10 flex-wrap gap-2">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                    <h3 className="text-[12px] font-black text-slate-800 tracking-tight flex items-center gap-1.5">
+                        <div className="w-5 h-5 rounded-full bg-cyan-50 text-cyan-600 flex items-center justify-center shadow-sm border border-cyan-100/50">
+                            <TrendingUp size={10} strokeWidth={2.5} />
+                        </div>
+                        {chartTitle}
+                    </h3>
+                    {/* Legend — top */}
+                    <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#e2e8f0]" /><span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Muerta</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#0052CC]" /><span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Normal</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#F79009]" /><span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Pico</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#FF2D55]" /><span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Crítica</span></div>
                     </div>
-                    {chartTitle}
-                </h3>
+                </div>
 
                 <div className="flex items-center bg-white/60 p-0.5 rounded-full border border-white shadow-[inset_0_1px_4px_rgba(0,0,0,0.03)] h-7">
                     {typeof chartView === 'number' && (
@@ -101,12 +110,6 @@ const ScheduleChart = ({
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 mt-4 justify-center md:justify-start relative z-10">
-                <div className="flex items-center gap-1 text-[8px] font-bold text-slate-500 uppercase tracking-widest"><div className="w-2 h-2 rounded-full bg-[#e2e8f0]" /> Muerta</div>
-                <div className="flex items-center gap-1 text-[8px] font-bold text-slate-500 uppercase tracking-widest"><div className="w-2 h-2 rounded-full bg-[#0052CC]" /> Normal</div>
-                <div className="flex items-center gap-1 text-[8px] font-bold text-slate-500 uppercase tracking-widest"><div className="w-2 h-2 rounded-full bg-[#F79009]" /> Pico</div>
-                <div className="flex items-center gap-1 text-[8px] font-bold text-slate-500 uppercase tracking-widest"><div className="w-2 h-2 rounded-full bg-[#FF2D55]" /> Crítica</div>
-            </div>
         </div>
     );
 };

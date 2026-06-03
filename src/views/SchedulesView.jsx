@@ -770,20 +770,20 @@ const SchedulesView = ({ openModal, setView }) => {
                     transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                     className="w-full flex-1 flex flex-col p-2 md:p-4 lg:px-6 mx-auto h-full overflow-hidden">
 
-                    {/* Filter pill above chart */}
-                    <div className="hidden lg:flex justify-end pb-2 shrink-0">
-                        {filterPill}
-                    </div>
-
-                    {/* Chart */}
-                    <div className="pb-3 shrink-0">
-                        <ScheduleChart
-                            chartTitle={chartTitle}
-                            chartView={chartView} setChartView={setChartView}
-                            isLoadingSales={isLoadingSales}
-                            currentChartData={currentChartData}
-                            openModal={openModal}
-                        />
+                    {/* Chart (left) + filter pill (right) — same height */}
+                    <div className="flex items-stretch gap-3 pb-3 shrink-0">
+                        <div className="flex-1 min-w-0">
+                            <ScheduleChart
+                                chartTitle={chartTitle}
+                                chartView={chartView} setChartView={setChartView}
+                                isLoadingSales={isLoadingSales}
+                                currentChartData={currentChartData}
+                                openModal={openModal}
+                            />
+                        </div>
+                        <div className="hidden lg:flex shrink-0">
+                            {filterPill}
+                        </div>
                     </div>
 
                     {employeesInView.length === 0 ? (

@@ -10,7 +10,7 @@ const ScheduleChart = ({
     openModal
 }) => {
     return (
-        <div className="bg-white/[0.14] backdrop-blur-2xl border border-white/60 rounded-2xl px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)] flex flex-col h-full min-h-[90px] hover:bg-white/[0.22] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] transition-all duration-300 group/chart relative overflow-visible z-10">
+        <div className="bg-white/[0.14] backdrop-blur-2xl border border-white/60 rounded-2xl px-4 py-2 shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)] flex flex-col h-full min-h-[80px] hover:bg-white/[0.22] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] transition-all duration-300 group/chart relative overflow-visible z-10">
 
             {/* Header: title + legend + toggle — compact single row */}
             <div className="flex items-center justify-between gap-3 mb-2 shrink-0">
@@ -21,7 +21,7 @@ const ScheduleChart = ({
                     </span>
                     {/* Legend inline */}
                     <div className="hidden md:flex items-center gap-2">
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#e2e8f0]" /><span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">Muerta</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#64748b]" /><span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">Muerta</span></div>
                         <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#0052CC]" /><span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">Normal</span></div>
                         <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#F79009]" /><span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">Pico</span></div>
                         <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#FF2D55]" /><span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">Crítica</span></div>
@@ -56,8 +56,8 @@ const ScheduleChart = ({
                 </button>
             </div>
 
-            {/* Bars — flex-1, labels below */}
-            <div className="flex items-end gap-[3px] flex-1 w-full relative overflow-visible pb-4">
+            {/* Bars — flex-1, labels inside each bar */}
+            <div className="flex items-end gap-[3px] flex-1 w-full relative overflow-visible">
                 <div className="absolute inset-0 flex flex-col justify-between opacity-15 pointer-events-none z-0">
                     <div className="border-t border-dashed border-slate-400 w-full" />
                     <div className="border-t border-dashed border-slate-400 w-full" />
@@ -95,15 +95,14 @@ const ScheduleChart = ({
                                 )}
                             </div>
 
-                            {/* Bar */}
+                            {/* Bar with label inside */}
                             <div
-                                className={`w-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/bar:opacity-90 group-hover/bar:shadow-sm origin-bottom z-10 ${chartView === 'DAYS' ? 'rounded-t-[5px] group-hover/bar:scale-y-[1.04]' : 'rounded-t-[4px] group-hover/bar:-translate-y-px'}`}
-                                style={{ height: item.height, backgroundColor: item.color }}
-                            />
-                            {/* Label below */}
-                            <span className="text-[8px] font-black text-slate-500 absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap group-hover/bar:text-[#0052CC] transition-colors duration-200 z-10">
-                                {item.label}
-                            </span>
+                                className={`relative w-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/bar:opacity-90 group-hover/bar:shadow-sm origin-bottom z-10 overflow-hidden ${chartView === 'DAYS' ? 'rounded-t-[5px] group-hover/bar:scale-y-[1.04]' : 'rounded-t-[4px] group-hover/bar:-translate-y-px'}`}
+                                style={{ height: item.height, backgroundColor: item.color }}>
+                                <span className="absolute bottom-0.5 inset-x-0 text-center text-[7px] font-black text-white/90 leading-none pointer-events-none">
+                                    {item.label}
+                                </span>
+                            </div>
                         </div>
                     ))
                 )}

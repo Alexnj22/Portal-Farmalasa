@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Bot, Clock, Flame, AlertTriangle, CircleUserRound } from 'lucide-react';
+import { X, Bot, Clock, Flame, AlertTriangle, CircleUserRound, Building2 } from 'lucide-react';
 import LiquidSelect from '../../../components/common/LiquidSelect'; 
 import TimePicker12 from '../../../components/common/TimePicker12'; 
 import { useStaffStore } from '../../../store/staffStore'; 
@@ -17,7 +17,7 @@ const formatTime12hStr = (time24) => {
     return `${hour}:${m} ${ampm}`;
 };
 
-const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, filterBranch, onClose, onSave, anchorRect }) => {
+const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, filterBranch, onClose, onSave, anchorRect, coverageMeta }) => {
     const { branches } = useStaffStore(); 
 
     const [shiftId, setShiftId] = useState(() => {
@@ -328,6 +328,15 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     </div>
                     <button onClick={handleClose} className="w-8 h-8 rounded-full bg-white/60 hover:bg-red-50 hover:text-red-500 text-slate-500 flex items-center justify-center transition-colors active:scale-[0.97] shrink-0"><X size={16} strokeWidth={3} /></button>
                 </div>
+
+                {coverageMeta && (
+                    <div className="mx-4 mt-3 px-3 py-2 bg-indigo-50/80 border border-indigo-200/80 rounded-2xl flex gap-2 items-start shrink-0">
+                        <Building2 size={13} className="text-indigo-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+                        <p className="text-[10px] font-bold text-indigo-600 leading-snug">
+                            Este turno sobreescribirá el horario de <strong>{coverageMeta.homeBranchName}</strong> para este día.
+                        </p>
+                    </div>
+                )}
 
                 <div className="px-4 pt-4 pb-2 shrink-0 relative z-[9999]">
                     <div className={`group/select hover:shadow-md transition-shadow duration-300 rounded-full relative ${shiftId === 'NO_SHIFTS' ? 'ring-2 ring-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.3)]' : ''}`}>

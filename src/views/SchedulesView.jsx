@@ -267,6 +267,11 @@ const SchedulesView = ({ openModal, setView }) => {
 
     const [chartView, setChartView]       = useState('DAYS');
     const [salesStats, setSalesStats]     = useState({ generalHours: [], days: [], specificHours: {} });
+
+    const [coveragesAtBranch, setCoveragesAtBranch]     = useState([]);
+    const [coveragesFromBranch, setCoveragesFromBranch] = useState([]);
+    const [coverageRosters, setCoverageRosters]         = useState({});
+    const [addedCoverageEmpIds, setAddedCoverageEmpIds] = useState(new Set());
     const [isLoadingSales, setIsLoadingSales] = useState(false);
 
     useEffect(() => {
@@ -323,6 +328,54 @@ const SchedulesView = ({ openModal, setView }) => {
             window.removeEventListener('employee-event-updated', handleRefresh);
         };
     }, [startDate, fetchWeekRosters, viewMode, filterBranch]);
+
+    useEffect(() => {
+        if (viewMode !== 'calendar' || !filterBranch || !startDate) return;
+        let isMounted = true;
+        const load = async () => {
+            const { data: atBranch } = await supabase
+                .from('schedule_coverage')
+                .select('*')
+                .eq('coverage_branch_id', filterBranch)
+                .eq('week_start_date', startDate);
+            if (!isMounted) return;
+            const entries = atBranch || [];
+            setCoveragesAtBranch(entries);
+            setAddedCoverageEmpIds(new Set());
+
+            const empIds = [...new Set(entries.map(e => e.employee_id))];
+            if (empIds.length > 0) {
+                const { data: rosters } = await supabase
+                    .from('employee_rosters')
+                    .select('employee_id, schedule_data')
+                    .in('employee_id', empIds)
+                    .eq('week_start_date', startDate);
+                if (!isMounted) return;
+                const map = {};
+                (rosters || []).forEach(r => { map[r.employee_id] = r.schedule_data; });
+                setCoverageRosters(map);
+            } else {
+                setCoverageRosters({});
+            }
+
+            const myEmpIds = employees
+                .filter(e => String(e.branchId || e.branch_id) === String(filterBranch) && (e.status || '').toUpperCase() !== 'INACTIVO')
+                .map(e => e.id);
+            if (myEmpIds.length > 0) {
+                const { data: fromBranch } = await supabase
+                    .from('schedule_coverage')
+                    .select('employee_id, coverage_branch_id, day_of_week')
+                    .in('employee_id', myEmpIds)
+                    .eq('week_start_date', startDate);
+                if (!isMounted) return;
+                setCoveragesFromBranch(fromBranch || []);
+            } else {
+                setCoveragesFromBranch([]);
+            }
+        };
+        load();
+        return () => { isMounted = false; };
+    }, [viewMode, filterBranch, startDate, employees]);
 
     const calendarDates = useMemo(() => Array.from({ length: 7 }).map((_, i) => {
         const [y, m, d] = startDate.split('-').map(Number);
@@ -514,6 +567,41 @@ const SchedulesView = ({ openModal, setView }) => {
     const handleEditCell = useCallback((empId, dayId, dateStr, currentData, rect) => {
         setEditingCell({ empId, dayId, dateStr, currentData, rect });
     }, []);
+
+    const handleAddCoverageEmployee = useCallback((empId) => {
+        setAddedCoverageEmpIds(prev => new Set([...prev, empId]));
+    }, []);
+
+    const handleRemoveCoverageEmployee = useCallback(async (empId) => {
+        setCoveragesAtBranch(prev => prev.filter(e => e.employee_id !== empId));
+        setAddedCoverageEmpIds(prev => { const s = new Set(prev); s.delete(empId); return s; });
+        await supabase.from('schedule_coverage')
+            .delete()
+            .eq('employee_id', empId)
+            .eq('coverage_branch_id', filterBranch)
+            .eq('week_start_date', startDate);
+    }, [filterBranch, startDate]);
+
+    const handleSaveCoverageCell = useCallback(async (empId, homeBranchId, dayOfWeek, scheduleData) => {
+        const entry = {
+            employee_id: empId,
+            coverage_branch_id: Number(filterBranch),
+            home_branch_id: homeBranchId ? Number(homeBranchId) : null,
+            week_start_date: startDate,
+            day_of_week: dayOfWeek,
+            schedule_data: scheduleData,
+            updated_at: new Date().toISOString(),
+        };
+        setCoveragesAtBranch(prev => {
+            const idx = prev.findIndex(e => e.employee_id === empId && e.day_of_week === dayOfWeek);
+            if (idx >= 0) { const next = [...prev]; next[idx] = { ...next[idx], schedule_data: scheduleData }; return next; }
+            return [...prev, entry];
+        });
+        const { error } = await supabase.from('schedule_coverage').upsert(entry, {
+            onConflict: 'employee_id,coverage_branch_id,week_start_date,day_of_week',
+        });
+        if (error) console.error('Error guardando cobertura:', error);
+    }, [filterBranch, startDate]);
 
     const triggerPublishAudit = () => {
         let incompleteCount = 0, excessCount = 0;
@@ -812,6 +900,24 @@ const SchedulesView = ({ openModal, setView }) => {
                                 salesStats={salesStats}
                                 onSalyAlertsUpdate={() => {}}
                                 isReadOnly={isPastWeek || !hasPermission('schedules', 'can_edit')}
+                                coveragesAtBranch={coveragesAtBranch}
+                                coveragesFromBranch={coveragesFromBranch}
+                                coverageRosters={coverageRosters}
+                                addedCoverageEmpIds={addedCoverageEmpIds}
+                                allEmployees={employees}
+                                branches={branches}
+                                currentBranchId={filterBranch}
+                                onAddCoverageEmployee={handleAddCoverageEmployee}
+                                onRemoveCoverageEmployee={handleRemoveCoverageEmployee}
+                                onEditCoverageCell={(emp, dayId, dateStr, currentData, rect, homeBranch) => {
+                                    setEditingCell({
+                                        empId: emp.id, dayId, dateStr,
+                                        currentData: currentData || {},
+                                        rect, isCoverage: true,
+                                        coverageHomeBranchId: homeBranch?.id,
+                                        coverageHomeBranchName: homeBranch?.name || 'su sucursal',
+                                    });
+                                }}
                             />
                         </div>
                     )}
@@ -821,7 +927,10 @@ const SchedulesView = ({ openModal, setView }) => {
 
             {editingCell && (
                 <InlineDayEditor
-                    employee={employeesInView.find(e => e.id === editingCell.empId)}
+                    employee={editingCell.isCoverage
+                        ? employees.find(e => e.id === editingCell.empId)
+                        : employeesInView.find(e => e.id === editingCell.empId)
+                    }
                     dateStr={editingCell.dateStr}
                     dayId={editingCell.dayId}
                     currentData={editingCell.currentData}
@@ -829,7 +938,14 @@ const SchedulesView = ({ openModal, setView }) => {
                     filterBranch={filterBranch}
                     anchorRect={editingCell.rect}
                     onClose={() => setEditingCell(null)}
-                    onSave={(dayId, newData) => handleSaveCell(editingCell.empId, dayId, newData)}
+                    onSave={(dayId, newData) => {
+                        if (editingCell.isCoverage) {
+                            handleSaveCoverageCell(editingCell.empId, editingCell.coverageHomeBranchId, Number(dayId), newData);
+                        } else {
+                            handleSaveCell(editingCell.empId, dayId, newData);
+                        }
+                    }}
+                    coverageMeta={editingCell.isCoverage ? { homeBranchName: editingCell.coverageHomeBranchName } : null}
                 />
             )}
 

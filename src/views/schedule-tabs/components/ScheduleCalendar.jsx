@@ -1,5 +1,5 @@
-import React, { memo, useMemo, useEffect } from 'react';
-import { CircleUserRound, Clock, Pencil, Flame, AlertTriangle } from 'lucide-react';
+import React, { memo, useMemo, useEffect, useState } from 'react';
+import { CircleUserRound, Clock, Pencil, Flame, AlertTriangle, Building2, Plus, X as XIcon, Search } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { getRoleTheme, getDayConflictLocal, getTimeBlocks, calculateEmployeeWeeklyHoursLocal, timeToMins } from '../../../utils/scheduleHelpers'; 
@@ -204,7 +204,7 @@ const evaluateDayCoverage = (dNum, allSchedules, shifts, daySalesStats) => {
 // ============================================================================
 // ⚡ FILA MEMOIZADA (UN EMPLEADO)
 // ============================================================================
-const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCell, isReadOnly }) => {
+const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCell, isReadOnly, apoyoDaysByDow }) => {
     let rawSchedule = roster || {};
     let sch = (typeof rawSchedule === 'string') ? JSON.parse(rawSchedule || '{}') : rawSchedule;
     
@@ -408,29 +408,38 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
 
                 const timeBlocks = hasShift ? getTimeBlocks(startStr, endStr, dayData.hasLunch, dayData.lunchStart, dayData.hasLactation, dayData.lactationStart) : [];
 
+                const apoyoBranch = apoyoDaysByDow?.[dId];
+
                 return (
-                    <td key={date} className={`p-0 align-top h-px ${isReadOnly ? 'cursor-default' : 'group/cell cursor-pointer relative z-10 hover:z-[60]'}`} onClick={(e) => {
-                        if (conf || isReadOnly) return;
+                    <td key={date} className={`p-0 align-top h-px ${(isReadOnly || apoyoBranch) ? 'cursor-default' : 'group/cell cursor-pointer relative z-10 hover:z-[60]'}`} onClick={(e) => {
+                        if (conf || isReadOnly || apoyoBranch) return;
                         const rect = e.currentTarget.getBoundingClientRect();
                         onEditCell(emp.id, dId, date, dayData, rect);
                     }}>
                         <div className={`h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col
-                            ${!isReadOnly ? 'group-hover/cell:scale-[1.03]' : ''}
-                            ${conf ? conf.bg + ' border border-dashed ' + conf.border :
+                            ${(!isReadOnly && !apoyoBranch) ? 'group-hover/cell:scale-[1.03]' : ''}
+                            ${apoyoBranch ? 'bg-violet-50 border border-violet-200 shadow-[0_2px_8px_rgba(139,92,246,0.08)]' :
+                              conf ? conf.bg + ' border border-dashed ' + conf.border :
                               hasShift ? 'bg-white border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.03)]' :
                               'border border-dashed border-slate-300/60 bg-slate-50/30 backdrop-blur-sm'
                             }
-                            ${isDailyOvertime && hasShift ? '!border-red-300 shadow-[inset_0_0_15px_rgba(239,68,68,0.1)]' : ''}
+                            ${!apoyoBranch && isDailyOvertime && hasShift ? '!border-red-300 shadow-[inset_0_0_15px_rgba(239,68,68,0.1)]' : ''}
                         `}>
-                            
-                            {!conf && !isReadOnly && (
+
+                            {!conf && !isReadOnly && !apoyoBranch && (
                                 <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#0052CC] text-white shadow-sm flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-50 hover:bg-blue-600">
                                     <Pencil size={8} strokeWidth={2.5} />
                                 </div>
                             )}
-                            
+
                             <div className="relative z-10 w-full h-full flex flex-col">
-                                {conf ? (
+                                {apoyoBranch ? (
+                                    <div className="w-full flex-1 flex flex-col items-center justify-center gap-1">
+                                        <Building2 size={11} className="text-violet-400" strokeWidth={2} />
+                                        <span className="text-[7px] font-black uppercase tracking-widest text-violet-600">Apoyo</span>
+                                        <span className="text-[6.5px] font-bold text-violet-400 text-center leading-tight truncate px-1">{apoyoBranch}</span>
+                                    </div>
+                                ) : conf ? (
                                     <div className={`w-full flex-1 flex flex-col items-center justify-center ${conf.text}`}>
                                         <conf.icon className="w-4 h-4 2xl:w-[18px] 2xl:h-[18px] mb-1" strokeWidth={2.5} />
                                         <span className="text-[7.5px] 2xl:text-[8px] font-black uppercase text-center leading-tight truncate px-1">{conf.label}</span>
@@ -485,18 +494,135 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
         </tr>
     );
 }, (prev, next) => {
-    return prev.emp.id === next.emp.id && 
-           prev.roster === next.roster && 
-           prev.calendarDates === next.calendarDates && 
+    return prev.emp.id === next.emp.id &&
+           prev.roster === next.roster &&
+           prev.calendarDates === next.calendarDates &&
            prev.shifts === next.shifts &&
-           prev.isReadOnly === next.isReadOnly;
+           prev.isReadOnly === next.isReadOnly &&
+           prev.apoyoDaysByDow === next.apoyoDaysByDow;
+});
+
+// ============================================================================
+// 🔀 FILA DE EMPLEADO DE COBERTURA (OTRA SUCURSAL)
+// ============================================================================
+const fmt12h = (t) => {
+    if (!t) return '';
+    const [h, m] = t.split(':').map(Number);
+    return `${h % 12 || 12}:${m.toString().padStart(2, '0')}${h >= 12 ? 'pm' : 'am'}`;
+};
+
+const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByDow, calendarDates, shifts, onEditCell, onRemove }) => {
+    const shortName = formatShortName(emp.name);
+    const parsedHomeRoster = useMemo(() => {
+        if (!homeRoster) return {};
+        return typeof homeRoster === 'string' ? JSON.parse(homeRoster || '{}') : homeRoster;
+    }, [homeRoster]);
+
+    return (
+        <tr className="group/row relative transition-[z-index] duration-150 hover:z-50">
+            <td className="p-0 sticky left-0 z-30 align-top h-px group-hover/row:z-50 min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
+                <div className="min-h-[72px] h-full bg-indigo-50/80 backdrop-blur-xl border border-indigo-200/60 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(99,102,241,0.06)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
+                    <div className="w-9 h-9 rounded-xl bg-white/60 border border-indigo-200/60 overflow-hidden flex items-center justify-center shrink-0">
+                        {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={22} className="text-indigo-200" />}
+                    </div>
+                    <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden gap-0.5">
+                        <h4 className="font-black text-slate-800 text-[12px] truncate leading-tight" title={emp.name}>{shortName}</h4>
+                        <div className="flex items-center gap-1">
+                            <Building2 size={9} className="text-indigo-400 shrink-0" strokeWidth={2} />
+                            <span className="text-[9px] font-bold text-indigo-500 truncate">{homeBranch?.name || 'Otra sucursal'}</span>
+                        </div>
+                        <div className="mt-0.5 px-1.5 py-[2px] bg-indigo-100 border border-indigo-200/80 rounded-full w-fit">
+                            <span className="text-[7px] font-black uppercase tracking-widest text-indigo-600">APOYO</span>
+                        </div>
+                    </div>
+                    <button onClick={onRemove} className="w-7 h-7 rounded-full bg-white/70 hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors shrink-0" title="Quitar cobertura">
+                        <XIcon size={12} strokeWidth={2.5} />
+                    </button>
+                </div>
+            </td>
+
+            {calendarDates.map(date => {
+                const dId = new Date(date + 'T00:00:00').getDay();
+                const coverageData = coverageDaysByDow?.[dId];
+                const homeData = parsedHomeRoster[dId] || {};
+                const displayData = coverageData || homeData;
+                const isCoverageDay = Boolean(coverageData);
+
+                const shift = shifts.find(s => String(s.id) === String(displayData?.shiftId));
+                const startStr = displayData?.customStart || shift?.start_time?.substring(0, 5) || shift?.start;
+                const endStr   = displayData?.customEnd   || shift?.end_time?.substring(0, 5)   || shift?.end;
+                const hasShift = !displayData?.isOff && startStr && endStr;
+
+                const netHrs = (() => {
+                    if (!hasShift) return '';
+                    let s = timeToMins(startStr), e = timeToMins(endStr);
+                    if (e < s) e += 1440;
+                    const paid = e - s - (displayData?.hasLunch ? 60 : 0);
+                    return (paid / 60).toFixed(1).replace('.0', '');
+                })();
+
+                return (
+                    <td key={date} className="p-0 align-top h-px group/cell cursor-pointer relative z-10 hover:z-[60]"
+                        onClick={e => onEditCell(emp, dId, date, isCoverageDay ? coverageData : null, e.currentTarget.getBoundingClientRect(), homeBranch)}>
+                        <div className={`h-full rounded-[1.2rem] mx-0.5 p-1.5 relative transition-transform duration-150 flex flex-col group-hover/cell:scale-[1.03]
+                            ${isCoverageDay
+                                ? 'bg-indigo-50 border border-indigo-300 shadow-[0_2px_8px_rgba(99,102,241,0.10)]'
+                                : hasShift
+                                    ? 'bg-white/50 border border-slate-200/50 opacity-40'
+                                    : 'border border-dashed border-slate-200/40 bg-slate-50/10 opacity-30'
+                            }`}>
+                            <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-all z-50 shadow-sm
+                                ${isCoverageDay ? 'bg-indigo-500 text-white' : 'bg-slate-400 text-white'}">
+                                {isCoverageDay ? <Pencil size={8} strokeWidth={2.5} /> : <Plus size={8} strokeWidth={2.5} />}
+                            </div>
+
+                            <div className="relative z-10 w-full h-full flex flex-col">
+                                {hasShift ? (
+                                    <div className="flex flex-col h-full">
+                                        <div className="flex items-start justify-between w-full mb-1">
+                                            <span className={`text-[7.5px] font-black uppercase px-1 py-[1px] rounded border truncate max-w-[68%]
+                                                ${isCoverageDay ? 'text-indigo-700 bg-indigo-100 border-indigo-200' : 'text-slate-400 bg-slate-50 border-slate-100'}`}>
+                                                {shift?.name || 'Manual'}
+                                            </span>
+                                            <span className={`text-[7px] font-black px-1 py-[1px] rounded border
+                                                ${isCoverageDay ? 'text-indigo-500 bg-indigo-50 border-indigo-100' : 'text-slate-300 bg-slate-50 border-slate-100'}`}>
+                                                {netHrs}h
+                                            </span>
+                                        </div>
+                                        <div className={`text-[8px] font-bold font-mono tracking-tight mt-auto ${isCoverageDay ? 'text-indigo-600' : 'text-slate-300'}`}>
+                                            {fmt12h(startStr)} - {fmt12h(endStr)}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="w-full flex-1 flex items-center justify-center">
+                                        {isCoverageDay
+                                            ? <span className="text-[7.5px] font-black uppercase text-indigo-400">Libre</span>
+                                            : <span className="text-[8px] font-black text-slate-200">—</span>
+                                        }
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </td>
+                );
+            })}
+        </tr>
+    );
 });
 
 // ============================================================================
 // 🚀 VISTA PRINCIPAL DEL CALENDARIO
 // ============================================================================
-const ScheduleCalendar = memo(({ isLoading, calendarDates, employeesInView, weeklyRosters, shifts, handleEditCell, salesStats, onSalyAlertsUpdate, isReadOnly }) => {
-    
+const ScheduleCalendar = memo(({
+    isLoading, calendarDates, employeesInView, weeklyRosters, shifts,
+    handleEditCell, salesStats, onSalyAlertsUpdate, isReadOnly,
+    coveragesAtBranch = [], coveragesFromBranch = [], coverageRosters = {},
+    addedCoverageEmpIds = new Set(), allEmployees = [], branches = [],
+    currentBranchId, onAddCoverageEmployee, onRemoveCoverageEmployee, onEditCoverageCell,
+}) => {
+    const [showCoverageSearch, setShowCoverageSearch] = useState(false);
+    const [coverageSearchTerm, setCoverageSearchTerm] = useState('');
+
     const allSchedulesArray = useMemo(() => {
         return employeesInView.map(emp => {
             let rawSchedule = weeklyRosters[emp.id] || {};
@@ -518,6 +644,50 @@ const ScheduleCalendar = memo(({ isLoading, calendarDates, employeesInView, week
         return result;
     }, [allSchedulesArray, shifts, salesStats, calendarDates]);
 
+    // Coverage employees to show in the calendar
+    const coverageEmpIds = useMemo(() => {
+        const fromDb = new Set((coveragesAtBranch || []).map(e => e.employee_id));
+        const added  = addedCoverageEmpIds instanceof Set ? addedCoverageEmpIds : new Set(addedCoverageEmpIds);
+        return [...new Set([...fromDb, ...added])];
+    }, [coveragesAtBranch, addedCoverageEmpIds]);
+
+    const coverageEmployeesData = useMemo(() => {
+        return coverageEmpIds.map(empId => {
+            const emp = allEmployees.find(e => e.id === empId);
+            if (!emp) return null;
+            const homeBranch = branches.find(b => String(b.id) === String(emp.branchId || emp.branch_id));
+            const homeRoster = coverageRosters[empId] || {};
+            const coverageDaysByDow = {};
+            (coveragesAtBranch || []).filter(c => c.employee_id === empId)
+                .forEach(c => { coverageDaysByDow[c.day_of_week] = c.schedule_data; });
+            return { emp, homeBranch, homeRoster, coverageDaysByDow };
+        }).filter(Boolean);
+    }, [coverageEmpIds, allEmployees, branches, coverageRosters, coveragesAtBranch]);
+
+    // "Apoyo" days by employee id for the home-branch badge
+    const apoyoByEmp = useMemo(() => {
+        const map = {};
+        (coveragesFromBranch || []).forEach(c => {
+            const targetBranch = branches.find(b => String(b.id) === String(c.coverage_branch_id));
+            if (!map[c.employee_id]) map[c.employee_id] = {};
+            map[c.employee_id][c.day_of_week] = targetBranch?.name || 'Otra sucursal';
+        });
+        return map;
+    }, [coveragesFromBranch, branches]);
+
+    // Coverage employee search results
+    const coverageSearchResults = useMemo(() => {
+        if (!coverageSearchTerm.trim()) return [];
+        const term = coverageSearchTerm.toLowerCase();
+        const alreadyAdded = new Set(coverageEmpIds);
+        return (allEmployees || []).filter(e => {
+            if (String(e.branchId || e.branch_id) === String(currentBranchId)) return false;
+            if (alreadyAdded.has(e.id)) return false;
+            if ((e.status || '').toUpperCase() === 'INACTIVO') return false;
+            return (e.name || '').toLowerCase().includes(term);
+        }).slice(0, 8);
+    }, [coverageSearchTerm, coverageEmpIds, allEmployees, currentBranchId]);
+
     useEffect(() => {
         let weeklyCopilotAlerts = [];
         calendarDates.forEach(date => {
@@ -536,7 +706,7 @@ const ScheduleCalendar = memo(({ isLoading, calendarDates, employeesInView, week
 
     return (
         <div className="w-full relative z-10 shrink-0 mt-4">
-            <div id="schedule-table-scroll" className="overflow-x-auto hide-scrollbar pb-10 px-2 pt-4">
+            <div id="schedule-table-scroll" className="overflow-x-auto hide-scrollbar pb-10 px-2 pt-4" style={{ overflowAnchor: 'none' }}>
                 <table className="w-full text-left border-separate border-spacing-y-2 border-spacing-x-1 min-w-full relative">
                     <thead className="relative z-[60]">
                         <tr>
@@ -638,8 +808,94 @@ const ScheduleCalendar = memo(({ isLoading, calendarDates, employeesInView, week
                                     calendarDates={calendarDates}
                                     onEditCell={handleEditCell}
                                     isReadOnly={isReadOnly}
+                                    apoyoDaysByDow={apoyoByEmp[emp.id]}
                                 />
                             ))}
+
+                            {/* ── Separador + filas de cobertura ── */}
+                            {coverageEmployeesData.length > 0 && (
+                                <tr><td colSpan={calendarDates.length + 1} className="pt-4 pb-1 px-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex-1 h-px bg-indigo-200/60" />
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
+                                            <Building2 size={9} /> Personal de Apoyo
+                                        </span>
+                                        <div className="flex-1 h-px bg-indigo-200/60" />
+                                    </div>
+                                </td></tr>
+                            )}
+
+                            {coverageEmployeesData.map(({ emp, homeBranch, homeRoster, coverageDaysByDow }) => (
+                                <CoverageEmployeeRow
+                                    key={emp.id}
+                                    emp={emp}
+                                    homeBranch={homeBranch}
+                                    homeRoster={homeRoster}
+                                    coverageDaysByDow={coverageDaysByDow}
+                                    calendarDates={calendarDates}
+                                    shifts={shifts}
+                                    onEditCell={onEditCoverageCell}
+                                    onRemove={() => onRemoveCoverageEmployee?.(emp.id)}
+                                />
+                            ))}
+
+                            {/* ── Botón agregar personal de apoyo ── */}
+                            {!isReadOnly && (
+                                <tr><td colSpan={calendarDates.length + 1} className="pt-3 pb-6 px-1">
+                                    {!showCoverageSearch ? (
+                                        <button
+                                            onClick={() => setShowCoverageSearch(true)}
+                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-slate-300/50 text-slate-400 hover:border-indigo-400 hover:text-indigo-500 hover:bg-indigo-50/30 transition-all duration-200 text-[10px] font-black uppercase tracking-widest"
+                                        >
+                                            <Plus size={13} strokeWidth={2.5} /> Agregar Personal de Apoyo
+                                        </button>
+                                    ) : (
+                                        <div className="bg-white/90 backdrop-blur-xl border border-slate-200 rounded-2xl p-3 shadow-lg">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <div className="flex-1 flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
+                                                    <Search size={12} className="text-slate-400 shrink-0" />
+                                                    <input
+                                                        autoFocus
+                                                        type="text"
+                                                        value={coverageSearchTerm}
+                                                        onChange={e => setCoverageSearchTerm(e.target.value)}
+                                                        placeholder="Buscar empleado de otra sucursal..."
+                                                        className="flex-1 bg-transparent text-[12px] text-slate-700 outline-none placeholder:text-slate-400"
+                                                    />
+                                                </div>
+                                                <button onClick={() => { setShowCoverageSearch(false); setCoverageSearchTerm(''); }}
+                                                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors shrink-0">
+                                                    <XIcon size={14} />
+                                                </button>
+                                            </div>
+                                            {coverageSearchResults.length > 0 ? (
+                                                <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
+                                                    {coverageSearchResults.map(e => {
+                                                        const br = branches.find(b => String(b.id) === String(e.branchId || e.branch_id));
+                                                        return (
+                                                            <button key={e.id}
+                                                                onClick={() => { onAddCoverageEmployee?.(e.id); setShowCoverageSearch(false); setCoverageSearchTerm(''); }}
+                                                                className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-indigo-50 transition-colors text-left w-full">
+                                                                <div className="w-8 h-8 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                                                                    {e.photo_url ? <img src={e.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={18} className="text-slate-300" />}
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <p className="text-[12px] font-black text-slate-800 truncate">{e.name}</p>
+                                                                    <p className="text-[10px] text-indigo-500 font-bold truncate">{br?.name || 'Sin sucursal'}</p>
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <p className="text-[11px] text-slate-400 text-center py-2">
+                                                    {coverageSearchTerm.trim() ? 'No se encontraron empleados' : 'Escribe el nombre del empleado'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </td></tr>
+                            )}
                         </motion.tbody>
                     )}
                     </AnimatePresence>

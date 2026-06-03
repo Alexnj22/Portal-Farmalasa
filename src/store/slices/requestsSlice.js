@@ -273,7 +273,8 @@ const markDisabilityDaysInRoster = async (employeeId, startDate, endDate) => {
         const weekMap = {};
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
             const weekKey = getMondayISO(d.toISOString().split('T')[0]);
-            const dayId   = d.getDay(); // 0=Dom, 1=Lun … 6=Sab
+            const rawDay  = d.getDay();
+            const dayId   = rawDay === 0 ? 7 : rawDay; // 7=Dom, 1=Lun … 6=Sab (matches kiosk reader)
             if (!weekMap[weekKey]) weekMap[weekKey] = [];
             weekMap[weekKey].push(dayId);
         }
@@ -311,8 +312,9 @@ const markVacationDaysInRoster = async (employeeId, startDate, endDate) => {
         const end   = new Date(endDate   + 'T00:00:00');
         const weekMap = {};
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            const weekKey = getMondayISO(d.toISOString().split('T')[0]);
-            const dayId   = d.getDay();
+            const weekKey  = getMondayISO(d.toISOString().split('T')[0]);
+            const rawDay   = d.getDay();
+            const dayId    = rawDay === 0 ? 7 : rawDay; // 7=Dom (matches kiosk reader)
             if (!weekMap[weekKey]) weekMap[weekKey] = [];
             weekMap[weekKey].push(dayId);
         }
@@ -384,7 +386,8 @@ const checkAndAlertCoverage = async (employeeId, branchId, startDate, endDate, a
                 const dateISO = checkD.toISOString().split('T')[0];
                 if (dateISO < startDate || dateISO > endDate) continue;
 
-                const dayId = checkD.getDay();
+                const rawDay = checkD.getDay();
+                const dayId  = rawDay === 0 ? 7 : rawDay;
                 let working = 0;
                 for (const roster of (rosters || [])) {
                     const s = typeof roster.schedule_data === 'string'
@@ -672,13 +675,13 @@ export const createRequestsSlice = (set, get) => ({
                     if (meta.date) {
                         try {
                             const swapDate  = meta.date;
-                            const swapDateD = new Date(swapDate + 'T12:00:00Z');
-                            const dow       = swapDateD.getUTCDay();
-                            const diffToMon = (dow + 6) % 7;
+                            const swapDateD = new Date(swapDate + 'T12:00:00'); // local time, no Z
+                            const dow       = swapDateD.getDay();               // local day (0=Sun)
+                            const diffToMon = dow === 0 ? 6 : dow - 1;
                             const monD      = new Date(swapDateD);
-                            monD.setUTCDate(monD.getUTCDate() - diffToMon);
-                            const weekStart = monD.toISOString().split('T')[0];
-                            const dayKey    = String(dow);
+                            monD.setDate(monD.getDate() - diffToMon);
+                            const weekStart = `${monD.getFullYear()}-${String(monD.getMonth() + 1).padStart(2, '0')}-${String(monD.getDate()).padStart(2, '0')}`;
+                            const dayKey    = String(dow === 0 ? 7 : dow); // 7=Dom (matches kiosk)
 
                             const [{ data: shiftsRows }, { data: rosters }] = await Promise.all([
                                 supabase.from('shifts').select('id, start_time, end_time'),

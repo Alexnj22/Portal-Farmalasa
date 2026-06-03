@@ -260,15 +260,18 @@ export default function WidgetInventorySearch() {
                     </div>
                     <div className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-200/80" />
                   </div>
-                  <div className="rounded-xl border border-slate-100 overflow-hidden">
+                  <div
+                    className="rounded-xl border border-white/60 overflow-hidden backdrop-blur-sm shadow-sm"
+                    style={{ background: 'rgba(255,255,255,0.30)' }}
+                  >
                     {prod.lots.length === 1 ? (
-                      <div className="flex items-center gap-2 px-3 py-2 bg-white">
+                      <div className="flex items-center gap-2 px-3 py-2">
                         <span className="text-[9px] font-mono text-slate-400 flex-1 truncate">{prod.lots[0].lote || '—'}</span>
                         <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
                         <span className="text-[10px] font-black text-slate-700 shrink-0 tabular-nums w-14 text-right">{prod.lots[0].cantidad} uds</span>
                       </div>
                     ) : (
-                      <div className="divide-y divide-white/60" style={{ background: 'linear-gradient(to bottom, #f8fafc, #f1f5f9)' }}>
+                      <div className="divide-y divide-white/40">
                         {prod.lots.map((row, li) => (
                           <div key={li} className="flex items-center gap-2 px-3 py-1.5">
                             <span className="text-[9px] font-mono text-slate-400 flex-1 truncate min-w-0">{row.lote || '—'}</span>
@@ -384,10 +387,11 @@ export default function WidgetInventorySearch() {
                       {multiLot ? (
                         /* Multiple lots */
                         <div
-                          className="rounded-xl border border-slate-100 overflow-hidden cursor-pointer group"
+                          className="rounded-xl border border-white/60 overflow-hidden cursor-pointer group backdrop-blur-sm shadow-sm"
+                          style={{ background: 'rgba(255,255,255,0.32)' }}
                           onClick={() => setDrillProduct({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl })}
                         >
-                          <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 bg-white group-hover:bg-blue-50/40 transition-colors">
+                          <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 group-hover:bg-white/30 transition-colors">
                             {prod.fotoUrl && (
                               <PhotoThumb url={prod.fotoUrl} onZoom={setLightboxUrl} />
                             )}
@@ -400,7 +404,7 @@ export default function WidgetInventorySearch() {
                             <span className="text-[10px] font-black text-slate-500 shrink-0 tabular-nums">{lotTotal} uds</span>
                             <ChevronRight size={11} className="text-slate-300 group-hover:text-[#0052CC] transition-colors shrink-0" strokeWidth={2.5} />
                           </div>
-                          <div className="divide-y divide-white/60" style={{ background: 'linear-gradient(to bottom, #f8fafc, #f1f5f9)' }}>
+                          <div className="divide-y divide-white/40" style={{ background: 'rgba(255,255,255,0.18)' }}>
                             {prod.lots.map((row, li) => (
                               <div key={li} className="flex items-center gap-2 px-3 py-1.5">
                                 <span className="text-[9px] font-mono text-slate-400 flex-1 truncate min-w-0">{row.lote || '—'}</span>
@@ -413,7 +417,8 @@ export default function WidgetInventorySearch() {
                       ) : (
                         /* Single lot */
                         <button
-                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-white/80 transition-colors group text-left"
+                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl border border-white/50 backdrop-blur-sm hover:bg-white/45 transition-colors group text-left shadow-sm"
+                          style={{ background: 'rgba(255,255,255,0.28)' }}
                           onClick={() => setDrillProduct({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl })}
                         >
                           {prod.fotoUrl && (

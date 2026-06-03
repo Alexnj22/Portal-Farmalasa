@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, AlertTriangle, CheckCircle2, ChevronRight, X, Receipt, Clock, Eye, ArrowLeft } from 'lucide-react';
+import { Search, Loader2, AlertTriangle, CheckCircle2, X, Receipt, Clock, Eye, ArrowLeft, AlertCircle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -117,7 +117,7 @@ function InvoiceDetail({ inv, onBack, onAnnul }) {
 }
 
 /* ─── Annulment form ────────────────────────────────────────────────────── */
-function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, appendAuditLog }) {
+function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, appendAuditLog, backLabel = 'Atrás' }) {
   const [reason,      setReason]      = useState('');
   const [comment,     setComment]     = useState('');
   const [submitting,  setSubmitting]  = useState(false);
@@ -248,11 +248,12 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   const activeBranch   = branches.find(b => String(b.id) === activeBranchId);
 
   // view: 'list' | 'detail' | 'annul' | 'success'
-  const [view,     setView]     = useState('list');
-  const [invoices, setInvoices] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [search,   setSearch]   = useState('');
-  const [focused,  setFocused]  = useState(null); // selected invoice
+  const [view,          setView]          = useState('list');
+  const [prevAnnulView, setPrevAnnulView] = useState('list');
+  const [invoices,      setInvoices]      = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [search,        setSearch]        = useState('');
+  const [focused,       setFocused]       = useState(null);
 
   const loadInvoices = useCallback(async () => {
     if (!activeBranchId) { setLoading(false); setInvoices([]); return; }
@@ -320,7 +321,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
     return (
       <AnnulForm
         inv={focused}
-        onBack={() => setView('detail')}
+        onBack={() => setView(prevAnnulView)}
         onSuccess={() => { setView('success'); setTimeout(() => { setView('list'); setFocused(null); loadInvoices(); }, 3000); }}
         user={user}
         activeBranch={activeBranch}
@@ -336,7 +337,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
       <InvoiceDetail
         inv={focused}
         onBack={() => { setView('list'); setFocused(null); }}
-        onAnnul={() => setView('annul')}
+        onAnnul={() => { setPrevAnnulView('detail'); setView('annul'); }}
       />
     );
   }
@@ -385,24 +386,21 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
           const ok  = age <= GRACE_DAYS;
           return (
             <div key={inv.id}
-              className="flex items-center gap-2.5 px-3 py-2.5 rounded-2xl border border-slate-100 bg-white hover:border-slate-200 transition-all"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-2xl border border-slate-100 bg-white hover:border-slate-200 transition-all"
             >
-              <Receipt size={14} className={ok ? 'text-slate-400 shrink-0' : 'text-slate-200 shrink-0'} strokeWidth={2} />
+              <Receipt size={13} className={ok ? 'text-slate-400 shrink-0' : 'text-slate-200 shrink-0'} strokeWidth={2} />
 
-              {/* Main info */}
+              {/* Main info — cliente primary */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className={`text-[11px] font-black truncate ${ok ? 'text-slate-800' : 'text-slate-400'}`}>
-                    {inv.correlativo}
-                  </span>
+                <p className={`text-[12px] font-black truncate leading-tight ${ok ? 'text-slate-800' : 'text-slate-400'}`}>
+                  {inv.cliente || 'Sin nombre'}
+                </p>
+                <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                  <span className="text-[9px] text-slate-400 font-mono">{inv.correlativo}</span>
+                  <span className="text-[8px] text-slate-300">·</span>
+                  <span className="text-[9px] text-slate-300 font-mono">#{inv.id}</span>
                   <DocBadge tipo={inv.tipo_documento} />
-                </div>
-                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                  <span className="text-[9px] text-slate-400 truncate max-w-[90px]">
-                    {inv.cliente || 'Sin cliente'}
-                  </span>
                   {inv.tipo_pago && <PayBadge tipo={inv.tipo_pago} />}
-                  <span className="text-[9px] text-slate-300">{fmtDate(inv.fecha)}</span>
                 </div>
               </div>
 
@@ -411,23 +409,31 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
                 <p className={`text-[11px] font-black ${ok ? 'text-slate-700' : 'text-slate-300'}`}>
                   {fmtCurrency(inv.total)}
                 </p>
-                {ok ? (
-                  <span className="text-[8px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">
-                    {GRACE_DAYS - age}d
-                  </span>
-                ) : (
-                  <span className="text-[8px] text-slate-300">vencida</span>
-                )}
+                <p className="text-[8px] text-slate-300">{fmtDate(inv.fecha)}</p>
               </div>
 
-              {/* Ver button */}
-              <button
-                onClick={() => { setFocused(inv); setView('detail'); }}
-                className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-[#0052CC] hover:text-white text-slate-400 transition-all shrink-0"
-                title="Ver detalle"
-              >
-                <Eye size={12} strokeWidth={2.5} />
-              </button>
+              {/* Action buttons */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => { setFocused(inv); setView('detail'); }}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-[#0052CC] hover:text-white text-slate-400 transition-all"
+                  title="Ver detalle"
+                >
+                  <Eye size={12} strokeWidth={2.5} />
+                </button>
+                <button
+                  onClick={() => { if (!ok) return; setFocused(inv); setPrevAnnulView('list'); setView('annul'); }}
+                  disabled={!ok}
+                  className={`w-7 h-7 flex items-center justify-center rounded-full transition-all ${
+                    ok
+                      ? 'bg-amber-50 hover:bg-amber-500 hover:text-white text-amber-500'
+                      : 'bg-slate-50 text-slate-200 cursor-not-allowed'
+                  }`}
+                  title={ok ? 'Solicitar anulación' : 'Fuera del período de gracia'}
+                >
+                  <AlertCircle size={12} strokeWidth={2.5} />
+                </button>
+              </div>
             </div>
           );
         })}

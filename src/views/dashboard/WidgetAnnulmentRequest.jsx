@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Loader2, AlertTriangle, CheckCircle2, ChevronRight, X, Receipt, Clock } from 'lucide-react';
+import { Search, Loader2, AlertTriangle, CheckCircle2, ChevronRight, X, Receipt, Clock, Building2 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
+import LiquidSelect from '../../components/common/LiquidSelect';
 
 const GRACE_DAYS = 3;
 
@@ -35,31 +36,41 @@ function fmtDate(d) {
   return new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function WidgetAnnulmentRequest() {
-  const { user }    = useAuth();
-  const employees   = useStaffStore(s => s.employees);
-  const branches    = useStaffStore(s => s.branches);
-  const appendAuditLog = useStaffStore(s => s.appendAuditLog);
+const ERP_SUCURSAL_MAP_INV = { 4: 1, 25: 2, 27: 3, 28: 4, 2: 5, 29: 7 };
 
+export default function WidgetAnnulmentRequest() {
+  const { user, getScope }  = useAuth();
+  const employees            = useStaffStore(s => s.employees);
+  const branches             = useStaffStore(s => s.branches);
+  const appendAuditLog       = useStaffStore(s => s.appendAuditLog);
+
+  const userBranchId  = user?.branchId ?? user?.branch_id;
+  const isAllScope    = getScope('dash_annulment_req') === 'ALL';
+
+  const [selectedBranchId, setSelectedBranchId] = useState(String(userBranchId ?? ''));
   const [invoices, setInvoices]       = useState([]);
   const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState('');
-  const [selected, setSelected]       = useState(null); // invoice
+  const [selected, setSelected]       = useState(null);
   const [reason, setReason]           = useState('');
   const [comment, setComment]         = useState('');
   const [submitting, setSubmitting]   = useState(false);
   const [success, setSuccess]         = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  const userBranchId = user?.branchId ?? user?.branch_id;
-  const userBranch   = branches.find(b => String(b.id) === String(userBranchId));
+  // Active branch: selectable when ALL scope, fixed to own branch otherwise
+  const activeBranchId = isAllScope ? selectedBranchId : String(userBranchId ?? '');
+  const activeBranch   = branches.find(b => String(b.id) === activeBranchId);
+  const erpSucursalId  = ERP_SUCURSAL_MAP_INV[Number(activeBranchId)];
 
-  // ERP sucursal_id for this branch
-  const ERP_SUCURSAL_MAP_INV = { 4: 1, 25: 2, 27: 3, 28: 4, 2: 5, 29: 7 };
-  const erpSucursalId = ERP_SUCURSAL_MAP_INV[Number(userBranchId)];
+  // Branch options for LiquidSelect — only branches that have an ERP mapping
+  const branchOptions = branches
+    .filter(b => ERP_SUCURSAL_MAP_INV[Number(b.id)])
+    .map(b => ({ value: String(b.id), label: b.name }));
 
   const loadInvoices = useCallback(async () => {
-    if (!erpSucursalId) { setLoading(false); return; }
+    const erpId = ERP_SUCURSAL_MAP_INV[Number(activeBranchId)];
+    if (!erpId) { setLoading(false); setInvoices([]); return; }
     setLoading(true);
     const now   = svToday();
     const y     = now.getFullYear();
@@ -70,7 +81,7 @@ export default function WidgetAnnulmentRequest() {
     const { data } = await supabase
       .from('sales_invoices')
       .select('id, correlativo, fecha, total, tipo_dte, branch_id, sucursal_id')
-      .eq('sucursal_id', erpSucursalId)
+      .eq('sucursal_id', erpId)
       .gte('fecha', from)
       .lte('fecha', to)
       .order('fecha', { ascending: false })
@@ -78,7 +89,7 @@ export default function WidgetAnnulmentRequest() {
 
     setInvoices(data || []);
     setLoading(false);
-  }, [erpSucursalId]);
+  }, [activeBranchId]);
 
   useEffect(() => { loadInvoices(); }, [loadInvoices]);
 
@@ -92,11 +103,10 @@ export default function WidgetAnnulmentRequest() {
   const graceDaysLeft = selected ? GRACE_DAYS - daysAgo(selected.fecha) : null;
   const withinGrace   = graceDaysLeft !== null && graceDaysLeft >= 0;
 
-  // Find supervisor at same branch (JEFE/SUBJEFE), fallback to ADMIN
+  // Find supervisor at the active branch (JEFE/SUBJEFE), fallback to ADMIN
   const findNotificationTarget = useCallback(() => {
-    const today = svToday().toISOString().split('T')[0];
     const branchEmps = employees.filter(e =>
-      String(e.branchId ?? e.branch_id) === String(userBranchId)
+      String(e.branchId ?? e.branch_id) === activeBranchId
     );
     const supervisors = branchEmps.filter(e =>
       ['JEFE', 'SUBJEFE'].includes(String(e.system_role ?? '').toUpperCase())
@@ -113,7 +123,7 @@ export default function WidgetAnnulmentRequest() {
     return employees.find(e =>
       ['ADMIN', 'SUPERADMIN'].includes(String(e.system_role ?? '').toUpperCase())
     );
-  }, [employees, userBranchId]);
+  }, [employees, activeBranchId]);
 
   const handleSubmit = async () => {
     if (!selected || !reason || !withinGrace) return;
@@ -133,8 +143,8 @@ export default function WidgetAnnulmentRequest() {
           fecha:        selected.fecha,
           total:        selected.total,
           tipo_dte:     selected.tipo_dte,
-          branch_id:    userBranchId,
-          branch_name:  userBranch?.name,
+          branch_id:    activeBranchId,
+          branch_name:  activeBranch?.name,
           reason,
           comment:      comment.trim() || null,
           notified_employee_id: target?.id ?? null,
@@ -174,7 +184,7 @@ export default function WidgetAnnulmentRequest() {
     }
   };
 
-  if (!erpSucursalId) {
+  if (!erpSucursalId && !isAllScope) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-300">
         <AlertTriangle size={28} strokeWidth={1.5} />
@@ -278,9 +288,27 @@ export default function WidgetAnnulmentRequest() {
   /* ── STEP 1: Select invoice ── */
   return (
     <div className="flex flex-col gap-3 h-full">
+      {/* Branch selector pill — only when ALL scope */}
+      {isAllScope && (
+        <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white/80 border border-slate-200/70 shadow-sm">
+          <Building2 size={12} className="text-slate-400 shrink-0" strokeWidth={2} />
+          <div className="flex-1 min-w-0">
+            <LiquidSelect
+              value={selectedBranchId}
+              onChange={val => { setSelectedBranchId(val ?? String(userBranchId ?? '')); setSelected(null); setSearch(''); }}
+              options={branchOptions}
+              placeholder="Seleccionar sucursal..."
+              bare
+              compact
+              clearable={false}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between shrink-0">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-          Ventas del mes — {userBranch?.name || 'Tu sucursal'}
+          Ventas del mes — {activeBranch?.name || 'Tu sucursal'}
         </p>
         <span className="text-[10px] font-bold text-slate-400">{invoices.length} facturas</span>
       </div>

@@ -10,7 +10,7 @@ const ScheduleChart = ({
     openModal
 }) => {
     return (
-        <div className="col-span-1 lg:col-span-2 flex flex-col justify-between group/chart relative overflow-visible min-h-[180px] z-10 px-2">
+        <div className="col-span-1 lg:col-span-2 bg-white/40 backdrop-blur-3xl backdrop-saturate-[180%] border border-white/80 rounded-[2rem] p-4 shadow-[inset_0_2px_15px_rgba(255,255,255,0.7),0_10px_40px_rgba(0,0,0,0.05)] flex flex-col justify-between hover:shadow-[0_15px_50px_rgba(0,0,0,0.08)] transition-all duration-300 group/chart relative overflow-visible min-h-[180px] z-10">
 
             <div className="absolute top-3 right-3 opacity-0 group-hover/chart:opacity-100 transition-opacity duration-200 z-20">
                 <button onClick={() => openModal && openModal('viewWfmAnalytics')}

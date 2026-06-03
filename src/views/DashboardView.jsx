@@ -1989,14 +1989,6 @@ const DashboardView = ({ openModal }) => {
                 <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#F79009" sub={pendingReqs.length===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
               </div>
         )}
-        {activeTab === 'operacion' && (
-          <div key="kpi-operacion" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard icon={Package}      label="Widgets operativos"    value={3}                       color="#F79009" sub="disponibles"/>
-            <KpiCard icon={Receipt}      label="Período de gracia"     value="3 días"                  color="#0052CC" sub="para anulaciones"/>
-            <KpiCard icon={FlaskConical} label="Registro SRS"          value="Activo"                  color="#12B76A" sub="consulta en línea"/>
-            <KpiCard icon={Zap}          label="Módulo"                value="Operación"               color="#6929C4" sub="inventario · DTE"/>
-          </div>
-        )}
 
         {/* Main widget grid — 4 cols desktop, 2 cols mobile */}
         <div

@@ -6,7 +6,6 @@ import { useAuth } from '../../context/AuthContext';
 
 const GRACE_DAYS = 3;
 
-const ERP_SUCURSAL_MAP_INV = { 4: 1, 25: 2, 27: 3, 28: 4, 2: 5, 29: 7 };
 
 const REASONS = [
   'Devolución del cliente',
@@ -247,7 +246,6 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   const userBranchId   = user?.branchId ?? user?.branch_id;
   const activeBranchId = propBranchId ?? String(userBranchId ?? '');
   const activeBranch   = branches.find(b => String(b.id) === activeBranchId);
-  const erpSucursalId  = ERP_SUCURSAL_MAP_INV[Number(activeBranchId)];
 
   // view: 'list' | 'detail' | 'annul' | 'success'
   const [view,     setView]     = useState('list');
@@ -257,8 +255,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   const [focused,  setFocused]  = useState(null); // selected invoice
 
   const loadInvoices = useCallback(async () => {
-    const erpId = ERP_SUCURSAL_MAP_INV[Number(activeBranchId)];
-    if (!erpId) { setLoading(false); setInvoices([]); return; }
+    if (!activeBranchId) { setLoading(false); setInvoices([]); return; }
     setLoading(true);
     const now  = svToday();
     const y    = now.getFullYear();
@@ -268,8 +265,8 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
 
     const { data, error } = await supabase
       .from('sales_invoices')
-      .select('id, correlativo, fecha, total, tipo_documento, cliente, tipo_pago, sucursal_id')
-      .eq('sucursal_id', erpId)
+      .select('id, correlativo, fecha, total, tipo_documento, cliente, tipo_pago, branch_id')
+      .eq('branch_id', Number(activeBranchId))
       .gte('fecha', from)
       .lte('fecha', to)
       .order('fecha', { ascending: false })
@@ -298,7 +295,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
     );
   });
 
-  if (!erpSucursalId && !propBranchId) {
+  if (!activeBranchId) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-300">
         <AlertTriangle size={28} strokeWidth={1.5} />

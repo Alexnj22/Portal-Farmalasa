@@ -1829,9 +1829,8 @@ const DashboardView = ({ openModal }) => {
     /* ── ANNULMENT REQUEST ── */
     if (wid === 'annulment_req') {
       if (!showWidget('annulment_req', 'dash_annulment_req')) return null;
-      const ERP_ANN_MAP = { 4: 1, 25: 2, 27: 3, 28: 4, 2: 5, 29: 7 };
       const isAnnAllScope = getScope('dash_annulment_req') === 'ALL';
-      const annBranchOpts = branches.filter(b => ERP_ANN_MAP[Number(b.id)]).map(b => ({ value: String(b.id), label: b.name }));
+      const annBranchOpts = branches.filter(b => b.id).map(b => ({ value: String(b.id), label: b.name }));
       return wrapWidget('annulment_req',
         <WidgetCard title="Solicitud de Anulación" icon={Receipt} category="ventas"
           action={isAnnAllScope && annBranchOpts.length > 0 && (

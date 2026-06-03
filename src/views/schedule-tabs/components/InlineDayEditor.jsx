@@ -300,10 +300,10 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 animate={isVisible && !isExiting ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.96, y: 6 }}
                 transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                 onAnimationComplete={() => { if (isExiting) onClose(); }}
-                className="fixed z-[9991] w-[290px] max-h-[85vh] bg-white/[0.28] backdrop-blur-[40px] backdrop-saturate-[220%] rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.95)] border border-white/70 flex flex-col cursor-default transform-gpu overflow-hidden"
+                className="fixed z-[9991] w-[290px] max-h-[85vh] bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] rounded-3xl shadow-[inset_0_1px_0_rgba(255,255,255,0.80),0_30px_80px_rgba(0,0,0,0.22)] border border-white/60 flex flex-col cursor-default transform-gpu overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-white/30 bg-white/[0.35] backdrop-blur-sm shrink-0 z-40">
+                <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-white/20 bg-white/[0.22] shrink-0 z-40">
                     <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-9 h-9 rounded-xl bg-white/60 backdrop-blur-sm overflow-hidden border border-white/80 shadow-sm flex items-center justify-center shrink-0">
                             {employee?.photo_url
@@ -359,7 +359,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {showTimePickers && (
-                        <div className={`flex flex-col gap-3 p-3 bg-white/[0.45] border rounded-2xl shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)] relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-white/40'}`}>
+                        <div className={`flex flex-col gap-3 p-3 bg-white/[0.35] border rounded-2xl relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-white/30'}`}>
                             
                             <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -391,7 +391,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                             
                             <div 
                                 onClick={() => setHasLunch(!hasLunch)}
-                                className="flex items-center justify-between bg-white/[0.5] border border-orange-200/60 p-3 rounded-2xl shadow-sm hover:shadow-md hover:border-orange-300 transition-all duration-300 group/row cursor-pointer"
+                                className="flex items-center justify-between bg-white/[0.4] border border-orange-200/50 p-3 rounded-2xl hover:border-orange-300 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <input 
@@ -411,7 +411,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
                             <div 
                                 onClick={() => setHasLactation(!hasLactation)}
-                                className="flex items-center justify-between bg-white/[0.5] border border-pink-200/60 p-3 rounded-2xl shadow-sm hover:shadow-md hover:border-pink-300 transition-all duration-300 group/row cursor-pointer"
+                                className="flex items-center justify-between bg-white/[0.4] border border-pink-200/50 p-3 rounded-2xl hover:border-pink-300 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <input 
@@ -447,7 +447,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
                 </div>
 
-                <div className="p-3 border-t border-white/30 bg-white/[0.35] shrink-0 z-30">
+                <div className="p-3 border-t border-white/20 bg-white/[0.22] shrink-0 z-30">
                     <button 
                         onClick={handleSave} 
                         disabled={isSaveDisabled}

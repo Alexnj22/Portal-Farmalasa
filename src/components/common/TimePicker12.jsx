@@ -63,11 +63,11 @@ const TimePicker12 = ({ value, onChange, className = '', disabled, defaultMeridi
     };
 
     return (
-        <div className={`flex items-center justify-center p-1 rounded-[1rem] bg-white/50 backdrop-blur-xl border border-white/80 shadow-[0_4px_12px_rgba(0,82,204,0.06),inset_0_2px_6px_rgba(255,255,255,0.9)] transition-all ${disabled ? 'opacity-50 pointer-events-none grayscale-[0.5]' : 'hover:shadow-[0_6px_16px_rgba(0,82,204,0.12)] hover:bg-white/70'} ${className}`}>
-            
+        <div className={`flex items-center justify-center p-1.5 rounded-[1rem] bg-white/50 backdrop-blur-xl border border-white/80 shadow-[0_4px_12px_rgba(0,82,204,0.06),inset_0_2px_6px_rgba(255,255,255,0.9)] transition-all ${disabled ? 'opacity-50 pointer-events-none grayscale-[0.5]' : 'hover:shadow-[0_6px_16px_rgba(0,82,204,0.12)] hover:bg-white/70'} ${className}`}>
+
             <select
                 disabled={disabled}
-                className="w-10 p-1.5 outline-none text-[13px] font-black bg-transparent appearance-none text-center cursor-pointer text-slate-700 focus:text-[#0052CC] transition-colors rounded-lg hover:bg-black/5"
+                className="w-11 py-1.5 px-1 outline-none text-[13px] font-black bg-transparent appearance-none text-center cursor-pointer text-slate-700 focus:text-[#0052CC] transition-colors rounded-lg hover:bg-black/5"
                 value={hour}
                 onChange={handleHourChange}
             >
@@ -83,7 +83,7 @@ const TimePicker12 = ({ value, onChange, className = '', disabled, defaultMeridi
 
             <select
                 disabled={disabled}
-                className="w-10 p-1.5 outline-none text-[13px] font-black bg-transparent appearance-none text-center cursor-pointer text-slate-700 focus:text-[#0052CC] transition-colors rounded-lg hover:bg-black/5"
+                className="w-11 py-1.5 px-1 outline-none text-[13px] font-black bg-transparent appearance-none text-center cursor-pointer text-slate-700 focus:text-[#0052CC] transition-colors rounded-lg hover:bg-black/5"
                 value={minute}
                 onChange={handleMinuteChange}
             >
@@ -97,7 +97,7 @@ const TimePicker12 = ({ value, onChange, className = '', disabled, defaultMeridi
 
             <select
                 disabled={disabled}
-                className="w-12 p-1.5 outline-none text-[11px] font-black uppercase tracking-widest bg-transparent appearance-none text-center cursor-pointer text-[#0052CC] focus:text-[#005bb5] transition-colors rounded-lg hover:bg-[#0052CC]/10"
+                className="w-[3.25rem] py-1.5 px-1 outline-none text-[11px] font-black uppercase tracking-widest bg-transparent appearance-none text-center cursor-pointer text-[#0052CC] focus:text-[#005bb5] transition-colors rounded-lg hover:bg-[#0052CC]/10"
                 value={ampm}
                 onChange={handleAmpmChange}
             >

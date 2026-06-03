@@ -209,12 +209,6 @@ const LiquidSelect = ({
         }
     }, [highlightedIndex]);
 
-    // Framer Motion variants for dropdown enter/exit
-    const dropdownVariants = {
-        hidden: { opacity: 0, scale: 0.97, y: coords.isFlipped ? 6 : -6 },
-        visible: { opacity: 1, scale: 1, y: 0 },
-    };
-
     const dropdownContent = (
         <motion.div
             key="liquid-dropdown"
@@ -226,10 +220,9 @@ const LiquidSelect = ({
                 width: Math.max(coords.width, compact ? 170 : 200) + 'px',
                 maxHeight: coords.maxHeight + 'px',
             }}
-            variants={dropdownVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
+            initial={{ opacity: 0, scale: 0.97, y: coords.isFlipped ? 6 : -6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97, y: coords.isFlipped ? 6 : -6 }}
             transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
             className={`fixed z-[99999] ${coords.transformOrigin} rounded-[1.5rem] overflow-y-auto p-3
             transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]
@@ -493,7 +486,7 @@ const LiquidSelect = ({
             )}
 
             {createPortal(
-                <AnimatePresence>{isOpen && dropdownContent}</AnimatePresence>,
+                <AnimatePresence>{isOpen ? dropdownContent : null}</AnimatePresence>,
                 document.body
             )}
         </div>

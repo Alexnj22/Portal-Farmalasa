@@ -86,9 +86,9 @@ const MODULE_GROUPS = [
             { key: 'productos', label: 'Productos', desc: 'Catálogo de productos, ubicaciones por sucursal, costos, precios e inventario en tiempo real', icon: Package, hasApprove: false, tabs: [
                 { key: 'productos_tab_catalogo',   label: 'Catálogo'   },
                 { key: 'productos_tab_inventario', label: 'Inventario' },
-                { key: 'productos_tab_minmax',     label: 'Min / Max'  },
                 { key: 'productos_tab_sinventa',   label: 'Sin Venta'  },
             ]},
+            { key: 'minmax', label: 'Min / Max', desc: 'Análisis de stock mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros', icon: BarChart2, hasApprove: false },
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
             { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, historial y reglas de despacho por producto', icon: Package, hasApprove: false, tabs: [
                 { key: 'pedidos_tab_generar',   label: 'Generar'           },

@@ -40,6 +40,7 @@ import MetasView from "./views/MetasView";
 import ProductosView from "./views/ProductosView";
 import LaboratoriosView from "./views/LaboratoriosView";
 import PedidosView from "./views/PedidosView";
+import MinMaxView from "./views/MinMaxView";
 import FacturacionView from "./views/FacturacionView";
 import CotizacionesView from "./views/CotizacionesView";
 import EncuestaView from "./views/EncuestaView";
@@ -568,6 +569,7 @@ function MainApp() {
                                     <Route path="productos" element={<PermissionGuard moduleKey="productos"><ProductosView /></PermissionGuard>} />
                                     <Route path="laboratorios" element={<PermissionGuard moduleKey="laboratorios"><LaboratoriosView /></PermissionGuard>} />
                                     <Route path="pedidos" element={<PermissionGuard moduleKey="pedidos"><PedidosView /></PermissionGuard>} />
+                                    <Route path="minmax" element={<PermissionGuard moduleKey="minmax"><MinMaxView /></PermissionGuard>} />
                                     <Route path="encuesta" element={<PermissionGuard moduleKey="encuesta"><EncuestaView /></PermissionGuard>} />
                                     <Route path="encuesta-admin" element={<PermissionGuard moduleKey="encuesta_admin"><EncuestaAdminView /></PermissionGuard>} />
 

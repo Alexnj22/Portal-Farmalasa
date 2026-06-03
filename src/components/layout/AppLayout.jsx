@@ -50,6 +50,7 @@ const MODULE_MAP = {
     productos:         { path: '/productos',        label: 'Productos',                icon: Package       },
     laboratorios:      { path: '/laboratorios',     label: 'Laboratorios',             icon: FlaskConical  },
     pedidos:           { path: '/pedidos',          label: 'Pedidos a Sucursales',     icon: ClipboardList },
+    minmax:            { path: '/minmax',           label: 'Min / Max',                icon: BarChart2     },
 };
 
 // ── Grupos del menú (define el orden y agrupación) ──────────────────────────
@@ -67,7 +68,7 @@ const MENU_GROUPS = [
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview', 'ios_test'] },
     { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones', 'promociones', 'bonificaciones'] },
     { key: 'rrhh',         label: 'RRHH',          icon: Users,         modules: ['entrevistas', 'encuesta_admin'] },
-    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'laboratorios', 'pedidos'] },
+    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'laboratorios', 'pedidos', 'minmax'] },
 ];
 
 const SELF_KEYS = ['emp_home', 'emp_requests', 'emp_announcements', 'emp_profile', 'emp_documents'];

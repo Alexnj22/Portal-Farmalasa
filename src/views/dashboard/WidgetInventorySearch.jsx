@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
@@ -90,7 +91,7 @@ function PhotoThumb({ url, onZoom }) {
 /* ─── Lightbox ──────────────────────────────────────────────────────────── */
 function Lightbox({ url, onClose }) {
   if (!url) return null;
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[9999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-8"
       onClick={onClose}
@@ -107,7 +108,8 @@ function Lightbox({ url, onClose }) {
       >
         <X size={14} className="text-white" strokeWidth={2.5} />
       </button>
-    </div>
+    </div>,
+    document.body
   );
 }
 

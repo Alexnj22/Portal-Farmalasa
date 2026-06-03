@@ -43,6 +43,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const [cancelModalRender, setCancelModalRender] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
 
+    // ── Timeline: fuente de verdad desde employee_timeline view ──────────────
+    const [timelineData, setTimelineData]         = useState([]);
+    const [isLoadingTimeline, setIsLoadingTimeline] = useState(false);
+
     // ── Tab Solicitudes: estado local (no contamina store admin) ──────────────
     const [empRequests, setEmpRequests]       = useState([]);
     const [isLoadingEmpReqs, setIsLoadingEmpReqs] = useState(false);
@@ -96,6 +100,32 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         else { const t = setTimeout(() => setCancelModalRender(false), 300); return () => clearTimeout(t); }
     }, [showCancelModal]);
 
+    // ── Cargar timeline desde la VIEW employee_timeline ──────────────────────
+    const fetchTimeline = useCallback(async () => {
+        const eid = activeEmployee?.id || user?.id;
+        if (!eid) return;
+        setIsLoadingTimeline(true);
+        try {
+            const { data } = await supabase
+                .from('employee_timeline')
+                .select('*')
+                .eq('employee_id', eid)
+                .order('event_date', { ascending: false });
+            setTimelineData(data || []);
+        } catch (e) {
+            console.error('Error cargando timeline:', e);
+        } finally {
+            setIsLoadingTimeline(false);
+        }
+    }, [activeEmployee?.id, user?.id]);
+
+    useEffect(() => { fetchTimeline(); }, [fetchTimeline]);
+
+    useEffect(() => {
+        window.addEventListener('force-history-refresh', fetchTimeline);
+        return () => window.removeEventListener('force-history-refresh', fetchTimeline);
+    }, [fetchTimeline]);
+
     const targetId = activeEmployee?.id || user?.id;
     const emp = employees.find(e => String(e.id) === String(targetId)) || (activeEmployee || user);
 
@@ -108,34 +138,18 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
     const timeline = useMemo(() => {
         if (!emp) return [];
-        const rawHistory = Array.isArray(emp.history) ? emp.history : [];
-        const syntheticEvents = [];
-
-        if (emp.hireDate || emp.hire_date) {
-            syntheticEvents.push({
-                id: 'hiring-event',
-                type: 'HIRING',
-                date: emp.hireDate || emp.hire_date,
-                note: `Inicio de labores en la empresa. Asignado a: ${branch ? branch.name : 'Sucursal Matriz'}.`,
-                isSystem: true
-            });
-        }
-
-        const mappedHistory = rawHistory.map(ev => {
-            const safeNote = ev.note || ev.metadata?.note || ev.details?.note || 'Evento registrado en el sistema.';
-            return {
-                id: ev.id,
-                type: ev.type,
-                date: ev.date || (ev.created_at ? ev.created_at.split('T')[0] : new Date().toISOString().split('T')[0]),
-                note: safeNote,
-                metadata: ev.metadata || ev.details || {},
-                documentId: ev.document_id || ev.documentId || null,
-                isSystem: false
-            };
-        });
-
-        return [...mappedHistory, ...syntheticEvents].sort((a, b) => new Date(b.date) - new Date(a.date));
-    }, [emp?.history, emp?.hireDate, emp?.hire_date, branch]);
+        return timelineData.map(ev => ({
+            id: `${ev.event_type}_${ev.event_date}_${ev.created_at}`,
+            type: ev.event_type,
+            category: ev.category,
+            date: ev.event_date,
+            endDate: ev.event_end_date,
+            note: ev.note || ev.metadata?.note || ev.metadata?.details?.note || 'Evento registrado en el sistema.',
+            metadata: ev.metadata || {},
+            documentId: ev.metadata?.document_id || null,
+            isSystem: ['HIRE', 'ROSTER_PUBLISHED'].includes(ev.event_type),
+        }));
+    }, [timelineData, emp?.id]);
 
     const ausenciasData = useMemo(() => {
         let list = timeline.filter(ev => ev.type === 'PERMIT' || ev.type === 'DISABILITY');
@@ -592,27 +606,39 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <h3 className="font-black text-slate-800 uppercase tracking-tight text-[16px] flex items-center gap-2">
                                                 <Clock size={18} className="text-[#0052CC]"/> Historial Operativo
                                             </h3>
-                                            <div className="px-3 py-1 bg-white/70 text-slate-500 rounded-full text-[9px] font-black uppercase tracking-widest border border-white shadow-sm">
+                                            <div className="px-3 py-1 bg-white/70 text-slate-500 rounded-full text-[9px] font-black uppercase tracking-widest border border-white shadow-sm flex items-center gap-1.5">
+                                                {isLoadingTimeline && <Loader2 size={10} className="animate-spin"/>}
                                                 {timeline.length} Eventos
                                             </div>
                                         </div>
 
                                         <div className="relative border-l-[3px] border-slate-200/70 ml-4 md:ml-6 space-y-8 pb-4">
                                             {timeline.length > 0 ? timeline.map((ev, idx) => {
-                                                const isHiring = ev.type === 'HIRING';
-                                                let evTheme = { label: ev.type, bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200' };
-                                                
-                                                if (isHiring) {
-                                                    evTheme = { label: 'Contratación Inicial', bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' };
+                                                const label = ev.category || EVENT_TYPES[ev.type]?.label || ev.type;
+                                                let evTheme = { label, bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200' };
+
+                                                if (ev.type === 'HIRE' || ev.type === 'HIRING') {
+                                                    evTheme = { label, bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' };
+                                                } else if (ev.type === 'ROSTER_PUBLISHED') {
+                                                    evTheme = { label, bg: 'bg-slate-100', text: 'text-slate-500', border: 'border-slate-200' };
+                                                } else if (ev.type === 'EMPLEADO_ASIGNADO' || ev.type === 'REASSIGNMENT') {
+                                                    evTheme = { label, bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' };
+                                                } else if (ev.type === 'EMPLEADO_RELEVADO') {
+                                                    evTheme = { label, bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' };
+                                                } else if (ev.type === 'EMPLEADO_DESVINCULADO_SUCURSAL' || ev.type === 'UNASSIGNED') {
+                                                    evTheme = { label, bg: 'bg-red-50', text: 'text-red-500', border: 'border-red-200' };
                                                 } else if (EVENT_TYPES[ev.type]) {
-                                                    const rawType = EVENT_TYPES[ev.type];
-                                                    evTheme.label = rawType.label;
-                                                    if (ev.type.includes('TRANSFER')) evTheme = { ...evTheme, bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' };
-                                                    if (ev.type.includes('PROMOTION')) evTheme = { ...evTheme, bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' };
-                                                    if (ev.type.includes('SALARY')) evTheme = { ...evTheme, bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' };
-                                                    if (ev.type.includes('TERMINATION')) evTheme = { ...evTheme, bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200' };
-                                                    if (ev.type === 'REHIRE') evTheme = { label: 'Recontratación', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
-                                                    if (ev.type === 'VACATION_RECALL') evTheme = { label: 'Ingreso en Vacaciones', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' };
+                                                    if (ev.type.includes('TRANSFER'))   evTheme = { label, bg: 'bg-blue-50',   text: 'text-blue-600',   border: 'border-blue-200' };
+                                                    else if (ev.type.includes('PROMOTION')) evTheme = { label, bg: 'bg-amber-50',  text: 'text-amber-600',  border: 'border-amber-200' };
+                                                    else if (ev.type.includes('SALARY'))    evTheme = { label, bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-200' };
+                                                    else if (ev.type.includes('TERMINATION')) evTheme = { label, bg: 'bg-red-50', text: 'text-red-600',   border: 'border-red-200' };
+                                                    else if (ev.type === 'REHIRE')          evTheme = { label, bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' };
+                                                    else if (ev.type === 'VACATION_RECALL') evTheme = { label, bg: 'bg-amber-50', text: 'text-amber-700',  border: 'border-amber-200' };
+                                                    else if (ev.type === 'DISABILITY')      evTheme = { label, bg: 'bg-red-50',   text: 'text-red-600',   border: 'border-red-200' };
+                                                    else if (ev.type === 'VACATION')        evTheme = { label, bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' };
+                                                    else if (ev.type === 'PERMIT')          evTheme = { label, bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' };
+                                                    else if (ev.type === 'SUPPORT')         evTheme = { label, bg: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-200' };
+                                                    else if (ev.type === 'INDUCTION')       evTheme = { label, bg: 'bg-teal-50',  text: 'text-teal-600',  border: 'border-teal-200' };
                                                 }
 
                                                 return (

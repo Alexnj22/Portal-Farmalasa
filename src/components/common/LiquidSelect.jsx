@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, Search, X, Plus, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const normalize = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
@@ -30,7 +31,6 @@ const LiquidSelect = ({
     bare = false,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [isClosing, setIsClosing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
@@ -39,14 +39,13 @@ const LiquidSelect = ({
     const dropdownRef = useRef(null);
     const searchDebounceRef = useRef(null);
     const itemRefs = useRef([]);
-    const closingTimerRef = useRef(null);
 
     // 🚨 ESTADO AMPLIADO PARA POSICIONAMIENTO INTELIGENTE
-    const [coords, setCoords] = useState({ 
-        top: 0, 
-        left: 0, 
-        width: 0, 
-        maxHeight: 300, 
+    const [coords, setCoords] = useState({
+        top: 0,
+        left: 0,
+        width: 0,
+        maxHeight: 300,
         transformOrigin: 'origin-top',
         isFlipped: false // Indica si se abrió hacia arriba
     });
@@ -69,11 +68,11 @@ const LiquidSelect = ({
         if (selectRef.current) {
             const rect = selectRef.current.getBoundingClientRect();
             const viewportHeight = window.innerHeight;
-            
+
             // Constantes de diseño
-            const DROPDOWN_IDEAL_HEIGHT = 300; 
+            const DROPDOWN_IDEAL_HEIGHT = 300;
             const MARGIN = 15; // Margen de seguridad desde los bordes de la pantalla
-            
+
             // Cálculos de espacio disponible
             const spaceBelow = viewportHeight - rect.bottom;
             const spaceAbove = rect.top;
@@ -104,40 +103,31 @@ const LiquidSelect = ({
         }
     };
 
-    // Cleanup closing timer on unmount
     useEffect(() => {
-        return () => { if (closingTimerRef.current) clearTimeout(closingTimerRef.current); };
-    }, []);
-
-    useEffect(() => {
-        const doClose = () => {
-            if (closingTimerRef.current) clearTimeout(closingTimerRef.current);
-            setIsClosing(true);
-            closingTimerRef.current = setTimeout(() => {
-                setIsOpen(false);
-                setIsClosing(false);
-                setSearchTerm('');
-            }, 150);
-        };
-
         const handleClickOutside = (e) => {
             if (
                 selectRef.current && !selectRef.current.contains(e.target) &&
                 (!dropdownRef.current || !dropdownRef.current.contains(e.target))
             ) {
-                doClose();
+                setIsOpen(false);
+                setSearchTerm('');
             }
         };
 
         const handleEscape = (e) => {
-            if (e.key === 'Escape') doClose();
+            if (e.key === 'Escape') {
+                setIsOpen(false);
+                setSearchTerm('');
+            }
         };
 
         const handleScroll = (e) => {
             if (dropdownRef.current && (dropdownRef.current === e.target || dropdownRef.current.contains(e.target))) {
                 return;
             }
-            if (isOpen) doClose();
+            if (isOpen) {
+                setIsOpen(false);
+            }
         };
 
         if (isOpen) {
@@ -154,21 +144,9 @@ const LiquidSelect = ({
         };
     }, [isOpen]);
 
-    const triggerClose = () => {
-        if (closingTimerRef.current) clearTimeout(closingTimerRef.current);
-        setIsClosing(true);
-        closingTimerRef.current = setTimeout(() => {
-            setIsOpen(false);
-            setIsClosing(false);
-            setSearchTerm('');
-        }, 150);
-    };
-
     const handleOpen = () => {
         if (disabled) return;
-        if (closingTimerRef.current) clearTimeout(closingTimerRef.current);
-        setIsClosing(false);
-        updateCoords();
+        updateCoords(); // Calculamos el espacio antes de abrir
         setIsOpen(true);
         setSearchTerm('');
         setTimeout(() => inputRef.current?.focus(), 50);
@@ -185,7 +163,8 @@ const LiquidSelect = ({
         e.stopPropagation();
         if (disabled) return;
         if (isOpen) {
-            triggerClose();
+            setIsOpen(false);
+            setSearchTerm('');
         } else {
             handleOpen();
         }
@@ -193,7 +172,8 @@ const LiquidSelect = ({
 
     const handleSelect = (val) => {
         onChange(val);
-        triggerClose();
+        setIsOpen(false);
+        setSearchTerm('');
     };
 
     const isLargeList = !serverSearch && options.length > searchThreshold;
@@ -229,22 +209,30 @@ const LiquidSelect = ({
         }
     }, [highlightedIndex]);
 
-    const dropdownContent = isOpen && (
-        <div
+    // Framer Motion variants for dropdown enter/exit
+    const dropdownVariants = {
+        hidden: { opacity: 0, scale: 0.97, y: coords.isFlipped ? 6 : -6 },
+        visible: { opacity: 1, scale: 1, y: 0 },
+    };
+
+    const dropdownContent = (
+        <motion.div
+            key="liquid-dropdown"
             ref={dropdownRef}
             data-surface="dropdown"
             style={{
                 top: coords.top,
                 left: coords.left,
                 width: Math.max(coords.width, compact ? 170 : 200) + 'px',
-                maxHeight: coords.maxHeight + 'px', // 🚨 EL MAX-HEIGHT DINÁMICO
+                maxHeight: coords.maxHeight + 'px',
             }}
-            className={`fixed z-[99999] ${coords.transformOrigin} transition-all duration-300 rounded-[1.5rem] overflow-y-auto p-3
-            ${isClosing
-                ? coords.isFlipped ? 'animate-out fade-out slide-out-to-bottom-2' : 'animate-out fade-out slide-out-to-top-2'
-                : coords.isFlipped ? 'animate-in fade-in slide-in-from-bottom-2' : 'animate-in fade-in slide-in-from-top-2'
-            }
-            duration-150 transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]
+            variants={dropdownVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+            className={`fixed z-[99999] ${coords.transformOrigin} rounded-[1.5rem] overflow-y-auto p-3
+            transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]
             ${isDark
                     ? 'bg-[#0A0F1C]/90 backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 shadow-[0_24px_50px_rgba(0,0,0,0.5),inset_0_2px_15px_rgba(255,255,255,0.05)]'
                     : 'bg-white/60 hover:bg-white/70 backdrop-blur-[20px] backdrop-saturate-[150%] border border-white/90 shadow-[0_30px_80px_rgba(0,0,0,0.15),0_15px_30px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)] hover:shadow-[0_40px_100px_rgba(0,0,0,0.2),inset_0_2px_15px_rgba(255,255,255,0.9)] hover:-translate-y-0.5'
@@ -362,7 +350,7 @@ const LiquidSelect = ({
                     </button>
                 )}
             </div>
-        </div>
+        </motion.div>
     );
 
     const pillBaseClasses = bare
@@ -504,7 +492,10 @@ const LiquidSelect = ({
                 </button>
             )}
 
-            {isOpen && createPortal(dropdownContent, document.body)}
+            {createPortal(
+                <AnimatePresence>{isOpen && dropdownContent}</AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Bot, Clock, Flame, AlertTriangle, CircleUserRound } from 'lucide-react';
 import LiquidSelect from '../../../components/common/LiquidSelect'; 
 import TimePicker12 from '../../../components/common/TimePicker12'; 
@@ -32,7 +33,8 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     const [hasLactation, setHasLactation] = useState(currentData?.hasLactation || false);
     const [lactationStart, setLactationStart] = useState(currentData?.lactationStart || '15:00');
 
-    const [pos, setPos] = useState({ top: -9999, left: -9999, opacity: 0 });
+    const [pos, setPos] = useState({ top: -9999, left: -9999 });
+    const [isVisible, setIsVisible] = useState(false);
     const [isExiting, setIsExiting] = useState(false);
     const popoverRef = useRef(null);
 
@@ -192,26 +194,27 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     useEffect(() => {
         if (popoverRef.current && anchorRect) {
             const popRect = popoverRef.current.getBoundingClientRect();
-            
+
             let left = anchorRect.left + 10;
             let top;
 
             if (anchorRect.top > window.innerHeight / 2) {
                 top = anchorRect.top - popRect.height - 10;
             } else {
-                top = anchorRect.bottom + 10; 
+                top = anchorRect.bottom + 10;
             }
 
             if (top < 10) top = 10;
             if (top + popRect.height > window.innerHeight) {
                 top = window.innerHeight - popRect.height - 10;
             }
-
             if (left + popRect.width > window.innerWidth) {
                 left = window.innerWidth - popRect.width - 10;
             }
 
-            setPos({ top, left, opacity: 1 });
+            setPos({ top, left });
+            // Give browser one frame to paint at scale(0.96) before animating in
+            requestAnimationFrame(() => requestAnimationFrame(() => setIsVisible(true)));
         }
     }, [anchorRect, shiftId, hasLunch, hasLactation, timeAuditErrors.length]);
 
@@ -229,7 +232,6 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
     const handleClose = () => {
         setIsExiting(true);
-        setTimeout(() => onClose(), 160);
     };
 
     const handleSave = () => {
@@ -292,16 +294,13 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
             
             <div className="fixed inset-0 z-[9990]" onClick={(e) => { e.stopPropagation(); handleClose(); }}></div>
 
-            <div
+            <motion.div
                 ref={popoverRef}
-                style={{
-                    top: pos.top,
-                    left: pos.left,
-                    opacity: pos.opacity,
-                    transform: (pos.opacity === 0 || isExiting) ? 'scale(0.96) translateY(6px)' : 'scale(1) translateY(0)',
-                    visibility: pos.opacity === 0 ? 'hidden' : 'visible'
-                }}
-                className="fixed z-[9991] w-[290px] max-h-[85vh] bg-white/[0.82] backdrop-blur-2xl backdrop-saturate-[180%] rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.9)] border border-white/70 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col cursor-default transform-gpu overflow-hidden"
+                style={{ top: pos.top, left: pos.left, visibility: pos.top === -9999 ? 'hidden' : 'visible' }}
+                animate={isVisible && !isExiting ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.96, y: 6 }}
+                transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                onAnimationComplete={() => { if (isExiting) onClose(); }}
+                className="fixed z-[9991] w-[290px] max-h-[85vh] bg-white/[0.28] backdrop-blur-[40px] backdrop-saturate-[220%] rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.95)] border border-white/70 flex flex-col cursor-default transform-gpu overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex justify-between items-center gap-3 px-4 py-3 border-b border-white/30 bg-white/[0.35] backdrop-blur-sm shrink-0 z-40">
@@ -360,7 +359,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                     )}
 
                     {showTimePickers && (
-                        <div className={`flex flex-col gap-3 p-3 bg-white/[0.55] border rounded-2xl shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)] relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-white/50'}`}>
+                        <div className={`flex flex-col gap-3 p-3 bg-white/[0.45] border rounded-2xl shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)] relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-white/40'}`}>
                             
                             <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -392,7 +391,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                             
                             <div 
                                 onClick={() => setHasLunch(!hasLunch)}
-                                className="flex items-center justify-between bg-white/[0.65] border border-orange-100/80 p-3 rounded-2xl shadow-sm hover:shadow-md hover:border-orange-300 transition-all duration-300 group/row cursor-pointer"
+                                className="flex items-center justify-between bg-white/[0.5] border border-orange-200/60 p-3 rounded-2xl shadow-sm hover:shadow-md hover:border-orange-300 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <input 
@@ -412,7 +411,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
                             <div 
                                 onClick={() => setHasLactation(!hasLactation)}
-                                className="flex items-center justify-between bg-white/[0.65] border border-pink-100/80 p-3 rounded-2xl shadow-sm hover:shadow-md hover:border-pink-300 transition-all duration-300 group/row cursor-pointer"
+                                className="flex items-center justify-between bg-white/[0.5] border border-pink-200/60 p-3 rounded-2xl shadow-sm hover:shadow-md hover:border-pink-300 transition-all duration-300 group/row cursor-pointer"
                             >
                                 <div className="flex items-center gap-2.5 pointer-events-none">
                                     <input 
@@ -460,7 +459,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         {shiftId === 'OFF' ? 'Asignar Descanso' : 'Guardar Cambios'}
                     </button>
                 </div>
-            </div>
+            </motion.div>
         </>,
         document.body
     );

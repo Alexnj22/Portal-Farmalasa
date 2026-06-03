@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { TrendingUp, ChevronLeft, BarChart2 } from 'lucide-react';
+import { TrendingUp, ChevronLeft, BarChart2, Maximize2 } from 'lucide-react';
 
 const ScheduleChart = ({
     chartTitle,
@@ -10,7 +10,7 @@ const ScheduleChart = ({
     openModal
 }) => {
     return (
-        <div className="bg-white/[0.14] backdrop-blur-2xl border border-white/60 rounded-2xl px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)] flex flex-col h-full hover:bg-white/[0.22] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] transition-all duration-300 group/chart relative overflow-visible z-10">
+        <div className="bg-white/[0.14] backdrop-blur-2xl border border-white/60 rounded-2xl px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)] flex flex-col h-full min-h-[120px] hover:bg-white/[0.22] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] transition-all duration-300 group/chart relative overflow-visible z-10">
 
             {/* Header: title + legend + toggle — compact single row */}
             <div className="flex items-center justify-between gap-3 mb-2 shrink-0">
@@ -47,8 +47,17 @@ const ScheduleChart = ({
                 </div>
             </div>
 
-            {/* Bars — flex-1 fills remaining height, no labels below (tooltips only) */}
-            <div className="flex items-end gap-1.5 flex-1 w-full relative overflow-visible">
+            {/* Expand button */}
+            <div className="absolute top-2.5 right-2.5 opacity-0 group-hover/chart:opacity-100 transition-opacity duration-200 z-20">
+                <button onClick={() => openModal && openModal('viewWfmAnalytics')}
+                    className="w-6 h-6 rounded-full bg-white/90 backdrop-blur-md text-[#0052CC] border border-blue-100 shadow-md flex items-center justify-center hover:bg-blue-50 hover:scale-105 active:scale-[0.97] transition-all"
+                    title="Expandir Análisis">
+                    <Maximize2 size={10} strokeWidth={2.5} />
+                </button>
+            </div>
+
+            {/* Bars — flex-1, labels below */}
+            <div className="flex items-end gap-[3px] flex-1 w-full relative overflow-visible pb-4">
                 <div className="absolute inset-0 flex flex-col justify-between opacity-15 pointer-events-none z-0">
                     <div className="border-t border-dashed border-slate-400 w-full" />
                     <div className="border-t border-dashed border-slate-400 w-full" />
@@ -91,6 +100,10 @@ const ScheduleChart = ({
                                 className={`w-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/bar:opacity-90 group-hover/bar:shadow-sm origin-bottom z-10 ${chartView === 'DAYS' ? 'rounded-t-[5px] group-hover/bar:scale-y-[1.04]' : 'rounded-t-[4px] group-hover/bar:-translate-y-px'}`}
                                 style={{ height: item.height, backgroundColor: item.color }}
                             />
+                            {/* Label below */}
+                            <span className="text-[6.5px] font-bold text-slate-400 absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap group-hover/bar:text-cyan-500 transition-colors duration-200 z-10">
+                                {item.label}
+                            </span>
                         </div>
                     ))
                 )}

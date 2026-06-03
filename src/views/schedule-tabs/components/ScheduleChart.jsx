@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { TrendingUp, Maximize2, ChevronLeft, Loader2, BarChart2 } from 'lucide-react';
+import { TrendingUp, ChevronLeft, BarChart2 } from 'lucide-react';
 
 const ScheduleChart = ({
     chartTitle,
@@ -10,106 +10,91 @@ const ScheduleChart = ({
     openModal
 }) => {
     return (
-        <div className="col-span-1 lg:col-span-2 bg-white/[0.14] backdrop-blur-2xl border border-white/60 rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)] flex flex-col justify-between hover:bg-white/[0.22] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] transition-all duration-300 group/chart relative overflow-visible h-full z-10">
+        <div className="bg-white/[0.14] backdrop-blur-2xl border border-white/60 rounded-2xl px-4 py-3 shadow-[0_2px_12px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.85)] flex flex-col h-full hover:bg-white/[0.22] hover:shadow-[0_6px_24px_rgba(0,0,0,0.09)] transition-all duration-300 group/chart relative overflow-visible z-10">
 
-            <div className="absolute top-3 right-3 opacity-0 group-hover/chart:opacity-100 transition-opacity duration-200 z-20">
-                <button onClick={() => openModal && openModal('viewWfmAnalytics')}
-                    className="w-7 h-7 rounded-full bg-white/90 backdrop-blur-md text-[#0052CC] border border-blue-100 shadow-md flex items-center justify-center hover:bg-blue-50 hover:scale-105 active:scale-[0.97] transition-all duration-200"
-                    title="Expandir Análisis">
-                    <Maximize2 size={12} strokeWidth={2.5} />
-                </button>
-            </div>
-
-            <div className="flex items-center justify-between mb-3 pr-10 relative z-10 flex-wrap gap-2">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                    <h3 className="text-[12px] font-black text-slate-800 tracking-tight flex items-center gap-1.5">
-                        <div className="w-5 h-5 rounded-full bg-cyan-50 text-cyan-600 flex items-center justify-center shadow-sm border border-cyan-100/50">
-                            <TrendingUp size={10} strokeWidth={2.5} />
-                        </div>
+            {/* Header: title + legend + toggle — compact single row */}
+            <div className="flex items-center justify-between gap-3 mb-2 shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+                    <span className="flex items-center gap-1.5 text-[10.5px] font-black text-slate-700 tracking-tight whitespace-nowrap">
+                        <TrendingUp size={10} strokeWidth={2.5} className="text-cyan-500 shrink-0" />
                         {chartTitle}
-                    </h3>
-                    {/* Legend — top */}
-                    <div className="flex items-center gap-2.5">
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#e2e8f0]" /><span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Muerta</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#0052CC]" /><span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Normal</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#F79009]" /><span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Pico</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#FF2D55]" /><span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Crítica</span></div>
+                    </span>
+                    {/* Legend inline */}
+                    <div className="hidden md:flex items-center gap-2">
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#e2e8f0]" /><span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">Muerta</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#0052CC]" /><span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">Normal</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#F79009]" /><span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">Pico</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#FF2D55]" /><span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">Crítica</span></div>
                     </div>
                 </div>
 
-                <div className="flex items-center bg-white/60 p-0.5 rounded-full border border-white shadow-[inset_0_1px_4px_rgba(0,0,0,0.03)] h-7">
+                {/* Días / Horas toggle */}
+                <div className="flex items-center bg-white/60 p-0.5 rounded-full border border-white/80 shadow-[inset_0_1px_4px_rgba(0,0,0,0.03)] h-6 shrink-0">
                     {typeof chartView === 'number' && (
                         <button onClick={() => setChartView('DAYS')}
-                            className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all duration-200 text-slate-500 hover:text-slate-800 flex items-center gap-1 hover:bg-white/50 active:scale-[0.97]">
-                            <ChevronLeft size={10} strokeWidth={3} /> Volver a Días
+                            className="px-2 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full text-slate-500 hover:text-slate-800 flex items-center gap-0.5 hover:bg-white/50 active:scale-[0.97] transition-all">
+                            <ChevronLeft size={8} strokeWidth={3} />Días
                         </button>
                     )}
                     <button onClick={() => setChartView('HOURS')}
-                        className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all duration-200 active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-white text-[#0052CC] shadow-sm scale-[1.02]' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
+                        className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
                         Horas
                     </button>
                     <button onClick={() => setChartView('DAYS')}
-                        className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-all duration-200 active:scale-[0.97] ${chartView === 'DAYS' ? 'bg-white text-[#0052CC] shadow-sm scale-[1.02]' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
+                        className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'DAYS' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
                         Días
                     </button>
                 </div>
             </div>
 
-            <div className="flex flex-col w-full border-b border-slate-200/60 pb-1.5 relative z-10 flex-1 mt-4">
-                <div className="flex items-end gap-1.5 h-[80px] w-full relative overflow-visible">
-                    <div className="absolute inset-0 flex flex-col justify-between opacity-20 pointer-events-none z-0 pb-[1px]">
-                        <div className="border-t border-dashed border-slate-400 w-full h-px" />
-                        <div className="border-t border-dashed border-slate-400 w-full h-px" />
-                    </div>
-
-                    {isLoadingSales ? (
-                        <div className="absolute inset-0 flex items-end gap-1.5 z-10 px-1">
-                            {Array.from({ length: 7 }).map((_, i) => (
-                                <div key={i} className="flex-1 flex flex-col justify-end items-center h-full">
-                                    <div className="w-full skeleton rounded-t-[6px]"
-                                        style={{ height: `${30 + (i % 3) * 20 + (i % 2) * 10}%` }} />
-                                </div>
-                            ))}
-                        </div>
-                    ) : currentChartData.length === 0 ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 gap-2 p-4 text-center animate-in fade-in duration-300">
-                            <BarChart2 size={24} strokeWidth={1.5} className="text-slate-300" />
-                            <p className="text-[9px] md:text-[10px] font-black text-[#0052CC]/60 uppercase tracking-widest leading-snug">Sin historial de ventas</p>
-                        </div>
-                    ) : (
-                        currentChartData.map((item, i) => (
-                            <div key={i}
-                                onClick={() => { if (chartView === 'DAYS') setChartView(item.day); }}
-                                className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${chartView === 'DAYS' ? 'cursor-pointer' : ''}`}>
-
-                                <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none w-max z-[100] translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-white/10">
-                                    <p className="font-black text-[8px] uppercase tracking-widest text-slate-400 mb-1 border-b border-white/10 pb-0.5 px-2">
-                                        {chartView === 'DAYS' ? 'Día' : 'Hora'}: {item.label}
-                                    </p>
-                                    <p className="text-[11px] font-bold flex items-center gap-1.5 mt-0.5">
-                                        <span className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
-                                        {item.avg} Tx / Promedio
-                                    </p>
-                                    {chartView === 'DAYS' && (
-                                        <p className="text-[7px] text-[#0052CC] font-black uppercase tracking-widest mt-1 bg-blue-500/10 px-1.5 py-0.5 rounded-full">
-                                            Clic para ver horas
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div
-                                    className={`w-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu group-hover:opacity-80 group-hover:shadow-md origin-bottom shadow-sm z-10 ${chartView === 'DAYS' ? 'rounded-t-[6px] group-hover:scale-y-[1.05]' : 'rounded-t-[4px] group-hover:-translate-y-[2px]'}`}
-                                    style={{ height: item.height, backgroundColor: item.color }}
-                                />
-                                <span className="text-[7px] md:text-[7.5px] font-bold text-slate-400 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:-translate-y-0.5 group-hover:text-cyan-500 transition-all duration-200 whitespace-nowrap z-10">
-                                    {item.label}
-                                </span>
-                            </div>
-                        ))
-                    )}
+            {/* Bars — flex-1 fills remaining height, no labels below (tooltips only) */}
+            <div className="flex items-end gap-1.5 flex-1 w-full relative overflow-visible">
+                <div className="absolute inset-0 flex flex-col justify-between opacity-15 pointer-events-none z-0">
+                    <div className="border-t border-dashed border-slate-400 w-full" />
+                    <div className="border-t border-dashed border-slate-400 w-full" />
                 </div>
-            </div>
 
+                {isLoadingSales ? (
+                    <div className="absolute inset-0 flex items-end gap-1.5 z-10">
+                        {Array.from({ length: 7 }).map((_, i) => (
+                            <div key={i} className="flex-1 h-full flex items-end">
+                                <div className="w-full skeleton rounded-t-[5px]"
+                                    style={{ height: `${30 + (i % 3) * 20 + (i % 2) * 10}%` }} />
+                            </div>
+                        ))}
+                    </div>
+                ) : currentChartData.length === 0 ? (
+                    <div className="absolute inset-0 flex items-center justify-center gap-2 text-slate-300 z-10">
+                        <BarChart2 size={18} strokeWidth={1.5} />
+                        <span className="text-[8px] font-black uppercase tracking-widest">Sin historial</span>
+                    </div>
+                ) : (
+                    currentChartData.map((item, i) => (
+                        <div key={i}
+                            onClick={() => { if (chartView === 'DAYS') setChartView(item.day); }}
+                            className={`flex-1 flex flex-col justify-end items-center group/bar h-full relative overflow-visible ${chartView === 'DAYS' ? 'cursor-pointer' : ''}`}>
+
+                            {/* Tooltip */}
+                            <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2 py-1.5 rounded-xl shadow-xl opacity-0 group-hover/bar:opacity-100 transition-all duration-150 pointer-events-none w-max z-[100] translate-y-1 group-hover/bar:-translate-y-0 border border-white/10">
+                                <p className="font-black text-[7.5px] uppercase tracking-widest text-slate-400">{item.label}</p>
+                                <p className="text-[10px] font-bold flex items-center gap-1 mt-0.5">
+                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
+                                    {item.avg} Tx
+                                </p>
+                                {chartView === 'DAYS' && (
+                                    <p className="text-[6.5px] text-[#0052CC] font-black uppercase tracking-widest mt-0.5">Clic → horas</p>
+                                )}
+                            </div>
+
+                            {/* Bar */}
+                            <div
+                                className={`w-full transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/bar:opacity-90 group-hover/bar:shadow-sm origin-bottom z-10 ${chartView === 'DAYS' ? 'rounded-t-[5px] group-hover/bar:scale-y-[1.04]' : 'rounded-t-[4px] group-hover/bar:-translate-y-px'}`}
+                                style={{ height: item.height, backgroundColor: item.color }}
+                            />
+                        </div>
+                    ))
+                )}
+            </div>
         </div>
     );
 };

@@ -690,48 +690,11 @@ const SchedulesView = ({ openModal, setView }) => {
         </div>
     );
 
-    // ── Sub-content: chart (left) + filter pill + publish (right) ──────────────
-    const schedSubContent = viewMode === 'calendar' ? (
-        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 lg:gap-4">
-            <div className="flex-1 min-w-0 w-full">
-                <ScheduleChart
-                    chartTitle={chartTitle}
-                    chartView={chartView}
-                    setChartView={setChartView}
-                    isLoadingSales={isLoadingSales}
-                    currentChartData={currentChartData}
-                    filterBranch={filterBranch}
-                    branches={branches}
-                    openModal={openModal}
-                />
-            </div>
-            <div className="flex items-center gap-2 shrink-0 self-center">
-                {filterPill}
-                {canEdit && getScope('schedules') !== 'BRANCH' && (
-                    <button
-                        onClick={weekIsPublished ? undefined : triggerPublishAudit}
-                        disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
-                        className={`h-10 px-4 md:px-5 text-white rounded-full flex items-center justify-center shrink-0 border transition-all gap-2
-                            ${weekIsPublished
-                                ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/50 shadow-[0_3px_10px_rgba(16,185,129,0.3)] cursor-default'
-                                : 'bg-gradient-to-br from-[#0052CC] to-[#003D99] border-[#0052CC]/50 shadow-[0_3px_10px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97]'}
-                            ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
-                        {isPublishing ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : weekIsPublished ? <CheckCircle size={16} strokeWidth={3} /> : <Save size={16} strokeWidth={3} />}
-                        <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden md:inline-block">
-                            {isPublishing ? '...' : weekIsPublished ? 'Publicado' : 'Publicar'}
-                        </span>
-                    </button>
-                )}
-            </div>
-        </div>
-    ) : null;
-
     return (
         <GlassViewLayout
             icon={CalendarDays}
             title="Horarios"
             filtersContent={filtersContent}
-            subContent={schedSubContent}
             transparentBody={viewMode === 'shifts' || viewMode === 'holidays'}
             fixedScrollMode={viewMode === 'shifts'}
         >
@@ -788,6 +751,40 @@ const SchedulesView = ({ openModal, setView }) => {
                     transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
                     className="w-full flex-1 flex flex-col p-2 md:p-4 lg:px-6 mx-auto h-full overflow-hidden">
 
+                    {/* ── Chart (left) + filter pill + publish (right) — Productos pattern ── */}
+                    <div className="flex items-start gap-3 flex-wrap pb-4 shrink-0">
+                        <div className="flex-1 min-w-0">
+                            <ScheduleChart
+                                chartTitle={chartTitle}
+                                chartView={chartView}
+                                setChartView={setChartView}
+                                isLoadingSales={isLoadingSales}
+                                currentChartData={currentChartData}
+                                filterBranch={filterBranch}
+                                branches={branches}
+                                openModal={openModal}
+                            />
+                        </div>
+                        <div className="hidden lg:flex flex-col items-end gap-2 shrink-0 self-center">
+                            {filterPill}
+                            {canEdit && getScope('schedules') !== 'BRANCH' && (
+                                <button
+                                    onClick={weekIsPublished ? undefined : triggerPublishAudit}
+                                    disabled={isPublishing || employeesInView.length === 0 || isPastWeek}
+                                    className={`h-10 px-4 md:px-5 text-white rounded-full flex items-center justify-center shrink-0 border transition-all gap-2
+                                        ${weekIsPublished
+                                            ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/50 shadow-[0_3px_10px_rgba(16,185,129,0.3)] cursor-default'
+                                            : 'bg-gradient-to-br from-[#0052CC] to-[#003D99] border-[#0052CC]/50 shadow-[0_3px_10px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97]'}
+                                        ${(employeesInView.length === 0 || isPastWeek) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}>
+                                    {isPublishing ? <Loader2 size={16} strokeWidth={3} className="animate-spin" /> : weekIsPublished ? <CheckCircle size={16} strokeWidth={3} /> : <Save size={16} strokeWidth={3} />}
+                                    <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden md:inline-block">
+                                        {isPublishing ? '...' : weekIsPublished ? 'Publicado' : 'Publicar'}
+                                    </span>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
                     {employeesInView.length === 0 ? (
                         <div className="flex flex-col items-center justify-center min-h-[55vh] gap-5">
                             <div className="p-6 bg-white/50 backdrop-blur-xl border border-white/60 rounded-[2rem] shadow-sm">
@@ -803,7 +800,7 @@ const SchedulesView = ({ openModal, setView }) => {
                             </button>
                         </div>
                     ) : (
-                        <div className="flex flex-col pb-10 h-full overflow-y-auto hide-scrollbar relative">
+                        <div className="flex flex-col pb-10 flex-1 min-h-0 overflow-y-auto hide-scrollbar relative">
                             <ScheduleCalendar
                                 isLoading={isLoading}
                                 calendarDates={calendarDates}

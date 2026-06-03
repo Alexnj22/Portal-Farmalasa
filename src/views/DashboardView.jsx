@@ -1817,11 +1817,11 @@ const DashboardView = ({ openModal }) => {
     if (wid === 'inv_search') {
       if (!showWidget('inv_search', 'dash_inv_search')) return null;
       return wrapWidget('inv_search',
-        <WidgetCard title="Consulta de Inventario" icon={Package} category="productos">
-          <div className="px-4 pb-4 pt-2 h-full">
-            <WidgetInventorySearch />
-          </div>
-        </WidgetCard>
+        <div className="h-full relative rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] overflow-hidden">
+          <div className="absolute inset-0 bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] pointer-events-none rounded-[1.75rem]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
+          <div className="relative h-full p-4"><WidgetInventorySearch /></div>
+        </div>
       , staggerIdx);
     }
 
@@ -1829,11 +1829,11 @@ const DashboardView = ({ openModal }) => {
     if (wid === 'annulment_req') {
       if (!showWidget('annulment_req', 'dash_annulment_req')) return null;
       return wrapWidget('annulment_req',
-        <WidgetCard title="Solicitud de Anulación" icon={Receipt} category="ventas">
-          <div className="px-4 pb-4 pt-2 h-full">
-            <WidgetAnnulmentRequest />
-          </div>
-        </WidgetCard>
+        <div className="h-full relative rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] overflow-hidden">
+          <div className="absolute inset-0 bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] pointer-events-none rounded-[1.75rem]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
+          <div className="relative h-full p-4"><WidgetAnnulmentRequest /></div>
+        </div>
       , staggerIdx);
     }
 
@@ -1841,11 +1841,11 @@ const DashboardView = ({ openModal }) => {
     if (wid === 'srs_inv') {
       if (!showWidget('srs_inv', 'dash_srs_inv')) return null;
       return wrapWidget('srs_inv',
-        <WidgetCard title="Búsqueda SRS + Inventario" icon={FlaskConical} category="productos">
-          <div className="px-4 pb-4 pt-2 h-full">
-            <WidgetSrsInventory />
-          </div>
-        </WidgetCard>
+        <div className="h-full relative rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] overflow-hidden">
+          <div className="absolute inset-0 bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] pointer-events-none rounded-[1.75rem]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/35 to-transparent pointer-events-none rounded-[1.75rem]" />
+          <div className="relative h-full p-4"><WidgetSrsInventory /></div>
+        </div>
       , staggerIdx);
     }
 

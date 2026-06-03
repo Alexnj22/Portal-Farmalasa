@@ -11,63 +11,59 @@ const ERP_BRANCH_MAP = {
   7: 'Salud 5',
 };
 const BRANCH_ORDER = [5, 1, 2, 3, 4, 7];
-const BRANCHES = BRANCH_ORDER.map(id => ({ id, name: ERP_BRANCH_MAP[id] }));
 
-function daysUntil(dateStr) {
-  if (!dateStr) return null;
-  return Math.ceil((new Date(dateStr + 'T12:00:00') - new Date()) / 86400000);
+const BRANCH_THEME = {
+  'La Popular': { dot: '#7C3AED', pill: 'bg-violet-50  border-violet-200/70', label: 'text-violet-700', lot: 'bg-violet-50/60' },
+  'Salud 1':    { dot: '#0052CC', pill: 'bg-blue-50    border-blue-200/70',   label: 'text-blue-700',   lot: 'bg-blue-50/60'   },
+  'Salud 2':    { dot: '#059669', pill: 'bg-emerald-50 border-emerald-200/70',label: 'text-emerald-700',lot: 'bg-emerald-50/60'},
+  'Salud 3':    { dot: '#D97706', pill: 'bg-amber-50   border-amber-200/70', label: 'text-amber-700',  lot: 'bg-amber-50/60'  },
+  'Salud 4':    { dot: '#E11D48', pill: 'bg-rose-50    border-rose-200/70',   label: 'text-rose-700',   lot: 'bg-rose-50/60'   },
+  'Salud 5':    { dot: '#0891B2', pill: 'bg-cyan-50    border-cyan-200/70',   label: 'text-cyan-700',   lot: 'bg-cyan-50/60'   },
+};
+const DEFAULT_THEME = BRANCH_THEME['Salud 1'];
+
+function daysUntil(d) {
+  if (!d) return null;
+  return Math.ceil((new Date(d + 'T12:00:00') - new Date()) / 86400000);
 }
 
-function fmtDate(dateStr) {
-  return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-SV', {
-    day: '2-digit', month: 'short', year: '2-digit',
-  });
-}
-
-function LotRow({ row }) {
-  const days = daysUntil(row.fecha_vencimiento);
-  const isExpired = days !== null && days <= 0;
-  const isNear    = days !== null && days > 0 && days <= 60;
-
+function ExpiryBadge({ date }) {
+  if (!date) return null;
+  const days      = daysUntil(date);
+  const isExpired = days <= 0;
+  const isNear    = days > 0 && days <= 60;
   return (
-    <div className="flex items-center gap-2 py-1.5">
-      <div className="flex-1 flex items-center gap-2 min-w-0">
-        {row.lote
-          ? <span className="text-[10px] font-mono text-slate-400 truncate">{row.lote}</span>
-          : <span className="text-[10px] text-slate-300 italic">Sin lote</span>
-        }
-        {row.fecha_vencimiento && (
-          <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
-            isExpired ? 'bg-red-100 text-red-600' :
-            isNear    ? 'bg-amber-100 text-amber-600' :
-                        'bg-slate-100 text-slate-500'
-          }`}>
-            {isExpired ? '⚠ Vencido' : `Vence ${fmtDate(row.fecha_vencimiento)}`}
-          </span>
-        )}
-      </div>
-      <span className="text-[11px] font-black text-slate-700 shrink-0 tabular-nums">
-        {row.cantidad} uds
-      </span>
-    </div>
+    <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap ${
+      isExpired ? 'bg-red-100 text-red-600' :
+      isNear    ? 'bg-amber-100 text-amber-700' :
+                  'bg-slate-100 text-slate-500'
+    }`}>
+      {isExpired
+        ? '⚠ Vencido'
+        : new Date(date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+    </span>
   );
 }
 
-function SkeletonCard({ lots = 2 }) {
+/* ─── Skeletons ─────────────────────────────────────────────────────────── */
+function SkeletonSection({ rows }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white overflow-hidden animate-pulse shrink-0">
-      <div className="flex items-start justify-between gap-2 px-3.5 pt-3 pb-2">
-        <div className="flex-1 space-y-1.5">
-          <div className="h-3 bg-slate-200 rounded-lg w-3/4" />
-          <div className="h-2 bg-slate-100 rounded-lg w-1/2" />
-        </div>
-        <div className="h-5 w-14 bg-blue-100 rounded-full shrink-0" />
+    <div className="mb-4 animate-pulse">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="h-px flex-1 bg-slate-200/70 rounded" />
+        <div className="h-5 w-24 bg-slate-200 rounded-full" />
+        <div className="h-px flex-1 bg-slate-200/70 rounded" />
       </div>
-      <div className="border-t border-slate-100 px-3.5 py-2 space-y-2">
-        {Array.from({ length: lots }).map((_, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <div className="h-2 bg-slate-100 rounded flex-1" style={{ maxWidth: `${60 + i * 15}%` }} />
-            <div className="h-2 bg-slate-200 rounded w-12 shrink-0" />
+      <div className="space-y-1">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="flex items-center gap-2.5 px-2.5 py-2">
+            <div className="flex-1 space-y-1.5">
+              <div className="h-2.5 bg-slate-200 rounded-md" style={{ width: `${48 + (i * 19) % 36}%` }} />
+              <div className="h-1.5 bg-slate-100 rounded-md w-1/3" />
+            </div>
+            <div className="h-2 w-8 bg-slate-100 rounded shrink-0" />
+            <div className="h-4 w-20 bg-slate-100 rounded-md shrink-0" />
+            <div className="h-2.5 w-12 bg-slate-200 rounded shrink-0" />
           </div>
         ))}
       </div>
@@ -75,20 +71,20 @@ function SkeletonCard({ lots = 2 }) {
   );
 }
 
+/* ─── Main component ────────────────────────────────────────────────────── */
 export default function WidgetInventorySearch() {
-  const [query,    setQuery]    = useState('');
-  const [branch,   setBranch]   = useState(''); // '' = all, or erp_sucursal_id as string
-  const [results,  setResults]  = useState(null);
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState(null);
-  const debounceRef = useRef(null);
+  const [query,   setQuery]   = useState('');
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState(null);
+  const debounceRef           = useRef(null);
 
-  const doSearch = useCallback(async (q, branchId) => {
+  const doSearch = useCallback(async (q) => {
     if (!q.trim()) { setResults(null); return; }
     setLoading(true);
     setError(null);
     try {
-      let qb = supabase
+      const { data, error: err } = await supabase
         .from('inventory')
         .select('erp_sucursal_id, descripcion, presentacion, lote, fecha_vencimiento, cantidad')
         .ilike('descripcion', `%${q}%`)
@@ -96,25 +92,28 @@ export default function WidgetInventorySearch() {
         .order('descripcion')
         .order('fecha_vencimiento', { ascending: true, nullsFirst: false });
 
-      if (branchId) qb = qb.eq('erp_sucursal_id', Number(branchId));
-
-      const { data, error: err } = await qb;
       if (err) throw err;
 
-      const byProduct = {};
+      // Group: branch → product key → lots
+      const map = {};
       for (const row of data || []) {
-        const key   = `${row.descripcion}||${row.presentacion || ''}`;
         const bName = ERP_BRANCH_MAP[row.erp_sucursal_id];
         if (!bName) continue;
-        if (!byProduct[key]) byProduct[key] = {
-          descripcion: row.descripcion,
+        const key = `${row.descripcion}||${row.presentacion || ''}`;
+        if (!map[bName])      map[bName]      = {};
+        if (!map[bName][key]) map[bName][key] = {
+          descripcion:  row.descripcion,
           presentacion: row.presentacion,
-          branches: {},
+          lots:         [],
         };
-        if (!byProduct[key].branches[bName]) byProduct[key].branches[bName] = [];
-        byProduct[key].branches[bName].push(row);
+        map[bName][key].lots.push(row);
       }
-      setResults(Object.values(byProduct));
+
+      setResults(
+        BRANCH_ORDER
+          .map(id => ({ name: ERP_BRANCH_MAP[id], products: Object.values(map[ERP_BRANCH_MAP[id]] || {}) }))
+          .filter(b => b.products.length > 0)
+      );
     } catch {
       setError('Error al consultar inventario');
     } finally {
@@ -122,53 +121,17 @@ export default function WidgetInventorySearch() {
     }
   }, []);
 
-  const trigger = (q, b) => {
+  const handleInput = (val) => {
+    setQuery(val);
     clearTimeout(debounceRef.current);
-    if (!q.trim()) { setResults(null); return; }
-    debounceRef.current = setTimeout(() => doSearch(q, b), 350);
+    if (!val.trim()) { setResults(null); return; }
+    debounceRef.current = setTimeout(() => doSearch(val), 380);
   };
-
-  const handleInput  = (val) => { setQuery(val); trigger(val, branch); };
-  const handleBranch = (id)  => {
-    const next = branch === id ? '' : id;
-    setBranch(next);
-    trigger(query, next);
-  };
-
-  const singleBranch = !!branch;
 
   return (
     <div className="flex flex-col gap-2.5 h-full">
 
-      {/* Branch filter pills */}
-      <div className="flex items-center gap-1.5 overflow-x-auto shrink-0 pb-0.5
-        [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <button
-          onClick={() => handleBranch('')}
-          className={`shrink-0 px-3 py-1 rounded-full text-[10px] font-black transition-all active:scale-[0.97] ${
-            !branch
-              ? 'bg-[#0052CC] text-white shadow-sm'
-              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-          }`}
-        >
-          Todas
-        </button>
-        {BRANCHES.map(b => (
-          <button
-            key={b.id}
-            onClick={() => handleBranch(String(b.id))}
-            className={`shrink-0 px-3 py-1 rounded-full text-[10px] font-black transition-all active:scale-[0.97] ${
-              branch === String(b.id)
-                ? 'bg-[#0052CC] text-white shadow-sm'
-                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-            }`}
-          >
-            {b.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Search input */}
+      {/* ── Search input ─────────────────────────────────────────────── */}
       <div className="relative shrink-0">
         <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
           {loading
@@ -179,7 +142,7 @@ export default function WidgetInventorySearch() {
           type="text"
           value={query}
           onChange={e => handleInput(e.target.value)}
-          placeholder="Buscar producto..."
+          placeholder="Buscar producto en todas las sucursales..."
           className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200 bg-white text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
           spellCheck={false}
           autoComplete="off"
@@ -194,97 +157,133 @@ export default function WidgetInventorySearch() {
         )}
       </div>
 
-      {error && (
-        <p className="text-[11px] text-red-500 font-medium shrink-0 px-1">{error}</p>
-      )}
+      {error && <p className="shrink-0 px-1 text-[11px] text-red-500 font-medium">{error}</p>}
 
-      {/* Results */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-2
-        [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      {/* ── Results ──────────────────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
-        {/* Loading skeletons */}
-        {loading && [2, 1, 3].map((lots, i) => <SkeletonCard key={i} lots={lots} />)}
+        {/* Loading */}
+        {loading && <><SkeletonSection rows={3} /><SkeletonSection rows={2} /></>}
 
-        {/* Empty states */}
+        {/* Empty — no query yet */}
         {!loading && results === null && (
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <Package size={28} strokeWidth={1.5} className="text-slate-200" />
-            <p className="text-[11px] font-semibold text-slate-400">
-              {branch
-                ? `Selecciona una sucursal y busca un producto`
-                : 'Escribe un producto para consultar'}
+            <p className="text-[11px] font-semibold text-slate-400 text-center leading-snug">
+              Busca un producto para ver<br />su stock por sucursal
             </p>
           </div>
         )}
+
+        {/* Empty — no results */}
         {!loading && results !== null && results.length === 0 && (
-          <div className="py-8 text-center text-[12px] text-slate-400 font-medium">
+          <div className="py-10 text-center text-[12px] text-slate-400 font-medium">
             Sin resultados para "{query}"
           </div>
         )}
 
-        {/* Product cards — always expanded */}
-        {!loading && (results || []).map(prod => {
-          const key        = `${prod.descripcion}||${prod.presentacion}`;
-          const branchKeys = BRANCH_ORDER.map(id => ERP_BRANCH_MAP[id]).filter(b => prod.branches[b]);
-          const totalUnits = branchKeys.reduce((s, b) =>
-            s + prod.branches[b].reduce((ss, r) => ss + r.cantidad, 0), 0);
+        {/* Branch sections */}
+        {!loading && (results || []).map((branch, bi) => {
+          const theme = BRANCH_THEME[branch.name] || DEFAULT_THEME;
+          const branchTotal = branch.products.reduce(
+            (s, p) => s + p.lots.reduce((ss, r) => ss + r.cantidad, 0), 0
+          );
 
           return (
-            <div key={key} className="rounded-2xl border border-slate-200 bg-white overflow-hidden shrink-0">
-
-              {/* Product header */}
-              <div className="flex items-start justify-between gap-2 px-3.5 pt-3 pb-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-black text-slate-800 leading-tight">{prod.descripcion}</p>
-                  {prod.presentacion && (
-                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">{prod.presentacion}</p>
-                  )}
+            <div
+              key={branch.name}
+              className="mb-4"
+              style={{ animation: `inv-fade-up 0.28s ease both`, animationDelay: `${bi * 55}ms` }}
+            >
+              {/* ── Branch header ──────────────────────────────────── */}
+              <div className="flex items-center gap-2 mb-1.5 sticky top-0 z-10 py-0.5">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-slate-200/80" />
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} backdrop-blur-sm shadow-sm`}>
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />
+                  <span className={`text-[10px] font-black uppercase tracking-wider ${theme.label}`}>
+                    {branch.name}
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-400 ml-0.5">{branchTotal} uds</span>
                 </div>
-                <span className="shrink-0 text-[11px] font-black text-[#0052CC] bg-blue-50 px-2.5 py-0.5 rounded-full">
-                  {totalUnits} uds
-                </span>
+                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-200/80" />
               </div>
 
-              {/* Lots / branches */}
-              <div className="border-t border-slate-100">
-                {singleBranch ? (
-                  /* Single branch selected: show lots directly without branch header */
-                  <div className="px-3.5 py-1 divide-y divide-slate-50">
-                    {branchKeys.flatMap(b => prod.branches[b]).map((row, i) => (
-                      <LotRow key={i} row={row} />
-                    ))}
-                  </div>
-                ) : (
-                  /* All branches: group lots by branch */
-                  <div className="divide-y divide-slate-100">
-                    {branchKeys.map(bName => {
-                      const rows   = prod.branches[bName];
-                      const bTotal = rows.reduce((s, r) => s + r.cantidad, 0);
-                      return (
-                        <div key={bName} className="px-3.5 py-2">
-                          {/* Branch row header */}
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                              {bName}
-                            </span>
-                            <span className="text-[10px] font-black text-slate-600">
-                              {bTotal} uds
+              {/* ── Products ───────────────────────────────────────── */}
+              <div className="space-y-0.5">
+                {branch.products.map((prod, pi) => {
+                  const lotTotal  = prod.lots.reduce((s, r) => s + r.cantidad, 0);
+                  const multiLot  = prod.lots.length > 1;
+
+                  return (
+                    <div
+                      key={`${prod.descripcion}||${prod.presentacion}`}
+                      className="rounded-xl overflow-hidden"
+                      style={{ animation: `inv-fade-up 0.22s ease both`, animationDelay: `${bi * 55 + pi * 25}ms` }}
+                    >
+                      {multiLot ? (
+                        /* Multiple lots ─────────────────────────── */
+                        <div className="rounded-xl border border-slate-100 overflow-hidden">
+                          {/* Product name row */}
+                          <div className="flex items-start gap-2 px-3 pt-2.5 pb-1.5 bg-white">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-black text-slate-800 leading-tight">{prod.descripcion}</p>
+                              {prod.presentacion && (
+                                <p className="text-[9px] text-slate-400 font-medium mt-0.5">{prod.presentacion}</p>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-black text-slate-500 shrink-0 tabular-nums mt-0.5">
+                              {lotTotal} uds
                             </span>
                           </div>
-                          {/* Lots */}
-                          <div className="divide-y divide-slate-50 pl-1">
-                            {rows.map((row, i) => <LotRow key={i} row={row} />)}
+                          {/* Lot rows */}
+                          <div className="divide-y divide-white/60" style={{ background: 'linear-gradient(to bottom, #f8fafc, #f1f5f9)' }}>
+                            {prod.lots.map((row, li) => (
+                              <div key={li} className="flex items-center gap-2 px-3 py-1.5">
+                                <span className="text-[9px] font-mono text-slate-400 flex-1 truncate min-w-0">
+                                  {row.lote || '—'}
+                                </span>
+                                <ExpiryBadge date={row.fecha_vencimiento} />
+                                <span className="text-[10px] font-black text-slate-600 shrink-0 tabular-nums w-14 text-right">
+                                  {row.cantidad} uds
+                                </span>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      ) : (
+                        /* Single lot ────────────────────────────── */
+                        <div className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-white/80 transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] font-bold text-slate-800 truncate leading-tight">{prod.descripcion}</p>
+                            {prod.presentacion && (
+                              <p className="text-[9px] text-slate-400">{prod.presentacion}</p>
+                            )}
+                          </div>
+                          <span className="text-[9px] font-mono text-slate-400 shrink-0 max-w-[60px] truncate">
+                            {prod.lots[0].lote || '—'}
+                          </span>
+                          <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
+                          <span className="text-[10px] font-black text-slate-700 shrink-0 tabular-nums w-14 text-right">
+                            {prod.lots[0].cantidad} uds
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Keyframe */}
+      <style>{`
+        @keyframes inv-fade-up {
+          from { opacity: 0; transform: translateY(7px); }
+          to   { opacity: 1; transform: translateY(0);   }
+        }
+      `}</style>
     </div>
   );
 }

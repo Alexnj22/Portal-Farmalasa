@@ -6,8 +6,10 @@ import {
     Megaphone, AlertTriangle, Activity, Copy, CheckCircle2,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, BellRing, LayoutDashboard,
-    TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone
+    TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
+    PackageMinus
 } from 'lucide-react';
+import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -51,6 +53,7 @@ const MODULE_MAP = {
     laboratorios:      { path: '/laboratorios',     label: 'Laboratorios',             icon: FlaskConical  },
     pedidos:           { path: '/pedidos',          label: 'Pedidos a Sucursales',     icon: ClipboardList },
     minmax:            { path: '/minmax',           label: 'Min / Max',                icon: BarChart2     },
+    ventas_perdidas:   { path: '/ventas-perdidas',  label: 'Ventas Perdidas',          icon: PackageMinus  },
 };
 
 // ── Grupos del menú (define el orden y agrupación) ──────────────────────────
@@ -68,7 +71,7 @@ const MENU_GROUPS = [
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview', 'ios_test'] },
     { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones', 'promociones', 'bonificaciones'] },
     { key: 'rrhh',         label: 'RRHH',          icon: Users,         modules: ['entrevistas', 'encuesta_admin'] },
-    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'laboratorios', 'pedidos', 'minmax'] },
+    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'laboratorios', 'pedidos', 'minmax', 'ventas_perdidas'] },
 ];
 
 const SELF_KEYS = ['emp_home', 'emp_requests', 'emp_announcements', 'emp_profile', 'emp_documents'];
@@ -77,6 +80,22 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const { user, hasPermission, isSU } = useAuth();
     const branches = useStaff((state) => state.branches || []);
     const announcements = useStaff((state) => state.announcements || []);
+
+    const [vpPending, setVpPending] = useState(0);
+    useEffect(() => {
+        const load = async () => {
+            const { count } = await supabase
+                .from('ventas_perdidas')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'pendiente');
+            setVpPending(count || 0);
+        };
+        load();
+        const ch = supabase.channel('vp-badge')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'ventas_perdidas' }, load)
+            .subscribe();
+        return () => { supabase.removeChannel(ch); };
+    }, []);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -244,6 +263,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     const getBadge = (key) => {
         if (key === 'emp_announcements' && unreadCount > 0) return unreadCount;
+        if (key === 'ventas_perdidas'   && vpPending   > 0) return vpPending;
         return 0;
     };
     const getAlert = (key) => key === 'branches' && hasBranchAlerts;

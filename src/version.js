@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.38';
+export const APP_VERSION = '1.4.39';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.39 — WidgetInventorySearch: total sucursal más visible (coloreado, 12px); búsqueda por principio activo
 // v1.4.38 — Fix definitivo factor: presentaciones solo guarda tipo; factor/descripcion siempre desde product_precios
 // v1.4.37 — Ventas/Productos: cantidad en unidades base (cantidad×factor ERP); RPC incluye factor por presentación
 // v1.4.36 — MinMax: clasificación ABC×XYZ, ciclo uniforme 45 días, panel de configuración (stock_config), CoverageBar, matriz filtrable

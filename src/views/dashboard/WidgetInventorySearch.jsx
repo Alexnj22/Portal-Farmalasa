@@ -129,18 +129,30 @@ export default function WidgetInventorySearch() {
     setError(null);
     setDrillProduct(null);
     try {
-      // Fetch photos in parallel (only ~5 products have them — very cheap)
-      const [{ data: photoData }, { data, error: err }] = await Promise.all([
+      // 1. Parallel: photos + products matching by principio_activo
+      const [{ data: photoData }, { data: paData }] = await Promise.all([
         supabase.from('products').select('nombre, foto_url').not('foto_url', 'is', null),
-        supabase
-          .from('inventory')
-          .select('erp_sucursal_id, descripcion, presentacion, lote, fecha_vencimiento, cantidad')
-          .ilike('descripcion', `%${q}%`)
-          .gt('cantidad', 0)
-          .order('descripcion')
-          .order('fecha_vencimiento', { ascending: true, nullsFirst: false }),
+        supabase.from('products').select('id, principio_activo')
+          .ilike('principio_activo', `%${q}%`)
+          .not('principio_activo', 'is', null),
       ]);
 
+      const paIds = (paData || []).map(p => p.id);
+      const paMap = new Map((paData || []).map(p => [p.id, p.principio_activo]));
+
+      // 2. Inventory query — match by description OR principio_activo product IDs
+      let invQuery = supabase
+        .from('inventory')
+        .select('erp_sucursal_id, erp_product_id, descripcion, presentacion, lote, fecha_vencimiento, cantidad')
+        .gt('cantidad', 0)
+        .order('descripcion')
+        .order('fecha_vencimiento', { ascending: true, nullsFirst: false });
+
+      invQuery = paIds.length > 0
+        ? invQuery.or(`descripcion.ilike.%${q}%,erp_product_id.in.(${paIds.join(',')})`)
+        : invQuery.ilike('descripcion', `%${q}%`);
+
+      const { data, error: err } = await invQuery;
       if (err) throw err;
 
       const photoMap = {};
@@ -156,10 +168,11 @@ export default function WidgetInventorySearch() {
         const key = `${row.descripcion}||${row.presentacion || ''}`;
         if (!map[bName])      map[bName]      = {};
         if (!map[bName][key]) map[bName][key] = {
-          descripcion:  row.descripcion,
-          presentacion: row.presentacion,
-          fotoUrl:      photoMap[row.descripcion.toUpperCase().trim()] ?? null,
-          lots:         [],
+          descripcion:     row.descripcion,
+          presentacion:    row.presentacion,
+          principioActivo: paMap.get(row.erp_product_id) ?? null,
+          fotoUrl:         photoMap[row.descripcion.toUpperCase().trim()] ?? null,
+          lots:            [],
         };
         map[bName][key].lots.push(row);
       }
@@ -228,6 +241,9 @@ export default function WidgetInventorySearch() {
 
           <div className="flex-1 min-w-0">
             <p className="text-[12px] font-black text-slate-800 leading-tight truncate">{drillProduct.descripcion}</p>
+            {drillProduct.principioActivo && (
+              <p className="text-[9px] text-violet-500 font-semibold truncate">{drillProduct.principioActivo}</p>
+            )}
             {drillProduct.presentacion && (
               <p className="text-[10px] text-slate-400 font-medium">{drillProduct.presentacion}</p>
             )}
@@ -258,7 +274,9 @@ export default function WidgetInventorySearch() {
                     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} backdrop-blur-sm shadow-sm`}>
                       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />
                       <span className={`text-[10px] font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
-                      <span className="text-[9px] font-bold text-slate-400 ml-0.5">{total} uds</span>
+                      <span className="w-px h-3 bg-slate-200 mx-1" />
+                      <span className={`text-[12px] font-black tabular-nums ${theme.label}`}>{total}</span>
+                      <span className="text-[9px] font-semibold text-slate-400 ml-0.5">uds</span>
                     </div>
                     <div className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-200/80" />
                   </div>
@@ -311,7 +329,7 @@ export default function WidgetInventorySearch() {
           type="text"
           value={query}
           onChange={e => handleInput(e.target.value)}
-          placeholder="Buscar producto en todas las sucursales..."
+          placeholder="Buscar por nombre o principio activo..."
           className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200/80 bg-white/80 backdrop-blur-sm text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
           spellCheck={false}
           autoComplete="off"
@@ -369,7 +387,9 @@ export default function WidgetInventorySearch() {
                   <span className={`text-[10px] font-black uppercase tracking-wider ${theme.label}`}>
                     {branch.name}
                   </span>
-                  <span className="text-[9px] font-bold text-slate-400 ml-0.5">{branchTotal} uds</span>
+                  <span className="w-px h-3 bg-slate-200 mx-1" />
+                  <span className={`text-[12px] font-black tabular-nums ${theme.label}`}>{branchTotal}</span>
+                  <span className="text-[9px] font-semibold text-slate-400 ml-0.5">uds</span>
                 </div>
                 <div className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-200/80" />
               </div>
@@ -391,7 +411,7 @@ export default function WidgetInventorySearch() {
                         <div
                           className="rounded-xl overflow-hidden cursor-pointer group backdrop-blur-sm"
                           style={{ background: 'rgba(255,255,255,0.38)', border: '1px solid rgba(255,255,255,0.72)', boxShadow: '0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)' }}
-                          onClick={() => setDrillProduct({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl })}
+                          onClick={() => setDrillProduct({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
                         >
                           <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5 group-hover:bg-white/30 transition-colors">
                             {prod.fotoUrl && (
@@ -399,6 +419,9 @@ export default function WidgetInventorySearch() {
                             )}
                             <div className="flex-1 min-w-0">
                               <p className="text-[11px] font-black text-slate-800 leading-tight">{prod.descripcion}</p>
+                              {prod.principioActivo && (
+                                <p className="text-[9px] text-violet-500 font-semibold mt-0.5 truncate">{prod.principioActivo}</p>
+                              )}
                               {prod.presentacion && (
                                 <p className="text-[9px] text-slate-400 font-medium mt-0.5">{prod.presentacion}</p>
                               )}
@@ -421,13 +444,16 @@ export default function WidgetInventorySearch() {
                         <button
                           className="w-full flex items-center gap-2 px-2.5 py-2.5 rounded-xl backdrop-blur-sm hover:bg-white/50 transition-colors group text-left"
                           style={{ background: 'rgba(255,255,255,0.34)', border: '1px solid rgba(255,255,255,0.68)', boxShadow: '0 2px 10px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)' }}
-                          onClick={() => setDrillProduct({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl })}
+                          onClick={() => setDrillProduct({ descripcion: prod.descripcion, presentacion: prod.presentacion, fotoUrl: prod.fotoUrl, principioActivo: prod.principioActivo })}
                         >
                           {prod.fotoUrl && (
                             <PhotoThumb url={prod.fotoUrl} onZoom={setLightboxUrl} />
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] font-bold text-slate-800 truncate leading-tight">{prod.descripcion}</p>
+                            {prod.principioActivo && (
+                              <p className="text-[9px] text-violet-500 font-semibold truncate">{prod.principioActivo}</p>
+                            )}
                             {prod.presentacion && (
                               <p className="text-[9px] text-slate-400">{prod.presentacion}</p>
                             )}

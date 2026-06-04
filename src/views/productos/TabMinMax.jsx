@@ -334,7 +334,7 @@ function AbcXyzBadge({ abc, xyz }) {
     );
 }
 
-// ─── Expanded breakdown panel ─────────────────────────────────────────────────
+// ─── Expanded panel — multi-branch view + current branch breakdown ────────────
 
 function ExpandedPanel({ row, cycleDays }) {
     const pres        = row.presentations || [];
@@ -345,15 +345,93 @@ function ExpandedPanel({ row, cycleDays }) {
     const hasDominant = sortedPres(pres).length > 0;
     const coverDays   = row.daily_velocity > 0 ? (stock / row.daily_velocity).toFixed(1) : null;
 
+    const [branchData,      setBranchData]      = useState(null);
+    const [loadingBranches, setLoadingBranches] = useState(true);
+
+    useEffect(() => {
+        supabase
+            .rpc('get_product_branch_summary', { p_erp_product_id: row.erp_product_id })
+            .then(({ data }) => setBranchData(data || []))
+            .finally(() => setLoadingBranches(false));
+    }, [row.erp_product_id]);
+
+    const netStock   = branchData?.filter(b => b.erp_sucursal_id !== 6).reduce((s, b) => s + Number(b.current_stock), 0) ?? null;
+    const totalStock = branchData?.reduce((s, b) => s + Number(b.current_stock), 0) ?? null;
+
     return (
         <div className="mx-4 mb-2 rounded-xl border border-slate-100 overflow-hidden"
             style={{ background: 'rgba(248,250,252,0.8)' }}>
+
+            {/* ── Multi-branch grid ── */}
+            <div className="px-4 pt-3 pb-2">
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Stock en red</span>
+                    {netStock !== null && (
+                        <div className="flex items-center gap-3 text-[9px] text-slate-400">
+                            <span>Red: <strong className="text-slate-600 tabular-nums">{netStock.toLocaleString()} und</strong></span>
+                            <span className="text-slate-300">·</span>
+                            <span>Incl. Bodega: <strong className="text-slate-600 tabular-nums">{totalStock.toLocaleString()} und</strong></span>
+                        </div>
+                    )}
+                </div>
+
+                {loadingBranches ? (
+                    <div className="flex items-center justify-center py-5">
+                        <Loader2 size={14} className="animate-spin text-slate-300" />
+                    </div>
+                ) : (
+                    <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+                        {ERP_ORDER.map(erpId => {
+                            const bd       = branchData?.find(b => b.erp_sucursal_id === erpId);
+                            const isCurrent = erpId === row._erp_sucursal_id;
+                            const bStock   = Number(bd?.current_stock ?? 0);
+                            const bMin     = Number(bd?.effective_min ?? 0);
+                            const bMax     = Number(bd?.effective_max ?? 0);
+                            const alert    = ALERT[bd?.alert_status ?? 'ok'] ?? ALERT.ok;
+                            const hasData  = !!bd;
+
+                            return (
+                                <div key={erpId}
+                                    className={`rounded-xl px-2 py-2 border transition-all ${
+                                        isCurrent
+                                            ? 'border-[#0052CC]/40 bg-blue-50/60 ring-1 ring-[#0052CC]/20'
+                                            : 'border-slate-100 bg-white/60'
+                                    } ${!hasData ? 'opacity-35' : ''}`}>
+                                    <div className="flex items-center justify-between gap-0.5 mb-0.5">
+                                        <span className="text-[8px] font-black text-slate-500 truncate leading-tight">
+                                            {erpId === 6 ? 'Bodega' : ERP_NAMES[erpId].replace('Salud ', 'S.')}
+                                        </span>
+                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
+                                    </div>
+                                    <div className={`text-[12px] font-black tabular-nums leading-none ${
+                                        !hasData ? 'text-slate-300' :
+                                        bStock === 0 ? 'text-red-500' :
+                                        bStock < bMin ? 'text-orange-600' : 'text-slate-800'
+                                    }`}>
+                                        {!hasData ? '—' : bStock === 0 ? '0' : formatUnits(bStock, pres)}
+                                    </div>
+                                    {hasData && <StockBar current={bStock} min={bMin} max={bMax} />}
+                                    {hasData && (bMin > 0 || bMax > 0) && (
+                                        <div className="flex items-center gap-0.5 mt-0.5 text-[7px] tabular-nums leading-tight">
+                                            <span className="text-orange-500 font-black">{bMin > 0 ? formatDominant(bMin, pres) : '—'}</span>
+                                            <span className="text-slate-200">·</span>
+                                            <span className="text-blue-500 font-black">{bMax > 0 ? formatDominant(bMax, pres) : '—'}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {/* ── Current branch breakdown by presentation ── */}
             {breakdown.length > 0 ? (
-                <div className="divide-y divide-slate-100">
+                <div className="border-t border-slate-100/80 divide-y divide-slate-100">
                     {breakdown.map(({ tipo, factor, qty, base }, i) => {
                         const pct = stock > 0 ? (base / stock) * 100 : 0;
                         return (
-                            <div key={i} className="grid items-center px-4 py-2.5"
+                            <div key={i} className="grid items-center px-4 py-2"
                                 style={{ gridTemplateColumns: '120px 1fr 72px 64px' }}>
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-[12px] font-bold text-slate-700">{tipo}</span>
@@ -371,12 +449,13 @@ function ExpandedPanel({ row, cycleDays }) {
                         );
                     })}
                 </div>
-            ) : (
-                <div className="px-4 py-3 flex items-center gap-2 text-[11px] text-slate-400 italic">
-                    <Package size={13} className="shrink-0 text-slate-300" /> Sin existencias actualmente
+            ) : !loadingBranches && stock === 0 && (
+                <div className="px-4 py-3 border-t border-slate-100 flex items-center gap-2 text-[11px] text-slate-400 italic">
+                    <Package size={13} className="shrink-0 text-slate-300" /> Sin existencias en esta sucursal
                 </div>
             )}
 
+            {/* ── Referencia pedido (sucursal actual) ── */}
             {!row.is_dead_stock && (minN > 0 || coverDays) && (
                 <div className="px-4 py-2.5 border-t border-slate-200/60 bg-white/50 flex items-center gap-5 flex-wrap">
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Referencia pedido</span>

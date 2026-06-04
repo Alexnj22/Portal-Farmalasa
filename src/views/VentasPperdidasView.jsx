@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PackageMinus, CheckCircle2, TrendingDown, Clock, FlaskConical, Building2, User, ShoppingCart } from 'lucide-react';
+import { PackageMinus, CheckCircle2, TrendingDown, Clock, FlaskConical, Building2, ShoppingCart } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import { supabase }   from '../supabaseClient';
@@ -27,13 +27,13 @@ export default function VentasPperdidasView() {
         const loadMaps = async () => {
             const [{ data: bData }, { data: eData }] = await Promise.all([
                 supabase.from('branches').select('id, name'),
-                supabase.from('employees_safe').select('id, name'),
+                supabase.from('employees_safe').select('id, name, photo_url'),
             ]);
             const bm = {};
             for (const b of bData || []) bm[b.id] = b.name;
             setBranchMap(bm);
             const em = {};
-            for (const e of eData || []) em[e.id] = e.name;
+            for (const e of eData || []) em[e.id] = { name: e.name, photo: e.photo_url || null };
             setEmpMap(em);
         };
         loadMaps();
@@ -141,8 +141,10 @@ export default function VentasPperdidasView() {
                         {rows.map(r => {
                             const nombre   = r.descripcion   || r.producto_buscado;
                             const searched = r.descripcion   && r.producto_buscado !== r.descripcion ? r.producto_buscado : null;
-                            const branch   = branchMap[r.branch_id]    || null;
-                            const reporter = empMap[r.reportado_por]   || null;
+                            const branch      = branchMap[r.branch_id]         || null;
+                            const reporterObj = empMap[r.reportado_por]        || null;
+                            const reporter    = reporterObj?.name              || null;
+                            const reporterPic = reporterObj?.photo             || null;
                             const fecha    = new Date(r.created_at).toLocaleDateString('es-SV', {
                                 day: '2-digit', month: 'short', year: '2-digit',
                                 hour: '2-digit', minute: '2-digit',
@@ -198,7 +200,13 @@ export default function VentasPperdidasView() {
                                                 )}
                                                 {reporter && (
                                                     <span className="flex items-center gap-1 text-[9px] text-slate-500">
-                                                        <User size={8} strokeWidth={2} className="text-slate-400" />
+                                                        {reporterPic ? (
+                                                            <img src={reporterPic} alt={reporter} className="w-3.5 h-3.5 rounded-full object-cover border border-slate-200 shrink-0" />
+                                                        ) : (
+                                                            <span className="w-3.5 h-3.5 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                                                                <span className="text-[6px] font-black text-slate-500 leading-none">{reporter[0]}</span>
+                                                            </span>
+                                                        )}
                                                         {reporter}
                                                     </span>
                                                 )}

@@ -5,8 +5,8 @@ import ViewTabBar      from '../components/common/ViewTabBar';
 import { supabase }   from '../supabaseClient';
 
 const TABS = [
-    { id: 'pendiente', label: 'Pendiente' },
-    { id: 'procesado', label: 'Procesado' },
+    { key: 'pendiente', label: 'Pendiente' },
+    { key: 'procesado', label: 'Procesado' },
 ];
 
 const TAB_HELP = {

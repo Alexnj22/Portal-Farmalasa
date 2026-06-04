@@ -7,6 +7,8 @@ import {
     DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import TablePagination from '../../components/common/TablePagination';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -878,6 +880,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [configOpen,   setConfigOpen]   = useState(false);
     const [sortBy,       setSortBy]       = useState(null);
     const [sortDir,      setSortDir]      = useState('asc');
+    const [page,         setPage]         = useState(1);
+    const [pageSize,     setPageSize]     = useState(25);
     const loadRef = useRef(0);
 
     const toggleExpand = useCallback((id) => {
@@ -955,32 +959,49 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         });
     }, [data, filterAbc, filterXyz, filterAlert, searchTerm]);
 
-    const toggleSort = (col) => {
-        if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-        else { setSortBy(col); setSortDir('asc'); }
-    };
+    const handleSort = useCallback((key) => {
+        setSortBy(prev => {
+            if (prev === key) { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); return prev; }
+            setSortDir('asc');
+            return key;
+        });
+        setPage(1);
+    }, []);
 
     const sorted = useMemo(() => {
         if (!sortBy) return filtered;
         return [...filtered].sort((a, b) => {
             let av, bv;
-            if (sortBy === 'name')     { av = a.product_name || ''; bv = b.product_name || ''; }
-            else if (sortBy === 'velocity') { av = Number(a.daily_velocity); bv = Number(b.daily_velocity); }
-            else if (sortBy === 'stock')    { av = Number(a.current_stock);  bv = Number(b.current_stock);  }
+            if (sortBy === 'product_name')  { av = a.product_name || ''; bv = b.product_name || ''; }
+            else if (sortBy === 'current_stock') { av = Number(a.current_stock); bv = Number(b.current_stock); }
             else if (sortBy === 'coverage') {
                 av = a.daily_velocity > 0 ? Number(a.current_stock) / Number(a.daily_velocity) : Infinity;
                 bv = b.daily_velocity > 0 ? Number(b.current_stock) / Number(b.daily_velocity) : Infinity;
             }
-            else if (sortBy === 'min')     { av = Number(a.effective_min);  bv = Number(b.effective_min);  }
-            else if (sortBy === 'max')     { av = Number(a.effective_max);  bv = Number(b.effective_max);  }
-            else if (sortBy === 'revenue') { av = Number(a.revenue_6m);     bv = Number(b.revenue_6m);     }
+            else if (sortBy === 'effective_min') { av = Number(a.effective_min); bv = Number(b.effective_min); }
+            else if (sortBy === 'effective_max') { av = Number(a.effective_max); bv = Number(b.effective_max); }
+            else if (sortBy === 'revenue_6m')    { av = Number(a.revenue_6m);    bv = Number(b.revenue_6m);    }
             else return 0;
-            if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+            if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv, 'es') : bv.localeCompare(av, 'es');
             return sortDir === 'asc' ? av - bv : bv - av;
         });
     }, [filtered, sortBy, sortDir]);
 
+    const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+    const pageRows   = sorted.slice((page - 1) * pageSize, page * pageSize);
+    useEffect(() => { setPage(1); }, [filterAbc, filterXyz, filterAlert, searchTerm, sortBy, sortDir, selectedErp]);
+
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
+
+    const COLS = [
+        { key: 'product_name',  label: 'Producto',    align: 'left',   sortable: true },
+        { key: 'abc_xyz',       label: 'Clase',        align: 'center' },
+        { key: 'coverage',      label: 'Cobertura',    align: 'center', sortable: true },
+        { key: 'current_stock', label: 'Stock actual', align: 'center', sortable: true },
+        { key: 'effective_min', label: 'MIN',           align: 'center', sortable: true },
+        { key: 'effective_max', label: 'MAX',           align: 'center', sortable: true },
+        { key: 'alert_status',  label: 'Estado',        align: 'center' },
+    ];
 
     const glass = 'rounded-2xl border border-white/60 backdrop-blur-sm';
     const glassStyle = { background: 'rgba(255,255,255,0.38)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' };
@@ -998,34 +1019,50 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 />
             )}
 
-            {/* ── Top bar ── */}
+            {/* ── Controls row ── */}
             <div className="flex items-center gap-2.5 flex-wrap">
-                <div className="overflow-visible" style={{ width: '175px' }}>
-                    <LiquidSelect
-                        value={String(selectedErp)}
-                        onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy(null); } }}
-                        options={erpOptions} icon={Building2} clearable={false} compact
-                    />
-                </div>
 
-                {/* ABC pills */}
-                <div className="flex items-center gap-0.5 p-0.5 rounded-xl bg-slate-100/80">
-                    {['all','A','B','C','D'].map(cls => (
-                        <button key={cls} onClick={() => setFilterAbc(cls)}
-                            className={`px-2.5 py-1.5 rounded-[10px] text-[11px] font-black transition-all duration-150 ${filterAbc === cls ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-                            {cls === 'all' ? 'Todos' : cls}
-                        </button>
-                    ))}
-                </div>
+                {/* Filter pill: Branch | ABC | XYZ */}
+                <div className="flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+                    <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
+                        <LiquidSelect
+                            value={String(selectedErp)}
+                            onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy(null); } }}
+                            options={erpOptions} icon={Building2} clearable={false} compact
+                        />
+                    </div>
 
-                {/* XYZ pills */}
-                <div className="flex items-center gap-0.5 p-0.5 rounded-xl bg-slate-100/80">
-                    {['all','X','Y','Z'].map(cls => (
-                        <button key={cls} onClick={() => setFilterXyz(cls)}
-                            className={`px-2.5 py-1.5 rounded-[10px] text-[11px] font-black transition-all duration-150 ${filterXyz === cls ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-                            {cls === 'all' ? 'XYZ' : cls}
-                        </button>
-                    ))}
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    <div className="flex items-center gap-0.5 px-2 py-1.5">
+                        {['all','A','B','C','D'].map(cls => (
+                            <button key={cls} onClick={() => setFilterAbc(cls)}
+                                className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all duration-150 ${filterAbc === cls ? 'bg-[#0052CC] text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                                {cls === 'all' ? 'ABC' : cls}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    <div className="flex items-center gap-0.5 px-2 py-1.5">
+                        {['all','X','Y','Z'].map(cls => (
+                            <button key={cls} onClick={() => setFilterXyz(cls)}
+                                className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all duration-150 ${filterXyz === cls ? 'bg-[#0052CC] text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                                {cls === 'all' ? 'XYZ' : cls}
+                            </button>
+                        ))}
+                    </div>
+
+                    {(filterAbc !== 'all' || filterXyz !== 'all') && (
+                        <>
+                            <div className="h-5 w-px bg-slate-100 shrink-0" />
+                            <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}
+                                className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                                <X size={11} strokeWidth={3} />
+                            </button>
+                        </>
+                    )}
                 </div>
 
                 <div className="flex-1" />
@@ -1036,7 +1073,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     </span>
                 )}
 
-                {/* Ciclo badge */}
                 <span className="text-[10px] font-bold text-[#0052CC] bg-blue-50 border border-blue-200/70 px-2.5 py-1 rounded-full">
                     Ciclo {cycleDays}d
                 </span>
@@ -1048,14 +1084,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     </button>
                 )}
 
-                {/* Config button */}
                 <button onClick={() => setConfigOpen(o => !o)}
                     className={`w-8 h-8 flex items-center justify-center rounded-xl border transition-all ${configOpen ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm' : 'text-slate-500 border-slate-200 bg-white/80 hover:border-slate-300 hover:shadow-sm'}`}
                     title="Configurar parámetros">
                     <Settings2 size={14} />
                 </button>
 
-                {/* Recalcular todas las sucursales + bodega */}
                 <button onClick={handleRecalcularAll} disabled={calculating || loading}
                     title="Recalcula todas las sucursales y Bodega en un solo paso"
                     className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-slate-600 border border-slate-200 bg-white/80 hover:border-slate-300 hover:shadow-sm rounded-xl transition-all disabled:opacity-50">
@@ -1064,7 +1098,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         : <><Layers size={12} /> Todas</>}
                 </button>
 
-                {/* Recalcular sucursal actual */}
                 <button onClick={handleRecalcular} disabled={calculating || loading}
                     className="flex items-center gap-1.5 px-4 py-2 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-xl shadow-sm shadow-blue-200/60 transition-all disabled:opacity-60">
                     {calculating && calcMode === 'single'
@@ -1173,173 +1206,161 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 </div>
             )}
 
-            {/* ── Table ── */}
+            {/* ── Table + Pagination ── */}
             {!neverCalc && (
-                <div className={`${glass} shadow-sm overflow-hidden`} style={{ ...glassStyle, background: 'rgba(255,255,255,0.55)' }}>
+                <>
+                <DataTable
+                    columns={COLS}
+                    sortKey={sortBy}
+                    sortDir={sortDir}
+                    onSort={handleSort}
+                    loading={loading}
+                    empty={{
+                        icon: Package,
+                        message: 'Sin productos con ese filtro',
+                        action: { label: 'Quitar filtros', onClick: () => { setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); } },
+                    }}
+                    minWidth="720px"
+                >
 
-                    {/* Header */}
-                    {(() => {
-                        const Th = ({ col, children, className = '' }) => (
-                            <button onClick={() => toggleSort(col)}
-                                className={`flex items-center gap-0.5 hover:text-slate-500 transition-colors ${sortBy === col ? 'text-[#0052CC]' : ''} ${className}`}>
-                                {children}
-                                {sortBy === col && <span className="text-[8px]">{sortDir === 'asc' ? '↑' : '↓'}</span>}
-                            </button>
+                    {pageRows.map((row) => {
+                        const isEditing  = editId === row.erp_product_id;
+                        const isExpanded = expandedIds.has(row.erp_product_id);
+                        const alert      = ALERT[row.alert_status] ?? ALERT.ok;
+                        const pres       = row.presentations || [];
+                        const dead       = row.is_dead_stock;
+                        const stock      = Number(row.current_stock);
+                        const minN       = Number(row.effective_min);
+                        const maxN       = Number(row.effective_max);
+                        const v30        = Number(row.velocity_30d ?? 0);
+                        const v6m        = Number(row.daily_velocity ?? 0);
+                        const canExpand  = !dead || stock > 0;
+
+                        if (isEditing) return (
+                            <React.Fragment key={row.erp_product_id}>
+                                <tr>
+                                    <td colSpan={COLS.length} className="p-0">
+                                        <EditRow row={row} onSave={handleEditSave} onCancel={() => setEditId(null)} />
+                                    </td>
+                                </tr>
+                            </React.Fragment>
                         );
+
                         return (
-                            <div className="grid text-[9px] font-black uppercase tracking-widest text-slate-400 pl-5 pr-4 py-2.5 border-b border-white/60 bg-white/40"
-                                style={{ gridTemplateColumns: '1fr 68px 100px 100px 105px 105px 88px' }}>
-                                <Th col="name">Producto</Th>
-                                <span className="text-center">Clase</span>
-                                <Th col="coverage" className="justify-end">Cobertura</Th>
-                                <Th col="stock" className="justify-end">Stock actual</Th>
-                                <Th col="min" className="justify-end pr-2"><span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block" /> MIN</span></Th>
-                                <Th col="max" className="justify-end pr-2"><span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400 inline-block" /> MAX</span></Th>
-                                <span className="text-center">Estado</span>
-                            </div>
-                        );
-                    })()}
-
-                    {loading ? (
-                        <div className="flex items-center justify-center gap-2.5 py-24 text-slate-400">
-                            <Loader2 size={20} className="animate-spin" />
-                            <span className="text-[13px]">Cargando análisis de {ERP_NAMES[selectedErp]}…</span>
-                        </div>
-                    ) : sorted.length === 0 ? (
-                        <div className="py-20 text-center">
-                            <Package size={30} className="opacity-15 mx-auto mb-3 text-slate-400" />
-                            <p className="text-[13px] text-slate-400 font-medium">Sin productos con ese filtro</p>
-                            <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); }}
-                                className="mt-3 text-[11px] text-blue-500 hover:text-blue-700 font-bold">Quitar filtros</button>
-                        </div>
-                    ) : (
-                        <div>
-                            {sorted.map((row) => {
-                                const isEditing = editId === row.erp_product_id;
-                                if (isEditing) return (
-                                    <EditRow key={`${row.erp_product_id}_edit`} row={row}
-                                        onSave={handleEditSave} onCancel={() => setEditId(null)} />
-                                );
-
-                                const alert      = ALERT[row.alert_status] ?? ALERT.ok;
-                                const abc        = ABC_CFG[row.abc_class]  ?? ABC_CFG.D;
-                                const pres       = row.presentations || [];
-                                const dead       = row.is_dead_stock;
-                                const stock      = Number(row.current_stock);
-                                const minN       = Number(row.effective_min);
-                                const maxN       = Number(row.effective_max);
-                                const v30        = Number(row.velocity_30d ?? 0);
-                                const v6m        = Number(row.daily_velocity ?? 0);
-                                const canExpand  = !dead || stock > 0;
-                                const isExpanded = expandedIds.has(row.erp_product_id);
-
-                                return (
-                                    <React.Fragment key={row.erp_product_id}>
-                                        <div
-                                            className={`border-l-4 ${alert.left} ${alert.row} border-b border-white/40 transition-all ${canExpand ? 'cursor-pointer hover:brightness-[0.97]' : ''}`}
-                                            onClick={() => canExpand && toggleExpand(row.erp_product_id)}
-                                        >
-                                            <div className="grid items-center pr-4 pl-1 py-2.5"
-                                                style={{ gridTemplateColumns: '1fr 68px 100px 100px 105px 105px 88px' }}>
-
-                                                {/* Product */}
-                                                <div className="min-w-0 pr-3 flex items-start gap-1">
-                                                    <div className={`mt-[3px] shrink-0 w-4 h-4 flex items-center justify-center ${!canExpand ? 'opacity-0' : ''}`}>
-                                                        <ChevronRight size={12} className={`text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
-                                                    </div>
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="flex items-center gap-1.5 min-w-0">
-                                                            <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">{row.product_name || '—'}</span>
-                                                            {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
-                                                        </div>
-                                                        {!dead && (
-                                                            <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
-                                                                {v6m.toFixed(1)} und/día
-                                                                {v30 > 0 && v30 > v6m * 1.1 && <span className="text-emerald-500" title={`30d: ${v30.toFixed(1)}/día`}>↑</span>}
-                                                                {v30 > 0 && v30 < v6m * 0.9 && <span className="text-red-400"    title={`30d: ${v30.toFixed(1)}/día`}>↓</span>}
-                                                            </span>
-                                                        )}
-                                                        {!dead && <StockBar current={stock} min={minN} max={maxN} />}
-                                                    </div>
+                            <React.Fragment key={row.erp_product_id}>
+                                <DataRow
+                                    index={pageRows.indexOf(row)}
+                                    onClick={canExpand ? () => toggleExpand(row.erp_product_id) : undefined}
+                                    className={`border-l-4 ${alert.left} ${alert.row}`}
+                                >
+                                    {/* Producto */}
+                                    <DataCell align="left" className="!py-2.5">
+                                        <div className="flex items-start gap-1 min-w-0">
+                                            <div className={`mt-[3px] shrink-0 w-4 h-4 flex items-center justify-center ${!canExpand ? 'opacity-0' : ''}`}>
+                                                <ChevronRight size={12} className={`text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                    <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">{row.product_name || '—'}</span>
+                                                    {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
                                                 </div>
-
-                                                {/* Combined ABC×XYZ badge */}
-                                                <div className="flex justify-center">
-                                                    <AbcXyzBadge abc={row.abc_class} xyz={row.demand_variability} />
-                                                </div>
-
-                                                {/* Coverage */}
-                                                <div className="flex justify-end">
-                                                    {!dead
-                                                        ? <CoverageBar current={stock} velocity={row.daily_velocity} cycleDays={cycleDays} />
-                                                        : <span className="text-slate-200 text-xs">—</span>}
-                                                </div>
-
-                                                {/* Stock actual */}
-                                                <div className="text-right">
-                                                    <div className={`text-[13px] font-bold tabular-nums leading-tight ${stock === 0 ? 'text-red-500' : stock < minN ? 'text-orange-600' : 'text-slate-700'}`}>
-                                                        {stock === 0 ? '0' : formatUnits(stock, pres)}
-                                                    </div>
-                                                    {!dead && stock > 0 && <div className="text-[9px] text-slate-400">{stock.toLocaleString()} und</div>}
-                                                </div>
-
-                                                {/* MIN */}
-                                                <div className="text-right">
-                                                    {dead ? <span className="text-slate-200 text-xs">—</span> : <>
-                                                        <div className={`text-[12px] font-semibold tabular-nums ${stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>{formatDominant(minN, pres)}</div>
-                                                        <div className="text-[9px] text-slate-400">{minN.toLocaleString()} und</div>
-                                                    </>}
-                                                </div>
-
-                                                {/* MAX */}
-                                                <div className="text-right">
-                                                    {dead ? <span className="text-slate-200 text-xs">—</span> : <>
-                                                        <div className={`text-[12px] font-semibold tabular-nums ${stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>{formatDominant(maxN, pres)}</div>
-                                                        <div className="text-[9px] text-slate-400">{maxN.toLocaleString()} und</div>
-                                                    </>}
-                                                </div>
-
-                                                {/* Alert + edit + pedir */}
-                                                <div className="flex flex-col items-center gap-0.5">
-                                                    <div className="flex items-center gap-1">
-                                                        <span className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full border ${alert.pill}`}>
-                                                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
-                                                            {alert.label}
-                                                        </span>
-                                                        {!dead && (
-                                                            <button onClick={e => { e.stopPropagation(); setEditId(row.erp_product_id); }} title="Ajustar MIN/MAX"
-                                                                className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-[#0052CC] hover:bg-blue-50 transition-colors shrink-0">
-                                                                <Edit3 size={11} />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                    {!dead && (row.alert_status === 'out_of_stock' || row.alert_status === 'below_min') && maxN > 0 && (
-                                                        <span className="text-[8px] font-bold text-slate-400 tabular-nums">
-                                                            Pedir {Math.max(0, maxN - stock).toLocaleString()}u
-                                                        </span>
-                                                    )}
-                                                </div>
+                                                {!dead && (
+                                                    <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                                                        {v6m.toFixed(1)} und/día
+                                                        {v30 > 0 && v30 > v6m * 1.1 && <span className="text-emerald-500" title={`30d: ${v30.toFixed(1)}/día`}>↑</span>}
+                                                        {v30 > 0 && v30 < v6m * 0.9 && <span className="text-red-400"    title={`30d: ${v30.toFixed(1)}/día`}>↓</span>}
+                                                    </span>
+                                                )}
+                                                {!dead && <StockBar current={stock} min={minN} max={maxN} />}
                                             </div>
                                         </div>
-                                        {isExpanded && canExpand && <ExpandedPanel row={row} cycleDays={cycleDays} />}
-                                    </React.Fragment>
-                                );
-                            })}
-                        </div>
-                    )}
+                                    </DataCell>
 
-                    {/* Footer */}
-                    {!loading && sorted.length > 0 && (
-                        <div className="pl-5 pr-4 py-2.5 border-t border-white/50 bg-white/30 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
-                            <span>{sorted.length.toLocaleString()} productos{sortBy && <span className="ml-1 text-[#0052CC]">· ordenado</span>}</span>
-                            <span className="text-slate-300">
-                                {(filterAlert !== 'all' || filterAbc !== 'all' || filterXyz !== 'all' || searchTerm)
-                                    ? `filtrado de ${data.length.toLocaleString()} · ${ERP_NAMES[selectedErp]}`
-                                    : ERP_NAMES[selectedErp]}
-                            </span>
-                        </div>
-                    )}
-                </div>
+                                    {/* Clase */}
+                                    <DataCell align="center" className="!py-2.5">
+                                        <AbcXyzBadge abc={row.abc_class} xyz={row.demand_variability} />
+                                    </DataCell>
+
+                                    {/* Cobertura */}
+                                    <DataCell align="center" className="!py-2.5">
+                                        {!dead
+                                            ? <div className="flex justify-center"><CoverageBar current={stock} velocity={row.daily_velocity} cycleDays={cycleDays} /></div>
+                                            : <span className="text-slate-200 text-xs">—</span>}
+                                    </DataCell>
+
+                                    {/* Stock actual */}
+                                    <DataCell align="center" className="!py-2.5">
+                                        <div className={`text-[13px] font-bold tabular-nums leading-tight ${stock === 0 ? 'text-red-500' : stock < minN ? 'text-orange-600' : 'text-slate-700'}`}>
+                                            {stock === 0 ? '0' : formatUnits(stock, pres)}
+                                        </div>
+                                        {!dead && stock > 0 && <div className="text-[9px] text-slate-400">{stock.toLocaleString()} und</div>}
+                                    </DataCell>
+
+                                    {/* MIN */}
+                                    <DataCell align="center" className="!py-2.5">
+                                        {dead ? <span className="text-slate-200 text-xs">—</span> : <>
+                                            <div className={`text-[12px] font-semibold tabular-nums ${stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>{formatDominant(minN, pres)}</div>
+                                            <div className="text-[9px] text-slate-400">{minN.toLocaleString()} und</div>
+                                        </>}
+                                    </DataCell>
+
+                                    {/* MAX */}
+                                    <DataCell align="center" className="!py-2.5">
+                                        {dead ? <span className="text-slate-200 text-xs">—</span> : <>
+                                            <div className={`text-[12px] font-semibold tabular-nums ${stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>{formatDominant(maxN, pres)}</div>
+                                            <div className="text-[9px] text-slate-400">{maxN.toLocaleString()} und</div>
+                                        </>}
+                                    </DataCell>
+
+                                    {/* Estado + editar + pedir */}
+                                    <DataCell align="center" className="!py-2.5">
+                                        <div className="flex flex-col items-center gap-0.5">
+                                            <div className="flex items-center gap-1">
+                                                <span className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full border ${alert.pill}`}>
+                                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
+                                                    {alert.label}
+                                                </span>
+                                                {!dead && (
+                                                    <button onClick={e => { e.stopPropagation(); setEditId(row.erp_product_id); }} title="Ajustar MIN/MAX"
+                                                        className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-[#0052CC] hover:bg-blue-50 transition-colors shrink-0">
+                                                        <Edit3 size={11} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {!dead && (row.alert_status === 'out_of_stock' || row.alert_status === 'below_min') && maxN > 0 && (
+                                                <span className="text-[8px] font-bold text-slate-400 tabular-nums">
+                                                    Pedir {Math.max(0, maxN - stock).toLocaleString()}u
+                                                </span>
+                                            )}
+                                        </div>
+                                    </DataCell>
+                                </DataRow>
+
+                                {isExpanded && canExpand && (
+                                    <tr>
+                                        <td colSpan={COLS.length} className="p-0">
+                                            <ExpandedPanel row={row} cycleDays={cycleDays} />
+                                        </td>
+                                    </tr>
+                                )}
+                            </React.Fragment>
+                        );
+                    })}
+                </DataTable>
+
+                {!loading && sorted.length > 0 && (
+                    <TablePagination
+                        pageSize={pageSize}
+                        onPageSizeChange={size => { setPageSize(size); setPage(1); }}
+                        page={page}
+                        totalPages={totalPages}
+                        onPageChange={setPage}
+                        total={data.length}
+                        unit="productos"
+                        filteredTotal={sorted.length < data.length ? sorted.length : undefined}
+                    />
+                )}
+                </>
             )}
         </div>
     );

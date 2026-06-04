@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import { Loader2, Package, X, AlertTriangle } from 'lucide-react';
+import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import TablePagination from '../../components/common/TablePagination';
 
 const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 const ERP_SHORT = { 1: 'S.1', 2: 'S.2', 3: 'S.3', 4: 'S.4', 5: 'LaP.', 6: 'Bod.', 7: 'S.5' };
@@ -22,13 +24,18 @@ const ALERT_LABELS = {
 };
 const SEVERITY = { out_of_stock: 4, below_min: 3, approaching: 1, overstocked: 1, ok: 0 };
 
+const COLS = [
+    { key: 'product_name', label: 'Producto', align: 'left', sortable: true },
+    ...ERP_ORDER.map(id => ({ key: String(id), label: ERP_SHORT[id], align: 'center' })),
+];
+
 function NetCell({ b }) {
-    if (!b) return <div className="h-full flex items-center justify-center text-slate-200 text-[10px]">—</div>;
+    if (!b) return <div className="text-slate-200 text-[10px] text-center">—</div>;
     const dot   = ALERT_DOT[b.alr] ?? 'bg-slate-300';
     const pedir = (b.alr === 'out_of_stock' || b.alr === 'below_min') && b.max > 0
         ? Math.max(0, b.max - b.stk) : null;
     return (
-        <div className="flex flex-col items-center justify-center gap-0 py-2">
+        <div className="flex flex-col items-center justify-center gap-0">
             <div className="flex items-center gap-0.5">
                 <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
                 <span className={`text-[11px] font-bold tabular-nums ml-0.5 ${
@@ -49,6 +56,10 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
     const [filterAbc,   setFilterAbc]   = useState('all');
     const [showAll,     setShowAll]     = useState(false);
     const [error,       setError]       = useState(null);
+    const [sortKey,     setSortKey]     = useState('product_name');
+    const [sortDir,     setSortDir]     = useState('asc');
+    const [page,        setPage]        = useState(1);
+    const [pageSize,    setPageSize]    = useState(25);
 
     useEffect(() => {
         setLoading(true); setError(null);
@@ -82,53 +93,87 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
         });
     }, [data, showAll, filterAbc, filterAlert, searchTerm]);
 
-    const glass = 'rounded-2xl border border-white/60 backdrop-blur-sm';
-    const glassStyle = { background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' };
-    const GRID = '1fr repeat(7, 72px)';
+    const sorted = useMemo(() => {
+        if (sortKey !== 'product_name') return filtered;
+        return [...filtered].sort((a, b) =>
+            sortDir === 'asc'
+                ? (a.product_name || '').localeCompare(b.product_name || '', 'es')
+                : (b.product_name || '').localeCompare(a.product_name || '', 'es')
+        );
+    }, [filtered, sortKey, sortDir]);
+
+    const handleSort = useCallback((key) => {
+        setSortKey(prev => {
+            if (prev === key) { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); return prev; }
+            setSortDir('asc');
+            return key;
+        });
+        setPage(1);
+    }, []);
+
+    const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+    const pageRows   = sorted.slice((page - 1) * pageSize, page * pageSize);
+    useEffect(() => { setPage(1); }, [filterAbc, filterAlert, showAll, searchTerm, sortKey, sortDir]);
+
+    const isDirty = filterAbc !== 'all' || filterAlert !== 'all';
 
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
 
-            {/* ── Controles ── */}
+            {/* ── Filter pill + actions ── */}
             <div className="flex items-center gap-2.5 flex-wrap">
-                {/* ABC */}
-                <div className="flex items-center gap-0.5 p-0.5 rounded-xl bg-slate-100/80">
-                    {['all','A','B','C','D'].map(cls => (
-                        <button key={cls} onClick={() => setFilterAbc(cls)}
-                            className={`px-2.5 py-1.5 rounded-[10px] text-[11px] font-black transition-all ${filterAbc === cls ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-                            {cls === 'all' ? 'ABC' : cls}
-                        </button>
-                    ))}
-                </div>
 
-                {/* Alert chips */}
-                {Object.entries(ALERT_LABELS).map(([key, label]) => {
-                    const cnt    = alertCounts[key] || 0;
-                    const active = filterAlert === key;
-                    if (!cnt && !active) return null;
-                    return (
-                        <button key={key} onClick={() => setFilterAlert(a => a === key ? 'all' : key)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all ${
-                                active ? 'bg-orange-50 border-orange-300 text-orange-700 shadow-sm' : 'bg-white/80 border-slate-200 text-slate-600 hover:border-slate-300 hover:shadow-sm'
-                            }`}>
-                            <span className={`w-2 h-2 rounded-full ${ALERT_DOT[key]}`} />
-                            <span className="tabular-nums font-black">{cnt}</span>
-                            <span className="opacity-80">{label}</span>
-                            {active && <X size={9} />}
-                        </button>
-                    );
-                })}
+                {/* Filter pill: ABC | Alert | Clear */}
+                <div className="flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0">
+                    {/* ABC */}
+                    <div className="flex items-center gap-0.5 px-2 py-1.5">
+                        {['all','A','B','C','D'].map(cls => (
+                            <button key={cls} onClick={() => { setFilterAbc(cls); setPage(1); }}
+                                className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all duration-150 ${filterAbc === cls ? 'bg-[#0052CC] text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                                {cls === 'all' ? 'ABC' : cls}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    {/* Alert */}
+                    <div className="flex items-center gap-0.5 px-2 py-1.5">
+                        {(['all', ...Object.keys(ALERT_LABELS)]).map(key => {
+                            const cnt = key === 'all' ? null : (alertCounts[key] || 0);
+                            if (cnt === 0) return null;
+                            return (
+                                <button key={key} onClick={() => { setFilterAlert(key); setPage(1); }}
+                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all ${filterAlert === key ? 'bg-[#0052CC] text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                                    {key !== 'all' && <span className={`w-1.5 h-1.5 rounded-full ${ALERT_DOT[key]}`} />}
+                                    {key === 'all' ? 'Todos' : ALERT_LABELS[key]}
+                                    {cnt !== null && <span className="tabular-nums">{cnt}</span>}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {isDirty && (
+                        <>
+                            <div className="h-5 w-px bg-slate-100 shrink-0" />
+                            <button onClick={() => { setFilterAbc('all'); setFilterAlert('all'); setPage(1); }}
+                                className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                                <X size={11} strokeWidth={3} />
+                            </button>
+                        </>
+                    )}
+                </div>
 
                 <div className="flex-1" />
 
                 {!loading && (
                     <span className="text-[11px] text-slate-400">
-                        <strong className="text-slate-600">{filtered.length.toLocaleString()}</strong>
+                        <strong className="text-slate-600">{sorted.length.toLocaleString()}</strong>
                         {!showAll && <span> de {data.length.toLocaleString()}</span>} productos
                     </span>
                 )}
 
-                <button onClick={() => setShowAll(s => !s)}
+                <button onClick={() => { setShowAll(s => !s); setPage(1); }}
                     className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border transition-all ${
                         showAll ? 'bg-slate-800 text-white border-slate-800' : 'bg-white/80 border-slate-200 text-slate-500 hover:border-slate-300'
                     }`}>
@@ -136,84 +181,67 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                 </button>
             </div>
 
-            {/* ── Tabla ── */}
-            <div className={`${glass} shadow-sm overflow-x-auto`} style={glassStyle}>
-
-                {/* Header */}
-                <div className="grid text-[9px] font-black uppercase tracking-widest text-slate-400 pl-4 pr-3 py-2.5 border-b border-white/60 bg-white/40 min-w-[700px]"
-                    style={{ gridTemplateColumns: GRID }}>
-                    <span>Producto</span>
-                    {ERP_ORDER.map(id => (
-                        <span key={id} className="text-center">{ERP_SHORT[id]}</span>
-                    ))}
+            {error && (
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-600 font-semibold">
+                    <AlertTriangle size={14} /> {error}
                 </div>
+            )}
 
-                {loading ? (
-                    <div className="flex items-center justify-center gap-2.5 py-24 text-slate-400">
-                        <Loader2 size={20} className="animate-spin" />
-                        <span className="text-[13px]">Cargando red completa…</span>
-                    </div>
-                ) : error ? (
-                    <div className="flex items-center gap-2 py-16 justify-center text-red-500 text-[12px]">
-                        <AlertTriangle size={14} />{error}
-                    </div>
-                ) : filtered.length === 0 ? (
-                    <div className="py-20 text-center">
-                        <Package size={30} className="opacity-15 mx-auto mb-3 text-slate-400" />
-                        <p className="text-[13px] text-slate-400 font-medium">
-                            {showAll ? 'Sin productos con parámetros calculados' : 'Sin alertas activas en ninguna sucursal'}
-                        </p>
-                        {!showAll && (
-                            <button onClick={() => setShowAll(true)}
-                                className="mt-3 text-[11px] text-blue-500 hover:text-blue-700 font-bold">
-                                Ver todos los productos
-                            </button>
-                        )}
-                    </div>
-                ) : (
-                    <div className="min-w-[700px]">
-                        {filtered.map(row => {
-                            const bs     = row.branches || {};
-                            const maxSev = Math.max(...Object.values(bs).map(b => SEVERITY[b.alr] ?? 0), 0);
-                            const rowTint = maxSev >= 4 ? 'bg-red-50/30' : maxSev >= 3 ? 'bg-orange-50/20' : '';
-                            return (
-                                <div key={row.erp_product_id}
-                                    className={`grid items-center pl-4 pr-3 border-b border-white/40 transition-colors hover:bg-white/30 ${rowTint}`}
-                                    style={{ gridTemplateColumns: GRID }}>
-                                    <div className="py-2 pr-2 flex items-center gap-1.5 min-w-0">
-                                        {row.abc_class && (
-                                            <span className={`shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-md border ${
-                                                row.abc_class === 'A' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                                row.abc_class === 'B' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                                row.abc_class === 'C' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                                                        'bg-slate-50 text-slate-400 border-slate-200'
-                                            }`}>{row.abc_class}</span>
-                                        )}
-                                        <span className="text-[12px] font-medium text-slate-800 truncate leading-tight">
-                                            {row.product_name}
-                                        </span>
-                                    </div>
-                                    {ERP_ORDER.map(id => (
-                                        <NetCell key={id} b={bs[String(id)]} />
-                                    ))}
+            {/* ── Tabla ── */}
+            <DataTable
+                columns={COLS}
+                sortKey={sortKey}
+                sortDir={sortDir}
+                onSort={handleSort}
+                loading={loading}
+                empty={{
+                    icon: Package,
+                    message: showAll ? 'Sin productos con parámetros calculados' : 'Sin alertas activas en ninguna sucursal',
+                    ...((!showAll) ? { action: { label: 'Ver todos los productos', onClick: () => setShowAll(true) } } : {}),
+                }}
+                minWidth="700px"
+            >
+                {pageRows.map((row, i) => {
+                    const bs     = row.branches || {};
+                    const maxSev = Math.max(...Object.values(bs).map(b => SEVERITY[b.alr] ?? 0), 0);
+                    const rowTint = maxSev >= 4 ? 'bg-red-50/40 border-l-4 border-l-red-400' : maxSev >= 3 ? 'bg-orange-50/30 border-l-4 border-l-orange-400' : '';
+                    return (
+                        <DataRow key={row.erp_product_id} index={i} className={rowTint}>
+                            <DataCell align="left" className="!py-2">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    {row.abc_class && (
+                                        <span className={`shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-md border ${
+                                            row.abc_class === 'A' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                            row.abc_class === 'B' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                            row.abc_class === 'C' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                                    'bg-slate-50 text-slate-400 border-slate-200'
+                                        }`}>{row.abc_class}</span>
+                                    )}
+                                    <span className="text-[12px] font-medium text-slate-800 truncate">{row.product_name}</span>
                                 </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {/* Footer */}
-                {!loading && filtered.length > 0 && (
-                    <div className="pl-4 pr-3 py-2 border-t border-white/50 bg-white/30 text-[9px] text-slate-400 font-semibold overflow-x-auto min-w-[700px]">
-                        <div className="grid" style={{ gridTemplateColumns: GRID }}>
-                            <span>{filtered.length.toLocaleString()} productos{!showAll && <span className="text-slate-300 ml-1">(con alertas)</span>}</span>
+                            </DataCell>
                             {ERP_ORDER.map(id => (
-                                <span key={id} className="text-center text-[8px]">{ERP_NAMES_FULL[id]}</span>
+                                <DataCell key={id} align="center" className="!py-2">
+                                    <NetCell b={bs[String(id)]} />
+                                </DataCell>
                             ))}
-                        </div>
-                    </div>
-                )}
-            </div>
+                        </DataRow>
+                    );
+                })}
+            </DataTable>
+
+            {!loading && sorted.length > 0 && (
+                <TablePagination
+                    pageSize={pageSize}
+                    onPageSizeChange={size => { setPageSize(size); setPage(1); }}
+                    page={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    total={data.length}
+                    unit="productos"
+                    filteredTotal={sorted.length < data.length ? sorted.length : undefined}
+                />
+            )}
         </div>
     );
 }

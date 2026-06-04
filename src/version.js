@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.50';
+export const APP_VERSION = '1.4.51';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.51 — MinMax: umbrales XYZ corregidos (X≤150, Y≤400) + recálculo completo red; fix La Popular sin AX/AY
 // v1.4.50 — MinMax: DataTable estándar + TablePagination (25/50/100) + filter pill (Ventas standard) en Sucursal y Red
 // v1.4.49 — MinMax: tab Red (TabMinMaxNetwork), ExpandedPanel → Pedir+Traslado+Vencimientos+Historial, EditRow → lead_time_days por producto
 // v1.4.48 — MinMax: corrige todo — approaching_pct configurable, velocity_30d + tendencia, sort columnas, Pedir, audit log, buffer days config, fmtMoney, keys React, lastCalcAt, CSV Pedir, branch cards números base

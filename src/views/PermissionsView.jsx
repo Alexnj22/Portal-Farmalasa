@@ -6,7 +6,7 @@ import {
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
     LayoutDashboard, TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
-    Sparkles, Layers, Globe2, BadgeAlert
+    Sparkles, Layers, Globe2, BadgeAlert, PackageMinus
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -89,6 +89,7 @@ const MODULE_GROUPS = [
                 { key: 'productos_tab_sinventa',   label: 'Sin Venta'  },
             ]},
             { key: 'minmax', label: 'Min / Max', desc: 'Análisis de stock mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros', icon: BarChart2, hasApprove: false },
+            { key: 'ventas_perdidas', label: 'Ventas Perdidas', desc: 'Registro de productos solicitados sin stock; alertas de compra para logística con seguimiento de estado', icon: PackageMinus, hasApprove: false },
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
             { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, historial y reglas de despacho por producto', icon: Package, hasApprove: false, tabs: [
                 { key: 'pedidos_tab_generar',   label: 'Generar'           },

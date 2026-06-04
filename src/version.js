@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.41';
+export const APP_VERSION = '1.4.42';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.42 — PermissionsView: agregar módulo ventas_perdidas al grupo Inventario
 // v1.4.41 — Ventas Perdidas: módulo + badge realtime + botón reportar en widget (sin stock → cantidad → BD)
 // v1.4.40 — WidgetInventorySearch: sin stock → auto SRS + alternativas en inventario por principio activo
 // v1.4.39 — WidgetInventorySearch: total sucursal más visible (coloreado, 12px); búsqueda por principio activo

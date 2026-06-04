@@ -1386,11 +1386,17 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     presentacion: p.presentacion || '',
                     cantidad:     parseFloat(p.cantidad || 0),
                     neto:         parseFloat(p.neto     || 0),
+                    factor:       parseInt(p.factor     || 1, 10),
                 }));
+                // Total in base units: each presentation quantity × its ERP factor.
+                // e.g. 2 CAJA(×10) + 6 UNIDAD(×1) = 26, not 8.
+                const cantidad_base = presentaciones.length > 0
+                    ? presentaciones.reduce((s, p) => s + p.cantidad * p.factor, 0)
+                    : qty;
                 return {
                     erp_product_id: item.erp_product_id,
                     descripcion:    item.descripcion,
-                    cantidad: qty, neto, costo_total, costo_unitario, utilidad, margen, presentaciones,
+                    cantidad: qty, cantidad_base, neto, costo_total, costo_unitario, utilidad, margen, presentaciones,
                     ultima_venta:        item.ultima_venta        || null,
                     ultima_venta_por_suc: item.ultima_venta_por_suc || [],
                 };
@@ -1683,7 +1689,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                 <ChevronDown size={13} className={`shrink-0 mt-0.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-blue-400' : 'text-slate-300'}`} />
                                             </div>
                                         </DataCell>
-                                        <DataCell align="right" hideBelow="md" className="text-[12px] font-semibold">{fmtNum(r.cantidad)}</DataCell>
+                                        <DataCell align="right" hideBelow="md" className="text-[12px] font-semibold">{fmtNum(r.cantidad_base)}</DataCell>
                                         <DataCell align="right" className="font-black text-[13px]">
                                             <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
                                                 {privacyMode ? '••••••' : fmt(r.neto)}
@@ -1729,6 +1735,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                         <div key={p.presentacion} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-sm">
                                                                             <span className="text-[11px] font-semibold text-slate-600">{p.presentacion || '(sin pres.)'}</span>
                                                                             <span className="text-[11px] font-black text-slate-800">{fmtQty(p.cantidad)} u</span>
+                                                                            {p.factor > 1 && (
+                                                                                <span className="text-[10px] font-semibold text-blue-500">= {fmtQty(p.cantidad * p.factor)} base</span>
+                                                                            )}
                                                                             <span className="text-[10px] text-slate-400">{fmt(p.neto)}</span>
                                                                         </div>
                                                                     ))}
@@ -1745,9 +1754,11 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                             // Branch rotation aggregated from drill data
                                                             const branchAgg = showBranch ? (() => {
                                                                 const netoMap = {}, cantMap = {};
+                                                                const factorMap = Object.fromEntries((r.presentaciones || []).map(p => [p.presentacion, p.factor || 1]));
                                                                 for (const l of drillData) {
+                                                                    const f = factorMap[l.presentacion] || 1;
                                                                     netoMap[l.branch_id] = (netoMap[l.branch_id] || 0) + l.neto;
-                                                                    cantMap[l.branch_id] = (cantMap[l.branch_id] || 0) + parseFloat(l.cantidad || 0);
+                                                                    cantMap[l.branch_id] = (cantMap[l.branch_id] || 0) + parseFloat(l.cantidad || 0) * f;
                                                                 }
                                                                 const entries = Object.entries(netoMap).sort((a, b) => b[1] - a[1]);
                                                                 const total   = entries.reduce((s, [, v]) => s + v, 0);
@@ -1830,7 +1841,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                         {/* Individual sales table */}
                                                         {drillData.length > 0 && (() => {
                                                             const docOpts  = [...new Set(drillData.map(l => l.tipo_documento).filter(Boolean))];
-                                                            const totCant  = filteredDrill.reduce((s, l) => s + parseFloat(l.cantidad || 0), 0);
+                                                            const drillFactorMap = Object.fromEntries((r.presentaciones || []).map(p => [p.presentacion, p.factor || 1]));
+                                                            const totCant  = filteredDrill.reduce((s, l) => s + parseFloat(l.cantidad || 0) * (drillFactorMap[l.presentacion] || 1), 0);
                                                             const totNeto  = filteredDrill.reduce((s, l) => s + parseFloat(l.neto || 0), 0);
                                                             const DH = ({ col, label, right }) => {
                                                                 const active = drillSortCol === col;

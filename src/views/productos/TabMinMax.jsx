@@ -896,14 +896,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         const rid = ++loadRef.current;
         setLoading(true); setError(null); setEditId(null); setExpandedIds(new Set());
         try {
-            const [{ data: rows, error: e1 }, { data: cost, error: e2 }] = await Promise.all([
-                supabase.rpc('get_stock_analysis', { p_erp_sucursal_id: erpId }).range(0, 9999),
-                supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
-            ]);
-            if (e1) throw e1;
+            // PostgREST caps at 1000 rows per request — fetch in chunks until exhausted
+            const allRows = [];
+            const CHUNK = 1000;
+            let from = 0;
+            let keepFetching = true;
+            while (keepFetching) {
+                const { data: chunk, error: e1 } = await supabase
+                    .rpc('get_stock_analysis', { p_erp_sucursal_id: erpId })
+                    .range(from, from + CHUNK - 1);
+                if (e1) throw e1;
+                allRows.push(...(chunk || []));
+                keepFetching = chunk && chunk.length === CHUNK;
+                from += CHUNK;
+            }
+            const { data: cost, error: e2 } = await supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId });
             if (e2) throw e2;
             if (rid !== loadRef.current) return;
-            setData((rows || []).map(r => ({ ...r, _erp_sucursal_id: erpId })));
+            setData(allRows.map(r => ({ ...r, _erp_sucursal_id: erpId })));
             setCostSummary(cost || null);
         } catch (e) {
             if (rid === loadRef.current) setError(e.message);

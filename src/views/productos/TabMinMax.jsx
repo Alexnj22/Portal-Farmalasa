@@ -625,6 +625,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [costSummary,  setCostSummary]  = useState(null);
     const [loading,      setLoading]      = useState(false);
     const [calculating,  setCalculating]  = useState(false);
+    const [calcMode,     setCalcMode]     = useState('single'); // 'single' | 'all'
     const [calcResult,   setCalcResult]   = useState(null);
     const [error,        setError]        = useState(null);
     const [editId,       setEditId]       = useState(null);
@@ -663,11 +664,22 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     useEffect(() => { loadData(selectedErp); }, [selectedErp, loadData]);
 
     const handleRecalcular = async () => {
-        setCalculating(true); setCalcResult(null); setError(null);
+        setCalculating(true); setCalcMode('single'); setCalcResult(null); setError(null);
         try {
             const { data: res, error: e } = await supabase.rpc('calculate_stock_params', { p_erp_sucursal_id: selectedErp });
             if (e) throw e;
-            setCalcResult(res);
+            setCalcResult({ ...res, mode: 'single' });
+            await loadData(selectedErp);
+        } catch (e) { setError(e.message); }
+        finally { setCalculating(false); }
+    };
+
+    const handleRecalcularAll = async () => {
+        setCalculating(true); setCalcMode('all'); setCalcResult(null); setError(null);
+        try {
+            const { data: res, error: e } = await supabase.rpc('calculate_stock_params');
+            if (e) throw e;
+            setCalcResult({ ...res, mode: 'all' });
             await loadData(selectedErp);
         } catch (e) { setError(e.message); }
         finally { setCalculating(false); }
@@ -682,7 +694,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const lastCalcAt    = useMemo(() => data.find(d => d.calculated_at)?.calculated_at ?? null, [data]);
     const isBodega      = selectedErp === 6;
-    const neverCalc     = !isBodega && data.length > 0 && data.every(d => d.is_dead_stock);
+    const neverCalc     = data.length > 0 && data.every(d => d.is_dead_stock);
     const hasActiveData = data.some(d => !d.is_dead_stock);
 
     const filtered = useMemo(() => {
@@ -771,12 +783,22 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     <Settings2 size={14} />
                 </button>
 
-                {!isBodega && (
-                    <button onClick={handleRecalcular} disabled={calculating || loading}
-                        className="flex items-center gap-1.5 px-4 py-2 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-xl shadow-sm shadow-blue-200/60 transition-all disabled:opacity-60">
-                        {calculating ? <><Loader2 size={13} className="animate-spin" /> Calculando…</> : <><RefreshCw size={13} /> Recalcular</>}
-                    </button>
-                )}
+                {/* Recalcular todas las sucursales + bodega */}
+                <button onClick={handleRecalcularAll} disabled={calculating || loading}
+                    title="Recalcula todas las sucursales y Bodega en un solo paso"
+                    className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-slate-600 border border-slate-200 bg-white/80 hover:border-slate-300 hover:shadow-sm rounded-xl transition-all disabled:opacity-50">
+                    {calculating && calcMode === 'all'
+                        ? <><Loader2 size={12} className="animate-spin" /> Calculando…</>
+                        : <><Layers size={12} /> Todas</>}
+                </button>
+
+                {/* Recalcular sucursal actual */}
+                <button onClick={handleRecalcular} disabled={calculating || loading}
+                    className="flex items-center gap-1.5 px-4 py-2 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-xl shadow-sm shadow-blue-200/60 transition-all disabled:opacity-60">
+                    {calculating && calcMode === 'single'
+                        ? <><Loader2 size={13} className="animate-spin" /> Calculando…</>
+                        : <><RefreshCw size={13} /> Recalcular</>}
+                </button>
             </div>
 
             {/* ── Alert stat chips ── */}
@@ -844,7 +866,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             {calcResult?.ok && (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[12px] text-emerald-700 font-semibold">
                     <CheckCircle2 size={14} />
-                    Cálculo completado — {calcResult.rows?.toLocaleString()} productos actualizados en {ERP_NAMES[selectedErp]}
+                    {calcResult.mode === 'all'
+                        ? `Cálculo completado — ${calcResult.rows?.toLocaleString()} productos actualizados en todas las sucursales + Bodega`
+                        : `Cálculo completado — ${calcResult.rows?.toLocaleString()} productos actualizados en ${ERP_NAMES[selectedErp]}`}
                     <button onClick={() => setCalcResult(null)} className="ml-auto text-emerald-400 hover:text-emerald-600"><X size={12} /></button>
                 </div>
             )}
@@ -855,9 +879,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 </div>
             )}
             {!loading && isBodega && (
-                <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-[12px] text-amber-800">
+                <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-[12px] text-blue-800">
                     <Info size={14} className="shrink-0 mt-0.5" />
-                    <span><strong>Bodega</strong> no tiene ventas directas — Min/Max basado en traslados es Fase 2. Se muestra inventario como referencia.</span>
+                    <span><strong>Bodega</strong> — MIN/MAX calculado a partir de la demanda consolidada de todas las sucursales. La velocidad de Bodega = suma de ventas diarias de todas las tiendas.</span>
                 </div>
             )}
             {!loading && neverCalc && (
@@ -865,7 +889,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     <Package size={36} className="opacity-15 mx-auto mb-4 text-slate-500" />
                     <p className="text-[15px] font-bold text-slate-700 mb-2">Sin datos para {ERP_NAMES[selectedErp]}</p>
                     <p className="text-[12px] text-slate-400 mb-6 max-w-sm mx-auto leading-relaxed">
-                        Haz clic en <strong>Recalcular</strong> para analizar {config?.analysis_days ?? 180} días de ventas y generar los parámetros MIN/MAX con clasificación ABC×XYZ.
+                        {isBodega
+                            ? `Haz clic en Recalcular para generar los parámetros MIN/MAX de Bodega basados en la demanda consolidada de todas las sucursales (${config?.analysis_days ?? 180} días).`
+                            : `Haz clic en Recalcular para analizar ${config?.analysis_days ?? 180} días de ventas y generar los parámetros MIN/MAX con clasificación ABC×XYZ.`}
                     </p>
                     <button onClick={handleRecalcular} disabled={calculating}
                         className="inline-flex items-center gap-2 px-6 py-2.5 text-[13px] font-bold text-white bg-[#0052CC] rounded-xl shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-60">

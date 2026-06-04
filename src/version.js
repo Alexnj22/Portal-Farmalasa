@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.45';
+export const APP_VERSION = '1.4.46';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.46 — MinMax: Bodega con MIN/MAX real (demanda consolidada todas sucursales); botón Recalcular todas; quita bloqueo Bodega
 // v1.4.45 — VentasPerdidas: foto del empleado en lugar de ícono User; fallback a inicial si no tiene foto
 // v1.4.44 — VentasPerdidas: fix tabs (key en TABS); WidgetInventorySearch: botón Reportar inline junto a badge ACTIVO
 // v1.4.43 — Ventas Perdidas: botón reportar en cada card SRS (con nombre/lab/principio); vista rediseñada, tabs sin traba

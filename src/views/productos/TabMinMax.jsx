@@ -4,7 +4,7 @@ import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download,
     CheckCircle2, Edit3, Check, Info, RotateCcw, ChevronRight,
-    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save,
+    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -355,17 +355,46 @@ function ExpandedPanel({ row, cycleDays }) {
     const coverDays   = row.daily_velocity > 0 ? (stock / row.daily_velocity).toFixed(1) : null;
 
     const [branchData,      setBranchData]      = useState(null);
+    const [expiryData,      setExpiryData]      = useState([]);
+    const [historyData,     setHistoryData]     = useState([]);
     const [loadingBranches, setLoadingBranches] = useState(true);
 
     useEffect(() => {
-        supabase
-            .rpc('get_product_branch_summary', { p_erp_product_id: row.erp_product_id })
-            .then(({ data }) => setBranchData(data || []))
-            .finally(() => setLoadingBranches(false));
-    }, [row.erp_product_id]);
+        Promise.all([
+            supabase.rpc('get_product_branch_summary', { p_erp_product_id: row.erp_product_id }),
+            supabase.rpc('get_product_expiring_lots',  { p_erp_product_id: row.erp_product_id }),
+            supabase.from('product_stock_params_history')
+                .select('captured_at, min_units, max_units, daily_velocity, velocity_30d, abc_class, demand_variability')
+                .eq('erp_product_id', row.erp_product_id)
+                .eq('erp_sucursal_id', row._erp_sucursal_id)
+                .order('captured_at', { ascending: false })
+                .limit(5),
+        ]).then(([{ data: bData }, { data: eData }, { data: hData }]) => {
+            setBranchData(bData || []);
+            setExpiryData(eData || []);
+            setHistoryData(hData || []);
+        }).finally(() => setLoadingBranches(false));
+    }, [row.erp_product_id, row._erp_sucursal_id]);
 
     const netStock   = branchData?.filter(b => b.erp_sucursal_id !== 6).reduce((s, b) => s + Number(b.current_stock), 0) ?? null;
     const totalStock = branchData?.reduce((s, b) => s + Number(b.current_stock), 0) ?? null;
+
+    const pedir = (!row.is_dead_stock && maxN > 0 && (row.alert_status === 'out_of_stock' || row.alert_status === 'below_min'))
+        ? Math.max(0, maxN - stock)
+        : null;
+
+    const transferSuggestions = useMemo(() => {
+        if (!branchData || pedir === null || pedir === 0) return [];
+        return branchData
+            .filter(b => b.erp_sucursal_id !== row._erp_sucursal_id && b.alert_status === 'overstocked')
+            .map(b => ({
+                name:        ERP_NAMES[b.erp_sucursal_id] || `Suc. ${b.erp_sucursal_id}`,
+                transferable: Math.max(0, Number(b.current_stock) - Number(b.effective_max)),
+                stock:        Number(b.current_stock),
+            }))
+            .filter(s => s.transferable > 0)
+            .sort((a, b) => b.transferable - a.transferable);
+    }, [branchData, row._erp_sucursal_id, pedir]);
 
     return (
         <div className="mx-4 mb-2 rounded-xl border border-slate-100 overflow-hidden"
@@ -391,13 +420,13 @@ function ExpandedPanel({ row, cycleDays }) {
                 ) : (
                     <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
                         {ERP_ORDER.map(erpId => {
-                            const bd       = branchData?.find(b => b.erp_sucursal_id === erpId);
+                            const bd        = branchData?.find(b => b.erp_sucursal_id === erpId);
                             const isCurrent = erpId === row._erp_sucursal_id;
-                            const bStock   = Number(bd?.current_stock ?? 0);
-                            const bMin     = Number(bd?.effective_min ?? 0);
-                            const bMax     = Number(bd?.effective_max ?? 0);
-                            const alert    = ALERT[bd?.alert_status ?? 'ok'] ?? ALERT.ok;
-                            const hasData  = !!bd;
+                            const bStock    = Number(bd?.current_stock ?? 0);
+                            const bMin      = Number(bd?.effective_min ?? 0);
+                            const bMax      = Number(bd?.effective_max ?? 0);
+                            const alert     = ALERT[bd?.alert_status ?? 'ok'] ?? ALERT.ok;
+                            const hasData   = !!bd;
 
                             return (
                                 <div key={erpId}
@@ -492,6 +521,72 @@ function ExpandedPanel({ row, cycleDays }) {
                             </span>
                         </>
                     )}
+                    {pedir !== null && (
+                        <span className="flex items-center gap-1.5 text-[11px]">
+                            <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
+                            <span className="text-slate-500 font-semibold">Pedir</span>
+                            <span className="font-black text-red-600">{hasDominant ? formatDominant(pedir, pres) : `${pedir.toLocaleString()} und`}</span>
+                            {hasDominant && <span className="text-slate-400 text-[10px]">({pedir.toLocaleString()} und)</span>}
+                        </span>
+                    )}
+                </div>
+            )}
+
+            {/* ── Traslado sugerido ── */}
+            {transferSuggestions.length > 0 && (
+                <div className="px-4 py-2.5 border-t border-amber-100/80 bg-amber-50/30 flex flex-col gap-1.5">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-amber-600">Traslado sugerido</span>
+                    <div className="flex flex-wrap gap-2">
+                        {transferSuggestions.map(s => (
+                            <div key={s.name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200">
+                                <Building2 size={9} className="text-amber-600 shrink-0" />
+                                <span className="text-[10px] font-black text-amber-800">{s.name}</span>
+                                <span className="text-[10px] font-bold text-amber-600 tabular-nums">{s.transferable.toLocaleString()} und disponibles</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Vencimientos próximos (60 días) ── */}
+            {expiryData.length > 0 && (
+                <div className="px-4 py-2.5 border-t border-orange-100/80 bg-orange-50/20 flex flex-col gap-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-orange-500">Vencimientos próximos (60 días)</span>
+                    <div className="flex flex-col gap-1">
+                        {expiryData.map((lot, i) => {
+                            const daysLeft = Math.ceil((new Date(lot.fecha_vencimiento) - Date.now()) / 86400000);
+                            const urgent   = daysLeft <= 30;
+                            return (
+                                <div key={i} className="flex items-center gap-3 text-[10px]">
+                                    <span className={`font-black tabular-nums w-8 shrink-0 ${urgent ? 'text-red-600' : 'text-orange-600'}`}>{daysLeft}d</span>
+                                    <span className="text-slate-400 font-mono text-[9px] shrink-0">{lot.lote || '—'}</span>
+                                    <span className="text-slate-600 font-semibold tabular-nums">{Number(lot.cantidad).toLocaleString()} und</span>
+                                    <span className="text-slate-400 text-[9px]">{new Date(lot.fecha_vencimiento).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Historial de cálculos ── */}
+            {historyData.length > 0 && (
+                <div className="px-4 py-2.5 border-t border-slate-100/80 bg-slate-50/30 flex flex-col gap-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Historial de cálculos</span>
+                    <div className="flex flex-col gap-1">
+                        {historyData.map((h, i) => (
+                            <div key={i} className="flex items-center gap-3 text-[10px] text-slate-500">
+                                <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                    {new Date(h.captured_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
+                                </span>
+                                <span className="font-bold text-orange-500">{(h.min_units ?? 0).toLocaleString()}</span>
+                                <span className="text-slate-300">→</span>
+                                <span className="font-bold text-blue-500">{(h.max_units ?? 0).toLocaleString()}</span>
+                                <span className="text-slate-400">{Number(h.daily_velocity || 0).toFixed(1)}/día</span>
+                                {h.abc_class && <AbcXyzBadge abc={h.abc_class} xyz={h.demand_variability} />}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
@@ -501,21 +596,37 @@ function ExpandedPanel({ row, cycleDays }) {
 // ─── Inline edit row ──────────────────────────────────────────────────────────
 
 function EditRow({ row, onSave, onCancel }) {
-    const [mn, setMn]         = useState(String(row.effective_min ?? ''));
-    const [mx, setMx]         = useState(String(row.effective_max ?? ''));
-    const [saving, setSaving] = useState(false);
-    const [err, setErr]       = useState('');
+    const [mn,      setMn]      = useState(String(row.effective_min ?? ''));
+    const [mx,      setMx]      = useState(String(row.effective_max ?? ''));
+    const [lt,      setLt]      = useState('');
+    const [ltLoaded, setLtLoaded] = useState(false);
+    const [saving,  setSaving]  = useState(false);
+    const [err,     setErr]     = useState('');
     const mnRef = useRef();
     useEffect(() => { mnRef.current?.select(); }, []);
+
+    useEffect(() => {
+        supabase.from('product_stock_params')
+            .select('lead_time_days')
+            .eq('erp_product_id', row.erp_product_id)
+            .eq('erp_sucursal_id', row._erp_sucursal_id)
+            .maybeSingle()
+            .then(({ data }) => {
+                setLt(data?.lead_time_days != null ? String(data.lead_time_days) : '');
+                setLtLoaded(true);
+            });
+    }, [row.erp_product_id, row._erp_sucursal_id]);
 
     const save = async (clearManual = false) => {
         const newMin = clearManual ? null : (mn === '' ? null : parseInt(mn, 10));
         const newMax = clearManual ? null : (mx === '' ? null : parseInt(mx, 10));
+        const newLt  = lt === '' ? null : parseInt(lt, 10);
         if (!clearManual && newMin !== null && newMax !== null && newMax <= newMin) { setErr('MAX debe ser mayor al MIN'); return; }
+        if (newLt !== null && newLt < 1) { setErr('Lead time debe ser ≥ 1 día'); return; }
         setSaving(true);
         try {
             const { error } = await supabase.from('product_stock_params')
-                .update({ manual_min: newMin, manual_max: newMax, updated_at: new Date().toISOString() })
+                .update({ manual_min: newMin, manual_max: newMax, lead_time_days: newLt, updated_at: new Date().toISOString() })
                 .eq('erp_product_id', row.erp_product_id)
                 .eq('erp_sucursal_id', row._erp_sucursal_id);
             if (error) throw error;
@@ -525,6 +636,7 @@ function EditRow({ row, onSave, onCancel }) {
                 action: clearManual ? 'reset' : 'override',
                 manual_min: newMin,
                 manual_max: newMax,
+                lead_time_days: newLt,
             });
             onSave();
         } catch (e) { setErr(e.message); setSaving(false); }
@@ -583,6 +695,18 @@ function EditRow({ row, onSave, onCancel }) {
                 </div>
             </div>
             {err && <div className="px-4 pb-2 text-[11px] font-semibold text-red-500">{err}</div>}
+            {ltLoaded && (
+                <div className="flex items-center gap-3 px-4 pb-2.5">
+                    <Clock size={10} className="text-slate-400 shrink-0" />
+                    <span className="text-[10px] text-slate-500 font-medium flex-1">Lead time específico</span>
+                    <span className="text-[9px] text-slate-400">(vacío = usar clase XYZ)</span>
+                    <input type="number" min="1" value={lt}
+                        onChange={e => { setLt(e.target.value); setErr(''); }}
+                        placeholder="—"
+                        className="w-14 text-right text-[12px] font-bold text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-slate-300" />
+                    <span className="text-[10px] text-slate-400 shrink-0">días</span>
+                </div>
+            )}
         </div>
     );
 }

@@ -1,9 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart2 } from 'lucide-react';
-import GlassViewLayout from '../components/GlassViewLayout';
-import ViewTabBar      from '../components/common/ViewTabBar';
-import TabMinMax       from './productos/TabMinMax';
-import { supabase }   from '../supabaseClient';
+import GlassViewLayout    from '../components/GlassViewLayout';
+import ViewTabBar         from '../components/common/ViewTabBar';
+import TabMinMax          from './productos/TabMinMax';
+import TabMinMaxNetwork   from './productos/TabMinMaxNetwork';
+import { supabase }      from '../supabaseClient';
+
+const TABS = [
+    { key: 'sucursal', label: 'Sucursal' },
+    { key: 'red',      label: 'Red' },
+];
 
 const DEFAULT_CONFIG = {
     cycle_days:      45,
@@ -22,6 +28,7 @@ const DEFAULT_CONFIG = {
 };
 
 export default function MinMaxView() {
+    const [activeTab,       setActiveTab]       = useState('sucursal');
     const [rawSearch,       setRawSearch]       = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [config,          setConfig]          = useState(DEFAULT_CONFIG);
@@ -42,24 +49,27 @@ export default function MinMaxView() {
 
     const filtersContent = (
         <ViewTabBar
-            tabs={[]}
-            activeTab=""
-            onTabChange={() => {}}
+            tabs={TABS}
+            activeTab={activeTab}
+            onTabChange={v => { setActiveTab(v); setRawSearch(''); }}
             showSearch
             searchValue={rawSearch}
             onSearchChange={setRawSearch}
-            placeholder="Buscar producto en Min/Max..."
+            placeholder={activeTab === 'red' ? 'Buscar en vista red…' : 'Buscar producto en Min/Max…'}
         />
     );
 
     return (
         <GlassViewLayout icon={BarChart2} title="Min / Max" filtersContent={filtersContent}>
-            {configLoaded && (
+            {configLoaded && activeTab === 'sucursal' && (
                 <TabMinMax
                     searchTerm={debouncedSearch}
                     config={config}
                     onConfigChange={setConfig}
                 />
+            )}
+            {configLoaded && activeTab === 'red' && (
+                <TabMinMaxNetwork searchTerm={debouncedSearch} />
             )}
         </GlassViewLayout>
     );

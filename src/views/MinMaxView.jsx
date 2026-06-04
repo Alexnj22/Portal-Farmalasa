@@ -6,15 +6,19 @@ import TabMinMax       from './productos/TabMinMax';
 import { supabase }   from '../supabaseClient';
 
 const DEFAULT_CONFIG = {
-    cycle_days:     45,
-    reorder_x_days: 7,
-    reorder_y_days: 10,
-    reorder_z_days: 15,
-    xyz_x_cv_max:   30,
-    xyz_y_cv_max:   70,
-    abc_a_pct:      70,
-    abc_b_pct:      90,
-    analysis_days:  180,
+    cycle_days:      45,
+    reorder_x_days:  7,
+    reorder_y_days:  10,
+    reorder_z_days:  15,
+    xyz_x_cv_max:    30,
+    xyz_y_cv_max:    70,
+    abc_a_pct:       70,
+    abc_b_pct:       90,
+    analysis_days:   180,
+    approaching_pct: 25,
+    buffer_x_days:   0,
+    buffer_y_days:   0,
+    buffer_z_days:   0,
 };
 
 export default function MinMaxView() {

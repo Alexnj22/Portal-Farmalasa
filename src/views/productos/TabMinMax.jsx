@@ -7,6 +7,7 @@ import {
     DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import { useStaffStore as useStaff } from '../../store/staffStore';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -59,6 +60,7 @@ function fmtMoney(n) {
     const v = Number(n) || 0;
     if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
     if (v >= 100_000)   return `$${Math.round(v / 1000)}k`;
+    if (v >= 1_000)     return `$${(v / 1000).toFixed(1)}k`;
     return `$${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
@@ -73,18 +75,25 @@ function relativeTime(iso) {
 }
 
 function exportCsv(rows, name) {
-    const h = ['Producto','ABC','XYZ','Estado','Stock actual','Cobertura (días)','MIN (und)','MAX (und)','Ventas período','Ingresos período'];
-    const lines = rows.map(r => [
-        `"${(r.product_name||'').replace(/"/g,'""')}"`,
-        r.abc_class,
-        normXyz(r.demand_variability),
-        ALERT[r.alert_status]?.label || r.alert_status,
-        r.current_stock,
-        r.daily_velocity > 0 ? (r.current_stock / r.daily_velocity).toFixed(1) : '—',
-        r.effective_min, r.effective_max,
-        r.units_sold_6m,
-        Number(r.revenue_6m).toFixed(2),
-    ].join(','));
+    const h = ['Producto','ABC','XYZ','Estado','Stock actual','Cobertura (días)','MIN (und)','MAX (und)','Pedir (und)','Ventas período','Ingresos período'];
+    const lines = rows.map(r => {
+        const stock = Number(r.current_stock);
+        const maxN  = Number(r.effective_max);
+        const pedir = (r.alert_status === 'out_of_stock' || r.alert_status === 'below_min') && maxN > 0
+            ? Math.max(0, maxN - stock) : '';
+        return [
+            `"${(r.product_name||'').replace(/"/g,'""')}"`,
+            r.abc_class,
+            normXyz(r.demand_variability),
+            ALERT[r.alert_status]?.label || r.alert_status,
+            stock,
+            r.daily_velocity > 0 ? (stock / r.daily_velocity).toFixed(1) : '—',
+            r.effective_min, r.effective_max,
+            pedir,
+            r.units_sold_6m,
+            Number(r.revenue_6m).toFixed(2),
+        ].join(',');
+    });
     const blob = new Blob([[h.join(','),...lines].join('\n')], { type:'text/csv;charset=utf-8;' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `minmax_${name}_${new Date().toISOString().slice(0,10)}.csv` });
     a.click(); URL.revokeObjectURL(a.href);
@@ -408,14 +417,14 @@ function ExpandedPanel({ row, cycleDays }) {
                                         bStock === 0 ? 'text-red-500' :
                                         bStock < bMin ? 'text-orange-600' : 'text-slate-800'
                                     }`}>
-                                        {!hasData ? '—' : bStock === 0 ? '0' : formatUnits(bStock, pres)}
+                                        {!hasData ? '—' : bStock === 0 ? '0' : bStock.toLocaleString()}
                                     </div>
                                     {hasData && <StockBar current={bStock} min={bMin} max={bMax} />}
                                     {hasData && (bMin > 0 || bMax > 0) && (
                                         <div className="flex items-center gap-0.5 mt-0.5 text-[7px] tabular-nums leading-tight">
-                                            <span className="text-orange-500 font-black">{bMin > 0 ? formatDominant(bMin, pres) : '—'}</span>
+                                            <span className="text-orange-500 font-black">{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
                                             <span className="text-slate-200">·</span>
-                                            <span className="text-blue-500 font-black">{bMax > 0 ? formatDominant(bMax, pres) : '—'}</span>
+                                            <span className="text-blue-500 font-black">{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
                                         </div>
                                     )}
                                 </div>
@@ -510,6 +519,13 @@ function EditRow({ row, onSave, onCancel }) {
                 .eq('erp_product_id', row.erp_product_id)
                 .eq('erp_sucursal_id', row._erp_sucursal_id);
             if (error) throw error;
+            useStaff.getState().appendAuditLog('MINMAX_MANUAL_OVERRIDE', String(row.erp_product_id), {
+                product: row.product_name,
+                sucursal_id: row._erp_sucursal_id,
+                action: clearManual ? 'reset' : 'override',
+                manual_min: newMin,
+                manual_max: newMax,
+            });
             onSave();
         } catch (e) { setErr(e.message); setSaving(false); }
     };
@@ -582,22 +598,28 @@ function ConfigPanel({ config, onSave, onClose }) {
     const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
     const handleSave = async () => {
-        const min = Number(form.reorder_x_days);
         if (Number(form.cycle_days) < 1) { setErr('El ciclo debe ser ≥ 1 día'); return; }
         if (Number(form.abc_a_pct) >= Number(form.abc_b_pct)) { setErr('El umbral A debe ser menor que el B'); return; }
         if (Number(form.xyz_x_cv_max) >= Number(form.xyz_y_cv_max)) { setErr('El CV máximo de X debe ser menor que el de Y'); return; }
+        if (Number(form.approaching_pct) < 1 || Number(form.approaching_pct) > 100) { setErr('Alerta próximo debe estar entre 1 y 100%'); return; }
         setSaving(true); setErr('');
+        const { data: { user } } = await supabase.auth.getUser();
         const payload = {
-            cycle_days:     Number(form.cycle_days),
-            reorder_x_days: Number(form.reorder_x_days),
-            reorder_y_days: Number(form.reorder_y_days),
-            reorder_z_days: Number(form.reorder_z_days),
-            xyz_x_cv_max:   Number(form.xyz_x_cv_max),
-            xyz_y_cv_max:   Number(form.xyz_y_cv_max),
-            abc_a_pct:      Number(form.abc_a_pct),
-            abc_b_pct:      Number(form.abc_b_pct),
-            analysis_days:  Number(form.analysis_days),
-            updated_at:     new Date().toISOString(),
+            cycle_days:      Number(form.cycle_days),
+            reorder_x_days:  Number(form.reorder_x_days),
+            reorder_y_days:  Number(form.reorder_y_days),
+            reorder_z_days:  Number(form.reorder_z_days),
+            xyz_x_cv_max:    Number(form.xyz_x_cv_max),
+            xyz_y_cv_max:    Number(form.xyz_y_cv_max),
+            abc_a_pct:       Number(form.abc_a_pct),
+            abc_b_pct:       Number(form.abc_b_pct),
+            analysis_days:   Number(form.analysis_days),
+            approaching_pct: Number(form.approaching_pct),
+            buffer_x_days:   Number(form.buffer_x_days),
+            buffer_y_days:   Number(form.buffer_y_days),
+            buffer_z_days:   Number(form.buffer_z_days),
+            updated_at:      new Date().toISOString(),
+            updated_by:      user?.email ?? null,
         };
         try {
             const { error } = await supabase.from('stock_config').update(payload).eq('id', 1);
@@ -609,11 +631,11 @@ function ConfigPanel({ config, onSave, onClose }) {
         finally { setSaving(false); }
     };
 
-    const Field = ({ label, k, unit, min = 0, step = 1 }) => (
+    const Field = ({ label, k, unit, min = 0, max, step = 1 }) => (
         <div className="flex items-center justify-between gap-3">
             <span className="text-[11px] text-slate-600 font-medium flex-1">{label}</span>
             <div className="flex items-center gap-1.5">
-                <input type="number" min={min} step={step} value={form[k]}
+                <input type="number" min={min} max={max} step={step} value={form[k] ?? 0}
                     onChange={e => set(k, e.target.value)}
                     className="w-16 text-right text-[12px] font-bold text-slate-800 bg-white/80 border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/30 focus:border-[#0052CC]" />
                 {unit && <span className="text-[10px] text-slate-400 shrink-0 w-8">{unit}</span>}
@@ -674,6 +696,26 @@ function ConfigPanel({ config, onSave, onClose }) {
                         <p className="text-[9px] text-slate-400">C y D = resto. Recalcula para aplicar.</p>
                     </section>
 
+                    <div className="h-px bg-slate-100" />
+
+                    {/* Alerta próximo mínimo */}
+                    <section className="flex flex-col gap-2">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Alerta "próximo a mínimo"</span>
+                        <Field label="Umbral (stock &lt; MIN × (1 + X%))" k="approaching_pct" unit="%" min={1} max={100} step={1} />
+                        <p className="text-[9px] text-slate-400">Ej: 25% → alerta si stock &lt; MIN × 1.25</p>
+                    </section>
+
+                    <div className="h-px bg-slate-100" />
+
+                    {/* Buffer de seguridad */}
+                    <section className="flex flex-col gap-2">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Buffer de seguridad (días extra al MIN)</span>
+                        <Field label="Clase X — demanda estable"  k="buffer_x_days" unit="días" min={0} />
+                        <Field label="Clase Y — demanda moderada" k="buffer_y_days" unit="días" min={0} />
+                        <Field label="Clase Z — demanda errática" k="buffer_z_days" unit="días" min={0} />
+                        <p className="text-[9px] text-slate-400">MIN = velocidad × (reorden + buffer). Recalcula para aplicar.</p>
+                    </section>
+
                     {err && <p className="text-[11px] text-red-500 font-semibold">{err}</p>}
                 </div>
 
@@ -710,6 +752,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [editId,       setEditId]       = useState(null);
     const [expandedIds,  setExpandedIds]  = useState(new Set());
     const [configOpen,   setConfigOpen]   = useState(false);
+    const [sortBy,       setSortBy]       = useState(null);
+    const [sortDir,      setSortDir]      = useState('asc');
     const loadRef = useRef(0);
 
     const toggleExpand = useCallback((id) => {
@@ -771,7 +815,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         STAT_CFGS.map(s => [s.key, data.filter(d => d.alert_status === s.key).length])
     ), [data]);
 
-    const lastCalcAt    = useMemo(() => data.find(d => d.calculated_at)?.calculated_at ?? null, [data]);
+    const lastCalcAt    = useMemo(() => data.find(d => d.calculated_at && !d.is_dead_stock)?.calculated_at ?? null, [data]);
     const isBodega      = selectedErp === 6;
     const neverCalc     = data.length > 0 && data.every(d => d.is_dead_stock);
     const hasActiveData = data.some(d => !d.is_dead_stock);
@@ -786,6 +830,31 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             return true;
         });
     }, [data, filterAbc, filterXyz, filterAlert, searchTerm]);
+
+    const toggleSort = (col) => {
+        if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        else { setSortBy(col); setSortDir('asc'); }
+    };
+
+    const sorted = useMemo(() => {
+        if (!sortBy) return filtered;
+        return [...filtered].sort((a, b) => {
+            let av, bv;
+            if (sortBy === 'name')     { av = a.product_name || ''; bv = b.product_name || ''; }
+            else if (sortBy === 'velocity') { av = Number(a.daily_velocity); bv = Number(b.daily_velocity); }
+            else if (sortBy === 'stock')    { av = Number(a.current_stock);  bv = Number(b.current_stock);  }
+            else if (sortBy === 'coverage') {
+                av = a.daily_velocity > 0 ? Number(a.current_stock) / Number(a.daily_velocity) : Infinity;
+                bv = b.daily_velocity > 0 ? Number(b.current_stock) / Number(b.daily_velocity) : Infinity;
+            }
+            else if (sortBy === 'min')     { av = Number(a.effective_min);  bv = Number(b.effective_min);  }
+            else if (sortBy === 'max')     { av = Number(a.effective_max);  bv = Number(b.effective_max);  }
+            else if (sortBy === 'revenue') { av = Number(a.revenue_6m);     bv = Number(b.revenue_6m);     }
+            else return 0;
+            if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+            return sortDir === 'asc' ? av - bv : bv - av;
+        });
+    }, [filtered, sortBy, sortDir]);
 
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
@@ -810,7 +879,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 <div className="overflow-visible" style={{ width: '175px' }}>
                     <LiquidSelect
                         value={String(selectedErp)}
-                        onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); } }}
+                        onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy(null); } }}
                         options={erpOptions} icon={Building2} clearable={false} compact
                     />
                 </div>
@@ -985,23 +1054,34 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 <div className={`${glass} shadow-sm overflow-hidden`} style={{ ...glassStyle, background: 'rgba(255,255,255,0.55)' }}>
 
                     {/* Header */}
-                    <div className="grid text-[9px] font-black uppercase tracking-widest text-slate-400 pl-5 pr-4 py-2.5 border-b border-white/60 bg-white/40"
-                        style={{ gridTemplateColumns: '1fr 68px 100px 100px 105px 105px 88px' }}>
-                        <span>Producto</span>
-                        <span className="text-center">Clase</span>
-                        <span className="text-right">Cobertura</span>
-                        <span className="text-right">Stock actual</span>
-                        <span className="text-right pr-2"><span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block" /> MIN</span></span>
-                        <span className="text-right pr-2"><span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400 inline-block" /> MAX</span></span>
-                        <span className="text-center">Estado</span>
-                    </div>
+                    {(() => {
+                        const Th = ({ col, children, className = '' }) => (
+                            <button onClick={() => toggleSort(col)}
+                                className={`flex items-center gap-0.5 hover:text-slate-500 transition-colors ${sortBy === col ? 'text-[#0052CC]' : ''} ${className}`}>
+                                {children}
+                                {sortBy === col && <span className="text-[8px]">{sortDir === 'asc' ? '↑' : '↓'}</span>}
+                            </button>
+                        );
+                        return (
+                            <div className="grid text-[9px] font-black uppercase tracking-widest text-slate-400 pl-5 pr-4 py-2.5 border-b border-white/60 bg-white/40"
+                                style={{ gridTemplateColumns: '1fr 68px 100px 100px 105px 105px 88px' }}>
+                                <Th col="name">Producto</Th>
+                                <span className="text-center">Clase</span>
+                                <Th col="coverage" className="justify-end">Cobertura</Th>
+                                <Th col="stock" className="justify-end">Stock actual</Th>
+                                <Th col="min" className="justify-end pr-2"><span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block" /> MIN</span></Th>
+                                <Th col="max" className="justify-end pr-2"><span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400 inline-block" /> MAX</span></Th>
+                                <span className="text-center">Estado</span>
+                            </div>
+                        );
+                    })()}
 
                     {loading ? (
                         <div className="flex items-center justify-center gap-2.5 py-24 text-slate-400">
                             <Loader2 size={20} className="animate-spin" />
                             <span className="text-[13px]">Cargando análisis de {ERP_NAMES[selectedErp]}…</span>
                         </div>
-                    ) : filtered.length === 0 ? (
+                    ) : sorted.length === 0 ? (
                         <div className="py-20 text-center">
                             <Package size={30} className="opacity-15 mx-auto mb-3 text-slate-400" />
                             <p className="text-[13px] text-slate-400 font-medium">Sin productos con ese filtro</p>
@@ -1010,7 +1090,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         </div>
                     ) : (
                         <div>
-                            {filtered.map((row, i) => {
+                            {sorted.map((row) => {
                                 const isEditing = editId === row.erp_product_id;
                                 if (isEditing) return (
                                     <EditRow key={`${row.erp_product_id}_edit`} row={row}
@@ -1024,11 +1104,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 const stock      = Number(row.current_stock);
                                 const minN       = Number(row.effective_min);
                                 const maxN       = Number(row.effective_max);
+                                const v30        = Number(row.velocity_30d ?? 0);
+                                const v6m        = Number(row.daily_velocity ?? 0);
                                 const canExpand  = !dead || stock > 0;
                                 const isExpanded = expandedIds.has(row.erp_product_id);
 
                                 return (
-                                    <React.Fragment key={`${row.erp_product_id}_${i}`}>
+                                    <React.Fragment key={row.erp_product_id}>
                                         <div
                                             className={`border-l-4 ${alert.left} ${alert.row} border-b border-white/40 transition-all ${canExpand ? 'cursor-pointer hover:brightness-[0.97]' : ''}`}
                                             onClick={() => canExpand && toggleExpand(row.erp_product_id)}
@@ -1046,7 +1128,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                             <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">{row.product_name || '—'}</span>
                                                             {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
                                                         </div>
-                                                        {!dead && <span className="text-[10px] text-slate-400">{Number(row.daily_velocity||0).toFixed(1)} und/día</span>}
+                                                        {!dead && (
+                                                            <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                                                                {v6m.toFixed(1)} und/día
+                                                                {v30 > 0 && v30 > v6m * 1.1 && <span className="text-emerald-500" title={`30d: ${v30.toFixed(1)}/día`}>↑</span>}
+                                                                {v30 > 0 && v30 < v6m * 0.9 && <span className="text-red-400"    title={`30d: ${v30.toFixed(1)}/día`}>↓</span>}
+                                                            </span>
+                                                        )}
                                                         {!dead && <StockBar current={stock} min={minN} max={maxN} />}
                                                     </div>
                                                 </div>
@@ -1087,17 +1175,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     </>}
                                                 </div>
 
-                                                {/* Alert + edit */}
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <span className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full border ${alert.pill}`}>
-                                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
-                                                        {alert.label}
-                                                    </span>
-                                                    {!dead && (
-                                                        <button onClick={e => { e.stopPropagation(); setEditId(row.erp_product_id); }} title="Ajustar MIN/MAX"
-                                                            className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-[#0052CC] hover:bg-blue-50 transition-colors shrink-0">
-                                                            <Edit3 size={11} />
-                                                        </button>
+                                                {/* Alert + edit + pedir */}
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <div className="flex items-center gap-1">
+                                                        <span className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full border ${alert.pill}`}>
+                                                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
+                                                            {alert.label}
+                                                        </span>
+                                                        {!dead && (
+                                                            <button onClick={e => { e.stopPropagation(); setEditId(row.erp_product_id); }} title="Ajustar MIN/MAX"
+                                                                className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-[#0052CC] hover:bg-blue-50 transition-colors shrink-0">
+                                                                <Edit3 size={11} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    {!dead && (row.alert_status === 'out_of_stock' || row.alert_status === 'below_min') && maxN > 0 && (
+                                                        <span className="text-[8px] font-bold text-slate-400 tabular-nums">
+                                                            Pedir {Math.max(0, maxN - stock).toLocaleString()}u
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>
@@ -1110,9 +1205,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     )}
 
                     {/* Footer */}
-                    {!loading && filtered.length > 0 && (
+                    {!loading && sorted.length > 0 && (
                         <div className="pl-5 pr-4 py-2.5 border-t border-white/50 bg-white/30 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
-                            <span>{filtered.length.toLocaleString()} productos</span>
+                            <span>{sorted.length.toLocaleString()} productos{sortBy && <span className="ml-1 text-[#0052CC]">· ordenado</span>}</span>
                             <span className="text-slate-300">
                                 {(filterAlert !== 'all' || filterAbc !== 'all' || filterXyz !== 'all' || searchTerm)
                                     ? `filtrado de ${data.length.toLocaleString()} · ${ERP_NAMES[selectedErp]}`

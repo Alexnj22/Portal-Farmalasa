@@ -74,7 +74,11 @@ Deno.serve(async (req) => {
     const { error: labErr } = await supabase.from('laboratorios').upsert(labRows, { onConflict: 'id' });
     if (labErr) throw new Error(`Laboratorios upsert: ${labErr.message}`);
 
-    // 3. Upsert presentaciones catalog (tipo only — descripcion and factor live in product_precios per product)
+    // 3. Upsert presentaciones catalog — tipo only.
+    // factor and descripcion are per-product (not per-type): the ERP reuses the same
+    // id_presentacion (e.g. id=9 "CAJA") for products with completely different unit
+    // counts (3, 10, 50, 200...). Storing factor/descripcion here produces a wrong
+    // first-product-wins value. The correct per-product factor lives in product_precios.
     const presMap = new Map<number, any>();
     for (const p of productos) {
       for (const pres of (p.presentaciones ?? [])) {
@@ -82,7 +86,6 @@ Deno.serve(async (req) => {
           presMap.set(pres.id_presentacion, {
             id:         pres.id_presentacion,
             tipo:       pres.tipo?.trim() ?? null,
-            factor:     pres.factor ?? 1,
             updated_at: now,
           });
         }

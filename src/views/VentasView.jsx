@@ -448,7 +448,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     const uncachedErpIds = erpIds.filter(id => !(id in pricesCache));
                     if (uncachedErpIds.length) {
                         supabase.from('product_precios')
-                            .select('product_id, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, presentaciones(tipo, descripcion)')
+                            .select('product_id, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7')
                             .eq('activo', true)
                             .in('product_id', uncachedErpIds)
                             .then(({ data: priceRows }) => {
@@ -490,7 +490,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         const uncachedIds = erpIds.filter(id => !(id in pricesCache));
         if (!uncachedIds.length) return;
         supabase.from('product_precios')
-            .select('product_id, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, presentaciones(tipo, descripcion)')
+            .select('product_id, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7')
             .eq('activo', true)
             .in('product_id', uncachedIds)
             .then(({ data: priceRows }) => {
@@ -1451,11 +1451,11 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     p_branch_id:      filterBranch ? Number(filterBranch) : null,
                 }),
                 supabase.from('product_precios')
-                    .select('id_presentacion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, presentaciones(tipo, descripcion)')
+                    .select('id_presentacion, descripcion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, presentaciones(tipo)')
                     .eq('product_id', productId)
                     .eq('activo', true),
                 supabase.from('product_precios_history')
-                    .select('id_presentacion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, valid_from, valid_until, presentaciones(tipo, descripcion)')
+                    .select('id_presentacion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, valid_from, valid_until, presentaciones(tipo)')
                     .eq('product_id', productId)
                     .order('valid_from', { ascending: false }),
                 supabase.rpc('get_product_trend', {
@@ -1469,13 +1469,15 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             // (e.g. "UNIDAD 1x1" stored as id=1 in product_precios but id=102 in sales)
             const preciosNameMap = new Map();
             for (const p of (precios || [])) {
-                const k = presKey(p.presentaciones?.tipo, p.presentaciones?.descripcion);
+                const k = presKey(p.presentaciones?.tipo, p.descripcion);
                 if (k) preciosNameMap.set(k, p);
             }
+            // descripcion lives in product_precios (per-product), not in presentaciones (catalog)
+            const presDescMap = new Map((precios || []).map(p => [p.id_presentacion, p.descripcion]));
             // Group history by name for the same reason
             const histNameMap = new Map();
             for (const h of (history || [])) {
-                const k = presKey(h.presentaciones?.tipo, h.presentaciones?.descripcion);
+                const k = presKey(h.presentaciones?.tipo, presDescMap.get(h.id_presentacion));
                 if (k) { if (!histNameMap.has(k)) histNameMap.set(k, []); histNameMap.get(k).push(h); }
             }
             const fallbackCurr = (precios || []).length === 1 ? precios[0] : null;

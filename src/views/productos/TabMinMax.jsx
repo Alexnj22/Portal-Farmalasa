@@ -1252,6 +1252,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             let av, bv;
             if (sortBy === 'product_name')  { av = a.product_name || ''; bv = b.product_name || ''; }
             else if (sortBy === 'laboratorio') { av = a.laboratorio_nombre || ''; bv = b.laboratorio_nombre || ''; }
+            else if (sortBy === 'abc_xyz') {
+                av = `${a.draft_abc_class || a.abc_class || 'D'}${normXyz(a.draft_demand_variability || a.demand_variability)}`;
+                bv = `${b.draft_abc_class || b.abc_class || 'D'}${normXyz(b.draft_demand_variability || b.demand_variability)}`;
+            }
             else if (sortBy === 'current_stock') { av = Number(a.current_stock); bv = Number(b.current_stock); }
             else if (sortBy === 'coverage') {
                 av = a.daily_velocity > 0 ? Number(a.current_stock) / Number(a.daily_velocity) : Infinity;
@@ -1276,7 +1280,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const COLS = [
         { key: 'product_name',  label: 'Producto',      align: 'left',   sortable: true },
         { key: 'laboratorio',   label: 'Laboratorio',   align: 'left',   sortable: true },
-        { key: 'abc_xyz',       label: 'Clase',         align: 'center' },
+        { key: 'abc_xyz',       label: 'Clase',         align: 'center', sortable: true },
         { key: 'coverage',      label: 'Cobertura',     align: 'center', sortable: true },
         { key: 'current_stock', label: 'Stock actual',  align: 'center', sortable: true },
         { key: 'effective_min', label: 'MIN',            align: 'center', sortable: true },

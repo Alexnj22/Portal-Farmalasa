@@ -12,6 +12,31 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination from '../../components/common/TablePagination';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
+// ─── Animation presets ────────────────────────────────────────────────────────
+// easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
+const EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
+
+// Chip / pill — subtle lift, no bounce
+const chipAnim = {
+    whileHover: { scale: 1.045, transition: { duration: 0.18, ease: EASE_OUT_EXPO } },
+    whileTap:   { scale: 0.955, transition: { duration: 0.06, ease: 'easeIn' } },
+};
+// CTA button (Calcular, Publicar) — a bit more prominent
+const ctaAnim = {
+    whileHover: { scale: 1.03,  transition: { duration: 0.18, ease: EASE_OUT_EXPO } },
+    whileTap:   { scale: 0.97,  transition: { duration: 0.06, ease: 'easeIn' } },
+};
+// Icon button — snappier, tighter
+const iconAnim = {
+    whileHover: { scale: 1.15,  transition: { duration: 0.14, ease: EASE_OUT_EXPO } },
+    whileTap:   { scale: 0.88,  transition: { duration: 0.06, ease: 'easeIn' } },
+};
+// Entrance — fade up, stagger via delay passed at call site
+const fadeUp = (delay = 0) => ({
+    initial:  { opacity: 0, y: 8 },
+    animate:  { opacity: 1, y: 0, transition: { duration: 0.28, ease: EASE_OUT_EXPO, delay } },
+});
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ERP_NAMES = {
@@ -1348,9 +1373,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         <motion.button onClick={() => exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp])}
                             disabled={data.length === 0 || loading}
                             title="Exportar CSV"
-                            whileHover={{ scale: 1.06, backgroundColor: 'rgba(255,255,255,0.7)' }}
-                            whileTap={{ scale: 0.94 }}
-                            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                            {...chipAnim}
                             className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 disabled:opacity-30">
                             <Download size={12} /> CSV
                         </motion.button>
@@ -1360,9 +1383,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         {/* Config */}
                         <motion.button onClick={() => setConfigOpen(o => !o)}
                             title="Configurar parámetros"
-                            whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.7)' }}
-                            whileTap={{ scale: 0.9 }}
-                            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                            {...iconAnim}
                             className={`px-3 py-2.5 rounded-xl ${configOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
                             <Settings2 size={13} />
                         </motion.button>
@@ -1372,9 +1393,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         {/* Todas las sucursales */}
                         <motion.button onClick={handleRecalcularAll} disabled={calculating || loading}
                             title="Recalcular todas las sucursales y Bodega"
-                            whileHover={{ scale: 1.04, backgroundColor: 'rgba(255,255,255,0.7)' }}
-                            whileTap={{ scale: 0.96 }}
-                            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                            {...chipAnim}
                             className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 disabled:opacity-40 disabled:pointer-events-none">
                             {calculating && calcMode === 'all'
                                 ? <><Loader2 size={11} className="animate-spin" /> Calculando…</>
@@ -1384,9 +1403,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                     {/* Calcular — blue right cap */}
                     <motion.button onClick={handleRecalcular} disabled={calculating || loading}
-                        whileHover={{ scale: 1.03, boxShadow: '0 6px 20px rgba(0,82,204,0.35)' }}
-                        whileTap={{ scale: 0.97 }}
-                        transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+                        {...ctaAnim}
                         className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                         {calculating && calcMode === 'single'
                             ? <><Loader2 size={12} className="animate-spin" /> Calculando…</>
@@ -1512,11 +1529,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         const active = filterAlert === cfg.key;
                         return (
                             <motion.button key={cfg.key}
-                                initial={{ opacity: 0, y: 6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                whileHover={{ scale: 1.06, y: -2, boxShadow: active ? undefined : '0 6px 18px rgba(0,0,0,0.10)' }}
-                                whileTap={{ scale: 0.94 }}
-                                transition={{ type: 'spring', stiffness: 380, damping: 22, delay: i * 0.04 }}
+                                {...fadeUp(i * 0.05)}
+                                {...chipAnim}
                                 onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold ${active ? cfg.active : 'bg-white/55 backdrop-blur-sm border-white/80 text-slate-600 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:bg-white/80'}`}>
                                 <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
@@ -1532,10 +1546,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     {hiddenIds.size > 0 && (
                         <motion.button
                             key="hidden-pill"
-                            initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.85 }}
-                            whileHover={{ scale: 1.06, y: -2, boxShadow: '0 6px 18px rgba(0,0,0,0.10)' }}
-                            whileTap={{ scale: 0.94 }}
-                            transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+                            initial={{ opacity: 0, scale: 0.88 }}
+                            animate={{ opacity: 1, scale: 1, transition: { duration: 0.22, ease: EASE_OUT_EXPO } }}
+                            exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.14, ease: 'easeIn' } }}
+                            {...chipAnim}
                             onClick={() => setHiddenIds(new Set())}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-white/55 backdrop-blur-sm border-white/80 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:bg-white/80">
                             <Eye size={10} />
@@ -1550,10 +1564,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     {draftCount > 0 && !loading && (
                         <motion.div
                             key="draft-pill"
-                            initial={{ opacity: 0, scale: 0.92, x: 12 }}
-                            animate={{ opacity: 1, scale: 1, x: 0 }}
-                            exit={{ opacity: 0, scale: 0.92, x: 12 }}
-                            transition={{ duration: 0.2, ease: 'easeOut' }}
+                            initial={{ opacity: 0, scale: 0.9, x: 16 }}
+                            animate={{ opacity: 1, scale: 1, x: 0, transition: { duration: 0.3, ease: EASE_OUT_EXPO } }}
+                            exit={{ opacity: 0, scale: 0.9, x: 16, transition: { duration: 0.18, ease: 'easeIn' } }}
                             className="ml-auto flex items-center shrink-0 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] transition-shadow duration-300"
                         >
                             {/* Glass white section — idéntico al pill de controles */}
@@ -1570,9 +1583,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <div className="h-5 w-px bg-slate-100 shrink-0" />
                                 {/* Solo borradores toggle */}
                                 <motion.button onClick={() => setFilterDraft(f => !f)}
-                                    whileHover={{ scale: 1.04, backgroundColor: 'rgba(255,255,255,0.7)' }}
-                                    whileTap={{ scale: 0.96 }}
-                                    transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                                    {...chipAnim}
                                     className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
                                     {filterDraft
                                         ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
@@ -1584,10 +1595,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             {hasActiveFilter && filteredDraftIds.length > 0 ? (
                                 <motion.button
                                     key="pub-filtered"
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                    whileHover={{ scale: 1.03, boxShadow: '0 6px 20px rgba(0,82,204,0.35)' }}
-                                    whileTap={{ scale: 0.97 }}
-                                    transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.14, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                                    {...ctaAnim}
                                     onClick={() => handlePublish(filteredDraftIds)} disabled={publishing}
                                     className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                                     {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
@@ -1596,10 +1605,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             ) : (
                                 <motion.button
                                     key="pub-all"
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                    whileHover={{ scale: 1.03, boxShadow: '0 6px 20px rgba(0,82,204,0.35)' }}
-                                    whileTap={{ scale: 0.97 }}
-                                    transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.14, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                                    {...ctaAnim}
                                     onClick={() => handlePublish()} disabled={publishing}
                                     className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                                     {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
@@ -1618,9 +1625,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 <>
                 <motion.div
                     key={`table-${page}-${filterAbc}-${filterXyz}-${filterAlert}-${searchTerm}-${filterDraft}`}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0, transition: { duration: 0.28, ease: EASE_OUT_EXPO } }}
                 >
                 <DataTable
                     columns={COLS}
@@ -1846,18 +1852,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             {/* Ocultar */}
                                             <motion.button onClick={e => { e.stopPropagation(); setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; }); }}
                                                 title="Ocultar producto"
-                                                whileHover={{ scale: 1.18, backgroundColor: 'rgba(241,245,249,1)' }}
-                                                whileTap={{ scale: 0.88 }}
-                                                transition={{ type: 'spring', stiffness: 420, damping: 20 }}
-                                                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500">
+                                                {...iconAnim}
+                                                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 hover:bg-slate-100">
                                                 <EyeOff size={12} />
                                             </motion.button>
                                             {/* Poner en 0 */}
                                             {!dead && (
                                                 <motion.button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title="Poner MIN y MAX en 0"
-                                                    whileHover={{ scale: 1.18, boxShadow: '0 3px 10px rgba(239,68,68,0.25)' }}
-                                                    whileTap={{ scale: 0.88 }}
-                                                    transition={{ type: 'spring', stiffness: 420, damping: 20 }}
+                                                    {...iconAnim}
                                                     className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600">
                                                     <XCircle size={14} />
                                                 </motion.button>
@@ -1866,9 +1868,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             {hasDraft && (
                                                 <motion.button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
                                                     disabled={publishing}
-                                                    whileHover={{ scale: 1.08, boxShadow: '0 3px 10px rgba(0,82,204,0.25)' }}
-                                                    whileTap={{ scale: 0.93 }}
-                                                    transition={{ type: 'spring', stiffness: 420, damping: 20 }}
+                                                    {...chipAnim}
                                                     className="text-[9px] font-bold text-[#0052CC] hover:text-white hover:bg-[#0052CC] bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg disabled:opacity-50">
                                                     {publishing ? <Loader2 size={9} className="animate-spin" /> : 'Publicar'}
                                                 </motion.button>

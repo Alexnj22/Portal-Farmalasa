@@ -5,7 +5,7 @@ import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download,
     CheckCircle2, Check, Info, RotateCcw, ChevronRight,
-    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle,
+    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -176,7 +176,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                 <div />
                 {XYZ_KEYS.map(xyz => (
                     <button key={xyz} onClick={() => setFilterXyz(p => p === xyz ? 'all' : xyz)}
-                        className="relative py-1.5 rounded-lg text-[11px] font-black text-center transition-all duration-150"
+                        className="relative py-1 rounded-lg text-[11px] font-black text-center transition-all duration-150"
                         style={{
                             color: xyzColors[xyz],
                             background: filterXyz === xyz ? `${xyzColors[xyz]}22` : 'transparent',
@@ -191,7 +191,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                     <React.Fragment key={abc}>
                         {/* ABC label */}
                         <button onClick={() => setFilterAbc(p => p === abc ? 'all' : abc)}
-                            className="relative py-2 rounded-lg text-[11px] font-black text-center transition-all duration-150"
+                            className="relative py-1 rounded-lg text-[11px] font-black text-center transition-all duration-150"
                             style={{
                                 color: abcColors[abc],
                                 background: filterAbc === abc ? `${abcColors[abc]}22` : 'transparent',
@@ -206,7 +206,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                             const rgb = abc === 'A' ? '16,185,129' : abc === 'B' ? '59,130,246' : abc === 'C' ? '245,158,11' : '148,163,184';
                             return (
                                 <button key={xyz} onClick={() => toggle(abc, xyz)}
-                                    className={`relative py-3 rounded-xl text-center transition-all duration-200
+                                    className={`relative py-2 rounded-xl text-center transition-all duration-200
                                         ${count === 0 ? 'opacity-20 cursor-default' : 'cursor-pointer hover:z-10 hover:scale-[1.08]'}
                                         ${isActive ? 'z-20' : ''}`}
                                     style={{
@@ -218,7 +218,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                                         outlineOffset: isActive ? '2px' : undefined,
                                     }}
                                     disabled={count === 0}>
-                                    <span className="text-[14px] font-black text-slate-700 tabular-nums leading-none">{count || '—'}</span>
+                                    <span className="text-[12px] font-black text-slate-700 tabular-nums leading-none">{count || '—'}</span>
                                     {count > 0 && <span className="text-[7px] font-bold text-slate-400 block mt-0.5 tracking-wider">{abc}{xyz}</span>}
                                 </button>
                             );
@@ -228,7 +228,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
             </div>
 
             {/* XYZ legend */}
-            <div className="flex items-center gap-4 flex-wrap border-t border-white/60 pt-2.5">
+            <div className="flex items-center gap-4 flex-wrap border-t border-white/60 pt-2">
                 {XYZ_KEYS.map(xyz => (
                     <span key={xyz} className="flex items-center gap-1.5 text-[9px]">
                         <span className="w-2 h-2 rounded-full shrink-0" style={{ background: xyzColors[xyz], boxShadow: `0 0 6px ${xyzColors[xyz]}60` }} />
@@ -1047,13 +1047,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [editId,       setEditId]       = useState(null);
     const [expandedIds,  setExpandedIds]  = useState(new Set());
     const [configOpen,   setConfigOpen]   = useState(false);
-    const [sortBy,       setSortBy]       = useState(null);
+    const [sortBy,       setSortBy]       = useState('laboratorio');
     const [sortDir,      setSortDir]      = useState('asc');
     const [page,         setPage]         = useState(1);
     const [pageSize,     setPageSize]     = useState(25);
     const [publishing,   setPublishing]   = useState(false);
     const [publishResult,setPublishResult]= useState(null);
     const [filterDraft,     setFilterDraft]     = useState(false);
+    const [hiddenIds,       setHiddenIds]       = useState(new Set());
     const [configChanged,   setConfigChanged]   = useState(false);
     const [inlineDraftEdit, setInlineDraftEdit] = useState(null); // { productId, sucursalId, field:'min'|'max', value }
     const [toast,           setToast]           = useState(null); // { message, type }
@@ -1217,14 +1218,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const filtered = useMemo(() => {
         const q = searchTerm.toLowerCase();
         return data.filter(r => {
+            if (hiddenIds.has(r.erp_product_id))                                           return false;
             if (filterDraft && r.draft_status !== 'pending')                               return false;
-            if (filterAbc !== 'all' && (r.draft_abc_class || r.abc_class) !== filterAbc)                           return false;
+            if (filterAbc !== 'all' && (r.draft_abc_class || r.abc_class) !== filterAbc)  return false;
             if (filterXyz !== 'all' && normXyz(r.draft_demand_variability || r.demand_variability) !== filterXyz) return false;
             if (filterAlert !== 'all' && r.alert_status !== filterAlert)                   return false;
             if (q && !r.product_name?.toLowerCase().includes(q))                          return false;
             return true;
         });
-    }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft]);
+    }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, hiddenIds]);
 
     const filteredDraftIds = useMemo(
         () => hasActiveFilter ? filtered.filter(r => r.draft_status === 'pending').map(r => r.erp_product_id) : [],
@@ -1323,7 +1325,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
                             <LiquidSelect
                                 value={String(selectedErp)}
-                                onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy(null); setFilterDraft(false); } }}
+                                onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy('laboratorio'); setSortDir('asc'); setFilterDraft(false); setHiddenIds(new Set()); } }}
                                 options={erpOptions} icon={Building2} clearable={false} compact
                             />
                         </div>
@@ -1494,19 +1496,38 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             {/* ── Alert stat chips + draft pills (above table) ── */}
             {!neverCalc && (
                 <div className="flex items-center gap-2 flex-wrap">
-                    {STAT_CFGS.map(cfg => {
+                    {STAT_CFGS.map((cfg, i) => {
                         const active = filterAlert === cfg.key;
                         return (
-                            <button key={cfg.key}
+                            <motion.button key={cfg.key}
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.18, delay: i * 0.04 }}
                                 onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all active:scale-[0.97] ${active ? `${cfg.active} shadow-sm` : 'bg-white/80 border-slate-200 text-slate-600 hover:border-slate-300 hover:shadow-sm'}`}>
                                 <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
                                 <span className={`tabular-nums font-black ${active ? '' : 'text-slate-700'}`}>{loading ? '–' : stats[cfg.key]}</span>
                                 <span className="opacity-80">{cfg.label}</span>
                                 {active && <X size={9} className="ml-0.5 opacity-60" />}
-                            </button>
+                            </motion.button>
                         );
                     })}
+
+                    {/* Ocultos */}
+                    <AnimatePresence>
+                    {hiddenIds.size > 0 && (
+                        <motion.button
+                            key="hidden-pill"
+                            initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.85 }}
+                            transition={{ duration: 0.15 }}
+                            onClick={() => setHiddenIds(new Set())}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-white/80 border-slate-200 text-slate-500 hover:border-slate-300 hover:shadow-sm transition-all active:scale-[0.97]">
+                            <Eye size={10} />
+                            {hiddenIds.size} oculto{hiddenIds.size !== 1 ? 's' : ''}
+                            <X size={9} className="ml-0.5 opacity-50" />
+                        </motion.button>
+                    )}
+                    </AnimatePresence>
 
                     {/* ── Draft pill ── */}
                     <AnimatePresence>
@@ -1572,6 +1593,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             {/* ── Table + Pagination ── */}
             {!neverCalc && (
                 <>
+                <motion.div
+                    key={`table-${page}-${filterAbc}-${filterXyz}-${filterAlert}-${searchTerm}-${filterDraft}`}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                >
                 <DataTable
                     columns={COLS}
                     sortKey={sortBy}
@@ -1792,17 +1819,25 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                                     {/* Acciones */}
                                     <DataCell align="center" className="!py-2.5">
-                                        <div className="flex items-center justify-center gap-1.5">
+                                        <div className="flex items-center justify-center gap-1">
+                                            {/* Ocultar */}
+                                            <button onClick={e => { e.stopPropagation(); setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; }); }}
+                                                title="Ocultar producto"
+                                                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 hover:bg-slate-100 transition-all active:scale-95">
+                                                <EyeOff size={12} />
+                                            </button>
+                                            {/* Poner en 0 */}
                                             {!dead && (
                                                 <button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title="Poner MIN y MAX en 0"
-                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 transition-colors">
-                                                    <XCircle size={13} />
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all active:scale-95">
+                                                    <XCircle size={14} />
                                                 </button>
                                             )}
+                                            {/* Publicar borrador */}
                                             {hasDraft && (
                                                 <button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
                                                     disabled={publishing}
-                                                    className="text-[9px] font-bold text-amber-600 hover:text-white hover:bg-amber-500 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg transition-all disabled:opacity-50">
+                                                    className="text-[9px] font-bold text-[#0052CC] hover:text-white hover:bg-[#0052CC] bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg transition-all disabled:opacity-50">
                                                     {publishing ? <Loader2 size={9} className="animate-spin" /> : 'Publicar'}
                                                 </button>
                                             )}
@@ -1821,6 +1856,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         );
                     })}
                 </DataTable>
+                </motion.div>
 
                 {!loading && sorted.length > 0 && (
                     <TablePagination

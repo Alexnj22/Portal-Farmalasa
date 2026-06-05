@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.87';
+export const APP_VERSION = '1.4.88';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.88 — fix: GlassViewLayout overflow-x-hidden — scroll horizontal ya no mueve el body bajo el menú
 // v1.4.87 — MinMax: formatDominant CEIL (floor→ceil) + símbolo ≥ — cajas indivisibles, cantidad cubre el umbral en unidades
 // v1.4.86 — MinMax: Equiv. siempre visible — cajas/blisters en amber/blue, sin presentación en slate-400 "N und", dead=—
 // v1.4.85 — MinMax: MIN/MAX muestran número puro; columna Equiv. con formatDominant (amber=MIN, blue=MAX); "—" si sin presentaciones

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.67';
+export const APP_VERSION = '1.4.68';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.68 — MinMax: MIN floor — si MAX>1, MIN mínimo 1; solo (0,1) válido con MIN=0 (calculate_stock_params actualizado en DB)
 // v1.4.67 — MinMax: publicar filtrados — botón "Publicar Clase A (N)" / "Publicar filtrados (N)" en banner cuando hay filtro activo con borradores
 // v1.4.66 — MinMax auditoría: formatDominant CEIL→FLOOR+~, EditRow border-l eliminado, validación MIN+MAX obligatorio par, calculate_stock_params usa erp_sucursal_map
 // v1.4.65 — MinMax tabla: ventas bajo nombre (no columna separada), columna Laboratorio, Stock actual = Faltan/Exceso en texto (sin barra), DB get_stock_analysis v3 + laboratorio_nombre

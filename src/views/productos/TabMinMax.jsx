@@ -301,7 +301,8 @@ function formatDominant(units, presentations) {
     const pres = sortedPres(presentations);
     if (!pres.length) return `${n.toLocaleString()} und`;
     const { tipo, factor } = pres[0];
-    return `${Math.ceil(n / factor)} ${tipo.trim()}`;
+    // floor: show how many complete packages the value represents (exact und shown as subtitle)
+    return `~${Math.floor(n / factor)} ${tipo.trim()}`;
 }
 
 function getBreakdown(units, presentations) {
@@ -706,6 +707,7 @@ function EditRow({ row, onSave, onCancel }) {
         const newMin = clearManual ? null : (mn === '' ? null : parseInt(mn, 10));
         const newMax = clearManual ? null : (mx === '' ? null : parseInt(mx, 10));
         const newLt  = lt === '' ? null : parseInt(lt, 10);
+        if (!clearManual && (newMin === null) !== (newMax === null)) { setErr('Completá ambos (MIN y MAX) o dejá los dos en blanco'); return; }
         if (!clearManual && newMin !== null && newMax !== null && newMax <= newMin) { setErr('MAX debe ser mayor al MIN'); return; }
         if (newLt !== null && newLt < 1) { setErr('Lead time debe ser ≥ 1 día'); return; }
         setSaving(true);
@@ -731,7 +733,7 @@ function EditRow({ row, onSave, onCancel }) {
     const pres  = row.presentations || [];
 
     return (
-        <div className={`border-l-4 ${alert.left} bg-blue-50/40 border-b border-blue-100`}>
+        <div className="bg-blue-50/40 border-b border-blue-100">
             <div className="grid items-center px-4 py-2"
                 style={{ gridTemplateColumns: '1fr 68px 100px 105px 105px 88px 56px' }}>
                 <div className="min-w-0 pr-3">

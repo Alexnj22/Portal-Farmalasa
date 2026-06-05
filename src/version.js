@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.75';
+export const APP_VERSION = '1.4.76';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.76 — MinMax: quita fila D de matriz ABC×XYZ (nunca tiene datos)
 // v1.4.75 — MinMax: sort default laboratorio, ocultar productos, XCircle visible, matriz compacta, motion chips+tabla
 // v1.4.74 — MinMax: columna Clase ordenable (AX→DZ, usa draft si existe)
 // v1.4.73 — MinMax: columna Laboratorio ordenable (sortable + localeCompare 'es')

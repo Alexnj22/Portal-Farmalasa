@@ -107,7 +107,7 @@ function exportCsv(rows, name, sucursalName) {
 
 function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, loading }) {
     const XYZ_KEYS = ['X', 'Y', 'Z'];
-    const ABC_KEYS = ['A', 'B', 'C', 'D'];
+    const ABC_KEYS = ['A', 'B', 'C'];
 
     const matrix = useMemo(() => {
         const m = {};

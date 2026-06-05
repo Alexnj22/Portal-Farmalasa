@@ -281,9 +281,9 @@ export default function TabMinMaxComparacion({ searchTerm = '' }) {
                 page={page}
                 totalPages={totalPages}
                 pageSize={pageSize}
-                totalRows={filtered.length}
-                onPage={setPage}
-                onPageSize={sz => { setPageSize(sz); setPage(1); }}
+                total={filtered.length}
+                onPageChange={setPage}
+                onPageSizeChange={sz => { setPageSize(sz); setPage(1); }}
             />
         </div>
     );

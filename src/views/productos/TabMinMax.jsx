@@ -3,8 +3,8 @@ import { supabase } from '../../supabaseClient';
 import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download,
-    CheckCircle2, Edit3, Check, Info, RotateCcw, ChevronRight,
-    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload,
+    CheckCircle2, Check, Info, RotateCcw, ChevronRight,
+    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -207,12 +207,14 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                                 <button key={xyz} onClick={() => toggle(abc, xyz)}
                                     className={`relative py-3 rounded-xl text-center transition-all duration-200
                                         ${count === 0 ? 'opacity-20 cursor-default' : 'cursor-pointer hover:z-10 hover:scale-[1.08]'}
-                                        ${isActive ? 'z-10 scale-[1.05]' : ''}`}
+                                        ${isActive ? 'z-20' : ''}`}
                                     style={{
                                         background: count > 0 ? `rgba(${rgb},${intensity})` : 'rgba(0,0,0,0.025)',
                                         boxShadow: isActive
-                                            ? `0 6px 18px rgba(${rgb},0.35), 0 0 0 2px rgba(${rgb},0.55)`
+                                            ? `0 6px 18px rgba(${rgb},0.25)`
                                             : count > 0 ? `0 2px 8px rgba(${rgb},0.12)` : undefined,
+                                        outline: isActive ? `2.5px solid rgba(${rgb},0.80)` : undefined,
+                                        outlineOffset: isActive ? '2px' : undefined,
                                     }}
                                     disabled={count === 0}>
                                     <span className="text-[14px] font-black text-slate-700 tabular-nums leading-none">{count || '—'}</span>
@@ -1126,6 +1128,23 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const handleEditSave = useCallback(() => { setEditId(null); loadData(selectedErp); }, [selectedErp, loadData]);
 
+    const zeroOutRow = useCallback(async (row) => {
+        const { error: e } = await supabase.from('product_stock_params')
+            .update({ draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() })
+            .eq('erp_product_id', row.erp_product_id)
+            .eq('erp_sucursal_id', row._erp_sucursal_id);
+        if (!e) {
+            setData(prev => prev.map(r =>
+                r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
+                    ? { ...r, draft_min: 0, draft_max: 0, draft_status: 'pending' }
+                    : r
+            ));
+        }
+        useStaff.getState().appendAuditLog('MINMAX_ZERO_OUT', String(row.erp_product_id), {
+            product: row.product_name, sucursal_id: row._erp_sucursal_id,
+        });
+    }, []);
+
     const saveDraftCell = useCallback(async (edit) => {
         if (!edit) return;
         const numVal = edit.value === '' ? null : parseInt(edit.value, 10);
@@ -1668,9 +1687,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     {alert.label}
                                                 </span>
                                                 {!dead && (
-                                                    <button onClick={e => { e.stopPropagation(); setEditId(row.erp_product_id); }} title="Ajustar manual MIN/MAX"
-                                                        className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-[#0052CC] hover:bg-blue-50 transition-colors shrink-0">
-                                                        <Edit3 size={11} />
+                                                    <button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title="Poner MIN y MAX en 0"
+                                                        className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 transition-colors shrink-0">
+                                                        <XCircle size={11} />
                                                     </button>
                                                 )}
                                                 {hasDraft && (

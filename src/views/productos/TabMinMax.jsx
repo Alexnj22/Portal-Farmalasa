@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import {
     RefreshCw, AlertTriangle, Loader2,
@@ -1503,44 +1504,63 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     })}
 
                     {/* ── Draft pill ── */}
+                    <AnimatePresence>
                     {draftCount > 0 && !loading && (
-                        <div className="ml-auto flex items-center shrink-0 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-shadow duration-300">
-                            {/* White section */}
-                            <div className="flex items-center rounded-l-2xl border border-r-0 border-slate-200/70 bg-white/80 backdrop-blur-sm">
-                                {/* Count */}
-                                <div className="flex items-center gap-1.5 px-3 py-2">
+                        <motion.div
+                            key="draft-pill"
+                            initial={{ opacity: 0, scale: 0.92, x: 12 }}
+                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                            exit={{ opacity: 0, scale: 0.92, x: 12 }}
+                            transition={{ duration: 0.2, ease: 'easeOut' }}
+                            className="ml-auto flex items-center shrink-0 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] transition-shadow duration-300"
+                        >
+                            {/* Glass white section — idéntico al pill de controles */}
+                            <div className="flex items-center rounded-l-2xl border border-r-0 border-slate-200/70 bg-white/80 backdrop-blur-sm overflow-hidden">
+                                {/* Count + dot pulsante */}
+                                <div className="flex items-center gap-1.5 px-3 py-2.5">
                                     <span className="relative flex h-2 w-2 shrink-0">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
                                     </span>
-                                    <span className="text-[11px] font-black text-amber-700 tabular-nums">{draftCount}</span>
-                                    <span className="text-[11px] text-slate-500">borrador{draftCount !== 1 ? 'es' : ''}</span>
+                                    <span className="text-[11px] font-black text-slate-700 tabular-nums">{draftCount}</span>
+                                    <span className="text-[11px] text-slate-400">borrador{draftCount !== 1 ? 'es' : ''}</span>
                                 </div>
                                 <div className="h-5 w-px bg-slate-100 shrink-0" />
                                 {/* Solo borradores toggle */}
                                 <button onClick={() => setFilterDraft(f => !f)}
-                                    className={`flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold transition-colors ${filterDraft ? 'text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-bold transition-colors active:scale-[0.97] ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
                                     {filterDraft
                                         ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
                                         : 'Solo borradores'}
                                 </button>
                             </div>
-                            {/* Publicar — amber cap */}
+                            {/* Publicar — blue cap, igual que Calcular */}
+                            <AnimatePresence mode="wait">
                             {hasActiveFilter && filteredDraftIds.length > 0 ? (
-                                <button onClick={() => handlePublish(filteredDraftIds)} disabled={publishing}
-                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-r-2xl transition-all active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
+                                <motion.button
+                                    key="pub-filtered"
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.15 }}
+                                    onClick={() => handlePublish(filteredDraftIds)} disabled={publishing}
+                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl transition-all duration-150 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
                                     {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
                                     Publicar {filterLabel} ({filteredDraftIds.length})
-                                </button>
+                                </motion.button>
                             ) : (
-                                <button onClick={() => handlePublish()} disabled={publishing}
-                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-r-2xl transition-all active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
+                                <motion.button
+                                    key="pub-all"
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.15 }}
+                                    onClick={() => handlePublish()} disabled={publishing}
+                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl transition-all duration-150 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
                                     {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
                                     Publicar todo ({draftCount})
-                                </button>
+                                </motion.button>
                             )}
-                        </div>
+                            </AnimatePresence>
+                        </motion.div>
                     )}
+                    </AnimatePresence>
                 </div>
             )}
 

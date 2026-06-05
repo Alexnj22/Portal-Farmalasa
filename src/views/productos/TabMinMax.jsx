@@ -773,6 +773,89 @@ function EditRow({ row, onSave, onCancel }) {
     );
 }
 
+// ─── Edit draft row ───────────────────────────────────────────────────────────
+
+function EditDraftRow({ row, onSave, onCancel }) {
+    const [mn,     setMn]     = useState(String(row.draft_min ?? ''));
+    const [mx,     setMx]     = useState(String(row.draft_max ?? ''));
+    const [saving, setSaving] = useState(false);
+    const [err,    setErr]    = useState('');
+    const mnRef = useRef();
+    useEffect(() => { mnRef.current?.select(); }, []);
+
+    const pres = row.presentations || [];
+
+    const save = async () => {
+        const newMin = mn === '' ? null : parseInt(mn, 10);
+        const newMax = mx === '' ? null : parseInt(mx, 10);
+        if (newMin !== null && newMax !== null && newMax <= newMin) { setErr('MAX debe ser mayor al MIN'); return; }
+        setSaving(true);
+        try {
+            const { error } = await supabase.from('product_stock_params')
+                .update({ draft_min: newMin, draft_max: newMax, updated_at: new Date().toISOString() })
+                .eq('erp_product_id', row.erp_product_id)
+                .eq('erp_sucursal_id', row._erp_sucursal_id);
+            if (error) throw error;
+            useStaff.getState().appendAuditLog('MINMAX_DRAFT_EDIT', String(row.erp_product_id), {
+                product: row.product_name, sucursal_id: row._erp_sucursal_id,
+                draft_min: newMin, draft_max: newMax,
+            });
+            onSave();
+        } catch (e) { setErr(e.message); setSaving(false); }
+    };
+
+    return (
+        <div className="border-l-4 border-l-amber-400 bg-amber-50/30 border-b border-amber-100">
+            <div className="grid items-center px-4 py-2"
+                style={{ gridTemplateColumns: '1fr 68px 100px 105px 105px 88px 56px' }}>
+                <div className="min-w-0 pr-3">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-[13px] font-semibold text-slate-800 truncate">{row.product_name}</span>
+                        <span className="shrink-0 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400">
+                        En uso: MIN <span className="text-orange-500 font-bold">{Number(row.effective_min || 0).toLocaleString()}</span> · MAX <span className="text-blue-500 font-bold">{Number(row.effective_max || 0).toLocaleString()}</span> und
+                    </span>
+                </div>
+                <div className="flex justify-center">
+                    <AbcXyzBadge abc={row.draft_abc_class || row.abc_class} xyz={row.draft_demand_variability || row.demand_variability} />
+                </div>
+                <div className="text-right">
+                    <span className={`text-[12px] font-bold tabular-nums ${Number(row.current_stock) === 0 ? 'text-red-500' : 'text-slate-700'}`}>
+                        {formatUnits(row.current_stock, pres)}
+                    </span>
+                </div>
+                <div className="px-1.5">
+                    <input ref={mnRef} type="number" min="0" value={mn}
+                        onChange={e => { setMn(e.target.value); setErr(''); }}
+                        onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') onCancel(); }}
+                        placeholder={String(row.draft_min ?? '')}
+                        className="w-full text-right text-[12px] font-bold text-amber-800 bg-amber-50 border border-amber-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                    <div className="text-[9px] text-slate-400 text-right mt-0.5">MIN borrador</div>
+                </div>
+                <div className="px-1.5">
+                    <input type="number" min="0" value={mx}
+                        onChange={e => { setMx(e.target.value); setErr(''); }}
+                        onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') onCancel(); }}
+                        placeholder={String(row.draft_max ?? '')}
+                        className="w-full text-right text-[12px] font-bold text-amber-800 bg-amber-50 border border-amber-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                    <div className="text-[9px] text-slate-400 text-right mt-0.5">MAX borrador</div>
+                </div>
+                <div className="flex items-center justify-center gap-1.5">
+                    <button onClick={save} disabled={saving}
+                        className="h-7 px-3 rounded-lg text-[11px] font-bold text-white bg-amber-500 hover:bg-amber-600 transition-colors disabled:opacity-50 flex items-center gap-1">
+                        {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Guardar
+                    </button>
+                    <button onClick={onCancel} disabled={saving}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"><X size={13} /></button>
+                </div>
+                <div />
+            </div>
+            {err && <div className="px-4 pb-2 text-[11px] font-semibold text-red-500">{err}</div>}
+        </div>
+    );
+}
+
 // ─── Config Panel ─────────────────────────────────────────────────────────────
 
 function ConfigPanel({ config, onSave, onClose }) {
@@ -946,6 +1029,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [publishResult,setPublishResult]= useState(null);
     const [filterDraft,  setFilterDraft]  = useState(false);
     const [configChanged,setConfigChanged]= useState(false);
+    const [draftEditId,  setDraftEditId]  = useState(null);
     const loadRef = useRef(0);
 
     const toggleExpand = useCallback((id) => {
@@ -958,7 +1042,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const loadData = useCallback(async (erpId) => {
         const rid = ++loadRef.current;
-        setLoading(true); setError(null); setEditId(null); setExpandedIds(new Set());
+        setLoading(true); setError(null); setEditId(null); setDraftEditId(null); setExpandedIds(new Set());
         try {
             // PostgREST caps at 1000 rows per request — fetch in chunks until exhausted
             const allRows = [];
@@ -1010,7 +1094,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         finally { setCalculating(false); }
     };
 
-    const handleEditSave = useCallback(() => { setEditId(null); loadData(selectedErp); }, [selectedErp, loadData]);
+    const handleEditSave      = useCallback(() => { setEditId(null);      loadData(selectedErp); }, [selectedErp, loadData]);
+    const handleDraftEditSave = useCallback(() => { setDraftEditId(null); loadData(selectedErp); }, [selectedErp, loadData]);
 
     const handlePublish = useCallback(async (productIds = null) => {
         setPublishing(true); setPublishResult(null); setError(null);
@@ -1390,8 +1475,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 >
 
                     {pageRows.map((row, rowIdx) => {
-                        const isEditing  = editId === row.erp_product_id;
-                        const isExpanded = expandedIds.has(row.erp_product_id);
+                        const isEditing      = editId      === row.erp_product_id;
+                        const isDraftEditing = draftEditId === row.erp_product_id;
+                        const isExpanded     = expandedIds.has(row.erp_product_id);
                         const alert      = ALERT[row.alert_status] ?? ALERT.ok;
                         const pres       = row.presentations || [];
                         const dead       = row.is_dead_stock;
@@ -1408,6 +1494,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <tr>
                                     <td colSpan={COLS.length} className="p-0">
                                         <EditRow row={row} onSave={handleEditSave} onCancel={() => setEditId(null)} />
+                                    </td>
+                                </tr>
+                            </React.Fragment>
+                        );
+
+                        if (isDraftEditing) return (
+                            <React.Fragment key={row.erp_product_id}>
+                                <tr>
+                                    <td colSpan={COLS.length} className="p-0">
+                                        <EditDraftRow row={row} onSave={handleDraftEditSave} onCancel={() => setDraftEditId(null)} />
                                     </td>
                                 </tr>
                             </React.Fragment>
@@ -1533,11 +1629,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 </span>
                                             )}
                                             {hasDraft && (
-                                                <button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
-                                                    disabled={publishing}
-                                                    className="text-[9px] font-bold text-amber-600 hover:text-white hover:bg-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full transition-all disabled:opacity-50">
-                                                    Publicar
-                                                </button>
+                                                <div className="flex items-center gap-1">
+                                                    <button onClick={e => { e.stopPropagation(); setEditId(null); setDraftEditId(row.erp_product_id); }}
+                                                        className="text-[9px] font-bold text-amber-700 hover:text-white hover:bg-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full transition-all flex items-center gap-0.5">
+                                                        <Edit3 size={8} /> Editar
+                                                    </button>
+                                                    <button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
+                                                        disabled={publishing}
+                                                        className="text-[9px] font-bold text-amber-600 hover:text-white hover:bg-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full transition-all disabled:opacity-50">
+                                                        Publicar
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
                                     </DataCell>

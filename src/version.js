@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.56';
+export const APP_VERSION = '1.4.57';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.57 — MinMax: edición de borrador inline (EditDraftRow) — editar draft_min/draft_max antes de publicar, muestra valor en uso como referencia
 // v1.4.56 — MinMax: CSV+sucursal, banner config→recalc, alerta clase A críticos, filtro AZ, proyección 30/60/90d, acciones dead stock, traslados en Red, orden defecto visible, pg_cron 3am diario
 // v1.4.55 — MinMax: workflow Borrador/Publicar — calcular genera borradores; diff live→draft en tabla; Publicar por fila o todo; get_stock_analysis VOLATILE; TabMinMaxNetwork chunked fetch; fix indexOf O(n²)
 // v1.4.54 — MinMax: fix MAX > MIN siempre — MAX = GREATEST(CEIL(v×cycle), MIN+1, 1); 0 casos inválidos en 17k registros

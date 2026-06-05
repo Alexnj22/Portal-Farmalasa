@@ -25,6 +25,12 @@ const mStart = (y, m) => `${y}-${pad(m + 1)}-01`;
 const mEnd   = (y, m) => `${y}-${pad(m + 1)}-${pad(new Date(y, m + 1, 0).getDate())}`;
 const mKey   = (y, m) => y * 12 + m;
 
+function daysAgo(n) {
+    const { y, m, d } = svNow();
+    const dt = new Date(Date.UTC(y, m, d - n));
+    return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`;
+}
+
 function buildPresets() {
     const { y, m } = svNow();
     const today = svToday();
@@ -32,15 +38,13 @@ function buildPresets() {
     const pY = m === 0 ? y - 1 : y;
     const m3 = ((m - 2) % 12 + 12) % 12;
     const y3 = m - 2 < 0 ? y - 1 : y;
-    const m6 = ((m - 5) % 12 + 12) % 12;
-    const y6 = m - 5 < 0 ? y - 1 : y;
     return [
-        { label: 'Hoy',             start: today,           end: today        },
-        { label: 'Este mes',        start: mStart(y, m),    end: mEnd(y, m)   },
-        { label: 'Mes anterior',    start: mStart(pY, pM),  end: mEnd(pY, pM) },
-        { label: 'Últimos 3 meses', start: mStart(y3, m3),  end: mEnd(y, m)   },
-        { label: 'Últimos 6 meses', start: mStart(y6, m6),  end: mEnd(y, m)   },
-        { label: 'Este año',        start: `${y}-01-01`,    end: `${y}-12-31` },
+        { label: 'Hoy',             start: today,        end: today        },
+        { label: 'Este mes',        start: mStart(y, m), end: mEnd(y, m)   },
+        { label: 'Mes anterior',    start: mStart(pY, pM), end: mEnd(pY, pM) },
+        { label: 'Últimos 3 meses', start: mStart(y3, m3), end: mEnd(y, m) },
+        { label: 'Últimos 6 meses', start: daysAgo(180),   end: today      },
+        { label: 'Este año',        start: `${y}-01-01`, end: `${y}-12-31` },
     ];
 }
 

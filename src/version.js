@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.88';
+export const APP_VERSION = '1.4.89';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.89 — PeriodPicker: "Últimos 6 meses" = hoy−180 días (rolling, igual que MinMax) en vez de inicio de mes calendario
 // v1.4.88 — fix: GlassViewLayout overflow-x-hidden — scroll horizontal ya no mueve el body bajo el menú
 // v1.4.87 — MinMax: formatDominant CEIL (floor→ceil) + símbolo ≥ — cajas indivisibles, cantidad cubre el umbral en unidades
 // v1.4.86 — MinMax: Equiv. siempre visible — cajas/blisters en amber/blue, sin presentación en slate-400 "N und", dead=—

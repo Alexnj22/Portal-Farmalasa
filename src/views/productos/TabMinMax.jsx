@@ -104,7 +104,7 @@ function relativeTime(iso) {
 }
 
 function exportCsv(rows, name, sucursalName) {
-    const h = ['Sucursal','Laboratorio','Producto','Clase','XYZ','MIN (und)','MAX (und)','Ventas período'];
+    const h = ['Sucursal','Laboratorio','Producto','Clase','MIN (und)','MAX (und)','Ventas período'];
     const lines = rows.map(r => {
         const abc = (r.draft_abc_class || r.abc_class || '—');
         const xyz = normXyz(r.draft_demand_variability || r.demand_variability);
@@ -113,7 +113,6 @@ function exportCsv(rows, name, sucursalName) {
             `"${(r.laboratorio_nombre||'').replace(/"/g,'""')}"`,
             `"${(r.product_name||'').replace(/"/g,'""')}"`,
             `${abc}${xyz}`,
-            xyz,
             r.effective_min ?? '—',
             r.effective_max ?? '—',
             r.units_sold_6m ?? 0,

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.91';
+export const APP_VERSION = '1.4.92';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.92 — MinMax CSV: quita columna XYZ separada (Clase ya muestra AX/BY/CZ)
 // v1.4.91 — MinMax CSV: quita Estado/Stock/Cobertura/Pedir/Ingresos; agrega Laboratorio y Clase completa (ABC+XYZ)
 // v1.4.90 — get_product_sales_agg: mes parcial de inicio desde invoice_items (no monthly_agg) → cantidad exacta al día igual que MinMax
 // v1.4.89 — PeriodPicker: "Últimos 6 meses" = hoy−180 días (rolling, igual que MinMax) en vez de inicio de mes calendario

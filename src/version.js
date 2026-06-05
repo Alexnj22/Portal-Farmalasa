@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.59';
+export const APP_VERSION = '1.4.60';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.60 — MinMax: 6 fixes — toast para calcResult, edición inline MIN/MAX borrador, matrix/filtro usan draft, badges solo draft, get_inventory_cost_summary draft fallback
 // v1.4.59 — MinMax: cards glassmorphic grandes, pill unificada (branch+CSV+cfg+todas+recalcular), sin leyenda ni ABC/XYZ duplicados en pill
 // v1.4.58 — MinMax: redesign visual — cards compactas izq, pill filtro der, chips alertas sobre tabla, skeleton matriz, botones min-w+active:scale, sin AZ ni Ciclo
 // v1.4.57 — MinMax: edición de borrador inline (EditDraftRow) — editar draft_min/draft_max antes de publicar, muestra valor en uso como referencia

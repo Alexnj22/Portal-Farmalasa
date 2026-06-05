@@ -114,8 +114,9 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
             for (const xyz of XYZ_KEYS)
                 m[`${abc}${xyz}`] = 0;
         for (const r of data) {
-            const abc = r.abc_class || 'D';
-            const xyz = normXyz(r.demand_variability);
+            if (r.is_dead_stock) continue;
+            const abc = r.draft_abc_class || r.abc_class || 'D';
+            const xyz = normXyz(r.draft_demand_variability || r.demand_variability);
             if (m[`${abc}${xyz}`] !== undefined) m[`${abc}${xyz}`]++;
         }
         return m;
@@ -1027,10 +1028,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [pageSize,     setPageSize]     = useState(25);
     const [publishing,   setPublishing]   = useState(false);
     const [publishResult,setPublishResult]= useState(null);
-    const [filterDraft,  setFilterDraft]  = useState(false);
-    const [configChanged,setConfigChanged]= useState(false);
-    const [draftEditId,  setDraftEditId]  = useState(null);
+    const [filterDraft,     setFilterDraft]     = useState(false);
+    const [configChanged,   setConfigChanged]   = useState(false);
+    const [inlineDraftEdit, setInlineDraftEdit] = useState(null); // { productId, sucursalId, field:'min'|'max', value }
+    const [toast,           setToast]           = useState(null); // { message, type }
     const loadRef = useRef(0);
+
+    useEffect(() => {
+        if (!toast) return;
+        const t = setTimeout(() => setToast(null), 4500);
+        return () => clearTimeout(t);
+    }, [toast]);
 
     const toggleExpand = useCallback((id) => {
         setExpandedIds(prev => {
@@ -1042,7 +1050,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const loadData = useCallback(async (erpId) => {
         const rid = ++loadRef.current;
-        setLoading(true); setError(null); setEditId(null); setDraftEditId(null); setExpandedIds(new Set());
+        setLoading(true); setError(null); setEditId(null); setInlineDraftEdit(null); setExpandedIds(new Set());
         try {
             // PostgREST caps at 1000 rows per request — fetch in chunks until exhausted
             const allRows = [];
@@ -1078,6 +1086,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             const { data: res, error: e } = await supabase.rpc('calculate_stock_params', { p_erp_sucursal_id: selectedErp });
             if (e) throw e;
             setCalcResult({ ...res, mode: 'single' });
+            setToast({ message: `${(res?.rows ?? 0).toLocaleString()} borradores generados para ${ERP_NAMES[selectedErp]}`, type: 'info' });
             await loadData(selectedErp);
         } catch (e) { setError(e.message); }
         finally { setCalculating(false); }
@@ -1089,13 +1098,35 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             const { data: res, error: e } = await supabase.rpc('calculate_stock_params');
             if (e) throw e;
             setCalcResult({ ...res, mode: 'all' });
+            setToast({ message: `${(res?.rows ?? 0).toLocaleString()} borradores generados para todas las sucursales`, type: 'info' });
             await loadData(selectedErp);
         } catch (e) { setError(e.message); }
         finally { setCalculating(false); }
     };
 
-    const handleEditSave      = useCallback(() => { setEditId(null);      loadData(selectedErp); }, [selectedErp, loadData]);
-    const handleDraftEditSave = useCallback(() => { setDraftEditId(null); loadData(selectedErp); }, [selectedErp, loadData]);
+    const handleEditSave = useCallback(() => { setEditId(null); loadData(selectedErp); }, [selectedErp, loadData]);
+
+    const saveDraftCell = useCallback(async (edit) => {
+        if (!edit) return;
+        const numVal = edit.value === '' ? null : parseInt(edit.value, 10);
+        if (Number.isNaN(numVal) && edit.value !== '') { setInlineDraftEdit(null); return; }
+        const col = edit.field === 'min' ? 'draft_min' : 'draft_max';
+        setInlineDraftEdit(null);
+        const { error: e } = await supabase.from('product_stock_params')
+            .update({ [col]: numVal, updated_at: new Date().toISOString() })
+            .eq('erp_product_id', edit.productId)
+            .eq('erp_sucursal_id', edit.sucursalId);
+        if (!e) {
+            setData(prev => prev.map(r =>
+                r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId
+                    ? { ...r, [col]: numVal }
+                    : r
+            ));
+        }
+        useStaff.getState().appendAuditLog('MINMAX_DRAFT_EDIT', String(edit.productId), {
+            field: col, value: numVal, sucursal_id: edit.sucursalId,
+        });
+    }, []);
 
     const handlePublish = useCallback(async (productIds = null) => {
         setPublishing(true); setPublishResult(null); setError(null);
@@ -1131,8 +1162,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         const q = searchTerm.toLowerCase();
         return data.filter(r => {
             if (filterDraft && r.draft_status !== 'pending')                               return false;
-            if (filterAbc   !== 'all' && r.abc_class    !== filterAbc)                    return false;
-            if (filterXyz   !== 'all' && normXyz(r.demand_variability) !== filterXyz)     return false;
+            if (filterAbc !== 'all' && (r.draft_abc_class || r.abc_class) !== filterAbc)                           return false;
+            if (filterXyz !== 'all' && normXyz(r.draft_demand_variability || r.demand_variability) !== filterXyz) return false;
             if (filterAlert !== 'all' && r.alert_status !== filterAlert)                   return false;
             if (q && !r.product_name?.toLowerCase().includes(q))                          return false;
             return true;
@@ -1261,12 +1292,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             : <><Layers size={11} /> Todas</>}
                     </button>
 
-                    {/* Recalcular — blue right cap */}
+                    {/* Calcular — blue right cap */}
                     <button onClick={handleRecalcular} disabled={calculating || loading}
-                        className="inline-flex items-center justify-center gap-1.5 min-w-[120px] px-4 py-2.5 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-[14px] transition-all duration-150 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
+                        className="inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 py-2.5 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl transition-all duration-150 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
                         {calculating && calcMode === 'single'
                             ? <><Loader2 size={12} className="animate-spin" /> Calculando…</>
-                            : <><RefreshCw size={12} /> Recalcular</>}
+                            : <><RefreshCw size={12} /> Calcular</>}
                     </button>
                 </div>
             </div>
@@ -1344,15 +1375,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         ? `${publishResult.published} producto${publishResult.published !== 1 ? 's' : ''} publicado${publishResult.published !== 1 ? 's' : ''} en ${ERP_NAMES[selectedErp]}`
                         : `${publishResult.published?.toLocaleString()} borradores publicados en ${ERP_NAMES[selectedErp]}`}
                     <button onClick={() => setPublishResult(null)} className="ml-auto text-emerald-400 hover:text-emerald-600"><X size={12} /></button>
-                </div>
-            )}
-            {calcResult?.ok && (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-[12px] text-blue-700 font-semibold">
-                    <Info size={14} />
-                    {calcResult.mode === 'all'
-                        ? `${calcResult.rows?.toLocaleString()} borradores generados para todas las sucursales — revisá y publicá los cambios`
-                        : `${calcResult.rows?.toLocaleString()} borradores generados para ${ERP_NAMES[selectedErp]} — revisá y publicá los cambios`}
-                    <button onClick={() => setCalcResult(null)} className="ml-auto text-blue-400 hover:text-blue-600"><X size={12} /></button>
                 </div>
             )}
             {error && (
@@ -1446,9 +1468,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 >
 
                     {pageRows.map((row, rowIdx) => {
-                        const isEditing      = editId      === row.erp_product_id;
-                        const isDraftEditing = draftEditId === row.erp_product_id;
-                        const isExpanded     = expandedIds.has(row.erp_product_id);
+                        const isEditing  = editId === row.erp_product_id;
+                        const isExpanded = expandedIds.has(row.erp_product_id);
                         const alert      = ALERT[row.alert_status] ?? ALERT.ok;
                         const pres       = row.presentations || [];
                         const dead       = row.is_dead_stock;
@@ -1465,16 +1486,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <tr>
                                     <td colSpan={COLS.length} className="p-0">
                                         <EditRow row={row} onSave={handleEditSave} onCancel={() => setEditId(null)} />
-                                    </td>
-                                </tr>
-                            </React.Fragment>
-                        );
-
-                        if (isDraftEditing) return (
-                            <React.Fragment key={row.erp_product_id}>
-                                <tr>
-                                    <td colSpan={COLS.length} className="p-0">
-                                        <EditDraftRow row={row} onSave={handleDraftEditSave} onCancel={() => setDraftEditId(null)} />
                                     </td>
                                 </tr>
                             </React.Fragment>
@@ -1511,21 +1522,25 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         </div>
                                     </DataCell>
 
-                                    {/* Clase */}
+                                    {/* Clase — show draft badge when no published value yet */}
                                     <DataCell align="center" className="!py-2.5">
-                                        <div className="flex flex-col items-center gap-0.5">
-                                            <AbcXyzBadge abc={row.abc_class} xyz={row.demand_variability} />
-                                            {hasDraft && row.draft_abc_class && (
-                                                row.abc_class == null ||
-                                                row.draft_abc_class !== row.abc_class ||
-                                                normXyz(row.draft_demand_variability) !== normXyz(row.demand_variability)
-                                            ) && (
-                                                <div className="flex items-center gap-0.5">
-                                                    <span className="text-[8px] text-slate-300">→</span>
-                                                    <AbcXyzBadge abc={row.draft_abc_class} xyz={row.draft_demand_variability} />
+                                        {!row.abc_class && hasDraft
+                                            ? <AbcXyzBadge abc={row.draft_abc_class} xyz={row.draft_demand_variability} />
+                                            : (
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <AbcXyzBadge abc={row.abc_class} xyz={row.demand_variability} />
+                                                    {hasDraft && row.draft_abc_class && (
+                                                        row.draft_abc_class !== row.abc_class ||
+                                                        normXyz(row.draft_demand_variability) !== normXyz(row.demand_variability)
+                                                    ) && (
+                                                        <div className="flex items-center gap-0.5">
+                                                            <span className="text-[8px] text-slate-300">→</span>
+                                                            <AbcXyzBadge abc={row.draft_abc_class} xyz={row.draft_demand_variability} />
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
+                                            )
+                                        }
                                     </DataCell>
 
                                     {/* Cobertura */}
@@ -1543,43 +1558,65 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         {!dead && stock > 0 && <div className="text-[9px] text-slate-400">{stock.toLocaleString()} und</div>}
                                     </DataCell>
 
-                                    {/* MIN */}
+                                    {/* MIN — inline edit on click for draft rows */}
                                     <DataCell align="center" className="!py-2.5">
-                                        {dead ? <span className="text-slate-200 text-xs">—</span> : (
+                                        {dead ? <span className="text-slate-200 text-xs">—</span> : hasDraft ? (
+                                            inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'min'
+                                                ? (
+                                                    <input autoFocus type="number" min="0"
+                                                        value={inlineDraftEdit.value}
+                                                        onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
+                                                        onBlur={() => saveDraftCell(inlineDraftEdit)}
+                                                        onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setInlineDraftEdit(null); }}
+                                                        onClick={e => e.stopPropagation()}
+                                                        className="w-16 text-center text-[13px] font-black text-amber-800 bg-amber-50 border-2 border-amber-400 rounded-lg px-1 py-1 focus:outline-none" />
+                                                ) : (
+                                                    <div className="flex flex-col items-center cursor-text group"
+                                                        onClick={e => { e.stopPropagation(); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); }}>
+                                                        <div className="text-[13px] font-black tabular-nums text-amber-600 group-hover:underline decoration-amber-400 underline-offset-2">
+                                                            {(row.draft_min ?? 0).toLocaleString()}
+                                                        </div>
+                                                        {minN > 0 && <div className="text-[9px] text-slate-400">{minN.toLocaleString()} act.</div>}
+                                                    </div>
+                                                )
+                                        ) : (
                                             <div className="flex flex-col items-center">
                                                 <div className={`text-[12px] font-semibold tabular-nums ${stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>{formatDominant(minN, pres)}</div>
                                                 <div className="text-[9px] text-slate-400">{minN.toLocaleString()} und</div>
-                                                {hasDraft && row.draft_min != null && row.draft_min !== minN && (
-                                                    <div className="flex items-center gap-0.5 mt-0.5">
-                                                        <span className="text-[8px] text-slate-300">→</span>
-                                                        <span className={`text-[10px] font-black tabular-nums ${row.draft_min > minN ? 'text-orange-500' : 'text-emerald-600'}`}>
-                                                            {row.draft_min.toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                )}
                                             </div>
                                         )}
                                     </DataCell>
 
-                                    {/* MAX */}
+                                    {/* MAX — inline edit on click for draft rows */}
                                     <DataCell align="center" className="!py-2.5">
-                                        {dead ? <span className="text-slate-200 text-xs">—</span> : (
+                                        {dead ? <span className="text-slate-200 text-xs">—</span> : hasDraft ? (
+                                            inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'max'
+                                                ? (
+                                                    <input autoFocus type="number" min="0"
+                                                        value={inlineDraftEdit.value}
+                                                        onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
+                                                        onBlur={() => saveDraftCell(inlineDraftEdit)}
+                                                        onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setInlineDraftEdit(null); }}
+                                                        onClick={e => e.stopPropagation()}
+                                                        className="w-16 text-center text-[13px] font-black text-blue-800 bg-blue-50 border-2 border-blue-400 rounded-lg px-1 py-1 focus:outline-none" />
+                                                ) : (
+                                                    <div className="flex flex-col items-center cursor-text group"
+                                                        onClick={e => { e.stopPropagation(); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); }}>
+                                                        <div className="text-[13px] font-black tabular-nums text-blue-600 group-hover:underline decoration-blue-400 underline-offset-2">
+                                                            {(row.draft_max ?? 0).toLocaleString()}
+                                                        </div>
+                                                        {maxN > 0 && <div className="text-[9px] text-slate-400">{maxN.toLocaleString()} act.</div>}
+                                                    </div>
+                                                )
+                                        ) : (
                                             <div className="flex flex-col items-center">
                                                 <div className={`text-[12px] font-semibold tabular-nums ${stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>{formatDominant(maxN, pres)}</div>
                                                 <div className="text-[9px] text-slate-400">{maxN.toLocaleString()} und</div>
-                                                {hasDraft && row.draft_max != null && row.draft_max !== maxN && (
-                                                    <div className="flex items-center gap-0.5 mt-0.5">
-                                                        <span className="text-[8px] text-slate-300">→</span>
-                                                        <span className={`text-[10px] font-black tabular-nums ${row.draft_max > maxN ? 'text-blue-500' : 'text-slate-500'}`}>
-                                                            {row.draft_max.toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                )}
                                             </div>
                                         )}
                                     </DataCell>
 
-                                    {/* Estado + editar + pedir + publicar */}
+                                    {/* Estado + editar (manual) + pedir + publicar */}
                                     <DataCell align="center" className="!py-2.5">
                                         <div className="flex flex-col items-center gap-0.5">
                                             <div className="flex items-center gap-1">
@@ -1588,7 +1625,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     {alert.label}
                                                 </span>
                                                 {!dead && (
-                                                    <button onClick={e => { e.stopPropagation(); setEditId(row.erp_product_id); }} title="Ajustar MIN/MAX"
+                                                    <button onClick={e => { e.stopPropagation(); setEditId(row.erp_product_id); }} title="Ajustar manual MIN/MAX"
                                                         className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-[#0052CC] hover:bg-blue-50 transition-colors shrink-0">
                                                         <Edit3 size={11} />
                                                     </button>
@@ -1600,17 +1637,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 </span>
                                             )}
                                             {hasDraft && (
-                                                <div className="flex items-center gap-1">
-                                                    <button onClick={e => { e.stopPropagation(); setEditId(null); setDraftEditId(row.erp_product_id); }}
-                                                        className="text-[9px] font-bold text-amber-700 hover:text-white hover:bg-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full transition-all flex items-center gap-0.5">
-                                                        <Edit3 size={8} /> Editar
-                                                    </button>
-                                                    <button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
-                                                        disabled={publishing}
-                                                        className="text-[9px] font-bold text-amber-600 hover:text-white hover:bg-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full transition-all disabled:opacity-50">
-                                                        Publicar
-                                                    </button>
-                                                </div>
+                                                <button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
+                                                    disabled={publishing}
+                                                    className="text-[9px] font-bold text-amber-600 hover:text-white hover:bg-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full transition-all disabled:opacity-50">
+                                                    Publicar
+                                                </button>
                                             )}
                                         </div>
                                     </DataCell>
@@ -1641,6 +1672,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     />
                 )}
                 </>
+            )}
+
+            {/* ── Toast notification ── */}
+            {toast && (
+                <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#0052CC] text-white shadow-2xl text-[13px] font-semibold animate-in slide-in-from-bottom-2">
+                    <Info size={15} className="shrink-0" />
+                    <span>{toast.message}</span>
+                    <button onClick={() => setToast(null)} className="ml-2 opacity-60 hover:opacity-100 transition-opacity">
+                        <X size={12} />
+                    </button>
+                </div>
             )}
         </div>
     );

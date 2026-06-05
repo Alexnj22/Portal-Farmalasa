@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.79';
+export const APP_VERSION = '1.4.80';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.80 — MinMax: hiddenIds → Supabase user_metadata (cross-device); fix DataTable key (no remount on filter); collapse expanded row al editar MIN/MAX
 // v1.4.79 — MinMax: hiddenIds persiste en localStorage por sucursal (minmax_hidden_{erp})
 // v1.4.78 — MinMax: animaciones fluidas — easeOutExpo, presets chipAnim/ctaAnim/iconAnim/fadeUp, sin spring en hover
 // v1.4.77 — MinMax: spring hover/tap en chips+pills+controles+acciones; glass inactivo backdrop-blur; active glass tinted

@@ -1080,19 +1080,27 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [publishResult,setPublishResult]= useState(null);
     const [filterDraft,     setFilterDraft]     = useState(false);
     const [hiddenIds,       setHiddenIds]       = useState(new Set());
+    const saveHiddenTimer = useRef(null);
 
-    // Persist hiddenIds in localStorage, keyed by branch
+    // Load hiddenIds from Supabase user_metadata (cross-device)
     useEffect(() => {
-        try {
-            const stored = localStorage.getItem(`minmax_hidden_${selectedErp}`);
-            setHiddenIds(stored ? new Set(JSON.parse(stored)) : new Set());
-        } catch { setHiddenIds(new Set()); }
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            const stored = user?.user_metadata?.minmax_hidden?.[selectedErp] ?? [];
+            setHiddenIds(new Set(stored));
+        });
     }, [selectedErp]);
 
+    // Save hiddenIds to Supabase user_metadata, debounced 2s
     useEffect(() => {
-        try {
-            localStorage.setItem(`minmax_hidden_${selectedErp}`, JSON.stringify([...hiddenIds]));
-        } catch {}
+        clearTimeout(saveHiddenTimer.current);
+        saveHiddenTimer.current = setTimeout(async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            const existing = user?.user_metadata?.minmax_hidden ?? {};
+            await supabase.auth.updateUser({
+                data: { minmax_hidden: { ...existing, [selectedErp]: [...hiddenIds] } }
+            });
+        }, 2000);
+        return () => clearTimeout(saveHiddenTimer.current);
     }, [hiddenIds, selectedErp]);
     const [configChanged,   setConfigChanged]   = useState(false);
     const [inlineDraftEdit, setInlineDraftEdit] = useState(null); // { productId, sucursalId, field:'min'|'max', value }
@@ -1638,7 +1646,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             {!neverCalc && (
                 <>
                 <motion.div
-                    key={`table-${page}-${filterAbc}-${filterXyz}-${filterAlert}-${searchTerm}-${filterDraft}`}
+                    key={`table-page-${page}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0, transition: { duration: 0.28, ease: EASE_OUT_EXPO } }}
                 >
@@ -1792,7 +1800,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     </div>
                                                 ) : (
                                                     <div className="flex flex-col items-center cursor-text group"
-                                                        onClick={e => { e.stopPropagation(); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); }}>
+                                                        onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); }}>
                                                         <div className="text-[13px] font-black tabular-nums text-amber-600 group-hover:underline decoration-amber-400 underline-offset-2">
                                                             {formatDominant(row.draft_min ?? 0, pres)}
                                                         </div>
@@ -1829,7 +1837,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     </div>
                                                 ) : (
                                                     <div className="flex flex-col items-center cursor-text group"
-                                                        onClick={e => { e.stopPropagation(); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); }}>
+                                                        onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); }}>
                                                         <div className="text-[13px] font-black tabular-nums text-blue-600 group-hover:underline decoration-blue-400 underline-offset-2">
                                                             {formatDominant(row.draft_max ?? 0, pres)}
                                                         </div>

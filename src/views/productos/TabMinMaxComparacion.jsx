@@ -6,8 +6,8 @@ import TablePagination           from '../../components/common/TablePagination';
 import LiquidSelect              from '../../components/common/LiquidSelect';
 
 // ── Sucursales (igual que TabMinMax) ──────────────────────────────────────────
-const ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 7: 'Salud 5' };
-const ERP_ORDER = [5, 1, 2, 3, 4, 7];
+const ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
+const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
 const normXyz = v => (v === 'X' || v === 'Y' || v === 'Z') ? v : 'Z';

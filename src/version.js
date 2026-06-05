@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.72';
+export const APP_VERSION = '1.4.73';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.73 — MinMax: columna Laboratorio ordenable (sortable + localeCompare 'es')
 // v1.4.72 — MinMax: draft pill = glass idéntico a pill controles, publicar azul #0052CC, motion enter/exit + AnimatePresence
 // v1.4.71 — MinMax: borradores/publicar en pill contenedor (sección blanca + cap ámbar), push right con ml-auto
 // v1.4.70 — MinMax: borradores/publicar como pills junto a chips de estado; matriz más compacta; "Todas las sucursales"

@@ -1876,15 +1876,20 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                                     {/* Equiv. — presentación calculada de MIN / MAX */}
                                     <DataCell align="center" className="!py-2.5">
-                                        {dead || sortedPres(pres).length === 0
+                                        {dead
                                             ? <span className="text-slate-200 text-xs">—</span>
                                             : (() => {
                                                 const dispMin = hasDraft ? (row.draft_min ?? 0) : minN;
                                                 const dispMax = hasDraft ? (row.draft_max ?? 0) : maxN;
+                                                const hasPres = sortedPres(pres).length > 0;
                                                 return (
                                                     <div className="flex flex-col items-center gap-0.5">
-                                                        <span className="text-[10px] font-bold tabular-nums text-amber-600">{formatDominant(dispMin, pres)}</span>
-                                                        <span className="text-[10px] font-bold tabular-nums text-blue-600">{formatDominant(dispMax, pres)}</span>
+                                                        <span className={`text-[10px] font-bold tabular-nums ${hasPres ? 'text-amber-600' : 'text-slate-400'}`}>
+                                                            {formatDominant(dispMin, pres)}
+                                                        </span>
+                                                        <span className={`text-[10px] font-bold tabular-nums ${hasPres ? 'text-blue-600' : 'text-slate-400'}`}>
+                                                            {formatDominant(dispMax, pres)}
+                                                        </span>
                                                     </div>
                                                 );
                                             })()

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.85';
+export const APP_VERSION = '1.4.86';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.86 — MinMax: Equiv. siempre visible — cajas/blisters en amber/blue, sin presentación en slate-400 "N und", dead=—
 // v1.4.85 — MinMax: MIN/MAX muestran número puro; columna Equiv. con formatDominant (amber=MIN, blue=MAX); "—" si sin presentaciones
 // v1.4.84 — MinMax: fix TDZ 2 — draftCount movido antes de requestPublish (segunda referencia circular en dep arrays)
 // v1.4.83 — MinMax: fix TDZ — handlePublish declarado antes de startDeferredPublish (dep array evaluado en cada render)

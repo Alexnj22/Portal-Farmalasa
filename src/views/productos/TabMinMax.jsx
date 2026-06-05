@@ -5,7 +5,7 @@ import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download,
     CheckCircle2, Check, Info, RotateCcw, ChevronRight,
-    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2,
+    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2, Target,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -291,6 +291,32 @@ function CostCards({ summary, isBodega }) {
                     </div>
                 </div>
             ))}
+        </div>
+    );
+}
+
+function DraftCostCard({ draftCost }) {
+    if (!draftCost || !Number(draftCost.product_count)) return null;
+    const minC = Number(draftCost.min_cost);
+    const maxC = Number(draftCost.max_cost);
+    return (
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm"
+            style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
+            <Target size={13} className="shrink-0 text-violet-400" />
+            <div className="flex flex-col leading-snug gap-1">
+                <span className="text-[10px] font-semibold text-slate-500">Objetivo borrador</span>
+                <div className="flex items-baseline gap-2">
+                    <div className="flex items-baseline gap-1">
+                        <span className="text-[9px] font-bold text-amber-500 uppercase tracking-wide">MIN</span>
+                        <span className="text-[13px] font-black tabular-nums text-amber-700">{fmtMoney(minC)}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-300">→</span>
+                    <div className="flex items-baseline gap-1">
+                        <span className="text-[9px] font-bold text-blue-500 uppercase tracking-wide">MAX</span>
+                        <span className="text-[14px] font-black tabular-nums text-blue-700">{fmtMoney(maxC)}</span>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
@@ -1059,6 +1085,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [filterAlert,  setFilterAlert]  = useState('all');
     const [data,         setData]         = useState([]);
     const [costSummary,  setCostSummary]  = useState(null);
+    const [draftCost,    setDraftCost]    = useState(null);
     const [loading,      setLoading]      = useState(false);
     const [calculating,  setCalculating]  = useState(false);
     const [calcMode,     setCalcMode]     = useState('single'); // 'single' | 'all'
@@ -1147,11 +1174,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 keepFetching = chunk && chunk.length === CHUNK;
                 from += CHUNK;
             }
-            const { data: cost, error: e2 } = await supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId });
+            const [{ data: cost, error: e2 }, { data: draft }] = await Promise.all([
+                supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
+                supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
+            ]);
             if (e2) throw e2;
             if (rid !== loadRef.current) return;
             setData(allRows.map(r => ({ ...r, _erp_sucursal_id: erpId })));
-            setCostSummary(cost || null);
+            setCostSummary(cost  || null);
+            setDraftCost(draft   || null);
         } catch (e) {
             if (rid === loadRef.current) setError(e.message);
         } finally {
@@ -1218,9 +1249,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     ? { ...r, [col]: numVal }
                     : r
             ));
-            // Refresh cards so útil/excedente reflect the new draft values
-            supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId })
-                .then(({ data: cost }) => { if (cost) setCostSummary(cost); });
+            // Refresh cards so útil/excedente and objetivo reflect edits
+            Promise.all([
+                supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
+                supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
+            ]).then(([{ data: cost }, { data: draft }]) => {
+                if (cost)  setCostSummary(cost);
+                if (draft) setDraftCost(draft);
+            });
         }
         useStaff.getState().appendAuditLog('MINMAX_DRAFT_EDIT', String(edit.productId), {
             field: col, value: numVal, sucursal_id: edit.sucursalId,
@@ -1378,6 +1414,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                 {/* LEFT: Cost cards */}
                 {costSummary && <CostCards summary={costSummary} isBodega={isBodega} />}
+                {draftCost   && <DraftCostCard draftCost={draftCost} />}
 
                 <div className="flex-1" />
 

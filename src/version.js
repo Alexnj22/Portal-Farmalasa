@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.5.0';
+export const APP_VERSION = '1.5.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.5.1  — MinMax: card "Objetivo borrador" — costo estimado MIN→MAX del inventario calculado (RPC get_draft_cost_estimate)
 // v1.5.0  — MinMax: onFocus select() en celdas MIN/MAX — al entrar se selecciona el valor para reemplazarlo de inmediato
 // v1.4.99 — MinMax: Enter/↓ en celda MIN o MAX guarda y salta al siguiente producto; ↑ salta al anterior; Tab/→ sigue abriendo MAX del mismo producto
 // v1.4.98 — MinMax vs ERP: agrega Bodega (ID 6) al selector de sucursal — faltaba en ERP_NAMES/ERP_ORDER

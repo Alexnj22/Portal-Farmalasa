@@ -1238,23 +1238,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         setPublishConfirm({ open: true, ids: ids ?? null, count });
     }, [draftCount]);
 
-    const startDeferredPublish = useCallback((ids, count) => {
-        setPublishConfirm({ open: false, ids: null, count: 0 });
-        const label = count === 1 ? 'borrador' : 'borradores';
-        setToast({
-            message: `Publicando ${count} ${label} en 5 s…`,
-            type: 'info',
-            action: {
-                label: 'Cancelar',
-                onClick: () => { clearTimeout(publishTimer.current); setToast(null); },
-            },
-        });
-        publishTimer.current = setTimeout(async () => {
-            setToast(null);
-            await handlePublish(ids ?? undefined);
-        }, 5000);
-    }, [handlePublish]);
-
     const handlePublish = useCallback(async (productIds = null) => {
         setPublishing(true); setPublishResult(null); setError(null);
         try {
@@ -1271,6 +1254,23 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         } catch (e) { setError(e.message); }
         finally { setPublishing(false); }
     }, [selectedErp, loadData]);
+
+    const startDeferredPublish = useCallback((ids, count) => {
+        setPublishConfirm({ open: false, ids: null, count: 0 });
+        const label = count === 1 ? 'borrador' : 'borradores';
+        setToast({
+            message: `Publicando ${count} ${label} en 5 s…`,
+            type: 'info',
+            action: {
+                label: 'Cancelar',
+                onClick: () => { clearTimeout(publishTimer.current); setToast(null); },
+            },
+        });
+        publishTimer.current = setTimeout(async () => {
+            setToast(null);
+            await handlePublish(ids ?? undefined);
+        }, 5000);
+    }, [handlePublish]);
 
     // ── Derived ──────────────────────────────────────────────────────────────
     const stats = useMemo(() => Object.fromEntries(

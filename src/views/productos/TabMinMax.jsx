@@ -1080,6 +1080,20 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [publishResult,setPublishResult]= useState(null);
     const [filterDraft,     setFilterDraft]     = useState(false);
     const [hiddenIds,       setHiddenIds]       = useState(new Set());
+
+    // Persist hiddenIds in localStorage, keyed by branch
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem(`minmax_hidden_${selectedErp}`);
+            setHiddenIds(stored ? new Set(JSON.parse(stored)) : new Set());
+        } catch { setHiddenIds(new Set()); }
+    }, [selectedErp]);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(`minmax_hidden_${selectedErp}`, JSON.stringify([...hiddenIds]));
+        } catch {}
+    }, [hiddenIds, selectedErp]);
     const [configChanged,   setConfigChanged]   = useState(false);
     const [inlineDraftEdit, setInlineDraftEdit] = useState(null); // { productId, sucursalId, field:'min'|'max', value }
     const [toast,           setToast]           = useState(null); // { message, type }
@@ -1350,7 +1364,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
                             <LiquidSelect
                                 value={String(selectedErp)}
-                                onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy('laboratorio'); setSortDir('asc'); setFilterDraft(false); setHiddenIds(new Set()); } }}
+                                onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy('laboratorio'); setSortDir('asc'); setFilterDraft(false); } }}
                                 options={erpOptions} icon={Building2} clearable={false} compact
                             />
                         </div>

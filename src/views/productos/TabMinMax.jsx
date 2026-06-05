@@ -1233,6 +1233,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         });
     }, []);
 
+    const draftCount = useMemo(() => data.filter(r => r.draft_status === 'pending').length, [data]);
+
     const requestPublish = useCallback((ids = null) => {
         const count = ids ? ids.length : draftCount;
         setPublishConfirm({ open: true, ids: ids ?? null, count });
@@ -1278,7 +1280,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     ), [data]);
 
     const lastCalcAt      = useMemo(() => data.find(d => d.calculated_at && !d.is_dead_stock)?.calculated_at ?? null, [data]);
-    const draftCount      = useMemo(() => data.filter(r => r.draft_status === 'pending').length, [data]);
     const lastDraftCalcAt = useMemo(() => data.find(r => r.draft_status === 'pending' && r.draft_calculated_at)?.draft_calculated_at ?? null, [data]);
 
     const hasActiveFilter = filterAbc !== 'all' || filterXyz !== 'all' || filterAlert !== 'all' || searchTerm !== '';

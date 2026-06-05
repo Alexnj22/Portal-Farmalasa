@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.93';
+export const APP_VERSION = '1.4.94';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.94 — MinMax vs ERP: fix TypeError (columns/sortKey/empty props incorrectos en DataTable) + DeltaCell defensivo
 // v1.4.93 — MinMax: tab "vs ERP" — compara borrador/publicado contra MIN/MAX del ERP por sucursal
 // v1.4.92 — MinMax CSV: quita columna XYZ separada (Clase ya muestra AX/BY/CZ)
 // v1.4.91 — MinMax CSV: quita Estado/Stock/Cobertura/Pedir/Ingresos; agrega Laboratorio y Clase completa (ABC+XYZ)

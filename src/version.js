@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.95';
+export const APP_VERSION = '1.4.96';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.96 — MinMax vs ERP: rediseño visual — selector sucursal a la derecha, pill estándar izq (Borrador/Publicado + filtros); sucursal con ERP_NAMES hardcoded (no useAuth)
 // v1.4.95 — MinMax vs ERP: fix TypeError — TablePagination recibía totalRows/onPage/onPageSize en vez de total/onPageChange/onPageSizeChange
 // v1.4.94 — MinMax vs ERP: fix TypeError (columns/sortKey/empty props incorrectos en DataTable) + DeltaCell defensivo
 // v1.4.93 — MinMax: tab "vs ERP" — compara borrador/publicado contra MIN/MAX del ERP por sucursal

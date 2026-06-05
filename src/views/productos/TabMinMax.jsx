@@ -5,7 +5,7 @@ import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download,
     CheckCircle2, Check, Info, RotateCcw, ChevronRight,
-    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff,
+    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -47,12 +47,12 @@ const ERP_NAMES = {
 const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
 const ALERT = {
-    out_of_stock: { label: 'Sin stock',     pill: 'bg-red-100 text-red-700 border-red-200',           dot: 'bg-red-500',     left: 'border-l-red-500',    row: 'bg-red-50/40'    },
-    below_min:    { label: 'Bajo mínimo',   pill: 'bg-orange-100 text-orange-700 border-orange-200',  dot: 'bg-orange-500',  left: 'border-l-orange-400', row: 'bg-orange-50/20' },
-    approaching:  { label: 'Próx. mínimo',  pill: 'bg-amber-100 text-amber-700 border-amber-200',     dot: 'bg-amber-400',   left: 'border-l-amber-300',  row: ''                },
-    ok:           { label: 'OK',            pill: 'bg-emerald-100 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500', left: 'border-l-emerald-400', row: ''              },
-    overstocked:  { label: 'Exceso',        pill: 'bg-blue-100 text-blue-700 border-blue-200',         dot: 'bg-blue-400',    left: 'border-l-blue-400',   row: 'bg-blue-50/10'  },
-    dead_stock:   { label: 'Sin movimiento',pill: 'bg-slate-100 text-slate-500 border-slate-200',      dot: 'bg-slate-300',   left: 'border-l-slate-200',  row: 'bg-slate-50/60' },
+    out_of_stock: { label: 'Sin stock',     pill: 'bg-red-100 text-red-700 border-red-200',            dot: 'bg-red-500',     row: 'bg-red-50/40'    },
+    below_min:    { label: 'Bajo mínimo',   pill: 'bg-orange-100 text-orange-700 border-orange-200',   dot: 'bg-orange-500',  row: 'bg-orange-50/20' },
+    approaching:  { label: 'Próx. mínimo',  pill: 'bg-amber-100 text-amber-700 border-amber-200',      dot: 'bg-amber-400',   row: ''                },
+    ok:           { label: 'OK',            pill: 'bg-emerald-100 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500', row: ''                },
+    overstocked:  { label: 'Exceso',        pill: 'bg-blue-100 text-blue-700 border-blue-200',          dot: 'bg-blue-400',    row: 'bg-blue-50/10'   },
+    dead_stock:   { label: 'Sin movimiento',pill: 'bg-slate-100 text-slate-500 border-slate-200',       dot: 'bg-slate-300',   row: 'bg-slate-50/60'  },
 };
 
 const STAT_CFGS = [
@@ -176,7 +176,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-5 gap-2 text-slate-300">
-                        <span className="text-3xl select-none">📊</span>
+                        <BarChart2 size={28} className="text-slate-200" />
                         <span className="text-[10px] font-semibold">Sin datos — presioná Calcular</span>
                     </div>
                 )}
@@ -232,7 +232,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                             const rgb = abc === 'A' ? '16,185,129' : abc === 'B' ? '59,130,246' : abc === 'C' ? '245,158,11' : '148,163,184';
                             return (
                                 <button key={xyz} onClick={() => toggle(abc, xyz)}
-                                    className={`relative py-2 rounded-xl text-center transition-all duration-200
+                                    className={`relative py-2 rounded-xl text-center transition-[transform,box-shadow,background-color] duration-200
                                         ${count === 0 ? 'opacity-20 cursor-default' : 'cursor-pointer hover:z-10 hover:scale-[1.08]'}
                                         ${isActive ? 'z-20' : ''}`}
                                     style={{
@@ -1068,9 +1068,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [loading,      setLoading]      = useState(false);
     const [calculating,  setCalculating]  = useState(false);
     const [calcMode,     setCalcMode]     = useState('single'); // 'single' | 'all'
-    const [calcResult,   setCalcResult]   = useState(null);
     const [error,        setError]        = useState(null);
-    const [editId,       setEditId]       = useState(null);
     const [expandedIds,  setExpandedIds]  = useState(new Set());
     const [configOpen,   setConfigOpen]   = useState(false);
     const [sortBy,       setSortBy]       = useState('laboratorio');
@@ -1083,6 +1081,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [hiddenIds,       setHiddenIds]       = useState(new Set());
     const saveHiddenTimer  = useRef(null);
     const publishTimer     = useRef(null);
+    const skipBlurSave     = useRef(false);
     const [publishConfirm, setPublishConfirm] = useState({ open: false, ids: null, count: 0 });
 
     // Cleanup publish timer on unmount
@@ -1138,7 +1137,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const loadData = useCallback(async (erpId) => {
         const rid = ++loadRef.current;
-        setLoading(true); setError(null); setEditId(null); setInlineDraftEdit(null); setExpandedIds(new Set());
+        setLoading(true); setError(null); setInlineDraftEdit(null); setExpandedIds(new Set());
         try {
             // PostgREST caps at 1000 rows per request — fetch in chunks until exhausted
             const allRows = [];
@@ -1169,11 +1168,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     useEffect(() => { loadData(selectedErp); }, [selectedErp, loadData]);
 
     const handleRecalcular = async () => {
-        setCalculating(true); setCalcMode('single'); setCalcResult(null); setError(null); setConfigChanged(false);
+        setCalculating(true); setCalcMode('single'); setError(null); setConfigChanged(false);
         try {
             const { data: res, error: e } = await supabase.rpc('calculate_stock_params', { p_erp_sucursal_id: selectedErp });
             if (e) throw e;
-            setCalcResult({ ...res, mode: 'single' });
             setToast({ message: `${(res?.rows ?? 0).toLocaleString()} borradores generados para ${ERP_NAMES[selectedErp]}`, type: 'info' });
             await loadData(selectedErp);
         } catch (e) { setError(e.message); }
@@ -1181,18 +1179,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     };
 
     const handleRecalcularAll = async () => {
-        setCalculating(true); setCalcMode('all'); setCalcResult(null); setError(null); setConfigChanged(false);
+        setCalculating(true); setCalcMode('all'); setError(null); setConfigChanged(false);
         try {
             const { data: res, error: e } = await supabase.rpc('calculate_stock_params');
             if (e) throw e;
-            setCalcResult({ ...res, mode: 'all' });
             setToast({ message: `${(res?.rows ?? 0).toLocaleString()} borradores generados para todas las sucursales`, type: 'info' });
             await loadData(selectedErp);
         } catch (e) { setError(e.message); }
         finally { setCalculating(false); }
     };
 
-    const handleEditSave = useCallback(() => { setEditId(null); loadData(selectedErp); }, [selectedErp, loadData]);
+    const handleEditSave = useCallback(() => { loadData(selectedErp); }, [selectedErp, loadData]);
 
     const zeroOutRow = useCallback(async (row) => {
         const { error: e } = await supabase.from('product_stock_params')
@@ -1355,15 +1352,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
     const COLS = [
-        { key: 'product_name',  label: 'Producto',      align: 'left',   sortable: true },
-        { key: 'laboratorio',   label: 'Laboratorio',   align: 'left',   sortable: true },
-        { key: 'abc_xyz',       label: 'Clase',         align: 'center', sortable: true },
-        { key: 'coverage',      label: 'Cobertura',     align: 'center', sortable: true },
-        { key: 'current_stock', label: 'Stock actual',  align: 'center', sortable: true },
-        { key: 'effective_min', label: 'MIN',            align: 'center', sortable: true },
-        { key: 'effective_max', label: 'MAX',            align: 'center', sortable: true },
-        { key: 'alert_status',  label: 'Estado',         align: 'center' },
-        { key: 'acciones',      label: 'Acciones',      align: 'center' },
+        { key: 'product_name',  label: 'Producto',    align: 'left',   sortable: true },
+        { key: 'laboratorio',   label: 'Laboratorio', align: 'left',   sortable: true },
+        { key: 'abc_xyz',       label: 'Clase',       align: 'center', sortable: true },
+        { key: 'effective_min', label: 'MIN',         align: 'center', sortable: true },
+        { key: 'effective_max', label: 'MAX',         align: 'center', sortable: true },
+        { key: 'alert_status',  label: 'Estado',      align: 'center' },
+        { key: 'acciones',      label: 'Acciones',    align: 'center' },
     ];
 
     const glass = 'rounded-2xl border border-white/60 backdrop-blur-sm';
@@ -1693,7 +1688,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 >
 
                     {pageRows.map((row, rowIdx) => {
-                        const isEditing  = editId === row.erp_product_id;
                         const isExpanded = expandedIds.has(row.erp_product_id);
                         const alert      = ALERT[row.alert_status] ?? ALERT.ok;
                         const pres       = row.presentations || [];
@@ -1705,16 +1699,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         const v6m        = Number(row.daily_velocity ?? 0);
                         const canExpand  = !dead || stock > 0;
                         const hasDraft   = row.draft_status === 'pending';
-
-                        if (isEditing) return (
-                            <React.Fragment key={row.erp_product_id}>
-                                <tr>
-                                    <td colSpan={COLS.length} className="p-0">
-                                        <EditRow row={row} onSave={handleEditSave} onCancel={() => setEditId(null)} />
-                                    </td>
-                                </tr>
-                            </React.Fragment>
-                        );
 
                         return (
                             <React.Fragment key={row.erp_product_id}>
@@ -1741,13 +1725,25 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
                                                     {hasDraft && <span className="shrink-0 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
                                                 </div>
+                                                {/* Stock actual inline */}
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <span className={`text-[11px] font-black tabular-nums ${stock === 0 ? 'text-red-500' : stock < minN ? 'text-orange-500' : 'text-slate-600'}`}>
+                                                        {formatUnits(stock, pres)}
+                                                    </span>
+                                                    {!dead && minN > 0 && stock < minN && (
+                                                        <span className="text-[9px] font-bold text-orange-400">↓{(minN - stock).toLocaleString()}</span>
+                                                    )}
+                                                    {!dead && maxN > 0 && stock > maxN && (
+                                                        <span className="text-[9px] font-bold text-blue-400">↑{(stock - maxN).toLocaleString()}</span>
+                                                    )}
+                                                </div>
                                                 {!dead && (
                                                     <span className="text-[10px] text-slate-400 flex items-center gap-0.5 mt-0.5">
-                                                        {v6m.toFixed(2)} und/día
+                                                        {v6m.toFixed(2)}/día
                                                         {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={9} className="text-emerald-500 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
                                                         {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={9} className="text-red-400 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
                                                         {Number(row.units_sold_6m) > 0 && <span className="ml-1 text-slate-300">·</span>}
-                                                        {Number(row.units_sold_6m) > 0 && <span className="ml-1">{Number(row.units_sold_6m).toLocaleString()} vend. 6m</span>}
+                                                        {Number(row.units_sold_6m) > 0 && <span className="ml-1">{Number(row.units_sold_6m).toLocaleString()} vend.</span>}
                                                     </span>
                                                 )}
                                             </div>
@@ -1782,31 +1778,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         }
                                     </DataCell>
 
-                                    {/* Cobertura */}
-                                    <DataCell align="center" className="!py-2.5">
-                                        {!dead
-                                            ? <div className="flex justify-center"><CoverageBar current={stock} velocity={row.daily_velocity} cycleDays={cycleDays} /></div>
-                                            : <span className="text-slate-200 text-xs">—</span>}
-                                    </DataCell>
-
-                                    {/* Stock actual */}
-                                    <DataCell align="center" className="!py-2.5">
-                                        <div className={`text-[13px] font-bold tabular-nums leading-tight ${stock === 0 ? 'text-red-500' : stock < minN ? 'text-orange-600' : 'text-slate-700'}`}>
-                                            {stock === 0 ? '0' : formatUnits(stock, pres)}
-                                        </div>
-                                        {!dead && stock > 0 && <div className="text-[9px] text-slate-400">{stock.toLocaleString()} und</div>}
-                                        {!dead && minN > 0 && stock < minN && (
-                                            <div className="text-[9px] font-bold text-orange-500 tabular-nums mt-0.5">
-                                                Faltan {(minN - stock).toLocaleString()}
-                                            </div>
-                                        )}
-                                        {!dead && maxN > 0 && stock > maxN && (
-                                            <div className="text-[9px] font-bold text-blue-500 tabular-nums mt-0.5">
-                                                Exceso +{(stock - maxN).toLocaleString()}
-                                            </div>
-                                        )}
-                                    </DataCell>
-
                                     {/* MIN — inline edit on click for draft rows */}
                                     <DataCell align="center" className="!py-2.5">
                                         {dead ? <span className="text-slate-200 text-xs">—</span> : hasDraft ? (
@@ -1816,10 +1787,22 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         <input autoFocus type="number" min="0"
                                                             value={inlineDraftEdit.value}
                                                             onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
-                                                            onBlur={() => saveDraftCell(inlineDraftEdit)}
-                                                            onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setInlineDraftEdit(null); }}
+                                                            onBlur={() => {
+                                                                if (skipBlurSave.current) { skipBlurSave.current = false; return; }
+                                                                saveDraftCell(inlineDraftEdit);
+                                                            }}
+                                                            onKeyDown={e => {
+                                                                if (e.key === 'Enter') { e.target.blur(); return; }
+                                                                if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
+                                                                if (e.key === 'Tab' || e.key === 'ArrowRight') {
+                                                                    e.preventDefault();
+                                                                    skipBlurSave.current = true;
+                                                                    saveDraftCell(inlineDraftEdit);
+                                                                    setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') });
+                                                                }
+                                                            }}
                                                             onClick={e => e.stopPropagation()}
-                                                            className="w-16 text-center text-[13px] font-black text-amber-800 bg-amber-50 border-2 border-amber-400 rounded-lg px-1 py-1 focus:outline-none" />
+                                                            className="w-20 text-center text-[13px] font-black text-amber-800 bg-amber-50 border-2 border-amber-400 rounded-lg px-1 py-1 focus:outline-none" />
                                                         {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && (
                                                             <div className="text-[9px] text-amber-600 font-bold mt-0.5 tabular-nums">
                                                                 ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
@@ -1827,19 +1810,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <div className="flex flex-col items-center cursor-text group"
+                                                    <div className="flex flex-col items-center cursor-pointer group/min"
                                                         onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); }}>
-                                                        <div className="text-[13px] font-black tabular-nums text-amber-600 group-hover:underline decoration-amber-400 underline-offset-2">
-                                                            {formatDominant(row.draft_min ?? 0, pres)}
+                                                        <div className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 group-hover/min:border-amber-400 group-hover/min:bg-amber-100 transition-[border-color,background-color] duration-150">
+                                                            <span className="text-[13px] font-black tabular-nums text-amber-700">{formatDominant(row.draft_min ?? 0, pres)}</span>
                                                         </div>
-                                                        {sortedPres(pres).length > 0 && <div className="text-[9px] text-slate-400 tabular-nums">{(row.draft_min ?? 0).toLocaleString()} und</div>}
-                                                        {minN > 0 && <div className="text-[9px] text-slate-300 tabular-nums">{minN.toLocaleString()} act.</div>}
+                                                        {minN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{formatDominant(minN, pres)} act.</div>}
                                                     </div>
                                                 )
                                         ) : (
                                             <div className="flex flex-col items-center">
                                                 <div className={`text-[12px] font-semibold tabular-nums ${stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>{formatDominant(minN, pres)}</div>
-                                                <div className="text-[9px] text-slate-400 tabular-nums">{minN.toLocaleString()} und</div>
                                             </div>
                                         )}
                                     </DataCell>
@@ -1853,10 +1834,22 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         <input autoFocus type="number" min="0"
                                                             value={inlineDraftEdit.value}
                                                             onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
-                                                            onBlur={() => saveDraftCell(inlineDraftEdit)}
-                                                            onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setInlineDraftEdit(null); }}
+                                                            onBlur={() => {
+                                                                if (skipBlurSave.current) { skipBlurSave.current = false; return; }
+                                                                saveDraftCell(inlineDraftEdit);
+                                                            }}
+                                                            onKeyDown={e => {
+                                                                if (e.key === 'Enter') { e.target.blur(); return; }
+                                                                if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
+                                                                if (e.key === 'ArrowLeft') {
+                                                                    e.preventDefault();
+                                                                    skipBlurSave.current = true;
+                                                                    saveDraftCell(inlineDraftEdit);
+                                                                    setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') });
+                                                                }
+                                                            }}
                                                             onClick={e => e.stopPropagation()}
-                                                            className="w-16 text-center text-[13px] font-black text-blue-800 bg-blue-50 border-2 border-blue-400 rounded-lg px-1 py-1 focus:outline-none" />
+                                                            className="w-20 text-center text-[13px] font-black text-blue-800 bg-blue-50 border-2 border-blue-400 rounded-lg px-1 py-1 focus:outline-none" />
                                                         {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && (
                                                             <div className="text-[9px] text-blue-600 font-bold mt-0.5 tabular-nums">
                                                                 ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
@@ -1864,19 +1857,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <div className="flex flex-col items-center cursor-text group"
+                                                    <div className="flex flex-col items-center cursor-pointer group/max"
                                                         onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); }}>
-                                                        <div className="text-[13px] font-black tabular-nums text-blue-600 group-hover:underline decoration-blue-400 underline-offset-2">
-                                                            {formatDominant(row.draft_max ?? 0, pres)}
+                                                        <div className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 group-hover/max:border-blue-400 group-hover/max:bg-blue-100 transition-[border-color,background-color] duration-150">
+                                                            <span className="text-[13px] font-black tabular-nums text-blue-700">{formatDominant(row.draft_max ?? 0, pres)}</span>
                                                         </div>
-                                                        {sortedPres(pres).length > 0 && <div className="text-[9px] text-slate-400 tabular-nums">{(row.draft_max ?? 0).toLocaleString()} und</div>}
-                                                        {maxN > 0 && <div className="text-[9px] text-slate-300 tabular-nums">{maxN.toLocaleString()} act.</div>}
+                                                        {maxN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{formatDominant(maxN, pres)} act.</div>}
                                                     </div>
                                                 )
                                         ) : (
                                             <div className="flex flex-col items-center">
                                                 <div className={`text-[12px] font-semibold tabular-nums ${stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>{formatDominant(maxN, pres)}</div>
-                                                <div className="text-[9px] text-slate-400">{maxN.toLocaleString()} und</div>
                                             </div>
                                         )}
                                     </DataCell>
@@ -1908,7 +1899,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             </motion.button>
                                             {/* Poner en 0 */}
                                             {!dead && (
-                                                <motion.button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title="Poner MIN y MAX en 0"
+                                                <motion.button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title="Crear borrador 0 / 0 (pone en 0 sin publicar)"
                                                     {...iconAnim}
                                                     className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600">
                                                     <XCircle size={14} />

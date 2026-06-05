@@ -30,12 +30,12 @@ const ALERT = {
 };
 
 const STAT_CFGS = [
-    { key: 'out_of_stock', label: 'Sin stock',      dot: 'bg-red-500',     active: 'bg-red-50 border-red-300 text-red-700'          },
-    { key: 'below_min',    label: 'Bajo mínimo',    dot: 'bg-orange-500',  active: 'bg-orange-50 border-orange-300 text-orange-700'  },
-    { key: 'approaching',  label: 'Próx. mínimo',   dot: 'bg-amber-400',   active: 'bg-amber-50 border-amber-300 text-amber-700'    },
-    { key: 'ok',           label: 'OK',              dot: 'bg-emerald-500', active: 'bg-emerald-50 border-emerald-300 text-emerald-700' },
-    { key: 'overstocked',  label: 'Exceso',          dot: 'bg-blue-400',    active: 'bg-blue-50 border-blue-300 text-blue-700'       },
-    { key: 'dead_stock',   label: 'Sin movimiento',  dot: 'bg-slate-300',   active: 'bg-slate-100 border-slate-300 text-slate-600'   },
+    { key: 'out_of_stock', label: 'Sin stock',      dot: 'bg-red-500',     active: 'bg-red-100/75 backdrop-blur-sm border-red-300/70 text-red-700 shadow-[0_3px_14px_rgba(239,68,68,0.22)]'            },
+    { key: 'below_min',    label: 'Bajo mínimo',    dot: 'bg-orange-500',  active: 'bg-orange-100/75 backdrop-blur-sm border-orange-300/70 text-orange-700 shadow-[0_3px_14px_rgba(249,115,22,0.22)]'   },
+    { key: 'approaching',  label: 'Próx. mínimo',   dot: 'bg-amber-400',   active: 'bg-amber-100/75 backdrop-blur-sm border-amber-300/70 text-amber-700 shadow-[0_3px_14px_rgba(245,158,11,0.22)]'      },
+    { key: 'ok',           label: 'OK',              dot: 'bg-emerald-500', active: 'bg-emerald-100/75 backdrop-blur-sm border-emerald-300/70 text-emerald-700 shadow-[0_3px_14px_rgba(16,185,129,0.22)]' },
+    { key: 'overstocked',  label: 'Exceso',          dot: 'bg-blue-400',    active: 'bg-blue-100/75 backdrop-blur-sm border-blue-300/70 text-blue-700 shadow-[0_3px_14px_rgba(59,130,246,0.22)]'         },
+    { key: 'dead_stock',   label: 'Sin movimiento',  dot: 'bg-slate-300',   active: 'bg-slate-100/75 backdrop-blur-sm border-slate-300/70 text-slate-600 shadow-[0_3px_14px_rgba(148,163,184,0.18)]'     },
 ];
 
 const ABC_CFG = {
@@ -1345,41 +1345,53 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         <div className="h-5 w-px bg-slate-100 shrink-0" />
 
                         {/* CSV */}
-                        <button onClick={() => exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp])}
+                        <motion.button onClick={() => exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp])}
                             disabled={data.length === 0 || loading}
                             title="Exportar CSV"
-                            className="flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-30 active:scale-[0.97]">
+                            whileHover={{ scale: 1.06, backgroundColor: 'rgba(255,255,255,0.7)' }}
+                            whileTap={{ scale: 0.94 }}
+                            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 disabled:opacity-30">
                             <Download size={12} /> CSV
-                        </button>
+                        </motion.button>
 
                         <div className="h-5 w-px bg-slate-100 shrink-0" />
 
                         {/* Config */}
-                        <button onClick={() => setConfigOpen(o => !o)}
+                        <motion.button onClick={() => setConfigOpen(o => !o)}
                             title="Configurar parámetros"
-                            className={`px-3 py-2.5 transition-all active:scale-[0.97] ${configOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
+                            whileHover={{ scale: 1.1, backgroundColor: 'rgba(255,255,255,0.7)' }}
+                            whileTap={{ scale: 0.9 }}
+                            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                            className={`px-3 py-2.5 rounded-xl ${configOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
                             <Settings2 size={13} />
-                        </button>
+                        </motion.button>
 
                         <div className="h-5 w-px bg-slate-100 shrink-0" />
 
                         {/* Todas las sucursales */}
-                        <button onClick={handleRecalcularAll} disabled={calculating || loading}
+                        <motion.button onClick={handleRecalcularAll} disabled={calculating || loading}
                             title="Recalcular todas las sucursales y Bodega"
-                            className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-all active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none">
+                            whileHover={{ scale: 1.04, backgroundColor: 'rgba(255,255,255,0.7)' }}
+                            whileTap={{ scale: 0.96 }}
+                            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                            className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 disabled:opacity-40 disabled:pointer-events-none">
                             {calculating && calcMode === 'all'
                                 ? <><Loader2 size={11} className="animate-spin" /> Calculando…</>
                                 : <><Layers size={11} /> Todas las sucursales</>}
-                        </button>
+                        </motion.button>
                     </div>
 
-                    {/* Calcular — blue right cap (sibling, not child, so it joins cleanly) */}
-                    <button onClick={handleRecalcular} disabled={calculating || loading}
-                        className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl transition-all duration-150 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
+                    {/* Calcular — blue right cap */}
+                    <motion.button onClick={handleRecalcular} disabled={calculating || loading}
+                        whileHover={{ scale: 1.03, boxShadow: '0 6px 20px rgba(0,82,204,0.35)' }}
+                        whileTap={{ scale: 0.97 }}
+                        transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+                        className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                         {calculating && calcMode === 'single'
                             ? <><Loader2 size={12} className="animate-spin" /> Calculando…</>
                             : <><RefreshCw size={12} /> Calcular</>}
-                    </button>
+                    </motion.button>
                 </div>
             </div>
 
@@ -1502,9 +1514,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             <motion.button key={cfg.key}
                                 initial={{ opacity: 0, y: 6 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.18, delay: i * 0.04 }}
+                                whileHover={{ scale: 1.06, y: -2, boxShadow: active ? undefined : '0 6px 18px rgba(0,0,0,0.10)' }}
+                                whileTap={{ scale: 0.94 }}
+                                transition={{ type: 'spring', stiffness: 380, damping: 22, delay: i * 0.04 }}
                                 onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all active:scale-[0.97] ${active ? `${cfg.active} shadow-sm` : 'bg-white/80 border-slate-200 text-slate-600 hover:border-slate-300 hover:shadow-sm'}`}>
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold ${active ? cfg.active : 'bg-white/55 backdrop-blur-sm border-white/80 text-slate-600 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:bg-white/80'}`}>
                                 <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
                                 <span className={`tabular-nums font-black ${active ? '' : 'text-slate-700'}`}>{loading ? '–' : stats[cfg.key]}</span>
                                 <span className="opacity-80">{cfg.label}</span>
@@ -1519,9 +1533,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         <motion.button
                             key="hidden-pill"
                             initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.85 }}
-                            transition={{ duration: 0.15 }}
+                            whileHover={{ scale: 1.06, y: -2, boxShadow: '0 6px 18px rgba(0,0,0,0.10)' }}
+                            whileTap={{ scale: 0.94 }}
+                            transition={{ type: 'spring', stiffness: 380, damping: 22 }}
                             onClick={() => setHiddenIds(new Set())}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-white/80 border-slate-200 text-slate-500 hover:border-slate-300 hover:shadow-sm transition-all active:scale-[0.97]">
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-white/55 backdrop-blur-sm border-white/80 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:bg-white/80">
                             <Eye size={10} />
                             {hiddenIds.size} oculto{hiddenIds.size !== 1 ? 's' : ''}
                             <X size={9} className="ml-0.5 opacity-50" />
@@ -1553,12 +1569,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 </div>
                                 <div className="h-5 w-px bg-slate-100 shrink-0" />
                                 {/* Solo borradores toggle */}
-                                <button onClick={() => setFilterDraft(f => !f)}
-                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-bold transition-colors active:scale-[0.97] ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
+                                <motion.button onClick={() => setFilterDraft(f => !f)}
+                                    whileHover={{ scale: 1.04, backgroundColor: 'rgba(255,255,255,0.7)' }}
+                                    whileTap={{ scale: 0.96 }}
+                                    transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                                    className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
                                     {filterDraft
                                         ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
                                         : 'Solo borradores'}
-                                </button>
+                                </motion.button>
                             </div>
                             {/* Publicar — blue cap, igual que Calcular */}
                             <AnimatePresence mode="wait">
@@ -1566,9 +1585,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <motion.button
                                     key="pub-filtered"
                                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.15 }}
+                                    whileHover={{ scale: 1.03, boxShadow: '0 6px 20px rgba(0,82,204,0.35)' }}
+                                    whileTap={{ scale: 0.97 }}
+                                    transition={{ type: 'spring', stiffness: 380, damping: 22 }}
                                     onClick={() => handlePublish(filteredDraftIds)} disabled={publishing}
-                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl transition-all duration-150 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
+                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                                     {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
                                     Publicar {filterLabel} ({filteredDraftIds.length})
                                 </motion.button>
@@ -1576,9 +1597,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <motion.button
                                     key="pub-all"
                                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.15 }}
+                                    whileHover={{ scale: 1.03, boxShadow: '0 6px 20px rgba(0,82,204,0.35)' }}
+                                    whileTap={{ scale: 0.97 }}
+                                    transition={{ type: 'spring', stiffness: 380, damping: 22 }}
                                     onClick={() => handlePublish()} disabled={publishing}
-                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl transition-all duration-150 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
+                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                                     {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
                                     Publicar todo ({draftCount})
                                 </motion.button>
@@ -1821,25 +1844,34 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     <DataCell align="center" className="!py-2.5">
                                         <div className="flex items-center justify-center gap-1">
                                             {/* Ocultar */}
-                                            <button onClick={e => { e.stopPropagation(); setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; }); }}
+                                            <motion.button onClick={e => { e.stopPropagation(); setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; }); }}
                                                 title="Ocultar producto"
-                                                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 hover:bg-slate-100 transition-all active:scale-95">
+                                                whileHover={{ scale: 1.18, backgroundColor: 'rgba(241,245,249,1)' }}
+                                                whileTap={{ scale: 0.88 }}
+                                                transition={{ type: 'spring', stiffness: 420, damping: 20 }}
+                                                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500">
                                                 <EyeOff size={12} />
-                                            </button>
+                                            </motion.button>
                                             {/* Poner en 0 */}
                                             {!dead && (
-                                                <button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title="Poner MIN y MAX en 0"
-                                                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all active:scale-95">
+                                                <motion.button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title="Poner MIN y MAX en 0"
+                                                    whileHover={{ scale: 1.18, boxShadow: '0 3px 10px rgba(239,68,68,0.25)' }}
+                                                    whileTap={{ scale: 0.88 }}
+                                                    transition={{ type: 'spring', stiffness: 420, damping: 20 }}
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600">
                                                     <XCircle size={14} />
-                                                </button>
+                                                </motion.button>
                                             )}
                                             {/* Publicar borrador */}
                                             {hasDraft && (
-                                                <button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
+                                                <motion.button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
                                                     disabled={publishing}
-                                                    className="text-[9px] font-bold text-[#0052CC] hover:text-white hover:bg-[#0052CC] bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg transition-all disabled:opacity-50">
+                                                    whileHover={{ scale: 1.08, boxShadow: '0 3px 10px rgba(0,82,204,0.25)' }}
+                                                    whileTap={{ scale: 0.93 }}
+                                                    transition={{ type: 'spring', stiffness: 420, damping: 20 }}
+                                                    className="text-[9px] font-bold text-[#0052CC] hover:text-white hover:bg-[#0052CC] bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg disabled:opacity-50">
                                                     {publishing ? <Loader2 size={9} className="animate-spin" /> : 'Publicar'}
-                                                </button>
+                                                </motion.button>
                                             )}
                                         </div>
                                     </DataCell>

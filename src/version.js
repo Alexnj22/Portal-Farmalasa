@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.76';
+export const APP_VERSION = '1.4.77';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.77 — MinMax: spring hover/tap en chips+pills+controles+acciones; glass inactivo backdrop-blur; active glass tinted
 // v1.4.76 — MinMax: quita fila D de matriz ABC×XYZ (nunca tiene datos)
 // v1.4.75 — MinMax: sort default laboratorio, ocultar productos, XCircle visible, matriz compacta, motion chips+tabla
 // v1.4.74 — MinMax: columna Clase ordenable (AX→DZ, usa draft si existe)

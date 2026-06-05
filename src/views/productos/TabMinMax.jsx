@@ -1788,13 +1788,31 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                                 saveDraftCell(inlineDraftEdit);
                                                             }}
                                                             onKeyDown={e => {
-                                                                if (e.key === 'Enter') { e.target.blur(); return; }
                                                                 if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
                                                                 if (e.key === 'Tab' || e.key === 'ArrowRight') {
                                                                     e.preventDefault();
                                                                     skipBlurSave.current = true;
                                                                     saveDraftCell(inlineDraftEdit);
                                                                     setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') });
+                                                                    return;
+                                                                }
+                                                                if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                                                                    e.preventDefault();
+                                                                    skipBlurSave.current = true;
+                                                                    saveDraftCell(inlineDraftEdit);
+                                                                    const next = pageRows.slice(rowIdx + 1).find(r => r.draft_status === 'pending');
+                                                                    if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: String(next.draft_min ?? '') });
+                                                                    else setInlineDraftEdit(null);
+                                                                    return;
+                                                                }
+                                                                if (e.key === 'ArrowUp') {
+                                                                    e.preventDefault();
+                                                                    skipBlurSave.current = true;
+                                                                    saveDraftCell(inlineDraftEdit);
+                                                                    const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => r.draft_status === 'pending');
+                                                                    if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: String(prev.draft_min ?? '') });
+                                                                    else setInlineDraftEdit(null);
+                                                                    return;
                                                                 }
                                                             }}
                                                             onClick={e => e.stopPropagation()}
@@ -1835,13 +1853,31 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                                 saveDraftCell(inlineDraftEdit);
                                                             }}
                                                             onKeyDown={e => {
-                                                                if (e.key === 'Enter') { e.target.blur(); return; }
                                                                 if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
                                                                 if (e.key === 'ArrowLeft') {
                                                                     e.preventDefault();
                                                                     skipBlurSave.current = true;
                                                                     saveDraftCell(inlineDraftEdit);
                                                                     setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') });
+                                                                    return;
+                                                                }
+                                                                if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                                                                    e.preventDefault();
+                                                                    skipBlurSave.current = true;
+                                                                    saveDraftCell(inlineDraftEdit);
+                                                                    const next = pageRows.slice(rowIdx + 1).find(r => r.draft_status === 'pending');
+                                                                    if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: String(next.draft_min ?? '') });
+                                                                    else setInlineDraftEdit(null);
+                                                                    return;
+                                                                }
+                                                                if (e.key === 'ArrowUp') {
+                                                                    e.preventDefault();
+                                                                    skipBlurSave.current = true;
+                                                                    saveDraftCell(inlineDraftEdit);
+                                                                    const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => r.draft_status === 'pending');
+                                                                    if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: String(prev.draft_min ?? '') });
+                                                                    else setInlineDraftEdit(null);
+                                                                    return;
                                                                 }
                                                             }}
                                                             onClick={e => e.stopPropagation()}

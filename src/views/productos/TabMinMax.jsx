@@ -1208,17 +1208,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const lastDraftCalcAt = useMemo(() => data.find(r => r.draft_status === 'pending' && r.draft_calculated_at)?.draft_calculated_at ?? null, [data]);
 
     const hasActiveFilter = filterAbc !== 'all' || filterXyz !== 'all' || filterAlert !== 'all' || searchTerm !== '';
-    const filteredDraftIds = useMemo(
-        () => hasActiveFilter ? filtered.filter(r => r.draft_status === 'pending').map(r => r.erp_product_id) : [],
-        [filtered, hasActiveFilter]
-    );
-
-    const filterLabel = useMemo(() => {
-        if (filterAbc !== 'all' && filterXyz === 'all' && filterAlert === 'all' && !searchTerm) return `Clase ${filterAbc}`;
-        if (filterAlert !== 'all' && filterAbc === 'all' && filterXyz === 'all' && !searchTerm) return ALERT[filterAlert]?.label ?? filterAlert;
-        if (searchTerm && filterAbc === 'all' && filterXyz === 'all' && filterAlert === 'all') return `"${searchTerm}"`;
-        return 'Filtrados';
-    }, [filterAbc, filterXyz, filterAlert, searchTerm]);
     const criticalACount  = useMemo(() => data.filter(r => r.abc_class === 'A' && (r.alert_status === 'out_of_stock' || r.alert_status === 'below_min')).length, [data]);
     const isBodega      = selectedErp === 6;
     const neverCalc     = data.length > 0 && data.every(d => d.is_dead_stock);
@@ -1235,6 +1224,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             return true;
         });
     }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft]);
+
+    const filteredDraftIds = useMemo(
+        () => hasActiveFilter ? filtered.filter(r => r.draft_status === 'pending').map(r => r.erp_product_id) : [],
+        [filtered, hasActiveFilter]
+    );
+    const filterLabel = useMemo(() => {
+        if (filterAbc !== 'all' && filterXyz === 'all' && filterAlert === 'all' && !searchTerm) return `Clase ${filterAbc}`;
+        if (filterAlert !== 'all' && filterAbc === 'all' && filterXyz === 'all' && !searchTerm) return ALERT[filterAlert]?.label ?? filterAlert;
+        if (searchTerm && filterAbc === 'all' && filterXyz === 'all' && filterAlert === 'all') return `"${searchTerm}"`;
+        return 'Filtrados';
+    }, [filterAbc, filterXyz, filterAlert, searchTerm]);
 
     const handleSort = useCallback((key) => {
         setSortBy(prev => {

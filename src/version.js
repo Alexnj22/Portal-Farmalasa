@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.64';
+export const APP_VERSION = '1.4.65';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.65 — MinMax tabla: ventas bajo nombre (no columna separada), columna Laboratorio, Stock actual = Faltan/Exceso en texto (sin barra), DB get_stock_analysis v3 + laboratorio_nombre
 // v1.4.64 — MinMax tabla: foto producto, columna Ventas (und/día + vend 6m + tendencia), StockBar en Stock, columna Acciones separada, quita border-l color, employee photo en banners/toast
 // v1.4.63 — MinMax: botón XCircle pone draft MIN/MAX en 0; matriz activa usa outline (no intersección con vecinos); quita Edit3
 // v1.4.62 — MinMax: MIN/MAX borrador muestran presentación dominante + und (igual que publicados); input muestra hint ≈ cajas mientras se escribe

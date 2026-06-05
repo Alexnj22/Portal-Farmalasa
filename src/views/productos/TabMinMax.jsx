@@ -1257,15 +1257,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
     const COLS = [
-        { key: 'product_name',  label: 'Producto',    align: 'left',   sortable: true },
-        { key: 'abc_xyz',       label: 'Clase',        align: 'center' },
-        { key: 'ventas',        label: 'Ventas',       align: 'center', sortable: true },
-        { key: 'coverage',      label: 'Cobertura',    align: 'center', sortable: true },
-        { key: 'current_stock', label: 'Stock actual', align: 'center', sortable: true },
-        { key: 'effective_min', label: 'MIN',           align: 'center', sortable: true },
-        { key: 'effective_max', label: 'MAX',           align: 'center', sortable: true },
-        { key: 'alert_status',  label: 'Estado',        align: 'center' },
-        { key: 'acciones',      label: 'Acciones',     align: 'center' },
+        { key: 'product_name',  label: 'Producto',      align: 'left',   sortable: true },
+        { key: 'laboratorio',   label: 'Laboratorio',   align: 'left' },
+        { key: 'abc_xyz',       label: 'Clase',         align: 'center' },
+        { key: 'coverage',      label: 'Cobertura',     align: 'center', sortable: true },
+        { key: 'current_stock', label: 'Stock actual',  align: 'center', sortable: true },
+        { key: 'effective_min', label: 'MIN',            align: 'center', sortable: true },
+        { key: 'effective_max', label: 'MAX',            align: 'center', sortable: true },
+        { key: 'alert_status',  label: 'Estado',         align: 'center' },
+        { key: 'acciones',      label: 'Acciones',      align: 'center' },
     ];
 
     const glass = 'rounded-2xl border border-white/60 backdrop-blur-sm';
@@ -1580,8 +1580,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
                                                     {hasDraft && <span className="shrink-0 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
                                                 </div>
+                                                {!dead && (
+                                                    <span className="text-[10px] text-slate-400 flex items-center gap-0.5 mt-0.5">
+                                                        {v6m.toFixed(2)} und/día
+                                                        {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={9} className="text-emerald-500 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
+                                                        {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={9} className="text-red-400 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
+                                                        {Number(row.units_sold_6m) > 0 && <span className="ml-1 text-slate-300">·</span>}
+                                                        {Number(row.units_sold_6m) > 0 && <span className="ml-1">{Number(row.units_sold_6m).toLocaleString()} vend. 6m</span>}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
+                                    </DataCell>
+
+                                    {/* Laboratorio */}
+                                    <DataCell align="left" className="!py-2.5">
+                                        <span className="text-[11px] text-slate-500 truncate block max-w-[120px]">
+                                            {row.laboratorio_nombre || <span className="text-slate-300">—</span>}
+                                        </span>
                                     </DataCell>
 
                                     {/* Clase — show draft badge when no published value yet */}
@@ -1605,23 +1621,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         }
                                     </DataCell>
 
-                                    {/* Ventas */}
-                                    <DataCell align="center" className="!py-2.5">
-                                        {dead ? <span className="text-slate-200 text-xs">—</span> : (
-                                            <div className="flex flex-col items-center gap-0.5">
-                                                <span className="flex items-center gap-0.5 text-[12px] font-bold tabular-nums text-slate-700">
-                                                    {v6m.toFixed(2)}
-                                                    {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={10} className="text-emerald-500 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
-                                                    {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={10} className="text-red-400 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
-                                                </span>
-                                                <span className="text-[9px] text-slate-400">und/día</span>
-                                                {Number(row.units_sold_6m) > 0 && (
-                                                    <span className="text-[9px] text-slate-400 tabular-nums">{Number(row.units_sold_6m).toLocaleString()} vend. 6m</span>
-                                                )}
-                                            </div>
-                                        )}
-                                    </DataCell>
-
                                     {/* Cobertura */}
                                     <DataCell align="center" className="!py-2.5">
                                         {!dead
@@ -1635,7 +1634,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             {stock === 0 ? '0' : formatUnits(stock, pres)}
                                         </div>
                                         {!dead && stock > 0 && <div className="text-[9px] text-slate-400">{stock.toLocaleString()} und</div>}
-                                        {!dead && <StockBar current={stock} min={minN} max={maxN} />}
+                                        {!dead && minN > 0 && stock < minN && (
+                                            <div className="text-[9px] font-bold text-orange-500 tabular-nums mt-0.5">
+                                                Faltan {(minN - stock).toLocaleString()}
+                                            </div>
+                                        )}
+                                        {!dead && maxN > 0 && stock > maxN && (
+                                            <div className="text-[9px] font-bold text-blue-500 tabular-nums mt-0.5">
+                                                Exceso +{(stock - maxN).toLocaleString()}
+                                            </div>
+                                        )}
                                     </DataCell>
 
                                     {/* MIN — inline edit on click for draft rows */}

@@ -131,21 +131,26 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
         setFilterXyz(px => px === xyz ? 'all' : xyz);
     };
 
+    const glassBox = {
+        background: 'rgba(255,255,255,0.52)',
+        backdropFilter: 'blur(20px)',
+        boxShadow: '0 8px 32px rgba(0,82,204,0.08), inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.03)',
+    };
+
     if (loading || data.length === 0) {
         return (
-            <div className="rounded-2xl border border-white/60 backdrop-blur-sm p-4 flex flex-col gap-3"
-                style={{ background: 'rgba(255,255,255,0.38)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
+            <div className="rounded-2xl border border-white/70 p-4 flex flex-col gap-3" style={glassBox}>
                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">Matriz ABC × XYZ</span>
                 {loading ? (
-                    <div className="grid gap-px animate-pulse" style={{ gridTemplateColumns: '28px repeat(3, 1fr)' }}>
+                    <div className="grid gap-1.5 animate-pulse" style={{ gridTemplateColumns: '26px repeat(3, 1fr)' }}>
                         {Array.from({ length: 16 }).map((_, i) => (
-                            <div key={i} className="h-9 rounded-xl bg-slate-100/80" />
+                            <div key={i} className="h-10 rounded-xl bg-slate-100/70" />
                         ))}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-4 gap-2 text-slate-300">
+                    <div className="flex flex-col items-center justify-center py-5 gap-2 text-slate-300">
                         <span className="text-3xl select-none">📊</span>
-                        <span className="text-[10px] font-semibold">Sin datos — presioná Recalcular</span>
+                        <span className="text-[10px] font-semibold">Sin datos — presioná Calcular</span>
                     </div>
                 )}
             </div>
@@ -153,26 +158,29 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
     }
 
     return (
-        <div className="rounded-2xl border border-white/60 backdrop-blur-sm p-4 flex flex-col gap-3"
-            style={{ background: 'rgba(255,255,255,0.38)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
+        <div className="rounded-2xl border border-white/70 p-4 flex flex-col gap-3" style={glassBox}>
             <div className="flex items-center justify-between gap-2">
                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Matriz ABC × XYZ</span>
                 {(filterAbc !== 'all' || filterXyz !== 'all') && (
                     <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}
-                        className="text-[9px] font-bold text-slate-400 hover:text-slate-600 flex items-center gap-0.5">
+                        className="text-[9px] font-bold text-slate-400 hover:text-slate-600 flex items-center gap-0.5 transition-colors">
                         <X size={9} /> limpiar
                     </button>
                 )}
             </div>
 
-            {/* Grid */}
-            <div className="grid gap-px" style={{ gridTemplateColumns: '28px repeat(3, 1fr)' }}>
+            {/* Grid — isolation:isolate ensures z-index on hover works within the stacking context */}
+            <div className="grid gap-1.5" style={{ gridTemplateColumns: '26px repeat(3, 1fr)', isolation: 'isolate' }}>
                 {/* Header row: XYZ */}
                 <div />
                 {XYZ_KEYS.map(xyz => (
                     <button key={xyz} onClick={() => setFilterXyz(p => p === xyz ? 'all' : xyz)}
-                        className={`py-1 rounded-lg text-[10px] font-black text-center transition-all ${filterXyz === xyz ? 'ring-2 ring-offset-1' : 'hover:opacity-80'}`}
-                        style={{ color: xyzColors[xyz], ringColor: xyzColors[xyz], background: filterXyz === xyz ? `${xyzColors[xyz]}18` : 'transparent' }}>
+                        className="relative py-1.5 rounded-lg text-[11px] font-black text-center transition-all duration-150"
+                        style={{
+                            color: xyzColors[xyz],
+                            background: filterXyz === xyz ? `${xyzColors[xyz]}22` : 'transparent',
+                            boxShadow: filterXyz === xyz ? `0 2px 8px ${xyzColors[xyz]}40` : undefined,
+                        }}>
                         {xyz}
                     </button>
                 ))}
@@ -182,21 +190,33 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                     <React.Fragment key={abc}>
                         {/* ABC label */}
                         <button onClick={() => setFilterAbc(p => p === abc ? 'all' : abc)}
-                            className={`py-1.5 rounded-lg text-[10px] font-black text-center transition-all ${filterAbc === abc ? 'ring-2 ring-offset-1' : 'hover:opacity-80'}`}
-                            style={{ color: abcColors[abc], background: filterAbc === abc ? `${abcColors[abc]}18` : 'transparent' }}>
+                            className="relative py-2 rounded-lg text-[11px] font-black text-center transition-all duration-150"
+                            style={{
+                                color: abcColors[abc],
+                                background: filterAbc === abc ? `${abcColors[abc]}22` : 'transparent',
+                            }}>
                             {abc}
                         </button>
                         {/* Cells */}
                         {XYZ_KEYS.map(xyz => {
                             const count = matrix[`${abc}${xyz}`];
                             const isActive = filterAbc === abc && filterXyz === xyz;
-                            const intensity = count > 0 ? Math.max(0.08, (count / maxCell) * 0.35) : 0;
+                            const intensity = count > 0 ? Math.max(0.10, (count / maxCell) * 0.38) : 0;
+                            const rgb = abc === 'A' ? '16,185,129' : abc === 'B' ? '59,130,246' : abc === 'C' ? '245,158,11' : '148,163,184';
                             return (
                                 <button key={xyz} onClick={() => toggle(abc, xyz)}
-                                    className={`relative py-2 rounded-xl text-center transition-all hover:scale-[1.04] ${count === 0 ? 'opacity-30 cursor-default' : 'cursor-pointer'} ${isActive ? 'ring-2 ring-offset-1 ring-slate-400' : ''}`}
-                                    style={{ background: count > 0 ? `rgba(${abc === 'A' ? '16,185,129' : abc === 'B' ? '59,130,246' : abc === 'C' ? '245,158,11' : '148,163,184'},${intensity})` : 'rgba(0,0,0,0.02)' }}
+                                    className={`relative py-3 rounded-xl text-center transition-all duration-200
+                                        ${count === 0 ? 'opacity-20 cursor-default' : 'cursor-pointer hover:z-10 hover:scale-[1.08]'}
+                                        ${isActive ? 'z-10 scale-[1.05]' : ''}`}
+                                    style={{
+                                        background: count > 0 ? `rgba(${rgb},${intensity})` : 'rgba(0,0,0,0.025)',
+                                        boxShadow: isActive
+                                            ? `0 6px 18px rgba(${rgb},0.35), 0 0 0 2px rgba(${rgb},0.55)`
+                                            : count > 0 ? `0 2px 8px rgba(${rgb},0.12)` : undefined,
+                                    }}
                                     disabled={count === 0}>
-                                    <span className="text-[13px] font-black text-slate-700 tabular-nums">{count || '—'}</span>
+                                    <span className="text-[14px] font-black text-slate-700 tabular-nums leading-none">{count || '—'}</span>
+                                    {count > 0 && <span className="text-[7px] font-bold text-slate-400 block mt-0.5 tracking-wider">{abc}{xyz}</span>}
                                 </button>
                             );
                         })}
@@ -205,10 +225,10 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
             </div>
 
             {/* XYZ legend */}
-            <div className="flex items-center gap-3 flex-wrap border-t border-slate-100/60 pt-2.5">
+            <div className="flex items-center gap-4 flex-wrap border-t border-white/60 pt-2.5">
                 {XYZ_KEYS.map(xyz => (
-                    <span key={xyz} className="flex items-center gap-1 text-[9px]">
-                        <span className="w-2 h-2 rounded-full" style={{ background: xyzColors[xyz] }} />
+                    <span key={xyz} className="flex items-center gap-1.5 text-[9px]">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: xyzColors[xyz], boxShadow: `0 0 6px ${xyzColors[xyz]}60` }} />
                         <span className="font-black" style={{ color: xyzColors[xyz] }}>{xyz}</span>
                         <span className="text-slate-400">{XYZ_CFG[xyz].desc}</span>
                     </span>
@@ -1122,6 +1142,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     ? { ...r, [col]: numVal }
                     : r
             ));
+            // Refresh cards so útil/excedente reflect the new draft values
+            supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId })
+                .then(({ data: cost }) => { if (cost) setCostSummary(cost); });
         }
         useStaff.getState().appendAuditLog('MINMAX_DRAFT_EDIT', String(edit.productId), {
             field: col, value: numVal, sucursal_id: edit.sucursalId,
@@ -1238,63 +1261,67 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                 <div className="flex-1" />
 
-                {/* RIGHT: Unified pill — Branch | [active filter] | CSV | ⚙ | Todas | Recalcular */}
-                <div className="flex items-center rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-shadow duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] shrink-0 overflow-visible">
+                {/* RIGHT: pill — white section + blue Calcular cap as sibling */}
+                <div className="flex items-center shrink-0 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] transition-shadow duration-300">
 
-                    {/* Branch selector */}
-                    <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
-                        <LiquidSelect
-                            value={String(selectedErp)}
-                            onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy(null); setFilterDraft(false); } }}
-                            options={erpOptions} icon={Building2} clearable={false} compact
-                        />
+                    {/* White section */}
+                    <div className="flex items-center rounded-l-2xl border border-r-0 border-slate-200/70 bg-white/80 backdrop-blur-sm overflow-visible">
+
+                        {/* Branch selector */}
+                        <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
+                            <LiquidSelect
+                                value={String(selectedErp)}
+                                onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy(null); setFilterDraft(false); } }}
+                                options={erpOptions} icon={Building2} clearable={false} compact
+                            />
+                        </div>
+
+                        {/* Active ABC/XYZ filter badge + clear */}
+                        {(filterAbc !== 'all' || filterXyz !== 'all') && (
+                            <>
+                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}
+                                    className="mx-2 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[11px] font-black text-blue-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all shrink-0">
+                                    {filterAbc !== 'all' ? filterAbc : '·'}{filterXyz !== 'all' ? filterXyz : ''}
+                                    <X size={9} strokeWidth={3} />
+                                </button>
+                            </>
+                        )}
+
+                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                        {/* CSV */}
+                        <button onClick={() => exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp])}
+                            disabled={data.length === 0 || loading}
+                            title="Exportar CSV"
+                            className="flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-30 active:scale-[0.97]">
+                            <Download size={12} /> CSV
+                        </button>
+
+                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                        {/* Config */}
+                        <button onClick={() => setConfigOpen(o => !o)}
+                            title="Configurar parámetros"
+                            className={`px-3 py-2.5 transition-all active:scale-[0.97] ${configOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
+                            <Settings2 size={13} />
+                        </button>
+
+                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                        {/* Toda la red */}
+                        <button onClick={handleRecalcularAll} disabled={calculating || loading}
+                            title="Recalcular todas las sucursales y Bodega"
+                            className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-all active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none">
+                            {calculating && calcMode === 'all'
+                                ? <><Loader2 size={11} className="animate-spin" /> Calculando…</>
+                                : <><Layers size={11} /> Toda la red</>}
+                        </button>
                     </div>
 
-                    {/* Active ABC/XYZ filter badge + clear */}
-                    {(filterAbc !== 'all' || filterXyz !== 'all') && (
-                        <>
-                            <div className="h-5 w-px bg-slate-100 shrink-0" />
-                            <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}
-                                className="mx-2 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[11px] font-black text-blue-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all shrink-0">
-                                {filterAbc !== 'all' ? filterAbc : '·'}{filterXyz !== 'all' ? filterXyz : ''}
-                                <X size={9} strokeWidth={3} />
-                            </button>
-                        </>
-                    )}
-
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
-
-                    {/* CSV */}
-                    <button onClick={() => exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp])}
-                        disabled={data.length === 0 || loading}
-                        title="Exportar CSV"
-                        className="flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-30 active:scale-[0.97]">
-                        <Download size={12} /> CSV
-                    </button>
-
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
-
-                    {/* Config */}
-                    <button onClick={() => setConfigOpen(o => !o)}
-                        title="Configurar parámetros"
-                        className={`px-3 py-2.5 transition-all active:scale-[0.97] ${configOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
-                        <Settings2 size={13} />
-                    </button>
-
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
-
-                    {/* Todas */}
-                    <button onClick={handleRecalcularAll} disabled={calculating || loading}
-                        title="Recalcula todas las sucursales y Bodega"
-                        className="inline-flex items-center justify-center gap-1.5 min-w-[72px] px-3 py-2.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-all active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none">
-                        {calculating && calcMode === 'all'
-                            ? <><Loader2 size={11} className="animate-spin" /> Calculando…</>
-                            : <><Layers size={11} /> Todas</>}
-                    </button>
-
-                    {/* Calcular — blue right cap */}
+                    {/* Calcular — blue right cap (sibling, not child, so it joins cleanly) */}
                     <button onClick={handleRecalcular} disabled={calculating || loading}
-                        className="inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 py-2.5 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl transition-all duration-150 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
+                        className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl transition-all duration-150 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
                         {calculating && calcMode === 'single'
                             ? <><Loader2 size={12} className="animate-spin" /> Calculando…</>
                             : <><RefreshCw size={12} /> Calcular</>}
@@ -1616,10 +1643,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         )}
                                     </DataCell>
 
-                                    {/* Estado + editar (manual) + pedir + publicar */}
+                                    {/* Estado + editar (manual) + publicar inline */}
                                     <DataCell align="center" className="!py-2.5">
                                         <div className="flex flex-col items-center gap-0.5">
-                                            <div className="flex items-center gap-1">
+                                            <div className="flex items-center gap-1 flex-wrap justify-center">
                                                 <span className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full border ${alert.pill}`}>
                                                     <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
                                                     {alert.label}
@@ -1630,18 +1657,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         <Edit3 size={11} />
                                                     </button>
                                                 )}
+                                                {hasDraft && (
+                                                    <button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
+                                                        disabled={publishing}
+                                                        className="text-[9px] font-bold text-amber-600 hover:text-white hover:bg-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full transition-all disabled:opacity-50 shrink-0">
+                                                        Publicar
+                                                    </button>
+                                                )}
                                             </div>
                                             {!dead && (row.alert_status === 'out_of_stock' || row.alert_status === 'below_min') && maxN > 0 && (
                                                 <span className="text-[8px] font-bold text-slate-400 tabular-nums">
                                                     Pedir {Math.max(0, maxN - stock).toLocaleString()}u
                                                 </span>
-                                            )}
-                                            {hasDraft && (
-                                                <button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
-                                                    disabled={publishing}
-                                                    className="text-[9px] font-bold text-amber-600 hover:text-white hover:bg-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full transition-all disabled:opacity-50">
-                                                    Publicar
-                                                </button>
                                             )}
                                         </div>
                                     </DataCell>

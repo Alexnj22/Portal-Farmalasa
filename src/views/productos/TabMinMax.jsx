@@ -328,8 +328,8 @@ function formatDominant(units, presentations) {
     const pres = sortedPres(presentations);
     if (!pres.length) return `${n.toLocaleString()} und`;
     const { tipo, factor } = pres[0];
-    // floor: show how many complete packages the value represents (exact und shown as subtitle)
-    return `~${Math.floor(n / factor)} ${tipo.trim()}`;
+    // ceil: boxes are indivisible — always round up so the displayed quantity covers the unit threshold
+    return `≥${Math.ceil(n / factor)} ${tipo.trim()}`;
 }
 
 function getBreakdown(units, presentations) {

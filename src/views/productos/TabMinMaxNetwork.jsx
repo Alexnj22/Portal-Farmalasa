@@ -62,13 +62,31 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
     const [pageSize,    setPageSize]    = useState(25);
 
     useEffect(() => {
+        let cancelled = false;
         setLoading(true); setError(null);
-        supabase.rpc('get_network_summary').range(0, 9999)
-            .then(({ data: rows, error: e }) => {
-                if (e) setError(e.message);
-                else setData(rows || []);
-            })
-            .finally(() => setLoading(false));
+        (async () => {
+            try {
+                const allRows = [];
+                const CHUNK = 1000;
+                let from = 0;
+                let keepFetching = true;
+                while (keepFetching) {
+                    const { data: chunk, error: e } = await supabase
+                        .rpc('get_network_summary')
+                        .range(from, from + CHUNK - 1);
+                    if (e) throw e;
+                    allRows.push(...(chunk || []));
+                    keepFetching = chunk && chunk.length === CHUNK;
+                    from += CHUNK;
+                }
+                if (!cancelled) setData(allRows);
+            } catch (e) {
+                if (!cancelled) setError(e.message);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
     }, []);
 
     const alertCounts = useMemo(() => {

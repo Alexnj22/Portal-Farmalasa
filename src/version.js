@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.54';
+export const APP_VERSION = '1.4.55';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.55 — MinMax: workflow Borrador/Publicar — calcular genera borradores; diff live→draft en tabla; Publicar por fila o todo; get_stock_analysis VOLATILE; TabMinMaxNetwork chunked fetch; fix indexOf O(n²)
 // v1.4.54 — MinMax: fix MAX > MIN siempre — MAX = GREATEST(CEIL(v×cycle), MIN+1, 1); 0 casos inválidos en 17k registros
 // v1.4.53 — MinMax: fix pisos MIN/MAX — slow movers usan FLOOR+0 y MAX≥1 (no más MAX=2 para ventas esporádicas)
 // v1.4.52 — MinMax: fix 1000-row cap en get_stock_analysis (chunked fetch hasta agotar resultados)

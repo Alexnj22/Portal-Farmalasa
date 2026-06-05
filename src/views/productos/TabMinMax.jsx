@@ -4,7 +4,7 @@ import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download,
     CheckCircle2, Edit3, Check, Info, RotateCcw, ChevronRight,
-    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock,
+    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -882,6 +882,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [sortDir,      setSortDir]      = useState('asc');
     const [page,         setPage]         = useState(1);
     const [pageSize,     setPageSize]     = useState(25);
+    const [publishing,   setPublishing]   = useState(false);
+    const [publishResult,setPublishResult]= useState(null);
+    const [filterDraft,  setFilterDraft]  = useState(false);
     const loadRef = useRef(0);
 
     const toggleExpand = useCallback((id) => {
@@ -948,12 +951,31 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const handleEditSave = useCallback(() => { setEditId(null); loadData(selectedErp); }, [selectedErp, loadData]);
 
+    const handlePublish = useCallback(async (productIds = null) => {
+        setPublishing(true); setPublishResult(null); setError(null);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            const rpcParams = { p_erp_sucursal_id: selectedErp, p_published_by: user?.email ?? null };
+            if (productIds) rpcParams.p_erp_product_ids = productIds;
+            const { data: res, error: e } = await supabase.rpc('publish_stock_params', rpcParams);
+            if (e) throw e;
+            setPublishResult({ ...res, productIds });
+            useStaff.getState().appendAuditLog('MINMAX_PUBLISH', String(selectedErp), {
+                sucursal_id: selectedErp, product_ids: productIds, published: res?.published,
+            });
+            await loadData(selectedErp);
+        } catch (e) { setError(e.message); }
+        finally { setPublishing(false); }
+    }, [selectedErp, loadData]);
+
     // ── Derived ──────────────────────────────────────────────────────────────
     const stats = useMemo(() => Object.fromEntries(
         STAT_CFGS.map(s => [s.key, data.filter(d => d.alert_status === s.key).length])
     ), [data]);
 
-    const lastCalcAt    = useMemo(() => data.find(d => d.calculated_at && !d.is_dead_stock)?.calculated_at ?? null, [data]);
+    const lastCalcAt      = useMemo(() => data.find(d => d.calculated_at && !d.is_dead_stock)?.calculated_at ?? null, [data]);
+    const draftCount      = useMemo(() => data.filter(r => r.draft_status === 'pending').length, [data]);
+    const lastDraftCalcAt = useMemo(() => data.find(r => r.draft_status === 'pending' && r.draft_calculated_at)?.draft_calculated_at ?? null, [data]);
     const isBodega      = selectedErp === 6;
     const neverCalc     = data.length > 0 && data.every(d => d.is_dead_stock);
     const hasActiveData = data.some(d => !d.is_dead_stock);
@@ -961,13 +983,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const filtered = useMemo(() => {
         const q = searchTerm.toLowerCase();
         return data.filter(r => {
-            if (filterAbc   !== 'all' && r.abc_class    !== filterAbc)       return false;
-            if (filterXyz   !== 'all' && normXyz(r.demand_variability) !== filterXyz) return false;
-            if (filterAlert !== 'all' && r.alert_status !== filterAlert)     return false;
-            if (q && !r.product_name?.toLowerCase().includes(q))             return false;
+            if (filterDraft && r.draft_status !== 'pending')                               return false;
+            if (filterAbc   !== 'all' && r.abc_class    !== filterAbc)                    return false;
+            if (filterXyz   !== 'all' && normXyz(r.demand_variability) !== filterXyz)     return false;
+            if (filterAlert !== 'all' && r.alert_status !== filterAlert)                   return false;
+            if (q && !r.product_name?.toLowerCase().includes(q))                          return false;
             return true;
         });
-    }, [data, filterAbc, filterXyz, filterAlert, searchTerm]);
+    }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft]);
 
     const handleSort = useCallback((key) => {
         setSortBy(prev => {
@@ -999,7 +1022,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
     const pageRows   = sorted.slice((page - 1) * pageSize, page * pageSize);
-    useEffect(() => { setPage(1); }, [filterAbc, filterXyz, filterAlert, searchTerm, sortBy, sortDir, selectedErp]);
+    useEffect(() => { setPage(1); }, [filterAbc, filterXyz, filterAlert, searchTerm, sortBy, sortDir, selectedErp, filterDraft]);
 
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
@@ -1037,7 +1060,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
                         <LiquidSelect
                             value={String(selectedErp)}
-                            onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy(null); } }}
+                            onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy(null); setFilterDraft(false); } }}
                             options={erpOptions} icon={Building2} clearable={false} compact
                         />
                     </div>
@@ -1177,14 +1200,46 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 </div>
             )}
 
+            {/* ── Draft pending banner ── */}
+            {draftCount > 0 && !loading && (
+                <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[12px] text-amber-800 font-medium">
+                    <span className="relative flex h-2 w-2 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
+                    </span>
+                    <span className="flex-1">
+                        <strong className="font-black">{draftCount.toLocaleString()}</strong> producto{draftCount !== 1 ? 's' : ''} con borradores pendientes de revisión
+                        {lastDraftCalcAt && <span className="text-amber-600 font-normal"> — calculados {relativeTime(lastDraftCalcAt)}</span>}
+                    </span>
+                    <button onClick={() => setFilterDraft(f => !f)}
+                        className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all ${filterDraft ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-200 hover:bg-amber-100'}`}>
+                        {filterDraft ? 'Ver todos' : 'Solo borradores'}
+                    </button>
+                    <button onClick={() => handlePublish()} disabled={publishing}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors disabled:opacity-50 shrink-0">
+                        {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
+                        Publicar todo
+                    </button>
+                </div>
+            )}
+
             {/* ── Banners ── */}
-            {calcResult?.ok && (
+            {publishResult?.ok && (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[12px] text-emerald-700 font-semibold">
                     <CheckCircle2 size={14} />
+                    {publishResult.productIds
+                        ? `${publishResult.published} producto${publishResult.published !== 1 ? 's' : ''} publicado${publishResult.published !== 1 ? 's' : ''} en ${ERP_NAMES[selectedErp]}`
+                        : `${publishResult.published?.toLocaleString()} borradores publicados en ${ERP_NAMES[selectedErp]}`}
+                    <button onClick={() => setPublishResult(null)} className="ml-auto text-emerald-400 hover:text-emerald-600"><X size={12} /></button>
+                </div>
+            )}
+            {calcResult?.ok && (
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-[12px] text-blue-700 font-semibold">
+                    <Info size={14} />
                     {calcResult.mode === 'all'
-                        ? `Cálculo completado — ${calcResult.rows?.toLocaleString()} productos actualizados en todas las sucursales + Bodega`
-                        : `Cálculo completado — ${calcResult.rows?.toLocaleString()} productos actualizados en ${ERP_NAMES[selectedErp]}`}
-                    <button onClick={() => setCalcResult(null)} className="ml-auto text-emerald-400 hover:text-emerald-600"><X size={12} /></button>
+                        ? `${calcResult.rows?.toLocaleString()} borradores generados para todas las sucursales — revisá y publicá los cambios`
+                        : `${calcResult.rows?.toLocaleString()} borradores generados para ${ERP_NAMES[selectedErp]} — revisá y publicá los cambios`}
+                    <button onClick={() => setCalcResult(null)} className="ml-auto text-blue-400 hover:text-blue-600"><X size={12} /></button>
                 </div>
             )}
             {error && (
@@ -1233,7 +1288,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     minWidth="720px"
                 >
 
-                    {pageRows.map((row) => {
+                    {pageRows.map((row, rowIdx) => {
                         const isEditing  = editId === row.erp_product_id;
                         const isExpanded = expandedIds.has(row.erp_product_id);
                         const alert      = ALERT[row.alert_status] ?? ALERT.ok;
@@ -1245,6 +1300,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         const v30        = Number(row.velocity_30d ?? 0);
                         const v6m        = Number(row.daily_velocity ?? 0);
                         const canExpand  = !dead || stock > 0;
+                        const hasDraft   = row.draft_status === 'pending';
 
                         if (isEditing) return (
                             <React.Fragment key={row.erp_product_id}>
@@ -1259,7 +1315,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         return (
                             <React.Fragment key={row.erp_product_id}>
                                 <DataRow
-                                    index={pageRows.indexOf(row)}
+                                    index={rowIdx}
                                     onClick={canExpand ? () => toggleExpand(row.erp_product_id) : undefined}
                                     className={`border-l-4 ${alert.left} ${alert.row}`}
                                 >
@@ -1273,6 +1329,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 <div className="flex items-center gap-1.5 min-w-0">
                                                     <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">{row.product_name || '—'}</span>
                                                     {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
+                                                    {hasDraft && <span className="shrink-0 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
                                                 </div>
                                                 {!dead && (
                                                     <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
@@ -1288,7 +1345,19 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                                     {/* Clase */}
                                     <DataCell align="center" className="!py-2.5">
-                                        <AbcXyzBadge abc={row.abc_class} xyz={row.demand_variability} />
+                                        <div className="flex flex-col items-center gap-0.5">
+                                            <AbcXyzBadge abc={row.abc_class} xyz={row.demand_variability} />
+                                            {hasDraft && row.draft_abc_class && (
+                                                row.abc_class == null ||
+                                                row.draft_abc_class !== row.abc_class ||
+                                                normXyz(row.draft_demand_variability) !== normXyz(row.demand_variability)
+                                            ) && (
+                                                <div className="flex items-center gap-0.5">
+                                                    <span className="text-[8px] text-slate-300">→</span>
+                                                    <AbcXyzBadge abc={row.draft_abc_class} xyz={row.draft_demand_variability} />
+                                                </div>
+                                            )}
+                                        </div>
                                     </DataCell>
 
                                     {/* Cobertura */}
@@ -1308,21 +1377,41 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                                     {/* MIN */}
                                     <DataCell align="center" className="!py-2.5">
-                                        {dead ? <span className="text-slate-200 text-xs">—</span> : <>
-                                            <div className={`text-[12px] font-semibold tabular-nums ${stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>{formatDominant(minN, pres)}</div>
-                                            <div className="text-[9px] text-slate-400">{minN.toLocaleString()} und</div>
-                                        </>}
+                                        {dead ? <span className="text-slate-200 text-xs">—</span> : (
+                                            <div className="flex flex-col items-center">
+                                                <div className={`text-[12px] font-semibold tabular-nums ${stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>{formatDominant(minN, pres)}</div>
+                                                <div className="text-[9px] text-slate-400">{minN.toLocaleString()} und</div>
+                                                {hasDraft && row.draft_min != null && row.draft_min !== minN && (
+                                                    <div className="flex items-center gap-0.5 mt-0.5">
+                                                        <span className="text-[8px] text-slate-300">→</span>
+                                                        <span className={`text-[10px] font-black tabular-nums ${row.draft_min > minN ? 'text-orange-500' : 'text-emerald-600'}`}>
+                                                            {row.draft_min.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </DataCell>
 
                                     {/* MAX */}
                                     <DataCell align="center" className="!py-2.5">
-                                        {dead ? <span className="text-slate-200 text-xs">—</span> : <>
-                                            <div className={`text-[12px] font-semibold tabular-nums ${stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>{formatDominant(maxN, pres)}</div>
-                                            <div className="text-[9px] text-slate-400">{maxN.toLocaleString()} und</div>
-                                        </>}
+                                        {dead ? <span className="text-slate-200 text-xs">—</span> : (
+                                            <div className="flex flex-col items-center">
+                                                <div className={`text-[12px] font-semibold tabular-nums ${stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>{formatDominant(maxN, pres)}</div>
+                                                <div className="text-[9px] text-slate-400">{maxN.toLocaleString()} und</div>
+                                                {hasDraft && row.draft_max != null && row.draft_max !== maxN && (
+                                                    <div className="flex items-center gap-0.5 mt-0.5">
+                                                        <span className="text-[8px] text-slate-300">→</span>
+                                                        <span className={`text-[10px] font-black tabular-nums ${row.draft_max > maxN ? 'text-blue-500' : 'text-slate-500'}`}>
+                                                            {row.draft_max.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </DataCell>
 
-                                    {/* Estado + editar + pedir */}
+                                    {/* Estado + editar + pedir + publicar */}
                                     <DataCell align="center" className="!py-2.5">
                                         <div className="flex flex-col items-center gap-0.5">
                                             <div className="flex items-center gap-1">
@@ -1341,6 +1430,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 <span className="text-[8px] font-bold text-slate-400 tabular-nums">
                                                     Pedir {Math.max(0, maxN - stock).toLocaleString()}u
                                                 </span>
+                                            )}
+                                            {hasDraft && (
+                                                <button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
+                                                    disabled={publishing}
+                                                    className="text-[9px] font-bold text-amber-600 hover:text-white hover:bg-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full transition-all disabled:opacity-50">
+                                                    Publicar
+                                                </button>
                                             )}
                                         </div>
                                     </DataCell>

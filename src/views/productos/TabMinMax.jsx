@@ -10,6 +10,7 @@ import {
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 
 // ─── Animation presets ────────────────────────────────────────────────────────
@@ -159,7 +160,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
 
     const glassBox = {
         background: 'rgba(255,255,255,0.52)',
-        backdropFilter: 'blur(20px)',
+        backdropFilter: 'blur(4px)',
         boxShadow: '0 8px 32px rgba(0,82,204,0.08), inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.03)',
     };
 
@@ -287,12 +288,12 @@ function CostCards({ summary, isBodega }) {
         <div className="flex items-center gap-2.5 flex-wrap">
             {STATS.map(({ label, value, color, icon: Icon, iconCls }) => (
                 <div key={label}
-                    className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-white/70 backdrop-blur-sm"
+                    className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm"
                     style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
-                    <Icon size={15} className={`shrink-0 ${iconCls}`} />
-                    <div className="flex flex-col leading-none gap-1">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</span>
-                        <span className={`text-[20px] font-black tabular-nums leading-none ${color}`}>{value}</span>
+                    <Icon size={13} className={`shrink-0 ${iconCls}`} />
+                    <div className="flex flex-col leading-snug gap-0.5">
+                        <span className="text-[10px] font-semibold text-slate-500">{label}</span>
+                        <span className={`text-[14px] font-black tabular-nums leading-none ${color}`}>{value}</span>
                     </div>
                 </div>
             ))}
@@ -1080,7 +1081,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [publishResult,setPublishResult]= useState(null);
     const [filterDraft,     setFilterDraft]     = useState(false);
     const [hiddenIds,       setHiddenIds]       = useState(new Set());
-    const saveHiddenTimer = useRef(null);
+    const saveHiddenTimer  = useRef(null);
+    const publishTimer     = useRef(null);
+    const [publishConfirm, setPublishConfirm] = useState({ open: false, ids: null, count: 0 });
+
+    // Cleanup publish timer on unmount
+    useEffect(() => () => clearTimeout(publishTimer.current), []);
 
     // Load hiddenIds from Supabase user_metadata (cross-device)
     useEffect(() => {
@@ -1229,6 +1235,28 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             field: col, value: numVal, sucursal_id: edit.sucursalId,
         });
     }, []);
+
+    const requestPublish = useCallback((ids = null) => {
+        const count = ids ? ids.length : draftCount;
+        setPublishConfirm({ open: true, ids: ids ?? null, count });
+    }, [draftCount]);
+
+    const startDeferredPublish = useCallback((ids, count) => {
+        setPublishConfirm({ open: false, ids: null, count: 0 });
+        const label = count === 1 ? 'borrador' : 'borradores';
+        setToast({
+            message: `Publicando ${count} ${label} en 5 s…`,
+            type: 'info',
+            action: {
+                label: 'Cancelar',
+                onClick: () => { clearTimeout(publishTimer.current); setToast(null); },
+            },
+        });
+        publishTimer.current = setTimeout(async () => {
+            setToast(null);
+            await handlePublish(ids ?? undefined);
+        }, 5000);
+    }, [handlePublish]);
 
     const handlePublish = useCallback(async (productIds = null) => {
         setPublishing(true); setPublishResult(null); setError(null);
@@ -1619,7 +1647,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     key="pub-filtered"
                                     initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.14, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, transition: { duration: 0.1 } }}
                                     {...ctaAnim}
-                                    onClick={() => handlePublish(filteredDraftIds)} disabled={publishing}
+                                    onClick={() => requestPublish(filteredDraftIds)} disabled={publishing}
                                     className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                                     {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
                                     Publicar {filterLabel} ({filteredDraftIds.length})
@@ -1629,7 +1657,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     key="pub-all"
                                     initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.14, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, transition: { duration: 0.1 } }}
                                     {...ctaAnim}
-                                    onClick={() => handlePublish()} disabled={publishing}
+                                    onClick={() => requestPublish()} disabled={publishing}
                                     className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                                     {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
                                     Publicar todo ({draftCount})
@@ -1888,7 +1916,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             )}
                                             {/* Publicar borrador */}
                                             {hasDraft && (
-                                                <motion.button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
+                                                <motion.button onClick={e => { e.stopPropagation(); requestPublish([row.erp_product_id]); }}
                                                     disabled={publishing}
                                                     {...chipAnim}
                                                     className="text-[9px] font-bold text-[#0052CC] hover:text-white hover:bg-[#0052CC] bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg disabled:opacity-50">
@@ -1934,11 +1962,29 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         ? <img src={currentEmployee.photo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-white/40" />
                         : <Info size={15} className="shrink-0" />}
                     <span>{toast.message}</span>
-                    <button onClick={() => setToast(null)} className="ml-2 opacity-60 hover:opacity-100 transition-opacity">
+                    {toast.action && (
+                        <button onClick={toast.action.onClick}
+                            className="ml-1 px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/35 text-[11px] font-bold transition-colors shrink-0">
+                            {toast.action.label}
+                        </button>
+                    )}
+                    <button onClick={() => setToast(null)} className="ml-1 opacity-60 hover:opacity-100 transition-opacity shrink-0">
                         <X size={12} />
                     </button>
                 </div>
             )}
+
+            {/* ── Confirm publish modal ── */}
+            <ConfirmModal
+                isOpen={publishConfirm.open}
+                onClose={() => setPublishConfirm({ open: false, ids: null, count: 0 })}
+                onConfirm={() => startDeferredPublish(publishConfirm.ids, publishConfirm.count)}
+                title={`¿Publicar ${publishConfirm.count} borrador${publishConfirm.count !== 1 ? 'es' : ''}?`}
+                message={`Se aplicarán los valores MIN/MAX en ${ERP_NAMES[selectedErp]}. Tendrás 5 segundos para cancelar.`}
+                confirmText="Publicar"
+                cancelText="Cancelar"
+                isDestructive={false}
+            />
         </div>
     );
 }

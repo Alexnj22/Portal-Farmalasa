@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.80';
+export const APP_VERSION = '1.4.81';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.81 — MinMax: CostCards sin hero-metric (14px vs 20px); blur 20px→4px en matriz; Publicar con ConfirmModal + toast cancelable 5s
 // v1.4.80 — MinMax: hiddenIds → Supabase user_metadata (cross-device); fix DataTable key (no remount on filter); collapse expanded row al editar MIN/MAX
 // v1.4.79 — MinMax: hiddenIds persiste en localStorage por sucursal (minmax_hidden_{erp})
 // v1.4.78 — MinMax: animaciones fluidas — easeOutExpo, presets chipAnim/ctaAnim/iconAnim/fadeUp, sin spring en hover

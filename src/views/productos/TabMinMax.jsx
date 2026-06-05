@@ -1783,6 +1783,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         <input autoFocus type="number" min="0"
                                                             value={inlineDraftEdit.value}
                                                             onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
+                                                            onFocus={e => e.target.select()}
                                                             onBlur={() => {
                                                                 if (skipBlurSave.current) { skipBlurSave.current = false; return; }
                                                                 saveDraftCell(inlineDraftEdit);
@@ -1848,6 +1849,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         <input autoFocus type="number" min="0"
                                                             value={inlineDraftEdit.value}
                                                             onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
+                                                            onFocus={e => e.target.select()}
                                                             onBlur={() => {
                                                                 if (skipBlurSave.current) { skipBlurSave.current = false; return; }
                                                                 saveDraftCell(inlineDraftEdit);

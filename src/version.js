@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.99';
+export const APP_VERSION = '1.5.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.5.0  — MinMax: onFocus select() en celdas MIN/MAX — al entrar se selecciona el valor para reemplazarlo de inmediato
 // v1.4.99 — MinMax: Enter/↓ en celda MIN o MAX guarda y salta al siguiente producto; ↑ salta al anterior; Tab/→ sigue abriendo MAX del mismo producto
 // v1.4.98 — MinMax vs ERP: agrega Bodega (ID 6) al selector de sucursal — faltaba en ERP_NAMES/ERP_ORDER
 // v1.4.97 — MinMax vs ERP: chunked fetch (range 1000) — PostgREST cap silencioso cortaba a 1000 filas (sucursales tienen 1500–2000+ productos)

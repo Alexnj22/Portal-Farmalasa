@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.69';
+export const APP_VERSION = '1.4.70';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.70 — MinMax: borradores/publicar como pills junto a chips de estado; matriz más compacta; "Todas las sucursales"
 // v1.4.69 — MinMax: fix TDZ — filteredDraftIds/filterLabel movidos debajo de filtered (ReferenceError antes de inicialización)
 // v1.4.68 — MinMax: MIN floor — si MAX>1, MIN mínimo 1; solo (0,1) válido con MIN=0 (calculate_stock_params actualizado en DB)
 // v1.4.67 — MinMax: publicar filtrados — botón "Publicar Clase A (N)" / "Publicar filtrados (N)" en banner cuando hay filtro activo con borradores

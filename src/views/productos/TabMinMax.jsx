@@ -139,7 +139,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
 
     if (loading || data.length === 0) {
         return (
-            <div className="rounded-2xl border border-white/70 p-4 flex flex-col gap-3" style={glassBox}>
+            <div className="rounded-2xl border border-white/70 p-3 flex flex-col gap-2" style={glassBox}>
                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">Matriz ABC × XYZ</span>
                 {loading ? (
                     <div className="grid gap-1.5 animate-pulse" style={{ gridTemplateColumns: '26px repeat(3, 1fr)' }}>
@@ -158,7 +158,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
     }
 
     return (
-        <div className="rounded-2xl border border-white/70 p-4 flex flex-col gap-3" style={glassBox}>
+        <div className="rounded-2xl border border-white/70 p-3 flex flex-col gap-2" style={glassBox}>
             <div className="flex items-center justify-between gap-2">
                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Matriz ABC × XYZ</span>
                 {(filterAbc !== 'all' || filterXyz !== 'all') && (
@@ -170,7 +170,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
             </div>
 
             {/* Grid — isolation:isolate ensures z-index on hover works within the stacking context */}
-            <div className="grid gap-1.5" style={{ gridTemplateColumns: '26px repeat(3, 1fr)', isolation: 'isolate' }}>
+            <div className="grid gap-1" style={{ gridTemplateColumns: '26px repeat(3, 1fr)', isolation: 'isolate' }}>
                 {/* Header row: XYZ */}
                 <div />
                 {XYZ_KEYS.map(xyz => (
@@ -1355,13 +1355,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                         <div className="h-5 w-px bg-slate-100 shrink-0" />
 
-                        {/* Toda la red */}
+                        {/* Todas las sucursales */}
                         <button onClick={handleRecalcularAll} disabled={calculating || loading}
                             title="Recalcular todas las sucursales y Bodega"
                             className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-all active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none">
                             {calculating && calcMode === 'all'
                                 ? <><Loader2 size={11} className="animate-spin" /> Calculando…</>
-                                : <><Layers size={11} /> Toda la red</>}
+                                : <><Layers size={11} /> Todas las sucursales</>}
                         </button>
                     </div>
 
@@ -1417,44 +1417,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 </div>
             )}
 
-            {/* ── Draft pending banner ── */}
-            {draftCount > 0 && !loading && (
-                <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-[12px] text-amber-800 font-medium">
-                    <span className="relative flex h-2 w-2 shrink-0">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
-                    </span>
-                    {currentEmployee?.photo_url && (
-                        <img src={currentEmployee.photo_url} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 ring-1 ring-amber-200" />
-                    )}
-                    <span className="flex-1">
-                        <strong className="font-black">{draftCount.toLocaleString()}</strong> producto{draftCount !== 1 ? 's' : ''} con borradores pendientes de revisión
-                        {lastDraftCalcAt && <span className="text-amber-600 font-normal"> — calculados {relativeTime(lastDraftCalcAt)}</span>}
-                    </span>
-                    <button onClick={() => setFilterDraft(f => !f)}
-                        className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all ${filterDraft ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-200 hover:bg-amber-100'}`}>
-                        {filterDraft ? 'Ver todos' : 'Solo borradores'}
-                    </button>
-
-                    {/* Publicar filtrados — aparece solo cuando hay un filtro activo con borradores */}
-                    {hasActiveFilter && filteredDraftIds.length > 0 && (
-                        <button onClick={() => handlePublish(filteredDraftIds)} disabled={publishing}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-amber-700 bg-white hover:bg-amber-100 border border-amber-300 rounded-lg transition-colors disabled:opacity-50 shrink-0">
-                            {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
-                            Publicar {filterLabel}
-                            <span className="ml-0.5 text-[10px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
-                                {filteredDraftIds.length}
-                            </span>
-                        </button>
-                    )}
-
-                    <button onClick={() => handlePublish()} disabled={publishing}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors disabled:opacity-50 shrink-0">
-                        {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
-                        Publicar todo <span className="text-[10px] font-black opacity-70">({draftCount})</span>
-                    </button>
-                </div>
-            )}
 
             {/* ── Banners ── */}
             {publishResult?.ok && (
@@ -1523,7 +1485,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 </div>
             )}
 
-            {/* ── Alert stat chips (above table) ── */}
+            {/* ── Alert stat chips + draft pills (above table) ── */}
             {!neverCalc && (
                 <div className="flex items-center gap-2 flex-wrap">
                     {STAT_CFGS.map(cfg => {
@@ -1539,6 +1501,38 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             </button>
                         );
                     })}
+
+                    {draftCount > 0 && !loading && (
+                        <>
+                            <div className="h-4 w-px bg-slate-200 shrink-0 mx-1" />
+
+                            {/* Solo borradores toggle */}
+                            <button onClick={() => setFilterDraft(f => !f)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all active:scale-[0.97] ${filterDraft ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-white/80 border-slate-200 text-slate-600 hover:border-slate-300 hover:shadow-sm'}`}>
+                                <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                                <span className="tabular-nums font-black">{draftCount}</span>
+                                <span className="opacity-80">Borradores</span>
+                                {filterDraft && <X size={9} className="ml-0.5 opacity-60" />}
+                            </button>
+
+                            {/* Publicar — filtrados si hay filtro activo, sino todo */}
+                            {hasActiveFilter && filteredDraftIds.length > 0 ? (
+                                <button onClick={() => handlePublish(filteredDraftIds)} disabled={publishing}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100 transition-all active:scale-[0.97] disabled:opacity-50">
+                                    {publishing ? <Loader2 size={9} className="animate-spin" /> : <Upload size={9} />}
+                                    Publicar {filterLabel}
+                                    <span className="font-black">({filteredDraftIds.length})</span>
+                                </button>
+                            ) : (
+                                <button onClick={() => handlePublish()} disabled={publishing}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-amber-500 text-white border-amber-500 hover:bg-amber-600 transition-all active:scale-[0.97] disabled:opacity-50">
+                                    {publishing ? <Loader2 size={9} className="animate-spin" /> : <Upload size={9} />}
+                                    Publicar todo
+                                    <span className="font-black opacity-80">({draftCount})</span>
+                                </button>
+                            )}
+                        </>
+                    )}
                 </div>
             )}
 

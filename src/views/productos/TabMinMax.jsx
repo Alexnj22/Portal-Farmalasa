@@ -104,24 +104,19 @@ function relativeTime(iso) {
 }
 
 function exportCsv(rows, name, sucursalName) {
-    const h = ['Sucursal','Producto','ABC','XYZ','Estado','Stock actual','Cobertura (días)','MIN (und)','MAX (und)','Pedir (und)','Ventas período','Ingresos período'];
+    const h = ['Sucursal','Laboratorio','Producto','Clase','XYZ','MIN (und)','MAX (und)','Ventas período'];
     const lines = rows.map(r => {
-        const stock = Number(r.current_stock);
-        const maxN  = Number(r.effective_max);
-        const pedir = !r.is_dead_stock && (r.alert_status === 'out_of_stock' || r.alert_status === 'below_min') && maxN > 0
-            ? Math.max(0, maxN - stock) : '';
+        const abc = (r.draft_abc_class || r.abc_class || '—');
+        const xyz = normXyz(r.draft_demand_variability || r.demand_variability);
         return [
             `"${(sucursalName||'').replace(/"/g,'""')}"`,
+            `"${(r.laboratorio_nombre||'').replace(/"/g,'""')}"`,
             `"${(r.product_name||'').replace(/"/g,'""')}"`,
-            r.abc_class || '—',
-            normXyz(r.demand_variability),
-            ALERT[r.alert_status]?.label || r.alert_status,
-            stock,
-            r.daily_velocity > 0 ? (stock / r.daily_velocity).toFixed(1) : '—',
-            r.effective_min ?? '—', r.effective_max ?? '—',
-            pedir,
+            `${abc}${xyz}`,
+            xyz,
+            r.effective_min ?? '—',
+            r.effective_max ?? '—',
             r.units_sold_6m ?? 0,
-            Number(r.revenue_6m || 0).toFixed(2),
         ].join(',');
     });
     const blob = new Blob([[h.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });

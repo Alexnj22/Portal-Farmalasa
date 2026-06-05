@@ -1358,6 +1358,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         { key: 'abc_xyz',       label: 'Clase',       align: 'center', sortable: true },
         { key: 'effective_min', label: 'MIN',         align: 'center', sortable: true },
         { key: 'effective_max', label: 'MAX',         align: 'center', sortable: true },
+        { key: 'presentacion',  label: 'Equiv.',      align: 'center' },
         { key: 'alert_status',  label: 'Estado',      align: 'center' },
         { key: 'acciones',      label: 'Acciones',    align: 'center' },
     ];
@@ -1814,14 +1815,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <div className="flex flex-col items-center cursor-pointer group/min"
                                                         onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); }}>
                                                         <div className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 group-hover/min:border-amber-400 group-hover/min:bg-amber-100 transition-[border-color,background-color] duration-150">
-                                                            <span className="text-[13px] font-black tabular-nums text-amber-700">{formatDominant(row.draft_min ?? 0, pres)}</span>
+                                                            <span className="text-[13px] font-black tabular-nums text-amber-700">{(row.draft_min ?? 0).toLocaleString()}</span>
                                                         </div>
-                                                        {minN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{formatDominant(minN, pres)} act.</div>}
+                                                        {minN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{minN.toLocaleString()} act.</div>}
                                                     </div>
                                                 )
                                         ) : (
                                             <div className="flex flex-col items-center">
-                                                <div className={`text-[12px] font-semibold tabular-nums ${stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>{formatDominant(minN, pres)}</div>
+                                                <div className={`text-[12px] font-semibold tabular-nums ${stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>{minN.toLocaleString()}</div>
                                             </div>
                                         )}
                                     </DataCell>
@@ -1861,16 +1862,33 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <div className="flex flex-col items-center cursor-pointer group/max"
                                                         onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); }}>
                                                         <div className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 group-hover/max:border-blue-400 group-hover/max:bg-blue-100 transition-[border-color,background-color] duration-150">
-                                                            <span className="text-[13px] font-black tabular-nums text-blue-700">{formatDominant(row.draft_max ?? 0, pres)}</span>
+                                                            <span className="text-[13px] font-black tabular-nums text-blue-700">{(row.draft_max ?? 0).toLocaleString()}</span>
                                                         </div>
-                                                        {maxN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{formatDominant(maxN, pres)} act.</div>}
+                                                        {maxN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{maxN.toLocaleString()} act.</div>}
                                                     </div>
                                                 )
                                         ) : (
                                             <div className="flex flex-col items-center">
-                                                <div className={`text-[12px] font-semibold tabular-nums ${stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>{formatDominant(maxN, pres)}</div>
+                                                <div className={`text-[12px] font-semibold tabular-nums ${stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>{maxN.toLocaleString()}</div>
                                             </div>
                                         )}
+                                    </DataCell>
+
+                                    {/* Equiv. — presentación calculada de MIN / MAX */}
+                                    <DataCell align="center" className="!py-2.5">
+                                        {dead || sortedPres(pres).length === 0
+                                            ? <span className="text-slate-200 text-xs">—</span>
+                                            : (() => {
+                                                const dispMin = hasDraft ? (row.draft_min ?? 0) : minN;
+                                                const dispMax = hasDraft ? (row.draft_max ?? 0) : maxN;
+                                                return (
+                                                    <div className="flex flex-col items-center gap-0.5">
+                                                        <span className="text-[10px] font-bold tabular-nums text-amber-600">{formatDominant(dispMin, pres)}</span>
+                                                        <span className="text-[10px] font-bold tabular-nums text-blue-600">{formatDominant(dispMax, pres)}</span>
+                                                    </div>
+                                                );
+                                            })()
+                                        }
                                     </DataCell>
 
                                     {/* Estado */}

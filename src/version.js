@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.84';
+export const APP_VERSION = '1.4.85';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.85 — MinMax: MIN/MAX muestran número puro; columna Equiv. con formatDominant (amber=MIN, blue=MAX); "—" si sin presentaciones
 // v1.4.84 — MinMax: fix TDZ 2 — draftCount movido antes de requestPublish (segunda referencia circular en dep arrays)
 // v1.4.83 — MinMax: fix TDZ — handlePublish declarado antes de startDeferredPublish (dep array evaluado en cada render)
 // v1.4.82 — MinMax: quita Cobertura+Stock columnas; stock inline bajo nombre; MIN/MAX botón-pill clickeable (amber/blue); input w-20 + Tab→MAX, ArrowLeft→MIN; XCircle tooltip; quita "und" subtítulos

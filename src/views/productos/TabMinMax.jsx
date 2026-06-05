@@ -1206,6 +1206,19 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const lastCalcAt      = useMemo(() => data.find(d => d.calculated_at && !d.is_dead_stock)?.calculated_at ?? null, [data]);
     const draftCount      = useMemo(() => data.filter(r => r.draft_status === 'pending').length, [data]);
     const lastDraftCalcAt = useMemo(() => data.find(r => r.draft_status === 'pending' && r.draft_calculated_at)?.draft_calculated_at ?? null, [data]);
+
+    const hasActiveFilter = filterAbc !== 'all' || filterXyz !== 'all' || filterAlert !== 'all' || searchTerm !== '';
+    const filteredDraftIds = useMemo(
+        () => hasActiveFilter ? filtered.filter(r => r.draft_status === 'pending').map(r => r.erp_product_id) : [],
+        [filtered, hasActiveFilter]
+    );
+
+    const filterLabel = useMemo(() => {
+        if (filterAbc !== 'all' && filterXyz === 'all' && filterAlert === 'all' && !searchTerm) return `Clase ${filterAbc}`;
+        if (filterAlert !== 'all' && filterAbc === 'all' && filterXyz === 'all' && !searchTerm) return ALERT[filterAlert]?.label ?? filterAlert;
+        if (searchTerm && filterAbc === 'all' && filterXyz === 'all' && filterAlert === 'all') return `"${searchTerm}"`;
+        return 'Filtrados';
+    }, [filterAbc, filterXyz, filterAlert, searchTerm]);
     const criticalACount  = useMemo(() => data.filter(r => r.abc_class === 'A' && (r.alert_status === 'out_of_stock' || r.alert_status === 'below_min')).length, [data]);
     const isBodega      = selectedErp === 6;
     const neverCalc     = data.length > 0 && data.every(d => d.is_dead_stock);
@@ -1422,10 +1435,23 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all ${filterDraft ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-700 border-amber-200 hover:bg-amber-100'}`}>
                         {filterDraft ? 'Ver todos' : 'Solo borradores'}
                     </button>
+
+                    {/* Publicar filtrados — aparece solo cuando hay un filtro activo con borradores */}
+                    {hasActiveFilter && filteredDraftIds.length > 0 && (
+                        <button onClick={() => handlePublish(filteredDraftIds)} disabled={publishing}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-amber-700 bg-white hover:bg-amber-100 border border-amber-300 rounded-lg transition-colors disabled:opacity-50 shrink-0">
+                            {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
+                            Publicar {filterLabel}
+                            <span className="ml-0.5 text-[10px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
+                                {filteredDraftIds.length}
+                            </span>
+                        </button>
+                    )}
+
                     <button onClick={() => handlePublish()} disabled={publishing}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors disabled:opacity-50 shrink-0">
                         {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
-                        Publicar todo
+                        Publicar todo <span className="text-[10px] font-black opacity-70">({draftCount})</span>
                     </button>
                 </div>
             )}

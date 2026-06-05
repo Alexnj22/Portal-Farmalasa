@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.63';
+export const APP_VERSION = '1.4.64';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.64 — MinMax tabla: foto producto, columna Ventas (und/día + vend 6m + tendencia), StockBar en Stock, columna Acciones separada, quita border-l color, employee photo en banners/toast
 // v1.4.63 — MinMax: botón XCircle pone draft MIN/MAX en 0; matriz activa usa outline (no intersección con vecinos); quita Edit3
 // v1.4.62 — MinMax: MIN/MAX borrador muestran presentación dominante + und (igual que publicados); input muestra hint ≈ cajas mientras se escribe
 // v1.4.61 — MinMax: pill Calcular como sibling (visual fix), Toda la red, Publicar inline con badge, matrix glassmorphism+hover z-index, cards se actualizan al editar draft

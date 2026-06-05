@@ -1054,6 +1054,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [configChanged,   setConfigChanged]   = useState(false);
     const [inlineDraftEdit, setInlineDraftEdit] = useState(null); // { productId, sucursalId, field:'min'|'max', value }
     const [toast,           setToast]           = useState(null); // { message, type }
+    const [currentEmployee, setCurrentEmployee] = useState(null);
     const loadRef = useRef(0);
 
     useEffect(() => {
@@ -1061,6 +1062,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         const t = setTimeout(() => setToast(null), 4500);
         return () => clearTimeout(t);
     }, [toast]);
+
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (!user?.email) return;
+            supabase.from('employees').select('id,name,photo_url').eq('email', user.email).maybeSingle()
+                .then(({ data: emp }) => { if (emp) setCurrentEmployee(emp); });
+        });
+    }, []);
 
     const toggleExpand = useCallback((id) => {
         setExpandedIds(prev => {
@@ -1234,6 +1243,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             else if (sortBy === 'effective_min') { av = Number(a.effective_min); bv = Number(b.effective_min); }
             else if (sortBy === 'effective_max') { av = Number(a.effective_max); bv = Number(b.effective_max); }
             else if (sortBy === 'revenue_6m')    { av = Number(a.revenue_6m);    bv = Number(b.revenue_6m);    }
+            else if (sortBy === 'ventas')        { av = Number(a.daily_velocity); bv = Number(b.daily_velocity); }
             else return 0;
             if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv, 'es') : bv.localeCompare(av, 'es');
             return sortDir === 'asc' ? av - bv : bv - av;
@@ -1249,11 +1259,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const COLS = [
         { key: 'product_name',  label: 'Producto',    align: 'left',   sortable: true },
         { key: 'abc_xyz',       label: 'Clase',        align: 'center' },
+        { key: 'ventas',        label: 'Ventas',       align: 'center', sortable: true },
         { key: 'coverage',      label: 'Cobertura',    align: 'center', sortable: true },
         { key: 'current_stock', label: 'Stock actual', align: 'center', sortable: true },
         { key: 'effective_min', label: 'MIN',           align: 'center', sortable: true },
         { key: 'effective_max', label: 'MAX',           align: 'center', sortable: true },
         { key: 'alert_status',  label: 'Estado',        align: 'center' },
+        { key: 'acciones',      label: 'Acciones',     align: 'center' },
     ];
 
     const glass = 'rounded-2xl border border-white/60 backdrop-blur-sm';
@@ -1397,6 +1409,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
                     </span>
+                    {currentEmployee?.photo_url && (
+                        <img src={currentEmployee.photo_url} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 ring-1 ring-amber-200" />
+                    )}
                     <span className="flex-1">
                         <strong className="font-black">{draftCount.toLocaleString()}</strong> producto{draftCount !== 1 ? 's' : ''} con borradores pendientes de revisión
                         {lastDraftCalcAt && <span className="text-amber-600 font-normal"> — calculados {relativeTime(lastDraftCalcAt)}</span>}
@@ -1416,10 +1431,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             {/* ── Banners ── */}
             {publishResult?.ok && (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[12px] text-emerald-700 font-semibold">
-                    <CheckCircle2 size={14} />
+                    {currentEmployee?.photo_url
+                        ? <img src={currentEmployee.photo_url} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 ring-1 ring-emerald-200" />
+                        : <CheckCircle2 size={14} />}
+                    {currentEmployee?.name && <span className="font-black text-emerald-800">{currentEmployee.name.split(' ')[0]}</span>}
                     {publishResult.productIds
-                        ? `${publishResult.published} producto${publishResult.published !== 1 ? 's' : ''} publicado${publishResult.published !== 1 ? 's' : ''} en ${ERP_NAMES[selectedErp]}`
-                        : `${publishResult.published?.toLocaleString()} borradores publicados en ${ERP_NAMES[selectedErp]}`}
+                        ? `publicó ${publishResult.published} producto${publishResult.published !== 1 ? 's' : ''} en ${ERP_NAMES[selectedErp]}`
+                        : `publicó ${publishResult.published?.toLocaleString()} borradores en ${ERP_NAMES[selectedErp]}`}
                     <button onClick={() => setPublishResult(null)} className="ml-auto text-emerald-400 hover:text-emerald-600"><X size={12} /></button>
                 </div>
             )}
@@ -1510,7 +1528,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         message: 'Sin productos con ese filtro',
                         action: { label: 'Quitar filtros', onClick: () => { setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); } },
                     }}
-                    minWidth="720px"
+                    minWidth="960px"
                 >
 
                     {pageRows.map((row, rowIdx) => {
@@ -1542,12 +1560,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <DataRow
                                     index={rowIdx}
                                     onClick={canExpand ? () => toggleExpand(row.erp_product_id) : undefined}
-                                    className={`border-l-4 ${alert.left} ${alert.row}`}
+                                    className={alert.row}
                                 >
                                     {/* Producto */}
                                     <DataCell align="left" className="!py-2.5">
-                                        <div className="flex items-start gap-1 min-w-0">
-                                            <div className={`mt-[3px] shrink-0 w-4 h-4 flex items-center justify-center ${!canExpand ? 'opacity-0' : ''}`}>
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            {/* Product photo */}
+                                            <div className="shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center">
+                                                {row.foto_url
+                                                    ? <img src={row.foto_url} alt="" className="w-full h-full object-contain" />
+                                                    : <Package size={16} className="text-slate-300" />}
+                                            </div>
+                                            <div className={`shrink-0 w-4 h-4 flex items-center justify-center ${!canExpand ? 'opacity-0' : ''}`}>
                                                 <ChevronRight size={12} className={`text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
                                             </div>
                                             <div className="min-w-0 flex-1">
@@ -1556,14 +1580,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
                                                     {hasDraft && <span className="shrink-0 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
                                                 </div>
-                                                {!dead && (
-                                                    <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
-                                                        {v6m.toFixed(1)} und/día
-                                                        {v30 > 0 && v30 > v6m * 1.1 && <span className="text-emerald-500" title={`30d: ${v30.toFixed(1)}/día`}>↑</span>}
-                                                        {v30 > 0 && v30 < v6m * 0.9 && <span className="text-red-400"    title={`30d: ${v30.toFixed(1)}/día`}>↓</span>}
-                                                    </span>
-                                                )}
-                                                {!dead && <StockBar current={stock} min={minN} max={maxN} />}
                                             </div>
                                         </div>
                                     </DataCell>
@@ -1589,6 +1605,23 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         }
                                     </DataCell>
 
+                                    {/* Ventas */}
+                                    <DataCell align="center" className="!py-2.5">
+                                        {dead ? <span className="text-slate-200 text-xs">—</span> : (
+                                            <div className="flex flex-col items-center gap-0.5">
+                                                <span className="flex items-center gap-0.5 text-[12px] font-bold tabular-nums text-slate-700">
+                                                    {v6m.toFixed(2)}
+                                                    {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={10} className="text-emerald-500 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
+                                                    {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={10} className="text-red-400 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
+                                                </span>
+                                                <span className="text-[9px] text-slate-400">und/día</span>
+                                                {Number(row.units_sold_6m) > 0 && (
+                                                    <span className="text-[9px] text-slate-400 tabular-nums">{Number(row.units_sold_6m).toLocaleString()} vend. 6m</span>
+                                                )}
+                                            </div>
+                                        )}
+                                    </DataCell>
+
                                     {/* Cobertura */}
                                     <DataCell align="center" className="!py-2.5">
                                         {!dead
@@ -1602,6 +1635,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             {stock === 0 ? '0' : formatUnits(stock, pres)}
                                         </div>
                                         {!dead && stock > 0 && <div className="text-[9px] text-slate-400">{stock.toLocaleString()} und</div>}
+                                        {!dead && <StockBar current={stock} min={minN} max={maxN} />}
                                     </DataCell>
 
                                     {/* MIN — inline edit on click for draft rows */}
@@ -1678,32 +1712,36 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         )}
                                     </DataCell>
 
-                                    {/* Estado + editar (manual) + publicar inline */}
+                                    {/* Estado */}
                                     <DataCell align="center" className="!py-2.5">
                                         <div className="flex flex-col items-center gap-0.5">
-                                            <div className="flex items-center gap-1 flex-wrap justify-center">
-                                                <span className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full border ${alert.pill}`}>
-                                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
-                                                    {alert.label}
-                                                </span>
-                                                {!dead && (
-                                                    <button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title="Poner MIN y MAX en 0"
-                                                        className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 transition-colors shrink-0">
-                                                        <XCircle size={11} />
-                                                    </button>
-                                                )}
-                                                {hasDraft && (
-                                                    <button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
-                                                        disabled={publishing}
-                                                        className="text-[9px] font-bold text-amber-600 hover:text-white hover:bg-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full transition-all disabled:opacity-50 shrink-0">
-                                                        Publicar
-                                                    </button>
-                                                )}
-                                            </div>
+                                            <span className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full border ${alert.pill}`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
+                                                {alert.label}
+                                            </span>
                                             {!dead && (row.alert_status === 'out_of_stock' || row.alert_status === 'below_min') && maxN > 0 && (
                                                 <span className="text-[8px] font-bold text-slate-400 tabular-nums">
                                                     Pedir {Math.max(0, maxN - stock).toLocaleString()}u
                                                 </span>
+                                            )}
+                                        </div>
+                                    </DataCell>
+
+                                    {/* Acciones */}
+                                    <DataCell align="center" className="!py-2.5">
+                                        <div className="flex items-center justify-center gap-1.5">
+                                            {!dead && (
+                                                <button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title="Poner MIN y MAX en 0"
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-400 hover:bg-red-50 transition-colors">
+                                                    <XCircle size={13} />
+                                                </button>
+                                            )}
+                                            {hasDraft && (
+                                                <button onClick={e => { e.stopPropagation(); handlePublish([row.erp_product_id]); }}
+                                                    disabled={publishing}
+                                                    className="text-[9px] font-bold text-amber-600 hover:text-white hover:bg-amber-500 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg transition-all disabled:opacity-50">
+                                                    {publishing ? <Loader2 size={9} className="animate-spin" /> : 'Publicar'}
+                                                </button>
                                             )}
                                         </div>
                                     </DataCell>
@@ -1739,7 +1777,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             {/* ── Toast notification ── */}
             {toast && (
                 <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#0052CC] text-white shadow-2xl text-[13px] font-semibold animate-in slide-in-from-bottom-2">
-                    <Info size={15} className="shrink-0" />
+                    {currentEmployee?.photo_url
+                        ? <img src={currentEmployee.photo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-white/40" />
+                        : <Info size={15} className="shrink-0" />}
                     <span>{toast.message}</span>
                     <button onClick={() => setToast(null)} className="ml-2 opacity-60 hover:opacity-100 transition-opacity">
                         <X size={12} />

@@ -1502,36 +1502,44 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         );
                     })}
 
+                    {/* ── Draft pill ── */}
                     {draftCount > 0 && !loading && (
-                        <>
-                            <div className="h-4 w-px bg-slate-200 shrink-0 mx-1" />
-
-                            {/* Solo borradores toggle */}
-                            <button onClick={() => setFilterDraft(f => !f)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all active:scale-[0.97] ${filterDraft ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-white/80 border-slate-200 text-slate-600 hover:border-slate-300 hover:shadow-sm'}`}>
-                                <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                                <span className="tabular-nums font-black">{draftCount}</span>
-                                <span className="opacity-80">Borradores</span>
-                                {filterDraft && <X size={9} className="ml-0.5 opacity-60" />}
-                            </button>
-
-                            {/* Publicar — filtrados si hay filtro activo, sino todo */}
+                        <div className="ml-auto flex items-center shrink-0 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-shadow duration-300">
+                            {/* White section */}
+                            <div className="flex items-center rounded-l-2xl border border-r-0 border-slate-200/70 bg-white/80 backdrop-blur-sm">
+                                {/* Count */}
+                                <div className="flex items-center gap-1.5 px-3 py-2">
+                                    <span className="relative flex h-2 w-2 shrink-0">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
+                                    </span>
+                                    <span className="text-[11px] font-black text-amber-700 tabular-nums">{draftCount}</span>
+                                    <span className="text-[11px] text-slate-500">borrador{draftCount !== 1 ? 'es' : ''}</span>
+                                </div>
+                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                {/* Solo borradores toggle */}
+                                <button onClick={() => setFilterDraft(f => !f)}
+                                    className={`flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold transition-colors ${filterDraft ? 'text-amber-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                                    {filterDraft
+                                        ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
+                                        : 'Solo borradores'}
+                                </button>
+                            </div>
+                            {/* Publicar — amber cap */}
                             {hasActiveFilter && filteredDraftIds.length > 0 ? (
                                 <button onClick={() => handlePublish(filteredDraftIds)} disabled={publishing}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100 transition-all active:scale-[0.97] disabled:opacity-50">
-                                    {publishing ? <Loader2 size={9} className="animate-spin" /> : <Upload size={9} />}
-                                    Publicar {filterLabel}
-                                    <span className="font-black">({filteredDraftIds.length})</span>
+                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-r-2xl transition-all active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
+                                    {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
+                                    Publicar {filterLabel} ({filteredDraftIds.length})
                                 </button>
                             ) : (
                                 <button onClick={() => handlePublish()} disabled={publishing}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-amber-500 text-white border-amber-500 hover:bg-amber-600 transition-all active:scale-[0.97] disabled:opacity-50">
-                                    {publishing ? <Loader2 size={9} className="animate-spin" /> : <Upload size={9} />}
-                                    Publicar todo
-                                    <span className="font-black opacity-80">({draftCount})</span>
+                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-r-2xl transition-all active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
+                                    {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
+                                    Publicar todo ({draftCount})
                                 </button>
                             )}
-                        </>
+                        </div>
                     )}
                 </div>
             )}

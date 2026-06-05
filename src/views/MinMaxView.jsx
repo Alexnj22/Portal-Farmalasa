@@ -2,13 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart2 } from 'lucide-react';
 import GlassViewLayout    from '../components/GlassViewLayout';
 import ViewTabBar         from '../components/common/ViewTabBar';
-import TabMinMax          from './productos/TabMinMax';
-import TabMinMaxNetwork   from './productos/TabMinMaxNetwork';
+import TabMinMax             from './productos/TabMinMax';
+import TabMinMaxNetwork      from './productos/TabMinMaxNetwork';
+import TabMinMaxComparacion  from './productos/TabMinMaxComparacion';
 import { supabase }      from '../supabaseClient';
 
 const TABS = [
-    { key: 'sucursal', label: 'Sucursal' },
-    { key: 'red',      label: 'Red' },
+    { key: 'sucursal',    label: 'Sucursal'    },
+    { key: 'red',         label: 'Red'         },
+    { key: 'comparacion', label: 'vs ERP'      },
 ];
 
 const DEFAULT_CONFIG = {
@@ -55,7 +57,11 @@ export default function MinMaxView() {
             showSearch
             searchValue={rawSearch}
             onSearchChange={setRawSearch}
-            placeholder={activeTab === 'red' ? 'Buscar en vista red…' : 'Buscar producto en Min/Max…'}
+            placeholder={
+            activeTab === 'red'         ? 'Buscar en vista red…'        :
+            activeTab === 'comparacion' ? 'Buscar en comparación ERP…'  :
+                                         'Buscar producto en Min/Max…'
+        }
         />
     );
 
@@ -70,6 +76,9 @@ export default function MinMaxView() {
             )}
             {configLoaded && activeTab === 'red' && (
                 <TabMinMaxNetwork searchTerm={debouncedSearch} />
+            )}
+            {activeTab === 'comparacion' && (
+                <TabMinMaxComparacion searchTerm={debouncedSearch} />
             )}
         </GlassViewLayout>
     );

@@ -61,10 +61,19 @@ export default function TabMinMaxComparacion({ searchTerm = '' }) {
 
     const load = useCallback(async () => {
         setLoading(true);
-        const { data: rows } = await supabase.rpc('get_minmax_comparison', {
-            p_erp_sucursal_id: selectedErp,
-        });
-        setData(rows || []);
+        const all = [];
+        const chunk = 1000;
+        let from = 0;
+        while (true) {
+            const { data: rows } = await supabase
+                .rpc('get_minmax_comparison', { p_erp_sucursal_id: selectedErp })
+                .range(from, from + chunk - 1);
+            if (!rows || rows.length === 0) break;
+            all.push(...rows);
+            if (rows.length < chunk) break;
+            from += chunk;
+        }
+        setData(all);
         setLoading(false);
     }, [selectedErp]);
 

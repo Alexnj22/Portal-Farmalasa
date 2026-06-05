@@ -76,27 +76,28 @@ function relativeTime(iso) {
     return new Date(iso).toLocaleDateString('es-SV', { day: 'numeric', month: 'short' });
 }
 
-function exportCsv(rows, name) {
-    const h = ['Producto','ABC','XYZ','Estado','Stock actual','Cobertura (días)','MIN (und)','MAX (und)','Pedir (und)','Ventas período','Ingresos período'];
+function exportCsv(rows, name, sucursalName) {
+    const h = ['Sucursal','Producto','ABC','XYZ','Estado','Stock actual','Cobertura (días)','MIN (und)','MAX (und)','Pedir (und)','Ventas período','Ingresos período'];
     const lines = rows.map(r => {
         const stock = Number(r.current_stock);
         const maxN  = Number(r.effective_max);
-        const pedir = (r.alert_status === 'out_of_stock' || r.alert_status === 'below_min') && maxN > 0
+        const pedir = !r.is_dead_stock && (r.alert_status === 'out_of_stock' || r.alert_status === 'below_min') && maxN > 0
             ? Math.max(0, maxN - stock) : '';
         return [
+            `"${(sucursalName||'').replace(/"/g,'""')}"`,
             `"${(r.product_name||'').replace(/"/g,'""')}"`,
-            r.abc_class,
+            r.abc_class || '—',
             normXyz(r.demand_variability),
             ALERT[r.alert_status]?.label || r.alert_status,
             stock,
             r.daily_velocity > 0 ? (stock / r.daily_velocity).toFixed(1) : '—',
-            r.effective_min, r.effective_max,
+            r.effective_min ?? '—', r.effective_max ?? '—',
             pedir,
-            r.units_sold_6m,
-            Number(r.revenue_6m).toFixed(2),
+            r.units_sold_6m ?? 0,
+            Number(r.revenue_6m || 0).toFixed(2),
         ].join(',');
     });
-    const blob = new Blob([[h.join(','),...lines].join('\n')], { type:'text/csv;charset=utf-8;' });
+    const blob = new Blob([[h.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `minmax_${name}_${new Date().toISOString().slice(0,10)}.csv` });
     a.click(); URL.revokeObjectURL(a.href);
 }
@@ -360,6 +361,14 @@ function ExpandedPanel({ row, cycleDays }) {
     const [expiryData,      setExpiryData]      = useState([]);
     const [historyData,     setHistoryData]     = useState([]);
     const [loadingBranches, setLoadingBranches] = useState(true);
+    const [deadAction,      setDeadAction]      = useState(null);
+
+    const logDeadStockAction = async (action) => {
+        setDeadAction(action);
+        await useStaff.getState().appendAuditLog('DEAD_STOCK_ACTION', String(row.erp_product_id), {
+            product: row.product_name, action, stock: Number(row.current_stock), erp_sucursal_id: row._erp_sucursal_id,
+        });
+    };
 
     useEffect(() => {
         Promise.all([
@@ -589,6 +598,57 @@ function ExpandedPanel({ row, cycleDays }) {
                             </div>
                         ))}
                     </div>
+                </div>
+            )}
+
+            {/* ── Proyección de cobertura (productos activos) ── */}
+            {!row.is_dead_stock && row.daily_velocity > 0 && stock > 0 && (
+                <div className="px-4 py-2.5 border-t border-slate-100/80 bg-slate-50/20 flex flex-col gap-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Proyección de stock</span>
+                    <div className="flex items-center gap-6 flex-wrap">
+                        {[30, 60, 90].map(days => {
+                            const projected = Math.max(0, Math.round(stock - row.daily_velocity * days));
+                            const depleted  = projected === 0;
+                            const low       = projected > 0 && projected < minN;
+                            const color     = depleted ? 'text-red-600' : low ? 'text-orange-600' : 'text-emerald-600';
+                            return (
+                                <div key={days} className="flex flex-col items-center gap-0.5">
+                                    <span className="text-[9px] text-slate-400 font-semibold">+{days}d</span>
+                                    <span className={`text-[15px] font-black tabular-nums leading-none ${color}`}>
+                                        {depleted ? '0 ✗' : projected.toLocaleString()}
+                                    </span>
+                                    <span className="text-[8px] text-slate-400">und</span>
+                                </div>
+                            );
+                        })}
+                        <div className="flex-1 text-[9px] text-slate-400 leading-snug">
+                            a {Number(row.daily_velocity).toFixed(2)} und/día promedio
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Acciones para dead stock ── */}
+            {row.is_dead_stock && (
+                <div className="px-4 py-2.5 border-t border-slate-100/80 bg-slate-50/40 flex flex-col gap-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Opciones</span>
+                    {deadAction ? (
+                        <div className="flex items-center gap-2 text-[11px] text-emerald-700 font-semibold">
+                            <CheckCircle2 size={12} />
+                            {deadAction === 'transfer' ? 'Marcado para traslado' : 'Marcado para liquidación'} — registrado en auditoría
+                        </div>
+                    ) : (
+                        <div className="flex flex-wrap gap-2">
+                            <button onClick={() => logDeadStockAction('transfer')}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors">
+                                <Building2 size={11} /> Marcar para traslado
+                            </button>
+                            <button onClick={() => logDeadStockAction('liquidate')}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors">
+                                <TrendingDown size={11} /> Marcar para liquidación
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -885,6 +945,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [publishing,   setPublishing]   = useState(false);
     const [publishResult,setPublishResult]= useState(null);
     const [filterDraft,  setFilterDraft]  = useState(false);
+    const [configChanged,setConfigChanged]= useState(false);
     const loadRef = useRef(0);
 
     const toggleExpand = useCallback((id) => {
@@ -928,7 +989,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     useEffect(() => { loadData(selectedErp); }, [selectedErp, loadData]);
 
     const handleRecalcular = async () => {
-        setCalculating(true); setCalcMode('single'); setCalcResult(null); setError(null);
+        setCalculating(true); setCalcMode('single'); setCalcResult(null); setError(null); setConfigChanged(false);
         try {
             const { data: res, error: e } = await supabase.rpc('calculate_stock_params', { p_erp_sucursal_id: selectedErp });
             if (e) throw e;
@@ -939,7 +1000,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     };
 
     const handleRecalcularAll = async () => {
-        setCalculating(true); setCalcMode('all'); setCalcResult(null); setError(null);
+        setCalculating(true); setCalcMode('all'); setCalcResult(null); setError(null); setConfigChanged(false);
         try {
             const { data: res, error: e } = await supabase.rpc('calculate_stock_params');
             if (e) throw e;
@@ -976,6 +1037,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const lastCalcAt      = useMemo(() => data.find(d => d.calculated_at && !d.is_dead_stock)?.calculated_at ?? null, [data]);
     const draftCount      = useMemo(() => data.filter(r => r.draft_status === 'pending').length, [data]);
     const lastDraftCalcAt = useMemo(() => data.find(r => r.draft_status === 'pending' && r.draft_calculated_at)?.draft_calculated_at ?? null, [data]);
+    const criticalACount  = useMemo(() => data.filter(r => r.abc_class === 'A' && (r.alert_status === 'out_of_stock' || r.alert_status === 'below_min')).length, [data]);
     const isBodega      = selectedErp === 6;
     const neverCalc     = data.length > 0 && data.every(d => d.is_dead_stock);
     const hasActiveData = data.some(d => !d.is_dead_stock);
@@ -1047,7 +1109,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             {configOpen && config && (
                 <ConfigPanel
                     config={config}
-                    onSave={cfg => { onConfigChange?.(cfg); }}
+                    onSave={cfg => { onConfigChange?.(cfg); setConfigChanged(true); }}
                     onClose={() => setConfigOpen(false)}
                 />
             )}
@@ -1087,6 +1149,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         ))}
                     </div>
 
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    <button
+                        onClick={() => { setFilterAbc(filterAbc === 'A' && filterXyz === 'Z' ? 'all' : 'A'); setFilterXyz(filterAbc === 'A' && filterXyz === 'Z' ? 'all' : 'Z'); setPage(1); }}
+                        title="Alta rotación de ingresos, demanda errática — requieren atención especial"
+                        className={`px-2.5 py-1 mx-1 rounded-[10px] text-[11px] font-black transition-all duration-150 ${filterAbc === 'A' && filterXyz === 'Z' ? 'bg-red-500 text-white shadow-sm' : 'text-red-400 hover:text-red-600'}`}>
+                        AZ
+                    </button>
+
                     {(filterAbc !== 'all' || filterXyz !== 'all') && (
                         <>
                             <div className="h-5 w-px bg-slate-100 shrink-0" />
@@ -1100,6 +1171,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                 <div className="flex-1" />
 
+                {!sortBy && !loading && data.length > 0 && (
+                    <span className="text-[10px] text-slate-300 flex items-center gap-1" title="Orden por defecto: alertas primero, luego revenue">
+                        alertas ↓ revenue
+                    </span>
+                )}
                 {lastCalcAt && !loading && (
                     <span className="text-[10px] text-slate-400 flex items-center gap-1">
                         <RefreshCw size={9} /> {relativeTime(lastCalcAt)}
@@ -1111,7 +1187,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 </span>
 
                 {data.length > 0 && !loading && (
-                    <button onClick={() => exportCsv(filtered, ERP_NAMES[selectedErp])}
+                    <button onClick={() => exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp])}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-slate-600 border border-slate-200 bg-white/80 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all">
                         <Download size={11} /> CSV
                     </button>
@@ -1248,6 +1324,31 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     <button onClick={() => setError(null)} className="ml-auto"><X size={12} /></button>
                 </div>
             )}
+            {configChanged && !calculating && (
+                <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[12px] text-blue-700 font-medium">
+                    <Settings2 size={13} className="shrink-0 text-blue-500" />
+                    <span className="flex-1">Configuración actualizada — recalculá para que los nuevos parámetros surtan efecto.</span>
+                    <button onClick={() => { handleRecalcular(); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-lg transition-colors">
+                        <RefreshCw size={10} /> Recalcular ahora
+                    </button>
+                    <button onClick={() => setConfigChanged(false)} className="text-blue-300 hover:text-blue-500"><X size={12} /></button>
+                </div>
+            )}
+
+            {!loading && criticalACount > 0 && (
+                <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-700 font-medium">
+                    <AlertTriangle size={14} className="shrink-0 text-red-500" />
+                    <span className="flex-1">
+                        <strong className="font-black">{criticalACount}</strong> producto{criticalACount !== 1 ? 's' : ''} clase <strong>A</strong> {criticalACount === 1 ? 'está' : 'están'} bajo mínimo o sin stock — alto impacto en revenue.
+                    </span>
+                    <button onClick={() => { setFilterAbc('A'); setFilterAlert('out_of_stock'); setPage(1); }}
+                        className="text-[11px] font-bold text-red-600 hover:text-red-800 underline underline-offset-2 shrink-0">
+                        Ver clase A críticos
+                    </button>
+                </div>
+            )}
+
             {!loading && isBodega && (
                 <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-[12px] text-blue-800">
                     <Info size={14} className="shrink-0 mt-0.5" />

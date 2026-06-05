@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
-import { Loader2, Package, X, AlertTriangle } from 'lucide-react';
+import { Loader2, Package, X, AlertTriangle, ArrowRight } from 'lucide-react';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 
@@ -133,10 +133,62 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
     const pageRows   = sorted.slice((page - 1) * pageSize, page * pageSize);
     useEffect(() => { setPage(1); }, [filterAbc, filterAlert, showAll, searchTerm, sortKey, sortDir]);
 
+    const transferOps = useMemo(() => {
+        const ops = [];
+        for (const row of data) {
+            const bs = row.branches || {};
+            const needers = Object.entries(bs)
+                .filter(([, b]) => b.alr === 'out_of_stock' || b.alr === 'below_min')
+                .map(([id, b]) => ({ id: Number(id), pedir: b.max > 0 ? Math.max(0, b.max - b.stk) : 0 }))
+                .filter(n => n.pedir > 0);
+            const suppliers = Object.entries(bs)
+                .filter(([id, b]) => b.alr === 'overstocked' && Number(id) !== 6)
+                .map(([id, b]) => ({ id: Number(id), excess: b.stk - b.max }))
+                .filter(s => s.excess > 0);
+            if (needers.length > 0 && suppliers.length > 0) {
+                const totalPedir = needers.reduce((s, n) => s + n.pedir, 0);
+                const totalExcess = suppliers.reduce((s, sup) => s + sup.excess, 0);
+                ops.push({ ...row, needers, suppliers, totalPedir, totalExcess });
+            }
+        }
+        return ops.sort((a, b) => b.totalPedir - a.totalPedir).slice(0, 15);
+    }, [data]);
+
     const isDirty = filterAbc !== 'all' || filterAlert !== 'all';
 
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
+
+            {/* ── Oportunidades de traslado ── */}
+            {!loading && transferOps.length > 0 && (
+                <div className="rounded-2xl border border-amber-200/60 bg-amber-50/50 backdrop-blur-sm p-4 flex flex-col gap-3"
+                    style={{ boxShadow: '0 4px 20px rgba(245,158,11,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-amber-600">Oportunidades de traslado</span>
+                        <span className="text-[9px] text-amber-500 font-semibold">— {transferOps.length} producto{transferOps.length !== 1 ? 's' : ''} con exceso disponible</span>
+                    </div>
+                    <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto">
+                        {transferOps.map(item => (
+                            <div key={item.erp_product_id} className="flex items-center gap-2 text-[11px] min-w-0">
+                                <span className="font-medium text-slate-700 flex-1 truncate min-w-0 leading-tight">{item.product_name}</span>
+                                <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+                                    {item.suppliers.map(s => (
+                                        <span key={s.id} className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[9px] font-black tabular-nums">
+                                            {ERP_SHORT[s.id]} +{s.excess}
+                                        </span>
+                                    ))}
+                                    <ArrowRight size={10} className="text-slate-300 shrink-0" />
+                                    {item.needers.map(n => (
+                                        <span key={n.id} className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[9px] font-black tabular-nums">
+                                            {ERP_SHORT[n.id]} -{n.pedir}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* ── Filter pill + actions ── */}
             <div className="flex items-center gap-2.5 flex-wrap">

@@ -220,50 +220,33 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
 // ─── Cost summary cards ───────────────────────────────────────────────────────
 
 function CostCards({ summary, isBodega }) {
-    const total     = Number(summary.total_cost)   || 0;
-    const useful    = Number(summary.useful_cost)  || 0;
-    const excess    = Number(summary.excess_cost)  || 0;
-    const dead      = Number(summary.dead_cost)    || 0;
-    const covPct    = Number(summary.coverage_pct) || 0;
-    const usefulPct = total > 0 ? (useful / total) * 100 : 0;
-    const excessPct = total > 0 ? (excess / total) * 100 : 0;
-    const deadPct   = total > 0 ? (dead   / total) * 100 : 0;
+    const total  = Number(summary.total_cost)  || 0;
+    const useful = Number(summary.useful_cost) || 0;
+    const excess = Number(summary.excess_cost) || 0;
+    const dead   = Number(summary.dead_cost)   || 0;
 
     const STATS = [
-        { label: 'Retenido',  value: fmtMoney(total),  color: 'text-slate-800',   icon: DollarSign,  iconCls: 'text-slate-400'   },
+        { label: 'Total retenido', value: fmtMoney(total),  color: 'text-slate-800',   icon: DollarSign,  iconCls: 'text-slate-400'   },
         ...(!isBodega ? [
-            { label: 'Útil',  value: fmtMoney(useful), color: 'text-emerald-700', icon: TrendingUp,  iconCls: 'text-emerald-500' },
-            { label: 'Exceso',value: fmtMoney(excess), color: 'text-orange-700',  icon: TrendingDown,iconCls: 'text-orange-500'  },
+            { label: 'Inventario útil',  value: fmtMoney(useful), color: 'text-emerald-700', icon: TrendingUp,  iconCls: 'text-emerald-500' },
+            { label: 'Capital excedente',value: fmtMoney(excess), color: 'text-orange-700',  icon: TrendingDown,iconCls: 'text-orange-500'  },
         ] : []),
-        { label: 'Sin mov.',  value: fmtMoney(dead),   color: 'text-slate-500',   icon: Layers,      iconCls: 'text-slate-400'   },
+        { label: 'Sin movimiento', value: fmtMoney(dead),   color: 'text-slate-500',   icon: Layers,      iconCls: 'text-slate-400'   },
     ];
 
     return (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap">
             {STATS.map(({ label, value, color, icon: Icon, iconCls }) => (
-                <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200/70 bg-white/80 backdrop-blur-sm"
-                    style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)' }}>
-                    <Icon size={12} className={`shrink-0 ${iconCls}`} />
-                    <div className="flex flex-col leading-none gap-0.5">
-                        <span className="text-[9px] font-semibold text-slate-400">{label}</span>
-                        <span className={`text-[14px] font-black tabular-nums ${color}`}>{value}</span>
+                <div key={label}
+                    className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-white/70 backdrop-blur-sm"
+                    style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
+                    <Icon size={15} className={`shrink-0 ${iconCls}`} />
+                    <div className="flex flex-col leading-none gap-1">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{label}</span>
+                        <span className={`text-[20px] font-black tabular-nums leading-none ${color}`}>{value}</span>
                     </div>
                 </div>
             ))}
-            {!isBodega && total > 0 && (
-                <div className="flex flex-col gap-1">
-                    <div className="w-20 h-1.5 rounded-full overflow-hidden bg-slate-200 flex gap-px">
-                        <div className="bg-emerald-400 transition-all" style={{ width: `${usefulPct.toFixed(2)}%` }} />
-                        <div className="bg-orange-400/80 transition-all" style={{ width: `${excessPct.toFixed(2)}%` }} />
-                        <div className="bg-slate-300 transition-all" style={{ width: `${deadPct.toFixed(2)}%` }} />
-                    </div>
-                    <div className="flex items-center gap-3 text-[9px] font-semibold flex-wrap">
-                        <span className="flex items-center gap-1 text-emerald-700"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" /> Útil {covPct}%</span>
-                        <span className="flex items-center gap-1 text-orange-600"><span className="w-1.5 h-1.5 rounded-full bg-orange-400/80 shrink-0" /> Exceso {excessPct.toFixed(1)}%</span>
-                        <span className="flex items-center gap-1 text-slate-600"><span className="w-1.5 h-1.5 rounded-full bg-slate-300 shrink-0" /> Sin mov. {deadPct.toFixed(1)}%</span>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
@@ -1217,15 +1200,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             )}
 
             {/* ── Controls row ── */}
-            <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap">
 
-                {/* LEFT: Compact cost cards */}
+                {/* LEFT: Cost cards */}
                 {costSummary && <CostCards summary={costSummary} isBodega={isBodega} />}
 
                 <div className="flex-1" />
 
-                {/* RIGHT: Filter pill */}
-                <div className="flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+                {/* RIGHT: Unified pill — Branch | [active filter] | CSV | ⚙ | Todas | Recalcular */}
+                <div className="flex items-center rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-shadow duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] shrink-0 overflow-visible">
+
+                    {/* Branch selector */}
                     <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
                         <LiquidSelect
                             value={String(selectedErp)}
@@ -1234,67 +1219,56 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         />
                     </div>
 
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
-
-                    <div className="flex items-center gap-0.5 px-2 py-1.5">
-                        {['all','A','B','C','D'].map(cls => (
-                            <button key={cls} onClick={() => setFilterAbc(cls)}
-                                className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all duration-150 ${filterAbc === cls ? 'bg-[#0052CC] text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-                                {cls === 'all' ? 'ABC' : cls}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
-
-                    <div className="flex items-center gap-0.5 px-2 py-1.5">
-                        {['all','X','Y','Z'].map(cls => (
-                            <button key={cls} onClick={() => setFilterXyz(cls)}
-                                className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all duration-150 ${filterXyz === cls ? 'bg-[#0052CC] text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-                                {cls === 'all' ? 'XYZ' : cls}
-                            </button>
-                        ))}
-                    </div>
-
+                    {/* Active ABC/XYZ filter badge + clear */}
                     {(filterAbc !== 'all' || filterXyz !== 'all') && (
                         <>
                             <div className="h-5 w-px bg-slate-100 shrink-0" />
-                            <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}
-                                className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
-                                <X size={11} strokeWidth={3} />
+                            <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}
+                                className="mx-2 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[11px] font-black text-blue-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all shrink-0">
+                                {filterAbc !== 'all' ? filterAbc : '·'}{filterXyz !== 'all' ? filterXyz : ''}
+                                <X size={9} strokeWidth={3} />
                             </button>
                         </>
                     )}
-                </div>
 
-                {/* Action buttons */}
-                {data.length > 0 && !loading && (
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    {/* CSV */}
                     <button onClick={() => exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp])}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-slate-600 border border-slate-200 bg-white/80 rounded-xl hover:border-slate-300 hover:shadow-sm transition-all active:scale-[0.97]">
-                        <Download size={11} /> CSV
+                        disabled={data.length === 0 || loading}
+                        title="Exportar CSV"
+                        className="flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-30 active:scale-[0.97]">
+                        <Download size={12} /> CSV
                     </button>
-                )}
 
-                <button onClick={() => setConfigOpen(o => !o)}
-                    className={`w-8 h-8 flex items-center justify-center rounded-xl border transition-all active:scale-[0.97] ${configOpen ? 'bg-[#0052CC] text-white border-[#0052CC] shadow-sm' : 'text-slate-500 border-slate-200 bg-white/80 hover:border-slate-300 hover:shadow-sm'}`}
-                    title="Configurar parámetros">
-                    <Settings2 size={14} />
-                </button>
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
 
-                <button onClick={handleRecalcularAll} disabled={calculating || loading}
-                    title="Recalcula todas las sucursales y Bodega en un solo paso"
-                    className="inline-flex items-center justify-center gap-1.5 min-w-[80px] px-3 py-2 text-[11px] font-bold text-slate-600 border border-slate-200 bg-white/80 hover:border-slate-300 hover:shadow-sm rounded-xl transition-all duration-150 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none">
-                    {calculating && calcMode === 'all'
-                        ? <><Loader2 size={12} className="animate-spin" /> Calculando…</>
-                        : <><Layers size={12} /> Todas</>}
-                </button>
+                    {/* Config */}
+                    <button onClick={() => setConfigOpen(o => !o)}
+                        title="Configurar parámetros"
+                        className={`px-3 py-2.5 transition-all active:scale-[0.97] ${configOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
+                        <Settings2 size={13} />
+                    </button>
 
-                <button onClick={handleRecalcular} disabled={calculating || loading}
-                    className="inline-flex items-center justify-center gap-1.5 min-w-[130px] px-4 py-2 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-xl shadow-sm shadow-blue-200/60 transition-all duration-150 active:scale-[0.97] disabled:opacity-60 disabled:pointer-events-none">
-                    {calculating && calcMode === 'single'
-                        ? <><Loader2 size={13} className="animate-spin" /> Calculando…</>
-                        : <><RefreshCw size={13} /> Recalcular</>}
-                </button>
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    {/* Todas */}
+                    <button onClick={handleRecalcularAll} disabled={calculating || loading}
+                        title="Recalcula todas las sucursales y Bodega"
+                        className="inline-flex items-center justify-center gap-1.5 min-w-[72px] px-3 py-2.5 text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-all active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none">
+                        {calculating && calcMode === 'all'
+                            ? <><Loader2 size={11} className="animate-spin" /> Calculando…</>
+                            : <><Layers size={11} /> Todas</>}
+                    </button>
+
+                    {/* Recalcular — blue right cap */}
+                    <button onClick={handleRecalcular} disabled={calculating || loading}
+                        className="inline-flex items-center justify-center gap-1.5 min-w-[120px] px-4 py-2.5 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-[14px] transition-all duration-150 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none">
+                        {calculating && calcMode === 'single'
+                            ? <><Loader2 size={12} className="animate-spin" /> Calculando…</>
+                            : <><RefreshCw size={12} /> Recalcular</>}
+                    </button>
+                </div>
             </div>
 
             {/* ── ABC × XYZ Matrix + info strip ── */}

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.4.61';
+export const APP_VERSION = '1.4.62';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.4.62 — MinMax: MIN/MAX borrador muestran presentación dominante + und (igual que publicados); input muestra hint ≈ cajas mientras se escribe
 // v1.4.61 — MinMax: pill Calcular como sibling (visual fix), Toda la red, Publicar inline con badge, matrix glassmorphism+hover z-index, cards se actualizan al editar draft
 // v1.4.60 — MinMax: 6 fixes — toast para calcResult, edición inline MIN/MAX borrador, matrix/filtro usan draft, badges solo draft, get_inventory_cost_summary draft fallback
 // v1.4.59 — MinMax: cards glassmorphic grandes, pill unificada (branch+CSV+cfg+todas+recalcular), sin leyenda ni ABC/XYZ duplicados en pill

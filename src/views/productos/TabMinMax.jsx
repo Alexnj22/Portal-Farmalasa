@@ -1590,26 +1590,34 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         {dead ? <span className="text-slate-200 text-xs">—</span> : hasDraft ? (
                                             inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'min'
                                                 ? (
-                                                    <input autoFocus type="number" min="0"
-                                                        value={inlineDraftEdit.value}
-                                                        onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
-                                                        onBlur={() => saveDraftCell(inlineDraftEdit)}
-                                                        onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setInlineDraftEdit(null); }}
-                                                        onClick={e => e.stopPropagation()}
-                                                        className="w-16 text-center text-[13px] font-black text-amber-800 bg-amber-50 border-2 border-amber-400 rounded-lg px-1 py-1 focus:outline-none" />
+                                                    <div className="flex flex-col items-center">
+                                                        <input autoFocus type="number" min="0"
+                                                            value={inlineDraftEdit.value}
+                                                            onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
+                                                            onBlur={() => saveDraftCell(inlineDraftEdit)}
+                                                            onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setInlineDraftEdit(null); }}
+                                                            onClick={e => e.stopPropagation()}
+                                                            className="w-16 text-center text-[13px] font-black text-amber-800 bg-amber-50 border-2 border-amber-400 rounded-lg px-1 py-1 focus:outline-none" />
+                                                        {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && (
+                                                            <div className="text-[9px] text-amber-600 font-bold mt-0.5 tabular-nums">
+                                                                ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 ) : (
                                                     <div className="flex flex-col items-center cursor-text group"
                                                         onClick={e => { e.stopPropagation(); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); }}>
                                                         <div className="text-[13px] font-black tabular-nums text-amber-600 group-hover:underline decoration-amber-400 underline-offset-2">
-                                                            {(row.draft_min ?? 0).toLocaleString()}
+                                                            {formatDominant(row.draft_min ?? 0, pres)}
                                                         </div>
-                                                        {minN > 0 && <div className="text-[9px] text-slate-400">{minN.toLocaleString()} act.</div>}
+                                                        {sortedPres(pres).length > 0 && <div className="text-[9px] text-slate-400 tabular-nums">{(row.draft_min ?? 0).toLocaleString()} und</div>}
+                                                        {minN > 0 && <div className="text-[9px] text-slate-300 tabular-nums">{minN.toLocaleString()} act.</div>}
                                                     </div>
                                                 )
                                         ) : (
                                             <div className="flex flex-col items-center">
                                                 <div className={`text-[12px] font-semibold tabular-nums ${stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>{formatDominant(minN, pres)}</div>
-                                                <div className="text-[9px] text-slate-400">{minN.toLocaleString()} und</div>
+                                                <div className="text-[9px] text-slate-400 tabular-nums">{minN.toLocaleString()} und</div>
                                             </div>
                                         )}
                                     </DataCell>
@@ -1619,20 +1627,28 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         {dead ? <span className="text-slate-200 text-xs">—</span> : hasDraft ? (
                                             inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'max'
                                                 ? (
-                                                    <input autoFocus type="number" min="0"
-                                                        value={inlineDraftEdit.value}
-                                                        onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
-                                                        onBlur={() => saveDraftCell(inlineDraftEdit)}
-                                                        onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setInlineDraftEdit(null); }}
-                                                        onClick={e => e.stopPropagation()}
-                                                        className="w-16 text-center text-[13px] font-black text-blue-800 bg-blue-50 border-2 border-blue-400 rounded-lg px-1 py-1 focus:outline-none" />
+                                                    <div className="flex flex-col items-center">
+                                                        <input autoFocus type="number" min="0"
+                                                            value={inlineDraftEdit.value}
+                                                            onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
+                                                            onBlur={() => saveDraftCell(inlineDraftEdit)}
+                                                            onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setInlineDraftEdit(null); }}
+                                                            onClick={e => e.stopPropagation()}
+                                                            className="w-16 text-center text-[13px] font-black text-blue-800 bg-blue-50 border-2 border-blue-400 rounded-lg px-1 py-1 focus:outline-none" />
+                                                        {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && (
+                                                            <div className="text-[9px] text-blue-600 font-bold mt-0.5 tabular-nums">
+                                                                ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 ) : (
                                                     <div className="flex flex-col items-center cursor-text group"
                                                         onClick={e => { e.stopPropagation(); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); }}>
                                                         <div className="text-[13px] font-black tabular-nums text-blue-600 group-hover:underline decoration-blue-400 underline-offset-2">
-                                                            {(row.draft_max ?? 0).toLocaleString()}
+                                                            {formatDominant(row.draft_max ?? 0, pres)}
                                                         </div>
-                                                        {maxN > 0 && <div className="text-[9px] text-slate-400">{maxN.toLocaleString()} act.</div>}
+                                                        {sortedPres(pres).length > 0 && <div className="text-[9px] text-slate-400 tabular-nums">{(row.draft_max ?? 0).toLocaleString()} und</div>}
+                                                        {maxN > 0 && <div className="text-[9px] text-slate-300 tabular-nums">{maxN.toLocaleString()} act.</div>}
                                                     </div>
                                                 )
                                         ) : (

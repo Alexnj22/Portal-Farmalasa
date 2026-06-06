@@ -83,16 +83,25 @@ BEGIN
     INSERT INTO product_stock_params (
       erp_product_id, erp_sucursal_id,
       min_units, max_units,
+      draft_min, draft_max, draft_status, draft_calculated_at,
       published_at, published_by, updated_at
     )
-    SELECT erp_product_id, 6, bodega_min, bodega_max, v_now, p_published_by, v_now
+    SELECT
+      erp_product_id, 6,
+      bodega_min, bodega_max,
+      bodega_min, bodega_max, 'pending', v_now,
+      v_now, p_published_by, v_now
     FROM network_sums
     ON CONFLICT (erp_product_id, erp_sucursal_id) DO UPDATE SET
-      min_units    = EXCLUDED.min_units,
-      max_units    = EXCLUDED.max_units,
-      published_at = EXCLUDED.published_at,
-      published_by = EXCLUDED.published_by,
-      updated_at   = EXCLUDED.updated_at
+      min_units           = EXCLUDED.min_units,
+      max_units           = EXCLUDED.max_units,
+      draft_min           = EXCLUDED.draft_min,
+      draft_max           = EXCLUDED.draft_max,
+      draft_status        = EXCLUDED.draft_status,
+      draft_calculated_at = EXCLUDED.draft_calculated_at,
+      published_at        = EXCLUDED.published_at,
+      published_by        = EXCLUDED.published_by,
+      updated_at          = EXCLUDED.updated_at
     WHERE product_stock_params.is_hidden IS NOT TRUE;
 
     GET DIAGNOSTICS v_count_bodega = ROW_COUNT;

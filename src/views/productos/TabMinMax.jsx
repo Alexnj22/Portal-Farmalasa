@@ -1835,9 +1835,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             )}
 
             {!loading && isBodega && (
-                <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200 text-[12px] text-blue-800">
-                    <Info size={14} className="shrink-0 mt-0.5" />
-                    <span><strong>Bodega</strong> — MIN/MAX calculado a partir de la demanda consolidada de todas las sucursales. La velocidad de Bodega = suma de ventas diarias de todas las tiendas.</span>
+                <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-violet-50 border border-violet-200 text-[12px] text-violet-800">
+                    <Info size={14} className="shrink-0 mt-0.5 text-violet-500" />
+                    <span>
+                        <strong>Bodega — valores calculados automáticamente.</strong>{' '}
+                        MIN y MAX se calculan como la <strong>suma de los MIN/MAX publicados de cada sucursal</strong> y se actualizan automáticamente al publicar cualquier sucursal.
+                        No es posible editarlos directamente aquí.
+                    </span>
                 </div>
             )}
             {!loading && neverCalc && (
@@ -2161,7 +2165,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     </div>
                                                 ) : (
                                                     <div className="flex flex-col items-center cursor-pointer group/min"
-                                                        onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); }}>
+                                                        onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); }}>
                                                         <div className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 group-hover/min:border-amber-400 group-hover/min:bg-amber-100 transition-[border-color,background-color] duration-150">
                                                             <span className="text-[13px] font-black tabular-nums text-amber-700">{(row.draft_min ?? 0).toLocaleString()}</span>
                                                         </div>
@@ -2170,7 +2174,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 )
                                         ) : (dead || noHistory) ? (
                                             <div className="flex flex-col items-center cursor-pointer group/min"
-                                                onClick={e => { e.stopPropagation(); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: '' }); }}>
+                                                onClick={e => { e.stopPropagation(); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: '' }); }}>
                                                 <div className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 group-hover/min:border-amber-400 group-hover/min:bg-amber-100 transition-[border-color,background-color] duration-150">
                                                     <span className="text-[13px] font-black tabular-nums text-amber-400">0</span>
                                                 </div>
@@ -2235,7 +2239,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     </div>
                                                 ) : (
                                                     <div className="flex flex-col items-center cursor-pointer group/max"
-                                                        onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); }}>
+                                                        onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); }}>
                                                         <div className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 group-hover/max:border-blue-400 group-hover/max:bg-blue-100 transition-[border-color,background-color] duration-150">
                                                             <span className="text-[13px] font-black tabular-nums text-blue-700">{(row.draft_max ?? 0).toLocaleString()}</span>
                                                         </div>
@@ -2244,7 +2248,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 )
                                         ) : (dead || noHistory) ? (
                                             <div className="flex flex-col items-center cursor-pointer group/max"
-                                                onClick={e => { e.stopPropagation(); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: '' }); }}>
+                                                onClick={e => { e.stopPropagation(); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: '' }); }}>
                                                 <div className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 group-hover/max:border-blue-400 group-hover/max:bg-blue-100 transition-[border-color,background-color] duration-150">
                                                     <span className="text-[13px] font-black tabular-nums text-blue-400">0</span>
                                                 </div>

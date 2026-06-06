@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.6.4';
+export const APP_VERSION = '1.6.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.6.5  — MinMax: Bodega borrador auto-actualiza al publicar sucursal (draft_min/max = Σ, draft_status pending); banner violet explicativo; toast al editar celda en Bodega
 // v1.6.4  — MinMax: Bodega Opción A — al publicar sucursal, Bodega MIN/MAX = Σ min/max publicados de todas las sucursales (automático, sin paso extra)
 // v1.6.3  — MinMax: winsorización P95 de outliers de demanda (configurable en stock_config.outlier_percentile)
 // v1.6.2  — MinMax: panel Labs glassmorphic con toggle ocultar_en_minmax, buscador, limpieza is_hidden al desocultar lab

@@ -1279,6 +1279,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [publishing,   setPublishing]   = useState(false);
     const [publishResult,setPublishResult]= useState(null);
     const [filterDraft,     setFilterDraft]     = useState(false);
+    const [filterHidden,    setFilterHidden]    = useState(false);
     const [hiddenIds,       setHiddenIds]       = useState(new Set());
     const saveHiddenTimer  = useRef(null); // unused, kept for cleanup safety
     const publishTimer     = useRef(null);
@@ -1435,6 +1436,29 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         });
     }, []);
 
+    const unhideProduct = useCallback(async (productId) => {
+        await supabase.from('product_stock_params')
+            .update({ is_hidden: false, updated_at: new Date().toISOString() })
+            .eq('erp_product_id', productId)
+            .eq('erp_sucursal_id', selectedErp);
+        setHiddenIds(prev => { const n = new Set(prev); n.delete(productId); return n; });
+        setData(prev => prev.map(r => r.erp_product_id === productId ? { ...r, is_hidden: false } : r));
+        useStaff.getState().appendAuditLog('MINMAX_UNHIDE', String(productId), { sucursal_id: selectedErp });
+    }, [selectedErp]);
+
+    const unhideAll = useCallback(async () => {
+        const ids = [...hiddenIds];
+        if (!ids.length) return;
+        await supabase.from('product_stock_params')
+            .update({ is_hidden: false, updated_at: new Date().toISOString() })
+            .in('erp_product_id', ids)
+            .eq('erp_sucursal_id', selectedErp);
+        setHiddenIds(new Set());
+        setData(prev => prev.map(r => ids.includes(r.erp_product_id) ? { ...r, is_hidden: false } : r));
+        setFilterHidden(false);
+        useStaff.getState().appendAuditLog('MINMAX_UNHIDE_ALL', 'batch', { count: ids.length, sucursal_id: selectedErp });
+    }, [hiddenIds, selectedErp]);
+
     const draftCount = useMemo(() => data.filter(r => r.draft_status === 'pending').length, [data]);
 
     const requestPublish = useCallback((ids = null) => {
@@ -1491,6 +1515,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const hasActiveData = data.some(d => !d.is_dead_stock && d.alert_status !== 'no_data');
 
     const filtered = useMemo(() => {
+        if (filterHidden) {
+            return data.filter(r => hiddenIds.has(r.erp_product_id));
+        }
         const q = searchTerm.toLowerCase();
         return data.filter(r => {
             if (hiddenIds.has(r.erp_product_id))                                           return false;
@@ -1501,7 +1528,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             if (q && !r.product_name?.toLowerCase().includes(q) && !r.laboratorio_nombre?.toLowerCase().includes(q)) return false;
             return true;
         });
-    }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, hiddenIds]);
+    }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, hiddenIds, filterHidden]);
 
     const filteredDraftIds = useMemo(
         () => hasActiveFilter ? filtered.filter(r => r.draft_status === 'pending').map(r => r.erp_product_id) : [],
@@ -1575,7 +1602,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
     const pageRows   = sorted.slice((page - 1) * pageSize, page * pageSize);
-    useEffect(() => { setPage(1); }, [filterAbc, filterXyz, filterAlert, searchTerm, sortBy, sortDir, selectedErp, filterDraft]);
+    useEffect(() => { setPage(1); }, [filterAbc, filterXyz, filterAlert, searchTerm, sortBy, sortDir, selectedErp, filterDraft, filterHidden]);
 
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
@@ -1633,7 +1660,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
                             <LiquidSelect
                                 value={String(selectedErp)}
-                                onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy('laboratorio'); setSortDir('asc'); setFilterDraft(false); } }}
+                                onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy('laboratorio'); setSortDir('asc'); setFilterDraft(false); setFilterHidden(false); } }}
                                 options={erpOptions} icon={Building2} clearable={false} compact
                             />
                         </div>
@@ -1851,30 +1878,39 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     )}
                     </AnimatePresence>
 
-                    {/* Ocultos */}
+                    {/* Ocultos — clic para ver/ocultar lista; Mostrar todos para desocultar en bloque */}
                     <AnimatePresence>
                     {hiddenIds.size > 0 && (
-                        <motion.button
+                        <motion.div
                             key="hidden-pill"
                             initial={{ opacity: 0, scale: 0.88 }}
                             animate={{ opacity: 1, scale: 1, transition: { duration: 0.22, ease: EASE_OUT_EXPO } }}
                             exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.14, ease: 'easeIn' } }}
-                            {...chipAnim}
-                            onClick={async () => {
-                                const ids = [...hiddenIds];
-                                if (ids.length === 0) return;
-                                await supabase.from('product_stock_params')
-                                    .update({ is_hidden: false, updated_at: new Date().toISOString() })
-                                    .in('erp_product_id', ids)
-                                    .eq('erp_sucursal_id', selectedErp);
-                                setHiddenIds(new Set());
-                                setData(prev => prev.map(r => hiddenIds.has(r.erp_product_id) ? { ...r, is_hidden: false } : r));
-                            }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-white/55 backdrop-blur-sm border-white/80 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:bg-white/80">
-                            <Eye size={10} />
-                            {hiddenIds.size} oculto{hiddenIds.size !== 1 ? 's' : ''}
-                            <X size={9} className="ml-0.5 opacity-50" />
-                        </motion.button>
+                            className={`flex items-center rounded-full border text-[11px] font-bold transition-all duration-200 ${
+                                filterHidden
+                                    ? 'bg-violet-100/80 backdrop-blur-sm border-violet-300/70 text-violet-700 shadow-[0_3px_14px_rgba(139,92,246,0.22)]'
+                                    : 'bg-white/55 backdrop-blur-sm border-white/80 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]'
+                            }`}>
+                            {/* Main click: toggle filterHidden */}
+                            <button
+                                onClick={() => setFilterHidden(f => !f)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 hover:opacity-80 transition-opacity">
+                                <Eye size={10} />
+                                <span>{hiddenIds.size} oculto{hiddenIds.size !== 1 ? 's' : ''}</span>
+                                {filterHidden && <X size={9} className="opacity-60" />}
+                            </button>
+                            {/* Mostrar todos — solo cuando está activo el filtro */}
+                            {filterHidden && (
+                                <>
+                                    <div className="h-3.5 w-px bg-violet-300/60 shrink-0" />
+                                    <button
+                                        onClick={unhideAll}
+                                        className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black text-violet-600 hover:text-violet-800 transition-colors whitespace-nowrap">
+                                        Mostrar todos
+                                    </button>
+                                </>
+                            )}
+                        </motion.div>
                     )}
                     </AnimatePresence>
 
@@ -2245,24 +2281,33 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     {/* Acciones */}
                                     <DataCell align="center" className="!py-2.5">
                                         <div className="flex items-center justify-center gap-1">
-                                            {/* Ocultar */}
-                                            <motion.button onClick={async e => {
-                                                e.stopPropagation();
-                                                await supabase.from('product_stock_params')
-                                                    .upsert(
-                                                        { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() },
-                                                        { onConflict: 'erp_product_id,erp_sucursal_id' }
-                                                    );
-                                                setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });
-                                                setData(prev => prev.map(r => r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
-                                                    ? { ...r, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r));
-                                                useStaff.getState().appendAuditLog('MINMAX_HIDE', String(row.erp_product_id), { product: row.product_name, sucursal_id: row._erp_sucursal_id });
-                                            }}
-                                                title="Ocultar producto (pone MIN/MAX en 0 y excluye de recálculos)"
-                                                {...iconAnim}
-                                                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 hover:bg-slate-100">
-                                                <EyeOff size={12} />
-                                            </motion.button>
+                                            {/* Mostrar / Ocultar según modo */}
+                                            {filterHidden ? (
+                                                <motion.button onClick={async e => { e.stopPropagation(); await unhideProduct(row.erp_product_id); }}
+                                                    title="Mostrar producto"
+                                                    {...iconAnim}
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-violet-400 hover:text-violet-600 hover:bg-violet-50">
+                                                    <Eye size={13} />
+                                                </motion.button>
+                                            ) : (
+                                                <motion.button onClick={async e => {
+                                                    e.stopPropagation();
+                                                    await supabase.from('product_stock_params')
+                                                        .upsert(
+                                                            { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() },
+                                                            { onConflict: 'erp_product_id,erp_sucursal_id' }
+                                                        );
+                                                    setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });
+                                                    setData(prev => prev.map(r => r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
+                                                        ? { ...r, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r));
+                                                    useStaff.getState().appendAuditLog('MINMAX_HIDE', String(row.erp_product_id), { product: row.product_name, sucursal_id: row._erp_sucursal_id });
+                                                }}
+                                                    title="Ocultar producto (pone MIN/MAX en 0 y excluye de recálculos)"
+                                                    {...iconAnim}
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 hover:bg-slate-100">
+                                                    <EyeOff size={12} />
+                                                </motion.button>
+                                            )}
                                             {/* Poner en 0 */}
                                             {!dead && !noHistory && (
                                                 <motion.button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title="Crear borrador 0 / 0 (pone en 0 sin publicar)"

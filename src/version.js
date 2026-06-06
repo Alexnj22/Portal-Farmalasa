@@ -5,7 +5,7 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.6.2';
+export const APP_VERSION = '1.6.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)

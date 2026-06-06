@@ -948,21 +948,22 @@ function ConfigPanel({ config, onSave, onClose }) {
         setSaving(true); setErr('');
         const { data: { user } } = await supabase.auth.getUser();
         const payload = {
-            cycle_days:      Number(form.cycle_days),
-            reorder_x_days:  Number(form.reorder_x_days),
-            reorder_y_days:  Number(form.reorder_y_days),
-            reorder_z_days:  Number(form.reorder_z_days),
-            xyz_x_cv_max:    Number(form.xyz_x_cv_max),
-            xyz_y_cv_max:    Number(form.xyz_y_cv_max),
-            abc_a_pct:       Number(form.abc_a_pct),
-            abc_b_pct:       Number(form.abc_b_pct),
-            analysis_days:   Number(form.analysis_days),
-            approaching_pct: Number(form.approaching_pct),
-            buffer_x_days:   Number(form.buffer_x_days),
-            buffer_y_days:   Number(form.buffer_y_days),
-            buffer_z_days:   Number(form.buffer_z_days),
-            updated_at:      new Date().toISOString(),
-            updated_by:      user?.email ?? null,
+            cycle_days:          Number(form.cycle_days),
+            reorder_x_days:      Number(form.reorder_x_days),
+            reorder_y_days:      Number(form.reorder_y_days),
+            reorder_z_days:      Number(form.reorder_z_days),
+            xyz_x_cv_max:        Number(form.xyz_x_cv_max),
+            xyz_y_cv_max:        Number(form.xyz_y_cv_max),
+            abc_a_pct:           Number(form.abc_a_pct),
+            abc_b_pct:           Number(form.abc_b_pct),
+            analysis_days:       Number(form.analysis_days),
+            approaching_pct:     Number(form.approaching_pct),
+            buffer_x_days:       Number(form.buffer_x_days),
+            buffer_y_days:       Number(form.buffer_y_days),
+            buffer_z_days:       Number(form.buffer_z_days),
+            outlier_percentile:  Number(form.outlier_percentile ?? 95),
+            updated_at:          new Date().toISOString(),
+            updated_by:          user?.email ?? null,
         };
         try {
             const { error } = await supabase.from('stock_config').update(payload).eq('id', 1);
@@ -1057,6 +1058,17 @@ function ConfigPanel({ config, onSave, onClose }) {
                         <Field label="Clase Y — demanda moderada" k="buffer_y_days" unit="días" min={0} />
                         <Field label="Clase Z — demanda errática" k="buffer_z_days" unit="días" min={0} />
                         <p className="text-[9px] text-slate-400">MIN = velocidad × (reorden + buffer). Recalcula para aplicar.</p>
+                    </section>
+
+                    <div className="h-px bg-slate-100" />
+
+                    {/* Filtrado de demanda mayorista */}
+                    <section className="flex flex-col gap-2">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Filtrado de outliers (winsorización)</span>
+                        <Field label="Percentil de corte" k="outlier_percentile" unit="%" min={50} max={100} step={1} />
+                        <p className="text-[9px] text-slate-400 leading-snug">
+                            Capea ventas diarias al percentil indicado antes de calcular velocidad y CV. P95 = estándar industria. P100 = sin filtro. Recalculá para aplicar.
+                        </p>
                     </section>
 
                     {err && <p className="text-[11px] text-red-500 font-semibold">{err}</p>}

@@ -5,7 +5,7 @@ import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download,
     CheckCircle2, Check, Info, RotateCcw, ChevronRight,
-    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2, Target,
+    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2, Target, FlaskConical,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -1076,6 +1076,104 @@ function ConfigPanel({ config, onSave, onClose }) {
     );
 }
 
+// ─── Labs Panel ───────────────────────────────────────────────────────────────
+
+function LabsPanel({ onClose, onChanged }) {
+    const [labs,    setLabs]    = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [saving,  setSaving]  = useState(null); // lab id being toggled
+
+    useEffect(() => {
+        supabase.from('laboratorios')
+            .select('id, nombre, ocultar_en_minmax')
+            .order('nombre', { ascending: true })
+            .then(({ data }) => { setLabs(data || []); setLoading(false); });
+    }, []);
+
+    const toggle = async (lab) => {
+        setSaving(lab.id);
+        const newVal = !lab.ocultar_en_minmax;
+        const { error } = await supabase.from('laboratorios')
+            .update({ ocultar_en_minmax: newVal })
+            .eq('id', lab.id);
+        if (!error) {
+            setLabs(prev => prev.map(l => l.id === lab.id ? { ...l, ocultar_en_minmax: newVal } : l));
+            useStaff.getState().appendAuditLog('MINMAX_LAB_VISIBILITY', String(lab.id), {
+                lab: lab.nombre, ocultar: newVal,
+            });
+            onChanged?.();
+        }
+        setSaving(null);
+    };
+
+    const hiddenCount = labs.filter(l => l.ocultar_en_minmax).length;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-start justify-end p-4 pt-20 pointer-events-none">
+            <div className="pointer-events-auto w-72 rounded-2xl border border-white/70 shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden"
+                style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(24px)' }}>
+
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                        <FlaskConical size={14} className="text-[#0052CC]" />
+                        <span className="text-[12px] font-black text-slate-800">Labs ocultos en MinMax</span>
+                        {hiddenCount > 0 && (
+                            <span className="text-[10px] font-black text-white bg-red-400 px-1.5 py-0.5 rounded-full leading-none">{hiddenCount}</span>
+                        )}
+                    </div>
+                    <button onClick={onClose} className="w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                        <X size={12} />
+                    </button>
+                </div>
+
+                <p className="px-4 pt-3 pb-1 text-[10px] text-slate-400 leading-relaxed">
+                    Los productos de labs ocultos no aparecen en MinMax ni se incluyen en el cálculo.
+                </p>
+
+                <div className="px-3 py-2 flex flex-col gap-1 max-h-[62vh] overflow-y-auto">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-10">
+                            <Loader2 size={18} className="animate-spin text-slate-300" />
+                        </div>
+                    ) : labs.map(lab => {
+                        const hidden = lab.ocultar_en_minmax;
+                        return (
+                            <button key={lab.id}
+                                onClick={() => toggle(lab)}
+                                disabled={saving === lab.id}
+                                className={`flex items-center justify-between gap-3 px-3 py-2 rounded-xl border text-left transition-all disabled:opacity-60 ${
+                                    hidden
+                                        ? 'bg-red-50/70 border-red-200 hover:bg-red-50'
+                                        : 'bg-white/60 border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                                }`}>
+                                <span className={`text-[11px] font-semibold truncate ${hidden ? 'text-red-700' : 'text-slate-600'}`}>
+                                    {lab.nombre}
+                                </span>
+                                <div className="shrink-0 relative">
+                                    {saving === lab.id ? (
+                                        <Loader2 size={12} className="animate-spin text-slate-400" />
+                                    ) : (
+                                        <div className={`w-8 h-4 rounded-full transition-colors relative ${hidden ? 'bg-red-400' : 'bg-slate-200'}`}>
+                                            <div className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-all duration-200 ${hidden ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                                        </div>
+                                    )}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                <div className="px-4 py-3 border-t border-slate-100">
+                    <button onClick={onClose}
+                        className="w-full py-2 rounded-xl text-[12px] font-bold text-slate-500 hover:bg-slate-100 transition-colors">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
@@ -1094,6 +1192,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [error,        setError]        = useState(null);
     const [expandedIds,  setExpandedIds]  = useState(new Set());
     const [configOpen,   setConfigOpen]   = useState(false);
+    const [labsOpen,     setLabsOpen]     = useState(false);
     const [sortBy,       setSortBy]       = useState('laboratorio');
     const [sortDir,      setSortDir]      = useState('asc');
     const [page,         setPage]         = useState(1);
@@ -1428,6 +1527,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 />
             )}
 
+            {/* ── Labs panel ── */}
+            {labsOpen && (
+                <LabsPanel
+                    onClose={() => setLabsOpen(false)}
+                    onChanged={() => loadData(selectedErp)}
+                />
+            )}
+
             {/* ── Controls row ── */}
             <div className="flex items-center gap-3 flex-wrap">
 
@@ -1483,6 +1590,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             {...iconAnim}
                             className={`px-3 py-2.5 rounded-xl ${configOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
                             <Settings2 size={13} />
+                        </motion.button>
+
+                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                        {/* Labs visibility */}
+                        <motion.button onClick={() => setLabsOpen(o => !o)}
+                            title="Laboratorios ocultos en MinMax"
+                            {...iconAnim}
+                            className={`px-3 py-2.5 rounded-xl ${labsOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
+                            <FlaskConical size={13} />
                         </motion.button>
 
                         <div className="h-5 w-px bg-slate-100 shrink-0" />

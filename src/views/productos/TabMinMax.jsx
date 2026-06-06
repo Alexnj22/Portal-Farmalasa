@@ -1797,9 +1797,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     {publishResult.productIds
                         ? `publicó ${publishResult.published} producto${publishResult.published !== 1 ? 's' : ''} en ${ERP_NAMES[selectedErp]}`
                         : `publicó ${publishResult.published?.toLocaleString()} borradores en ${ERP_NAMES[selectedErp]}`}
-                    {publishResult.bodega_updated > 0 && selectedErp !== 6 && (
-                        <span className="text-emerald-500 font-medium">· Bodega actualizada ({publishResult.bodega_updated} productos)</span>
-                    )}
                     <button onClick={() => setPublishResult(null)} className="ml-auto text-emerald-400 hover:text-emerald-600"><X size={12} /></button>
                 </div>
             )}

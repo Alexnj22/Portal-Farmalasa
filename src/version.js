@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.6.6';
+export const APP_VERSION = '1.6.7';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.6.7  — MinMax: Bodega draft = trigger DB en tiempo real (Σ efectivos de sucursales al editar draft); publish_stock_params sin auto-update Bodega
 // v1.6.6  — MinMax: fix banner Bodega (edición sí permitida); backfill draft Bodega existente; toast al editar MIN/MAX en Bodega
 // v1.6.5  — MinMax: Bodega borrador auto-actualiza al publicar sucursal (draft_min/max = Σ, draft_status pending); banner violet explicativo; toast al editar celda en Bodega
 // v1.6.4  — MinMax: Bodega Opción A — al publicar sucursal, Bodega MIN/MAX = Σ min/max publicados de todas las sucursales (automático, sin paso extra)

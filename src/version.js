@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.5.7';
+export const APP_VERSION = '1.5.8';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.5.8  — MinMax: errores de calcular/publicar → toast rojo en español; timeout → mensaje claro sugiere recalcular por sucursal
 // v1.5.7  — MinMax: todos los productos activos visibles (no_data UNION ALL en get_stock_analysis); MIN/MAX editable para dead-stock y sin-historial; warning ⚠ 6m
 // v1.5.6  — MinMax: ocultar usa upsert — dead-stock products (sin fila en product_stock_params) ahora persisten ocultos tras reload
 // v1.5.5  — MinMax: get_draft_cost_estimate excluye is_hidden=true — conteo y costos ahora correctos sin ocultos

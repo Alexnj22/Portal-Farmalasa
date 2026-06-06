@@ -1177,6 +1177,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     useEffect(() => { loadData(selectedErp); }, [selectedErp, loadData]);
 
+    const fmtCalcError = msg => {
+        if (!msg) return 'Error al calcular.';
+        if (/timeout|canceling statement/i.test(msg))
+            return 'El cálculo tardó demasiado. Intentá recalcular por sucursal en vez de todas a la vez.';
+        return `Error al calcular: ${msg}`;
+    };
+
     const handleRecalcular = async () => {
         setCalculating(true); setCalcMode('single'); setError(null); setConfigChanged(false);
         try {
@@ -1184,7 +1191,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             if (e) throw e;
             setToast({ message: `${(res?.rows ?? 0).toLocaleString()} borradores generados para ${ERP_NAMES[selectedErp]}`, type: 'info' });
             await loadData(selectedErp);
-        } catch (e) { setError(e.message); }
+        } catch (e) { setToast({ message: fmtCalcError(e.message), type: 'error' }); }
         finally { setCalculating(false); }
     };
 
@@ -1195,7 +1202,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             if (e) throw e;
             setToast({ message: `${(res?.rows ?? 0).toLocaleString()} borradores generados para todas las sucursales`, type: 'info' });
             await loadData(selectedErp);
-        } catch (e) { setError(e.message); }
+        } catch (e) { setToast({ message: fmtCalcError(e.message), type: 'error' }); }
         finally { setCalculating(false); }
     };
 
@@ -1270,7 +1277,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 sucursal_id: selectedErp, product_ids: productIds, published: res?.published,
             });
             await loadData(selectedErp);
-        } catch (e) { setError(e.message); }
+        } catch (e) { setToast({ message: `Error al publicar: ${e.message}`, type: 'error' }); }
         finally { setPublishing(false); }
     }, [selectedErp, loadData]);
 
@@ -2111,7 +2118,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
             {/* ── Toast notification ── */}
             {toast && (
-                <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#0052CC] text-white shadow-2xl text-[13px] font-semibold animate-in slide-in-from-bottom-2">
+                <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl text-white shadow-2xl text-[13px] font-semibold animate-in slide-in-from-bottom-2 ${toast.type === 'error' ? 'bg-red-600' : 'bg-[#0052CC]'}`}>
                     {currentEmployee?.photo_url
                         ? <img src={currentEmployee.photo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-white/40" />
                         : <Info size={15} className="shrink-0" />}

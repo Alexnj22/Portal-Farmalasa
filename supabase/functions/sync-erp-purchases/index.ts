@@ -1,6 +1,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, getErpBranchMap, requireInvokeSecret } from "../_shared/security.ts";
 
+function getPurchaseCreds(): { username: string; password: string } {
+  const raw = Deno.env.get("ERP_PURCHASES_CREDS");
+  if (!raw) throw new Error("ERP_PURCHASES_CREDS secret not configured.");
+  return JSON.parse(raw);
+}
+
 // Sincroniza compras/recepciones del ERP → purchase_receipts + purchase_receipt_items.
 // Mismo patrón de auth que sync-dte-sales (login → cookie → fetch JSON).
 // URL: descargar_compras_json.php?fini=YYYY-MM-DD&ffin=YYYY-MM-DD&id_sucursal=N
@@ -60,7 +66,8 @@ async function discoverBranch(
 
   // Devuelve la clave raíz, keys del primer registro y primera línea de productos
   const rootKeys    = Object.keys(payload);
-  const rootKey     = rootKeys[0] ?? null;
+  // Busca la clave cuyo valor sea array (ej: "compras"), no la primera clave escalar
+  const rootKey     = rootKeys.find(k => Array.isArray(payload[k])) ?? null;
   const records: any[] = rootKey ? (payload[rootKey] ?? []) : [];
   const firstRecord = records[0] ?? null;
   const firstItem   = firstRecord ? Object.values(firstRecord).find(Array.isArray)?.[0] ?? null : null;
@@ -127,26 +134,41 @@ async function syncBranch(
 
   const receiptsToUpsert: any[] = [];
   const newErpIds = new Set<number>();
-  const productMap = new Map<number, any>();
+  const productMap  = new Map<number, any>();
+  const supplierMap = new Map<number, any>(); // erpSupplierId → { erp_supplier_id, nombre, nrc }
 
   for (const c of compras) {
-    // ID flexible
-    const erpPurchaseId = Number(c.id_compra ?? c.id_factura ?? c.id_orden ?? c.id);
+    const erpPurchaseId = Number(c.compra_id ?? c.id_compra ?? c.id_factura ?? c.id_orden ?? c.id);
     if (!erpPurchaseId) continue;
 
-    // Fecha flexible
-    const fecha = c.fecha ?? c.fecha_emision ?? c.fecha_recepcion ?? null;
+    const fecha   = c.documento?.fecha_emision ?? c.fecha ?? c.fecha_emision ?? c.fecha_recepcion ?? null;
+    const provObj = c.proveedor;
+    let provNombre: string | null = null;
+    let erpSupplierId: number | null = null;
+    let provNrc: string | null = null;
+
+    if (typeof provObj === 'object' && provObj !== null) {
+      provNombre    = provObj.nombre    ?? null;
+      erpSupplierId = provObj.id        ? Number(provObj.id) : null;
+      provNrc       = provObj.nrc       ?? null;
+    } else {
+      provNombre = provObj ?? c.supplier ?? c.nombre_proveedor ?? null;
+    }
+
+    if (erpSupplierId && !supplierMap.has(erpSupplierId))
+      supplierMap.set(erpSupplierId, { erp_supplier_id: erpSupplierId, nombre: provNombre, nrc: provNrc, updated_at: new Date().toISOString() });
 
     const row = {
       erp_purchase_id: erpPurchaseId,
       branch_id:       branchId,
       erp_sucursal_id: erpId,
+      erp_supplier_id: erpSupplierId,
       fecha:           fecha,
-      proveedor:       c.proveedor ?? c.supplier ?? c.nombre_proveedor ?? null,
-      estado:          c.estado ?? null,
-      subtotal:        c.totales?.subtotal ?? c.subtotal ?? 0,
-      iva:             c.totales?.iva      ?? c.iva      ?? 0,
-      total:           c.totales?.total    ?? c.total    ?? 0,
+      proveedor:       provNombre,
+      estado:          c.anulada === true ? 'anulada' : (c.estado ?? null),
+      subtotal:        c.totales?.sumas_gravadas  ?? c.totales?.subtotal ?? c.subtotal ?? 0,
+      iva:             c.totales?.iva             ?? c.iva                              ?? 0,
+      total:           c.totales?.total_operacion ?? c.totales?.total    ?? c.total     ?? 0,
       updated_at:      new Date().toISOString(),
     };
 
@@ -154,14 +176,27 @@ async function syncBranch(
     if (!existingMap.has(erpPurchaseId)) newErpIds.add(erpPurchaseId);
 
     // Productos para upsert de catálogo
-    for (const p of (c.productos ?? c.items ?? c.detalle ?? [])) {
-      const pid = p.id ?? p.id_producto;
+    for (const p of (c.items ?? c.productos ?? c.detalle ?? [])) {
+      const pid = p.producto_id ?? p.id ?? p.id_producto;
       if (pid && !productMap.has(Number(pid)))
-        productMap.set(Number(pid), { id: Number(pid), nombre: p.descripcion ?? p.nombre, updated_at: new Date().toISOString() });
+        productMap.set(Number(pid), { id: Number(pid), nombre: p.nombre ?? p.descripcion, updated_at: new Date().toISOString() });
     }
   }
 
-  // 3. Upsert productos al catálogo
+  // 3a. Upsert proveedores
+  const erpSupplierToId = new Map<number, number>();
+  if (supplierMap.size > 0) {
+    await supabase.from('suppliers').upsert([...supplierMap.values()], { onConflict: 'erp_supplier_id', ignoreDuplicates: false });
+    const { data: suppRows } = await supabase
+      .from('suppliers').select('id, erp_supplier_id').in('erp_supplier_id', [...supplierMap.keys()]);
+    for (const s of (suppRows ?? [])) erpSupplierToId.set(s.erp_supplier_id, s.id);
+    // Inject supplier_id into receipt rows
+    for (const row of receiptsToUpsert) {
+      if (row.erp_supplier_id) row.supplier_id = erpSupplierToId.get(row.erp_supplier_id) ?? null;
+    }
+  }
+
+  // 3b. Upsert productos al catálogo
   if (productMap.size > 0)
     await supabase.from('products').upsert([...productMap.values()], { onConflict: 'id', ignoreDuplicates: true });
 
@@ -184,26 +219,26 @@ async function syncBranch(
   // 5. Items — solo para recepciones nuevas
   const itemsToInsert: any[] = [];
   for (const c of compras) {
-    const erpPurchaseId = Number(c.id_compra ?? c.id_factura ?? c.id_orden ?? c.id);
+    const erpPurchaseId = Number(c.compra_id ?? c.id_compra ?? c.id_factura ?? c.id_orden ?? c.id);
     if (!newErpIds.has(erpPurchaseId)) continue;
 
     const receiptId = existingMap.get(erpPurchaseId);
     if (!receiptId) continue;
 
-    const lines = c.productos ?? c.items ?? c.detalle ?? [];
+    const lines = c.items ?? c.productos ?? c.detalle ?? [];
     for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
       const p = lines[lineIdx];
-      const rawFecha = p.fecha_vencimiento ?? p.vencimiento ?? null;
+      const rawFecha = p.trazabilidad?.fecha_vencimiento ?? p.fecha_vencimiento ?? p.vencimiento ?? null;
 
       itemsToInsert.push({
         receipt_id:        receiptId,
         linea_num:         lineIdx,
-        erp_product_id:    p.id ?? p.id_producto ?? null,
-        descripcion:       p.descripcion ?? p.nombre ?? null,
+        erp_product_id:    p.producto_id ?? p.id ?? p.id_producto ?? null,
+        descripcion:       p.nombre ?? p.descripcion ?? null,
         cantidad:          parseFloat(p.cantidad) || 0,
-        precio_unitario:   parseFloat(p.precio_unitario ?? p.precio ?? 0) || 0,
-        total_linea:       parseFloat(p.total_linea ?? p.total ?? 0) || 0,
-        lote:              p.lote || null,
+        precio_unitario:   parseFloat(p.precios?.costo_unitario ?? p.precio_unitario ?? p.precio ?? 0) || 0,
+        total_linea:       parseFloat(p.precios?.subtotal_linea ?? p.total_linea ?? p.total ?? 0) || 0,
+        lote:              (p.trazabilidad?.lote ?? p.lote) || null,
         fecha_vencimiento: (rawFecha && rawFecha !== '0000-00-00') ? rawFecha : null,
       });
     }
@@ -251,12 +286,10 @@ Deno.serve(async (req) => {
 
     // ── Modo discover: muestra estructura raw del ERP ─────────────────────────
     if (discover) {
-      const target = onlyBranch
-        ? BRANCH_MAP.find(b => b.branchId === onlyBranch)
-        : BRANCH_MAP[0];
-      if (!target) throw new Error('No branch found');
-      const info = await discoverBranch(target.erpId, target.username, target.password, startDate, endDate);
-      return new Response(JSON.stringify({ discover: true, branchId: target.branchId, erpId: target.erpId, ...info }), {
+      const erpIdToUse: number = body.erpId ?? 6;
+      const { username, password } = getPurchaseCreds();
+      const info = await discoverBranch(erpIdToUse, username, password, startDate, endDate);
+      return new Response(JSON.stringify({ discover: true, erpId: erpIdToUse, ...info }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -267,14 +300,19 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    const branches = onlyBranch
-      ? BRANCH_MAP.filter(b => b.branchId === onlyBranch)
-      : BRANCH_MAP;
+    // Compras llegan a Bodega (erpId=6, branchId=30). Las credenciales son de ERP_PURCHASES_CREDS.
+    const { username: puUser, password: puPass } = getPurchaseCreds();
+    const BODEGA_ERP_ID  = 6;
+    const BODEGA_BRANCH_ID = 30;
+
+    const purchaseBranches = onlyBranch
+      ? [{ branchId: onlyBranch, erpId: BODEGA_ERP_ID, username: puUser, password: puPass }]
+      : [{ branchId: BODEGA_BRANCH_ID, erpId: BODEGA_ERP_ID, username: puUser, password: puPass }];
 
     const results: any[]  = [];
     const logRows: any[]  = [];
 
-    for (const { branchId, erpId, username, password } of branches) {
+    for (const { branchId, erpId, username, password } of purchaseBranches) {
       let attempts = 0;
       let lastErr: string | null = null;
       let result: any = null;

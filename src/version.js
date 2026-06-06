@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.5.2';
+export const APP_VERSION = '1.5.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.5.3  — MinMax: ocultar → is_hidden en DB (compartido), draft 0/0, excluido de recálculos; card "Inversión borrador"
 // v1.5.2  — MinMax: búsqueda por laboratorio (además de nombre de producto)
 // v1.5.1  — MinMax: card "Objetivo borrador" — costo estimado MIN→MAX del inventario calculado (RPC get_draft_cost_estimate)
 // v1.5.0  — MinMax: onFocus select() en celdas MIN/MAX — al entrar se selecciona el valor para reemplazarlo de inmediato

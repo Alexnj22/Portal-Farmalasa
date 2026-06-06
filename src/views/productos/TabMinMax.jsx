@@ -304,7 +304,7 @@ function DraftCostCard({ draftCost }) {
             style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
             <Target size={13} className="shrink-0 text-violet-400" />
             <div className="flex flex-col leading-snug gap-1">
-                <span className="text-[10px] font-semibold text-slate-500">Objetivo borrador</span>
+                <span className="text-[10px] font-semibold text-slate-500">Inversión borrador</span>
                 <div className="flex items-baseline gap-2">
                     <div className="flex items-baseline gap-1">
                         <span className="text-[9px] font-bold text-amber-500 uppercase tracking-wide">MIN</span>
@@ -1100,7 +1100,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [publishResult,setPublishResult]= useState(null);
     const [filterDraft,     setFilterDraft]     = useState(false);
     const [hiddenIds,       setHiddenIds]       = useState(new Set());
-    const saveHiddenTimer  = useRef(null);
+    const saveHiddenTimer  = useRef(null); // unused, kept for cleanup safety
     const publishTimer     = useRef(null);
     const skipBlurSave     = useRef(false);
     const [publishConfirm, setPublishConfirm] = useState({ open: false, ids: null, count: 0 });
@@ -1108,26 +1108,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     // Cleanup publish timer on unmount
     useEffect(() => () => clearTimeout(publishTimer.current), []);
 
-    // Load hiddenIds from Supabase user_metadata (cross-device)
-    useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            const stored = user?.user_metadata?.minmax_hidden?.[selectedErp] ?? [];
-            setHiddenIds(new Set(stored));
-        });
-    }, [selectedErp]);
-
-    // Save hiddenIds to Supabase user_metadata, debounced 2s
-    useEffect(() => {
-        clearTimeout(saveHiddenTimer.current);
-        saveHiddenTimer.current = setTimeout(async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            const existing = user?.user_metadata?.minmax_hidden ?? {};
-            await supabase.auth.updateUser({
-                data: { minmax_hidden: { ...existing, [selectedErp]: [...hiddenIds] } }
-            });
-        }, 2000);
-        return () => clearTimeout(saveHiddenTimer.current);
-    }, [hiddenIds, selectedErp]);
+    // hiddenIds se carga desde is_hidden en get_stock_analysis al hacer loadData
     const [configChanged,   setConfigChanged]   = useState(false);
     const [inlineDraftEdit, setInlineDraftEdit] = useState(null); // { productId, sucursalId, field:'min'|'max', value }
     const [toast,           setToast]           = useState(null); // { message, type }
@@ -1180,7 +1161,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             ]);
             if (e2) throw e2;
             if (rid !== loadRef.current) return;
-            setData(allRows.map(r => ({ ...r, _erp_sucursal_id: erpId })));
+            const mapped = allRows.map(r => ({ ...r, _erp_sucursal_id: erpId }));
+            setData(mapped);
+            setHiddenIds(new Set(mapped.filter(r => r.is_hidden).map(r => r.erp_product_id)));
             setCostSummary(cost  || null);
             setDraftCost(draft   || null);
         } catch (e) {
@@ -1628,7 +1611,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             animate={{ opacity: 1, scale: 1, transition: { duration: 0.22, ease: EASE_OUT_EXPO } }}
                             exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.14, ease: 'easeIn' } }}
                             {...chipAnim}
-                            onClick={() => setHiddenIds(new Set())}
+                            onClick={async () => {
+                                const ids = [...hiddenIds];
+                                if (ids.length === 0) return;
+                                await supabase.from('product_stock_params')
+                                    .update({ is_hidden: false, updated_at: new Date().toISOString() })
+                                    .in('erp_product_id', ids)
+                                    .eq('erp_sucursal_id', selectedErp);
+                                setHiddenIds(new Set());
+                                setData(prev => prev.map(r => hiddenIds.has(r.erp_product_id) ? { ...r, is_hidden: false } : r));
+                            }}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-white/55 backdrop-blur-sm border-white/80 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:bg-white/80">
                             <Eye size={10} />
                             {hiddenIds.size} oculto{hiddenIds.size !== 1 ? 's' : ''}
@@ -1984,8 +1976,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     <DataCell align="center" className="!py-2.5">
                                         <div className="flex items-center justify-center gap-1">
                                             {/* Ocultar */}
-                                            <motion.button onClick={e => { e.stopPropagation(); setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; }); }}
-                                                title="Ocultar producto"
+                                            <motion.button onClick={async e => {
+                                                e.stopPropagation();
+                                                await supabase.from('product_stock_params')
+                                                    .update({ is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() })
+                                                    .eq('erp_product_id', row.erp_product_id)
+                                                    .eq('erp_sucursal_id', row._erp_sucursal_id);
+                                                setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });
+                                                setData(prev => prev.map(r => r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
+                                                    ? { ...r, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r));
+                                                useStaff.getState().appendAuditLog('MINMAX_HIDE', String(row.erp_product_id), { product: row.product_name, sucursal_id: row._erp_sucursal_id });
+                                            }}
+                                                title="Ocultar producto (pone MIN/MAX en 0 y excluye de recálculos)"
                                                 {...iconAnim}
                                                 className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 hover:bg-slate-100">
                                                 <EyeOff size={12} />

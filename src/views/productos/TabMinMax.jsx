@@ -1318,6 +1318,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         () => hasActiveFilter ? filtered.filter(r => r.draft_status === 'pending').map(r => r.erp_product_id) : [],
         [filtered, hasActiveFilter]
     );
+
+    const hideFiltered = useCallback(async () => {
+        if (!filtered.length) return;
+        const ids = filtered.map(r => r.erp_product_id);
+        await supabase.from('product_stock_params')
+            .update({ is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() })
+            .in('erp_product_id', ids)
+            .eq('erp_sucursal_id', selectedErp);
+        setHiddenIds(prev => { const n = new Set(prev); ids.forEach(id => n.add(id)); return n; });
+        setData(prev => prev.map(r =>
+            ids.includes(r.erp_product_id) && r._erp_sucursal_id === selectedErp
+                ? { ...r, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r
+        ));
+        useStaff.getState().appendAuditLog('MINMAX_HIDE_FILTERED', 'batch', { count: ids.length, sucursal_id: selectedErp });
+    }, [filtered, selectedErp]);
     const filterLabel = useMemo(() => {
         if (filterAbc !== 'all' && filterXyz === 'all' && filterAlert === 'all' && !searchTerm) return `Clase ${filterAbc}`;
         if (filterAlert !== 'all' && filterAbc === 'all' && filterXyz === 'all' && !searchTerm) return ALERT[filterAlert]?.label ?? filterAlert;
@@ -1601,6 +1616,23 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             </motion.button>
                         );
                     })}
+
+                    {/* Ocultar filtrados */}
+                    <AnimatePresence>
+                    {hasActiveFilter && filtered.length > 0 && (
+                        <motion.button
+                            key="hide-filtered"
+                            initial={{ opacity: 0, scale: 0.88 }}
+                            animate={{ opacity: 1, scale: 1, transition: { duration: 0.22, ease: EASE_OUT_EXPO } }}
+                            exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.14, ease: 'easeIn' } }}
+                            {...chipAnim}
+                            onClick={hideFiltered}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-white/55 backdrop-blur-sm border-white/80 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:bg-white/80">
+                            <EyeOff size={10} />
+                            Ocultar {filterLabel} ({filtered.length})
+                        </motion.button>
+                    )}
+                    </AnimatePresence>
 
                     {/* Ocultos */}
                     <AnimatePresence>

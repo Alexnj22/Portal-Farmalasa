@@ -1322,10 +1322,20 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const hideFiltered = useCallback(async () => {
         if (!filtered.length) return;
         const ids = filtered.map(r => r.erp_product_id);
+        // upsert en vez de update para que dead-stock products (sin fila en product_stock_params) también queden ocultos
         await supabase.from('product_stock_params')
-            .update({ is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() })
-            .in('erp_product_id', ids)
-            .eq('erp_sucursal_id', selectedErp);
+            .upsert(
+                ids.map(id => ({
+                    erp_product_id: id,
+                    erp_sucursal_id: selectedErp,
+                    is_hidden: true,
+                    draft_min: 0,
+                    draft_max: 0,
+                    draft_status: 'pending',
+                    updated_at: new Date().toISOString(),
+                })),
+                { onConflict: 'erp_product_id,erp_sucursal_id' }
+            );
         setHiddenIds(prev => { const n = new Set(prev); ids.forEach(id => n.add(id)); return n; });
         setData(prev => prev.map(r =>
             ids.includes(r.erp_product_id) && r._erp_sucursal_id === selectedErp
@@ -2011,9 +2021,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             <motion.button onClick={async e => {
                                                 e.stopPropagation();
                                                 await supabase.from('product_stock_params')
-                                                    .update({ is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() })
-                                                    .eq('erp_product_id', row.erp_product_id)
-                                                    .eq('erp_sucursal_id', row._erp_sucursal_id);
+                                                    .upsert(
+                                                        { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() },
+                                                        { onConflict: 'erp_product_id,erp_sucursal_id' }
+                                                    );
                                                 setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });
                                                 setData(prev => prev.map(r => r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
                                                     ? { ...r, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r));

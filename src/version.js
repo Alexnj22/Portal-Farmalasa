@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.5.5';
+export const APP_VERSION = '1.5.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.5.6  — MinMax: ocultar usa upsert — dead-stock products (sin fila en product_stock_params) ahora persisten ocultos tras reload
 // v1.5.5  — MinMax: get_draft_cost_estimate excluye is_hidden=true — conteo y costos ahora correctos sin ocultos
 // v1.5.4  — MinMax: botón "Ocultar filtrados (N)" — oculta en lote todos los productos visibles con el filtro activo
 // v1.5.3  — MinMax: ocultar → is_hidden en DB (compartido), draft 0/0, excluido de recálculos; card "Inversión borrador"

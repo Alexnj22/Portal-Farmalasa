@@ -1326,7 +1326,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             if (filterAbc !== 'all' && (r.draft_abc_class || r.abc_class) !== filterAbc)  return false;
             if (filterXyz !== 'all' && normXyz(r.draft_demand_variability || r.demand_variability) !== filterXyz) return false;
             if (filterAlert !== 'all' && r.alert_status !== filterAlert)                   return false;
-            if (q && !r.product_name?.toLowerCase().includes(q))                          return false;
+            if (q && !r.product_name?.toLowerCase().includes(q) && !r.laboratorio_nombre?.toLowerCase().includes(q)) return false;
             return true;
         });
     }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, hiddenIds]);

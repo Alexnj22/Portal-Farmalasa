@@ -433,6 +433,7 @@ function ExpandedPanel({ row, cycleDays }) {
     const [branchData,      setBranchData]      = useState(null);
     const [expiryData,      setExpiryData]      = useState([]);
     const [historyData,     setHistoryData]     = useState([]);
+    const [purchaseData,    setPurchaseData]    = useState([]);
     const [loadingBranches, setLoadingBranches] = useState(true);
     const [deadAction,      setDeadAction]      = useState(null);
 
@@ -453,10 +454,16 @@ function ExpandedPanel({ row, cycleDays }) {
                 .eq('erp_sucursal_id', row._erp_sucursal_id)
                 .order('captured_at', { ascending: false })
                 .limit(5),
-        ]).then(([{ data: bData }, { data: eData }, { data: hData }]) => {
+            supabase.from('product_cost_history')
+                .select('fecha, proveedor, precio_unitario, cantidad, lote, fecha_vencimiento')
+                .eq('erp_product_id', row.erp_product_id)
+                .order('fecha', { ascending: false })
+                .limit(6),
+        ]).then(([{ data: bData }, { data: eData }, { data: hData }, { data: pData }]) => {
             setBranchData(bData || []);
             setExpiryData(eData || []);
             setHistoryData(hData || []);
+            setPurchaseData(pData || []);
         }).finally(() => setLoadingBranches(false));
     }, [row.erp_product_id, row._erp_sucursal_id]);
 
@@ -668,6 +675,32 @@ function ExpandedPanel({ row, cycleDays }) {
                                 <span className="font-bold text-blue-500">{(h.max_units ?? 0).toLocaleString()}</span>
                                 <span className="text-slate-400">{Number(h.daily_velocity || 0).toFixed(1)}/día</span>
                                 {h.abc_class && <AbcXyzBadge abc={h.abc_class} xyz={h.demand_variability} />}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Últimas compras (Bodega) ── */}
+            {purchaseData.length > 0 && (
+                <div className="px-4 py-2.5 border-t border-slate-100/80 bg-slate-50/30 flex flex-col gap-2">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
+                    <div className="flex flex-col gap-1">
+                        {purchaseData.map((p, i) => (
+                            <div key={i} className="flex items-center gap-2.5 text-[10px]">
+                                <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                    {new Date(p.fecha).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                </span>
+                                <span className="font-bold text-slate-700 tabular-nums w-12 shrink-0 text-right">
+                                    {Number(p.cantidad).toLocaleString()} und
+                                </span>
+                                <span className="text-slate-400 shrink-0">
+                                    ${Number(p.precio_unitario).toFixed(2)}
+                                </span>
+                                <span className="text-slate-500 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
+                                {p.lote && p.lote !== 'GENERICO' && (
+                                    <span className="shrink-0 text-[8px] font-mono text-slate-400 bg-slate-100 px-1 rounded">{p.lote}</span>
+                                )}
                             </div>
                         ))}
                     </div>

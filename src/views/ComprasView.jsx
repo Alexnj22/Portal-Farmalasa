@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ShoppingCart, Package, ChevronDown, ChevronRight, Calendar, Users } from 'lucide-react';
+import { ShoppingCart, Package, ChevronDown, ChevronRight, Calendar, Users, AlertTriangle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
@@ -131,7 +131,7 @@ function ItemsExpand({ receiptId }) {
 
 // ── TabFacturas ───────────────────────────────────────────────────────────────
 
-function TabFacturas({ dateStart, dateEnd, supplierId, searchTerm }) {
+function TabFacturas({ dateStart, dateEnd, supplierId, sinProveedor, searchTerm }) {
     const [rows,      setRows]      = useState([]);
     const [loading,   setLoading]   = useState(false);
     const [page,      setPage]      = useState(1);
@@ -153,7 +153,8 @@ function TabFacturas({ dateStart, dateEnd, supplierId, searchTerm }) {
 
         if (dateStart) q = q.gte('fecha', dateStart);
         if (dateEnd)   q = q.lte('fecha', dateEnd);
-        if (supplierId) q = q.eq('supplier_id', supplierId);
+        if (sinProveedor) q = q.is('supplier_id', null);
+        else if (supplierId) q = q.eq('supplier_id', supplierId);
         if (searchTerm) {
             const term = searchTerm.trim();
             q = q.or(`proveedor.ilike.%${term}%`);
@@ -163,10 +164,10 @@ function TabFacturas({ dateStart, dateEnd, supplierId, searchTerm }) {
         setRows(data || []);
         setTotal(count || 0);
         setLoading(false);
-    }, [dateStart, dateEnd, supplierId, searchTerm, page]);
+    }, [dateStart, dateEnd, supplierId, sinProveedor, searchTerm, page]);
 
     // Reset page when filters change
-    useEffect(() => { setPage(1); }, [dateStart, dateEnd, supplierId, searchTerm]);
+    useEffect(() => { setPage(1); }, [dateStart, dateEnd, supplierId, sinProveedor, searchTerm]);
     useEffect(() => { load(); }, [load]);
 
     const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -195,7 +196,15 @@ function TabFacturas({ dateStart, dateEnd, supplierId, searchTerm }) {
                                 <span className="font-semibold text-slate-700 tabular-nums">{fmtDate(row.fecha)}</span>
                             </DataCell>
                             <DataCell>
-                                <span className="text-slate-800 font-medium text-[12px]">{provName(row)}</span>
+                                <div className="flex items-center gap-1.5">
+                                    {!row.supplier_id && (
+                                        <AlertTriangle size={12} className="text-amber-500 shrink-0" title="Proveedor no linkeado — verificar en ERP" />
+                                    )}
+                                    <span className="text-slate-800 font-medium text-[12px]">{provName(row)}</span>
+                                    {!row.supplier_id && (
+                                        <span className="text-[9px] font-mono text-slate-400">#{row.erp_purchase_id}</span>
+                                    )}
+                                </div>
                             </DataCell>
                             <DataCell align="center" hideBelow="md">{estadoBadge(row.estado)}</DataCell>
                             <DataCell align="center">
@@ -330,63 +339,83 @@ export default function ComprasView() {
     const [dateStart, setDateStart] = useState(range.start);
     const [dateEnd,   setDateEnd]   = useState(range.end);
 
-    const [suppliers,   setSuppliers]   = useState([]);
-    const [supplierId,  setSupplierId]  = useState('');
+    const [suppliers,     setSuppliers]     = useState([]);
+    const [supplierId,    setSupplierId]    = useState('');
+    const [sinProveedor,  setSinProveedor]  = useState(false);
+    const [unlinkedCount, setUnlinkedCount] = useState(0);
 
-    // Load supplier list once
+    // Load supplier list + global unlinked count once
     useEffect(() => {
-        supabase
-            .from('suppliers')
-            .select('id, nombre')
-            .order('nombre')
+        supabase.from('suppliers').select('id, nombre').order('nombre')
             .then(({ data }) => setSuppliers(data || []));
+        supabase.from('purchase_receipts').select('id', { count: 'exact', head: true }).is('supplier_id', null)
+            .then(({ count }) => setUnlinkedCount(count || 0));
     }, []);
 
     const filtersContent = (
-        <div className="flex items-center gap-3 rounded-2xl bg-white/80 border border-slate-200/70 px-4 py-2 flex-wrap">
-            {/* Date start */}
-            <div className="flex items-center gap-1.5">
-                <Calendar size={12} className="text-slate-400" />
-                <input
-                    type="date"
-                    value={dateStart}
-                    onChange={e => setDateStart(e.target.value)}
-                    className="text-[11px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer"
-                />
-            </div>
-
-            <div className="h-5 w-px bg-slate-100" />
-
-            {/* Date end */}
-            <div className="flex items-center gap-1.5">
-                <Calendar size={12} className="text-slate-400" />
-                <input
-                    type="date"
-                    value={dateEnd}
-                    onChange={e => setDateEnd(e.target.value)}
-                    className="text-[11px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer"
-                />
-            </div>
-
-            {activeTab === 'facturas' && (
-                <>
-                    <div className="h-5 w-px bg-slate-100" />
-                    {/* Supplier filter */}
-                    <div className="flex items-center gap-1.5">
-                        <Users size={12} className="text-slate-400" />
-                        <select
-                            value={supplierId}
-                            onChange={e => setSupplierId(e.target.value)}
-                            className="text-[11px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer max-w-[180px]"
-                        >
-                            <option value="">Todos los proveedores</option>
-                            {suppliers.map(s => (
-                                <option key={s.id} value={s.id}>{s.nombre}</option>
-                            ))}
-                        </select>
-                    </div>
-                </>
+        <div className="flex flex-col gap-2">
+            {/* Aviso global: facturas sin proveedor */}
+            {unlinkedCount > 0 && (
+                <button
+                    onClick={() => { setSinProveedor(v => !v); setSupplierId(''); }}
+                    className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition-colors w-fit ${
+                        sinProveedor
+                            ? 'bg-amber-100 border-amber-300 text-amber-800'
+                            : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
+                    }`}
+                >
+                    <AlertTriangle size={12} className="text-amber-500" />
+                    {unlinkedCount} factura{unlinkedCount !== 1 ? 's' : ''} sin proveedor linkeado — verificar en ERP
+                    <span className="ml-1 text-[10px] font-bold underline">{sinProveedor ? 'Ver todas' : 'Filtrar'}</span>
+                </button>
             )}
+
+            <div className="flex items-center gap-3 rounded-2xl bg-white/80 border border-slate-200/70 px-4 py-2 flex-wrap">
+                {/* Date start */}
+                <div className="flex items-center gap-1.5">
+                    <Calendar size={12} className="text-slate-400" />
+                    <input
+                        type="date"
+                        value={dateStart}
+                        onChange={e => setDateStart(e.target.value)}
+                        className="text-[11px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer"
+                    />
+                </div>
+
+                <div className="h-5 w-px bg-slate-100" />
+
+                {/* Date end */}
+                <div className="flex items-center gap-1.5">
+                    <Calendar size={12} className="text-slate-400" />
+                    <input
+                        type="date"
+                        value={dateEnd}
+                        onChange={e => setDateEnd(e.target.value)}
+                        className="text-[11px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer"
+                    />
+                </div>
+
+                {activeTab === 'facturas' && (
+                    <>
+                        <div className="h-5 w-px bg-slate-100" />
+                        {/* Supplier filter */}
+                        <div className="flex items-center gap-1.5">
+                            <Users size={12} className="text-slate-400" />
+                            <select
+                                value={sinProveedor ? '' : supplierId}
+                                onChange={e => { setSupplierId(e.target.value); setSinProveedor(false); }}
+                                disabled={sinProveedor}
+                                className="text-[11px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer max-w-[180px] disabled:opacity-40"
+                            >
+                                <option value="">Todos los proveedores</option>
+                                {suppliers.map(s => (
+                                    <option key={s.id} value={s.id}>{s.nombre}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
     );
 
@@ -407,6 +436,7 @@ export default function ComprasView() {
                         dateStart={dateStart}
                         dateEnd={dateEnd}
                         supplierId={supplierId || null}
+                        sinProveedor={sinProveedor}
                         searchTerm={search}
                     />
                 )}

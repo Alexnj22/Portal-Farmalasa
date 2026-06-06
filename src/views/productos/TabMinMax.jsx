@@ -1297,6 +1297,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const publishTimer     = useRef(null);
     const skipBlurSave     = useRef(false);
     const [publishConfirm, setPublishConfirm] = useState({ open: false, ids: null, count: 0 });
+    const [analysisConfig, setAnalysisConfig] = useState({ analysis_days: 180 });
 
     // Cleanup publish timer on unmount
     useEffect(() => () => clearTimeout(publishTimer.current), []);
@@ -1348,9 +1349,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 keepFetching = chunk && chunk.length === CHUNK;
                 from += CHUNK;
             }
-            const [{ data: cost, error: e2 }, { data: draft }] = await Promise.all([
+            const [{ data: cost, error: e2 }, { data: draft }, { data: cfg }] = await Promise.all([
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
+                supabase.from('stock_config').select('analysis_days').eq('id', 1).single(),
             ]);
             if (e2) throw e2;
             if (rid !== loadRef.current) return;
@@ -1359,6 +1361,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             setHiddenIds(new Set(mapped.filter(r => r.is_hidden).map(r => r.erp_product_id)));
             setCostSummary(cost  || null);
             setDraftCost(draft   || null);
+            if (cfg) setAnalysisConfig(cfg);
         } catch (e) {
             if (rid === loadRef.current) setError(e.message);
         } finally {
@@ -2026,6 +2029,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         const v6m        = Number(row.daily_velocity ?? 0);
                         const canExpand  = stock > 0;
                         const hasDraft   = row.draft_status === 'pending';
+                        const limitedData = hasDraft &&
+                            row.draft_data_days != null &&
+                            row.draft_data_days < (analysisConfig.analysis_days ?? 180);
 
                         return (
                             <React.Fragment key={row.erp_product_id}>
@@ -2051,6 +2057,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">{row.product_name || '—'}</span>
                                                     {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
                                                     {hasDraft && <span className="shrink-0 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
+                                                    {limitedData && (
+                                                        <span title={`Solo ${row.draft_data_days} días de historial de compras (ventana: ${analysisConfig.analysis_days} días)`}
+                                                            className="shrink-0 text-[8px] font-black text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-full cursor-help">
+                                                            {row.draft_data_days}d DATOS
+                                                        </span>
+                                                    )}
                                                     {noHistory && <span className="shrink-0 text-[8px] font-black text-yellow-700 bg-yellow-50 border border-yellow-200 px-1.5 py-0.5 rounded-full">SIN HISTORIAL</span>}
                                                 </div>
                                                 {/* Stock actual inline */}

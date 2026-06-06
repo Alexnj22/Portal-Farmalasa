@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.6.8';
+export const APP_VERSION = '1.6.9';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.6.9  — MinMax: denominador dinámico para productos nuevos (days_since_first_purchase vs analysis_days fijo); badge "Xd DATOS"; tabla suppliers + vista product_purchase_summary; cron sync-purchases-daily
 // v1.6.8  — Nueva edge function sync-erp-purchases + tablas purchase_receipts/items/sync_log (compras ERP con discover mode)
 // v1.6.7  — MinMax: Bodega draft = trigger DB en tiempo real (Σ efectivos de sucursales al editar draft); publish_stock_params sin auto-update Bodega
 // v1.6.6  — MinMax: fix banner Bodega (edición sí permitida); backfill draft Bodega existente; toast al editar MIN/MAX en Bodega

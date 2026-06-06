@@ -53,6 +53,7 @@ const ALERT = {
     ok:           { label: 'OK',            pill: 'bg-emerald-100 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500', row: ''                },
     overstocked:  { label: 'Exceso',        pill: 'bg-blue-100 text-blue-700 border-blue-200',          dot: 'bg-blue-400',    row: 'bg-blue-50/10'   },
     dead_stock:   { label: 'Sin movimiento',pill: 'bg-slate-100 text-slate-500 border-slate-200',       dot: 'bg-slate-300',   row: 'bg-slate-50/60'  },
+    no_data:      { label: 'Sin historial', pill: 'bg-yellow-50 text-yellow-700 border-yellow-200',      dot: 'bg-yellow-300',  row: ''                },
 };
 
 const STAT_CFGS = [
@@ -62,6 +63,7 @@ const STAT_CFGS = [
     { key: 'ok',           label: 'OK',              dot: 'bg-emerald-500', active: 'bg-emerald-100/75 backdrop-blur-sm border-emerald-300/70 text-emerald-700 shadow-[0_3px_14px_rgba(16,185,129,0.22)]' },
     { key: 'overstocked',  label: 'Exceso',          dot: 'bg-blue-400',    active: 'bg-blue-100/75 backdrop-blur-sm border-blue-300/70 text-blue-700 shadow-[0_3px_14px_rgba(59,130,246,0.22)]'         },
     { key: 'dead_stock',   label: 'Sin movimiento',  dot: 'bg-slate-300',   active: 'bg-slate-100/75 backdrop-blur-sm border-slate-300/70 text-slate-600 shadow-[0_3px_14px_rgba(148,163,184,0.18)]'     },
+    { key: 'no_data',      label: 'Sin historial',   dot: 'bg-yellow-300',  active: 'bg-yellow-50/75 backdrop-blur-sm border-yellow-300/70 text-yellow-700 shadow-[0_3px_14px_rgba(234,179,8,0.18)]'            },
 ];
 
 const ABC_CFG = {
@@ -135,7 +137,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
             for (const xyz of XYZ_KEYS)
                 m[`${abc}${xyz}`] = 0;
         for (const r of data) {
-            if (r.is_dead_stock) continue;
+            if (r.is_dead_stock || r.alert_status === 'no_data') continue;
             const abc = r.draft_abc_class || r.abc_class || 'D';
             const xyz = normXyz(r.draft_demand_variability || r.demand_variability);
             if (m[`${abc}${xyz}`] !== undefined) m[`${abc}${xyz}`]++;
@@ -1201,9 +1203,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const zeroOutRow = useCallback(async (row) => {
         const { error: e } = await supabase.from('product_stock_params')
-            .update({ draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() })
-            .eq('erp_product_id', row.erp_product_id)
-            .eq('erp_sucursal_id', row._erp_sucursal_id);
+            .upsert(
+                { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() },
+                { onConflict: 'erp_product_id,erp_sucursal_id' }
+            );
         if (!e) {
             setData(prev => prev.map(r =>
                 r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
@@ -1223,13 +1226,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         const col = edit.field === 'min' ? 'draft_min' : 'draft_max';
         setInlineDraftEdit(null);
         const { error: e } = await supabase.from('product_stock_params')
-            .update({ [col]: numVal, updated_at: new Date().toISOString() })
-            .eq('erp_product_id', edit.productId)
-            .eq('erp_sucursal_id', edit.sucursalId);
+            .upsert(
+                { erp_product_id: edit.productId, erp_sucursal_id: edit.sucursalId, [col]: numVal, draft_status: 'pending', updated_at: new Date().toISOString() },
+                { onConflict: 'erp_product_id,erp_sucursal_id' }
+            );
         if (!e) {
             setData(prev => prev.map(r =>
                 r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId
-                    ? { ...r, [col]: numVal }
+                    ? { ...r, [col]: numVal, draft_status: 'pending' }
                     : r
             ));
             // Refresh cards so útil/excedente and objetivo reflect edits
@@ -1298,8 +1302,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const hasActiveFilter = filterAbc !== 'all' || filterXyz !== 'all' || filterAlert !== 'all' || searchTerm !== '';
     const criticalACount  = useMemo(() => data.filter(r => r.abc_class === 'A' && (r.alert_status === 'out_of_stock' || r.alert_status === 'below_min')).length, [data]);
     const isBodega      = selectedErp === 6;
-    const neverCalc     = data.length > 0 && data.every(d => d.is_dead_stock);
-    const hasActiveData = data.some(d => !d.is_dead_stock);
+    const neverCalc     = data.length > 0 && data.every(d => d.is_dead_stock || d.alert_status === 'no_data');
+    const hasActiveData = data.some(d => !d.is_dead_stock && d.alert_status !== 'no_data');
 
     const filtered = useMemo(() => {
         const q = searchTerm.toLowerCase();
@@ -1759,12 +1763,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         const alert      = ALERT[row.alert_status] ?? ALERT.ok;
                         const pres       = row.presentations || [];
                         const dead       = row.is_dead_stock;
+                        const noHistory  = row.alert_status === 'no_data';
                         const stock      = Number(row.current_stock);
                         const minN       = Number(row.effective_min);
                         const maxN       = Number(row.effective_max);
                         const v30        = Number(row.velocity_30d ?? 0);
                         const v6m        = Number(row.daily_velocity ?? 0);
-                        const canExpand  = !dead || stock > 0;
+                        const canExpand  = stock > 0;
                         const hasDraft   = row.draft_status === 'pending';
 
                         return (
@@ -1791,6 +1796,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">{row.product_name || '—'}</span>
                                                     {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
                                                     {hasDraft && <span className="shrink-0 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
+                                                    {noHistory && <span className="shrink-0 text-[8px] font-black text-yellow-700 bg-yellow-50 border border-yellow-200 px-1.5 py-0.5 rounded-full">SIN HISTORIAL</span>}
                                                 </div>
                                                 {/* Stock actual inline */}
                                                 <div className="flex items-center gap-1.5 mt-0.5">
@@ -1804,7 +1810,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         <span className="text-[9px] font-bold text-blue-400">↑{(stock - maxN).toLocaleString()}</span>
                                                     )}
                                                 </div>
-                                                {!dead && (
+                                                {noHistory && (
+                                                    <span className="text-[10px] text-yellow-500 italic mt-0.5">Sin ventas en esta sucursal</span>
+                                                )}
+                                                {!dead && !noHistory && (
                                                     <span className="text-[10px] text-slate-400 flex items-center gap-0.5 mt-0.5">
                                                         {v6m.toFixed(2)}/día
                                                         {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={9} className="text-emerald-500 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
@@ -1847,7 +1856,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                                     {/* MIN — inline edit on click for draft rows */}
                                     <DataCell align="center" className="!py-2.5">
-                                        {dead ? <span className="text-slate-200 text-xs">—</span> : hasDraft ? (
+                                        {hasDraft ? (
                                             inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'min'
                                                 ? (
                                                     <div className="flex flex-col items-center">
@@ -1894,6 +1903,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                                 ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
                                                             </div>
                                                         )}
+                                                        {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
                                                     </div>
                                                 ) : (
                                                     <div className="flex flex-col items-center cursor-pointer group/min"
@@ -1904,6 +1914,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         {minN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{minN.toLocaleString()} act.</div>}
                                                     </div>
                                                 )
+                                        ) : (dead || noHistory) ? (
+                                            <div className="flex flex-col items-center cursor-pointer group/min"
+                                                onClick={e => { e.stopPropagation(); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: '' }); }}>
+                                                <div className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 group-hover/min:border-amber-400 group-hover/min:bg-amber-100 transition-[border-color,background-color] duration-150">
+                                                    <span className="text-[13px] font-black tabular-nums text-amber-400">0</span>
+                                                </div>
+                                            </div>
                                         ) : (
                                             <div className="flex flex-col items-center">
                                                 <div className={`text-[12px] font-semibold tabular-nums ${stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>{minN.toLocaleString()}</div>
@@ -1913,7 +1930,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                                     {/* MAX — inline edit on click for draft rows */}
                                     <DataCell align="center" className="!py-2.5">
-                                        {dead ? <span className="text-slate-200 text-xs">—</span> : hasDraft ? (
+                                        {hasDraft ? (
                                             inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'max'
                                                 ? (
                                                     <div className="flex flex-col items-center">
@@ -1960,6 +1977,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                                 ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
                                                             </div>
                                                         )}
+                                                        {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
                                                     </div>
                                                 ) : (
                                                     <div className="flex flex-col items-center cursor-pointer group/max"
@@ -1970,6 +1988,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         {maxN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{maxN.toLocaleString()} act.</div>}
                                                     </div>
                                                 )
+                                        ) : (dead || noHistory) ? (
+                                            <div className="flex flex-col items-center cursor-pointer group/max"
+                                                onClick={e => { e.stopPropagation(); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: '' }); }}>
+                                                <div className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 group-hover/max:border-blue-400 group-hover/max:bg-blue-100 transition-[border-color,background-color] duration-150">
+                                                    <span className="text-[13px] font-black tabular-nums text-blue-400">0</span>
+                                                </div>
+                                            </div>
                                         ) : (
                                             <div className="flex flex-col items-center">
                                                 <div className={`text-[12px] font-semibold tabular-nums ${stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>{maxN.toLocaleString()}</div>
@@ -2036,7 +2061,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 <EyeOff size={12} />
                                             </motion.button>
                                             {/* Poner en 0 */}
-                                            {!dead && (
+                                            {!dead && !noHistory && (
                                                 <motion.button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title="Crear borrador 0 / 0 (pone en 0 sin publicar)"
                                                     {...iconAnim}
                                                     className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600">

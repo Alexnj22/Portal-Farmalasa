@@ -492,21 +492,3 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/set-employee-password/deno.json"
 entrypoint = "./functions/set-employee-password/index.ts"
-
-[functions.sync-erp-minmax]
-verify_jwt = false
-
-[functions.sync-products]
-verify_jwt = false
-
-[functions.backfill-dte-sales]
-verify_jwt = false
-
-[functions.check-doc-expiry]
-verify_jwt = false
-
-[functions.consolidate-timesheets]
-verify_jwt = false
-
-[functions.heal-dte-sync]
-verify_jwt = false

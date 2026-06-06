@@ -5,10 +5,16 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.6.3';
+export const APP_VERSION = '1.6.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v1.6.4  — MinMax: Bodega Opción A — al publicar sucursal, Bodega MIN/MAX = Σ min/max publicados de todas las sucursales (automático, sin paso extra)
+// v1.6.3  — MinMax: winsorización P95 de outliers de demanda (configurable en stock_config.outlier_percentile)
+// v1.6.2  — MinMax: panel Labs glassmorphic con toggle ocultar_en_minmax, buscador, limpieza is_hidden al desocultar lab
+// v1.6.1  — MinMax: filtro "Ocultos" → ver y mostrar ocultos individualmente o en lote ("Mostrar todos")
+// v1.6.0  — MinMax: Labs panel — ocultar_en_minmax en laboratorios; productos de labs ocultos no se contabilizan como ocultos individuales
+// v1.5.9  — MinMax: ocultar por laboratorio — SARITA/CONSTANCIA/BEBIDAS/RECARGAS/NEVERIA excluidos por defecto
 // v1.5.8  — MinMax: errores de calcular/publicar → toast rojo en español; timeout → mensaje claro sugiere recalcular por sucursal
 // v1.5.7  — MinMax: todos los productos activos visibles (no_data UNION ALL en get_stock_analysis); MIN/MAX editable para dead-stock y sin-historial; warning ⚠ 6m
 // v1.5.6  — MinMax: ocultar usa upsert — dead-stock products (sin fila en product_stock_params) ahora persisten ocultos tras reload

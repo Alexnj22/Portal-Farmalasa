@@ -1839,8 +1839,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     <Info size={14} className="shrink-0 mt-0.5 text-violet-500" />
                     <span>
                         <strong>Bodega — valores calculados automáticamente.</strong>{' '}
-                        MIN y MAX se calculan como la <strong>suma de los MIN/MAX publicados de cada sucursal</strong> y se actualizan automáticamente al publicar cualquier sucursal.
-                        No es posible editarlos directamente aquí.
+                        MIN y MAX se calculan como la <strong>suma de los MIN/MAX publicados de cada sucursal</strong> y se actualizan solos al publicar cualquier sucursal.
+                        Puedes sobreescribirlos manualmente si necesitas ajustar.
                     </span>
                 </div>
             )}

@@ -69,15 +69,18 @@ export default function TabHistorial({ searchTerm }) {
           )
         : promos;
 
-    const pillCls = 'flex items-center gap-2 bg-white/80 border border-slate-200/70 rounded-2xl px-3 py-2 shadow-sm mb-3';
-
     return (
         <div>
-            <div className={pillCls}>
-                <History size={12} className="text-slate-400" />
-                <span className="text-[11px] text-slate-500">
-                    {filtered.length} {filtered.length === 1 ? 'promoción cerrada' : 'promociones cerradas'}
-                </span>
+            {/* Info pill — right-aligned, glassmorphic */}
+            <div className="flex justify-end mb-4">
+                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 shrink-0">
+                    <div className="flex items-center gap-1.5 px-3 py-2">
+                        <History size={12} className="text-slate-400" />
+                        <span className="text-[11px] text-slate-500">
+                            {filtered.length} {filtered.length === 1 ? 'promoción cerrada' : 'promociones cerradas'}
+                        </span>
+                    </div>
+                </div>
             </div>
 
             <DataTable

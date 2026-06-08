@@ -321,13 +321,16 @@ export default function TabPromos({ searchTerm, canEdit }) {
 
     return (
         <div>
-            {/* Filter pill — glassmorphic */}
-            <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-                <div className="flex items-center gap-2 bg-white/80 border border-slate-200/70 rounded-2xl px-3 py-2 shadow-sm backdrop-blur-sm flex-wrap">
-                    <Tag size={13} className="text-slate-400 flex-shrink-0" />
+            {/* Filter pill — glassmorphic, right-aligned */}
+            <div className="flex justify-end mb-4">
+                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+                    <div className="flex items-center px-2 py-2">
+                        <Tag size={13} className="text-slate-400 flex-shrink-0" />
+                    </div>
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
                     {pillFilters.map((pf, idx) => (
                         <React.Fragment key={pf.key}>
-                            {idx > 0 && <div className="h-4 w-px bg-slate-100" />}
+                            {idx > 0 && <div className="h-5 w-px bg-slate-100 shrink-0" />}
                             <button
                                 onClick={() => setFilterState(pf.key)}
                                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-all ${
@@ -350,7 +353,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
 
                     {canEdit && (
                         <>
-                            <div className="h-4 w-px bg-slate-100" />
+                            <div className="h-5 w-px bg-slate-100 shrink-0" />
                             <button
                                 onClick={() => setShowModal(true)}
                                 className="flex items-center gap-1.5 px-3 py-1 rounded-xl text-[11px] font-bold text-blue-600 hover:bg-blue-50 transition-all"

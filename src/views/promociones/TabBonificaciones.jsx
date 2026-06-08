@@ -124,7 +124,7 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
             .select(`
                 id, role, units_credited, amount_earned, amount_paid, updated_at,
                 employee_id,
-                employees(id, name, photo),
+                employees(id, name, photo_url),
                 promotion_products(
                     id, promotion_id, factor_descripcion,
                     products(nombre),
@@ -152,21 +152,23 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
     const totalPending = filtered.reduce((s, b) => s + Math.max(0, b.amount_earned - b.amount_paid), 0);
     const totalEarned  = filtered.reduce((s, b) => s + (b.amount_earned || 0), 0);
 
-    const pillCls = 'flex items-center gap-2 bg-white/80 border border-slate-200/70 rounded-2xl px-3 py-2 shadow-sm';
-
     return (
         <div>
-            {/* Summary pill */}
-            <div className="flex items-center gap-3 mb-3 flex-wrap">
-                <div className={pillCls}>
-                    <Gift size={12} className="text-slate-400" />
-                    <span className="text-[11px] text-slate-500">Total ganado:</span>
-                    <span className="text-[11px] font-semibold text-slate-700">{fmt$(totalEarned)}</span>
-                    <div className="h-4 w-px bg-slate-100" />
-                    <span className="text-[11px] text-slate-500">Pendiente:</span>
-                    <span className={`text-[11px] font-semibold ${totalPending > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
-                        {fmt$(totalPending)}
-                    </span>
+            {/* Summary pill — right-aligned, glassmorphic */}
+            <div className="flex justify-end mb-4">
+                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 shrink-0">
+                    <div className="flex items-center gap-1.5 px-3 py-2">
+                        <Gift size={12} className="text-slate-400" />
+                        <span className="text-[11px] text-slate-500">Total ganado:</span>
+                        <span className="text-[11px] font-semibold text-slate-700">{fmt$(totalEarned)}</span>
+                    </div>
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+                    <div className="flex items-center gap-1.5 px-3 py-2">
+                        <span className="text-[11px] text-slate-500">Pendiente:</span>
+                        <span className={`text-[11px] font-semibold ${totalPending > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                            {fmt$(totalPending)}
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -201,8 +203,8 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
                                 <DataCell align="left">
                                     <div className="flex items-center gap-2">
                                         <div className="w-6 h-6 rounded-full bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                                            {b.employees?.photo
-                                                ? <img src={b.employees.photo} className="w-full h-full object-cover" alt="" />
+                                            {b.employees?.photo_url
+                                                ? <img src={b.employees.photo_url} className="w-full h-full object-cover" alt="" />
                                                 : <User size={10} className="text-slate-400" />}
                                         </div>
                                         <span className="text-[12px] font-medium text-slate-700">{empName}</span>

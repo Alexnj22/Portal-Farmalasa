@@ -43,6 +43,7 @@ import PedidosView from "./views/PedidosView";
 import MinMaxView from "./views/MinMaxView";
 import VentasPperdidasView from "./views/VentasPperdidasView";
 import ComprasView from "./views/ComprasView";
+import PromocionesView from "./views/PromocionesView";
 import FacturacionView from "./views/FacturacionView";
 import CotizacionesView from "./views/CotizacionesView";
 import EncuestaView from "./views/EncuestaView";
@@ -574,6 +575,7 @@ function MainApp() {
                                     <Route path="minmax" element={<PermissionGuard moduleKey="minmax"><MinMaxView /></PermissionGuard>} />
                                     <Route path="ventas-perdidas" element={<PermissionGuard moduleKey="ventas_perdidas"><VentasPperdidasView /></PermissionGuard>} />
                                     <Route path="compras" element={<PermissionGuard moduleKey="compras"><ComprasView /></PermissionGuard>} />
+                                    <Route path="promociones" element={<PermissionGuard moduleKey="promociones"><PromocionesView /></PermissionGuard>} />
                                     <Route path="encuesta" element={<PermissionGuard moduleKey="encuesta"><EncuestaView /></PermissionGuard>} />
                                     <Route path="encuesta-admin" element={<PermissionGuard moduleKey="encuesta_admin"><EncuestaAdminView /></PermissionGuard>} />
 
@@ -686,6 +688,7 @@ const ROUTE_TITLES = {
     '/encuesta':          'Encuesta',
     '/encuesta-admin':    'Encuesta',
     '/compras':           'Compras',
+    '/promociones':       'Promociones',
     '/branches':          'Sucursales',
     '/roles':             'Roles',
     '/permissions':       'Permisos',

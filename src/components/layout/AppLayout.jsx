@@ -46,7 +46,7 @@ const MODULE_MAP = {
     cotizaciones:      { path: '/cotizaciones',     label: 'Cotizaciones',             icon: Receipt    },
     encuesta:          { path: '/encuesta',         label: 'Clima Organizacional',     icon: BarChart2  },
     encuesta_admin:    { path: '/encuesta-admin',   label: 'Encuestas',                icon: PenLine    },
-    promociones:       { path: '/promociones',      label: 'Promociones',              icon: Tag,          comingSoon: true },
+    promociones:       { path: '/promociones',      label: 'Promociones',              icon: Tag        },
     bonificaciones:    { path: '/bonificaciones',   label: 'Bonificaciones',           icon: Gift,         comingSoon: true },
     entrevistas:       { path: '/entrevistas',      label: 'Entrevistas',              icon: Users,        comingSoon: true },
     productos:         { path: '/productos',        label: 'Productos',                icon: Package       },

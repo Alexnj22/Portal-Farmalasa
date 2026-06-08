@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '1.8.1';
+export const APP_VERSION = '2.0.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.0.0  — Módulo Promociones: 6 tablas DB (promotions, branches, products, bonifications, payments, sales_cache); PromocionesView 3 tabs (Activas/Bonificaciones/Historial); edge function sync-promo-sales + cron 4:30am; MinMax excluye ventas de períodos en promo (calculate_stock_params actualizado)
 // v1.8.1  — Compras: aviso global + filtro "Sin proveedor" + ícono ⚠ en filas sin supplier_id; edge function v11 fallback por nombre
 // v1.8.0  — Módulo Compras: vista dedicada /compras con tab Facturas (expandible por ítems) y tab Productos (product_purchase_summary); filtros por fecha y proveedor
 // v1.7.0  — MinMax: panel expandido muestra "Últimas compras (Bodega)" — fecha, cantidad, precio, proveedor, lote

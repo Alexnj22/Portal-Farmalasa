@@ -75,7 +75,7 @@ const MODULE_GROUPS = [
             ]},
             { key: 'cotizaciones',   label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icon: Receipt,       hasApprove: false, hasScope: true },
             { key: 'metas',          label: 'Metas',         desc: 'Dashboard de metas de ventas por sucursal con proyecciones y gráficas',                icon: Target,        hasApprove: false },
-            { key: 'promociones',    label: 'Promociones',   desc: 'Gestión de promociones y ofertas por producto o categoría (próximamente)',             icon: Gift,          hasApprove: false, comingSoon: true },
+            { key: 'promociones',    label: 'Promociones',   desc: 'Gestión de promociones activas, bonificaciones y cierre por stock o fecha',          icon: Gift,          hasApprove: false },
             { key: 'bonificaciones', label: 'Bonificaciones',desc: 'Esquemas de bonificación por ventas y metas alcanzadas (próximamente)',                icon: DollarSign,    hasApprove: false, comingSoon: true },
         ],
     },

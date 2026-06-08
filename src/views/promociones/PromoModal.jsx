@@ -224,14 +224,15 @@ function AddProductInline({ onAdd }) {
         const seen = new Set();
         for (const row of (data || [])) {
             const p = row.presentaciones;
-            if (p && !seen.has(p.id)) {
-                seen.add(p.id);
-                const factor = (p.descripcion || '').toUpperCase().replace(/\s/g, '');
-                const label  = factor && factor !== '1X1' && factor !== '1X01'
-                    ? `${p.tipo} · ${factor}`
-                    : p.tipo;
-                unique.push({ value: String(p.id), label, tipo: p.tipo, descripcion: p.descripcion });
-            }
+            if (!p) continue;
+            const dedupeKey = `${p.tipo}||${(p.descripcion || '').toUpperCase().replace(/\s/g, '')}`;
+            if (seen.has(dedupeKey)) continue;
+            seen.add(dedupeKey);
+            const factor = (p.descripcion || '').toUpperCase().replace(/\s/g, '');
+            const label  = factor && factor !== '1X1' && factor !== '1X01'
+                ? `${p.tipo} · ${factor}`
+                : p.tipo;
+            unique.push({ value: String(p.id), label, tipo: p.tipo, descripcion: p.descripcion });
         }
         setPresentOptions(unique);
         if (unique.length === 1) setPresentacionId(unique[0].value);
@@ -568,18 +569,18 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                     </div>
                 </div>
 
-                {/* Body — solid white */}
+                {/* Body — solid white. Both steps stay mounted to preserve date picker + in-progress form state */}
                 <div className="flex-1 overflow-y-auto overscroll-contain px-7 py-6 scrollbar-hide bg-white">
-                    {step === 0 && (
+                    <div className={step !== 0 ? 'hidden' : ''}>
                         <StepInfo form={form} set={set} branches={branches} />
-                    )}
-                    {step === 1 && (
+                    </div>
+                    <div className={step !== 1 ? 'hidden' : ''}>
                         <StepProducts
                             products={products}
                             onAdd={pp => setProducts(prev => [...prev, pp])}
                             onRemove={idx => setProducts(prev => prev.filter((_, i) => i !== idx))}
                         />
-                    )}
+                    </div>
                 </div>
 
                 {/* Footer */}

@@ -218,21 +218,22 @@ function AddProductInline({ onAdd }) {
         setLoadingPresent(true);
         const { data } = await supabase
             .from('product_precios')
-            .select('id_presentacion, presentaciones(id, tipo, descripcion)')
+            .select('id_presentacion, descripcion, factor, presentaciones(id, tipo)')
             .eq('product_id', parseInt(val));
         const unique = [];
         const seen = new Set();
         for (const row of (data || [])) {
             const p = row.presentaciones;
             if (!p) continue;
-            const dedupeKey = `${p.tipo}||${(p.descripcion || '').toUpperCase().replace(/\s/g, '')}`;
+            // Use product_precios.descripcion (product-specific factor), not presentaciones.descripcion (global catalog)
+            const desc      = (row.descripcion || '').toUpperCase().replace(/\s/g, '');
+            const dedupeKey = `${p.tipo}||${desc}`;
             if (seen.has(dedupeKey)) continue;
             seen.add(dedupeKey);
-            const factor = (p.descripcion || '').toUpperCase().replace(/\s/g, '');
-            const label  = factor && factor !== '1X1' && factor !== '1X01'
-                ? `${p.tipo} · ${factor}`
+            const label = desc && desc !== '1X1' && desc !== '1X01'
+                ? `${p.tipo} · ${desc}`
                 : p.tipo;
-            unique.push({ value: String(p.id), label, tipo: p.tipo, descripcion: p.descripcion });
+            unique.push({ value: String(p.id), label, tipo: p.tipo, descripcion: row.descripcion });
         }
         setPresentOptions(unique);
         if (unique.length === 1) setPresentacionId(unique[0].value);

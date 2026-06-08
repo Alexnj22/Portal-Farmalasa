@@ -170,14 +170,41 @@ function ProductRow({ pp, onRemove }) {
     );
 }
 
-function AddProductInline({ productOptions, onAdd }) {
-    const [show, setShow] = useState(false);
-    const [pid, setPid] = useState(null);
+function AddProductInline({ onAdd }) {
+    const [show,           setShow]           = useState(false);
+    const [pid,            setPid]            = useState(null);
+    const [selectedProd,   setSelectedProd]   = useState(null);
+    const [searchResults,  setSearchResults]  = useState([]);
+    const [isSearching,    setIsSearching]    = useState(false);
     const [f, setF] = useState({
         factor_descripcion: '', factor_denominador: 1,
         stock_inicial: '', precio_promo: '',
         bono_vendedor: '', bono_admin_pool: '', bono_bodega_pool: '',
     });
+
+    const handleSearch = useCallback(async (q) => {
+        if (!q || q.trim().length < 2) { setSearchResults([]); return; }
+        setIsSearching(true);
+        const { data } = await supabase
+            .from('products')
+            .select('id, nombre, foto_url, laboratorios(nombre)')
+            .eq('activo', true)
+            .ilike('nombre', `%${q.trim()}%`)
+            .order('nombre')
+            .limit(50);
+        setSearchResults((data || []).map(p => ({
+            value:       String(p.id),
+            label:       p.nombre,
+            foto_url:    p.foto_url    || null,
+            laboratorio: p.laboratorios?.nombre || null,
+        })));
+        setIsSearching(false);
+    }, []);
+
+    const handleSelect = (val) => {
+        setPid(val);
+        setSelectedProd(searchResults.find(o => o.value === val) || null);
+    };
 
     if (!show) {
         return (
@@ -191,17 +218,16 @@ function AddProductInline({ productOptions, onAdd }) {
         );
     }
 
-    const selected = productOptions.find(o => o.value === pid);
     const g = (k) => f[k];
     const s = (k, v) => setF(prev => ({ ...prev, [k]: v }));
 
     const handleAdd = () => {
-        if (!pid || !selected) return;
+        if (!pid || !selectedProd) return;
         onAdd({
             product_id: parseInt(pid),
-            nombre:             selected.label,
-            foto_url:           selected.foto_url || null,
-            laboratorio:        selected.laboratorio || null,
+            nombre:             selectedProd.label,
+            foto_url:           selectedProd.foto_url || null,
+            laboratorio:        selectedProd.laboratorio || null,
             factor_descripcion: f.factor_descripcion || null,
             factor_denominador: parseInt(f.factor_denominador) || 1,
             stock_inicial:      f.stock_inicial !== '' ? parseInt(f.stock_inicial) : null,
@@ -211,6 +237,8 @@ function AddProductInline({ productOptions, onAdd }) {
             bono_bodega_pool:   parseFloat(f.bono_bodega_pool) || 0,
         });
         setPid(null);
+        setSelectedProd(null);
+        setSearchResults([]);
         setF({ factor_descripcion: '', factor_denominador: 1, stock_inicial: '', precio_promo: '', bono_vendedor: '', bono_admin_pool: '', bono_bodega_pool: '' });
         setShow(false);
     };
@@ -221,7 +249,15 @@ function AddProductInline({ productOptions, onAdd }) {
         <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-3 space-y-3">
             <div>
                 <label className={lbl}>Producto *</label>
-                <LiquidSelect value={pid} onChange={setPid} options={productOptions} placeholder="Buscar producto..." />
+                <LiquidSelect
+                    value={pid}
+                    onChange={handleSelect}
+                    options={searchResults}
+                    placeholder="Escribe para buscar producto..."
+                    serverSearch
+                    onSearchChange={handleSearch}
+                    isLoading={isSearching}
+                />
             </div>
 
             {pid && (
@@ -285,7 +321,7 @@ function AddProductInline({ productOptions, onAdd }) {
     );
 }
 
-function StepProducts({ products, onAdd, onRemove, productOptions }) {
+function StepProducts({ products, onAdd, onRemove }) {
     return (
         <div className="space-y-3">
             {products.length === 0 && (
@@ -294,7 +330,7 @@ function StepProducts({ products, onAdd, onRemove, productOptions }) {
             {products.map((pp, idx) => (
                 <ProductRow key={idx} pp={pp} onRemove={() => onRemove(idx)} />
             ))}
-            <AddProductInline productOptions={productOptions} onAdd={onAdd} />
+            <AddProductInline onAdd={onAdd} />
         </div>
     );
 }
@@ -311,8 +347,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
     const { showToast } = useToastStore();
     const [step,   setStep]   = useState(0);
     const [saving, setSaving] = useState(false);
-    const [branches,       setBranches]       = useState([]);
-    const [productOptions, setProductOptions] = useState([]);
+    const [branches, setBranches] = useState([]);
 
     const [form, setForm] = useState({
         nombre:        '',
@@ -335,22 +370,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
             .then(({ data }) => {
                 const b = data || [];
                 setBranches(b);
-                // Default: all selected
                 setForm(f => ({ ...f, branch_ids: b.map(br => br.id) }));
-            });
-
-        supabase.from('products')
-            .select('id, nombre, foto_url, laboratorio_id, laboratorios(nombre)')
-            .eq('activo', true)
-            .order('nombre')
-            .limit(3000)
-            .then(({ data }) => {
-                setProductOptions((data || []).map(p => ({
-                    value:       String(p.id),
-                    label:       p.nombre,
-                    foto_url:    p.foto_url || null,
-                    laboratorio: p.laboratorios?.nombre || null,
-                })));
             });
     }, [isOpen]);
 
@@ -493,7 +513,6 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                             products={products}
                             onAdd={pp => setProducts(prev => [...prev, pp])}
                             onRemove={idx => setProducts(prev => prev.filter((_, i) => i !== idx))}
-                            productOptions={productOptions}
                         />
                     )}
                 </div>

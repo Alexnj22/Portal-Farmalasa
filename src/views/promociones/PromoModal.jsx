@@ -134,7 +134,12 @@ function ProductRow({ pp, onRemove }) {
             </div>
             <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-semibold text-slate-700 leading-tight truncate">{pp.nombre}</p>
-                {pp.laboratorio && <p className="text-[10px] text-slate-400">{pp.laboratorio}</p>}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    {pp.laboratorio && <span className="text-[10px] text-slate-400">{pp.laboratorio}</span>}
+                    {pp.presentacion_tipo && (
+                        <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md">{pp.presentacion_tipo}</span>
+                    )}
+                </div>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
                     {pp.factor_descripcion && (
                         <span className="text-[10px] text-violet-600 font-medium">Factor: {pp.factor_descripcion}</span>
@@ -171,11 +176,14 @@ function ProductRow({ pp, onRemove }) {
 }
 
 function AddProductInline({ onAdd }) {
-    const [show,           setShow]           = useState(false);
-    const [pid,            setPid]            = useState(null);
-    const [selectedProd,   setSelectedProd]   = useState(null);
-    const [searchResults,  setSearchResults]  = useState([]);
-    const [isSearching,    setIsSearching]    = useState(false);
+    const [show,              setShow]              = useState(false);
+    const [pid,               setPid]               = useState(null);
+    const [selectedProd,      setSelectedProd]      = useState(null);
+    const [searchResults,     setSearchResults]     = useState([]);
+    const [isSearching,       setIsSearching]       = useState(false);
+    const [presentOptions,    setPresentOptions]    = useState([]);
+    const [presentacionId,    setPresentacionId]    = useState(null);
+    const [loadingPresent,    setLoadingPresent]    = useState(false);
     const [f, setF] = useState({
         factor_descripcion: '', factor_denominador: 1,
         stock_inicial: '', precio_promo: '',
@@ -201,9 +209,29 @@ function AddProductInline({ onAdd }) {
         setIsSearching(false);
     }, []);
 
-    const handleSelect = (val) => {
+    const handleSelect = async (val) => {
         setPid(val);
         setSelectedProd(searchResults.find(o => o.value === val) || null);
+        setPresentacionId(null);
+        setPresentOptions([]);
+        if (!val) return;
+        setLoadingPresent(true);
+        const { data } = await supabase
+            .from('product_precios')
+            .select('id_presentacion, presentaciones(id, tipo)')
+            .eq('product_id', parseInt(val));
+        const unique = [];
+        const seen = new Set();
+        for (const row of (data || [])) {
+            const p = row.presentaciones;
+            if (p && !seen.has(p.id)) {
+                seen.add(p.id);
+                unique.push({ value: String(p.id), label: p.tipo });
+            }
+        }
+        setPresentOptions(unique);
+        if (unique.length === 1) setPresentacionId(unique[0].value);
+        setLoadingPresent(false);
     };
 
     if (!show) {
@@ -223,8 +251,12 @@ function AddProductInline({ onAdd }) {
 
     const handleAdd = () => {
         if (!pid || !selectedProd) return;
+        if (presentOptions.length > 0 && !presentacionId) return;
+        const presentLabel = presentOptions.find(o => o.value === presentacionId)?.label || null;
         onAdd({
-            product_id: parseInt(pid),
+            product_id:         parseInt(pid),
+            presentacion_id:    presentacionId ? parseInt(presentacionId) : null,
+            presentacion_tipo:  presentLabel,
             nombre:             selectedProd.label,
             foto_url:           selectedProd.foto_url || null,
             laboratorio:        selectedProd.laboratorio || null,
@@ -239,6 +271,8 @@ function AddProductInline({ onAdd }) {
         setPid(null);
         setSelectedProd(null);
         setSearchResults([]);
+        setPresentOptions([]);
+        setPresentacionId(null);
         setF({ factor_descripcion: '', factor_denominador: 1, stock_inicial: '', precio_promo: '', bono_vendedor: '', bono_admin_pool: '', bono_bodega_pool: '' });
         setShow(false);
     };
@@ -259,6 +293,34 @@ function AddProductInline({ onAdd }) {
                     isLoading={isSearching}
                 />
             </div>
+
+            {pid && presentOptions.length > 0 && (
+                <div>
+                    <label className={lbl}>Presentación *</label>
+                    {loadingPresent ? (
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400 py-2">
+                            <Loader2 size={12} className="animate-spin" /> Cargando presentaciones...
+                        </div>
+                    ) : (
+                        <div className="flex gap-2 flex-wrap">
+                            {presentOptions.map(opt => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => setPresentacionId(opt.value)}
+                                    className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
+                                        presentacionId === opt.value
+                                            ? 'bg-blue-600 border-blue-600 text-white font-semibold'
+                                            : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'
+                                    }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {pid && (
                 <>
@@ -416,6 +478,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                     products.map(pp => ({
                         promotion_id:       promo.id,
                         product_id:         pp.product_id,
+                        presentacion_id:    pp.presentacion_id || null,
                         factor_descripcion: pp.factor_descripcion,
                         factor_denominador: pp.factor_denominador,
                         stock_inicial:      pp.stock_inicial,

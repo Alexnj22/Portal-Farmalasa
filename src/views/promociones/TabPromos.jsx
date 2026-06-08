@@ -203,6 +203,9 @@ function PromoCard({ promo, onStateChange, onDelete, onRefresh, canEdit }) {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-[11px] font-semibold text-slate-700 truncate">{pp.products?.nombre}</span>
+                                        {pp.presentaciones?.tipo && (
+                                            <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md">{pp.presentaciones.tipo}</span>
+                                        )}
                                         {pp.factor_descripcion && (
                                             <span className="text-[10px] text-violet-600 font-medium bg-violet-50 px-1.5 py-0.5 rounded-md">{pp.factor_descripcion}</span>
                                         )}
@@ -260,6 +263,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
                 promotion_products(
                     id, product_id, factor_descripcion, factor_denominador,
                     stock_inicial, bono_vendedor, bono_admin_pool, bono_bodega_pool,
+                    presentacion_id, presentaciones(tipo),
                     products(nombre, foto_url, laboratorio_id, laboratorios(nombre)),
                     promotion_sales_cache(units_sold)
                 )

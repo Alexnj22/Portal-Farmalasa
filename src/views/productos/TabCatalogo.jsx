@@ -8,7 +8,7 @@ import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
     Camera, TrendingDown, ShieldAlert, Plus, X, Building2, Tag,
-    Sparkles, History, MapPin, Search, Clipboard, Eye,
+    Sparkles, History, MapPin, Search, Clipboard, Eye, RotateCcw,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -698,6 +698,126 @@ function resizeImage(file, maxPx, quality) {
     });
 }
 
+// ── Purchase history helpers ──────────────────────────────────────────────────
+
+function classifyFromPurchases(purchases) {
+    if (!purchases || purchases.length === 0) return null;
+    const today  = new Date();
+    const cut60  = new Date(today); cut60.setDate(today.getDate() - 60);
+    const cut270 = new Date(today); cut270.setDate(today.getDate() - 270);
+
+    const dates = purchases
+        .map(p => new Date(p.purchase_receipts?.fecha))
+        .filter(d => !isNaN(d.getTime()))
+        .sort((a, b) => a - b);
+
+    if (dates.length === 0) return null;
+
+    const firstDate = dates[0];
+    const lastDate  = dates[dates.length - 1];
+
+    if (firstDate >= cut60) return 'Nuevo';
+
+    const hasRecent       = lastDate >= cut60;
+    const hasIntermediate = dates.some(d => d < cut60 && d >= cut270);
+
+    if (hasRecent && !hasIntermediate) return 'Reentrada';
+    if (hasRecent) return 'Regular';
+    return null;
+}
+
+const CLASIF_STYLE = {
+    Nuevo:     { bg: 'bg-emerald-50 border-emerald-200 text-emerald-700', Icon: Sparkles   },
+    Reentrada: { bg: 'bg-violet-50 border-violet-200 text-violet-700',   Icon: RotateCcw  },
+    Regular:   { bg: 'bg-blue-50 border-blue-200 text-blue-700',         Icon: Package    },
+};
+
+function PurchaseHistorySection({ purchases }) {
+    const [showAll, setShowAll] = useState(false);
+
+    if (!purchases || purchases.length === 0)
+        return <p className="text-[11px] text-slate-300 italic">Sin historial de compras registrado.</p>;
+
+    const clasificacion = classifyFromPurchases(purchases);
+    const cs = clasificacion ? CLASIF_STYLE[clasificacion] : null;
+
+    const rows = [...purchases]
+        .filter(p => p.purchase_receipts)
+        .sort((a, b) => new Date(b.purchase_receipts.fecha) - new Date(a.purchase_receipts.fecha));
+
+    const allDates  = rows.map(r => new Date(r.purchase_receipts.fecha));
+    const firstDate = allDates.length ? new Date(Math.min(...allDates)) : null;
+    const lastDate  = allDates.length ? new Date(Math.max(...allDates)) : null;
+
+    const visible   = showAll ? rows : rows.slice(0, 8);
+    const fmtDate   = d => d ? new Date(d).toLocaleDateString('es-SV', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+    const fmtCost   = v => v != null && parseFloat(v) > 0 ? `$${parseFloat(v).toFixed(4)}` : '—';
+
+    return (
+        <div className="space-y-3">
+            {/* Classification badge + summary */}
+            <div className="flex items-center gap-3 flex-wrap">
+                {cs && (
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${cs.bg}`}>
+                        <cs.Icon size={10} /> {clasificacion}
+                    </span>
+                )}
+                <span className="text-[10px] text-slate-400">
+                    Primera compra: <span className="font-semibold text-slate-600">{fmtDate(firstDate)}</span>
+                </span>
+                <span className="text-[9px] text-slate-200">·</span>
+                <span className="text-[10px] text-slate-400">
+                    Última: <span className="font-semibold text-slate-600">{fmtDate(lastDate)}</span>
+                </span>
+                <span className="text-[9px] text-slate-200">·</span>
+                <span className="text-[10px] text-slate-400">
+                    <span className="font-semibold text-slate-600">{rows.length}</span> compra{rows.length !== 1 ? 's' : ''}
+                </span>
+            </div>
+
+            {/* Cost history table */}
+            <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+                <table className="min-w-full text-sm">
+                    <thead>
+                        <tr className="bg-slate-50/80 border-b border-slate-100">
+                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-slate-400">Fecha</th>
+                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-slate-400">Proveedor</th>
+                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-center text-slate-400">Cant.</th>
+                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-right text-slate-400">Costo unit.</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                        {visible.map((row, i) => (
+                            <tr key={i} className="hover:bg-slate-50/40 transition-colors">
+                                <td className="px-3 py-2 text-[11px] text-slate-600 whitespace-nowrap">
+                                    {fmtDate(row.purchase_receipts?.fecha)}
+                                </td>
+                                <td className="px-3 py-2 text-[11px] text-slate-700 max-w-[180px] truncate">
+                                    {row.purchase_receipts?.proveedor || '—'}
+                                </td>
+                                <td className="px-3 py-2 text-[11px] text-slate-600 text-center tabular-nums">
+                                    {parseFloat(row.cantidad || 0).toLocaleString()}
+                                </td>
+                                <td className="px-3 py-2 text-[12px] font-semibold text-slate-700 text-right tabular-nums">
+                                    {fmtCost(row.precio_unitario)}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {rows.length > 8 && (
+                <button
+                    onClick={() => setShowAll(v => !v)}
+                    className="text-[10px] font-bold text-slate-400 hover:text-slate-600 transition-colors">
+                    {showAll ? 'Ver menos' : `Ver ${rows.length - 8} compra${rows.length - 8 !== 1 ? 's' : ''} anterior${rows.length - 8 !== 1 ? 'es' : ''}`}
+                </button>
+            )}
+        </div>
+    );
+}
+
 // ── ExpandedProductRow ────────────────────────────────────────────────────────
 
 function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated }) {
@@ -1121,6 +1241,14 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 </div>
                             )}
                         </div>
+                    </div>
+
+                    {/* ── Historial de compras ── */}
+                    <div>
+                        <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-1.5`}>
+                            <Package size={9} /> Historial de compras
+                        </p>
+                        <PurchaseHistorySection purchases={data?.purchases || []} />
                     </div>
 
                     {/* ── Guardar / Cancelar ── */}
@@ -2536,13 +2664,14 @@ export default function TabCatalogo({
         prefetchTimerRef.current = setTimeout(async () => {
             prefetchingRef.current.add(productId);
             try {
-                const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }] = await Promise.all([
+                const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }] = await Promise.all([
                     supabase.from('product_precios').select(`id_presentacion, activo, descripcion, factor, costo, ${PRICE_SELECT}, presentaciones(tipo)`).eq('product_id', productId).order('activo', { ascending: false }),
                     supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                     supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                     supabase.from('product_active_principles').select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden'),
+                    supabase.from('purchase_receipt_items').select('cantidad, precio_unitario, purchase_receipts(fecha, proveedor)').eq('erp_product_id', productId).order('receipt_id', { ascending: false }).limit(60),
                 ]);
-                setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [] } }));
+                setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [] } }));
             } catch { /* silent */ }
         }, 120);
     }, [expandedCache]);
@@ -2557,13 +2686,14 @@ export default function TabCatalogo({
         setLoadingExpandedId(productId);
         prefetchingRef.current.add(productId);
         try {
-            const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }] = await Promise.all([
+            const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }] = await Promise.all([
                 supabase.from('product_precios').select(`id_presentacion, activo, descripcion, factor, costo, ${PRICE_SELECT}, presentaciones(tipo)`).eq('product_id', productId).order('activo', { ascending: false }),
                 supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                 supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                 supabase.from('product_active_principles').select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden'),
+                supabase.from('purchase_receipt_items').select('cantidad, precio_unitario, purchase_receipts(fecha, proveedor)').eq('erp_product_id', productId).order('receipt_id', { ascending: false }).limit(60),
             ]);
-            setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [] } }));
+            setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [] } }));
         } finally { setLoadingExpandedId(null); }
     }, [expandedId, expandedCache, cancelPrefetch]);
 

@@ -35,12 +35,12 @@ function StepInfo({ form, set, branches, allBranches }) {
     return (
         <div className="space-y-4">
             <div>
-                <label className={lbl}>Nombre de la promoción *</label>
+                <label className={lbl}>Nombre de la promoción</label>
                 <input
                     className={inp}
                     value={form.nombre}
                     onChange={e => set('nombre', e.target.value)}
-                    placeholder="Ej: Tramafen Sachets 1+1 — Junio 2026"
+                    placeholder="Opcional — se genera del primer producto si se deja vacío"
                     autoFocus
                 />
             </div>
@@ -451,15 +451,19 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
     const handleClose = () => { reset(); onClose(); };
 
     const handleCreate = async () => {
-        if (!form.nombre.trim()) return showToast('Error', 'El nombre es requerido', 'error');
         if (products.length === 0) return showToast('Error', 'Agrega al menos un producto', 'error');
+
+        // Auto-generate name from first product + month if not provided
+        const mes = new Date().toLocaleDateString('es-SV', { month: 'short', year: 'numeric' });
+        const autoNombre = form.nombre.trim() ||
+            `${products[0].nombre.split(' ').slice(0, 3).join(' ')} · ${mes}`;
 
         setSaving(true);
         try {
             const { data: promo, error: promoErr } = await supabase
                 .from('promotions')
                 .insert({
-                    nombre:        form.nombre.trim(),
+                    nombre:        autoNombre,
                     estado:        'draft',
                     fecha_inicio:  form.fecha_inicio || null,
                     fecha_fin:     form.fecha_fin    || null,
@@ -496,7 +500,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                 );
             }
 
-            showToast('Promoción creada', form.nombre.trim(), 'success');
+            showToast('Promoción creada', autoNombre, 'success');
             onCreated(promo.id);
             handleClose();
         } catch (err) {
@@ -598,10 +602,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                     {step === 0 ? (
                         <button
                             type="button"
-                            onClick={() => {
-                                if (!form.nombre.trim()) return showToast('Error', 'El nombre es requerido', 'error');
-                                setStep(1);
-                            }}
+                            onClick={() => setStep(1)}
                             className="flex items-center gap-1.5 px-5 py-2 text-[12px] font-bold bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm shadow-blue-200"
                         >
                             Siguiente <ChevronRight size={13} />

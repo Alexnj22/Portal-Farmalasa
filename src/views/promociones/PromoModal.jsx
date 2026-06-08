@@ -26,8 +26,8 @@ const fmtDate = (d) => {
     return `${day}/${m}/${y}`;
 };
 
-const inp = 'w-full text-[12px] bg-white/60 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-400 placeholder:text-slate-300';
-const lbl = 'text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block';
+const inp = 'w-full text-[12px] bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-slate-300 text-slate-700';
+const lbl = 'text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block';
 
 // ── Step 1: Datos de la promoción ────────────────────────────────────────────
 
@@ -79,10 +79,10 @@ function StepInfo({ form, set, branches, allBranches }) {
                         type="button"
                         onClick={() => set('branch_ids', form.branch_ids.length === branches.length
                             ? [] : branches.map(b => b.id))}
-                        className={`px-3 py-1.5 text-[11px] font-semibold rounded-full border transition-all ${
+                        className={`px-3 py-1.5 text-[11px] font-bold rounded-full border transition-all ${
                             form.branch_ids.length === branches.length
-                                ? 'bg-blue-600 border-blue-600 text-white'
-                                : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'
+                                ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600 text-white shadow-sm shadow-blue-200'
+                                : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
                         }`}
                     >
                         Todas
@@ -98,8 +98,8 @@ function StepInfo({ form, set, branches, allBranches }) {
                                     : [...form.branch_ids, b.id])}
                                 className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
                                     active
-                                        ? 'bg-blue-600 border-blue-600 text-white font-semibold'
-                                        : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'
+                                        ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600 text-white font-bold shadow-sm shadow-blue-200'
+                                        : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
                                 }`}
                             >
                                 {b.name}
@@ -126,8 +126,8 @@ function StepInfo({ form, set, branches, allBranches }) {
 
 function ProductRow({ pp, onRemove }) {
     return (
-        <div className="bg-white/70 border border-slate-100 rounded-xl p-3 flex gap-3 items-start">
-            <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <div className="bg-white border border-slate-100 rounded-xl p-3 flex gap-3 items-start shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                 {pp.foto_url
                     ? <img src={pp.foto_url} className="w-full h-full object-cover" alt="" />
                     : <Package size={13} className="text-slate-300" />}
@@ -239,7 +239,7 @@ function AddProductInline({ onAdd }) {
             <button
                 type="button"
                 onClick={() => setShow(true)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-slate-200 rounded-xl text-[11px] text-slate-400 hover:border-blue-300 hover:text-blue-500 transition-all"
+                className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-blue-200/60 rounded-2xl text-[11px] font-semibold text-blue-400 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/50 transition-all"
             >
                 <Plus size={12} /> Agregar producto a la promoción
             </button>
@@ -280,7 +280,7 @@ function AddProductInline({ onAdd }) {
     const numInp = `${inp} text-center`;
 
     return (
-        <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-3 space-y-3">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50/60 border border-blue-100 rounded-2xl p-4 space-y-3.5 shadow-sm">
             <div>
                 <label className={lbl}>Producto *</label>
                 <LiquidSelect
@@ -310,8 +310,8 @@ function AddProductInline({ onAdd }) {
                                     onClick={() => setPresentacionId(opt.value)}
                                     className={`px-3 py-1.5 text-[11px] rounded-full border transition-all ${
                                         presentacionId === opt.value
-                                            ? 'bg-blue-600 border-blue-600 text-white font-semibold'
-                                            : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'
+                                            ? 'bg-gradient-to-r from-blue-600 to-blue-700 border-blue-600 text-white font-bold shadow-sm shadow-blue-200'
+                                            : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
                                     }`}
                                 >
                                     {opt.label}
@@ -343,26 +343,26 @@ function AddProductInline({ onAdd }) {
                         </div>
                     </div>
 
-                    <div className="border-t border-blue-100 pt-3">
-                        <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wide mb-2 flex items-center gap-1">
+                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50/60 border border-emerald-100 rounded-xl p-3 space-y-2.5">
+                        <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1.5">
                             <Gift size={10} /> Bonificaciones por trigger
                         </p>
                         <div className="grid grid-cols-3 gap-2">
                             <div>
-                                <label className={`${lbl} text-emerald-600`}>Vendedor ($)</label>
+                                <label className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1.5 block">Vendedor ($)</label>
                                 <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_vendedor')} onChange={e => s('bono_vendedor', e.target.value)} />
                             </div>
                             <div>
-                                <label className={`${lbl} text-blue-600`}>Admin pool ($)</label>
+                                <label className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1.5 block">Admin pool ($)</label>
                                 <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_admin_pool')} onChange={e => s('bono_admin_pool', e.target.value)} />
                             </div>
                             <div>
-                                <label className={`${lbl} text-amber-600`}>Bodega pool ($)</label>
+                                <label className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5 block">Bodega pool ($)</label>
                                 <input className={numInp} type="number" step="0.01" min="0" placeholder="0.00" value={g('bono_bodega_pool')} onChange={e => s('bono_bodega_pool', e.target.value)} />
                             </div>
                         </div>
-                        <p className="text-[9px] text-slate-400 mt-1">
-                            "Pool" = monto repartido entre todos los del área activos en la promo. "Vendedor" = por persona que hizo la venta.
+                        <p className="text-[9px] text-emerald-600/60 font-medium">
+                            Pool = repartido entre todos del área. Vendedor = quien hizo la venta.
                         </p>
                     </div>
                 </>
@@ -374,7 +374,7 @@ function AddProductInline({ onAdd }) {
                     type="button"
                     onClick={handleAdd}
                     disabled={!pid}
-                    className="px-4 py-1.5 text-[11px] font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-40 transition-colors flex items-center gap-1.5"
+                    className="px-4 py-1.5 text-[11px] font-bold bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-40 transition-all shadow-sm shadow-blue-200 flex items-center gap-1.5"
                 >
                     <Plus size={10} /> Agregar
                 </button>
@@ -503,60 +503,58 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
-            <div className="relative w-full max-w-xl flex flex-col rounded-[2.5rem] overflow-hidden border border-white/90 shadow-[0_40px_100px_rgba(0,0,0,0.25),inset_0_2px_15px_rgba(255,255,255,0.8)] animate-in fade-in zoom-in-[0.98] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] max-h-[90vh]">
-                {/* Glass bg */}
-                <div className="absolute inset-0 bg-white/50 backdrop-blur-[15px] backdrop-saturate-[300%] -z-10 pointer-events-none" />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md">
+            <div className="relative w-full max-w-xl flex flex-col rounded-[2rem] overflow-hidden shadow-[0_50px_120px_rgba(0,0,0,0.35),0_20px_40px_rgba(15,23,42,0.2)] animate-in fade-in zoom-in-[0.98] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] max-h-[90vh] bg-white">
 
-                {/* Header */}
-                <div className="flex-none px-8 py-6 border-b border-white/40 flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 flex items-center justify-center rounded-[1.25rem] border border-white/80 shadow-sm bg-white/70 backdrop-blur-md text-blue-600">
-                                <Tag size={22} strokeWidth={2.5} />
+                {/* Header — gradient */}
+                <div className="flex-none bg-gradient-to-br from-blue-700 via-blue-600 to-violet-600 px-7 pt-7 pb-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3.5">
+                            <div className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white/15 border border-white/20 text-white shadow-inner">
+                                <Tag size={20} strokeWidth={2.5} />
                             </div>
                             <div>
-                                <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg leading-none mb-1">
+                                <h3 className="font-black text-white text-[19px] tracking-tight leading-none mb-0.5">
                                     Nueva Promoción
                                 </h3>
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
-                                    {step === 0 ? 'DATOS GENERALES' : 'PRODUCTOS Y BONIFICACIONES'}
+                                <p className="text-[10px] font-semibold text-blue-200 uppercase tracking-[0.18em]">
+                                    {step === 0 ? 'Datos generales' : 'Productos y bonificaciones'}
                                 </p>
                             </div>
                         </div>
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/60 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm"
+                            className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white transition-all"
                         >
-                            <X size={18} strokeWidth={2.5} />
+                            <X size={16} strokeWidth={2.5} />
                         </button>
                     </div>
 
-                    {/* Step indicator */}
-                    <div className="flex items-center justify-center gap-2">
+                    {/* Step indicator — white on gradient */}
+                    <div className="flex items-center gap-3">
                         {STEPS.map((s, idx) => {
-                            const isActive  = idx === step;
-                            const isDone    = idx < step;
-                            const StepIcon  = s.icon;
+                            const isActive = idx === step;
+                            const isDone   = idx < step;
+                            const StepIcon = s.icon;
                             return (
                                 <React.Fragment key={s.key}>
                                     {idx > 0 && (
-                                        <div className={`h-[2px] w-12 rounded-full transition-all duration-400 ${isDone ? 'bg-blue-400' : 'bg-slate-200'}`} />
+                                        <div className={`flex-1 h-[2px] rounded-full transition-all duration-400 ${isDone ? 'bg-white/60' : 'bg-white/20'}`} />
                                     )}
                                     <button
                                         type="button"
                                         onClick={() => idx < step && setStep(idx)}
-                                        className="flex flex-col items-center gap-1 group"
+                                        className="flex items-center gap-2 shrink-0"
                                     >
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${
-                                            isActive ? 'bg-blue-600 border-blue-600 text-white scale-110 shadow-blue-200'
-                                            : isDone  ? 'bg-emerald-500 border-emerald-400 text-white'
-                                            : 'bg-white border-slate-200 text-slate-400'
+                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                                            isActive ? 'bg-white border-white text-blue-600 scale-110 shadow-lg shadow-blue-900/30'
+                                            : isDone  ? 'bg-emerald-400 border-emerald-300 text-white'
+                                            : 'bg-white/10 border-white/25 text-white/50'
                                         }`}>
-                                            {isDone ? <Check size={14} /> : <StepIcon size={13} />}
+                                            {isDone ? <Check size={13} /> : <StepIcon size={12} />}
                                         </div>
-                                        <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${isActive ? 'text-blue-600' : isDone ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                        <span className={`text-[11px] font-bold transition-colors ${isActive ? 'text-white' : isDone ? 'text-white/70' : 'text-white/40'}`}>
                                             {s.label}
                                         </span>
                                     </button>
@@ -566,8 +564,8 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                     </div>
                 </div>
 
-                {/* Body */}
-                <div className="flex-1 overflow-y-auto overscroll-contain px-8 py-6 scrollbar-hide">
+                {/* Body — solid white */}
+                <div className="flex-1 overflow-y-auto overscroll-contain px-7 py-6 scrollbar-hide bg-white">
                     {step === 0 && (
                         <StepInfo form={form} set={set} branches={branches} />
                     )}
@@ -581,11 +579,11 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                 </div>
 
                 {/* Footer */}
-                <div className="flex-none px-8 py-5 border-t border-white/40 flex items-center justify-between">
+                <div className="flex-none px-7 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/80">
                     <button
                         type="button"
                         onClick={step === 0 ? handleClose : () => setStep(s => s - 1)}
-                        className="flex items-center gap-1.5 px-4 py-2 text-[11px] text-slate-500 hover:text-slate-700 transition-colors"
+                        className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors"
                     >
                         {step > 0 && <ChevronLeft size={13} />}
                         {step === 0 ? 'Cancelar' : 'Atrás'}
@@ -598,7 +596,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                                 if (!form.nombre.trim()) return showToast('Error', 'El nombre es requerido', 'error');
                                 setStep(1);
                             }}
-                            className="flex items-center gap-1.5 px-5 py-2 text-[11px] font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+                            className="flex items-center gap-1.5 px-5 py-2 text-[12px] font-bold bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm shadow-blue-200"
                         >
                             Siguiente <ChevronRight size={13} />
                         </button>
@@ -607,7 +605,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                             type="button"
                             onClick={handleCreate}
                             disabled={saving || products.length === 0}
-                            className="flex items-center gap-1.5 px-5 py-2 text-[11px] font-bold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-40 transition-colors shadow-sm"
+                            className="flex items-center gap-1.5 px-5 py-2 text-[12px] font-bold bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl hover:from-emerald-700 hover:to-emerald-800 disabled:opacity-40 transition-all shadow-sm shadow-emerald-200"
                         >
                             {saving ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
                             Crear Promoción

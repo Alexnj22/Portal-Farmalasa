@@ -218,7 +218,7 @@ function AddProductInline({ onAdd }) {
         setLoadingPresent(true);
         const { data } = await supabase
             .from('product_precios')
-            .select('id_presentacion, presentaciones(id, tipo)')
+            .select('id_presentacion, presentaciones(id, tipo, descripcion)')
             .eq('product_id', parseInt(val));
         const unique = [];
         const seen = new Set();
@@ -226,7 +226,11 @@ function AddProductInline({ onAdd }) {
             const p = row.presentaciones;
             if (p && !seen.has(p.id)) {
                 seen.add(p.id);
-                unique.push({ value: String(p.id), label: p.tipo });
+                const factor = (p.descripcion || '').toUpperCase().replace(/\s/g, '');
+                const label  = factor && factor !== '1X1' && factor !== '1X01'
+                    ? `${p.tipo} · ${factor}`
+                    : p.tipo;
+                unique.push({ value: String(p.id), label, tipo: p.tipo, descripcion: p.descripcion });
             }
         }
         setPresentOptions(unique);

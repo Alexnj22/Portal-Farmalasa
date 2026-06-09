@@ -10,7 +10,6 @@ const PRODUCTS_URL = 'https://clientesdte3.oss.com.sv/farma_salud/descargar_prod
 const CREDENTIALS  = { username: 'documento1.supervisor', password: 'documento9999' };
 const CHUNK        = 500;
 
-const PRICE_FIELDS = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7', 'costo'] as const;
 
 async function getSessionCookie(): Promise<string> {
   const form = new URLSearchParams();
@@ -123,6 +122,7 @@ Deno.serve(async (req) => {
       const { data: batch, error: epErr } = await supabase
         .from('products')
         .select('id, nombre, laboratorio_id, activo')
+        .order('id')
         .range(epFrom, epFrom + CHUNK - 1);
       if (epErr) throw new Error(`Load products: ${epErr.message}`);
       if (!batch || batch.length === 0) break;
@@ -192,154 +192,38 @@ Deno.serve(async (req) => {
     }
     const precioRows = [...precioRowsMap.values()];
 
-    // 5a. Fetch all existing precios
-    const existingPreciosAll: any[] = [];
-    let pFrom = 0;
-    while (true) {
-      const { data: batch } = await supabase
-        .from('product_precios')
-        .select('product_id, id_presentacion, descripcion, factor, activo, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7')
-        .range(pFrom, pFrom + CHUNK - 1);
-      if (!batch || batch.length === 0) break;
-      existingPreciosAll.push(...batch);
-      if (batch.length < CHUNK) break;
-      pFrom += CHUNK;
-    }
-
-    const existingPreciosMap = new Map(
-      existingPreciosAll.map((p: any) => [`${p.product_id}_${p.id_presentacion}`, p])
-    );
-
-    const precioChangelogs: any[] = [];
-    const changedKeys      = new Set<string>(); // any change → upsert
-    const priceChangedKeys = new Set<string>(); // price/desc change only → history
-    const newCombos: any[] = [];
-
-    for (const nr of precioRows) {
-      const key = `${nr.product_id}_${nr.id_presentacion}`;
-      const er  = existingPreciosMap.get(key);
-
-      if (!er) {
-        newCombos.push(nr);
-        continue;
-      }
-
-      let hasPriceChange      = false;
-      let hasStructuralChange = false;
-
-      // Check numeric price fields
-      for (const campo of PRICE_FIELDS) {
-        const oldVal = er[campo];
-        const newVal = nr[campo];
-        const same = (oldVal == null && newVal == null) ||
-                     (oldVal != null && newVal != null && Math.abs(Number(oldVal) - Number(newVal)) < 0.005);
-        if (!same) {
-          precioChangelogs.push({
-            product_id:      nr.product_id,
-            id_presentacion: nr.id_presentacion,
-            campo,
-            valor_anterior:  oldVal != null ? String(oldVal) : null,
-            valor_nuevo:     newVal != null ? String(newVal) : null,
-            detected_at:     now,
-          });
-          hasPriceChange = true;
-        }
-      }
-
-      // Check descripcion — skip null→value (first-time population is not a real change)
-      const oldDesc = er.descripcion ?? null;
-      const newDesc = nr.descripcion ?? null;
-      if (oldDesc !== null && oldDesc !== newDesc) {
-        precioChangelogs.push({
-          product_id:      nr.product_id,
-          id_presentacion: nr.id_presentacion,
-          campo:           'descripcion',
-          valor_anterior:  oldDesc,
-          valor_nuevo:     newDesc,
-          detected_at:     now,
-        });
-        hasPriceChange = true;
-      }
-
-      // activo and factor are structural — upsert but skip price history
-      if ((er.activo ?? true) !== (nr.activo ?? true)) hasStructuralChange = true;
-      if ((er.factor ?? null) !== (nr.factor ?? null)) hasStructuralChange = true;
-
-      if (hasPriceChange) {
-        changedKeys.add(key);
-        priceChangedKeys.add(key);
-      } else if (hasStructuralChange) {
-        changedKeys.add(key);
-      }
-    }
-
-    // 5b. Close active history entries and open new ones — only for price/desc changes
-    if (priceChangedKeys.size > 0) {
-      for (const key of priceChangedKeys) {
-        const [pid, presId] = key.split('_').map(Number);
-        await supabase.from('product_precios_history')
-          .update({ valid_until: now })
-          .eq('product_id', pid)
-          .eq('id_presentacion', presId)
-          .is('valid_until', null);
-      }
-      const newHistoryRows = [...priceChangedKeys].map(key => {
-        const r = precioRowsMap.get(key)!;
-        return {
-          product_id: r.product_id, id_presentacion: r.id_presentacion,
-          vineta: r.vineta, descuento_1: r.descuento_1, vip: r.vip,
-          clinica: r.clinica, mayoreo: r.mayoreo, premium: r.premium, precio_7: r.precio_7,
-          costo: r.costo ?? null,
-          valid_from: now,
-        };
-      });
-      await supabase.from('product_precios_history').insert(newHistoryRows);
-    }
-
-    // 5c. Seed history for brand-new combos
-    if (newCombos.length > 0) {
-      const seedRows = newCombos.map((r: any) => ({
-        product_id: r.product_id, id_presentacion: r.id_presentacion,
-        vineta: r.vineta, descuento_1: r.descuento_1, vip: r.vip,
-        clinica: r.clinica, mayoreo: r.mayoreo, premium: r.premium, precio_7: r.precio_7,
-        costo: r.costo ?? null,
-        valid_from: now,
-      }));
-      for (let i = 0; i < seedRows.length; i += CHUNK) {
-        const { error } = await supabase.from('product_precios_history').insert(seedRows.slice(i, i + CHUNK));
-        if (error) upsertErrors.push(`history[${i}]: ${error.message}`);
-      }
-    }
-
-    if (precioChangelogs.length > 0) {
-      await supabase.from('product_precios_changelog').insert(precioChangelogs);
-    }
-
-    // 5d. Upsert new and changed precios
-    const newComboKeys = new Set(newCombos.map((r: any) => `${r.product_id}_${r.id_presentacion}`));
-    const precioRowsToUpsert = precioRows.filter((r: any) => {
-      const key = `${r.product_id}_${r.id_presentacion}`;
-      return changedKeys.has(key) || newComboKeys.has(key);
-    });
-    for (let i = 0; i < precioRowsToUpsert.length; i += CHUNK) {
-      const { error } = await supabase.from('product_precios').upsert(precioRowsToUpsert.slice(i, i + CHUNK), { onConflict: 'product_id,id_presentacion' });
+    // 5a. Upsert all precios directly — DB handles conflicts server-side.
+    // Avoids loading thousands of rows into memory for in-process comparison.
+    for (let i = 0; i < precioRows.length; i += CHUNK) {
+      const { error } = await supabase.from('product_precios')
+        .upsert(precioRows.slice(i, i + CHUNK), { onConflict: 'product_id,id_presentacion' });
       if (error) upsertErrors.push(`precios[${i}]: ${error.message}`);
     }
 
-    // 5e. Mark as inactive any presentation the ERP no longer includes for a product
-    const erpComboKeys  = new Set(precioRows.map((r: any) => `${r.product_id}_${r.id_presentacion}`));
-    const erpProductIds = new Set(precioRows.map((r: any) => r.product_id));
-    const orphaned = existingPreciosAll.filter((r: any) =>
-      erpProductIds.has(r.product_id) &&
-      !erpComboKeys.has(`${r.product_id}_${r.id_presentacion}`) &&
-      r.activo !== false
-    );
-    for (const r of orphaned) {
-      const { error } = await supabase.from('product_precios')
-        .update({ activo: false })
-        .eq('product_id', r.product_id)
-        .eq('id_presentacion', r.id_presentacion);
-      if (error) upsertErrors.push(`deactivate[${r.product_id}_${r.id_presentacion}]: ${error.message}`);
+    // 5b. Deactivate presentations the ERP no longer includes — batch by product_id chunks
+    // to avoid loading all 7k+ rows into memory at once.
+    const erpComboSet   = new Set(precioRows.map((r: any) => `${r.product_id}_${r.id_presentacion}`));
+    const erpProductIds = [...new Set(precioRows.map((r: any) => r.product_id as number))];
+    let deactivatedCount = 0;
+
+    for (let i = 0; i < erpProductIds.length; i += CHUNK) {
+      const batchIds = erpProductIds.slice(i, i + CHUNK);
+      const { data: activeCombos } = await supabase
+        .from('product_precios')
+        .select('product_id, id_presentacion')
+        .in('product_id', batchIds)
+        .eq('activo', true);
+
+      for (const combo of (activeCombos || [])) {
+        if (!erpComboSet.has(`${combo.product_id}_${combo.id_presentacion}`)) {
+          const { error } = await supabase.from('product_precios')
+            .update({ activo: false })
+            .eq('product_id', combo.product_id)
+            .eq('id_presentacion', combo.id_presentacion);
+          if (error) upsertErrors.push(`deactivate[${combo.product_id}_${combo.id_presentacion}]: ${error.message}`);
+          else deactivatedCount++;
+        }
+      }
     }
 
     return new Response(
@@ -349,12 +233,9 @@ Deno.serve(async (req) => {
         presentaciones:   presMap.size,
         products_total:   productRows.length,
         products_written: productRowsToUpsert.length,
-        precios_total:    precioRows.length,
-        precios_written:  precioRowsToUpsert.length,
-        price_changes:    precioChangelogs.length,
         product_changes:  realProductChangelogs.length,
-        new_combos:       newCombos.length,
-        deactivated:      orphaned.length,
+        precios_total:    precioRows.length,
+        deactivated:      deactivatedCount,
         errors:           upsertErrors,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

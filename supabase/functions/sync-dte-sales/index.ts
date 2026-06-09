@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, getErpBranchMap, getErpInvMap, requireInvokeSecret } from "../_shared/security.ts";
+import { selectAllByIn } from "../_shared/db.ts";
 
 // ERP credentials are loaded from Supabase Secret ERP_BRANCH_MAP and ERP_INV_BRANCH_MAP (JSON arrays).
 // Never hardcode credentials here — set the secrets in the Supabase Dashboard → Edge Functions → Secrets.
@@ -80,11 +81,13 @@ async function syncBranch(
   // 2. Fetch facturas existentes — incluye todos los campos comparables
   const erpInvoiceIds = ventas.map(v => String(v.id_factura)).filter(Boolean);
 
-  const { data: existingRaw } = await supabase
-    .from('sales_invoices')
-    .select('id, erp_invoice_id, estado, tipo_pago, recibido_mh, cliente, total, customer_id')
-    .in('erp_invoice_id', erpInvoiceIds)
-    .limit(10000);
+  // Paginado: PostgREST corta en 1000 filas; en rangos amplios eso dejaba el mapa
+  // incompleto y re-procesaba facturas como "nuevas" (changelogs falsos).
+  const existingRaw = await selectAllByIn<any>(
+    supabase, 'sales_invoices',
+    'id, erp_invoice_id, estado, tipo_pago, recibido_mh, cliente, total, customer_id',
+    'erp_invoice_id', erpInvoiceIds,
+  );
 
   const existingMap = new Map(
     (existingRaw ?? []).map((inv: any) => [String(inv.erp_invoice_id), inv])
@@ -184,16 +187,21 @@ async function syncBranch(
     if (inv.cliente) { const cid = customerIdMap.get(inv.cliente.trim().toUpperCase()); if (cid) inv.customer_id = cid; }
   }
 
-  // 4. Upsert solo facturas nuevas o con cambios
+  // 4. Upsert solo facturas nuevas o con cambios.
+  // Troceado a 500: el .select() de retorno también está sujeto al cap de 1000
+  // filas; sin trocear, en upserts grandes faltarían ids en invoiceIdMap y sus
+  // items no se insertarían.
   if (invoicesToUpsert.length > 0) {
-    const { data: upserted, error: upsertErr } = await supabase
-      .from('sales_invoices')
-      .upsert(invoicesToUpsert, { onConflict: 'erp_invoice_id' })
-      .select('id, erp_invoice_id')
-      .limit(10000);
-    if (upsertErr) throw upsertErr;
-    for (const inv of (upserted ?? [])) {
-      invoiceIdMap.set(String(inv.erp_invoice_id), inv.id);
+    const UP_CHUNK = 500;
+    for (let i = 0; i < invoicesToUpsert.length; i += UP_CHUNK) {
+      const { data: upserted, error: upsertErr } = await supabase
+        .from('sales_invoices')
+        .upsert(invoicesToUpsert.slice(i, i + UP_CHUNK), { onConflict: 'erp_invoice_id' })
+        .select('id, erp_invoice_id');
+      if (upsertErr) throw upsertErr;
+      for (const inv of (upserted ?? [])) {
+        invoiceIdMap.set(String(inv.erp_invoice_id), inv.id);
+      }
     }
   }
 

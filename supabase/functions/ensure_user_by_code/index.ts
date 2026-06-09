@@ -33,11 +33,10 @@ Deno.serve(async (req: Request) => {
 
     const clean = raw.toUpperCase();
 
-    // ── Búsqueda case-insensitive para code (stored en minúsculas o mayúsculas según el empleado) ──
-    // kiosk_pin usa eq exacto por seguridad
-    const { data: rows, error: dbError } = await admin!
-      .from("employees")
-      .select(`
+    // ── Búsqueda parametrizada (sin interpolar input en .or()): primero por code
+    // (case-insensitive), luego por kiosk_pin exacto. Los métodos .ilike/.eq
+    // escapan el valor correctamente, evitando inyección en el filtro PostgREST.
+    const SELECT_COLS = `
         id,
         code,
         kiosk_pin,
@@ -50,9 +49,21 @@ Deno.serve(async (req: Request) => {
         status,
         system_role,
         role:roles!employees_role_id_fkey ( name )
-      `)
-      .or(`code.ilike.${raw},kiosk_pin.eq.${clean}`)
+      `;
+
+    let { data: rows, error: dbError } = await admin!
+      .from("employees")
+      .select(SELECT_COLS)
+      .ilike("code", raw)
       .limit(1);
+
+    if (!dbError && !rows?.length) {
+      ({ data: rows, error: dbError } = await admin!
+        .from("employees")
+        .select(SELECT_COLS)
+        .eq("kiosk_pin", clean)
+        .limit(1));
+    }
 
     if (dbError) return json({ ok: false, error: "DB_ERROR", details: dbError.message });
     if (!rows?.length) return json({ ok: false, error: "NOT_FOUND" });

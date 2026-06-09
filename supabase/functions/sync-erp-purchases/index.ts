@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, getErpBranchMap, requireInvokeSecret } from "../_shared/security.ts";
+import { selectAllByIn } from "../_shared/db.ts";
 
 function getPurchaseCreds(): { username: string; password: string } {
   const raw = Deno.env.get("ERP_PURCHASES_CREDS");
@@ -127,12 +128,12 @@ async function syncBranch(
     .filter(Boolean)
     .map(Number);
 
-  const { data: existingRaw } = await supabase
-    .from('purchase_receipts')
-    .select('id, erp_purchase_id')
-    .in('erp_purchase_id', erpPurchaseIds)
-    .eq('erp_sucursal_id', erpId)
-    .limit(10000);
+  // Paginado para superar el cap de 1000 filas de PostgREST en rangos amplios.
+  const existingRaw = await selectAllByIn<any>(
+    supabase, 'purchase_receipts', 'id, erp_purchase_id',
+    'erp_purchase_id', erpPurchaseIds,
+    (q) => q.eq('erp_sucursal_id', erpId),
+  );
 
   const existingMap = new Map<number, number>(
     (existingRaw ?? []).map((r: any) => [r.erp_purchase_id, r.id])

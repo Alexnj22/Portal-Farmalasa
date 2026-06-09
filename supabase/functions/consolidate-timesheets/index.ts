@@ -251,6 +251,17 @@ Deno.serve(async (req) => {
       punchMap.get(key)!.push(p);
     }
 
+    // Pre-cargar timesheets existentes del día en un Map (evita un SELECT por empleado)
+    const timesheetIdMap = new Map<string, number>();
+    if (rosterEmpIds.length > 0) {
+      const { data: existingTs } = await supabase
+        .from('timesheets')
+        .select('id, employee_id')
+        .eq('work_date', workDate)
+        .in('employee_id', rosterEmpIds);
+      for (const t of existingTs || []) timesheetIdMap.set(String(t.employee_id), t.id);
+    }
+
     let upserted = 0;
     let skipped  = 0;
 
@@ -364,13 +375,8 @@ Deno.serve(async (req) => {
         nocturnalOTHours = parseFloat((nocturnalOTMins      / 60).toFixed(2));
       }
 
-      // Upsert
-      const { data: existing } = await supabase
-        .from('timesheets')
-        .select('id')
-        .eq('employee_id', empId)
-        .eq('work_date', workDate)
-        .limit(1);
+      // Upsert (id existente resuelto desde el Map pre-cargado)
+      const existingId = timesheetIdMap.get(empId);
 
       const payload = {
         employee_id:               empId,
@@ -390,8 +396,8 @@ Deno.serve(async (req) => {
         updated_at:                new Date().toISOString(),
       };
 
-      if (existing && existing.length > 0) {
-        await supabase.from('timesheets').update(payload).eq('id', existing[0].id);
+      if (existingId) {
+        await supabase.from('timesheets').update(payload).eq('id', existingId);
       } else {
         await supabase.from('timesheets').insert([payload]);
       }

@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireAuthUser } from "../_shared/security.ts";
+import { callGemini, parseGeminiJson } from "../_shared/gemini.ts";
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -91,32 +92,16 @@ Deno.serve(async (req) => {
     - Catálogo de Turnos (Solo usa IDs válidos de esta lista): ${JSON.stringify(shifts)}
     `;
 
-    // 4. Llamar a Google Gemini con Temperature súper baja para respuestas analíticas
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${Deno.env.get('GEMINI_API_KEY')}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: systemInstruction }] }],
-        generationConfig: { 
-            temperature: 0.1, // 🚨 CRÍTICO: Mantiene a la IA determinista y matemática
-            response_mime_type: "application/json" 
-        }
-      })
+    // 4. Llamar a Google Gemini con Temperature súper baja para respuestas analíticas.
+    // Modelo pro fijo para mantener la IA determinista y matemática.
+    const rawText = await callGemini({
+      prompt: systemInstruction,
+      model: "gemini-2.5-pro",
+      temperature: 0.1,
+      jsonOutput: true,
     });
 
-    const geminiData = await geminiRes.json();
-    
-    // Validar errores directos de Google API
-    if (geminiData.error) {
-        throw new Error(`Google API Error: ${geminiData.error.message}`);
-    }
-
-    if (!geminiData.candidates || !geminiData.candidates[0].content.parts[0].text) {
-        throw new Error("Gemini no devolvió un horario válido.");
-    }
-
-    // Parsear el string JSON de Gemini
-    const aiScheduleJSON = JSON.parse(geminiData.candidates[0].content.parts[0].text);
+    const aiScheduleJSON = parseGeminiJson(rawText);
 
     return new Response(JSON.stringify({ success: true, aiSchedule: aiScheduleJSON }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

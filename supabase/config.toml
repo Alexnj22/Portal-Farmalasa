@@ -392,6 +392,12 @@ verify_jwt = false
 [functions.sync-erp-minmax]
 verify_jwt = false
 
+[functions.sync-erp-purchases]
+verify_jwt = false
+
+[functions.sync-promo-sales]
+verify_jwt = false
+
 [functions.sync-products]
 verify_jwt = false
 

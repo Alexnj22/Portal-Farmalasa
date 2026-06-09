@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireAuthUser } from "../_shared/security.ts";
+import { callGemini, parseGeminiJson } from "../_shared/gemini.ts";
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -108,30 +109,16 @@ FORMATO DE RESPUESTA:
   }
 ]`;
 
-    // 6. Call Gemini
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${Deno.env.get("GEMINI_API_KEY")}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.1,
-            response_mime_type: "application/json",
-          },
-        }),
-      }
-    );
-
-    const geminiData = await geminiRes.json();
-    if (geminiData.error) throw new Error(`Gemini: ${geminiData.error.message}`);
-    if (!geminiData.candidates?.[0]?.content?.parts?.[0]?.text) {
-      throw new Error("Gemini no devolvió un plan válido.");
-    }
+    // 6. Call Gemini (modelo pro fijo para el plan determinista)
+    const rawText = await callGemini({
+      prompt,
+      model: "gemini-2.5-pro",
+      temperature: 0.1,
+      jsonOutput: true,
+    });
 
     const aiPlan: Array<{ employee_id: string; start_date: string; end_date: string; days: number }> =
-      JSON.parse(geminiData.candidates[0].content.parts[0].text);
+      parseGeminiJson(rawText);
 
     if (!Array.isArray(aiPlan) || aiPlan.length === 0) {
       throw new Error("El plan generado está vacío.");

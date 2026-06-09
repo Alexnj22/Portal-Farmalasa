@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2"
 import { encode } from "https://deno.land/std@0.168.0/encoding/base64.ts"
 import { getCorsHeaders } from "../_shared/security.ts"
+import { callGemini } from "../_shared/gemini.ts"
 
 // SALY — Asistente de Operaciones
 const SALY_PERSONA = `Eres Saly, asistente ejecutiva de operaciones de "Farmacia La Salud" y "La Popular". Tienes un perfil de consultora senior: analítica, precisa y orientada a decisiones. Tu comunicación es formal, moderna y sin adornos — vas directo al dato y a la acción.
@@ -52,8 +53,8 @@ Deno.serve(async (req) => {
     const mimeType = isComplexTask ? "application/json" : "text/plain";
 
     let prompt = "";
-    let inlineDataParts: any[] = []; 
-    let responseKey = "result"; 
+    let inlineData: { mimeType: string; data: string }[] = [];
+    let responseKey = "result";
 
     switch (action) {
       case 'analyze-branch': {
@@ -69,7 +70,7 @@ Deno.serve(async (req) => {
       case 'analyze-document': {
         const { data: fileData, error: downloadError } = await supabase.storage.from(payload.bucketName).download(payload.filePath)
         if (downloadError) throw downloadError
-        inlineDataParts = [{ inline_data: { data: encode(await fileData.arrayBuffer()), mime_type: fileData.type || 'application/pdf' } }];
+        inlineData = [{ mimeType: fileData.type || 'application/pdf', data: encode(await fileData.arrayBuffer()) }];
         prompt = `Analiza este documento. Devuelve ÚNICAMENTE un JSON exacto: { "aiSummary": "...", "issueDate": "...", "expDate": "..." }`;
         responseKey = "aiData";
         break;
@@ -214,26 +215,15 @@ Reglas estrictas:
         throw new Error(`Acción '${action}' no reconocida.`);
     }
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiApiKey}`;
     const finalSystemInstruction = `${SALY_PERSONA}\n\n${prompt}`;
 
-    const requestBody = {
-      contents: [{ parts: [{ text: finalSystemInstruction }, ...inlineDataParts] }],
-      generationConfig: { temperature: temperature, response_mime_type: mimeType }
-    };
-
-    const geminiRes = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody)
+    let finalData = await callGemini({
+      prompt: finalSystemInstruction,
+      model: "gemini-2.5-pro",
+      temperature,
+      jsonOutput: mimeType === "application/json",
+      inlineData,
     });
-
-    const geminiData = await geminiRes.json();
-
-    if (!geminiRes.ok) throw new Error(`Google API Error: ${geminiData.error?.message || JSON.stringify(geminiData)}`);
-    if (!geminiData.candidates || geminiData.candidates.length === 0) throw new Error("Saly devolvió una respuesta vacía.");
-
-    let finalData = geminiData.candidates[0].content.parts[0].text;
 
     // 🤖 INTERCEPTOR DE BORRADORES (Agentic AI - HITL)
     if (action === 'chat') {

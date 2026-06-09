@@ -24,10 +24,12 @@ const THRESHOLDS: Threshold[] = [
   { days: 7,  label: '7d',  priority: 'URGENT', emoji: '🚨' },
 ];
 
-// El Salvador is UTC-6
+// El Salvador is UTC-6. Devuelve el mediodía UTC del día CST actual, para que
+// la comparación con expDate (parseado como 'YYYY-MM-DDT12:00:00') sea consistente
+// y no se corra de día cerca de medianoche.
 function todayCST(): Date {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const cst = new Date(Date.now() - 6 * 3600_000);
+  return new Date(`${cst.toISOString().split('T')[0]}T12:00:00`);
 }
 
 Deno.serve(async (req) => {

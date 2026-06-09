@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
+import { selectAllPaged } from "../_shared/db.ts";
 
 // Syncs daily sales from sales_invoice_items into promotion_sales_cache
 // for all active promotions. Run daily via pg_cron.
@@ -60,24 +61,24 @@ Deno.serve(async (req) => {
 
       for (const pp of (promo.promotion_products || [])) {
         try {
-          // Aggregate daily units sold per branch for this product during the promo period
-          const { data: sales, error: salesErr } = await supabase
-            .from("sales_invoice_items")
-            .select(`
-              cantidad, presentacion,
-              sales_invoices!inner(fecha, branch_id, estado)
-            `)
-            .eq("erp_product_id", pp.product_id)
-            .in("sales_invoices.branch_id", branchIds)
-            .gte("sales_invoices.fecha", fromDate)
-            .lte("sales_invoices.fecha", toDate)
-            .neq("sales_invoices.estado", "ANULADA")
-            .gt("cantidad", 0);
-
-          if (salesErr) {
-            errors.push(`pp=${pp.id}: ${salesErr.message}`);
-            continue;
-          }
+          // Aggregate daily units sold per branch for this product during the promo period.
+          // Paginado con .range() para superar el cap de 1000 filas de PostgREST
+          // (promos largas con muchas ventas se truncaban silenciosamente).
+          const sales = await selectAllPaged<any>((from, to) =>
+            supabase
+              .from("sales_invoice_items")
+              .select(`
+                cantidad, presentacion,
+                sales_invoices!inner(fecha, branch_id, estado)
+              `)
+              .eq("erp_product_id", pp.product_id)
+              .in("sales_invoices.branch_id", branchIds)
+              .gte("sales_invoices.fecha", fromDate)
+              .lte("sales_invoices.fecha", toDate)
+              .neq("sales_invoices.estado", "ANULADA")
+              .gt("cantidad", 0)
+              .range(from, to)
+          );
 
           // Aggregate by (fecha, branch_id)
           const agg: Record<string, number> = {};
@@ -120,10 +121,15 @@ Deno.serve(async (req) => {
           (s: number, pp: any) => s + (pp.stock_inicial || 0), 0
         );
         if (totalStock > 0) {
+          // Sumar SOLO las ventas dentro del período de la promo — sin filtrar por
+          // fecha, el cache histórico (o reuso del producto en otra promo) cerraba
+          // promociones antes de tiempo.
           const { data: cacheRows } = await supabase
             .from("promotion_sales_cache")
             .select("units_sold")
-            .in("promotion_product_id", (promo.promotion_products || []).map((pp: any) => pp.id));
+            .in("promotion_product_id", (promo.promotion_products || []).map((pp: any) => pp.id))
+            .gte("fecha", fromDate)
+            .lte("fecha", toDate);
 
           const totalSold = (cacheRows || []).reduce((s, r) => s + (r.units_sold || 0), 0);
           if (totalSold >= totalStock) {

@@ -1,20 +1,23 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
 
 const LOGIN_URL    = 'https://clientesdte3.oss.com.sv/farma_salud/login.php';
 const PRODUCTS_URL = 'https://clientesdte3.oss.com.sv/farma_salud/descargar_productos_json.php';
-const CREDENTIALS  = { username: 'documento1.supervisor', password: 'documento9999' };
 const CHUNK        = 500;
 
+// Credenciales ERP desde Supabase Secret ERP_PRODUCTS_CREDS (JSON {username,password}).
+// Nunca hardcodear credenciales aquí.
+function getProductCreds(): { username: string; password: string } {
+  const raw = Deno.env.get("ERP_PRODUCTS_CREDS");
+  if (!raw) throw new Error("ERP_PRODUCTS_CREDS secret not configured in Supabase.");
+  return JSON.parse(raw);
+}
 
 async function getSessionCookie(): Promise<string> {
+  const { username, password } = getProductCreds();
   const form = new URLSearchParams();
-  form.append('username', CREDENTIALS.username);
-  form.append('password', CREDENTIALS.password);
+  form.append('username', username);
+  form.append('password', password);
   form.append('m', '1');
   const res = await fetch(LOGIN_URL, {
     method: 'POST',
@@ -29,7 +32,14 @@ async function getSessionCookie(): Promise<string> {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  if (!requireInvokeSecret(req)) {
+    return new Response(JSON.stringify({ ok: false, error: "UNAUTHORIZED" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const supabase = createClient(

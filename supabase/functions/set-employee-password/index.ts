@@ -10,9 +10,21 @@ const corsHeaders = {
 
 const json = (body: unknown) =>
   new Response(JSON.stringify(body), {
-    status: 200, 
+    status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+
+// Contraseña temporal aleatoria (sin caracteres ambiguos) para resets.
+// Reemplaza los valores triviales '1234'/'123456' que permitían tomar cuentas
+// no usadas antes del primer login.
+function randomTempPassword(len = 10): string {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  const arr = new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  let out = "";
+  arr.forEach(b => (out += chars[b % chars.length]));
+  return out;
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -56,10 +68,11 @@ Deno.serve(async (req: Request) => {
     const username = typeof body?.username === "string" ? body.username.toLowerCase().trim() : "";
     const password = typeof body?.password === "string" ? body.password : "";
 
+    // password === '1234' es el sentinel de "resetear a temporal".
+    const isResetRequest = password === '1234';
     if (!username || !password) return json({ ok: false, error: "MISSING_FIELDS" });
-    const isInitialPassword = password === '1234';
-    if (!isInitialPassword && password.length < 6) {
-        return json({ ok: false, error: "PASSWORD_TOO_SHORT" });
+    if (!isResetRequest && password.length < 8) {
+        return json({ ok: false, error: "PASSWORD_TOO_SHORT", details: "Mínimo 8 caracteres." });
     }
 
     const email = `${username}@farmalasa.app`;
@@ -70,25 +83,30 @@ Deno.serve(async (req: Request) => {
     const employee = rows[0];
     if (employee.status && employee.status !== "ACTIVO") return json({ ok: false, error: "EMPLOYEE_INACTIVE", details: "Empleado dado de baja." });
 
+    // En un reset (o creación) generamos una contraseña temporal aleatoria que
+    // se devuelve SOLO al admin autorizado para que se la comunique al empleado.
+    const tempPassword = randomTempPassword();
+
     // 3. Actualizar o Crear en Auth
     const { data: existingAuth } = await admin.auth.admin.getUserById(employee.id);
 
     if (existingAuth?.user) {
-      const isReset = password === '1234';
-      const effectivePassword = isReset ? '123456' : password;
+      const effectivePassword = isResetRequest ? tempPassword : password;
       const { error: updErr } = await admin.auth.admin.updateUserById(employee.id, {
-        password: effectivePassword, user_metadata: { username, code: employee.code, must_change_password: isReset },
+        password: effectivePassword, user_metadata: { username, code: employee.code, must_change_password: isResetRequest },
       });
       if (updErr) return json({ ok: false, error: "AUTH_UPDATE_ERROR", details: updErr.message });
     } else {
       const { error: createErr } = await admin.auth.admin.createUser({
-        id: employee.id, email, password: "1234", email_confirm: true,
+        id: employee.id, email, password: tempPassword, email_confirm: true,
         user_metadata: { username, code: employee.code, must_change_password: true },
       });
       if (createErr) return json({ ok: false, error: "AUTH_CREATE_ERROR", details: createErr.message });
     }
 
-    return json({ ok: true });
+    // Devolver la temporal sólo cuando la generamos nosotros (reset o creación).
+    const generated = isResetRequest || !existingAuth?.user;
+    return json({ ok: true, ...(generated ? { tempPassword } : {}) });
     
   } catch (e) {
     return json({ ok: false, error: "UNHANDLED_EXCEPTION", details: String((e as Error)?.message ?? e) });

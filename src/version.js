@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.21';
+export const APP_VERSION = '2.2.22';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.22 — MinMax: rediseño completo zona filtros+borradores — 2 filas separadas: Row1 pill liquid glass (filtros estado + pocos datos); Row2 amber glass pill (borradores+toggles+descartar) + Publicar CTA elevado con sombra azul independiente; sin elementos cargados en una sola línea
 // v2.2.21 — MinMax: Ocultar/Ocultos movidos al espacio entre matrix y pill de filtros; pill de filtros rediseñada igual que pill de sucursal (bg-white/80 border-slate-200/70 h-5 dividers); Publicar azul como cap derecho separado
 // v2.2.20 — MinMax: pill de filtros unificada y glassmorphic — status chips, pocos datos, borradores y Publicar en una sola pill; chips más grandes (px-3 py-2 text-[11px]); colores activos por categoría (chipActive); sección draft entra animada desde la derecha cuando hay borradores; X badge animado con AnimatePresence
 // v2.2.19 — fix(DB): get_stock_analysis Branch 3 ahora devuelve dead_stock+is_dead_stock=true — antes emitía out_of_stock/ok, por eso "Sin historial" siempre daba 0; ahora aparecen bajo "Sin movimiento"

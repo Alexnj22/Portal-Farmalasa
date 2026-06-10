@@ -2179,31 +2179,36 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             )}
             </AnimatePresence>
 
-            {/* ── Filter pill (status + draft + publicar) ── */}
+            {/* ── Filter + Draft bar — two-row layout ── */}
             {!neverCalc && (
-                <div className="flex items-stretch rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.08)] transition-shadow duration-300">
+                <div className="flex flex-col gap-2">
 
-                    {/* White section */}
-                    <div className={`flex items-center bg-white/80 backdrop-blur-sm border border-slate-200/70 overflow-hidden ${draftCount > 0 && !loading && canManage ? 'rounded-l-2xl border-r-0' : 'rounded-2xl'}`}>
-
-                        {/* Status chips */}
+                    {/* Row 1 — Status filters (liquid glass pill) */}
+                    <div className="flex items-center rounded-2xl overflow-hidden self-start"
+                        style={{
+                            background: 'rgba(255,255,255,0.55)',
+                            backdropFilter: 'blur(24px)',
+                            WebkitBackdropFilter: 'blur(24px)',
+                            border: '1px solid rgba(255,255,255,0.82)',
+                            boxShadow: '0 8px 32px rgba(0,82,204,0.07), inset 0 1px 0 rgba(255,255,255,0.92)',
+                        }}>
                         {STAT_CFGS.map((cfg, i) => {
                             const active = filterAlert === cfg.key;
                             return (
                                 <React.Fragment key={cfg.key}>
-                                    {i > 0 && <div className="h-5 w-px bg-slate-100 shrink-0" />}
+                                    {i > 0 && <div className="h-5 w-px bg-slate-200/60 shrink-0" />}
                                     <motion.button
                                         whileTap={{ scale: 0.93 }}
                                         onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
-                                        className={`flex items-center gap-1.5 px-2.5 py-2 text-[11px] font-bold transition-colors duration-150 ${active ? cfg.chipActive : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'}`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
-                                        <span className={`tabular-nums font-black ${active ? '' : 'text-slate-700'}`}>
+                                        className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 select-none whitespace-nowrap ${active ? cfg.chipActive + ' font-bold' : 'text-slate-500 hover:bg-white/60 hover:text-slate-700'}`}>
+                                        <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
+                                        <span className={`tabular-nums font-black text-[12px] ${active ? '' : 'text-slate-700'}`}>
                                             {loading ? '–' : stats[cfg.key]}
                                         </span>
-                                        <span className="opacity-80">{cfg.label}</span>
+                                        <span>{cfg.label}</span>
                                         <AnimatePresence>
                                         {active && (
-                                            <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.55 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
+                                            <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.5 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
                                                 <X size={9} className="ml-0.5" />
                                             </motion.span>
                                         )}
@@ -2212,112 +2217,120 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 </React.Fragment>
                             );
                         })}
-
                         {/* Pocos datos */}
+                        <AnimatePresence>
                         {sparseCount > 0 && !loading && (
-                            <>
-                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                            <motion.div key="sparse" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
+                                <div className="h-5 w-px bg-slate-200/60 shrink-0" />
                                 <motion.button
                                     whileTap={{ scale: 0.93 }}
                                     onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
-                                    className={`flex items-center gap-1.5 px-2.5 py-2 text-[11px] font-bold transition-colors duration-150 whitespace-nowrap ${filterSparse ? 'bg-orange-50 text-orange-700' : 'text-orange-500 hover:bg-slate-50/80 hover:text-orange-700'}`}
-                                    title="Productos con ventas en menos de 3 días distintos">
-                                    <AlertTriangle size={10} strokeWidth={2.5} />
-                                    <span className="tabular-nums font-black">{sparseCount}</span>
+                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 whitespace-nowrap ${filterSparse ? 'bg-orange-50/90 text-orange-700 font-bold' : 'text-orange-500 hover:bg-white/60 hover:text-orange-600'}`}>
+                                    <AlertTriangle size={10} strokeWidth={2.5} className="shrink-0" />
+                                    <span className="tabular-nums font-black text-[12px]">{sparseCount}</span>
                                     pocos datos
                                     <AnimatePresence>
                                     {filterSparse && (
-                                        <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.55 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
+                                        <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.5 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
                                             <X size={9} className="ml-0.5" />
                                         </motion.span>
                                     )}
                                     </AnimatePresence>
                                 </motion.button>
-                            </>
+                            </motion.div>
                         )}
+                        </AnimatePresence>
+                    </div>
 
-                        {/* Draft controls — animate in when drafts exist */}
-                        <AnimatePresence>
-                        {draftCount > 0 && !loading && (
-                            <motion.div key="draft-controls"
-                                initial={{ opacity: 0, width: 0 }}
-                                animate={{ opacity: 1, width: 'auto', transition: { duration: 0.25, ease: EASE_OUT_EXPO } }}
-                                exit={{ opacity: 0, width: 0, transition: { duration: 0.16 } }}
-                                className="flex items-center shrink-0 overflow-hidden">
-                                {/* Thick divider — visually separates status from draft zone */}
-                                <div className="h-5 w-[2px] bg-slate-200 shrink-0 mx-1" />
-                                {/* Count + pulsing dot */}
-                                <div className="flex items-center gap-1.5 px-2.5 py-2 whitespace-nowrap">
-                                    <span className="relative flex h-1.5 w-1.5 shrink-0">
+                    {/* Row 2 — Draft workflow (only when drafts exist) */}
+                    <AnimatePresence>
+                    {draftCount > 0 && !loading && (
+                        <motion.div
+                            key="draft-row"
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0, transition: { duration: 0.28, ease: EASE_OUT_EXPO } }}
+                            exit={{ opacity: 0, y: -8, transition: { duration: 0.18 } }}
+                            className="flex items-center gap-3">
+
+                            {/* Amber-tinted glass pill: draft info + filter toggles + destructive action */}
+                            <div className="flex items-center rounded-2xl overflow-hidden shrink-0"
+                                style={{
+                                    background: 'rgba(255,251,235,0.72)',
+                                    backdropFilter: 'blur(24px)',
+                                    WebkitBackdropFilter: 'blur(24px)',
+                                    border: '1px solid rgba(251,191,36,0.28)',
+                                    boxShadow: '0 4px 20px rgba(245,158,11,0.10), inset 0 1px 0 rgba(255,255,255,0.92)',
+                                }}>
+                                {/* Pulsing dot + count */}
+                                <div className="flex items-center gap-2 px-3.5 py-2.5 shrink-0">
+                                    <span className="relative flex h-2 w-2 shrink-0">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-400" />
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
                                     </span>
-                                    <span className="text-[11px] font-black text-slate-700 tabular-nums">{draftCount}</span>
-                                    <span className="text-[11px] text-slate-400">borrador{draftCount !== 1 ? 'es' : ''}</span>
+                                    <span className="text-[12px] font-black text-amber-800 tabular-nums whitespace-nowrap">{draftCount}</span>
+                                    <span className="text-[11px] text-amber-600/80 font-medium whitespace-nowrap">borrador{draftCount !== 1 ? 'es' : ''}</span>
                                 </div>
-                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                <div className="h-5 w-px bg-amber-200/70 shrink-0" />
                                 {/* Solo borradores */}
                                 <motion.button whileTap={{ scale: 0.93 }}
                                     onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); setFilterChangesOnly(false); }}
-                                    className={`flex items-center gap-1.5 px-2.5 py-2 text-[11px] font-bold transition-colors duration-150 whitespace-nowrap ${filterDraft ? 'bg-amber-50 text-amber-700' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'}`}>
-                                    {filterDraft ? <><X size={9} strokeWidth={2.5} /> Ver todos</> : 'Solo borradores'}
+                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 whitespace-nowrap ${filterDraft ? 'bg-amber-100/70 text-amber-800 font-bold' : 'text-amber-700/70 hover:bg-amber-100/50 hover:text-amber-900'}`}>
+                                    {filterDraft ? <><X size={9} strokeWidth={2.5} className="shrink-0" /> Ver todos</> : 'Solo borradores'}
                                 </motion.button>
                                 {/* Solo cambios */}
                                 {hasPublishedData && changesCount > 0 && (
                                     <>
-                                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                        <div className="h-5 w-px bg-amber-200/70 shrink-0" />
                                         <motion.button whileTap={{ scale: 0.93 }}
                                             onClick={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); setFilterSparse(false); }}
-                                            className={`flex items-center gap-1.5 px-2.5 py-2 text-[11px] font-bold transition-colors duration-150 whitespace-nowrap ${filterChangesOnly ? 'bg-violet-50 text-violet-700' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'}`}>
-                                            {filterChangesOnly ? <><X size={9} strokeWidth={2.5} /> Ver todos</> : `Solo cambios (${changesCount})`}
+                                            className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 whitespace-nowrap ${filterChangesOnly ? 'bg-violet-100/70 text-violet-800 font-bold' : 'text-amber-700/70 hover:bg-amber-100/50 hover:text-amber-900'}`}>
+                                            {filterChangesOnly ? <><X size={9} strokeWidth={2.5} className="shrink-0" /> Ver todos</> : `Solo cambios (${changesCount})`}
                                         </motion.button>
                                     </>
                                 )}
                                 {/* Descartar */}
                                 {canManage && (
                                     <>
-                                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                        <div className="h-5 w-px bg-amber-200/70 shrink-0" />
                                         <motion.button whileTap={{ scale: 0.93 }}
                                             onClick={() => setDiscardConfirm(true)}
                                             disabled={discardingAll}
-                                            className="flex items-center gap-1.5 px-2.5 py-2 text-[11px] font-bold text-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-colors duration-150 whitespace-nowrap disabled:opacity-50">
-                                            {discardingAll ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}
+                                            className="flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold text-rose-400 hover:bg-rose-50/80 hover:text-rose-600 transition-colors duration-150 whitespace-nowrap disabled:opacity-50">
+                                            {discardingAll ? <Loader2 size={10} className="animate-spin shrink-0" /> : <Trash2 size={10} className="shrink-0" />}
                                             Descartar
                                         </motion.button>
                                     </>
                                 )}
-                            </motion.div>
-                        )}
-                        </AnimatePresence>
-                    </div>
+                            </div>
 
-                    {/* Blue Publicar cap — sibling of white section, only when drafts */}
-                    <AnimatePresence>
-                    {draftCount > 0 && !loading && canManage && (
-                        <motion.div key="pub-cap"
-                            initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto', transition: { duration: 0.25, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, width: 0, transition: { duration: 0.16 } }}
-                            className="flex items-stretch shrink-0 overflow-hidden">
-                            <AnimatePresence mode="wait">
-                            {hasActiveFilter && filteredDraftIds.length > 0 ? (
-                                <motion.button key="pub-filtered"
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.12 } }} exit={{ opacity: 0, transition: { duration: 0.08 } }}
-                                    {...ctaAnim}
-                                    onClick={() => requestPublish(filteredDraftIds)} disabled={!canManage || publishing}
-                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none transition-colors whitespace-nowrap">
-                                    {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
-                                    Publicar {filterLabel} ({filteredDraftIds.length})
-                                </motion.button>
-                            ) : (
-                                <motion.button key="pub-all"
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.12 } }} exit={{ opacity: 0, transition: { duration: 0.08 } }}
-                                    {...ctaAnim}
-                                    onClick={() => requestPublish()} disabled={!canManage || publishing}
-                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none transition-colors whitespace-nowrap">
-                                    {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
-                                    Publicar todo ({draftCount})
-                                </motion.button>
+                            <div className="flex-1" />
+
+                            {/* Publicar — standalone elevated primary CTA */}
+                            {canManage && (
+                                <AnimatePresence mode="wait">
+                                {hasActiveFilter && filteredDraftIds.length > 0 ? (
+                                    <motion.button key="pub-filtered"
+                                        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.12 } }}
+                                        {...ctaAnim}
+                                        onClick={() => requestPublish(filteredDraftIds)} disabled={!canManage || publishing}
+                                        className="flex items-center gap-2 px-5 py-2.5 text-[12px] font-bold text-white rounded-2xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap transition-all hover:brightness-110"
+                                        style={{ background: '#0052CC', boxShadow: '0 4px 20px rgba(0,82,204,0.40), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
+                                        {publishing ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
+                                        Publicar {filterLabel} ({filteredDraftIds.length})
+                                    </motion.button>
+                                ) : (
+                                    <motion.button key="pub-all"
+                                        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.12 } }}
+                                        {...ctaAnim}
+                                        onClick={() => requestPublish()} disabled={!canManage || publishing}
+                                        className="flex items-center gap-2 px-5 py-2.5 text-[12px] font-bold text-white rounded-2xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap transition-all hover:brightness-110"
+                                        style={{ background: '#0052CC', boxShadow: '0 4px 20px rgba(0,82,204,0.40), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
+                                        {publishing ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
+                                        Publicar todo ({draftCount})
+                                    </motion.button>
+                                )}
+                                </AnimatePresence>
                             )}
-                            </AnimatePresence>
                         </motion.div>
                     )}
                     </AnimatePresence>

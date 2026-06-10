@@ -5,6 +5,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 
 const ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
+const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
 const STATUS_CFG = {
   pending:  { label: 'Pendiente', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
@@ -29,6 +30,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
   const [rows, setRows]       = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab]         = useState('pending'); // pending | history
+  const [sucFilter, setSucFilter] = useState('all'); // 'all' | erp_sucursal_id
   const [busyId, setBusyId]   = useState(null);
   const [error, setError]     = useState(null);
 
@@ -94,15 +96,25 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
     }
   }, [user, appendAuditLog, notifyRequester, load]);
 
+  // Filas del tab actual (sin filtro de sucursal) — para contar por sucursal
+  const tabRows = useMemo(
+    () => rows.filter(r => tab === 'pending' ? r.status === 'pending' : r.status !== 'pending'),
+    [rows, tab]
+  );
+  const sucCounts = useMemo(() => {
+    const m = {};
+    for (const r of tabRows) m[r.erp_sucursal_id] = (m[r.erp_sucursal_id] || 0) + 1;
+    return m;
+  }, [tabRows]);
+
   const filtered = useMemo(() => {
     const q = searchTerm.toLowerCase();
-    return rows.filter(r => {
-      if (tab === 'pending' && r.status !== 'pending') return false;
-      if (tab === 'history' && r.status === 'pending') return false;
+    return tabRows.filter(r => {
+      if (sucFilter !== 'all' && String(r.erp_sucursal_id) !== String(sucFilter)) return false;
       if (q && !r.product_name?.toLowerCase().includes(q) && !r.requested_by_name?.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [rows, tab, searchTerm]);
+  }, [tabRows, sucFilter, searchTerm]);
 
   const pendingCount = useMemo(() => rows.filter(r => r.status === 'pending').length, [rows]);
 
@@ -111,7 +123,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
       {/* Sub-tabs */}
       <div className="flex items-center gap-2">
         {[['pending', `Pendientes${pendingCount ? ` (${pendingCount})` : ''}`], ['history', 'Historial']].map(([k, label]) => (
-          <button key={k} onClick={() => setTab(k)}
+          <button key={k} onClick={() => { setTab(k); setSucFilter('all'); }}
             className={`px-3.5 py-1.5 rounded-full text-[12px] font-bold transition-colors ${
               tab === k ? 'bg-[#0052CC] text-white' : 'bg-white text-slate-500 border border-slate-200 hover:border-[#0052CC]/40'
             }`}>
@@ -119,6 +131,26 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
           </button>
         ))}
       </div>
+
+      {/* Filtro por sucursal */}
+      {Object.keys(sucCounts).length > 0 && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button onClick={() => setSucFilter('all')}
+            className={`px-3 py-1 rounded-full text-[11px] font-bold transition-colors ${
+              sucFilter === 'all' ? 'bg-slate-700 text-white' : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-400'
+            }`}>
+            Todas ({tabRows.length})
+          </button>
+          {ERP_ORDER.filter(id => sucCounts[id]).map(id => (
+            <button key={id} onClick={() => setSucFilter(String(id))}
+              className={`px-3 py-1 rounded-full text-[11px] font-bold transition-colors ${
+                String(sucFilter) === String(id) ? 'bg-slate-700 text-white' : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-400'
+              }`}>
+              {ERP_NAMES[id]} ({sucCounts[id]})
+            </button>
+          ))}
+        </div>
+      )}
 
       {error && (
         <div className="rounded-xl bg-red-50 border border-red-200 px-3.5 py-2 text-[12px] font-semibold text-red-600 flex items-center justify-between">
@@ -153,6 +185,9 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
                   </div>
                   <div className="text-[10px] text-slate-400 mt-0.5">
                     {ERP_NAMES[r.erp_sucursal_id] || r.erp_sucursal_id} · {r.requested_by_name || r.requested_by} · {relTime(r.requested_at)}
+                    {r.current_sales_6m != null && (
+                      <span className="text-emerald-600 font-semibold"> · {Number(r.current_sales_6m).toLocaleString()} und 6m</span>
+                    )}
                   </div>
                   {r.reason && <div className="text-[11px] text-slate-500 mt-1 italic truncate">“{r.reason}”</div>}
                   {!isPending && r.decision_note && (

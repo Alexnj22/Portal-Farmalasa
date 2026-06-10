@@ -24,7 +24,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
     let cancelled = false;
     setLoadingCur(true);
     supabase.from('product_stock_params')
-      .select('manual_min, manual_max, min_units, max_units')
+      .select('manual_min, manual_max, min_units, max_units, units_sold_6m')
       .eq('erp_product_id', product.id)
       .eq('erp_sucursal_id', Number(erp))
       .maybeSingle()
@@ -33,6 +33,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         setCurrent({
           min: data?.manual_min ?? data?.min_units ?? null,
           max: data?.manual_max ?? data?.max_units ?? null,
+          sales6m: data?.units_sold_6m ?? null,
         });
         setLoadingCur(false);
       });
@@ -56,6 +57,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         product_name:      product.nombre,
         current_min:       current?.min ?? null,
         current_max:       current?.max ?? null,
+        current_sales_6m:  current?.sales6m ?? null,
         requested_min:     newMin,
         requested_max:     newMax,
         reason:            reason.trim() || null,
@@ -118,14 +120,26 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
       </div>
 
       <div className="flex flex-col gap-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {/* Actual */}
+        {/* Actual + contexto de ventas */}
         {erp && (
-          <div className="rounded-2xl border border-slate-100 bg-slate-50/60 px-3.5 py-2.5 flex items-center justify-between">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">En uso ahora</span>
-            {loadingCur ? <Loader2 size={13} className="animate-spin text-slate-300" /> : (
-              <span className="text-[11px] font-bold text-slate-600">
-                MIN <span className="text-orange-500">{current?.min ?? '—'}</span> · MAX <span className="text-blue-500">{current?.max ?? '—'}</span>
-              </span>
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/60 px-3.5 py-2.5 flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">En uso ahora</span>
+              {loadingCur ? <Loader2 size={13} className="animate-spin text-slate-300" /> : (
+                <span className="text-[11px] font-bold text-slate-600">
+                  MIN <span className="text-orange-500">{current?.min ?? '—'}</span> · MAX <span className="text-blue-500">{current?.max ?? '—'}</span>
+                </span>
+              )}
+            </div>
+            {!loadingCur && (
+              <div className="flex items-center justify-between border-t border-slate-100 pt-1.5">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                  <TrendingUp size={11} className="text-emerald-500" /> Ventas 6 meses
+                </span>
+                <span className="text-[11px] font-bold text-slate-700 tabular-nums">
+                  {current?.sales6m != null ? `${Number(current.sales6m).toLocaleString()} und` : 'Sin ventas'}
+                </span>
+              </div>
             )}
           </div>
         )}

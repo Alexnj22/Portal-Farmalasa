@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS public.minmax_change_requests (
   product_name      text,
   current_min       integer,           -- snapshot al momento de solicitar
   current_max       integer,
+  current_sales_6m  integer,            -- ventas últimos 6 meses de esa sucursal (contexto)
   requested_min     integer NOT NULL,
   requested_max     integer NOT NULL,
   reason            text,

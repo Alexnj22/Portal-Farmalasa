@@ -2131,77 +2131,36 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 </div>
             )}
 
-            {/* ── Ocultar filtrados / Ocultos — between matrix and filter pill ── */}
-            <AnimatePresence>
-            {!neverCalc && ((hasActiveFilter && filtered.length > 0) || hiddenIds.size > 0) && (
-                <motion.div
-                    key="hide-row"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto', transition: { duration: 0.22, ease: EASE_OUT_EXPO } }}
-                    exit={{ opacity: 0, height: 0, transition: { duration: 0.14 } }}
-                    className="flex items-center gap-2 overflow-hidden">
-                    <AnimatePresence>
-                    {hasActiveFilter && filtered.length > 0 && (
-                        <motion.button
-                            key="hide-filtered"
-                            initial={{ opacity: 0, scale: 0.88 }} animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.12 } }}
-                            whileTap={{ scale: 0.94 }}
-                            onClick={hideFiltered}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-white/80 backdrop-blur-sm border-slate-200/70 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.9)] hover:bg-white transition-colors">
-                            <EyeOff size={10} className="text-rose-400" />
-                            Ocultar {filterLabel} ({filtered.length})
-                        </motion.button>
-                    )}
-                    </AnimatePresence>
-                    <AnimatePresence>
-                    {hiddenIds.size > 0 && (
-                        <motion.div
-                            key="hidden-pill"
-                            initial={{ opacity: 0, scale: 0.88 }} animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.12 } }}
-                            className={`flex items-center rounded-full border text-[11px] font-bold transition-colors duration-200 ${filterHidden ? 'bg-violet-100/80 border-violet-300/70 text-violet-700' : 'bg-white/80 border-slate-200/70 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.9)]'}`}>
-                            <button onClick={() => setFilterHidden(f => !f)} className="flex items-center gap-1.5 px-3 py-1.5 hover:opacity-80 transition-opacity">
-                                <Eye size={10} />
-                                <span>{hiddenIds.size} oculto{hiddenIds.size !== 1 ? 's' : ''}</span>
-                                {filterHidden && <X size={9} className="opacity-60" />}
-                            </button>
-                            {filterHidden && (
-                                <>
-                                    <div className="h-3.5 w-px bg-violet-300/60 shrink-0" />
-                                    <button onClick={unhideAll} className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black text-violet-600 hover:text-violet-800 transition-colors whitespace-nowrap">
-                                        Mostrar todos
-                                    </button>
-                                </>
-                            )}
-                        </motion.div>
-                    )}
-                    </AnimatePresence>
-                </motion.div>
-            )}
-            </AnimatePresence>
-
             {/* ── Filter + Draft bar — two-row layout ── */}
             {!neverCalc && (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2.5">
 
-                    {/* Row 1 — Status filters (liquid glass pill) */}
-                    <div className="flex items-center rounded-2xl overflow-hidden self-start"
+                    {/* Row 1 — Status filters + visibility controls (liquid glass pill) */}
+                    <motion.div
+                        className="flex items-center rounded-2xl overflow-hidden self-start transition-shadow duration-300"
+                        whileHover={{ boxShadow: '0 12px 40px rgba(0,82,204,0.11), inset 0 1px 0 rgba(255,255,255,0.95)' }}
                         style={{
-                            background: 'rgba(255,255,255,0.55)',
+                            background: 'rgba(255,255,255,0.58)',
                             backdropFilter: 'blur(24px)',
                             WebkitBackdropFilter: 'blur(24px)',
-                            border: '1px solid rgba(255,255,255,0.82)',
+                            border: '1px solid rgba(255,255,255,0.85)',
                             boxShadow: '0 8px 32px rgba(0,82,204,0.07), inset 0 1px 0 rgba(255,255,255,0.92)',
                         }}>
                         {STAT_CFGS.map((cfg, i) => {
                             const active = filterAlert === cfg.key;
                             return (
                                 <React.Fragment key={cfg.key}>
-                                    {i > 0 && <div className="h-5 w-px bg-slate-200/60 shrink-0" />}
+                                    {i > 0 && <div className="h-5 w-px bg-slate-200/50 shrink-0" />}
                                     <motion.button
-                                        whileTap={{ scale: 0.93 }}
+                                        whileTap={{ scale: 0.92 }}
+                                        whileHover={{ backgroundColor: active ? undefined : 'rgba(255,255,255,0.65)' }}
                                         onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
-                                        className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 select-none whitespace-nowrap ${active ? cfg.chipActive + ' font-bold' : 'text-slate-500 hover:bg-white/60 hover:text-slate-700'}`}>
-                                        <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
+                                        className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 select-none whitespace-nowrap ${active ? cfg.chipActive + ' font-bold' : 'text-slate-500 hover:text-slate-700'}`}>
+                                        <motion.span
+                                            className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`}
+                                            animate={active ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                                            transition={{ duration: 0.3 }}
+                                        />
                                         <span className={`tabular-nums font-black text-[12px] ${active ? '' : 'text-slate-700'}`}>
                                             {loading ? '–' : stats[cfg.key]}
                                         </span>
@@ -2217,15 +2176,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 </React.Fragment>
                             );
                         })}
+
                         {/* Pocos datos */}
                         <AnimatePresence>
                         {sparseCount > 0 && !loading && (
                             <motion.div key="sparse" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
-                                <div className="h-5 w-px bg-slate-200/60 shrink-0" />
+                                <div className="h-5 w-px bg-slate-200/50 shrink-0" />
                                 <motion.button
-                                    whileTap={{ scale: 0.93 }}
+                                    whileTap={{ scale: 0.92 }}
+                                    whileHover={{ backgroundColor: 'rgba(255,255,255,0.65)' }}
                                     onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
-                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 whitespace-nowrap ${filterSparse ? 'bg-orange-50/90 text-orange-700 font-bold' : 'text-orange-500 hover:bg-white/60 hover:text-orange-600'}`}>
+                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 whitespace-nowrap ${filterSparse ? 'bg-orange-50/90 text-orange-700 font-bold' : 'text-orange-500 hover:text-orange-700'}`}>
                                     <AlertTriangle size={10} strokeWidth={2.5} className="shrink-0" />
                                     <span className="tabular-nums font-black text-[12px]">{sparseCount}</span>
                                     pocos datos
@@ -2240,7 +2201,58 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             </motion.div>
                         )}
                         </AnimatePresence>
-                    </div>
+
+                        {/* Ocultar filtrados (contextual) */}
+                        <AnimatePresence>
+                        {hasActiveFilter && filtered.length > 0 && (
+                            <motion.div key="hide-action" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
+                                <div className="h-5 w-px bg-slate-200/50 shrink-0" />
+                                <motion.button
+                                    whileTap={{ scale: 0.92 }}
+                                    whileHover={{ backgroundColor: 'rgba(255,235,235,0.5)' }}
+                                    onClick={hideFiltered}
+                                    className="flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold text-rose-400 hover:text-rose-600 transition-colors duration-150 whitespace-nowrap">
+                                    <EyeOff size={10} className="shrink-0" />
+                                    Ocultar {filterLabel} ({filtered.length})
+                                </motion.button>
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
+
+                        {/* N ocultos toggle */}
+                        <AnimatePresence>
+                        {hiddenIds.size > 0 && (
+                            <motion.div key="hidden-toggle" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
+                                <div className="h-5 w-px bg-slate-200/50 shrink-0" />
+                                <motion.button
+                                    whileTap={{ scale: 0.92 }}
+                                    onClick={() => setFilterHidden(f => !f)}
+                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 whitespace-nowrap ${filterHidden ? 'bg-violet-50/90 text-violet-700 font-bold' : 'text-slate-400 hover:text-slate-600'}`}>
+                                    <Eye size={10} className="shrink-0" />
+                                    {hiddenIds.size} oculto{hiddenIds.size !== 1 ? 's' : ''}
+                                    <AnimatePresence>
+                                    {filterHidden && (
+                                        <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.5 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
+                                            <X size={9} className="ml-0.5" />
+                                        </motion.span>
+                                    )}
+                                    </AnimatePresence>
+                                </motion.button>
+                                {filterHidden && (
+                                    <>
+                                        <div className="h-5 w-px bg-violet-200/60 shrink-0" />
+                                        <motion.button
+                                            whileTap={{ scale: 0.92 }}
+                                            onClick={unhideAll}
+                                            className="flex items-center gap-1 px-3 py-2.5 text-[11px] font-bold text-violet-600 hover:text-violet-800 transition-colors whitespace-nowrap">
+                                            Mostrar todos
+                                        </motion.button>
+                                    </>
+                                )}
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
+                    </motion.div>
 
                     {/* Row 2 — Draft workflow (only when drafts exist) */}
                     <AnimatePresence>
@@ -2253,7 +2265,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             className="flex items-center gap-3">
 
                             {/* Amber-tinted glass pill: draft info + filter toggles + destructive action */}
-                            <div className="flex items-center rounded-2xl overflow-hidden shrink-0"
+                            <motion.div
+                                className="flex items-center rounded-2xl overflow-hidden shrink-0 transition-shadow duration-300"
+                                whileHover={{ boxShadow: '0 8px 28px rgba(245,158,11,0.18), inset 0 1px 0 rgba(255,255,255,0.95)' }}
                                 style={{
                                     background: 'rgba(255,251,235,0.72)',
                                     backdropFilter: 'blur(24px)',
@@ -2301,7 +2315,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         </motion.button>
                                     </>
                                 )}
-                            </div>
+                            </motion.div>
 
                             <div className="flex-1" />
 
@@ -2311,9 +2325,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 {hasActiveFilter && filteredDraftIds.length > 0 ? (
                                     <motion.button key="pub-filtered"
                                         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.12 } }}
-                                        {...ctaAnim}
+                                        whileHover={{ scale: 1.03, y: -1, boxShadow: '0 8px 28px rgba(0,82,204,0.5), inset 0 1px 0 rgba(255,255,255,0.2)' }}
+                                        whileTap={{ scale: 0.96, y: 0 }}
                                         onClick={() => requestPublish(filteredDraftIds)} disabled={!canManage || publishing}
-                                        className="flex items-center gap-2 px-5 py-2.5 text-[12px] font-bold text-white rounded-2xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap transition-all hover:brightness-110"
+                                        className="flex items-center gap-2 px-5 py-2.5 text-[12px] font-bold text-white rounded-2xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap"
                                         style={{ background: '#0052CC', boxShadow: '0 4px 20px rgba(0,82,204,0.40), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
                                         {publishing ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
                                         Publicar {filterLabel} ({filteredDraftIds.length})
@@ -2321,9 +2336,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 ) : (
                                     <motion.button key="pub-all"
                                         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.12 } }}
-                                        {...ctaAnim}
+                                        whileHover={{ scale: 1.03, y: -1, boxShadow: '0 8px 28px rgba(0,82,204,0.5), inset 0 1px 0 rgba(255,255,255,0.2)' }}
+                                        whileTap={{ scale: 0.96, y: 0 }}
                                         onClick={() => requestPublish()} disabled={!canManage || publishing}
-                                        className="flex items-center gap-2 px-5 py-2.5 text-[12px] font-bold text-white rounded-2xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap transition-all hover:brightness-110"
+                                        className="flex items-center gap-2 px-5 py-2.5 text-[12px] font-bold text-white rounded-2xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap"
                                         style={{ background: '#0052CC', boxShadow: '0 4px 20px rgba(0,82,204,0.40), inset 0 1px 0 rgba(255,255,255,0.15)' }}>
                                         {publishing ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
                                         Publicar todo ({draftCount})

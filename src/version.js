@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.0';
+export const APP_VERSION = '2.2.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.1  — MinMax: fix toast de validación (validateEdit síncrono en cada handler antes de navegar); backfill calc_min/calc_max en 17k filas; texto "act." más visible (slate-400)
 // v2.2.0  — MinMax: validación MIN/MAX muestra LiquidToast con el error y revierte al valor anterior; botón Restaurar (RotateCcw) en acciones devuelve al valor originalmente calculado por Calcular (calc_min/calc_max en DB)
 // v2.1.9  — MinMax: error de validación (MAX>MIN, regla 0/x) se muestra inline debajo del input en rojo; el input permanece abierto para corrección
 // v2.1.8  — MinMax: permisos can_edit/can_approve/can_view; modo live post-publicación (edits van directo a min_units/max_units); filtro "Solo cambios" auto al recalcular con datos publicados; validación inline MAX>MIN y regla 0/x (MIN=0→MAX solo 0 o 1); tabla product_stock_params limpiada para inicio fresco

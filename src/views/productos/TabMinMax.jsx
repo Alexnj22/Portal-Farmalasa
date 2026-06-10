@@ -1480,6 +1480,28 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         }
     }, [hasPublishedData]);
 
+    // Pure sync validation — used by key handlers and saveDraftCell
+    const validateEdit = useCallback((edit) => {
+        if (!edit) return null;
+        const numVal = edit.value === '' ? null : parseInt(edit.value, 10);
+        if (Number.isNaN(numVal) || numVal === null) return null;
+        const targetRow = data.find(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId);
+        const rowHasDraft = targetRow?.draft_status === 'pending';
+        const otherRaw = edit.field === 'min'
+            ? (rowHasDraft ? targetRow?.draft_max  : targetRow?.effective_max)
+            : (rowHasDraft ? targetRow?.draft_min  : targetRow?.effective_min);
+        const other = otherRaw != null ? Number(otherRaw) : null;
+        if (other === null) return null;
+        if (edit.field === 'max') {
+            if (numVal > 0 && numVal <= other) return 'MAX debe ser mayor al MIN';
+            if (other === 0 && numVal > 1)     return 'Con MIN=0 solo se permite MAX=0 o MAX=1';
+        } else {
+            if (numVal > 0 && other > 0 && numVal >= other) return 'MIN debe ser menor al MAX';
+            if (numVal === 0 && other > 1)                   return 'Con MIN=0 el MAX no puede ser mayor a 1';
+        }
+        return null;
+    }, [data]);
+
     const saveDraftCell = useCallback(async (edit) => {
         if (!edit) return;
         const numVal = edit.value === '' ? null : parseInt(edit.value, 10);
@@ -1487,29 +1509,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         const targetRow = data.find(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId);
         const rowHasDraft = targetRow?.draft_status === 'pending';
         const saveLive = hasPublishedData && !rowHasDraft;
-
-        // Cross-field validation — keep edit open, show inline error
-        if (numVal !== null) {
-            const otherRaw = edit.field === 'min'
-                ? (rowHasDraft ? targetRow?.draft_max   : targetRow?.effective_max)
-                : (rowHasDraft ? targetRow?.draft_min   : targetRow?.effective_min);
-            const other = otherRaw != null ? Number(otherRaw) : null;
-            if (other !== null) {
-                let errMsg = null;
-                if (edit.field === 'max') {
-                    if (numVal > 0 && numVal <= other) errMsg = 'MAX debe ser mayor al MIN';
-                    else if (other === 0 && numVal > 1) errMsg = 'Con MIN=0 solo se permite MAX=0 o MAX=1';
-                } else {
-                    if (numVal > 0 && other > 0 && numVal >= other) errMsg = 'MIN debe ser menor al MAX';
-                    else if (numVal === 0 && other > 1)              errMsg = 'Con MIN=0 el MAX no puede ser mayor a 1';
-                }
-                if (errMsg) {
-                    setToast({ message: errMsg, type: 'error' });
-                    setInlineDraftEdit(null);
-                    return;
-                }
-            }
-        }
 
         setInlineDraftEdit(null);
         if (saveLive) {
@@ -2290,12 +2289,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     onFocus={e => e.target.select()}
                                                     onBlur={() => {
                                                         if (skipBlurSave.current) { skipBlurSave.current = false; return; }
+                                                        const err = validateEdit(inlineDraftEdit);
+                                                        if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                         saveDraftCell(inlineDraftEdit);
                                                     }}
                                                     onKeyDown={e => {
                                                         if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
                                                         if (e.key === 'Tab' || e.key === 'ArrowRight') {
                                                             e.preventDefault();
+                                                            const err = validateEdit(inlineDraftEdit);
+                                                            if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
                                                             setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(hasDraft ? (row.draft_max ?? '') : (row.effective_max ?? '')) });
@@ -2303,6 +2306,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         }
                                                         if (e.key === 'Enter' || e.key === 'ArrowDown') {
                                                             e.preventDefault();
+                                                            const err = validateEdit(inlineDraftEdit);
+                                                            if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
                                                             const next = pageRows.slice(rowIdx + 1).find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
@@ -2312,6 +2317,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         }
                                                         if (e.key === 'ArrowUp') {
                                                             e.preventDefault();
+                                                            const err = validateEdit(inlineDraftEdit);
+                                                            if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
                                                             const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
@@ -2335,7 +2342,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 <div className={`px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 ${canManage ? 'group-hover/min:border-amber-400 group-hover/min:bg-amber-100' : ''} transition-[border-color,background-color] duration-150`}>
                                                     <span className="text-[13px] font-black tabular-nums text-amber-700">{(row.draft_min ?? 0).toLocaleString()}</span>
                                                 </div>
-                                                {minN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{minN.toLocaleString()} act.</div>}
+                                                {minN > 0 && <div className="text-[9px] text-slate-400 tabular-nums mt-0.5">{minN.toLocaleString()} act.</div>}
                                             </div>
                                         ) : (dead || noHistory) ? (
                                             canManage ? (
@@ -2376,12 +2383,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     onFocus={e => e.target.select()}
                                                     onBlur={() => {
                                                         if (skipBlurSave.current) { skipBlurSave.current = false; return; }
+                                                        const errB = validateEdit(inlineDraftEdit);
+                                                        if (errB) { setToast({ message: errB, type: 'error' }); setInlineDraftEdit(null); return; }
                                                         saveDraftCell(inlineDraftEdit);
                                                     }}
                                                     onKeyDown={e => {
                                                         if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
                                                         if (e.key === 'ArrowLeft') {
                                                             e.preventDefault();
+                                                            const err = validateEdit(inlineDraftEdit);
+                                                            if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
                                                             setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(hasDraft ? (row.draft_min ?? '') : (row.effective_min ?? '')) });
@@ -2389,6 +2400,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         }
                                                         if (e.key === 'Enter' || e.key === 'ArrowDown') {
                                                             e.preventDefault();
+                                                            const err = validateEdit(inlineDraftEdit);
+                                                            if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
                                                             const next = pageRows.slice(rowIdx + 1).find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
@@ -2398,6 +2411,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         }
                                                         if (e.key === 'ArrowUp') {
                                                             e.preventDefault();
+                                                            const err = validateEdit(inlineDraftEdit);
+                                                            if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
                                                             const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
@@ -2421,7 +2436,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 <div className={`px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 ${canManage ? 'group-hover/max:border-blue-400 group-hover/max:bg-blue-100' : ''} transition-[border-color,background-color] duration-150`}>
                                                     <span className="text-[13px] font-black tabular-nums text-blue-700">{(row.draft_max ?? 0).toLocaleString()}</span>
                                                 </div>
-                                                {maxN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{maxN.toLocaleString()} act.</div>}
+                                                {maxN > 0 && <div className="text-[9px] text-slate-400 tabular-nums mt-0.5">{maxN.toLocaleString()} act.</div>}
                                             </div>
                                         ) : (dead || noHistory) ? (
                                             canManage ? (

@@ -88,6 +88,25 @@ const XYZ_CFG = {
 // Normalize legacy demand_variability values → X/Y/Z
 const normXyz = (v) => ({ stable: 'X', moderate: 'Y', erratic: 'Z' }[v] ?? v ?? 'X');
 
+// Pure validation: receives the edit + the current row object directly (no closure lookup)
+const validateEditForRow = (edit, row) => {
+    if (!edit || !row) return null;
+    const numVal = edit.value === '' ? null : parseInt(edit.value, 10);
+    if (numVal === null || Number.isNaN(numVal)) return null;
+    const hasDraftRow = row.draft_status === 'pending';
+    const other = Number(edit.field === 'max'
+        ? (hasDraftRow ? (row.draft_min ?? 0) : (row.effective_min ?? 0))
+        : (hasDraftRow ? (row.draft_max ?? 0) : (row.effective_max ?? 0)));
+    if (edit.field === 'max') {
+        if (numVal > 0 && numVal <= other) return 'MAX debe ser mayor al MIN';
+        if (other === 0 && numVal > 1)     return 'Con MIN=0 solo se permite MAX=0 o MAX=1';
+    } else {
+        if (numVal > 0 && other > 0 && numVal >= other) return 'MIN debe ser menor al MAX';
+        if (numVal === 0 && other > 1)                   return 'Con MIN=0 el MAX no puede ser mayor a 1';
+    }
+    return null;
+};
+
 function fmtMoney(n) {
     const v = Number(n) || 0;
     if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
@@ -1480,28 +1499,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         }
     }, [hasPublishedData]);
 
-    // Pure sync validation — used by key handlers and saveDraftCell
-    const validateEdit = useCallback((edit) => {
-        if (!edit) return null;
-        const numVal = edit.value === '' ? null : parseInt(edit.value, 10);
-        if (Number.isNaN(numVal) || numVal === null) return null;
-        const targetRow = data.find(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId);
-        const rowHasDraft = targetRow?.draft_status === 'pending';
-        const otherRaw = edit.field === 'min'
-            ? (rowHasDraft ? targetRow?.draft_max  : targetRow?.effective_max)
-            : (rowHasDraft ? targetRow?.draft_min  : targetRow?.effective_min);
-        const other = otherRaw != null ? Number(otherRaw) : null;
-        if (other === null) return null;
-        if (edit.field === 'max') {
-            if (numVal > 0 && numVal <= other) return 'MAX debe ser mayor al MIN';
-            if (other === 0 && numVal > 1)     return 'Con MIN=0 solo se permite MAX=0 o MAX=1';
-        } else {
-            if (numVal > 0 && other > 0 && numVal >= other) return 'MIN debe ser menor al MAX';
-            if (numVal === 0 && other > 1)                   return 'Con MIN=0 el MAX no puede ser mayor a 1';
-        }
-        return null;
-    }, [data]);
-
     const saveDraftCell = useCallback(async (edit) => {
         if (!edit) return;
         const numVal = edit.value === '' ? null : parseInt(edit.value, 10);
@@ -2289,15 +2286,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     onFocus={e => e.target.select()}
                                                     onBlur={() => {
                                                         if (skipBlurSave.current) { skipBlurSave.current = false; return; }
-                                                        const err = validateEdit(inlineDraftEdit);
-                                                        if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
+                                                        const err = validateEditForRow(inlineDraftEdit, row);
+                                                        if (err) { skipBlurSave.current = true; setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                         saveDraftCell(inlineDraftEdit);
                                                     }}
                                                     onKeyDown={e => {
                                                         if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
                                                         if (e.key === 'Tab' || e.key === 'ArrowRight') {
                                                             e.preventDefault();
-                                                            const err = validateEdit(inlineDraftEdit);
+                                                            const err = validateEditForRow(inlineDraftEdit, row);
                                                             if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
@@ -2306,7 +2303,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         }
                                                         if (e.key === 'Enter' || e.key === 'ArrowDown') {
                                                             e.preventDefault();
-                                                            const err = validateEdit(inlineDraftEdit);
+                                                            const err = validateEditForRow(inlineDraftEdit, row);
                                                             if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
@@ -2317,7 +2314,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         }
                                                         if (e.key === 'ArrowUp') {
                                                             e.preventDefault();
-                                                            const err = validateEdit(inlineDraftEdit);
+                                                            const err = validateEditForRow(inlineDraftEdit, row);
                                                             if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
@@ -2383,15 +2380,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     onFocus={e => e.target.select()}
                                                     onBlur={() => {
                                                         if (skipBlurSave.current) { skipBlurSave.current = false; return; }
-                                                        const errB = validateEdit(inlineDraftEdit);
-                                                        if (errB) { setToast({ message: errB, type: 'error' }); setInlineDraftEdit(null); return; }
+                                                        const errB = validateEditForRow(inlineDraftEdit, row);
+                                                        if (errB) { skipBlurSave.current = true; setToast({ message: errB, type: 'error' }); setInlineDraftEdit(null); return; }
                                                         saveDraftCell(inlineDraftEdit);
                                                     }}
                                                     onKeyDown={e => {
                                                         if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
                                                         if (e.key === 'ArrowLeft') {
                                                             e.preventDefault();
-                                                            const err = validateEdit(inlineDraftEdit);
+                                                            const err = validateEditForRow(inlineDraftEdit, row);
                                                             if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
@@ -2400,7 +2397,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         }
                                                         if (e.key === 'Enter' || e.key === 'ArrowDown') {
                                                             e.preventDefault();
-                                                            const err = validateEdit(inlineDraftEdit);
+                                                            const err = validateEditForRow(inlineDraftEdit, row);
                                                             if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
@@ -2411,7 +2408,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         }
                                                         if (e.key === 'ArrowUp') {
                                                             e.preventDefault();
-                                                            const err = validateEdit(inlineDraftEdit);
+                                                            const err = validateEditForRow(inlineDraftEdit, row);
                                                             if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
@@ -2548,7 +2545,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     onClick={e => { e.stopPropagation(); resetToCalc(row); }}
                                                     title={`Restaurar a valores calculados (MIN ${row.calc_min} / MAX ${row.calc_max})`}
                                                     {...iconAnim}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-orange-500 hover:bg-orange-50 transition-colors">
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-500 hover:bg-emerald-100 hover:text-emerald-700 transition-colors">
                                                     <RotateCcw size={12} />
                                                 </motion.button>
                                             )}

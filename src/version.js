@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.1';
+export const APP_VERSION = '2.2.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.2  — MinMax: fix definitivo toast validación usando validateEditForRow(row) puro sin closure de data; botón Restaurar verde; skipBlurSave en path de error para evitar doble-fire
 // v2.2.1  — MinMax: fix toast de validación (validateEdit síncrono en cada handler antes de navegar); backfill calc_min/calc_max en 17k filas; texto "act." más visible (slate-400)
 // v2.2.0  — MinMax: validación MIN/MAX muestra LiquidToast con el error y revierte al valor anterior; botón Restaurar (RotateCcw) en acciones devuelve al valor originalmente calculado por Calcular (calc_min/calc_max en DB)
 // v2.1.9  — MinMax: error de validación (MAX>MIN, regla 0/x) se muestra inline debajo del input en rojo; el input permanece abierto para corrección

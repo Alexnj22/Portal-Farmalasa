@@ -360,6 +360,25 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         return () => { ro.disconnect(); window.removeEventListener('resize', recomputePill); };
     }, []);
 
+    // Scroll nav to keep active item visible after submenu animation finishes
+    useEffect(() => {
+        const t = setTimeout(() => {
+            const navEl = navRef.current;
+            const activeEl = itemRefs.current.get(activeId);
+            if (!navEl || !activeEl) return;
+            const navRect = navEl.getBoundingClientRect();
+            const actRect = activeEl.getBoundingClientRect();
+            const elTop    = actRect.top    - navRect.top + navEl.scrollTop;
+            const elBottom = actRect.bottom - navRect.top + navEl.scrollTop;
+            if (elBottom > navEl.scrollTop + navEl.clientHeight) {
+                navEl.scrollTo({ top: elBottom - navEl.clientHeight + 8, behavior: 'smooth' });
+            } else if (elTop < navEl.scrollTop) {
+                navEl.scrollTo({ top: elTop - 8, behavior: 'smooth' });
+            }
+        }, 330);
+        return () => clearTimeout(t);
+    }, [openGroups, activeId]);
+
     const allModuleKeys = useMemo(() =>
         visibleGroups.flatMap(g => g.visibleModules.filter(m => !m.comingSoon).map(m => m.key)),
     [visibleGroups]);

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.12';
+export const APP_VERSION = '2.2.13';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.13 — Sidebar: scroll automático al ítem activo al abrir submenú (espera 330ms a que termine la animación, luego scrollea la nav)
 // v2.2.12 — MinMax: fix tab "Sin movimiento" mostraba 0 (alert_status era 'no_data' en vez de 'dead_stock' desde calc_columns); filtro "pocos datos" ahora es toggle independiente (filterSparse) — muestra solo sparse sin mezclar borradores
 // v2.2.11 — MinMax: "Calcular todas" llama por sucursal en secuencia (muestra progreso "La Popular 1/7"); DB: work_mem 128MB elimina disk spill, data-modifying CTEs fusionan sparse+main en un solo scan, ranked filtra dias>=3
 // v2.2.10 — MinMax: todos los mensajes usan LiquidToast — error de carga, calcular éxito/error, aviso bodega; eliminado banner inline de error

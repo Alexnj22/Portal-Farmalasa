@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.1.7';
+export const APP_VERSION = '2.1.8';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.1.8  — MinMax: permisos can_edit/can_approve/can_view; modo live post-publicación (edits van directo a min_units/max_units); filtro "Solo cambios" auto al recalcular con datos publicados; validación inline MAX>MIN y regla 0/x (MIN=0→MAX solo 0 o 1); tabla product_stock_params limpiada para inicio fresco
 // v2.1.7  — Widget Ajuste Min/Max: aviso reformulado ("MIN y MAX se ingresan en unidades. 30 und = 1 CAJA" + "Factor calculado: 1x30"); se quita el equivalente bajo los inputs MIN/MAX; foto del producto y principio activo en el header del formulario y en los resultados de búsqueda
 // v2.1.6  — Widget Ajuste Min/Max: deja claro que MIN/MAX son en UNIDADES (no presentaciones) — aviso con el factor de la presentación dominante (ej: 1 CAJA = 100 und (1x100)), labels "Nuevo MIN/MAX (und)", y equivalente en vivo bajo cada input y en "En uso ahora" (≈ N CAJA). Carga presentaciones de product_precios
 // v2.1.5  — Reset de contraseña: al restablecer (EmployeeDetailView) ahora se muestra la contraseña temporal aleatoria que genera el edge function en un modal con botón de copiar ("no se volverá a mostrar"); antes solo salía un toast y la temporal quedaba invisible

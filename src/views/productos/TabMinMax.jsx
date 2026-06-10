@@ -1487,6 +1487,36 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         const targetRow = data.find(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId);
         const rowHasDraft = targetRow?.draft_status === 'pending';
         const saveLive = hasPublishedData && !rowHasDraft;
+
+        // Cross-field validation
+        if (numVal !== null) {
+            const otherRaw = edit.field === 'min'
+                ? (rowHasDraft ? targetRow?.draft_max   : targetRow?.effective_max)
+                : (rowHasDraft ? targetRow?.draft_min   : targetRow?.effective_min);
+            const other = otherRaw != null ? Number(otherRaw) : null;
+            if (other !== null) {
+                if (edit.field === 'max') {
+                    if (numVal > 0 && numVal <= other) {
+                        setToast({ message: 'MAX debe ser mayor al MIN', type: 'error' });
+                        setInlineDraftEdit(null); return;
+                    }
+                    if (other === 0 && numVal > 1) {
+                        setToast({ message: 'Con MIN=0 solo se permite MAX=0 o MAX=1', type: 'error' });
+                        setInlineDraftEdit(null); return;
+                    }
+                } else {
+                    if (numVal > 0 && other > 0 && numVal >= other) {
+                        setToast({ message: 'MIN debe ser menor al MAX', type: 'error' });
+                        setInlineDraftEdit(null); return;
+                    }
+                    if (numVal === 0 && other > 1) {
+                        setToast({ message: 'Con MIN=0 el MAX no puede ser mayor a 1 — ajustá el MAX primero', type: 'error' });
+                        setInlineDraftEdit(null); return;
+                    }
+                }
+            }
+        }
+
         setInlineDraftEdit(null);
         if (saveLive) {
             const col    = edit.field === 'min' ? 'min_units'    : 'max_units';

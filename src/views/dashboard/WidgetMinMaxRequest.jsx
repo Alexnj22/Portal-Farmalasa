@@ -135,8 +135,14 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors shrink-0">
           <ArrowLeft size={13} strokeWidth={2.5} />
         </button>
+        <div className="shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center">
+          {product.foto_url
+            ? <img src={product.foto_url} alt="" className="w-full h-full object-contain" />
+            : <Package size={16} className="text-slate-300" />}
+        </div>
         <div className="flex-1 min-w-0">
           <p className="text-[12px] font-black text-slate-800 truncate">{product.nombre}</p>
+          {product.principio_activo && <p className="text-[10px] text-emerald-600 font-semibold truncate">{product.principio_activo}</p>}
           <p className="text-[10px] text-slate-400 truncate">
             {ERP_NAMES[Number(erp)] || 'Sucursal'}{product.laboratorio_nombre ? ` · ${product.laboratorio_nombre}` : ''}
           </p>
@@ -178,10 +184,11 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         {/* Aviso: valores en unidades + factor de presentación */}
         <div className="flex items-start gap-2 rounded-xl bg-blue-50/70 border border-blue-100 px-3 py-2">
           <Package size={13} className="text-blue-500 mt-0.5 shrink-0" />
-          <p className="text-[10px] text-blue-700 font-medium leading-snug">
-            MIN y MAX se ingresan en <b>unidades</b> (no en presentaciones).
-            {domPres && <> 1 {domPres.tipo?.trim() || 'caja'} = <b>{domPres.factor} und</b>{domPres.descripcion ? ` (${domPres.descripcion})` : ''}.</>}
-          </p>
+          <div className="text-[10px] text-blue-700 font-medium leading-snug">
+            MIN y MAX se ingresan en <b>unidades</b>.
+            {domPres && <> <b>{domPres.factor} und = 1 {domPres.tipo?.trim() || 'caja'}</b>.</>}
+            {domPres?.descripcion && <div className="text-[9px] text-blue-500/80 mt-0.5">Factor calculado: {domPres.descripcion}</div>}
+          </div>
         </div>
 
         {/* Nuevos valores */}
@@ -190,13 +197,11 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
             <label className="text-[10px] font-black text-orange-500 uppercase tracking-widest px-1">Nuevo MIN (und) *</label>
             <input type="number" min="0" value={mn} onChange={e => { setMn(e.target.value); setErr(''); }}
               className="w-full text-right text-[13px] font-bold text-orange-700 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300" />
-            {fmtEquiv(mn, pres) && <span className="text-[9px] text-orange-500 font-bold text-right px-1">{fmtEquiv(mn, pres)}</span>}
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest px-1">Nuevo MAX (und) *</label>
             <input type="number" min="0" value={mx} onChange={e => { setMx(e.target.value); setErr(''); }}
               className="w-full text-right text-[13px] font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-300" />
-            {fmtEquiv(mx, pres) && <span className="text-[9px] text-blue-500 font-bold text-right px-1">{fmtEquiv(mx, pres)}</span>}
           </div>
         </div>
 
@@ -236,7 +241,7 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
     if (!q || q.trim().length < 2) { setResults([]); setLoading(false); return; }
     setLoading(true);
     supabase.from('products')
-      .select('id, nombre, laboratorio_id, laboratorios(nombre)')
+      .select('id, nombre, laboratorio_id, foto_url, principio_activo, laboratorios(nombre)')
       .eq('activo', true)
       .ilike('nombre', `%${q.trim()}%`)
       .order('nombre')
@@ -308,9 +313,14 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
         {!loading && results.map(p => (
           <button key={p.id} onClick={() => { setPicked(p); setView('form'); }}
             className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl border border-slate-100 bg-white hover:border-[#0052CC]/40 transition-colors text-left">
-            <Package size={14} className="text-slate-300 shrink-0" strokeWidth={2} />
+            <div className="shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center">
+              {p.foto_url
+                ? <img src={p.foto_url} alt="" className="w-full h-full object-contain" />
+                : <Package size={14} className="text-slate-300" strokeWidth={2} />}
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-[12px] font-bold text-slate-800 truncate leading-tight">{p.nombre}</p>
+              {p.principio_activo && <p className="text-[9px] text-emerald-600 font-semibold truncate">{p.principio_activo}</p>}
               {p.laboratorio_nombre && <p className="text-[9px] text-slate-400 truncate">{p.laboratorio_nombre}</p>}
             </div>
             <Building2 size={12} className="text-slate-300 shrink-0" />

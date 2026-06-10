@@ -66,7 +66,6 @@ const STAT_CFGS = [
     { key: 'ok',           label: 'OK',              dot: 'bg-emerald-500', active: 'bg-emerald-100/75 backdrop-blur-sm border-emerald-300/70 text-emerald-700 shadow-[0_3px_14px_rgba(16,185,129,0.22)]' },
     { key: 'overstocked',  label: 'Exceso',          dot: 'bg-blue-400',    active: 'bg-blue-100/75 backdrop-blur-sm border-blue-300/70 text-blue-700 shadow-[0_3px_14px_rgba(59,130,246,0.22)]'         },
     { key: 'dead_stock',   label: 'Sin movimiento',  dot: 'bg-slate-300',   active: 'bg-slate-100/75 backdrop-blur-sm border-slate-300/70 text-slate-600 shadow-[0_3px_14px_rgba(148,163,184,0.18)]'     },
-    { key: 'no_data',      label: 'Sin historial',   dot: 'bg-yellow-300',  active: 'bg-yellow-50/75 backdrop-blur-sm border-yellow-300/70 text-yellow-700 shadow-[0_3px_14px_rgba(234,179,8,0.18)]'            },
 ];
 
 const ABC_CFG = {
@@ -367,18 +366,12 @@ function DraftCostCard({ draftCost }) {
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm"
             style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
             <Target size={13} className="shrink-0 text-violet-400" />
-            <div className="flex flex-col leading-snug gap-1">
+            <div className="flex flex-col leading-snug gap-0.5">
                 <span className="text-[10px] font-semibold text-slate-500">Inversión borrador</span>
-                <div className="flex items-baseline gap-2">
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-[9px] font-bold text-amber-500 uppercase tracking-wide">MIN</span>
-                        <span className="text-[13px] font-black tabular-nums text-amber-700">{fmtMoney(minC)}</span>
-                    </div>
+                <div className="flex items-baseline gap-1.5">
+                    <span className="text-[14px] font-black tabular-nums text-amber-700">{fmtMoney(minC)}</span>
                     <span className="text-[10px] text-slate-300">→</span>
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-[9px] font-bold text-blue-500 uppercase tracking-wide">MAX</span>
-                        <span className="text-[14px] font-black tabular-nums text-blue-700">{fmtMoney(maxC)}</span>
-                    </div>
+                    <span className="text-[14px] font-black tabular-nums text-blue-700">{fmtMoney(maxC)}</span>
                 </div>
             </div>
         </div>
@@ -2149,11 +2142,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     <motion.button
                                         {...chipAnim}
                                         onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
-                                        className={`flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-bold transition-colors duration-150 ${active ? 'bg-slate-100/90 text-slate-700' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'}`}>
+                                        className={`flex items-center gap-1 px-2 py-1 text-[10px] font-bold transition-colors duration-150 ${active ? 'bg-slate-100/90 text-slate-700' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'}`}>
                                         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
                                         <span className={`tabular-nums font-black ${active ? '' : 'text-slate-700'}`}>{loading ? '–' : stats[cfg.key]}</span>
                                         <span className="opacity-80">{cfg.label}</span>
-                                        {active && <X size={9} className="ml-0.5 opacity-60" />}
+                                        {active && <X size={8} className="ml-0.5 opacity-60" />}
                                     </motion.button>
                                 </React.Fragment>
                             );
@@ -2165,12 +2158,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <motion.button
                                     {...chipAnim}
                                     onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
-                                    className={`flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-bold transition-colors duration-150 ${filterSparse ? 'bg-orange-50/80 text-orange-700' : 'text-orange-500 hover:bg-orange-50/60 hover:text-orange-700'}`}
+                                    className={`flex items-center gap-1 px-2 py-1 text-[10px] font-bold transition-colors duration-150 ${filterSparse ? 'bg-orange-50/80 text-orange-700' : 'text-orange-500 hover:bg-orange-50/60 hover:text-orange-700'}`}
                                     title="Productos con ventas en menos de 3 días distintos — requieren confirmación manual de MIN/MAX">
                                     <AlertTriangle size={9} strokeWidth={2.5} />
                                     <span className="tabular-nums font-black">{sparseCount}</span>
                                     pocos datos
-                                    {filterSparse && <X size={9} className="ml-0.5 opacity-60" />}
+                                    {filterSparse && <X size={8} className="ml-0.5 opacity-60" />}
                                 </motion.button>
                             </>
                         )}
@@ -2239,21 +2232,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         >
                             <div className="flex items-center rounded-l-2xl border border-r-0 border-slate-200/70 bg-white/80 backdrop-blur-sm overflow-hidden">
                                 {/* Count + pulsing dot */}
-                                <div className="flex items-center gap-1 px-2.5 py-1.5">
+                                <div className="flex items-center gap-1 px-2 py-1">
                                     <span className="relative flex h-1.5 w-1.5 shrink-0">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
                                         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-400" />
                                     </span>
-                                    <span className="text-[11px] font-black text-slate-700 tabular-nums">{draftCount}</span>
-                                    <span className="text-[11px] text-slate-400">borrador{draftCount !== 1 ? 'es' : ''}</span>
+                                    <span className="text-[10px] font-black text-slate-700 tabular-nums">{draftCount}</span>
+                                    <span className="text-[10px] text-slate-400">borrador{draftCount !== 1 ? 'es' : ''}</span>
                                 </div>
                                 <div className="h-5 w-px bg-slate-100 shrink-0" />
                                 {/* Solo borradores toggle */}
                                 <motion.button
                                     {...chipAnim}
                                     onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); setFilterChangesOnly(false); }}
-                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
-                                    {filterDraft ? <><X size={10} strokeWidth={2.5} /> Ver todos</> : 'Solo borradores'}
+                                    className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[10px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
+                                    {filterDraft ? <><X size={9} strokeWidth={2.5} /> Ver todos</> : 'Solo borradores'}
                                 </motion.button>
                                 {/* Solo cambios — only when there is published data with changes */}
                                 {hasPublishedData && changesCount > 0 && (
@@ -2262,8 +2255,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         <motion.button
                                             {...chipAnim}
                                             onClick={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); setFilterSparse(false); }}
-                                            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold ${filterChangesOnly ? 'text-violet-600' : 'text-slate-500 hover:text-slate-700'}`}>
-                                            {filterChangesOnly ? <><X size={10} strokeWidth={2.5} /> Ver todos</> : `Solo cambios (${changesCount})`}
+                                            className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[10px] font-bold ${filterChangesOnly ? 'text-violet-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                                            {filterChangesOnly ? <><X size={9} strokeWidth={2.5} /> Ver todos</> : `Solo cambios (${changesCount})`}
                                         </motion.button>
                                     </>
                                 )}
@@ -2275,7 +2268,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             {...chipAnim}
                                             onClick={() => setDiscardConfirm(true)}
                                             disabled={discardingAll}
-                                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-50 disabled:opacity-50 disabled:pointer-events-none transition-colors">
+                                            className="flex items-center gap-1 px-2 py-1 rounded-xl text-[10px] font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-50 disabled:opacity-50 disabled:pointer-events-none transition-colors">
                                             {discardingAll ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}
                                             Descartar todo
                                         </motion.button>
@@ -2290,7 +2283,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.14, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, transition: { duration: 0.1 } }}
                                     {...ctaAnim}
                                     onClick={() => requestPublish(filteredDraftIds)} disabled={!canManage || publishing}
-                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
+                                    className="self-stretch inline-flex items-center justify-center gap-1 px-3 text-[10px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                                     {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
                                     Publicar {filterLabel} ({filteredDraftIds.length})
                                 </motion.button>
@@ -2300,7 +2293,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.14, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, transition: { duration: 0.1 } }}
                                     {...ctaAnim}
                                     onClick={() => requestPublish()} disabled={!canManage || publishing}
-                                    className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
+                                    className="self-stretch inline-flex items-center justify-center gap-1 px-3 text-[10px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                                     {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
                                     Publicar todo ({draftCount})
                                 </motion.button>

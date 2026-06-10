@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.17';
+export const APP_VERSION = '2.2.18';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.18 — MinMax: DraftCostCard igualada en altura a CostCards (una sola línea de valores, gap-0.5, text-[14px]); "Sin historial" eliminado de STAT_CFGS (redundante con Sin movimiento); pills aún más compactas (px-2 py-1 text-[10px])
 // v2.2.17 — MinMax: cálculo mensual automático (edge fn auto-calculate-minmax + pg_cron día 1 a las 3am); notificación push al Supervisor de Ventas con fallback a jefe inmediato; RPC discard_stock_drafts; botón "Descartar todo" con confirm modal; botón Trash2 por fila para descartar borrador individual
 // v2.2.16 — MinMax: cards (Total retenido/Inventario útil/etc.) muestran skeleton al cambiar sucursal; pills de filtro más compactas (px-2.5 py-1.5); botón Ocultar rosa, botón Historial azul
 // v2.2.15 — MinMax: filtros de estado unidos en una sola pill contenedor (rounded-2xl); "Pocos datos" movido dentro de la pill de estado; borradores+publicar en pill separada (solo visible cuando hay borradores); mensaje badge sparse mejorado (mayorista vs rotación mínima)

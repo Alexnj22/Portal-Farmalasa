@@ -1342,7 +1342,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     // hiddenIds se carga desde is_hidden en get_stock_analysis al hacer loadData
     const [configChanged,   setConfigChanged]   = useState(false);
-    const [inlineDraftEdit, setInlineDraftEdit] = useState(null); // { productId, sucursalId, field:'min'|'max', value }
+    const [inlineDraftEdit, setInlineDraftEdit] = useState(null); // { productId, sucursalId, field:'min'|'max', value, error? }
     const [toast,           setToast]           = useState(null); // { message, type }
     const [currentEmployee, setCurrentEmployee] = useState(null);
     const loadRef = useRef(0);
@@ -1488,31 +1488,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         const rowHasDraft = targetRow?.draft_status === 'pending';
         const saveLive = hasPublishedData && !rowHasDraft;
 
-        // Cross-field validation
+        // Cross-field validation — keep edit open, show inline error
         if (numVal !== null) {
             const otherRaw = edit.field === 'min'
                 ? (rowHasDraft ? targetRow?.draft_max   : targetRow?.effective_max)
                 : (rowHasDraft ? targetRow?.draft_min   : targetRow?.effective_min);
             const other = otherRaw != null ? Number(otherRaw) : null;
             if (other !== null) {
+                let errMsg = null;
                 if (edit.field === 'max') {
-                    if (numVal > 0 && numVal <= other) {
-                        setToast({ message: 'MAX debe ser mayor al MIN', type: 'error' });
-                        setInlineDraftEdit(null); return;
-                    }
-                    if (other === 0 && numVal > 1) {
-                        setToast({ message: 'Con MIN=0 solo se permite MAX=0 o MAX=1', type: 'error' });
-                        setInlineDraftEdit(null); return;
-                    }
+                    if (numVal > 0 && numVal <= other) errMsg = 'MAX debe ser mayor al MIN';
+                    else if (other === 0 && numVal > 1) errMsg = 'Con MIN=0 solo se permite MAX=0 o MAX=1';
                 } else {
-                    if (numVal > 0 && other > 0 && numVal >= other) {
-                        setToast({ message: 'MIN debe ser menor al MAX', type: 'error' });
-                        setInlineDraftEdit(null); return;
-                    }
-                    if (numVal === 0 && other > 1) {
-                        setToast({ message: 'Con MIN=0 el MAX no puede ser mayor a 1 — ajustá el MAX primero', type: 'error' });
-                        setInlineDraftEdit(null); return;
-                    }
+                    if (numVal > 0 && other > 0 && numVal >= other) errMsg = 'MIN debe ser menor al MAX';
+                    else if (numVal === 0 && other > 1)              errMsg = 'Con MIN=0 el MAX no puede ser mayor a 1';
+                }
+                if (errMsg) {
+                    setInlineDraftEdit(prev => prev ? { ...prev, error: errMsg } : prev);
+                    return;
                 }
             }
         }
@@ -2266,7 +2259,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             <div className="flex flex-col items-center">
                                                 <input autoFocus type="number" min="0"
                                                     value={inlineDraftEdit.value}
-                                                    onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
+                                                    onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value, error: undefined }))}
                                                     onFocus={e => e.target.select()}
                                                     onBlur={() => {
                                                         if (skipBlurSave.current) { skipBlurSave.current = false; return; }
@@ -2306,6 +2299,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-amber-600' : 'text-emerald-600'}`}>
                                                         ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
                                                     </div>
+                                                )}
+                                                {inlineDraftEdit.error && inlineDraftEdit.field === 'min' && (
+                                                    <div className="text-[9px] text-red-600 font-semibold mt-0.5 text-center leading-tight">{inlineDraftEdit.error}</div>
                                                 )}
                                                 {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
                                             </div>
@@ -2352,7 +2348,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             <div className="flex flex-col items-center">
                                                 <input autoFocus type="number" min="0"
                                                     value={inlineDraftEdit.value}
-                                                    onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
+                                                    onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value, error: undefined }))}
                                                     onFocus={e => e.target.select()}
                                                     onBlur={() => {
                                                         if (skipBlurSave.current) { skipBlurSave.current = false; return; }
@@ -2392,6 +2388,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-blue-600' : 'text-emerald-600'}`}>
                                                         ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
                                                     </div>
+                                                )}
+                                                {inlineDraftEdit.error && inlineDraftEdit.field === 'max' && (
+                                                    <div className="text-[9px] text-red-600 font-semibold mt-0.5 text-center leading-tight">{inlineDraftEdit.error}</div>
                                                 )}
                                                 {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
                                             </div>

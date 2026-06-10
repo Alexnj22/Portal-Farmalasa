@@ -72,26 +72,19 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         requested_min: newMin, requested_max: newMax, reason: reason.trim() || null,
       });
 
-      // Notificar a los aprobadores (can_approve en minmax). No-fatal.
+      // Notificar al Supervisor de Ventas (o su jefe si está de vacaciones). No-fatal.
       try {
-        const { data: roles } = await supabase.from('role_permissions')
-          .select('role_id').eq('module_key', 'minmax').eq('can_approve', true);
-        const roleIds = (roles || []).map(r => r.role_id).filter(Boolean);
-        if (roleIds.length) {
-          const { data: emps } = await supabase.from('employees')
-            .select('id').in('role_id', roleIds).eq('status', 'ACTIVO');
-          const ids = (emps || []).map(e => e.id);
-          if (ids.length) {
-            await supabase.functions.invoke('send-push-notification', {
-              body: {
-                title: '📊 Solicitud de ajuste Min/Max',
-                message: `${user?.name || 'Un colaborador'} propone MIN ${newMin} · MAX ${newMax} para ${product.nombre} (${ERP_NAMES[Number(erp)] || erp})`,
-                url: '/minmax',
-                target_type: 'EMPLOYEE',
-                target_value: ids,
-              },
-            });
-          }
+        const { data: ids } = await supabase.rpc('get_minmax_approver_ids');
+        if (ids && ids.length) {
+          await supabase.functions.invoke('send-push-notification', {
+            body: {
+              title: '📊 Solicitud de ajuste Min/Max',
+              message: `${user?.name || 'Un colaborador'} propone MIN ${newMin} · MAX ${newMax} para ${product.nombre} (${ERP_NAMES[Number(erp)] || erp})`,
+              url: '/minmax',
+              target_type: 'EMPLOYEE',
+              target_value: ids,
+            },
+          });
         }
       } catch { /* push no-fatal */ }
 

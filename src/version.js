@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.1.2';
+export const APP_VERSION = '2.1.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.1.3  — MinMax solicitudes: ruteo de notificación al rol Supervisor/a de Ventas (RPC get_minmax_approver_ids), con fallback al jefe inmediato (rol padre) si está de vacaciones/incapacidad/permiso hoy. Rediseño visual de la pestaña Solicitudes: filter pill estándar (sucursal + Aprobar todas/filtradas), grid de cards glassmorphic multi-columna con foto del solicitante, ventas 6m, actual→propuesto, aprobar/rechazar con razón inline; historial filtrable por sucursal con estado
 // v2.1.2  — MinMax solicitudes: widget muestra ventas últimos 6 meses de la sucursal (contexto para proponer); columna current_sales_6m guarda el snapshot; cola de aprobación (pestaña Solicitudes) con filtro por sucursal (chips con conteo) + ventas 6m en cada tarjeta
 // v2.1.1  — MinMax widget: ahora aparece en Permisos (dash_minmax_req con scope) y respeta alcance — scope ALL muestra selector de sucursal ERP en el header (como Anulaciones), scope limitado fija la sucursal del empleado (mapeo branch_id→ERP por nombre). RLS de solicitudes gateada por dash_minmax_req (operación puede proponer sin acceso al módulo). Selector de sucursal interno del widget eliminado (viene del header)
 // v2.1.0  — MinMax workflow de solicitudes de ajuste: tabla minmax_change_requests + RLS (can_edit propone / can_approve aprueba) + RPCs approve/reject_minmax_request (aplican override manual atómico); WidgetMinMaxRequest en Dashboard/Operación (busca producto, propone MIN/MAX, push a aprobadores); pestaña "Solicitudes" en MinMax (cola + historial, aprobar/rechazar con push al solicitante); PermissionsView minmax hasApprove:true. Integridad: CHECK max>=min en product_stock_params (manual/calc/draft) + guard en publish_stock_params + 1 draft corrupto saneado. Item 5 visual: border-l ámbar eliminado de EditDraftRow, transition-all→transition-colors en hovers de color, text-[7px]→[9px]

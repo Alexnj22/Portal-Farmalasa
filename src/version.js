@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.6';
+export const APP_VERSION = '2.2.7';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.7  — MinMax: labels con bajo contraste en glassmorphism corregidos — velocidad/día, separador ·, vend., laboratorio, N act. bajo MIN/MAX, ≈ cantidad bajo inputs; todos legibles
 // v2.2.6  — MinMax: todo via LiquidToast (publicar, restaurar, errores); banner fijo de publicación eliminado; error DB muestra mensaje real en lugar de hardcoded
 // v2.2.5  — MinMax: modal historial MIN/MAX por producto — foto producto + foto empleado + fecha/hora + campo + valor anterior→nuevo; audit log enriquecido (product, field_label, old_value, new_value)
 // v2.2.4  — MinMax: avisos LiquidToast con nombre del producto; warn si valor guardado es 4× mayor/menor al calculado (warnIfOutrageous); errores de validación y DB via LiquidToast

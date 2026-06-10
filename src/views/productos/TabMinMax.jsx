@@ -2290,11 +2290,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <span className="text-[10px] text-yellow-500 italic mt-0.5">Sin ventas en esta sucursal</span>
                                                 )}
                                                 {!dead && !noHistory && (
-                                                    <span className="text-[10px] text-slate-400 flex items-center gap-0.5 mt-0.5">
+                                                    <span className="text-[10px] text-slate-600 flex items-center gap-0.5 mt-0.5">
                                                         {v6m.toFixed(2)}/día
                                                         {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={9} className="text-emerald-500 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
                                                         {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={9} className="text-red-400 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
-                                                        {Number(row.units_sold_6m) > 0 && <span className="ml-1 text-slate-300">·</span>}
+                                                        {Number(row.units_sold_6m) > 0 && <span className="ml-1 text-slate-500">·</span>}
                                                         {Number(row.units_sold_6m) > 0 && <span className="ml-1">{Number(row.units_sold_6m).toLocaleString()} vend.</span>}
                                                     </span>
                                                 )}
@@ -2304,7 +2304,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                                     {/* Laboratorio */}
                                     <DataCell align="left" className="!py-2.5">
-                                        <span className="text-[11px] text-slate-500 truncate block max-w-[120px]">
+                                        <span className="text-[11px] text-slate-700 truncate block max-w-[120px]">
                                             {row.laboratorio_nombre || <span className="text-slate-300">—</span>}
                                         </span>
                                     </DataCell>
@@ -2381,7 +2381,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     onClick={e => e.stopPropagation()}
                                                     className={`w-20 text-center text-[13px] font-black rounded-lg px-1 py-1 focus:outline-none border-2 ${hasDraft ? 'text-amber-800 bg-amber-50 border-amber-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
                                                 {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && (
-                                                    <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                    <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-amber-700' : 'text-emerald-700'}`}>
                                                         ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
                                                     </div>
                                                 )}
@@ -2393,7 +2393,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 <div className={`px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 ${canManage ? 'group-hover/min:border-amber-400 group-hover/min:bg-amber-100' : ''} transition-[border-color,background-color] duration-150`}>
                                                     <span className="text-[13px] font-black tabular-nums text-amber-700">{(row.draft_min ?? 0).toLocaleString()}</span>
                                                 </div>
-                                                {minN > 0 && <div className="text-[9px] text-slate-400 tabular-nums mt-0.5">{minN.toLocaleString()} act.</div>}
+                                                {minN > 0 && <div className="text-[9px] text-slate-600 tabular-nums mt-0.5">{minN.toLocaleString()} act.</div>}
                                             </div>
                                         ) : (dead || noHistory) ? (
                                             canManage ? (
@@ -2475,7 +2475,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     onClick={e => e.stopPropagation()}
                                                     className={`w-20 text-center text-[13px] font-black rounded-lg px-1 py-1 focus:outline-none border-2 ${hasDraft ? 'text-blue-800 bg-blue-50 border-blue-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
                                                 {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && (
-                                                    <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-blue-600' : 'text-emerald-600'}`}>
+                                                    <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-blue-700' : 'text-emerald-700'}`}>
                                                         ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
                                                     </div>
                                                 )}
@@ -2487,7 +2487,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 <div className={`px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 ${canManage ? 'group-hover/max:border-blue-400 group-hover/max:bg-blue-100' : ''} transition-[border-color,background-color] duration-150`}>
                                                     <span className="text-[13px] font-black tabular-nums text-blue-700">{(row.draft_max ?? 0).toLocaleString()}</span>
                                                 </div>
-                                                {maxN > 0 && <div className="text-[9px] text-slate-400 tabular-nums mt-0.5">{maxN.toLocaleString()} act.</div>}
+                                                {maxN > 0 && <div className="text-[9px] text-slate-600 tabular-nums mt-0.5">{maxN.toLocaleString()} act.</div>}
                                             </div>
                                         ) : (dead || noHistory) ? (
                                             canManage ? (

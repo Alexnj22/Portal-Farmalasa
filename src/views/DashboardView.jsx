@@ -102,6 +102,11 @@ const TABS = [
   { id: 'operacion', label: 'Operación', icon: Zap             },
 ];
 
+// Min/Max usa sucursal ERP (1-7); el portal usa branch_id. Mapeo por nombre (calzan exacto).
+const MM_ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
+const MM_ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
+const MM_BRANCH_TO_ERP = { 2: 5, 4: 1, 25: 2, 27: 3, 28: 4, 29: 7, 30: 6 };
+
 const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos','inv_search','annulment_req','srs_inv','minmax_req'];
 const TAB_WIDGETS = {
   general:   ALL_WIDGET_IDS,
@@ -761,6 +766,7 @@ const DashboardView = ({ openModal }) => {
   const [salesView,      setSalesView]      = useState('DAYS');
   const [shiftBranch,    setShiftBranch]    = useState('');
   const [annulmentBranch, setAnnulmentBranch] = useState(() => String(user?.branchId ?? user?.branch_id ?? ''));
+  const [minmaxErp, setMinmaxErp] = useState(() => String(MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? 5));
   const [absences,       setAbsences]       = useState([]);
   const [absLoading,     setAbsLoading]     = useState(true);
   const [todaySales,     setTodaySales]     = useState({});
@@ -1856,11 +1862,26 @@ const DashboardView = ({ openModal }) => {
 
     /* ── MIN/MAX ADJUSTMENT REQUEST ── */
     if (wid === 'minmax_req') {
-      if (!isWidgetOn('minmax_req') || !hasPermission('minmax', 'can_edit')) return null;
+      if (!showWidget('minmax_req', 'dash_minmax_req')) return null;
+      const isMmAllScope = getScope('dash_minmax_req') === 'ALL';
+      const ownErp = MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? null;
+      const mmErpOpts = MM_ERP_ORDER.map(id => ({ value: String(id), label: MM_ERP_NAMES[id] }));
       return wrapWidget('minmax_req',
-        <WidgetCard title="Ajuste de Min/Max" icon={BarChart2} category="productos">
+        <WidgetCard title="Ajuste de Min/Max" icon={BarChart2} category="productos"
+          action={isMmAllScope && (
+            <LiquidSelect
+              value={minmaxErp}
+              onChange={val => setMinmaxErp(val ?? String(ownErp ?? 5))}
+              options={mmErpOpts}
+              placeholder="Sucursal..."
+              clearable={false}
+              compact
+              bare
+            />
+          )}
+        >
           <div className="px-4 pb-4 pt-2 h-full">
-            <WidgetMinMaxRequest />
+            <WidgetMinMaxRequest selectedErp={isMmAllScope ? Number(minmaxErp) : ownErp} />
           </div>
         </WidgetCard>
       , staggerIdx);

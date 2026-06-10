@@ -31,10 +31,11 @@ CREATE INDEX IF NOT EXISTS mmcr_requester_idx ON public.minmax_change_requests (
 -- ── RLS (espejo de approval_requests) ────────────────────────────────────────
 ALTER TABLE public.minmax_change_requests ENABLE ROW LEVEL SECURITY;
 
--- INSERT: cualquiera con can_edit en minmax puede solicitar, solo a su propio nombre.
+-- INSERT: gateado por el permiso del WIDGET (dash_minmax_req can_view), no por el
+-- módulo — así operación puede proponer sin tener acceso al módulo Min/Max. Solo a nombre propio.
 CREATE POLICY mmcr_insert ON public.minmax_change_requests
   FOR INSERT WITH CHECK (
-    auth_has_module_permission('minmax', 'can_edit')
+    auth_has_module_permission('dash_minmax_req', 'can_view')
     AND requested_by_id = (SELECT auth.uid())
   );
 

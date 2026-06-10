@@ -9,8 +9,7 @@ const ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: '
 const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
 /* ── Form: propone min/max para un producto+sucursal ── */
-function RequestForm({ product, user, appendAuditLog, onBack, onSuccess }) {
-  const [erp, setErp]           = useState('');
+function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) {
   const [current, setCurrent]   = useState(null);   // { min, max } actuales
   const [loadingCur, setLoadingCur] = useState(false);
   const [mn, setMn]             = useState('');
@@ -97,7 +96,7 @@ function RequestForm({ product, user, appendAuditLog, onBack, onSuccess }) {
       onSuccess();
     } catch (e) {
       setErr(e.message?.includes('row-level security')
-        ? 'No tenés permiso para crear solicitudes (can_edit en Min/Max).'
+        ? 'No tenés permiso para crear solicitudes (widget Ajuste de Min/Max).'
         : (e.message || 'Error al enviar'));
       setSubmitting(false);
     }
@@ -112,26 +111,13 @@ function RequestForm({ product, user, appendAuditLog, onBack, onSuccess }) {
         </button>
         <div className="flex-1 min-w-0">
           <p className="text-[12px] font-black text-slate-800 truncate">{product.nombre}</p>
-          {product.laboratorio_nombre && <p className="text-[10px] text-slate-400 truncate">{product.laboratorio_nombre}</p>}
+          <p className="text-[10px] text-slate-400 truncate">
+            {ERP_NAMES[Number(erp)] || 'Sucursal'}{product.laboratorio_nombre ? ` · ${product.laboratorio_nombre}` : ''}
+          </p>
         </div>
       </div>
 
       <div className="flex flex-col gap-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {/* Sucursal */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Sucursal *</label>
-          <div className="grid grid-cols-3 gap-1.5">
-            {ERP_ORDER.map(id => (
-              <button key={id} onClick={() => setErp(String(id))}
-                className={`px-2 py-2 rounded-xl border text-[11px] font-bold transition-colors ${
-                  String(id) === erp ? 'bg-[#0052CC] text-white border-[#0052CC]' : 'bg-white text-slate-600 border-slate-200 hover:border-[#0052CC]/40'
-                }`}>
-                {ERP_NAMES[id]}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Actual */}
         {erp && (
           <div className="rounded-2xl border border-slate-100 bg-slate-50/60 px-3.5 py-2.5 flex items-center justify-between">
@@ -179,7 +165,7 @@ function RequestForm({ product, user, appendAuditLog, onBack, onSuccess }) {
 }
 
 /* ── Main: busca producto → formulario ── */
-export default function WidgetMinMaxRequest() {
+export default function WidgetMinMaxRequest({ selectedErp = null }) {
   const { user }       = useAuth();
   const appendAuditLog = useStaffStore(s => s.appendAuditLog);
 
@@ -226,7 +212,7 @@ export default function WidgetMinMaxRequest() {
   if (view === 'form' && picked) {
     return (
       <RequestForm
-        product={picked} user={user} appendAuditLog={appendAuditLog}
+        product={picked} erp={selectedErp} user={user} appendAuditLog={appendAuditLog}
         onBack={() => { setView('search'); setPicked(null); }}
         onSuccess={() => { setView('success'); setTimeout(() => { setView('search'); setPicked(null); setSearch(''); setResults([]); }, 2600); }}
       />

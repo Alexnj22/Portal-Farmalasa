@@ -1504,7 +1504,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     else if (numVal === 0 && other > 1)              errMsg = 'Con MIN=0 el MAX no puede ser mayor a 1';
                 }
                 if (errMsg) {
-                    setInlineDraftEdit(prev => prev ? { ...prev, error: errMsg } : prev);
+                    setToast({ message: errMsg, type: 'error' });
+                    setInlineDraftEdit(null);
                     return;
                 }
             }
@@ -1583,6 +1584,32 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         setFilterHidden(false);
         useStaff.getState().appendAuditLog('MINMAX_UNHIDE_ALL', 'batch', { count: ids.length, sucursal_id: selectedErp });
     }, [hiddenIds, selectedErp]);
+
+    const resetToCalc = useCallback(async (row) => {
+        if (row.calc_min == null && row.calc_max == null) {
+            setToast({ message: 'No hay valores calculados guardados para este producto. Corre Calcular primero.', type: 'error' });
+            return;
+        }
+        const cMin = row.calc_min ?? 0;
+        const cMax = row.calc_max ?? 0;
+        const saveLive = hasPublishedData && row.draft_status !== 'pending';
+        const upsertData = saveLive
+            ? { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, min_units: cMin, max_units: cMax, updated_at: new Date().toISOString() }
+            : { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, draft_min: cMin, draft_max: cMax, draft_status: 'pending', updated_at: new Date().toISOString() };
+        const { error: e } = await supabase.from('product_stock_params')
+            .upsert(upsertData, { onConflict: 'erp_product_id,erp_sucursal_id' });
+        if (e) { setToast({ message: `Error al restaurar: ${e.message}`, type: 'error' }); return; }
+        setData(prev => prev.map(r => {
+            if (r.erp_product_id !== row.erp_product_id || r._erp_sucursal_id !== row._erp_sucursal_id) return r;
+            return saveLive
+                ? { ...r, effective_min: cMin, effective_max: cMax }
+                : { ...r, draft_min: cMin, draft_max: cMax, draft_status: 'pending' };
+        }));
+        setToast({ message: `${row.product_name}: restaurado a MIN ${cMin} / MAX ${cMax} (calculado)`, type: 'success' });
+        useStaff.getState().appendAuditLog('MINMAX_RESET_CALC', String(row.erp_product_id), {
+            calc_min: cMin, calc_max: cMax, sucursal_id: row._erp_sucursal_id, mode: saveLive ? 'live' : 'draft',
+        });
+    }, [hasPublishedData]);
 
     const draftCount   = useMemo(() => data.filter(r => r.draft_status === 'pending').length, [data]);
     const changesCount = useMemo(() => data.filter(r => r.draft_status === 'pending' && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max)).length, [data]);
@@ -2300,9 +2327,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
                                                     </div>
                                                 )}
-                                                {inlineDraftEdit.error && inlineDraftEdit.field === 'min' && (
-                                                    <div className="text-[9px] text-red-600 font-semibold mt-0.5 text-center leading-tight">{inlineDraftEdit.error}</div>
-                                                )}
                                                 {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
                                             </div>
                                         ) : hasDraft ? (
@@ -2388,9 +2412,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-blue-600' : 'text-emerald-600'}`}>
                                                         ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
                                                     </div>
-                                                )}
-                                                {inlineDraftEdit.error && inlineDraftEdit.field === 'max' && (
-                                                    <div className="text-[9px] text-red-600 font-semibold mt-0.5 text-center leading-tight">{inlineDraftEdit.error}</div>
                                                 )}
                                                 {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
                                             </div>
@@ -2504,6 +2525,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     {...iconAnim}
                                                     className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600">
                                                     <XCircle size={14} />
+                                                </motion.button>
+                                            )}
+                                            {/* Restaurar a calculado */}
+                                            {canManage && row.calc_min != null && (
+                                                <motion.button
+                                                    onClick={e => { e.stopPropagation(); resetToCalc(row); }}
+                                                    title={`Restaurar a valores calculados (MIN ${row.calc_min} / MAX ${row.calc_max})`}
+                                                    {...iconAnim}
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-orange-500 hover:bg-orange-50 transition-colors">
+                                                    <RotateCcw size={12} />
                                                 </motion.button>
                                             )}
                                             {/* Publicar borrador */}

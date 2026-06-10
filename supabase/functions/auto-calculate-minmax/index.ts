@@ -5,7 +5,7 @@ import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
 // Calcula MIN/MAX para las 7 sucursales en secuencia, luego notifica
 // a los Supervisores de Ventas (con fallback al jefe inmediato si están
 // de vacaciones/incapacidad/permiso hoy).
-// Disparado por pg_cron el día 1 de cada mes a las 3am (El Salvador).
+// Disparado por pg_cron el día 1 de cada mes a las 9am (El Salvador, UTC-6 = 15:00 UTC).
 
 const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 const ERP_NAMES: Record<number, string> = {

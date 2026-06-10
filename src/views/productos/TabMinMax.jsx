@@ -12,6 +12,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination from '../../components/common/TablePagination';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useAuth } from '../../context/AuthContext';
 
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
@@ -1303,6 +1304,9 @@ function LabsPanel({ onClose, onChanged }) {
 export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const cycleDays = config?.cycle_days ?? 45;
 
+    const { hasPermission } = useAuth();
+    const canManage = hasPermission('minmax', 'can_edit');
+
     const [selectedErp,  setSelectedErp]  = useState(5);
     const [filterAbc,    setFilterAbc]    = useState('all');
     const [filterXyz,    setFilterXyz]    = useState('all');
@@ -1323,8 +1327,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [pageSize,     setPageSize]     = useState(25);
     const [publishing,   setPublishing]   = useState(false);
     const [publishResult,setPublishResult]= useState(null);
-    const [filterDraft,     setFilterDraft]     = useState(false);
-    const [filterHidden,    setFilterHidden]    = useState(false);
+    const [filterDraft,       setFilterDraft]       = useState(false);
+    const [filterChangesOnly, setFilterChangesOnly] = useState(false);
+    const [filterHidden,      setFilterHidden]      = useState(false);
     const [hiddenIds,       setHiddenIds]       = useState(new Set());
     const saveHiddenTimer  = useRef(null); // unused, kept for cleanup safety
     const publishTimer     = useRef(null);
@@ -1402,7 +1407,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         }
     }, []);
 
-    useEffect(() => { loadData(selectedErp); }, [selectedErp, loadData]);
+    useEffect(() => { loadData(selectedErp); setFilterChangesOnly(false); setFilterDraft(false); }, [selectedErp, loadData]);
 
     const fmtCalcError = msg => {
         if (!msg) return 'Error al calcular.';
@@ -1412,77 +1417,126 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     };
 
     const handleRecalcular = async () => {
+        const wasPublished = hasPublishedData;
         setCalculating(true); setCalcMode('single'); setError(null); setConfigChanged(false);
         try {
             const { data: res, error: e } = await supabase.rpc('calculate_stock_params', { p_erp_sucursal_id: selectedErp });
             if (e) throw e;
             setToast({ message: `${(res?.rows ?? 0).toLocaleString()} borradores generados para ${ERP_NAMES[selectedErp]}`, type: 'info' });
             await loadData(selectedErp);
+            if (wasPublished) { setFilterChangesOnly(true); setFilterDraft(false); }
         } catch (e) { setToast({ message: fmtCalcError(e.message), type: 'error' }); }
         finally { setCalculating(false); }
     };
 
     const handleRecalcularAll = async () => {
+        const wasPublished = hasPublishedData;
         setCalculating(true); setCalcMode('all'); setError(null); setConfigChanged(false);
         try {
             const { data: res, error: e } = await supabase.rpc('calculate_stock_params');
             if (e) throw e;
             setToast({ message: `${(res?.rows ?? 0).toLocaleString()} borradores generados para todas las sucursales`, type: 'info' });
             await loadData(selectedErp);
+            if (wasPublished) { setFilterChangesOnly(true); setFilterDraft(false); }
         } catch (e) { setToast({ message: fmtCalcError(e.message), type: 'error' }); }
         finally { setCalculating(false); }
     };
 
     const handleEditSave = useCallback(() => { loadData(selectedErp); }, [selectedErp, loadData]);
 
+    const hasPublishedData = useMemo(() => data.some(r => r.published_by != null), [data]);
+
     const zeroOutRow = useCallback(async (row) => {
-        const { error: e } = await supabase.from('product_stock_params')
-            .upsert(
-                { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() },
-                { onConflict: 'erp_product_id,erp_sucursal_id' }
-            );
-        if (!e) {
-            setData(prev => prev.map(r =>
-                r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
-                    ? { ...r, draft_min: 0, draft_max: 0, draft_status: 'pending' }
-                    : r
-            ));
+        if (hasPublishedData && row.draft_status !== 'pending') {
+            const { error: e } = await supabase.from('product_stock_params')
+                .upsert(
+                    { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, min_units: 0, max_units: 0, updated_at: new Date().toISOString() },
+                    { onConflict: 'erp_product_id,erp_sucursal_id' }
+                );
+            if (!e) {
+                setData(prev => prev.map(r =>
+                    r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
+                        ? { ...r, effective_min: 0, effective_max: 0 } : r
+                ));
+            }
+            useStaff.getState().appendAuditLog('MINMAX_LIVE_ZERO', String(row.erp_product_id), {
+                product: row.product_name, sucursal_id: row._erp_sucursal_id,
+            });
+        } else {
+            const { error: e } = await supabase.from('product_stock_params')
+                .upsert(
+                    { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() },
+                    { onConflict: 'erp_product_id,erp_sucursal_id' }
+                );
+            if (!e) {
+                setData(prev => prev.map(r =>
+                    r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
+                        ? { ...r, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r
+                ));
+            }
+            useStaff.getState().appendAuditLog('MINMAX_ZERO_OUT', String(row.erp_product_id), {
+                product: row.product_name, sucursal_id: row._erp_sucursal_id,
+            });
         }
-        useStaff.getState().appendAuditLog('MINMAX_ZERO_OUT', String(row.erp_product_id), {
-            product: row.product_name, sucursal_id: row._erp_sucursal_id,
-        });
-    }, []);
+    }, [hasPublishedData]);
 
     const saveDraftCell = useCallback(async (edit) => {
         if (!edit) return;
         const numVal = edit.value === '' ? null : parseInt(edit.value, 10);
         if (Number.isNaN(numVal) && edit.value !== '') { setInlineDraftEdit(null); return; }
-        const col = edit.field === 'min' ? 'draft_min' : 'draft_max';
+        const targetRow = data.find(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId);
+        const rowHasDraft = targetRow?.draft_status === 'pending';
+        const saveLive = hasPublishedData && !rowHasDraft;
         setInlineDraftEdit(null);
-        const { error: e } = await supabase.from('product_stock_params')
-            .upsert(
-                { erp_product_id: edit.productId, erp_sucursal_id: edit.sucursalId, [col]: numVal, draft_status: 'pending', updated_at: new Date().toISOString() },
-                { onConflict: 'erp_product_id,erp_sucursal_id' }
-            );
-        if (!e) {
-            setData(prev => prev.map(r =>
-                r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId
-                    ? { ...r, [col]: numVal, draft_status: 'pending' }
-                    : r
-            ));
-            // Refresh cards so útil/excedente and objetivo reflect edits
-            Promise.all([
-                supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
-                supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
-            ]).then(([{ data: cost }, { data: draft }]) => {
-                if (cost)  setCostSummary(cost);
-                if (draft) setDraftCost(draft);
+        if (saveLive) {
+            const col    = edit.field === 'min' ? 'min_units'    : 'max_units';
+            const effCol = edit.field === 'min' ? 'effective_min' : 'effective_max';
+            const { error: e } = await supabase.from('product_stock_params')
+                .upsert(
+                    { erp_product_id: edit.productId, erp_sucursal_id: edit.sucursalId, [col]: numVal, updated_at: new Date().toISOString() },
+                    { onConflict: 'erp_product_id,erp_sucursal_id' }
+                );
+            if (!e) {
+                setData(prev => prev.map(r =>
+                    r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId
+                        ? { ...r, [effCol]: numVal ?? 0 } : r
+                ));
+                Promise.all([
+                    supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
+                    supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
+                ]).then(([{ data: cost }, { data: draft }]) => {
+                    if (cost)  setCostSummary(cost);
+                    if (draft) setDraftCost(draft);
+                });
+            }
+            useStaff.getState().appendAuditLog('MINMAX_LIVE_EDIT', String(edit.productId), {
+                field: col, value: numVal, sucursal_id: edit.sucursalId,
+            });
+        } else {
+            const col = edit.field === 'min' ? 'draft_min' : 'draft_max';
+            const { error: e } = await supabase.from('product_stock_params')
+                .upsert(
+                    { erp_product_id: edit.productId, erp_sucursal_id: edit.sucursalId, [col]: numVal, draft_status: 'pending', updated_at: new Date().toISOString() },
+                    { onConflict: 'erp_product_id,erp_sucursal_id' }
+                );
+            if (!e) {
+                setData(prev => prev.map(r =>
+                    r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId
+                        ? { ...r, [col]: numVal, draft_status: 'pending' } : r
+                ));
+                Promise.all([
+                    supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
+                    supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
+                ]).then(([{ data: cost }, { data: draft }]) => {
+                    if (cost)  setCostSummary(cost);
+                    if (draft) setDraftCost(draft);
+                });
+            }
+            useStaff.getState().appendAuditLog('MINMAX_DRAFT_EDIT', String(edit.productId), {
+                field: col, value: numVal, sucursal_id: edit.sucursalId,
             });
         }
-        useStaff.getState().appendAuditLog('MINMAX_DRAFT_EDIT', String(edit.productId), {
-            field: col, value: numVal, sucursal_id: edit.sucursalId,
-        });
-    }, []);
+    }, [data, hasPublishedData]);
 
     const unhideProduct = useCallback(async (productId) => {
         await supabase.from('product_stock_params')
@@ -1507,7 +1561,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         useStaff.getState().appendAuditLog('MINMAX_UNHIDE_ALL', 'batch', { count: ids.length, sucursal_id: selectedErp });
     }, [hiddenIds, selectedErp]);
 
-    const draftCount = useMemo(() => data.filter(r => r.draft_status === 'pending').length, [data]);
+    const draftCount   = useMemo(() => data.filter(r => r.draft_status === 'pending').length, [data]);
+    const changesCount = useMemo(() => data.filter(r => r.draft_status === 'pending' && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max)).length, [data]);
 
     const requestPublish = useCallback((ids = null) => {
         const count = ids ? ids.length : draftCount;
@@ -1570,13 +1625,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         return data.filter(r => {
             if (hiddenIds.has(r.erp_product_id))                                           return false;
             if (filterDraft && r.draft_status !== 'pending')                               return false;
+            if (filterChangesOnly && !(r.draft_status === 'pending' && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max))) return false;
             if (filterAbc !== 'all' && (r.draft_abc_class || r.abc_class) !== filterAbc)  return false;
             if (filterXyz !== 'all' && normXyz(r.draft_demand_variability || r.demand_variability) !== filterXyz) return false;
             if (filterAlert !== 'all' && r.alert_status !== filterAlert)                   return false;
             if (q && !r.product_name?.toLowerCase().includes(q) && !r.laboratorio_nombre?.toLowerCase().includes(q)) return false;
             return true;
         });
-    }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, hiddenIds, filterHidden]);
+    }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, filterChangesOnly, hiddenIds, filterHidden]);
 
     const filteredDraftIds = useMemo(
         () => hasActiveFilter ? filtered.filter(r => r.draft_status === 'pending').map(r => r.erp_product_id) : [],
@@ -1759,7 +1815,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         <div className="h-5 w-px bg-slate-100 shrink-0" />
 
                         {/* Todas las sucursales */}
-                        <motion.button onClick={handleRecalcularAll} disabled={calculating || loading}
+                        <motion.button onClick={handleRecalcularAll} disabled={!canManage || calculating || loading}
                             title="Recalcular todas las sucursales y Bodega"
                             {...chipAnim}
                             className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 disabled:opacity-40 disabled:pointer-events-none">
@@ -1770,7 +1826,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     </div>
 
                     {/* Calcular — blue right cap */}
-                    <motion.button onClick={handleRecalcular} disabled={calculating || loading}
+                    <motion.button onClick={handleRecalcular} disabled={!canManage || calculating || loading}
                         {...ctaAnim}
                         className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                         {calculating && calcMode === 'single'
@@ -1988,14 +2044,34 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     <span className="text-[11px] text-slate-400">borrador{draftCount !== 1 ? 'es' : ''}</span>
                                 </div>
                                 <div className="h-5 w-px bg-slate-100 shrink-0" />
-                                {/* Solo borradores toggle */}
-                                <motion.button onClick={() => setFilterDraft(f => !f)}
-                                    {...chipAnim}
-                                    className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
-                                    {filterDraft
-                                        ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
-                                        : 'Solo borradores'}
-                                </motion.button>
+                                {/* Solo borradores / Solo cambios toggles */}
+                                {hasPublishedData && changesCount > 0 ? (
+                                    <>
+                                        <motion.button onClick={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); }}
+                                            {...chipAnim}
+                                            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterChangesOnly ? 'text-violet-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                                            {filterChangesOnly
+                                                ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
+                                                : `Solo cambios (${changesCount})`}
+                                        </motion.button>
+                                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                        <motion.button onClick={() => { setFilterDraft(f => !f); setFilterChangesOnly(false); }}
+                                            {...chipAnim}
+                                            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
+                                            {filterDraft
+                                                ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
+                                                : 'Todos borradores'}
+                                        </motion.button>
+                                    </>
+                                ) : (
+                                    <motion.button onClick={() => setFilterDraft(f => !f)}
+                                        {...chipAnim}
+                                        className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
+                                        {filterDraft
+                                            ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
+                                            : 'Solo borradores'}
+                                    </motion.button>
+                                )}
                             </div>
                             {/* Publicar — blue cap, igual que Calcular */}
                             <AnimatePresence mode="wait">
@@ -2004,7 +2080,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     key="pub-filtered"
                                     initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.14, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, transition: { duration: 0.1 } }}
                                     {...ctaAnim}
-                                    onClick={() => requestPublish(filteredDraftIds)} disabled={publishing}
+                                    onClick={() => requestPublish(filteredDraftIds)} disabled={!canManage || publishing}
                                     className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                                     {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
                                     Publicar {filterLabel} ({filteredDraftIds.length})
@@ -2014,7 +2090,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     key="pub-all"
                                     initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.14, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, transition: { duration: 0.1 } }}
                                     {...ctaAnim}
-                                    onClick={() => requestPublish()} disabled={publishing}
+                                    onClick={() => requestPublish()} disabled={!canManage || publishing}
                                     className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                                     {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
                                     Publicar todo ({draftCount})
@@ -2154,151 +2230,175 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         }
                                     </DataCell>
 
-                                    {/* MIN — inline edit on click for draft rows */}
+                                    {/* MIN — inline edit on click (draft→amber, live→emerald) */}
                                     <DataCell align="center" className="!py-2.5">
-                                        {hasDraft ? (
-                                            inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'min'
-                                                ? (
-                                                    <div className="flex flex-col items-center">
-                                                        <input autoFocus type="number" min="0"
-                                                            value={inlineDraftEdit.value}
-                                                            onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
-                                                            onFocus={e => e.target.select()}
-                                                            onBlur={() => {
-                                                                if (skipBlurSave.current) { skipBlurSave.current = false; return; }
-                                                                saveDraftCell(inlineDraftEdit);
-                                                            }}
-                                                            onKeyDown={e => {
-                                                                if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
-                                                                if (e.key === 'Tab' || e.key === 'ArrowRight') {
-                                                                    e.preventDefault();
-                                                                    skipBlurSave.current = true;
-                                                                    saveDraftCell(inlineDraftEdit);
-                                                                    setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') });
-                                                                    return;
-                                                                }
-                                                                if (e.key === 'Enter' || e.key === 'ArrowDown') {
-                                                                    e.preventDefault();
-                                                                    skipBlurSave.current = true;
-                                                                    saveDraftCell(inlineDraftEdit);
-                                                                    const next = pageRows.slice(rowIdx + 1).find(r => r.draft_status === 'pending');
-                                                                    if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: String(next.draft_min ?? '') });
-                                                                    else setInlineDraftEdit(null);
-                                                                    return;
-                                                                }
-                                                                if (e.key === 'ArrowUp') {
-                                                                    e.preventDefault();
-                                                                    skipBlurSave.current = true;
-                                                                    saveDraftCell(inlineDraftEdit);
-                                                                    const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => r.draft_status === 'pending');
-                                                                    if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: String(prev.draft_min ?? '') });
-                                                                    else setInlineDraftEdit(null);
-                                                                    return;
-                                                                }
-                                                            }}
-                                                            onClick={e => e.stopPropagation()}
-                                                            className="w-20 text-center text-[13px] font-black text-amber-800 bg-amber-50 border-2 border-amber-400 rounded-lg px-1 py-1 focus:outline-none" />
-                                                        {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && (
-                                                            <div className="text-[9px] text-amber-600 font-bold mt-0.5 tabular-nums">
-                                                                ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
-                                                            </div>
-                                                        )}
-                                                        {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col items-center cursor-pointer group/min"
-                                                        onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); }}>
-                                                        <div className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 group-hover/min:border-amber-400 group-hover/min:bg-amber-100 transition-[border-color,background-color] duration-150">
-                                                            <span className="text-[13px] font-black tabular-nums text-amber-700">{(row.draft_min ?? 0).toLocaleString()}</span>
-                                                        </div>
-                                                        {minN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{minN.toLocaleString()} act.</div>}
-                                                    </div>
-                                                )
-                                        ) : (dead || noHistory) ? (
-                                            <div className="flex flex-col items-center cursor-pointer group/min"
-                                                onClick={e => { e.stopPropagation(); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: '' }); }}>
-                                                <div className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 group-hover/min:border-amber-400 group-hover/min:bg-amber-100 transition-[border-color,background-color] duration-150">
-                                                    <span className="text-[13px] font-black tabular-nums text-amber-400">0</span>
-                                                </div>
-                                            </div>
-                                        ) : (
+                                        {canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'min' ? (
                                             <div className="flex flex-col items-center">
-                                                <div className={`text-[12px] font-semibold tabular-nums ${stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>{minN.toLocaleString()}</div>
+                                                <input autoFocus type="number" min="0"
+                                                    value={inlineDraftEdit.value}
+                                                    onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
+                                                    onFocus={e => e.target.select()}
+                                                    onBlur={() => {
+                                                        if (skipBlurSave.current) { skipBlurSave.current = false; return; }
+                                                        saveDraftCell(inlineDraftEdit);
+                                                    }}
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
+                                                        if (e.key === 'Tab' || e.key === 'ArrowRight') {
+                                                            e.preventDefault();
+                                                            skipBlurSave.current = true;
+                                                            saveDraftCell(inlineDraftEdit);
+                                                            setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(hasDraft ? (row.draft_max ?? '') : (row.effective_max ?? '')) });
+                                                            return;
+                                                        }
+                                                        if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                                                            e.preventDefault();
+                                                            skipBlurSave.current = true;
+                                                            saveDraftCell(inlineDraftEdit);
+                                                            const next = pageRows.slice(rowIdx + 1).find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
+                                                            if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: String(next.draft_status === 'pending' ? (next.draft_min ?? '') : (next.effective_min ?? '')) });
+                                                            else setInlineDraftEdit(null);
+                                                            return;
+                                                        }
+                                                        if (e.key === 'ArrowUp') {
+                                                            e.preventDefault();
+                                                            skipBlurSave.current = true;
+                                                            saveDraftCell(inlineDraftEdit);
+                                                            const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
+                                                            if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: String(prev.draft_status === 'pending' ? (prev.draft_min ?? '') : (prev.effective_min ?? '')) });
+                                                            else setInlineDraftEdit(null);
+                                                            return;
+                                                        }
+                                                    }}
+                                                    onClick={e => e.stopPropagation()}
+                                                    className={`w-20 text-center text-[13px] font-black rounded-lg px-1 py-1 focus:outline-none border-2 ${hasDraft ? 'text-amber-800 bg-amber-50 border-amber-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
+                                                {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && (
+                                                    <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                        ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
+                                                    </div>
+                                                )}
+                                                {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
                                             </div>
+                                        ) : hasDraft ? (
+                                            <div className={`flex flex-col items-center ${canManage ? 'cursor-pointer group/min' : ''}`}
+                                                onClick={canManage ? e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); } : undefined}>
+                                                <div className={`px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 ${canManage ? 'group-hover/min:border-amber-400 group-hover/min:bg-amber-100' : ''} transition-[border-color,background-color] duration-150`}>
+                                                    <span className="text-[13px] font-black tabular-nums text-amber-700">{(row.draft_min ?? 0).toLocaleString()}</span>
+                                                </div>
+                                                {minN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{minN.toLocaleString()} act.</div>}
+                                            </div>
+                                        ) : (dead || noHistory) ? (
+                                            canManage ? (
+                                                <div className="flex flex-col items-center cursor-pointer group/min"
+                                                    onClick={e => { e.stopPropagation(); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: '' }); }}>
+                                                    <div className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 group-hover/min:border-amber-400 group-hover/min:bg-amber-100 transition-[border-color,background-color] duration-150">
+                                                        <span className="text-[13px] font-black tabular-nums text-amber-400">0</span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-[12px] font-semibold tabular-nums text-slate-400">0</span>
+                                                </div>
+                                            )
+                                        ) : (
+                                            hasPublishedData && canManage ? (
+                                                <div className="flex flex-col items-center cursor-pointer group/min"
+                                                    onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.effective_min ?? '') }); }}>
+                                                    <div className={`px-2.5 py-1 rounded-lg border group-hover/min:border-emerald-400 group-hover/min:bg-emerald-50 transition-[border-color,background-color] duration-150 ${stock < minN ? 'border-orange-200' : 'border-slate-200'}`}>
+                                                        <span className={`text-[13px] font-black tabular-nums ${stock < minN ? 'text-orange-600' : 'text-slate-600'}`}>{minN.toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center">
+                                                    <div className={`text-[12px] font-semibold tabular-nums ${stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>{minN.toLocaleString()}</div>
+                                                </div>
+                                            )
                                         )}
                                     </DataCell>
 
-                                    {/* MAX — inline edit on click for draft rows */}
+                                    {/* MAX — inline edit on click (draft→blue, live→emerald) */}
                                     <DataCell align="center" className="!py-2.5">
-                                        {hasDraft ? (
-                                            inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'max'
-                                                ? (
-                                                    <div className="flex flex-col items-center">
-                                                        <input autoFocus type="number" min="0"
-                                                            value={inlineDraftEdit.value}
-                                                            onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
-                                                            onFocus={e => e.target.select()}
-                                                            onBlur={() => {
-                                                                if (skipBlurSave.current) { skipBlurSave.current = false; return; }
-                                                                saveDraftCell(inlineDraftEdit);
-                                                            }}
-                                                            onKeyDown={e => {
-                                                                if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
-                                                                if (e.key === 'ArrowLeft') {
-                                                                    e.preventDefault();
-                                                                    skipBlurSave.current = true;
-                                                                    saveDraftCell(inlineDraftEdit);
-                                                                    setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') });
-                                                                    return;
-                                                                }
-                                                                if (e.key === 'Enter' || e.key === 'ArrowDown') {
-                                                                    e.preventDefault();
-                                                                    skipBlurSave.current = true;
-                                                                    saveDraftCell(inlineDraftEdit);
-                                                                    const next = pageRows.slice(rowIdx + 1).find(r => r.draft_status === 'pending');
-                                                                    if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: String(next.draft_min ?? '') });
-                                                                    else setInlineDraftEdit(null);
-                                                                    return;
-                                                                }
-                                                                if (e.key === 'ArrowUp') {
-                                                                    e.preventDefault();
-                                                                    skipBlurSave.current = true;
-                                                                    saveDraftCell(inlineDraftEdit);
-                                                                    const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => r.draft_status === 'pending');
-                                                                    if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: String(prev.draft_min ?? '') });
-                                                                    else setInlineDraftEdit(null);
-                                                                    return;
-                                                                }
-                                                            }}
-                                                            onClick={e => e.stopPropagation()}
-                                                            className="w-20 text-center text-[13px] font-black text-blue-800 bg-blue-50 border-2 border-blue-400 rounded-lg px-1 py-1 focus:outline-none" />
-                                                        {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && (
-                                                            <div className="text-[9px] text-blue-600 font-bold mt-0.5 tabular-nums">
-                                                                ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
-                                                            </div>
-                                                        )}
-                                                        {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col items-center cursor-pointer group/max"
-                                                        onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); }}>
-                                                        <div className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 group-hover/max:border-blue-400 group-hover/max:bg-blue-100 transition-[border-color,background-color] duration-150">
-                                                            <span className="text-[13px] font-black tabular-nums text-blue-700">{(row.draft_max ?? 0).toLocaleString()}</span>
-                                                        </div>
-                                                        {maxN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{maxN.toLocaleString()} act.</div>}
-                                                    </div>
-                                                )
-                                        ) : (dead || noHistory) ? (
-                                            <div className="flex flex-col items-center cursor-pointer group/max"
-                                                onClick={e => { e.stopPropagation(); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: '' }); }}>
-                                                <div className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 group-hover/max:border-blue-400 group-hover/max:bg-blue-100 transition-[border-color,background-color] duration-150">
-                                                    <span className="text-[13px] font-black tabular-nums text-blue-400">0</span>
-                                                </div>
-                                            </div>
-                                        ) : (
+                                        {canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'max' ? (
                                             <div className="flex flex-col items-center">
-                                                <div className={`text-[12px] font-semibold tabular-nums ${stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>{maxN.toLocaleString()}</div>
+                                                <input autoFocus type="number" min="0"
+                                                    value={inlineDraftEdit.value}
+                                                    onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value }))}
+                                                    onFocus={e => e.target.select()}
+                                                    onBlur={() => {
+                                                        if (skipBlurSave.current) { skipBlurSave.current = false; return; }
+                                                        saveDraftCell(inlineDraftEdit);
+                                                    }}
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
+                                                        if (e.key === 'ArrowLeft') {
+                                                            e.preventDefault();
+                                                            skipBlurSave.current = true;
+                                                            saveDraftCell(inlineDraftEdit);
+                                                            setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(hasDraft ? (row.draft_min ?? '') : (row.effective_min ?? '')) });
+                                                            return;
+                                                        }
+                                                        if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                                                            e.preventDefault();
+                                                            skipBlurSave.current = true;
+                                                            saveDraftCell(inlineDraftEdit);
+                                                            const next = pageRows.slice(rowIdx + 1).find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
+                                                            if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: String(next.draft_status === 'pending' ? (next.draft_min ?? '') : (next.effective_min ?? '')) });
+                                                            else setInlineDraftEdit(null);
+                                                            return;
+                                                        }
+                                                        if (e.key === 'ArrowUp') {
+                                                            e.preventDefault();
+                                                            skipBlurSave.current = true;
+                                                            saveDraftCell(inlineDraftEdit);
+                                                            const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
+                                                            if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: String(prev.draft_status === 'pending' ? (prev.draft_min ?? '') : (prev.effective_min ?? '')) });
+                                                            else setInlineDraftEdit(null);
+                                                            return;
+                                                        }
+                                                    }}
+                                                    onClick={e => e.stopPropagation()}
+                                                    className={`w-20 text-center text-[13px] font-black rounded-lg px-1 py-1 focus:outline-none border-2 ${hasDraft ? 'text-blue-800 bg-blue-50 border-blue-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
+                                                {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && (
+                                                    <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-blue-600' : 'text-emerald-600'}`}>
+                                                        ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
+                                                    </div>
+                                                )}
+                                                {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
                                             </div>
+                                        ) : hasDraft ? (
+                                            <div className={`flex flex-col items-center ${canManage ? 'cursor-pointer group/max' : ''}`}
+                                                onClick={canManage ? e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); } : undefined}>
+                                                <div className={`px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 ${canManage ? 'group-hover/max:border-blue-400 group-hover/max:bg-blue-100' : ''} transition-[border-color,background-color] duration-150`}>
+                                                    <span className="text-[13px] font-black tabular-nums text-blue-700">{(row.draft_max ?? 0).toLocaleString()}</span>
+                                                </div>
+                                                {maxN > 0 && <div className="text-[9px] text-slate-300 tabular-nums mt-0.5">{maxN.toLocaleString()} act.</div>}
+                                            </div>
+                                        ) : (dead || noHistory) ? (
+                                            canManage ? (
+                                                <div className="flex flex-col items-center cursor-pointer group/max"
+                                                    onClick={e => { e.stopPropagation(); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: '' }); }}>
+                                                    <div className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 group-hover/max:border-blue-400 group-hover/max:bg-blue-100 transition-[border-color,background-color] duration-150">
+                                                        <span className="text-[13px] font-black tabular-nums text-blue-400">0</span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-[12px] font-semibold tabular-nums text-slate-400">0</span>
+                                                </div>
+                                            )
+                                        ) : (
+                                            hasPublishedData && canManage ? (
+                                                <div className="flex flex-col items-center cursor-pointer group/max"
+                                                    onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.effective_max ?? '') }); }}>
+                                                    <div className={`px-2.5 py-1 rounded-lg border group-hover/max:border-emerald-400 group-hover/max:bg-emerald-50 transition-[border-color,background-color] duration-150 ${stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200'}`}>
+                                                        <span className={`text-[13px] font-black tabular-nums ${stock > maxN && maxN > 0 ? 'text-blue-600' : 'text-slate-600'}`}>{maxN.toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center">
+                                                    <div className={`text-[12px] font-semibold tabular-nums ${stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>{maxN.toLocaleString()}</div>
+                                                </div>
+                                            )
                                         )}
                                     </DataCell>
 
@@ -2370,15 +2470,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 </motion.button>
                                             )}
                                             {/* Poner en 0 */}
-                                            {!dead && !noHistory && (
-                                                <motion.button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title="Crear borrador 0 / 0 (pone en 0 sin publicar)"
+                                            {!dead && !noHistory && canManage && (
+                                                <motion.button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title={hasPublishedData && !hasDraft ? 'Poner MIN/MAX en 0 (en vivo)' : 'Crear borrador 0 / 0 (pone en 0 sin publicar)'}
                                                     {...iconAnim}
                                                     className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600">
                                                     <XCircle size={14} />
                                                 </motion.button>
                                             )}
                                             {/* Publicar borrador */}
-                                            {hasDraft && (
+                                            {hasDraft && canManage && (
                                                 <motion.button onClick={e => { e.stopPropagation(); requestPublish([row.erp_product_id]); }}
                                                     disabled={publishing}
                                                     {...chipAnim}

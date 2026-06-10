@@ -1391,6 +1391,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [publishResult,setPublishResult]= useState(null); // kept for potential future use
     const [filterDraft,       setFilterDraft]       = useState(false);
     const [filterSparse,      setFilterSparse]      = useState(false);
+    const [hidingIds,         setHidingIds]         = useState(new Set());
     const [filterChangesOnly, setFilterChangesOnly] = useState(false);
     const [filterHidden,      setFilterHidden]      = useState(false);
     const [hiddenIds,       setHiddenIds]       = useState(new Set());
@@ -1438,7 +1439,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const loadData = useCallback(async (erpId) => {
         const rid = ++loadRef.current;
-        setLoading(true); setError(null); setInlineDraftEdit(null); setExpandedIds(new Set());
+        setLoading(true); setData([]); setError(null); setInlineDraftEdit(null); setExpandedIds(new Set());
         try {
             // PostgREST caps at 1000 rows per request — fetch in chunks until exhausted
             const allRows = [];
@@ -2664,20 +2665,25 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             ) : (
                                                 <motion.button onClick={async e => {
                                                     e.stopPropagation();
+                                                    setHidingIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });
                                                     await supabase.from('product_stock_params')
                                                         .upsert(
                                                             { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() },
                                                             { onConflict: 'erp_product_id,erp_sucursal_id' }
                                                         );
+                                                    setHidingIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; });
                                                     setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });
                                                     setData(prev => prev.map(r => r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
                                                         ? { ...r, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r));
                                                     useStaff.getState().appendAuditLog('MINMAX_HIDE', String(row.erp_product_id), { product: row.product_name, sucursal_id: row._erp_sucursal_id });
                                                 }}
+                                                    disabled={hidingIds.has(row.erp_product_id)}
                                                     title="Ocultar producto (pone MIN/MAX en 0 y excluye de recálculos)"
                                                     {...iconAnim}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 hover:bg-slate-100">
-                                                    <EyeOff size={12} />
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 hover:bg-slate-100 disabled:pointer-events-none">
+                                                    {hidingIds.has(row.erp_product_id)
+                                                        ? <Loader2 size={12} className="animate-spin text-slate-400" />
+                                                        : <EyeOff size={12} />}
                                                 </motion.button>
                                             )}
                                             {/* Poner en 0 */}

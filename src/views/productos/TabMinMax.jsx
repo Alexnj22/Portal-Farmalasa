@@ -1370,7 +1370,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [page,         setPage]         = useState(1);
     const [pageSize,     setPageSize]     = useState(25);
     const [publishing,   setPublishing]   = useState(false);
-    const [publishResult,setPublishResult]= useState(null);
+    const [publishResult,setPublishResult]= useState(null); // kept for potential future use
     const [filterDraft,       setFilterDraft]       = useState(false);
     const [filterChangesOnly, setFilterChangesOnly] = useState(false);
     const [filterHidden,      setFilterHidden]      = useState(false);
@@ -1546,7 +1546,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     { onConflict: 'erp_product_id,erp_sucursal_id' }
                 );
             if (e) {
-                useToastStore.getState().showToast(targetRow?.product_name || 'Producto', 'Valor inválido: MAX debe ser mayor al MIN', 'error');
+                useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error');
                 return;
             }
             setData(prev => prev.map(r =>
@@ -1577,7 +1577,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     { onConflict: 'erp_product_id,erp_sucursal_id' }
                 );
             if (e) {
-                useToastStore.getState().showToast(targetRow?.product_name || 'Producto', 'Valor inválido: MAX debe ser mayor al MIN', 'error');
+                useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error');
                 return;
             }
             setData(prev => prev.map(r =>
@@ -1628,7 +1628,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const resetToCalc = useCallback(async (row) => {
         if (row.calc_min == null && row.calc_max == null) {
-            setToast({ message: 'No hay valores calculados guardados para este producto. Corre Calcular primero.', type: 'error' });
+            useToastStore.getState().showToast(row.product_name, 'No hay valores calculados. Corre Calcular primero.', 'error');
             return;
         }
         const cMin = row.calc_min ?? 0;
@@ -1639,14 +1639,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             : { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, draft_min: cMin, draft_max: cMax, draft_status: 'pending', updated_at: new Date().toISOString() };
         const { error: e } = await supabase.from('product_stock_params')
             .upsert(upsertData, { onConflict: 'erp_product_id,erp_sucursal_id' });
-        if (e) { setToast({ message: `Error al restaurar: ${e.message}`, type: 'error' }); return; }
+        if (e) { useToastStore.getState().showToast(row.product_name, `Error al restaurar: ${e.message}`, 'error'); return; }
         setData(prev => prev.map(r => {
             if (r.erp_product_id !== row.erp_product_id || r._erp_sucursal_id !== row._erp_sucursal_id) return r;
             return saveLive
                 ? { ...r, effective_min: cMin, effective_max: cMax }
                 : { ...r, draft_min: cMin, draft_max: cMax, draft_status: 'pending' };
         }));
-        setToast({ message: `${row.product_name}: restaurado a MIN ${cMin} / MAX ${cMax} (calculado)`, type: 'success' });
+        useToastStore.getState().showToast(row.product_name, `Restaurado a MIN ${cMin} / MAX ${cMax} (calculado)`, 'success');
         useStaff.getState().appendAuditLog('MINMAX_RESET_CALC', String(row.erp_product_id), {
             calc_min: cMin, calc_max: cMax, sucursal_id: row._erp_sucursal_id, mode: saveLive ? 'live' : 'draft',
         });
@@ -1688,12 +1688,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             if (productIds) rpcParams.p_erp_product_ids = productIds;
             const { data: res, error: e } = await supabase.rpc('publish_stock_params', rpcParams);
             if (e) throw e;
-            setPublishResult({ ...res, productIds });
             useStaff.getState().appendAuditLog('MINMAX_PUBLISH', String(selectedErp), {
                 sucursal_id: selectedErp, product_ids: productIds, published: res?.published,
             });
             await loadData(selectedErp);
-        } catch (e) { setToast({ message: `Error al publicar: ${e.message}`, type: 'error' }); }
+            const n = res?.published ?? 0;
+            const label = productIds ? `${n} producto${n !== 1 ? 's' : ''}` : `${n.toLocaleString()} borradores`;
+            useToastStore.getState().showToast(ERP_NAMES[selectedErp], `Publicó ${label} exitosamente`, 'success');
+        } catch (e) { useToastStore.getState().showToast('Error al publicar', e.message, 'error'); }
         finally { setPublishing(false); }
     }, [selectedErp, loadData]);
 
@@ -1990,19 +1992,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             )}
 
 
-            {/* ── Banners ── */}
-            {publishResult?.ok && (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[12px] text-emerald-700 font-semibold">
-                    {currentEmployee?.photo_url
-                        ? <img src={currentEmployee.photo_url} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 ring-1 ring-emerald-200" />
-                        : <CheckCircle2 size={14} />}
-                    {currentEmployee?.name && <span className="font-black text-emerald-800">{currentEmployee.name.split(' ')[0]}</span>}
-                    {publishResult.productIds
-                        ? `publicó ${publishResult.published} producto${publishResult.published !== 1 ? 's' : ''} en ${ERP_NAMES[selectedErp]}`
-                        : `publicó ${publishResult.published?.toLocaleString()} borradores en ${ERP_NAMES[selectedErp]}`}
-                    <button onClick={() => setPublishResult(null)} className="ml-auto text-emerald-400 hover:text-emerald-600"><X size={12} /></button>
-                </div>
-            )}
             {error && (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-600 font-semibold">
                     <AlertTriangle size={14} /> {error}

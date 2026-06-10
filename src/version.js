@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.3';
+export const APP_VERSION = '2.2.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.4  — MinMax: avisos LiquidToast con nombre del producto; warn si valor guardado es 4× mayor/menor al calculado (warnIfOutrageous); errores de validación y DB via LiquidToast
 // v2.2.3  — MinMax: fix raíz del toast invisible — backdrop-filter del body card creaba containing block para position:fixed; ahora el toast usa createPortal→document.body; skipBlurSave en todos los error paths; toast fallback en error DB
 // v2.2.2  — MinMax: fix definitivo toast validación usando validateEditForRow(row) puro sin closure de data; botón Restaurar verde; skipBlurSave en path de error para evitar doble-fire
 // v2.2.1  — MinMax: fix toast de validación (validateEdit síncrono en cada handler antes de navegar); backfill calc_min/calc_max en 17k filas; texto "act." más visible (slate-400)

@@ -8,7 +8,7 @@ import {
     MapPin, Briefcase, HeartPulse, Download,
     Cake, AlertCircle, AlertTriangle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, Ban, Loader2,
     KeyRound, Camera, ClipboardList, Palmtree, RefreshCw, DollarSign, FileCheck, Check, X, Search, Stethoscope, ChevronLeft, ChevronRight,
-    BarChart2, Smile, ThumbsUp, Meh, Frown
+    BarChart2, Smile, ThumbsUp, Meh, Frown, Copy
 } from 'lucide-react';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
 import { EVENT_TYPES, WEEK_DAYS } from '../data/constants';
@@ -37,6 +37,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const [showExceptionModal, setShowExceptionModal] = useState(false);
     const [showResetConfirm, setShowResetConfirm] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
+    const [resetResult, setResetResult] = useState(null); // contraseña temporal generada
+    const [copiedPwd, setCopiedPwd]     = useState(false);
     const [cancelingEventId, setCancelingEventId] = useState(null);
     const [cancelReason, setCancelReason] = useState('');
     const [showCancelModal, setShowCancelModal] = useState(false);
@@ -321,11 +323,16 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             );
             if (data?.ok) {
                 setShowResetConfirm(false);
-                useToastStore.getState().showToast(
-                    'Contraseña Restablecida',
-                    `${emp.name} deberá cambiar su contraseña en su próximo acceso.`,
-                    'success'
-                );
+                if (data.tempPassword) {
+                    setCopiedPwd(false);
+                    setResetResult({ password: data.tempPassword });
+                } else {
+                    useToastStore.getState().showToast(
+                        'Contraseña Restablecida',
+                        `${emp.name} deberá cambiar su contraseña en su próximo acceso.`,
+                        'success'
+                    );
+                }
             } else {
                 useToastStore.getState().showToast('Error', 'No se pudo restablecer.', 'error');
             }
@@ -1419,6 +1426,43 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 isDestructive={false}
                 isProcessing={isResetting}
             />
+        )}
+
+        {resetResult && createPortal(
+            <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setResetResult(null)} />
+                <div className="relative w-full max-w-sm bg-white/95 backdrop-blur-2xl border border-white/80 rounded-[2rem] overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.2)]">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 bg-emerald-500" />
+                    <div className="p-6 sm:p-8 flex flex-col items-center relative z-10">
+                        <div className="w-14 h-14 rounded-[1.2rem] flex items-center justify-center mb-4 border bg-white/60 border-emerald-200 shadow-sm text-emerald-500">
+                            <KeyRound size={26} strokeWidth={2.5} />
+                        </div>
+                        <h3 className="text-[18px] font-black uppercase tracking-tight mb-1 text-slate-800 text-center">Contraseña temporal</h3>
+                        <p className="text-[12px] text-slate-500 font-medium text-center mb-4 leading-relaxed">
+                            Compártela con <span className="font-bold text-slate-700">{emp.name}</span>. Deberá cambiarla en su próximo acceso.
+                            <br /><span className="text-amber-600 font-bold">No se volverá a mostrar.</span>
+                        </p>
+                        <div className="w-full flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl pl-4 pr-2 py-2.5 mb-4">
+                            <span className="flex-1 text-[20px] font-black tracking-[0.2em] text-slate-800 text-center select-all">{resetResult.password}</span>
+                            <button
+                                onClick={async () => {
+                                    try { await navigator.clipboard.writeText(resetResult.password); } catch { /* noop */ }
+                                    setCopiedPwd(true);
+                                    setTimeout(() => setCopiedPwd(false), 2000);
+                                }}
+                                title="Copiar"
+                                className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${copiedPwd ? 'bg-emerald-500 text-white' : 'bg-[#0052CC] text-white hover:bg-blue-700'}`}>
+                                {copiedPwd ? <Check size={18} strokeWidth={2.5} /> : <Copy size={17} strokeWidth={2.2} />}
+                            </button>
+                        </div>
+                        <button onClick={() => setResetResult(null)}
+                            className="w-full py-2.5 rounded-2xl bg-slate-100 text-slate-600 text-[13px] font-bold hover:bg-slate-200 transition-colors">
+                            Listo
+                        </button>
+                    </div>
+                </div>
+            </div>,
+            document.body
         )}
 
         {cancelModalRender && createPortal(

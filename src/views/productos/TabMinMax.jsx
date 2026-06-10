@@ -385,6 +385,24 @@ function DraftCostCard({ draftCost }) {
     );
 }
 
+function CardSkeletons({ isBodega }) {
+    const count = isBodega ? 2 : 4;
+    return (
+        <div className="flex items-center gap-2.5 flex-wrap">
+            {Array.from({ length: count }).map((_, i) => (
+                <div key={i} className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm animate-pulse"
+                    style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
+                    <div className="w-3.5 h-3.5 rounded-full bg-slate-200/80 shrink-0" />
+                    <div className="flex flex-col gap-1.5">
+                        <div className="h-2 w-16 rounded bg-slate-200/80" />
+                        <div className="h-3 w-20 rounded bg-slate-200/80" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function sortedPres(presentations) {
@@ -1900,8 +1918,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             <div className="flex items-center gap-3 flex-wrap">
 
                 {/* LEFT: Cost cards */}
-                {costSummary && <CostCards summary={costSummary} isBodega={isBodega} />}
-                {draftCost   && <DraftCostCard draftCost={draftCost} />}
+                {loading
+                    ? <CardSkeletons isBodega={isBodega} />
+                    : costSummary
+                        ? <CostCards summary={costSummary} isBodega={isBodega} />
+                        : null}
+                {!loading && draftCost && <DraftCostCard draftCost={draftCost} />}
 
                 <div className="flex-1" />
 
@@ -2095,8 +2117,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     <motion.button
                                         {...chipAnim}
                                         onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
-                                        className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-bold transition-colors duration-150 ${active ? 'bg-slate-100/90 text-slate-700' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'}`}>
-                                        <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
+                                        className={`flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-bold transition-colors duration-150 ${active ? 'bg-slate-100/90 text-slate-700' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'}`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
                                         <span className={`tabular-nums font-black ${active ? '' : 'text-slate-700'}`}>{loading ? '–' : stats[cfg.key]}</span>
                                         <span className="opacity-80">{cfg.label}</span>
                                         {active && <X size={9} className="ml-0.5 opacity-60" />}
@@ -2111,9 +2133,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <motion.button
                                     {...chipAnim}
                                     onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
-                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-bold transition-colors duration-150 ${filterSparse ? 'bg-orange-50/80 text-orange-700' : 'text-orange-500 hover:bg-orange-50/60 hover:text-orange-700'}`}
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-bold transition-colors duration-150 ${filterSparse ? 'bg-orange-50/80 text-orange-700' : 'text-orange-500 hover:bg-orange-50/60 hover:text-orange-700'}`}
                                     title="Productos con ventas en menos de 3 días distintos — requieren confirmación manual de MIN/MAX">
-                                    <AlertTriangle size={10} strokeWidth={2.5} />
+                                    <AlertTriangle size={9} strokeWidth={2.5} />
                                     <span className="tabular-nums font-black">{sparseCount}</span>
                                     pocos datos
                                     {filterSparse && <X size={9} className="ml-0.5 opacity-60" />}
@@ -2185,10 +2207,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         >
                             <div className="flex items-center rounded-l-2xl border border-r-0 border-slate-200/70 bg-white/80 backdrop-blur-sm overflow-hidden">
                                 {/* Count + pulsing dot */}
-                                <div className="flex items-center gap-1.5 px-3 py-2.5">
-                                    <span className="relative flex h-2 w-2 shrink-0">
+                                <div className="flex items-center gap-1 px-2.5 py-1.5">
+                                    <span className="relative flex h-1.5 w-1.5 shrink-0">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
+                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-400" />
                                     </span>
                                     <span className="text-[11px] font-black text-slate-700 tabular-nums">{draftCount}</span>
                                     <span className="text-[11px] text-slate-400">borrador{draftCount !== 1 ? 'es' : ''}</span>
@@ -2198,7 +2220,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <motion.button
                                     {...chipAnim}
                                     onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); setFilterChangesOnly(false); }}
-                                    className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
                                     {filterDraft ? <><X size={10} strokeWidth={2.5} /> Ver todos</> : 'Solo borradores'}
                                 </motion.button>
                                 {/* Solo cambios — only when there is published data with changes */}
@@ -2208,7 +2230,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         <motion.button
                                             {...chipAnim}
                                             onClick={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); setFilterSparse(false); }}
-                                            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterChangesOnly ? 'text-violet-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                                            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold ${filterChangesOnly ? 'text-violet-600' : 'text-slate-500 hover:text-slate-700'}`}>
                                             {filterChangesOnly ? <><X size={10} strokeWidth={2.5} /> Ver todos</> : `Solo cambios (${changesCount})`}
                                         </motion.button>
                                     </>
@@ -2668,9 +2690,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     disabled={hidingIds.has(row.erp_product_id)}
                                                     title="Ocultar producto (pone MIN/MAX en 0 y excluye de recálculos)"
                                                     {...iconAnim}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-slate-500 hover:bg-slate-100 disabled:pointer-events-none">
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 disabled:pointer-events-none">
                                                     {hidingIds.has(row.erp_product_id)
-                                                        ? <Loader2 size={12} className="animate-spin text-slate-400" />
+                                                        ? <Loader2 size={12} className="animate-spin text-rose-400" />
                                                         : <EyeOff size={12} />}
                                                 </motion.button>
                                             )}
@@ -2697,7 +2719,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 onClick={e => { e.stopPropagation(); openHistory(row); }}
                                                 title="Ver historial de cambios MIN/MAX"
                                                 {...iconAnim}
-                                                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-[#0052CC] hover:bg-blue-50 transition-colors">
+                                                className="w-7 h-7 flex items-center justify-center rounded-lg text-blue-400 hover:text-[#0052CC] hover:bg-blue-50 transition-colors">
                                                 <History size={12} />
                                             </motion.button>
                                             {/* Publicar borrador */}

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.9';
+export const APP_VERSION = '2.2.10';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.10 — MinMax: todos los mensajes usan LiquidToast — error de carga, calcular éxito/error, aviso bodega; eliminado banner inline de error
 // v2.2.9  — MinMax: detección de productos con datos insuficientes (< 3 días de venta) — badge "POCOS DATOS", MIN/MAX con borde punteado naranja "⚠ Confirmar", guardado siempre como borrador; botón de filtro en barra; calculate_stock_params excluye estos del cálculo automático
 // v2.2.8  — MinMax: fix timeout al cambiar sucursal — eliminado subquery d2 inutilizado en get_stock_analysis (escaneaba toda sales_invoice_items sin filtro); índice en erp_sucursal_map(branch_id); errores DB traducidos al español
 // v2.2.7  — MinMax: labels con bajo contraste en glassmorphism corregidos — velocidad/día, separador ·, vend., laboratorio, N act. bajo MIN/MAX, ≈ cantidad bajo inputs; todos legibles

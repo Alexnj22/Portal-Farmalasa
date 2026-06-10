@@ -1466,7 +1466,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             setDraftCost(draft   || null);
             if (cfg) setAnalysisConfig(cfg);
         } catch (e) {
-            if (rid === loadRef.current) setError(translateDbError(e.message));
+            if (rid === loadRef.current) useToastStore.getState().showToast(ERP_NAMES[erpId] ?? 'MinMax', translateDbError(e.message), 'error');
         } finally {
             if (rid === loadRef.current) setLoading(false);
         }
@@ -1487,10 +1487,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         try {
             const { data: res, error: e } = await supabase.rpc('calculate_stock_params', { p_erp_sucursal_id: selectedErp });
             if (e) throw e;
-            setToast({ message: `${(res?.rows ?? 0).toLocaleString()} borradores generados para ${ERP_NAMES[selectedErp]}`, type: 'info' });
+            useToastStore.getState().showToast(ERP_NAMES[selectedErp], `${(res?.rows ?? 0).toLocaleString()} borradores generados`, 'success');
             await loadData(selectedErp);
             if (wasPublished) { setFilterChangesOnly(true); setFilterDraft(false); }
-        } catch (e) { setToast({ message: fmtCalcError(e.message), type: 'error' }); }
+        } catch (e) { useToastStore.getState().showToast(ERP_NAMES[selectedErp], fmtCalcError(e.message), 'error'); }
         finally { setCalculating(false); }
     };
 
@@ -1500,10 +1500,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         try {
             const { data: res, error: e } = await supabase.rpc('calculate_stock_params');
             if (e) throw e;
-            setToast({ message: `${(res?.rows ?? 0).toLocaleString()} borradores generados para todas las sucursales`, type: 'info' });
+            useToastStore.getState().showToast('Todas las sucursales', `${(res?.rows ?? 0).toLocaleString()} borradores generados`, 'success');
             await loadData(selectedErp);
             if (wasPublished) { setFilterChangesOnly(true); setFilterDraft(false); }
-        } catch (e) { setToast({ message: fmtCalcError(e.message), type: 'error' }); }
+        } catch (e) { useToastStore.getState().showToast('Calcular', fmtCalcError(e.message), 'error'); }
         finally { setCalculating(false); }
     };
 
@@ -2011,12 +2011,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             )}
 
 
-            {error && (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-600 font-semibold">
-                    <AlertTriangle size={14} /> {error}
-                    <button onClick={() => setError(null)} className="ml-auto"><X size={12} /></button>
-                </div>
-            )}
             {configChanged && !calculating && (
                 <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[12px] text-blue-700 font-medium">
                     <Settings2 size={13} className="shrink-0 text-blue-500" />
@@ -2442,7 +2436,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             </div>
                                         ) : hasDraft ? (
                                             <div className={`flex flex-col items-center ${canManage ? 'cursor-pointer group/min' : ''}`}
-                                                onClick={canManage ? e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); } : undefined}>
+                                                onClick={canManage ? e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); } : undefined}>
                                                 <div className={`px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 ${canManage ? 'group-hover/min:border-amber-400 group-hover/min:bg-amber-100' : ''} transition-[border-color,background-color] duration-150`}>
                                                     <span className="text-[13px] font-black tabular-nums text-amber-700">{(row.draft_min ?? 0).toLocaleString()}</span>
                                                 </div>
@@ -2451,7 +2445,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         ) : isSparse ? (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/min"
-                                                    onClick={e => { e.stopPropagation(); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: minN > 0 ? String(minN) : '' }); }}>
+                                                    onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: minN > 0 ? String(minN) : '' }); }}>
                                                     <div className="px-2.5 py-1 rounded-lg bg-orange-50 border border-dashed border-orange-300 group-hover/min:border-orange-400 group-hover/min:bg-orange-100 transition-[border-color,background-color] duration-150">
                                                         <span className="text-[13px] font-black tabular-nums text-orange-400">{minN > 0 ? minN.toLocaleString() : '—'}</span>
                                                     </div>
@@ -2466,7 +2460,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         ) : (dead || noHistory) ? (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/min"
-                                                    onClick={e => { e.stopPropagation(); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: '' }); }}>
+                                                    onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: '' }); }}>
                                                     <div className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 group-hover/min:border-amber-400 group-hover/min:bg-amber-100 transition-[border-color,background-color] duration-150">
                                                         <span className="text-[13px] font-black tabular-nums text-amber-400">0</span>
                                                     </div>
@@ -2479,7 +2473,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         ) : (
                                             hasPublishedData && canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/min"
-                                                    onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.effective_min ?? '') }); }}>
+                                                    onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.effective_min ?? '') }); }}>
                                                     <div className={`px-2.5 py-1 rounded-lg border group-hover/min:border-emerald-400 group-hover/min:bg-emerald-50 transition-[border-color,background-color] duration-150 ${stock < minN ? 'border-orange-200' : 'border-slate-200'}`}>
                                                         <span className={`text-[13px] font-black tabular-nums ${stock < minN ? 'text-orange-600' : 'text-slate-600'}`}>{minN.toLocaleString()}</span>
                                                     </div>
@@ -2551,7 +2545,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             </div>
                                         ) : hasDraft ? (
                                             <div className={`flex flex-col items-center ${canManage ? 'cursor-pointer group/max' : ''}`}
-                                                onClick={canManage ? e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); } : undefined}>
+                                                onClick={canManage ? e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); } : undefined}>
                                                 <div className={`px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 ${canManage ? 'group-hover/max:border-blue-400 group-hover/max:bg-blue-100' : ''} transition-[border-color,background-color] duration-150`}>
                                                     <span className="text-[13px] font-black tabular-nums text-blue-700">{(row.draft_max ?? 0).toLocaleString()}</span>
                                                 </div>
@@ -2560,7 +2554,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         ) : isSparse ? (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/max"
-                                                    onClick={e => { e.stopPropagation(); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: maxN > 0 ? String(maxN) : '' }); }}>
+                                                    onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: maxN > 0 ? String(maxN) : '' }); }}>
                                                     <div className="px-2.5 py-1 rounded-lg bg-orange-50 border border-dashed border-orange-300 group-hover/max:border-orange-400 group-hover/max:bg-orange-100 transition-[border-color,background-color] duration-150">
                                                         <span className="text-[13px] font-black tabular-nums text-orange-400">{maxN > 0 ? maxN.toLocaleString() : '—'}</span>
                                                     </div>
@@ -2575,7 +2569,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         ) : (dead || noHistory) ? (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/max"
-                                                    onClick={e => { e.stopPropagation(); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: '' }); }}>
+                                                    onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: '' }); }}>
                                                     <div className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 group-hover/max:border-blue-400 group-hover/max:bg-blue-100 transition-[border-color,background-color] duration-150">
                                                         <span className="text-[13px] font-black tabular-nums text-blue-400">0</span>
                                                     </div>
@@ -2588,7 +2582,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         ) : (
                                             hasPublishedData && canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/max"
-                                                    onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.effective_max ?? '') }); }}>
+                                                    onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.effective_max ?? '') }); }}>
                                                     <div className={`px-2.5 py-1 rounded-lg border group-hover/max:border-emerald-400 group-hover/max:bg-emerald-50 transition-[border-color,background-color] duration-150 ${stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200'}`}>
                                                         <span className={`text-[13px] font-black tabular-nums ${stock > maxN && maxN > 0 ? 'text-blue-600' : 'text-slate-600'}`}>{maxN.toLocaleString()}</span>
                                                     </div>

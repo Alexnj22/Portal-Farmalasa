@@ -88,7 +88,7 @@ const MODULE_GROUPS = [
                 { key: 'productos_tab_inventario', label: 'Inventario' },
                 { key: 'productos_tab_sinventa',   label: 'Sin Venta'  },
             ]},
-            { key: 'minmax', label: 'Min / Max', desc: 'Análisis de stock mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros', icon: BarChart2, hasApprove: false },
+            { key: 'minmax', label: 'Min / Max', desc: 'Análisis de stock mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros. Aprobar = publicar cambios y resolver solicitudes de ajuste', icon: BarChart2, hasApprove: true },
             { key: 'ventas_perdidas', label: 'Ventas Perdidas', desc: 'Registro de productos solicitados sin stock; alertas de compra para logística con seguimiento de estado', icon: PackageMinus, hasApprove: false },
             { key: 'compras', label: 'Compras', desc: 'Historial de facturas de compra de Bodega desde el ERP: facturas por fecha y proveedor, detalle de ítems y resumen por producto', icon: ShoppingCart, hasApprove: false },
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },

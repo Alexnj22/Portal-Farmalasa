@@ -5,9 +5,11 @@ import ViewTabBar         from '../components/common/ViewTabBar';
 import TabMinMax             from './productos/TabMinMax';
 import TabMinMaxNetwork      from './productos/TabMinMaxNetwork';
 import TabMinMaxComparacion  from './productos/TabMinMaxComparacion';
+import TabMinMaxRequests     from './productos/TabMinMaxRequests';
 import { supabase }      from '../supabaseClient';
+import { useAuth }       from '../context/AuthContext';
 
-const TABS = [
+const BASE_TABS = [
     { key: 'sucursal',    label: 'Sucursal'    },
     { key: 'red',         label: 'Red'         },
     { key: 'comparacion', label: 'vs ERP'      },
@@ -30,6 +32,12 @@ const DEFAULT_CONFIG = {
 };
 
 export default function MinMaxView() {
+    const { hasPermission } = useAuth();
+    const canApprove = hasPermission('minmax', 'can_approve');
+    const TABS = canApprove
+        ? [...BASE_TABS, { key: 'solicitudes', label: 'Solicitudes' }]
+        : BASE_TABS;
+
     const [activeTab,       setActiveTab]       = useState('sucursal');
     const [rawSearch,       setRawSearch]       = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -60,6 +68,7 @@ export default function MinMaxView() {
             placeholder={
             activeTab === 'red'         ? 'Buscar en vista red…'        :
             activeTab === 'comparacion' ? 'Buscar en comparación ERP…'  :
+            activeTab === 'solicitudes' ? 'Buscar solicitud…'           :
                                          'Buscar producto en Min/Max…'
         }
         />
@@ -79,6 +88,9 @@ export default function MinMaxView() {
             )}
             {activeTab === 'comparacion' && (
                 <TabMinMaxComparacion searchTerm={debouncedSearch} />
+            )}
+            {canApprove && activeTab === 'solicitudes' && (
+                <TabMinMaxRequests searchTerm={debouncedSearch} />
             )}
         </GlassViewLayout>
     );

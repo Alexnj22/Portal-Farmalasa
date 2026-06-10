@@ -21,6 +21,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import WidgetInventorySearch from './dashboard/WidgetInventorySearch';
 import WidgetSrsInventory from './dashboard/WidgetSrsInventory';
 import WidgetAnnulmentRequest from './dashboard/WidgetAnnulmentRequest';
+import WidgetMinMaxRequest from './dashboard/WidgetMinMaxRequest';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { getTodayAttendanceStatus } from '../utils/helpers';
@@ -83,6 +84,7 @@ const WIDGET_SIZES = {
   inv_search:    { minCols: 2, minRows: 3, label: 'Inventario'   },
   annulment_req: { minCols: 2, minRows: 3, label: 'Anulaciones'  },
   srs_inv:       { minCols: 2, minRows: 3, label: 'Búsqueda SRS' },
+  minmax_req:    { minCols: 2, minRows: 3, label: 'Ajuste Min/Max' },
 };
 
 const getWidgetSize = (id) => {
@@ -100,12 +102,12 @@ const TABS = [
   { id: 'operacion', label: 'Operación', icon: Zap             },
 ];
 
-const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos','inv_search','annulment_req','srs_inv'];
+const ALL_WIDGET_IDS = ['kpi','trend','requests','shifts','absences','sales','branches','calendar','announcements','birthdays','cotizaciones','facturacion','top_productos','inv_search','annulment_req','srs_inv','minmax_req'];
 const TAB_WIDGETS = {
   general:   ALL_WIDGET_IDS,
   comercial: ['kpi','cotizaciones','facturacion','top_productos','sales'],
   rrhh:      ['kpi','trend','shifts','absences','requests','calendar','announcements','birthdays'],
-  operacion: ['inv_search','annulment_req','srs_inv'],
+  operacion: ['inv_search','annulment_req','srs_inv','minmax_req'],
 };
 
 // Resolve collisions after a drop: dragged widget wins its target position,
@@ -1847,6 +1849,18 @@ const DashboardView = ({ openModal }) => {
         >
           <div className="px-4 pb-4 pt-2 h-full">
             <WidgetAnnulmentRequest selectedBranchId={isAnnAllScope ? annulmentBranch : null} />
+          </div>
+        </WidgetCard>
+      , staggerIdx);
+    }
+
+    /* ── MIN/MAX ADJUSTMENT REQUEST ── */
+    if (wid === 'minmax_req') {
+      if (!isWidgetOn('minmax_req') || !hasPermission('minmax', 'can_edit')) return null;
+      return wrapWidget('minmax_req',
+        <WidgetCard title="Ajuste de Min/Max" icon={BarChart2} category="productos">
+          <div className="px-4 pb-4 pt-2 h-full">
+            <WidgetMinMaxRequest />
           </div>
         </WidgetCard>
       , staggerIdx);

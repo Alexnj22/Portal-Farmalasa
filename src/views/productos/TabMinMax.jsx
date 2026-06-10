@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import {
     RefreshCw, AlertTriangle, Loader2,
-    Building2, Package, X, Download,
+    Building2, Package, X, Download, Trash2,
     CheckCircle2, Check, Info, RotateCcw, ChevronRight, History,
     DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2, Target, FlaskConical, Search,
 } from 'lucide-react';
@@ -1417,6 +1417,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const publishTimer     = useRef(null);
     const skipBlurSave     = useRef(false);
     const [publishConfirm, setPublishConfirm] = useState({ open: false, ids: null, count: 0 });
+    const [discardConfirm, setDiscardConfirm] = useState(false);
+    const [discardingAll,  setDiscardingAll]  = useState(false);
     const [analysisConfig, setAnalysisConfig] = useState({ analysis_days: 180 });
 
     // Cleanup publish timer on unmount
@@ -1705,6 +1707,36 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             calc_min: cMin, calc_max: cMax, sucursal_id: row._erp_sucursal_id, mode: saveLive ? 'live' : 'draft',
         });
     }, [hasPublishedData]);
+
+    // Descarta el borrador de un producto individual: revierte draft al valor publicado actual.
+    const discardDraft = useCallback(async (row) => {
+        const revertMin = row.effective_min ?? 0;
+        const revertMax = row.effective_max ?? 0;
+        const { error: e } = await supabase.from('product_stock_params')
+            .update({ draft_min: revertMin, draft_max: revertMax, draft_status: 'none', updated_at: new Date().toISOString() })
+            .eq('erp_product_id', row.erp_product_id)
+            .eq('erp_sucursal_id', row._erp_sucursal_id);
+        if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${e.message}`, 'error'); return; }
+        setData(prev => prev.map(r =>
+            r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
+                ? { ...r, draft_min: revertMin, draft_max: revertMax, draft_status: 'none' } : r
+        ));
+        useStaff.getState().appendAuditLog('MINMAX_DISCARD_DRAFT', String(row.erp_product_id), {
+            product: row.product_name, sucursal_id: row._erp_sucursal_id, reverted_to: { min: revertMin, max: revertMax },
+        });
+    }, []);
+
+    // Descarta todos los borradores de la sucursal actual usando el RPC discard_stock_drafts.
+    const handleDiscardAll = useCallback(async () => {
+        setDiscardingAll(true);
+        const { data: count, error: e } = await supabase.rpc('discard_stock_drafts', { p_erp_sucursal_id: selectedErp });
+        setDiscardingAll(false);
+        setDiscardConfirm(false);
+        if (e) { useToastStore.getState().showToast(ERP_NAMES[selectedErp], `Error al descartar: ${e.message}`, 'error'); return; }
+        useToastStore.getState().showToast(ERP_NAMES[selectedErp], `${count ?? 0} borradores descartados`, 'success');
+        useStaff.getState().appendAuditLog('MINMAX_DISCARD_ALL', String(selectedErp), { sucursal: ERP_NAMES[selectedErp], count });
+        await loadData(selectedErp);
+    }, [selectedErp, loadData]);
 
     const draftCount   = useMemo(() => data.filter(r => r.draft_status === 'pending').length, [data]);
     const sparseCount  = useMemo(() => data.filter(r => r.draft_status === 'sparse_data').length, [data]);
@@ -2235,6 +2267,20 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         </motion.button>
                                     </>
                                 )}
+                                {/* Descartar todo */}
+                                {canManage && (
+                                    <>
+                                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                        <motion.button
+                                            {...chipAnim}
+                                            onClick={() => setDiscardConfirm(true)}
+                                            disabled={discardingAll}
+                                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-50 disabled:opacity-50 disabled:pointer-events-none transition-colors">
+                                            {discardingAll ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}
+                                            Descartar todo
+                                        </motion.button>
+                                    </>
+                                )}
                             </div>
                             {/* Publicar — blue right cap */}
                             <AnimatePresence mode="wait">
@@ -2722,6 +2768,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 className="w-7 h-7 flex items-center justify-center rounded-lg text-blue-400 hover:text-[#0052CC] hover:bg-blue-50 transition-colors">
                                                 <History size={12} />
                                             </motion.button>
+                                            {/* Descartar borrador individual */}
+                                            {hasDraft && canManage && (
+                                                <motion.button
+                                                    onClick={e => { e.stopPropagation(); discardDraft(row); }}
+                                                    title="Descartar borrador — vuelve al valor publicado"
+                                                    {...iconAnim}
+                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                                                    <Trash2 size={12} />
+                                                </motion.button>
+                                            )}
                                             {/* Publicar borrador */}
                                             {hasDraft && canManage && (
                                                 <motion.button onClick={e => { e.stopPropagation(); requestPublish([row.erp_product_id]); }}
@@ -2887,6 +2943,19 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 confirmText="Publicar"
                 cancelText="Cancelar"
                 isDestructive={false}
+            />
+
+            {/* ── Confirm discard all modal ── */}
+            <ConfirmModal
+                isOpen={discardConfirm}
+                onClose={() => setDiscardConfirm(false)}
+                onConfirm={handleDiscardAll}
+                title={`¿Descartar ${draftCount} borrador${draftCount !== 1 ? 'es' : ''}?`}
+                message={`Los valores calculados de ${ERP_NAMES[selectedErp]} se descartarán y volverán al MIN/MAX publicado actual. Esta acción no se puede deshacer.`}
+                confirmText="Descartar"
+                cancelText="Cancelar"
+                isDestructive={true}
+                isProcessing={discardingAll}
             />
         </div>
     );

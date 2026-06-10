@@ -1550,8 +1550,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         const numVal = edit.value === '' ? null : parseInt(edit.value, 10);
         if (Number.isNaN(numVal) && edit.value !== '') { setInlineDraftEdit(null); return; }
         const targetRow = data.find(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId);
-        const rowHasDraft = targetRow?.draft_status === 'pending';
-        const saveLive = hasPublishedData && !rowHasDraft;
+        const rowHasDraft  = targetRow?.draft_status === 'pending';
+        const rowIsSparse  = targetRow?.draft_status === 'sparse_data';
+        const saveLive = hasPublishedData && !rowHasDraft && !rowIsSparse;
 
         setInlineDraftEdit(null);
         if (saveLive) {
@@ -1670,6 +1671,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     }, [hasPublishedData]);
 
     const draftCount   = useMemo(() => data.filter(r => r.draft_status === 'pending').length, [data]);
+    const sparseCount  = useMemo(() => data.filter(r => r.draft_status === 'sparse_data').length, [data]);
     const changesCount = useMemo(() => data.filter(r => r.draft_status === 'pending' && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max)).length, [data]);
 
     const openHistory = useCallback(async (row) => {
@@ -1754,7 +1756,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         const q = searchTerm.toLowerCase();
         return data.filter(r => {
             if (hiddenIds.has(r.erp_product_id))                                           return false;
-            if (filterDraft && r.draft_status !== 'pending')                               return false;
+            if (filterDraft && r.draft_status !== 'pending' && r.draft_status !== 'sparse_data') return false;
             if (filterChangesOnly && !(r.draft_status === 'pending' && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max))) return false;
             if (filterAbc !== 'all' && (r.draft_abc_class || r.abc_class) !== filterAbc)  return false;
             if (filterXyz !== 'all' && normXyz(r.draft_demand_variability || r.demand_variability) !== filterXyz) return false;
@@ -2179,8 +2181,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
                                                 : 'Todos borradores'}
                                         </motion.button>
+                                        {sparseCount > 0 && !filterDraft && (
+                                            <>
+                                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                                <motion.button onClick={() => { setFilterDraft(true); setFilterChangesOnly(false); }}
+                                                    {...chipAnim}
+                                                    className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold text-orange-600 hover:text-orange-700"
+                                                    title="Productos con ventas en menos de 3 días — requieren confirmación manual de MIN/MAX">
+                                                    <AlertTriangle size={10} strokeWidth={2.5} />
+                                                    {sparseCount} pocos datos
+                                                </motion.button>
+                                            </>
+                                        )}
                                     </>
                                 ) : (
+                                    <>
                                     <motion.button onClick={() => setFilterDraft(f => !f)}
                                         {...chipAnim}
                                         className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
@@ -2188,6 +2203,19 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
                                             : 'Solo borradores'}
                                     </motion.button>
+                                    {sparseCount > 0 && !filterDraft && (
+                                        <>
+                                            <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                            <motion.button onClick={() => setFilterDraft(true)}
+                                                {...chipAnim}
+                                                className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold text-orange-600 hover:text-orange-700"
+                                                title="Productos con ventas en menos de 3 días — requieren confirmación manual de MIN/MAX">
+                                                <AlertTriangle size={10} strokeWidth={2.5} />
+                                                {sparseCount} pocos datos
+                                            </motion.button>
+                                        </>
+                                    )}
+                                    </>
                                 )}
                             </div>
                             {/* Publicar — blue cap, igual que Calcular */}
@@ -2255,6 +2283,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         const v6m        = Number(row.daily_velocity ?? 0);
                         const canExpand  = stock > 0;
                         const hasDraft   = row.draft_status === 'pending';
+                        const isSparse   = row.draft_status === 'sparse_data';
                         const limitedData = hasDraft &&
                             row.draft_data_days != null &&
                             row.draft_data_days < (analysisConfig.analysis_days ?? 180);
@@ -2290,6 +2319,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         </span>
                                                     )}
                                                     {noHistory && <span className="shrink-0 text-[8px] font-black text-yellow-700 bg-yellow-50 border border-yellow-200 px-1.5 py-0.5 rounded-full">SIN HISTORIAL</span>}
+                                                    {isSparse && <span className="shrink-0 text-[8px] font-black text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded-full" title="Vendió en menos de 3 días distintos — MIN/MAX requiere confirmación manual">POCOS DATOS</span>}
                                                 </div>
                                                 {/* Stock actual inline */}
                                                 <div className="flex items-center gap-1.5 mt-0.5">
@@ -2306,7 +2336,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 {noHistory && (
                                                     <span className="text-[10px] text-yellow-500 italic mt-0.5">Sin ventas en esta sucursal</span>
                                                 )}
-                                                {!dead && !noHistory && (
+                                                {isSparse && (
+                                                    <span className="text-[10px] text-orange-500 mt-0.5 flex items-center gap-0.5">
+                                                        <AlertTriangle size={9} />
+                                                        {Number(row.units_sold_6m) > 0 ? `${Number(row.units_sold_6m).toLocaleString()} uds. en 1–2 días` : 'Venta puntual'} · confirmar MIN/MAX manual
+                                                    </span>
+                                                )}
+                                                {!dead && !noHistory && !isSparse && (
                                                     <span className="text-[10px] text-slate-600 flex items-center gap-0.5 mt-0.5">
                                                         {v6m.toFixed(2)}/día
                                                         {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={9} className="text-emerald-500 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
@@ -2412,6 +2448,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 </div>
                                                 {minN > 0 && <div className="text-[9px] text-slate-600 tabular-nums mt-0.5">{minN.toLocaleString()} act.</div>}
                                             </div>
+                                        ) : isSparse ? (
+                                            canManage ? (
+                                                <div className="flex flex-col items-center cursor-pointer group/min"
+                                                    onClick={e => { e.stopPropagation(); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: minN > 0 ? String(minN) : '' }); }}>
+                                                    <div className="px-2.5 py-1 rounded-lg bg-orange-50 border border-dashed border-orange-300 group-hover/min:border-orange-400 group-hover/min:bg-orange-100 transition-[border-color,background-color] duration-150">
+                                                        <span className="text-[13px] font-black tabular-nums text-orange-400">{minN > 0 ? minN.toLocaleString() : '—'}</span>
+                                                    </div>
+                                                    <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-[12px] font-semibold tabular-nums text-orange-400">{minN > 0 ? minN.toLocaleString() : '—'}</span>
+                                                    <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
+                                                </div>
+                                            )
                                         ) : (dead || noHistory) ? (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/min"
@@ -2506,6 +2557,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 </div>
                                                 {maxN > 0 && <div className="text-[9px] text-slate-600 tabular-nums mt-0.5">{maxN.toLocaleString()} act.</div>}
                                             </div>
+                                        ) : isSparse ? (
+                                            canManage ? (
+                                                <div className="flex flex-col items-center cursor-pointer group/max"
+                                                    onClick={e => { e.stopPropagation(); if (isBodega) setToast({ message: 'Bodega: MIN/MAX se calculan automáticamente como Σ sucursales. Puedes sobreescribirlo manualmente.', type: 'info' }); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: maxN > 0 ? String(maxN) : '' }); }}>
+                                                    <div className="px-2.5 py-1 rounded-lg bg-orange-50 border border-dashed border-orange-300 group-hover/max:border-orange-400 group-hover/max:bg-orange-100 transition-[border-color,background-color] duration-150">
+                                                        <span className="text-[13px] font-black tabular-nums text-orange-400">{maxN > 0 ? maxN.toLocaleString() : '—'}</span>
+                                                    </div>
+                                                    <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-[12px] font-semibold tabular-nums text-orange-400">{maxN > 0 ? maxN.toLocaleString() : '—'}</span>
+                                                    <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
+                                                </div>
+                                            )
                                         ) : (dead || noHistory) ? (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/max"

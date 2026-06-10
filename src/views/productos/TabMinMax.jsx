@@ -1390,6 +1390,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [publishing,   setPublishing]   = useState(false);
     const [publishResult,setPublishResult]= useState(null); // kept for potential future use
     const [filterDraft,       setFilterDraft]       = useState(false);
+    const [filterSparse,      setFilterSparse]      = useState(false);
     const [filterChangesOnly, setFilterChangesOnly] = useState(false);
     const [filterHidden,      setFilterHidden]      = useState(false);
     const [hiddenIds,       setHiddenIds]       = useState(new Set());
@@ -1473,7 +1474,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         }
     }, []);
 
-    useEffect(() => { loadData(selectedErp); setFilterChangesOnly(false); setFilterDraft(false); }, [selectedErp, loadData]);
+    useEffect(() => { loadData(selectedErp); setFilterChangesOnly(false); setFilterDraft(false); setFilterSparse(false); }, [selectedErp, loadData]);
 
     const fmtCalcError = msg => {
         if (!msg) return 'Error al calcular.';
@@ -1772,7 +1773,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         const q = searchTerm.toLowerCase();
         return data.filter(r => {
             if (hiddenIds.has(r.erp_product_id))                                           return false;
-            if (filterDraft && r.draft_status !== 'pending' && r.draft_status !== 'sparse_data') return false;
+            if (filterSparse && r.draft_status !== 'sparse_data') return false;
+            if (filterDraft && r.draft_status !== 'pending') return false;
             if (filterChangesOnly && !(r.draft_status === 'pending' && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max))) return false;
             if (filterAbc !== 'all' && (r.draft_abc_class || r.abc_class) !== filterAbc)  return false;
             if (filterXyz !== 'all' && normXyz(r.draft_demand_variability || r.demand_variability) !== filterXyz) return false;
@@ -1780,7 +1782,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             if (q && !r.product_name?.toLowerCase().includes(q) && !r.laboratorio_nombre?.toLowerCase().includes(q)) return false;
             return true;
         });
-    }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, filterChangesOnly, hiddenIds, filterHidden]);
+    }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, filterSparse, filterChangesOnly, hiddenIds, filterHidden]);
 
     const filteredDraftIds = useMemo(
         () => hasActiveFilter ? filtered.filter(r => r.draft_status === 'pending').map(r => r.erp_product_id) : [],
@@ -1854,7 +1856,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
     const pageRows   = sorted.slice((page - 1) * pageSize, page * pageSize);
-    useEffect(() => { setPage(1); }, [filterAbc, filterXyz, filterAlert, searchTerm, sortBy, sortDir, selectedErp, filterDraft, filterHidden]);
+    useEffect(() => { setPage(1); }, [filterAbc, filterXyz, filterAlert, searchTerm, sortBy, sortDir, selectedErp, filterDraft, filterSparse, filterHidden]);
 
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
@@ -2184,44 +2186,44 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 : `Solo cambios (${changesCount})`}
                                         </motion.button>
                                         <div className="h-5 w-px bg-slate-100 shrink-0" />
-                                        <motion.button onClick={() => { setFilterDraft(f => !f); setFilterChangesOnly(false); }}
+                                        <motion.button onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); setFilterChangesOnly(false); }}
                                             {...chipAnim}
                                             className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
                                             {filterDraft
                                                 ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
                                                 : 'Todos borradores'}
                                         </motion.button>
-                                        {sparseCount > 0 && !filterDraft && (
+                                        {sparseCount > 0 && (
                                             <>
                                                 <div className="h-5 w-px bg-slate-100 shrink-0" />
-                                                <motion.button onClick={() => { setFilterDraft(true); setFilterChangesOnly(false); }}
+                                                <motion.button onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); }}
                                                     {...chipAnim}
-                                                    className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold text-orange-600 hover:text-orange-700"
+                                                    className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterSparse ? 'text-orange-700' : 'text-orange-500 hover:text-orange-700'}`}
                                                     title="Productos con ventas en menos de 3 días — requieren confirmación manual de MIN/MAX">
                                                     <AlertTriangle size={10} strokeWidth={2.5} />
-                                                    {sparseCount} pocos datos
+                                                    {filterSparse ? <><X size={10} strokeWidth={2.5} /> Ver todos</> : `${sparseCount} pocos datos`}
                                                 </motion.button>
                                             </>
                                         )}
                                     </>
                                 ) : (
                                     <>
-                                    <motion.button onClick={() => setFilterDraft(f => !f)}
+                                    <motion.button onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); }}
                                         {...chipAnim}
                                         className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
                                         {filterDraft
                                             ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
                                             : 'Solo borradores'}
                                     </motion.button>
-                                    {sparseCount > 0 && !filterDraft && (
+                                    {sparseCount > 0 && (
                                         <>
                                             <div className="h-5 w-px bg-slate-100 shrink-0" />
-                                            <motion.button onClick={() => setFilterDraft(true)}
+                                            <motion.button onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); }}
                                                 {...chipAnim}
-                                                className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold text-orange-600 hover:text-orange-700"
+                                                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterSparse ? 'text-orange-700' : 'text-orange-500 hover:text-orange-700'}`}
                                                 title="Productos con ventas en menos de 3 días — requieren confirmación manual de MIN/MAX">
                                                 <AlertTriangle size={10} strokeWidth={2.5} />
-                                                {sparseCount} pocos datos
+                                                {filterSparse ? <><X size={10} strokeWidth={2.5} /> Ver todos</> : `${sparseCount} pocos datos`}
                                             </motion.button>
                                         </>
                                     )}

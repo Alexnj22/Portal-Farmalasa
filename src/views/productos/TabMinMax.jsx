@@ -90,6 +90,23 @@ const XYZ_CFG = {
 // Normalize legacy demand_variability values → X/Y/Z
 const normXyz = (v) => ({ stable: 'X', moderate: 'Y', erratic: 'Z' }[v] ?? v ?? 'X');
 
+const translateDbError = (msg) => {
+    if (!msg) return 'Error desconocido';
+    if (/statement timeout|canceling statement/i.test(msg))
+        return 'La consulta tardó demasiado. Intenta nuevamente.';
+    if (/row-level security/i.test(msg))
+        return 'Sin permisos para esta operación.';
+    if (/unique constraint/i.test(msg))
+        return 'Ya existe un registro con esos datos.';
+    if (/foreign key constraint/i.test(msg))
+        return 'No se puede eliminar: hay registros relacionados.';
+    if (/not-null constraint/i.test(msg))
+        return 'Falta un campo requerido.';
+    if (/check constraint/i.test(msg))
+        return 'Valor fuera del rango permitido.';
+    return msg;
+};
+
 // Warns (but does NOT block) when a saved value is 4× above or 4× below the calculated reference.
 const warnIfOutrageous = (field, numVal, row) => {
     if (!numVal || numVal <= 0 || !row) return;
@@ -1449,7 +1466,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             setDraftCost(draft   || null);
             if (cfg) setAnalysisConfig(cfg);
         } catch (e) {
-            if (rid === loadRef.current) setError(e.message);
+            if (rid === loadRef.current) setError(translateDbError(e.message));
         } finally {
             if (rid === loadRef.current) setLoading(false);
         }

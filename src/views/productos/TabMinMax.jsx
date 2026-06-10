@@ -60,12 +60,12 @@ const ALERT = {
 };
 
 const STAT_CFGS = [
-    { key: 'out_of_stock', label: 'Sin stock',      dot: 'bg-red-500',     active: 'bg-red-100/75 backdrop-blur-sm border-red-300/70 text-red-700 shadow-[0_3px_14px_rgba(239,68,68,0.22)]'            },
-    { key: 'below_min',    label: 'Bajo mínimo',    dot: 'bg-orange-500',  active: 'bg-orange-100/75 backdrop-blur-sm border-orange-300/70 text-orange-700 shadow-[0_3px_14px_rgba(249,115,22,0.22)]'   },
-    { key: 'approaching',  label: 'Próx. mínimo',   dot: 'bg-amber-400',   active: 'bg-amber-100/75 backdrop-blur-sm border-amber-300/70 text-amber-700 shadow-[0_3px_14px_rgba(245,158,11,0.22)]'      },
-    { key: 'ok',           label: 'OK',              dot: 'bg-emerald-500', active: 'bg-emerald-100/75 backdrop-blur-sm border-emerald-300/70 text-emerald-700 shadow-[0_3px_14px_rgba(16,185,129,0.22)]' },
-    { key: 'overstocked',  label: 'Exceso',          dot: 'bg-blue-400',    active: 'bg-blue-100/75 backdrop-blur-sm border-blue-300/70 text-blue-700 shadow-[0_3px_14px_rgba(59,130,246,0.22)]'         },
-    { key: 'dead_stock',   label: 'Sin movimiento',  dot: 'bg-slate-300',   active: 'bg-slate-100/75 backdrop-blur-sm border-slate-300/70 text-slate-600 shadow-[0_3px_14px_rgba(148,163,184,0.18)]'     },
+    { key: 'out_of_stock', label: 'Sin stock',      dot: 'bg-red-500',     active: 'bg-red-100/75 backdrop-blur-sm border-red-300/70 text-red-700 shadow-[0_3px_14px_rgba(239,68,68,0.22)]',             chipActive: 'bg-red-50/90 text-red-700'       },
+    { key: 'below_min',    label: 'Bajo mínimo',    dot: 'bg-orange-500',  active: 'bg-orange-100/75 backdrop-blur-sm border-orange-300/70 text-orange-700 shadow-[0_3px_14px_rgba(249,115,22,0.22)]',   chipActive: 'bg-orange-50/90 text-orange-700' },
+    { key: 'approaching',  label: 'Próx. mínimo',   dot: 'bg-amber-400',   active: 'bg-amber-100/75 backdrop-blur-sm border-amber-300/70 text-amber-700 shadow-[0_3px_14px_rgba(245,158,11,0.22)]',      chipActive: 'bg-amber-50/90 text-amber-700'   },
+    { key: 'ok',           label: 'OK',              dot: 'bg-emerald-500', active: 'bg-emerald-100/75 backdrop-blur-sm border-emerald-300/70 text-emerald-700 shadow-[0_3px_14px_rgba(16,185,129,0.22)]', chipActive: 'bg-emerald-50/90 text-emerald-700'},
+    { key: 'overstocked',  label: 'Exceso',          dot: 'bg-blue-400',    active: 'bg-blue-100/75 backdrop-blur-sm border-blue-300/70 text-blue-700 shadow-[0_3px_14px_rgba(59,130,246,0.22)]',         chipActive: 'bg-blue-50/90 text-blue-700'     },
+    { key: 'dead_stock',   label: 'Sin movimiento',  dot: 'bg-slate-300',   active: 'bg-slate-100/75 backdrop-blur-sm border-slate-300/70 text-slate-600 shadow-[0_3px_14px_rgba(148,163,184,0.18)]',     chipActive: 'bg-slate-100/90 text-slate-600'  },
 ];
 
 const ABC_CFG = {
@@ -1940,15 +1940,66 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             )}
 
             {/* ── Controls row ── */}
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-start gap-3 flex-wrap">
 
-                {/* LEFT: Cost cards */}
-                {loading
-                    ? <CardSkeletons isBodega={isBodega} />
-                    : costSummary
-                        ? <CostCards summary={costSummary} isBodega={isBodega} />
-                        : null}
-                {!loading && draftCost && <DraftCostCard draftCost={draftCost} />}
+                {/* LEFT: Cost cards + hide controls stacked below */}
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                        {loading
+                            ? <CardSkeletons isBodega={isBodega} />
+                            : costSummary
+                                ? <CostCards summary={costSummary} isBodega={isBodega} />
+                                : null}
+                        {!loading && draftCost && <DraftCostCard draftCost={draftCost} />}
+                    </div>
+                    {/* Ocultar filtrados + Ocultos — below cards */}
+                    <AnimatePresence>
+                    {(hasActiveFilter && filtered.length > 0) || hiddenIds.size > 0 ? (
+                        <motion.div
+                            key="hide-row"
+                            initial={{ opacity: 0, y: -6 }}
+                            animate={{ opacity: 1, y: 0, transition: { duration: 0.22, ease: EASE_OUT_EXPO } }}
+                            exit={{ opacity: 0, y: -6, transition: { duration: 0.14 } }}
+                            className="flex items-center gap-2">
+                            <AnimatePresence>
+                            {hasActiveFilter && filtered.length > 0 && (
+                                <motion.button
+                                    key="hide-filtered"
+                                    initial={{ opacity: 0, scale: 0.88 }} animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.12 } }}
+                                    whileTap={{ scale: 0.94 }}
+                                    onClick={hideFiltered}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-white/60 backdrop-blur-sm border-white/80 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:bg-white/85 transition-colors">
+                                    <EyeOff size={10} className="text-rose-400" />
+                                    Ocultar {filterLabel} ({filtered.length})
+                                </motion.button>
+                            )}
+                            </AnimatePresence>
+                            <AnimatePresence>
+                            {hiddenIds.size > 0 && (
+                                <motion.div
+                                    key="hidden-pill"
+                                    initial={{ opacity: 0, scale: 0.88 }} animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.12 } }}
+                                    className={`flex items-center rounded-full border text-[11px] font-bold transition-colors duration-200 ${filterHidden ? 'bg-violet-100/80 backdrop-blur-sm border-violet-300/70 text-violet-700 shadow-[0_3px_14px_rgba(139,92,246,0.22)]' : 'bg-white/60 backdrop-blur-sm border-white/80 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]'}`}>
+                                    <button onClick={() => setFilterHidden(f => !f)} className="flex items-center gap-1.5 px-3 py-1.5 hover:opacity-80 transition-opacity">
+                                        <Eye size={10} />
+                                        <span>{hiddenIds.size} oculto{hiddenIds.size !== 1 ? 's' : ''}</span>
+                                        {filterHidden && <X size={9} className="opacity-60" />}
+                                    </button>
+                                    {filterHidden && (
+                                        <>
+                                            <div className="h-3.5 w-px bg-violet-300/60 shrink-0" />
+                                            <button onClick={unhideAll} className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black text-violet-600 hover:text-violet-800 transition-colors whitespace-nowrap">
+                                                Mostrar todos
+                                            </button>
+                                        </>
+                                    )}
+                                </motion.div>
+                            )}
+                            </AnimatePresence>
+                        </motion.div>
+                    ) : null}
+                    </AnimatePresence>
+                </div>
 
                 <div className="flex-1" />
 
@@ -2129,180 +2180,149 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 </div>
             )}
 
-            {/* ── Unified filter pill + draft pill (above table) ── */}
+            {/* ── Unified glassmorphic filter pill (above table) ── */}
             {!neverCalc && (
-                <div className="flex items-center gap-2 flex-wrap">
-                    {/* Status + sparse filters — single pill container */}
-                    <div className="flex items-center rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] overflow-hidden">
-                        {STAT_CFGS.map((cfg, i) => {
-                            const active = filterAlert === cfg.key;
-                            return (
-                                <React.Fragment key={cfg.key}>
-                                    {i > 0 && <div className="h-5 w-px bg-slate-100 shrink-0" />}
-                                    <motion.button
-                                        {...chipAnim}
-                                        onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
-                                        className={`flex items-center gap-1 px-2 py-1 text-[10px] font-bold transition-colors duration-150 ${active ? 'bg-slate-100/90 text-slate-700' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'}`}>
-                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
-                                        <span className={`tabular-nums font-black ${active ? '' : 'text-slate-700'}`}>{loading ? '–' : stats[cfg.key]}</span>
-                                        <span className="opacity-80">{cfg.label}</span>
-                                        {active && <X size={8} className="ml-0.5 opacity-60" />}
-                                    </motion.button>
-                                </React.Fragment>
-                            );
-                        })}
-                        {/* Pocos datos — alongside status chips */}
-                        {sparseCount > 0 && !loading && (
-                            <>
-                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                <motion.div layout className="flex items-stretch rounded-2xl overflow-hidden"
+                    style={{
+                        background: 'rgba(255,255,255,0.62)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        border: '1px solid rgba(255,255,255,0.82)',
+                        boxShadow: '0 8px 32px rgba(0,82,204,0.07), 0 2px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.95)',
+                    }}>
+
+                    {/* Status chips */}
+                    {STAT_CFGS.map((cfg, i) => {
+                        const active = filterAlert === cfg.key;
+                        return (
+                            <React.Fragment key={cfg.key}>
+                                {i > 0 && <div className="w-px bg-slate-200/50 shrink-0 self-stretch" />}
                                 <motion.button
-                                    {...chipAnim}
-                                    onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
-                                    className={`flex items-center gap-1 px-2 py-1 text-[10px] font-bold transition-colors duration-150 ${filterSparse ? 'bg-orange-50/80 text-orange-700' : 'text-orange-500 hover:bg-orange-50/60 hover:text-orange-700'}`}
-                                    title="Productos con ventas en menos de 3 días distintos — requieren confirmación manual de MIN/MAX">
-                                    <AlertTriangle size={9} strokeWidth={2.5} />
-                                    <span className="tabular-nums font-black">{sparseCount}</span>
-                                    pocos datos
-                                    {filterSparse && <X size={8} className="ml-0.5 opacity-60" />}
+                                    whileTap={{ scale: 0.93 }}
+                                    onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
+                                    className={`flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold transition-all duration-200 ${active ? cfg.chipActive : 'text-slate-500 hover:bg-white/70 hover:text-slate-700'}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
+                                    <motion.span key={loading ? 'load' : stats[cfg.key]} initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.18 }}
+                                        className={`tabular-nums font-black ${active ? '' : 'text-slate-700'}`}>
+                                        {loading ? '–' : stats[cfg.key]}
+                                    </motion.span>
+                                    <span className="opacity-80">{cfg.label}</span>
+                                    <AnimatePresence>
+                                    {active && (
+                                        <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.55 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
+                                            <X size={9} className="ml-0.5" />
+                                        </motion.span>
+                                    )}
+                                    </AnimatePresence>
                                 </motion.button>
-                            </>
-                        )}
-                    </div>
+                            </React.Fragment>
+                        );
+                    })}
 
-                    {/* Ocultar filtrados */}
+                    {/* Pocos datos */}
                     <AnimatePresence>
-                    {hasActiveFilter && filtered.length > 0 && (
-                        <motion.button
-                            key="hide-filtered"
-                            initial={{ opacity: 0, scale: 0.88 }}
-                            animate={{ opacity: 1, scale: 1, transition: { duration: 0.22, ease: EASE_OUT_EXPO } }}
-                            exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.14, ease: 'easeIn' } }}
-                            {...chipAnim}
-                            onClick={hideFiltered}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold bg-white/55 backdrop-blur-sm border-white/80 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:bg-white/80">
-                            <EyeOff size={10} />
-                            Ocultar {filterLabel} ({filtered.length})
-                        </motion.button>
-                    )}
-                    </AnimatePresence>
-
-                    {/* Ocultos */}
-                    <AnimatePresence>
-                    {hiddenIds.size > 0 && (
-                        <motion.div
-                            key="hidden-pill"
-                            initial={{ opacity: 0, scale: 0.88 }}
-                            animate={{ opacity: 1, scale: 1, transition: { duration: 0.22, ease: EASE_OUT_EXPO } }}
-                            exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.14, ease: 'easeIn' } }}
-                            className={`flex items-center rounded-full border text-[11px] font-bold transition-colors duration-200 ${
-                                filterHidden
-                                    ? 'bg-violet-100/80 backdrop-blur-sm border-violet-300/70 text-violet-700 shadow-[0_3px_14px_rgba(139,92,246,0.22)]'
-                                    : 'bg-white/55 backdrop-blur-sm border-white/80 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]'
-                            }`}>
-                            <button
-                                onClick={() => setFilterHidden(f => !f)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 hover:opacity-80 transition-opacity">
-                                <Eye size={10} />
-                                <span>{hiddenIds.size} oculto{hiddenIds.size !== 1 ? 's' : ''}</span>
-                                {filterHidden && <X size={9} className="opacity-60" />}
-                            </button>
-                            {filterHidden && (
-                                <>
-                                    <div className="h-3.5 w-px bg-violet-300/60 shrink-0" />
-                                    <button
-                                        onClick={unhideAll}
-                                        className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black text-violet-600 hover:text-violet-800 transition-colors whitespace-nowrap">
-                                        Mostrar todos
-                                    </button>
-                                </>
-                            )}
+                    {sparseCount > 0 && !loading && (
+                        <motion.div key="sparse" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto', transition: { duration: 0.22, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, width: 0, transition: { duration: 0.15 } }} className="flex items-stretch overflow-hidden shrink-0">
+                            <div className="w-px bg-slate-200/50 shrink-0 self-stretch" />
+                            <motion.button
+                                whileTap={{ scale: 0.93 }}
+                                onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
+                                className={`flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold transition-all duration-200 whitespace-nowrap ${filterSparse ? 'bg-orange-50/90 text-orange-700' : 'text-orange-500 hover:bg-white/70 hover:text-orange-700'}`}
+                                title="Productos con ventas en menos de 3 días distintos">
+                                <AlertTriangle size={10} strokeWidth={2.5} />
+                                <span className="tabular-nums font-black">{sparseCount}</span>
+                                pocos datos
+                                <AnimatePresence>
+                                {filterSparse && (
+                                    <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.55 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
+                                        <X size={9} className="ml-0.5" />
+                                    </motion.span>
+                                )}
+                                </AnimatePresence>
+                            </motion.button>
                         </motion.div>
                     )}
                     </AnimatePresence>
 
-                    {/* ── Borradores + Publicar pill — only when draftCount > 0 ── */}
+                    {/* Draft section — enters from right when drafts exist */}
                     <AnimatePresence>
                     {draftCount > 0 && !loading && (
                         <motion.div
-                            key="draft-pill"
-                            initial={{ opacity: 0, scale: 0.9, x: 16 }}
-                            animate={{ opacity: 1, scale: 1, x: 0, transition: { duration: 0.3, ease: EASE_OUT_EXPO } }}
-                            exit={{ opacity: 0, scale: 0.9, x: 16, transition: { duration: 0.18, ease: 'easeIn' } }}
-                            className="ml-auto flex items-center shrink-0 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] transition-shadow duration-300"
-                        >
-                            <div className="flex items-center rounded-l-2xl border border-r-0 border-slate-200/70 bg-white/80 backdrop-blur-sm overflow-hidden">
-                                {/* Count + pulsing dot */}
-                                <div className="flex items-center gap-1 px-2 py-1">
-                                    <span className="relative flex h-1.5 w-1.5 shrink-0">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-400" />
-                                    </span>
-                                    <span className="text-[10px] font-black text-slate-700 tabular-nums">{draftCount}</span>
-                                    <span className="text-[10px] text-slate-400">borrador{draftCount !== 1 ? 'es' : ''}</span>
-                                </div>
-                                <div className="h-5 w-px bg-slate-100 shrink-0" />
-                                {/* Solo borradores toggle */}
-                                <motion.button
-                                    {...chipAnim}
-                                    onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); setFilterChangesOnly(false); }}
-                                    className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[10px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
-                                    {filterDraft ? <><X size={9} strokeWidth={2.5} /> Ver todos</> : 'Solo borradores'}
-                                </motion.button>
-                                {/* Solo cambios — only when there is published data with changes */}
-                                {hasPublishedData && changesCount > 0 && (
-                                    <>
-                                        <div className="h-5 w-px bg-slate-100 shrink-0" />
-                                        <motion.button
-                                            {...chipAnim}
-                                            onClick={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); setFilterSparse(false); }}
-                                            className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[10px] font-bold ${filterChangesOnly ? 'text-violet-600' : 'text-slate-500 hover:text-slate-700'}`}>
-                                            {filterChangesOnly ? <><X size={9} strokeWidth={2.5} /> Ver todos</> : `Solo cambios (${changesCount})`}
-                                        </motion.button>
-                                    </>
-                                )}
-                                {/* Descartar todo */}
-                                {canManage && (
-                                    <>
-                                        <div className="h-5 w-px bg-slate-100 shrink-0" />
-                                        <motion.button
-                                            {...chipAnim}
-                                            onClick={() => setDiscardConfirm(true)}
-                                            disabled={discardingAll}
-                                            className="flex items-center gap-1 px-2 py-1 rounded-xl text-[10px] font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-50 disabled:opacity-50 disabled:pointer-events-none transition-colors">
-                                            {discardingAll ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}
-                                            Descartar todo
-                                        </motion.button>
-                                    </>
-                                )}
+                            key="draft-section"
+                            initial={{ opacity: 0, width: 0 }}
+                            animate={{ opacity: 1, width: 'auto', transition: { duration: 0.28, ease: EASE_OUT_EXPO } }}
+                            exit={{ opacity: 0, width: 0, transition: { duration: 0.18, ease: 'easeIn' } }}
+                            className="flex items-stretch overflow-hidden shrink-0">
+                            {/* Thick separator — visually splits status from draft zone */}
+                            <div className="w-[2px] bg-slate-200/70 shrink-0 self-stretch mx-0.5" />
+                            {/* Pulsing dot + count */}
+                            <div className="flex items-center gap-1.5 px-3 py-2 shrink-0">
+                                <span className="relative flex h-2 w-2 shrink-0">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
+                                </span>
+                                <span className="text-[11px] font-black text-slate-700 tabular-nums whitespace-nowrap">{draftCount}</span>
+                                <span className="text-[11px] text-slate-400 whitespace-nowrap">borrador{draftCount !== 1 ? 'es' : ''}</span>
                             </div>
-                            {/* Publicar — blue right cap */}
-                            <AnimatePresence mode="wait">
-                            {hasActiveFilter && filteredDraftIds.length > 0 ? (
-                                <motion.button
-                                    key="pub-filtered"
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.14, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                                    {...ctaAnim}
-                                    onClick={() => requestPublish(filteredDraftIds)} disabled={!canManage || publishing}
-                                    className="self-stretch inline-flex items-center justify-center gap-1 px-3 text-[10px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
-                                    {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
-                                    Publicar {filterLabel} ({filteredDraftIds.length})
-                                </motion.button>
-                            ) : (
-                                <motion.button
-                                    key="pub-all"
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.14, ease: EASE_OUT_EXPO } }} exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                                    {...ctaAnim}
-                                    onClick={() => requestPublish()} disabled={!canManage || publishing}
-                                    className="self-stretch inline-flex items-center justify-center gap-1 px-3 text-[10px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
-                                    {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
-                                    Publicar todo ({draftCount})
-                                </motion.button>
+                            <div className="w-px bg-slate-200/50 shrink-0 self-stretch" />
+                            {/* Solo borradores */}
+                            <motion.button whileTap={{ scale: 0.93 }}
+                                onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); setFilterChangesOnly(false); }}
+                                className={`flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold transition-all duration-200 whitespace-nowrap ${filterDraft ? 'bg-amber-50/90 text-amber-700' : 'text-slate-500 hover:bg-white/70 hover:text-slate-700'}`}>
+                                {filterDraft ? <><X size={9} strokeWidth={2.5} /> Ver todos</> : 'Solo borradores'}
+                            </motion.button>
+                            {/* Solo cambios */}
+                            {hasPublishedData && changesCount > 0 && (
+                                <>
+                                    <div className="w-px bg-slate-200/50 shrink-0 self-stretch" />
+                                    <motion.button whileTap={{ scale: 0.93 }}
+                                        onClick={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); setFilterSparse(false); }}
+                                        className={`flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold transition-all duration-200 whitespace-nowrap ${filterChangesOnly ? 'bg-violet-50/90 text-violet-700' : 'text-slate-500 hover:bg-white/70 hover:text-slate-700'}`}>
+                                        {filterChangesOnly ? <><X size={9} strokeWidth={2.5} /> Ver todos</> : `Solo cambios (${changesCount})`}
+                                    </motion.button>
+                                </>
                             )}
-                            </AnimatePresence>
+                            {/* Descartar */}
+                            {canManage && (
+                                <>
+                                    <div className="w-px bg-slate-200/50 shrink-0 self-stretch" />
+                                    <motion.button whileTap={{ scale: 0.93 }}
+                                        onClick={() => setDiscardConfirm(true)}
+                                        disabled={discardingAll}
+                                        className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-rose-400 hover:bg-rose-50/80 hover:text-rose-600 transition-all duration-200 whitespace-nowrap disabled:opacity-50">
+                                        {discardingAll ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}
+                                        Descartar
+                                    </motion.button>
+                                </>
+                            )}
+                            {/* Publicar — blue right cap, flush with pill edge */}
+                            {canManage && (
+                                <AnimatePresence mode="wait">
+                                {hasActiveFilter && filteredDraftIds.length > 0 ? (
+                                    <motion.button key="pub-filtered"
+                                        initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.14 } }} exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                                        {...ctaAnim}
+                                        onClick={() => requestPublish(filteredDraftIds)} disabled={!canManage || publishing}
+                                        className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 disabled:opacity-60 disabled:pointer-events-none transition-colors whitespace-nowrap">
+                                        {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
+                                        Publicar {filterLabel} ({filteredDraftIds.length})
+                                    </motion.button>
+                                ) : (
+                                    <motion.button key="pub-all"
+                                        initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration: 0.14 } }} exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                                        {...ctaAnim}
+                                        onClick={() => requestPublish()} disabled={!canManage || publishing}
+                                        className="self-stretch inline-flex items-center justify-center gap-1.5 px-4 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 disabled:opacity-60 disabled:pointer-events-none transition-colors whitespace-nowrap">
+                                        {publishing ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
+                                        Publicar todo ({draftCount})
+                                    </motion.button>
+                                )}
+                                </AnimatePresence>
+                            )}
                         </motion.div>
                     )}
                     </AnimatePresence>
-                </div>
+                </motion.div>
             )}
 
             {/* ── Table + Pagination ── */}

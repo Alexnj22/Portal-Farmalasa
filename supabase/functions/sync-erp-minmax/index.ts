@@ -34,17 +34,28 @@ async function getSessionCookie(username: string, password: string): Promise<str
   return cookie;
 }
 
+// Caché de cookie por-invocación, keyed por credenciales (evita re-login por sucursal).
+async function getCachedCookie(cache: Map<string, string>, username: string, password: string): Promise<string> {
+  const key = `${username}|${password}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const cookie = await getSessionCookie(username, password);
+  cache.set(key, cookie);
+  return cookie;
+}
+
 async function syncBranch(
   supabase: any,
   erpId: number,
   username: string,
   password: string,
   now: string,
+  cookieCache: Map<string, string>,
 ): Promise<{ erp_sucursal_id: number; inserted: number; skipped: number; errors: string[] }> {
   const ubicacionId = ERPSUC_TO_UBICACION[erpId];
   if (!ubicacionId) throw new Error(`No ubicacion mapping for erpId ${erpId}`);
 
-  const cookie = await getSessionCookie(username, password);
+  const cookie = await getCachedCookie(cookieCache, username, password);
 
   const url = `${REPOSI_BASE}?id_ubicacion=${ubicacionId}`;
   const res = await fetch(url, {
@@ -135,13 +146,14 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     const results: any[] = [];
     const allErrors: string[] = [];
+    const cookieCache = new Map<string, string>();
 
     for (const entry of INV_MAP) {
       if (onlyErpId && entry.erpId !== onlyErpId) continue;
       if (!ERPSUC_TO_UBICACION[entry.erpId]) continue;
 
       try {
-        const r = await syncBranch(supabase, entry.erpId, entry.username, entry.password, now);
+        const r = await syncBranch(supabase, entry.erpId, entry.username, entry.password, now, cookieCache);
         results.push(r);
         if (r.errors.length > 0) allErrors.push(...r.errors);
       } catch (e: any) {

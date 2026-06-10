@@ -52,7 +52,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2. Buscar huecos de IDs en los últimos N días
+    // 2. Detectar huecos de IDs en los últimos N días — SOLO para reporte/visibilidad.
+    //    NO se dispara re-sync por huecos: la secuencia de id_factura del ERP es global
+    //    (incluye documentos fuera de nuestras sucursales), así que casi todos los huecos
+    //    son falsos positivos — re-sincronizarlos siempre trae 0 facturas nuevas. Además
+    //    el cron `dte-*-hora` ya re-baja todo el mes en curso cada hora, cubriendo
+    //    cualquier pérdida real. El re-sync solo se dispara por fallos reales (paso 1).
     for (let i = 1; i <= lookbackDays; i++) {
       const d = new Date(hoy);
       d.setDate(d.getDate() - i);
@@ -61,11 +66,7 @@ Deno.serve(async (req) => {
       const { data: gaps } = await supabase.rpc('find_sync_gaps', { p_date: dateStr });
       if (gaps && gaps.length > 0) {
         const totalGaps = gaps.reduce((s: number, g: any) => s + g.gap_size, 0);
-        // Si hay huecos, marcar esa fecha para re-sync de todas las sucursales
-        if (!failedSet.has(dateStr)) failedSet.set(dateStr, new Set());
-        // Añadir todas las sucursales para cubrir el hueco (no sabemos cuál lo tiene)
-        for (const bid of [4, 25, 27, 28, 29, 2]) failedSet.get(dateStr)!.add(bid);
-        summary.push({ date: dateStr, gaps: gaps.length, totalMissingIds: totalGaps, action: 'gap_detected' });
+        summary.push({ date: dateStr, gaps: gaps.length, totalMissingIds: totalGaps, action: 'gap_detected_info_only' });
       }
     }
 

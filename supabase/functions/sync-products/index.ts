@@ -220,19 +220,22 @@ Deno.serve(async (req) => {
       const batchIds = erpProductIds.slice(i, i + CHUNK);
       const { data: activeCombos } = await supabase
         .from('product_precios')
-        .select('product_id, id_presentacion')
+        .select('id, product_id, id_presentacion')
         .in('product_id', batchIds)
         .eq('activo', true);
 
-      for (const combo of (activeCombos || [])) {
-        if (!erpComboSet.has(`${combo.product_id}_${combo.id_presentacion}`)) {
-          const { error } = await supabase.from('product_precios')
-            .update({ activo: false })
-            .eq('product_id', combo.product_id)
-            .eq('id_presentacion', combo.id_presentacion);
-          if (error) upsertErrors.push(`deactivate[${combo.product_id}_${combo.id_presentacion}]: ${error.message}`);
-          else deactivatedCount++;
-        }
+      // Recolectar los ids a desactivar y hacer UN solo UPDATE en lote
+      // (antes era un UPDATE por combo → N+1).
+      const idsToDeactivate = (activeCombos || [])
+        .filter((c: any) => !erpComboSet.has(`${c.product_id}_${c.id_presentacion}`))
+        .map((c: any) => c.id);
+
+      if (idsToDeactivate.length > 0) {
+        const { error } = await supabase.from('product_precios')
+          .update({ activo: false })
+          .in('id', idsToDeactivate);
+        if (error) upsertErrors.push(`deactivate[batch ${i}]: ${error.message}`);
+        else deactivatedCount += idsToDeactivate.length;
       }
     }
 

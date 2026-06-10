@@ -41,6 +41,18 @@ async function getSessionCookie(username: string, password: string): Promise<str
   return cookie;
 }
 
+// Caché de cookie por-invocación, keyed por credenciales. Evita re-login por cada
+// sucursal cuando comparten el mismo usuario ERP. El Map se crea por request, así
+// que no hay riesgo de cookie vieja entre corridas ni carreras entre invocaciones.
+async function getCachedCookie(cache: Map<string, string>, username: string, password: string): Promise<string> {
+  const key = `${username}|${password}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const cookie = await withRetry(() => getSessionCookie(username, password));
+  cache.set(key, cookie);
+  return cookie;
+}
+
 function parseTipoDoc(correlativo: string): string {
   if (!correlativo) return 'UNKNOWN';
   const parts = correlativo.split('_');
@@ -63,10 +75,11 @@ async function syncBranch(
   endDate: string,
   forceItems: boolean,
   presLookup: Map<string, number>,
+  cookieCache: Map<string, string>,
 ): Promise<{ total: number; new: number; changes: number; items: number; idMin: number | null; idMax: number | null }> {
 
-  // 1. Login + fetch con reintentos
-  const cookie = await withRetry(() => getSessionCookie(username, password));
+  // 1. Login (cacheado por credenciales) + fetch con reintentos
+  const cookie = await getCachedCookie(cookieCache, username, password);
 
   const url = `${DTE_BASE}?fini=${startDate}&ffin=${endDate}&id_sucursal=${erpId}`;
   const res = await withRetry(() => fetch(url, {
@@ -277,8 +290,9 @@ async function syncInventoryBranch(
   password: string,
   ubicacionId: number,
   isVencidos: boolean,
+  cookieCache: Map<string, string>,
 ): Promise<{ items: number; rows: number }> {
-  const cookie = await withRetry(() => getSessionCookie(username, password));
+  const cookie = await getCachedCookie(cookieCache, username, password);
 
   const url = `${INV_BASE}?id_ubicacion=${ubicacionId}&id_sucursal=${erpId}`;
   const res = await withRetry(() => fetch(url, {
@@ -400,6 +414,9 @@ Deno.serve(async (req) => {
     const results: any[] = [];
     const logRows: any[] = [];
 
+    // Caché de cookies ERP compartido por toda la invocación (DTE + inventario)
+    const cookieCache = new Map<string, string>();
+
     if (!skipDte) {
       const branches = onlyBranch
         ? BRANCH_MAP.filter(b => b.branchId === onlyBranch)
@@ -423,7 +440,7 @@ Deno.serve(async (req) => {
         for (let attempt = 1; attempt <= 3; attempt++) {
           attempts = attempt;
           try {
-            branchResult = await syncBranch(supabase, branchId, erpId, username, password, startDate, endDate, forceItems, presLookup);
+            branchResult = await syncBranch(supabase, branchId, erpId, username, password, startDate, endDate, forceItems, presLookup, cookieCache);
             lastErr = null;
             break;
           } catch (e: any) {
@@ -468,7 +485,7 @@ Deno.serve(async (req) => {
           : [{ id: 0, isVencidos: false }];
         for (const { id: ubicacionId, isVencidos } of ubicaciones) {
           try {
-            const result = await syncInventoryBranch(supabase, invErpId, username, password, ubicacionId, isVencidos);
+            const result = await syncInventoryBranch(supabase, invErpId, username, password, ubicacionId, isVencidos, cookieCache);
             invResults.push({ erpId: invErpId, ubicacionId, isVencidos, ...result });
             await supabase.from('inventory_sync_log').insert({
               erp_sucursal_id: invErpId,

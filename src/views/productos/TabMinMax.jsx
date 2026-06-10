@@ -198,7 +198,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                 <div />
                 {XYZ_KEYS.map(xyz => (
                     <button key={xyz} onClick={() => setFilterXyz(p => p === xyz ? 'all' : xyz)}
-                        className="relative py-1 rounded-lg text-[11px] font-black text-center transition-all duration-150"
+                        className="relative py-1 rounded-lg text-[11px] font-black text-center transition-colors duration-150"
                         style={{
                             color: xyzColors[xyz],
                             background: filterXyz === xyz ? `${xyzColors[xyz]}22` : 'transparent',
@@ -213,7 +213,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                     <React.Fragment key={abc}>
                         {/* ABC label */}
                         <button onClick={() => setFilterAbc(p => p === abc ? 'all' : abc)}
-                            className="relative py-1 rounded-lg text-[11px] font-black text-center transition-all duration-150"
+                            className="relative py-1 rounded-lg text-[11px] font-black text-center transition-colors duration-150"
                             style={{
                                 color: abcColors[abc],
                                 background: filterAbc === abc ? `${abcColors[abc]}22` : 'transparent',
@@ -241,7 +241,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                                     }}
                                     disabled={count === 0}>
                                     <span className="text-[12px] font-black text-slate-700 tabular-nums leading-none">{count || '—'}</span>
-                                    {count > 0 && <span className="text-[7px] font-bold text-slate-400 block mt-0.5 tracking-wider">{abc}{xyz}</span>}
+                                    {count > 0 && <span className="text-[9px] font-bold text-slate-400 block mt-0.5 tracking-wider">{abc}{xyz}</span>}
                                 </button>
                             );
                         })}
@@ -521,7 +521,7 @@ function ExpandedPanel({ row, cycleDays }) {
 
                             return (
                                 <div key={erpId}
-                                    className={`rounded-xl px-2 py-2 border transition-all ${
+                                    className={`rounded-xl px-2 py-2 border transition-colors ${
                                         isCurrent
                                             ? 'border-[#0052CC]/40 bg-blue-50/60 ring-1 ring-[#0052CC]/20'
                                             : 'border-slate-100 bg-white/60'
@@ -541,7 +541,7 @@ function ExpandedPanel({ row, cycleDays }) {
                                     </div>
                                     {hasData && <StockBar current={bStock} min={bMin} max={bMax} />}
                                     {hasData && (bMin > 0 || bMax > 0) && (
-                                        <div className="flex items-center gap-0.5 mt-0.5 text-[7px] tabular-nums leading-tight">
+                                        <div className="flex items-center gap-0.5 mt-0.5 text-[9px] tabular-nums leading-tight">
                                             <span className="text-orange-500 font-black">{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
                                             <span className="text-slate-200">·</span>
                                             <span className="text-blue-500 font-black">{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
@@ -1286,7 +1286,7 @@ function LabsPanel({ onClose, onChanged }) {
                 {/* Footer */}
                 <div className="px-3 pb-3 pt-1 border-t mt-auto" style={glass.divider}>
                     <button onClick={onClose}
-                        className="w-full py-2 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-all duration-150"
+                        className="w-full py-2 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-colors duration-150"
                         style={glass.footer}
                         onMouseOver={e => Object.assign(e.currentTarget.style, { background: 'rgba(255,255,255,0.65)' })}
                         onMouseOut={e => Object.assign(e.currentTarget.style, glass.footer)}>
@@ -1718,7 +1718,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             <>
                                 <div className="h-5 w-px bg-slate-100 shrink-0" />
                                 <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}
-                                    className="mx-2 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[11px] font-black text-blue-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all shrink-0">
+                                    className="mx-2 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[11px] font-black text-blue-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors shrink-0">
                                     {filterAbc !== 'all' ? filterAbc : '·'}{filterXyz !== 'all' ? filterXyz : ''}
                                     <X size={9} strokeWidth={3} />
                                 </button>
@@ -1938,7 +1938,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             initial={{ opacity: 0, scale: 0.88 }}
                             animate={{ opacity: 1, scale: 1, transition: { duration: 0.22, ease: EASE_OUT_EXPO } }}
                             exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.14, ease: 'easeIn' } }}
-                            className={`flex items-center rounded-full border text-[11px] font-bold transition-all duration-200 ${
+                            className={`flex items-center rounded-full border text-[11px] font-bold transition-colors duration-200 ${
                                 filterHidden
                                     ? 'bg-violet-100/80 backdrop-blur-sm border-violet-300/70 text-violet-700 shadow-[0_3px_14px_rgba(139,92,246,0.22)]'
                                     : 'bg-white/55 backdrop-blur-sm border-white/80 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]'

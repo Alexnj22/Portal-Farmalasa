@@ -5,10 +5,12 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.0.2';
+export const APP_VERSION = '2.1.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.1.0  — MinMax workflow de solicitudes de ajuste: tabla minmax_change_requests + RLS (can_edit propone / can_approve aprueba) + RPCs approve/reject_minmax_request (aplican override manual atómico); WidgetMinMaxRequest en Dashboard/Operación (busca producto, propone MIN/MAX, push a aprobadores); pestaña "Solicitudes" en MinMax (cola + historial, aprobar/rechazar con push al solicitante); PermissionsView minmax hasApprove:true. Integridad: CHECK max>=min en product_stock_params (manual/calc/draft) + guard en publish_stock_params + 1 draft corrupto saneado. Item 5 visual: border-l ámbar eliminado de EditDraftRow, transition-all→transition-colors en hovers de color, text-[7px]→[9px]
+// v2.0.3  — Edge functions hardening: sync-products a secret ERP_PRODUCTS_CREDS + requireInvokeSecret; set-employee-password reset a contraseña temporal aleatoria; ensure_user_by_code búsqueda parametrizada; fix 401 heal-dte-sync/backfill (usaban service key en vez de ADMIN_INVOKE_SECRET → redes de seguridad caídas); paginación >1000 filas (dte/purchases/promo); helper Gemini compartido (sin listar modelos por request); check-doc-expiry UTC-6 real; sync-promo auto-cierre filtra por período; cookie ERP cacheada por invocación; UPDATE en lote en desactivación de presentaciones; heal sin re-sync por huecos (falsos positivos)
 // v2.0.2  — sync-products v23: fix raíz — presentaciones upsert solo tipo (factor/descripcion eliminados); precios upsert directo sin carga masiva en memoria; paginación con .order('id'); laboratorio_id y product_precios ahora correctos para APITENA/NEUROBION ADVANCE/FARSENTAL/IMATION
 // v2.0.1  — PromoModal: deduplicar presentaciones por tipo+descripción (no por id); mantener pasos montados (fecha y producto en progreso no se pierden al navegar); header gradiente azul-violeta, body blanco sólido; selector presentación con factor (CAJA · 1X10); búsqueda productos server-side (sin cap 1000); pills filtro alineadas a derecha en los 3 tabs de Promociones
 // v2.0.0  — Módulo Promociones: 6 tablas DB (promotions, branches, products, bonifications, payments, sales_cache); PromocionesView 3 tabs (Activas/Bonificaciones/Historial); edge function sync-promo-sales + cron 4:30am; MinMax excluye ventas de períodos en promo (calculate_stock_params actualizado)

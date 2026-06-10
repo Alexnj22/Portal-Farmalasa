@@ -1378,6 +1378,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [loading,      setLoading]      = useState(false);
     const [calculating,  setCalculating]  = useState(false);
     const [calcMode,     setCalcMode]     = useState('single'); // 'single' | 'all'
+    const [calcProgress, setCalcProgress] = useState(null); // { current, total, name }
     const [error,        setError]        = useState(null);
     const [expandedIds,  setExpandedIds]  = useState(new Set());
     const [configOpen,   setConfigOpen]   = useState(false);
@@ -1497,14 +1498,29 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const handleRecalcularAll = async () => {
         const wasPublished = hasPublishedData;
         setCalculating(true); setCalcMode('all'); setError(null); setConfigChanged(false);
-        try {
-            const { data: res, error: e } = await supabase.rpc('calculate_stock_params');
-            if (e) throw e;
-            useToastStore.getState().showToast('Todas las sucursales', `${(res?.rows ?? 0).toLocaleString()} borradores generados`, 'success');
-            await loadData(selectedErp);
-            if (wasPublished) { setFilterChangesOnly(true); setFilterDraft(false); }
-        } catch (e) { useToastStore.getState().showToast('Calcular', fmtCalcError(e.message), 'error'); }
-        finally { setCalculating(false); }
+        const ids = ERP_ORDER;
+        let totalRows = 0;
+        const failed = [];
+        for (let i = 0; i < ids.length; i++) {
+            const id = ids[i];
+            setCalcProgress({ current: i + 1, total: ids.length, name: ERP_NAMES[id] });
+            try {
+                const { data: res, error: e } = await supabase.rpc('calculate_stock_params', { p_erp_sucursal_id: id });
+                if (e) throw e;
+                totalRows += res?.rows ?? 0;
+            } catch (e) {
+                failed.push(ERP_NAMES[id]);
+            }
+        }
+        setCalcProgress(null);
+        if (failed.length > 0) {
+            useToastStore.getState().showToast('Calcular', `Error en: ${failed.join(', ')}`, 'error');
+        } else {
+            useToastStore.getState().showToast('Todas las sucursales', `${totalRows.toLocaleString()} borradores generados`, 'success');
+        }
+        await loadData(selectedErp);
+        if (wasPublished) { setFilterChangesOnly(true); setFilterDraft(false); }
+        setCalculating(false);
     };
 
     const handleEditSave = useCallback(() => { loadData(selectedErp); }, [selectedErp, loadData]);
@@ -1952,7 +1968,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             {...chipAnim}
                             className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 disabled:opacity-40 disabled:pointer-events-none">
                             {calculating && calcMode === 'all'
-                                ? <><Loader2 size={11} className="animate-spin" /> Calculando…</>
+                                ? <><Loader2 size={11} className="animate-spin" /> {calcProgress ? `${calcProgress.name} ${calcProgress.current}/${calcProgress.total}` : 'Calculando…'}</>
                                 : <><Layers size={11} /> Todas las sucursales</>}
                         </motion.button>
                     </div>

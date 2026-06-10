@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.1.3';
+export const APP_VERSION = '2.1.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.1.4  — MinMax solicitudes: el empleado ve el estado de sus solicitudes de ajuste en "Mis Solicitudes" (EmployeeRequestsView lee minmax_change_requests propias; card MinMaxStatusCard con estado pendiente/aprobada/rechazada + respuesta del supervisor), bajo las pestañas Pendientes/Aprobadas/Rechazadas. Antes la confirmación solo llegaba por push
 // v2.1.3  — MinMax solicitudes: ruteo de notificación al rol Supervisor/a de Ventas (RPC get_minmax_approver_ids), con fallback al jefe inmediato (rol padre) si está de vacaciones/incapacidad/permiso hoy. Rediseño visual de la pestaña Solicitudes: filter pill estándar (sucursal + Aprobar todas/filtradas), grid de cards glassmorphic multi-columna con foto del solicitante, ventas 6m, actual→propuesto, aprobar/rechazar con razón inline; historial filtrable por sucursal con estado
 // v2.1.2  — MinMax solicitudes: widget muestra ventas últimos 6 meses de la sucursal (contexto para proponer); columna current_sales_6m guarda el snapshot; cola de aprobación (pestaña Solicitudes) con filtro por sucursal (chips con conteo) + ventas 6m en cada tarjeta
 // v2.1.1  — MinMax widget: ahora aparece en Permisos (dash_minmax_req con scope) y respeta alcance — scope ALL muestra selector de sucursal ERP en el header (como Anulaciones), scope limitado fija la sucursal del empleado (mapeo branch_id→ERP por nombre). RLS de solicitudes gateada por dash_minmax_req (operación puede proponer sin acceso al módulo). Selector de sucursal interno del widget eliminado (viene del header)

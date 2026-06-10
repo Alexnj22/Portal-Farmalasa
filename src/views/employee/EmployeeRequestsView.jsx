@@ -2,7 +2,8 @@ import React, { useState, useCallback, useEffect, memo, useMemo } from 'react';
 import {
     ClipboardList, Plus, Loader2, X, Palmtree, FileText, RefreshCw,
     DollarSign, FileCheck, CheckCircle2, Send, AlertCircle, XCircle, Check,
-    Stethoscope, Upload, FileImage, CalendarDays, Clock, AlertTriangle, Info
+    Stethoscope, Upload, FileImage, CalendarDays, Clock, AlertTriangle, Info,
+    BarChart2, ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
@@ -44,6 +45,58 @@ const TABS = [
     { key: 'REJECTED',  label: 'Rechazadas' },
     { key: 'CANCELLED', label: 'Canceladas' },
 ];
+
+// Min/Max requests viven en su tabla; mapeo de estado UI → estado tabla
+const MM_STATUS_MAP = { PENDING: 'pending', APPROVED: 'approved', REJECTED: 'rejected' };
+const MM_ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MinMaxStatusCard — solicitud de ajuste Min/Max propia (solo lectura, ve estado)
+// ─────────────────────────────────────────────────────────────────────────────
+const MinMaxStatusCard = memo(({ req }) => {
+    const cfg = req.status === 'approved'
+        ? { border: 'border-emerald-300/70 bg-emerald-50/80', badge: 'bg-emerald-100 text-emerald-700 border-emerald-200', label: 'Aprobada' }
+        : req.status === 'rejected'
+        ? { border: 'border-red-300 bg-white/90', badge: 'bg-red-100 text-red-600 border-red-200', label: 'Rechazada' }
+        : { border: 'border-[#0052CC]/30 bg-white/80', badge: 'bg-amber-100 text-amber-700 border-amber-200', label: 'Pendiente' };
+    return (
+        <div className={`p-5 rounded-[2rem] border-2 ${cfg.border} backdrop-blur-2xl flex flex-col gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.05)]`}>
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-[0.875rem] bg-blue-100 border border-blue-200 flex items-center justify-center flex-shrink-0">
+                        <BarChart2 size={16} strokeWidth={2} className="text-blue-600" />
+                    </div>
+                    <div>
+                        <p className="text-[13px] font-black text-slate-800 leading-tight">Ajuste Min/Max</p>
+                        <p className="text-[10px] text-slate-500 font-medium">{MM_ERP_NAMES[req.erp_sucursal_id] || req.erp_sucursal_id}</p>
+                    </div>
+                </div>
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border whitespace-nowrap flex-shrink-0 ${cfg.badge}`}>{cfg.label}</span>
+            </div>
+
+            <p className="text-[13px] font-bold text-slate-800 leading-tight">{req.product_name || `Producto ${req.erp_product_id}`}</p>
+
+            <div className="flex items-center justify-center gap-3 rounded-2xl bg-white/70 border border-slate-100 py-2">
+                <div className="text-right text-[12px] font-bold tabular-nums text-slate-400">
+                    <div>MIN {req.current_min ?? '—'}</div>
+                    <div>MAX {req.current_max ?? '—'}</div>
+                </div>
+                <ArrowRight size={15} className="text-slate-300" />
+                <div className="text-left text-[12px] font-black tabular-nums">
+                    <div className="text-orange-600">MIN {req.requested_min}</div>
+                    <div className="text-blue-600">MAX {req.requested_max}</div>
+                </div>
+            </div>
+
+            {req.reason && <p className="text-[11px] text-slate-500 italic leading-snug">“{req.reason}”</p>}
+            {req.status !== 'pending' && req.decision_note && (
+                <p className="text-[11px] text-slate-600 font-medium bg-slate-50/70 border border-slate-100 rounded-xl px-3 py-1.5">
+                    Respuesta del supervisor: {req.decision_note}
+                </p>
+            )}
+        </div>
+    );
+});
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -299,6 +352,7 @@ const EmployeeRequestsView = () => {
 
     const [requests, setRequests]         = useState([]);
     const [peerRequests, setPeerRequests] = useState([]);
+    const [minmaxReqs, setMinmaxReqs]     = useState([]);
     const [isLoading, setIsLoading]       = useState(false);
     const [statusFilter, setStatusFilter] = useState('PENDING');
     const [showOldApproved, setShowOldApproved] = useState(false);
@@ -481,7 +535,7 @@ const EmployeeRequestsView = () => {
     const load = useCallback(async () => {
         if (!user?.id) return;
         setIsLoading(true);
-        const [{ data: ownData }, { data: peerData }] = await Promise.all([
+        const [{ data: ownData }, { data: peerData }, { data: mmData }] = await Promise.all([
             supabase
                 .from('approval_requests')
                 .select('id, type, status, note, approver_note, created_at, current_level, metadata')
@@ -493,9 +547,16 @@ const EmployeeRequestsView = () => {
                 .eq('approver_id', user.id)
                 .eq('type', 'SHIFT_CHANGE')
                 .eq('status', 'PENDING'),
+            supabase
+                .from('minmax_change_requests')
+                .select('*')
+                .eq('requested_by_id', user.id)
+                .order('requested_at', { ascending: false })
+                .limit(200),
         ]);
 
         setRequests(ownData || []);
+        setMinmaxReqs(mmData || []);
 
         // Enriquecer peer requests con nombre del solicitante
         const rawPeer = (peerData || []).filter(r => {
@@ -535,6 +596,16 @@ const EmployeeRequestsView = () => {
         }
         return list;
     }, [requests, statusFilter, showOldApproved, currentYM]);
+
+    const filteredMinmax = useMemo(() => {
+        const target = MM_STATUS_MAP[statusFilter];
+        if (!target) return [];
+        let list = minmaxReqs.filter(r => r.status === target);
+        if (!showOldApproved) {
+            list = list.filter(r => r.status !== 'approved' || ((r.decided_at || r.requested_at)?.slice(0, 7) === currentYM));
+        }
+        return list;
+    }, [minmaxReqs, statusFilter, showOldApproved, currentYM]);
 
     const handleAddPermDate = (dateStr) => {
         if (!dateStr) return;
@@ -1194,7 +1265,7 @@ const EmployeeRequestsView = () => {
                                     </div>
                                 ))}
                             </div>
-                        ) : filtered.length === 0 ? (
+                        ) : (filtered.length === 0 && filteredMinmax.length === 0) ? (
                             <div key={statusFilter} className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] col-span-full">
                                 <div className="relative group flex flex-col items-center text-center">
                                     <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 pointer-events-none ${
@@ -1221,14 +1292,19 @@ const EmployeeRequestsView = () => {
                                 </div>
                             </div>
                         ) : (
-                            filtered.map(req => (
-                                <RequestCard
-                                    key={req.id}
-                                    req={req}
-                                    onCancel={id => setCancelConfirmId(id)}
-                                    uploadFileToStorage={uploadFileToStorage}
-                                />
-                            ))
+                            <>
+                                {filtered.map(req => (
+                                    <RequestCard
+                                        key={req.id}
+                                        req={req}
+                                        onCancel={id => setCancelConfirmId(id)}
+                                        uploadFileToStorage={uploadFileToStorage}
+                                    />
+                                ))}
+                                {filteredMinmax.map(req => (
+                                    <MinMaxStatusCard key={`mm-${req.id}`} req={req} />
+                                ))}
+                            </>
                         )}
                     </div>
                 </div>

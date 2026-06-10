@@ -7,6 +7,8 @@ const corsHeaders = {
 
 const SYNC_URL = 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/sync-dte-sales';
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+// sync-dte-sales valida requireInvokeSecret → enviar ADMIN_INVOKE_SECRET, no el service key.
+const INVOKE_SECRET = Deno.env.get('ADMIN_INVOKE_SECRET') ?? '';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -72,7 +74,7 @@ Deno.serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SERVICE_KEY}`,
+          'Authorization': `Bearer ${INVOKE_SECRET}`,
         },
         body: JSON.stringify(payload),
         signal: AbortSignal.timeout(120_000),

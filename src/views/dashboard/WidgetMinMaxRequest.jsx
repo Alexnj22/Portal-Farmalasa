@@ -8,6 +8,19 @@ import { useAuth } from '../../context/AuthContext';
 const ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
 const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
+// Presentación dominante (la "caja" más grande, factor>1) para mostrar equivalentes.
+function dominantPres(pres) {
+  const uniq = [...new Map((pres || []).map(p => [p.factor, p])).values()];
+  return uniq.filter(p => p.factor > 1).sort((a, b) => b.factor - a.factor)[0] || null;
+}
+// "≈ N CAJA" para un valor en unidades (ceil: la caja es indivisible).
+function fmtEquiv(units, pres) {
+  const d = dominantPres(pres);
+  const n = Number(units);
+  if (!d || !n) return null;
+  return `≈ ${Math.ceil(n / d.factor)} ${(d.tipo || 'caja').trim()}`;
+}
+
 /* ── Form: propone min/max para un producto+sucursal ── */
 function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) {
   const [current, setCurrent]   = useState(null);   // { min, max } actuales
@@ -17,6 +30,24 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
   const [reason, setReason]     = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr]           = useState('');
+  const [pres, setPres]         = useState([]);   // presentaciones del producto (factor/tipo)
+
+  // Presentaciones del producto (para mostrar el factor y el equivalente en cajas)
+  useEffect(() => {
+    let cancelled = false;
+    supabase.from('product_precios')
+      .select('factor, descripcion, presentaciones(tipo)')
+      .eq('product_id', product.id)
+      .eq('activo', true)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setPres((data || [])
+          .map(r => ({ tipo: r.presentaciones?.tipo, factor: r.factor, descripcion: r.descripcion }))
+          .filter(p => p.factor));
+      });
+    return () => { cancelled = true; };
+  }, [product.id]);
+  const domPres = dominantPres(pres);
 
   // Carga el min/max efectivo actual (manual ?? calculado) al elegir sucursal
   useEffect(() => {
@@ -119,9 +150,16 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">En uso ahora</span>
               {loadingCur ? <Loader2 size={13} className="animate-spin text-slate-300" /> : (
-                <span className="text-[11px] font-bold text-slate-600">
-                  MIN <span className="text-orange-500">{current?.min ?? '—'}</span> · MAX <span className="text-blue-500">{current?.max ?? '—'}</span>
-                </span>
+                <div className="text-right">
+                  <span className="text-[11px] font-bold text-slate-600">
+                    MIN <span className="text-orange-500">{current?.min ?? '—'}</span> · MAX <span className="text-blue-500">{current?.max ?? '—'}</span> <span className="text-slate-400 font-medium">und</span>
+                  </span>
+                  {(fmtEquiv(current?.min, pres) || fmtEquiv(current?.max, pres)) && (
+                    <div className="text-[9px] text-slate-400 font-semibold">
+                      {fmtEquiv(current?.min, pres) || '—'} · {fmtEquiv(current?.max, pres) || '—'}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
             {!loadingCur && (
@@ -137,17 +175,28 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           </div>
         )}
 
+        {/* Aviso: valores en unidades + factor de presentación */}
+        <div className="flex items-start gap-2 rounded-xl bg-blue-50/70 border border-blue-100 px-3 py-2">
+          <Package size={13} className="text-blue-500 mt-0.5 shrink-0" />
+          <p className="text-[10px] text-blue-700 font-medium leading-snug">
+            MIN y MAX se ingresan en <b>unidades</b> (no en presentaciones).
+            {domPres && <> 1 {domPres.tipo?.trim() || 'caja'} = <b>{domPres.factor} und</b>{domPres.descripcion ? ` (${domPres.descripcion})` : ''}.</>}
+          </p>
+        </div>
+
         {/* Nuevos valores */}
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-black text-orange-500 uppercase tracking-widest px-1">Nuevo MIN *</label>
+            <label className="text-[10px] font-black text-orange-500 uppercase tracking-widest px-1">Nuevo MIN (und) *</label>
             <input type="number" min="0" value={mn} onChange={e => { setMn(e.target.value); setErr(''); }}
               className="w-full text-right text-[13px] font-bold text-orange-700 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300" />
+            {fmtEquiv(mn, pres) && <span className="text-[9px] text-orange-500 font-bold text-right px-1">{fmtEquiv(mn, pres)}</span>}
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest px-1">Nuevo MAX *</label>
+            <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest px-1">Nuevo MAX (und) *</label>
             <input type="number" min="0" value={mx} onChange={e => { setMx(e.target.value); setErr(''); }}
               className="w-full text-right text-[13px] font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-300" />
+            {fmtEquiv(mx, pres) && <span className="text-[9px] text-blue-500 font-bold text-right px-1">{fmtEquiv(mx, pres)}</span>}
           </div>
         </div>
 

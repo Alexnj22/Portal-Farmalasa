@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.1.5';
+export const APP_VERSION = '2.1.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.1.6  — Widget Ajuste Min/Max: deja claro que MIN/MAX son en UNIDADES (no presentaciones) — aviso con el factor de la presentación dominante (ej: 1 CAJA = 100 und (1x100)), labels "Nuevo MIN/MAX (und)", y equivalente en vivo bajo cada input y en "En uso ahora" (≈ N CAJA). Carga presentaciones de product_precios
 // v2.1.5  — Reset de contraseña: al restablecer (EmployeeDetailView) ahora se muestra la contraseña temporal aleatoria que genera el edge function en un modal con botón de copiar ("no se volverá a mostrar"); antes solo salía un toast y la temporal quedaba invisible
 // v2.1.4  — MinMax solicitudes: el empleado ve el estado de sus solicitudes de ajuste en "Mis Solicitudes" (EmployeeRequestsView lee minmax_change_requests propias; card MinMaxStatusCard con estado pendiente/aprobada/rechazada + respuesta del supervisor), bajo las pestañas Pendientes/Aprobadas/Rechazadas. Antes la confirmación solo llegaba por push
 // v2.1.3  — MinMax solicitudes: ruteo de notificación al rol Supervisor/a de Ventas (RPC get_minmax_approver_ids), con fallback al jefe inmediato (rol padre) si está de vacaciones/incapacidad/permiso hoy. Rediseño visual de la pestaña Solicitudes: filter pill estándar (sucursal + Aprobar todas/filtradas), grid de cards glassmorphic multi-columna con foto del solicitante, ventas 6m, actual→propuesto, aprobar/rechazar con razón inline; historial filtrable por sucursal con estado

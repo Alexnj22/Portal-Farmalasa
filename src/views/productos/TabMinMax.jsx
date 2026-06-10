@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import {
@@ -1516,19 +1517,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     { erp_product_id: edit.productId, erp_sucursal_id: edit.sucursalId, [col]: numVal, updated_at: new Date().toISOString() },
                     { onConflict: 'erp_product_id,erp_sucursal_id' }
                 );
-            if (!e) {
-                setData(prev => prev.map(r =>
-                    r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId
-                        ? { ...r, [effCol]: numVal ?? 0 } : r
-                ));
-                Promise.all([
-                    supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
-                    supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
-                ]).then(([{ data: cost }, { data: draft }]) => {
-                    if (cost)  setCostSummary(cost);
-                    if (draft) setDraftCost(draft);
-                });
+            if (e) {
+                setToast({ message: 'Valor inválido: MAX debe ser mayor al MIN', type: 'error' });
+                return;
             }
+            setData(prev => prev.map(r =>
+                r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId
+                    ? { ...r, [effCol]: numVal ?? 0 } : r
+            ));
+            Promise.all([
+                supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
+                supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
+            ]).then(([{ data: cost }, { data: draft }]) => {
+                if (cost)  setCostSummary(cost);
+                if (draft) setDraftCost(draft);
+            });
             useStaff.getState().appendAuditLog('MINMAX_LIVE_EDIT', String(edit.productId), {
                 field: col, value: numVal, sucursal_id: edit.sucursalId,
             });
@@ -1539,19 +1542,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     { erp_product_id: edit.productId, erp_sucursal_id: edit.sucursalId, [col]: numVal, draft_status: 'pending', updated_at: new Date().toISOString() },
                     { onConflict: 'erp_product_id,erp_sucursal_id' }
                 );
-            if (!e) {
-                setData(prev => prev.map(r =>
-                    r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId
-                        ? { ...r, [col]: numVal, draft_status: 'pending' } : r
-                ));
-                Promise.all([
-                    supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
-                    supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
-                ]).then(([{ data: cost }, { data: draft }]) => {
-                    if (cost)  setCostSummary(cost);
-                    if (draft) setDraftCost(draft);
-                });
+            if (e) {
+                setToast({ message: 'Valor inválido: MAX debe ser mayor al MIN', type: 'error' });
+                return;
             }
+            setData(prev => prev.map(r =>
+                r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId
+                    ? { ...r, [col]: numVal, draft_status: 'pending' } : r
+            ));
+            Promise.all([
+                supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
+                supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
+            ]).then(([{ data: cost }, { data: draft }]) => {
+                if (cost)  setCostSummary(cost);
+                if (draft) setDraftCost(draft);
+            });
             useStaff.getState().appendAuditLog('MINMAX_DRAFT_EDIT', String(edit.productId), {
                 field: col, value: numVal, sucursal_id: edit.sucursalId,
             });
@@ -2295,7 +2300,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         if (e.key === 'Tab' || e.key === 'ArrowRight') {
                                                             e.preventDefault();
                                                             const err = validateEditForRow(inlineDraftEdit, row);
-                                                            if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
+                                                            if (err) { skipBlurSave.current = true; setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
                                                             setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(hasDraft ? (row.draft_max ?? '') : (row.effective_max ?? '')) });
@@ -2304,7 +2309,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         if (e.key === 'Enter' || e.key === 'ArrowDown') {
                                                             e.preventDefault();
                                                             const err = validateEditForRow(inlineDraftEdit, row);
-                                                            if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
+                                                            if (err) { skipBlurSave.current = true; setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
                                                             const next = pageRows.slice(rowIdx + 1).find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
@@ -2315,7 +2320,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         if (e.key === 'ArrowUp') {
                                                             e.preventDefault();
                                                             const err = validateEditForRow(inlineDraftEdit, row);
-                                                            if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
+                                                            if (err) { skipBlurSave.current = true; setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
                                                             const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
@@ -2389,7 +2394,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         if (e.key === 'ArrowLeft') {
                                                             e.preventDefault();
                                                             const err = validateEditForRow(inlineDraftEdit, row);
-                                                            if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
+                                                            if (err) { skipBlurSave.current = true; setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
                                                             setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(hasDraft ? (row.draft_min ?? '') : (row.effective_min ?? '')) });
@@ -2398,7 +2403,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         if (e.key === 'Enter' || e.key === 'ArrowDown') {
                                                             e.preventDefault();
                                                             const err = validateEditForRow(inlineDraftEdit, row);
-                                                            if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
+                                                            if (err) { skipBlurSave.current = true; setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
                                                             const next = pageRows.slice(rowIdx + 1).find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
@@ -2409,7 +2414,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         if (e.key === 'ArrowUp') {
                                                             e.preventDefault();
                                                             const err = validateEditForRow(inlineDraftEdit, row);
-                                                            if (err) { setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
+                                                            if (err) { skipBlurSave.current = true; setToast({ message: err, type: 'error' }); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
                                                             const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
@@ -2590,9 +2595,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 </>
             )}
 
-            {/* ── Toast notification ── */}
-            {toast && (
-                <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl text-white shadow-2xl text-[13px] font-semibold animate-in slide-in-from-bottom-2 ${toast.type === 'error' ? 'bg-red-600' : 'bg-[#0052CC]'}`}>
+            {/* ── Toast notification (portal → fuera de backdrop-filter, siempre en viewport) ── */}
+            {toast && createPortal(
+                <div className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-xl text-white shadow-2xl text-[13px] font-semibold animate-in slide-in-from-bottom-2 ${toast.type === 'error' ? 'bg-red-600' : 'bg-[#0052CC]'}`}>
                     {currentEmployee?.photo_url
                         ? <img src={currentEmployee.photo_url} alt="" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-white/40" />
                         : <Info size={15} className="shrink-0" />}
@@ -2606,7 +2611,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     <button onClick={() => setToast(null)} className="ml-1 opacity-60 hover:opacity-100 transition-opacity shrink-0">
                         <X size={12} />
                     </button>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* ── Confirm publish modal ── */}

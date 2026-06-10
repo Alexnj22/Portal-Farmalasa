@@ -2082,24 +2082,45 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 </div>
             )}
 
-            {/* ── Alert stat chips + draft pills (above table) ── */}
+            {/* ── Unified filter pill + draft pill (above table) ── */}
             {!neverCalc && (
                 <div className="flex items-center gap-2 flex-wrap">
-                    {STAT_CFGS.map((cfg, i) => {
-                        const active = filterAlert === cfg.key;
-                        return (
-                            <motion.button key={cfg.key}
-                                {...fadeUp(i * 0.05)}
-                                {...chipAnim}
-                                onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold ${active ? cfg.active : 'bg-white/55 backdrop-blur-sm border-white/80 text-slate-600 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)] hover:bg-white/80'}`}>
-                                <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
-                                <span className={`tabular-nums font-black ${active ? '' : 'text-slate-700'}`}>{loading ? '–' : stats[cfg.key]}</span>
-                                <span className="opacity-80">{cfg.label}</span>
-                                {active && <X size={9} className="ml-0.5 opacity-60" />}
-                            </motion.button>
-                        );
-                    })}
+                    {/* Status + sparse filters — single pill container */}
+                    <div className="flex items-center rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] overflow-hidden">
+                        {STAT_CFGS.map((cfg, i) => {
+                            const active = filterAlert === cfg.key;
+                            return (
+                                <React.Fragment key={cfg.key}>
+                                    {i > 0 && <div className="h-5 w-px bg-slate-100 shrink-0" />}
+                                    <motion.button
+                                        {...chipAnim}
+                                        onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
+                                        className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-bold transition-colors duration-150 ${active ? 'bg-slate-100/90 text-slate-700' : 'text-slate-500 hover:bg-slate-50/80 hover:text-slate-700'}`}>
+                                        <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
+                                        <span className={`tabular-nums font-black ${active ? '' : 'text-slate-700'}`}>{loading ? '–' : stats[cfg.key]}</span>
+                                        <span className="opacity-80">{cfg.label}</span>
+                                        {active && <X size={9} className="ml-0.5 opacity-60" />}
+                                    </motion.button>
+                                </React.Fragment>
+                            );
+                        })}
+                        {/* Pocos datos — alongside status chips */}
+                        {sparseCount > 0 && !loading && (
+                            <>
+                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                <motion.button
+                                    {...chipAnim}
+                                    onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
+                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-bold transition-colors duration-150 ${filterSparse ? 'bg-orange-50/80 text-orange-700' : 'text-orange-500 hover:bg-orange-50/60 hover:text-orange-700'}`}
+                                    title="Productos con ventas en menos de 3 días distintos — requieren confirmación manual de MIN/MAX">
+                                    <AlertTriangle size={10} strokeWidth={2.5} />
+                                    <span className="tabular-nums font-black">{sparseCount}</span>
+                                    pocos datos
+                                    {filterSparse && <X size={9} className="ml-0.5 opacity-60" />}
+                                </motion.button>
+                            </>
+                        )}
+                    </div>
 
                     {/* Ocultar filtrados */}
                     <AnimatePresence>
@@ -2118,7 +2139,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     )}
                     </AnimatePresence>
 
-                    {/* Ocultos — clic para ver/ocultar lista; Mostrar todos para desocultar en bloque */}
+                    {/* Ocultos */}
                     <AnimatePresence>
                     {hiddenIds.size > 0 && (
                         <motion.div
@@ -2131,7 +2152,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     ? 'bg-violet-100/80 backdrop-blur-sm border-violet-300/70 text-violet-700 shadow-[0_3px_14px_rgba(139,92,246,0.22)]'
                                     : 'bg-white/55 backdrop-blur-sm border-white/80 text-slate-500 shadow-[0_2px_8px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.95)]'
                             }`}>
-                            {/* Main click: toggle filterHidden */}
                             <button
                                 onClick={() => setFilterHidden(f => !f)}
                                 className="flex items-center gap-1.5 px-3 py-1.5 hover:opacity-80 transition-opacity">
@@ -2139,7 +2159,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <span>{hiddenIds.size} oculto{hiddenIds.size !== 1 ? 's' : ''}</span>
                                 {filterHidden && <X size={9} className="opacity-60" />}
                             </button>
-                            {/* Mostrar todos — solo cuando está activo el filtro */}
                             {filterHidden && (
                                 <>
                                     <div className="h-3.5 w-px bg-violet-300/60 shrink-0" />
@@ -2154,7 +2173,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     )}
                     </AnimatePresence>
 
-                    {/* ── Draft pill ── */}
+                    {/* ── Borradores + Publicar pill — only when draftCount > 0 ── */}
                     <AnimatePresence>
                     {draftCount > 0 && !loading && (
                         <motion.div
@@ -2164,9 +2183,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             exit={{ opacity: 0, scale: 0.9, x: 16, transition: { duration: 0.18, ease: 'easeIn' } }}
                             className="ml-auto flex items-center shrink-0 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] transition-shadow duration-300"
                         >
-                            {/* Glass white section — idéntico al pill de controles */}
                             <div className="flex items-center rounded-l-2xl border border-r-0 border-slate-200/70 bg-white/80 backdrop-blur-sm overflow-hidden">
-                                {/* Count + dot pulsante */}
+                                {/* Count + pulsing dot */}
                                 <div className="flex items-center gap-1.5 px-3 py-2.5">
                                     <span className="relative flex h-2 w-2 shrink-0">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
@@ -2176,62 +2194,27 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     <span className="text-[11px] text-slate-400">borrador{draftCount !== 1 ? 'es' : ''}</span>
                                 </div>
                                 <div className="h-5 w-px bg-slate-100 shrink-0" />
-                                {/* Solo borradores / Solo cambios toggles */}
-                                {hasPublishedData && changesCount > 0 ? (
+                                {/* Solo borradores toggle */}
+                                <motion.button
+                                    {...chipAnim}
+                                    onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); setFilterChangesOnly(false); }}
+                                    className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
+                                    {filterDraft ? <><X size={10} strokeWidth={2.5} /> Ver todos</> : 'Solo borradores'}
+                                </motion.button>
+                                {/* Solo cambios — only when there is published data with changes */}
+                                {hasPublishedData && changesCount > 0 && (
                                     <>
-                                        <motion.button onClick={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); }}
-                                            {...chipAnim}
-                                            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterChangesOnly ? 'text-violet-600' : 'text-slate-500 hover:text-slate-700'}`}>
-                                            {filterChangesOnly
-                                                ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
-                                                : `Solo cambios (${changesCount})`}
-                                        </motion.button>
                                         <div className="h-5 w-px bg-slate-100 shrink-0" />
-                                        <motion.button onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); setFilterChangesOnly(false); }}
+                                        <motion.button
                                             {...chipAnim}
-                                            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
-                                            {filterDraft
-                                                ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
-                                                : 'Todos borradores'}
+                                            onClick={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); setFilterSparse(false); }}
+                                            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterChangesOnly ? 'text-violet-600' : 'text-slate-500 hover:text-slate-700'}`}>
+                                            {filterChangesOnly ? <><X size={10} strokeWidth={2.5} /> Ver todos</> : `Solo cambios (${changesCount})`}
                                         </motion.button>
-                                        {sparseCount > 0 && (
-                                            <>
-                                                <div className="h-5 w-px bg-slate-100 shrink-0" />
-                                                <motion.button onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); }}
-                                                    {...chipAnim}
-                                                    className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterSparse ? 'text-orange-700' : 'text-orange-500 hover:text-orange-700'}`}
-                                                    title="Productos con ventas en menos de 3 días — requieren confirmación manual de MIN/MAX">
-                                                    <AlertTriangle size={10} strokeWidth={2.5} />
-                                                    {filterSparse ? <><X size={10} strokeWidth={2.5} /> Ver todos</> : `${sparseCount} pocos datos`}
-                                                </motion.button>
-                                            </>
-                                        )}
-                                    </>
-                                ) : (
-                                    <>
-                                    <motion.button onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); }}
-                                        {...chipAnim}
-                                        className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterDraft ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
-                                        {filterDraft
-                                            ? <><X size={10} strokeWidth={2.5} /> Ver todos</>
-                                            : 'Solo borradores'}
-                                    </motion.button>
-                                    {sparseCount > 0 && (
-                                        <>
-                                            <div className="h-5 w-px bg-slate-100 shrink-0" />
-                                            <motion.button onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); }}
-                                                {...chipAnim}
-                                                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold ${filterSparse ? 'text-orange-700' : 'text-orange-500 hover:text-orange-700'}`}
-                                                title="Productos con ventas en menos de 3 días — requieren confirmación manual de MIN/MAX">
-                                                <AlertTriangle size={10} strokeWidth={2.5} />
-                                                {filterSparse ? <><X size={10} strokeWidth={2.5} /> Ver todos</> : `${sparseCount} pocos datos`}
-                                            </motion.button>
-                                        </>
-                                    )}
                                     </>
                                 )}
                             </div>
-                            {/* Publicar — blue cap, igual que Calcular */}
+                            {/* Publicar — blue right cap */}
                             <AnimatePresence mode="wait">
                             {hasActiveFilter && filteredDraftIds.length > 0 ? (
                                 <motion.button
@@ -2352,7 +2335,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 {isSparse && (
                                                     <span className="text-[10px] text-orange-500 mt-0.5 flex items-center gap-0.5">
                                                         <AlertTriangle size={9} />
-                                                        {Number(row.units_sold_6m) > 0 ? `${Number(row.units_sold_6m).toLocaleString()} uds. en 1–2 días` : 'Venta puntual'} · confirmar MIN/MAX manual
+                                                        {Number(row.units_sold_6m) >= 10
+                                                            ? `Posible compra mayorista: ${Number(row.units_sold_6m).toLocaleString()} uds. en 1–2 días`
+                                                            : Number(row.units_sold_6m) > 0
+                                                                ? `Rotación mínima: ${Number(row.units_sold_6m).toLocaleString()} uds. en 6 meses`
+                                                                : 'Sin ventas registradas'
+                                                        } · confirmar MIN/MAX
                                                     </span>
                                                 )}
                                                 {!dead && !noHistory && !isSparse && (

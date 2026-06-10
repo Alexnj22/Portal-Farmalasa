@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.14';
+export const APP_VERSION = '2.2.15';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.15 — MinMax: filtros de estado unidos en una sola pill contenedor (rounded-2xl); "Pocos datos" movido dentro de la pill de estado; borradores+publicar en pill separada (solo visible cuando hay borradores); mensaje badge sparse mejorado (mayorista vs rotación mínima)
 // v2.2.14 — MinMax: skeleton al cambiar sucursal (setData([]) antes de fetch); spinner en botón Ocultar mientras espera DB; historial audit_logs limpiado
 // v2.2.13 — Sidebar: scroll automático al ítem activo al abrir submenú (espera 330ms a que termine la animación, luego scrollea la nav)
 // v2.2.12 — MinMax: fix tab "Sin movimiento" mostraba 0 (alert_status era 'no_data' en vez de 'dead_stock' desde calc_columns); filtro "pocos datos" ahora es toggle independiente (filterSparse) — muestra solo sparse sin mezclar borradores

@@ -912,7 +912,7 @@ function EditDraftRow({ row, onSave, onCancel }) {
     };
 
     return (
-        <div className="border-l-4 border-l-amber-400 bg-amber-50/30 border-b border-amber-100">
+        <div className="bg-amber-50/30 border-b border-amber-100">
             <div className="grid items-center px-4 py-2"
                 style={{ gridTemplateColumns: '1fr 68px 100px 105px 105px 88px 56px' }}>
                 <div className="min-w-0 pr-3">

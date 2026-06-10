@@ -5,7 +5,7 @@ import { supabase } from '../../supabaseClient';
 import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download,
-    CheckCircle2, Check, Info, RotateCcw, ChevronRight,
+    CheckCircle2, Check, Info, RotateCcw, ChevronRight, History,
     DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2, Target, FlaskConical, Search,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -1389,6 +1389,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [inlineDraftEdit, setInlineDraftEdit] = useState(null); // { productId, sucursalId, field:'min'|'max', value, error? }
     const [toast,           setToast]           = useState(null); // { message, type }
     const [currentEmployee, setCurrentEmployee] = useState(null);
+    const [historyRow,      setHistoryRow]      = useState(null);
+    const [historyLogs,     setHistoryLogs]     = useState([]);
+    const [historyLoading,  setHistoryLoading]  = useState(false);
+    const [empPhotoMap,     setEmpPhotoMap]     = useState({});
     const loadRef = useRef(0);
 
     useEffect(() => {
@@ -1557,7 +1561,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 if (draft) setDraftCost(draft);
             });
             useStaff.getState().appendAuditLog('MINMAX_LIVE_EDIT', String(edit.productId), {
-                field: col, value: numVal, sucursal_id: edit.sucursalId,
+                field: col,
+                field_label: edit.field === 'min' ? 'MIN' : 'MAX',
+                product: targetRow?.product_name,
+                old_value: edit.field === 'min' ? (targetRow?.effective_min ?? 0) : (targetRow?.effective_max ?? 0),
+                new_value: numVal,
+                sucursal_id: edit.sucursalId,
             });
             warnIfOutrageous(edit.field, numVal, targetRow);
         } else {
@@ -1583,7 +1592,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 if (draft) setDraftCost(draft);
             });
             useStaff.getState().appendAuditLog('MINMAX_DRAFT_EDIT', String(edit.productId), {
-                field: col, value: numVal, sucursal_id: edit.sucursalId,
+                field: col,
+                field_label: edit.field === 'min' ? 'MIN' : 'MAX',
+                product: targetRow?.product_name,
+                old_value: edit.field === 'min' ? (targetRow?.draft_min ?? targetRow?.effective_min ?? 0) : (targetRow?.draft_max ?? targetRow?.effective_max ?? 0),
+                new_value: numVal,
+                sucursal_id: edit.sucursalId,
             });
             warnIfOutrageous(edit.field, numVal, targetRow);
         }
@@ -1640,6 +1654,26 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const draftCount   = useMemo(() => data.filter(r => r.draft_status === 'pending').length, [data]);
     const changesCount = useMemo(() => data.filter(r => r.draft_status === 'pending' && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max)).length, [data]);
+
+    const openHistory = useCallback(async (row) => {
+        setHistoryRow(row);
+        setHistoryLogs([]);
+        setHistoryLoading(true);
+        const [{ data: logs }, { data: emps }] = await Promise.all([
+            supabase.from('audit_logs')
+                .select('id,user_name,user_id,action,details,created_at')
+                .in('action', ['MINMAX_LIVE_EDIT','MINMAX_DRAFT_EDIT','MINMAX_RESET_CALC','MINMAX_MANUAL_OVERRIDE','MINMAX_ZERO_OUT','MINMAX_LIVE_ZERO'])
+                .eq('target_id', String(row.erp_product_id))
+                .order('created_at', { ascending: false })
+                .limit(80),
+            supabase.from('employees').select('name,photo_url'),
+        ]);
+        const photoMap = {};
+        (emps || []).forEach(e => { if (e.name) photoMap[e.name] = e.photo_url; });
+        setHistoryLogs(logs || []);
+        setEmpPhotoMap(photoMap);
+        setHistoryLoading(false);
+    }, []);
 
     const requestPublish = useCallback((ids = null) => {
         const count = ids ? ids.length : draftCount;
@@ -2580,6 +2614,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <RotateCcw size={12} />
                                                 </motion.button>
                                             )}
+                                            {/* Historial */}
+                                            <motion.button
+                                                onClick={e => { e.stopPropagation(); openHistory(row); }}
+                                                title="Ver historial de cambios MIN/MAX"
+                                                {...iconAnim}
+                                                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-[#0052CC] hover:bg-blue-50 transition-colors">
+                                                <History size={12} />
+                                            </motion.button>
                                             {/* Publicar borrador */}
                                             {hasDraft && canManage && (
                                                 <motion.button onClick={e => { e.stopPropagation(); requestPublish([row.erp_product_id]); }}
@@ -2637,6 +2679,100 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     <button onClick={() => setToast(null)} className="ml-1 opacity-60 hover:opacity-100 transition-opacity shrink-0">
                         <X size={12} />
                     </button>
+                </div>,
+                document.body
+            )}
+
+            {/* ── Historial MIN/MAX ── */}
+            {historyRow && createPortal(
+                <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4" onClick={() => setHistoryRow(null)}>
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+                    {/* Card */}
+                    <div className="relative z-10 w-full max-w-md max-h-[82vh] flex flex-col rounded-3xl border border-white/70 shadow-[0_32px_80px_rgba(0,0,0,0.18)] overflow-hidden"
+                        style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(40px) saturate(200%)' }}
+                        onClick={e => e.stopPropagation()}>
+
+                        {/* Header */}
+                        <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-100/80 shrink-0">
+                            {/* Product photo */}
+                            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden shrink-0 flex items-center justify-center">
+                                {historyRow.foto_url
+                                    ? <img src={historyRow.foto_url} alt="" className="w-full h-full object-contain" />
+                                    : <Package size={22} className="text-slate-300" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[13px] font-black text-slate-800 truncate leading-tight">{historyRow.product_name}</p>
+                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">{ERP_NAMES[historyRow._erp_sucursal_id]} · Historial MIN/MAX</p>
+                            </div>
+                            <button onClick={() => setHistoryRow(null)}
+                                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors shrink-0">
+                                <X size={14} />
+                            </button>
+                        </div>
+
+                        {/* List */}
+                        <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2">
+                            {historyLoading && (
+                                <div className="flex justify-center py-10">
+                                    <Loader2 size={22} className="animate-spin text-slate-300" />
+                                </div>
+                            )}
+                            {!historyLoading && historyLogs.length === 0 && (
+                                <div className="flex flex-col items-center gap-2 py-10">
+                                    <History size={28} className="text-slate-200" />
+                                    <p className="text-[12px] text-slate-400">Sin cambios registrados aún</p>
+                                </div>
+                            )}
+                            {!historyLoading && historyLogs.map(log => {
+                                const d = log.details || {};
+                                const empPhoto = empPhotoMap[log.user_name];
+                                const sucName = ERP_NAMES[d.sucursal_id] || '';
+                                const isReset = log.action === 'MINMAX_RESET_CALC';
+                                const isZero  = log.action === 'MINMAX_ZERO_OUT' || log.action === 'MINMAX_LIVE_ZERO';
+                                const fieldLabel = d.field_label || (d.field?.includes('min') ? 'MIN' : d.field?.includes('max') ? 'MAX' : d.field || '');
+                                const dt = new Date(log.created_at);
+                                const dateStr = dt.toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
+                                const timeStr = dt.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' });
+                                return (
+                                    <div key={log.id} className="flex items-start gap-3 bg-white/70 border border-white/80 rounded-2xl px-3.5 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
+                                        {/* Employee avatar */}
+                                        <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
+                                            {empPhoto
+                                                ? <img src={empPhoto} alt="" className="w-full h-full object-cover" />
+                                                : <span className="text-[10px] font-black text-slate-400">{log.user_name?.charAt(0)?.toUpperCase() || '?'}</span>}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                                                <span className="text-[11px] font-bold text-slate-700 truncate">{log.user_name || 'Sistema'}</span>
+                                                <span className="text-[9px] text-slate-400 shrink-0 tabular-nums">{dateStr} · {timeStr}</span>
+                                            </div>
+                                            {isReset ? (
+                                                <p className="text-[11px] text-emerald-700 font-semibold mt-0.5">
+                                                    Restaurado a calculado — MIN {d.calc_min ?? '?'} / MAX {d.calc_max ?? '?'}
+                                                </p>
+                                            ) : isZero ? (
+                                                <p className="text-[11px] text-red-600 font-semibold mt-0.5">Puesto en cero (MIN 0 / MAX 0)</p>
+                                            ) : (
+                                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${fieldLabel === 'MIN' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{fieldLabel}</span>
+                                                    {d.old_value != null && (
+                                                        <><span className="text-[11px] font-semibold text-slate-500">{d.old_value}</span>
+                                                        <span className="text-[10px] text-slate-300">→</span></>
+                                                    )}
+                                                    <span className="text-[11px] font-black text-slate-800">{d.new_value ?? d.value ?? '?'}</span>
+                                                    {sucName && <span className="text-[9px] text-slate-400 ml-1">{sucName}</span>}
+                                                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ml-auto ${log.action === 'MINMAX_LIVE_EDIT' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                                                        {log.action === 'MINMAX_LIVE_EDIT' ? 'EN VIVO' : 'BORRADOR'}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>,
                 document.body
             )}

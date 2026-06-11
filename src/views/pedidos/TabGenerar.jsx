@@ -355,6 +355,29 @@ export default function TabGenerar({ searchTerm = '' }) {
                 items_count: items.length,
                 numero:      ped?.numero,
             });
+            // Notificar a las sucursales afectadas
+            try {
+                const { data: branchRows } = await supabase
+                    .from('erp_sucursal_map')
+                    .select('branch_id')
+                    .in('erp_sucursal_id', [...selected])
+                    .eq('es_bodega', false);
+                const branchIds = (branchRows || []).map(r => r.branch_id).filter(Boolean);
+                if (branchIds.length > 0) {
+                    const pedTitle = `Pedido #${ped?.numero} generado`;
+                    const pedMsg   = `Se generó el pedido #${ped?.numero} para ${[...selected].map(id => ERP_NAMES[id]).join(', ')}. Revisá la recepción en tu sucursal.`;
+                    await supabase.from('announcements').insert({
+                        title: pedTitle, message: pedMsg,
+                        target_type: 'BRANCH', target_value: branchIds,
+                        read_by: [], is_archived: false, created_by: user?.id ?? null,
+                        priority: 'NORMAL',
+                        metadata: { pedido_id: pedidoId, numero: ped?.numero, sucursales: [...selected] },
+                    });
+                    supabase.functions.invoke('send-push-notification', {
+                        body: { title: pedTitle, message: pedMsg, url: '/pedidos', target_type: 'BRANCH', target_value: branchIds },
+                    }).catch(() => {});
+                }
+            } catch { /* no-fatal */ }
             setConfirmed({ id: pedidoId, numero: ped?.numero });
             setPreview(null); setNotes(''); setAdjustments({});
         } catch (e) {

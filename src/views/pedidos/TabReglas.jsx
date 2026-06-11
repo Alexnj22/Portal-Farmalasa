@@ -75,7 +75,7 @@ export default function TabReglas({ searchTerm = '' }) {
     }, []);
 
     // ── Load products paginated ───────────────────────────────────────────────
-    const loadProducts = useCallback(async (currentPage, term, labId) => {
+    const loadProducts = useCallback(async (currentPage, term, labId, ruleFilter, ruleIds) => {
         setLoadingProducts(true);
         const offset = currentPage * PAGE_SIZE;
         let q = supabase
@@ -87,6 +87,13 @@ export default function TabReglas({ searchTerm = '' }) {
             .range(offset, offset + PAGE_SIZE - 1);
         if (term.length >= 2) q = q.ilike('nombre', `%${term}%`);
         if (labId)            q = q.eq('laboratorio_id', parseInt(labId));
+        if (ruleFilter === 'con') {
+            // Only products that have a rule
+            q = ruleIds.length > 0 ? q.in('id', ruleIds) : q.in('id', [0]);
+        } else if (ruleFilter === 'sin' && ruleIds.length > 0) {
+            // Only products without a rule
+            q = q.not('id', 'in', `(${ruleIds.join(',')})`);
+        }
         const { data, count } = await q;
         setProducts(data || []);
         setTotalCount(count ?? 0);
@@ -94,14 +101,14 @@ export default function TabReglas({ searchTerm = '' }) {
     }, []);
 
     useEffect(() => { loadRules(); }, [loadRules]);
-    useEffect(() => { loadProducts(page, searchTerm, filterLab); }, [page, searchTerm, filterLab, loadProducts]);
+    useEffect(() => {
+        if (loadingRules) return;
+        const ids = Object.keys(rulesMap).map(Number);
+        loadProducts(page, searchTerm, filterLab, filterRule, ids);
+    }, [page, searchTerm, filterLab, filterRule, rulesMap, loadProducts, loadingRules]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Client-side rule filter (applied after DB fetch)
-    const visibleProducts = filterRule === 'con'
-        ? products.filter(p => !!rulesMap[p.id])
-        : filterRule === 'sin'
-        ? products.filter(p => !rulesMap[p.id])
-        : products;
+    // All filtering is now server-side — products is already the correct slice
+    const visibleProducts = products;
 
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
     const rulesCount = Object.keys(rulesMap).length;
@@ -224,7 +231,6 @@ export default function TabReglas({ searchTerm = '' }) {
                         ? `${totalCount} resultado${totalCount !== 1 ? 's' : ''} para "${searchTerm}"`
                         : `${totalCount.toLocaleString()} productos`
                     }
-                    {filterRule && <span className="ml-2 text-slate-400">· {visibleProducts.length} visibles</span>}
                 </p>
                 {!loadingRules && (
                     <span className="text-[12px] text-slate-400 border-l border-slate-200 pl-3">
@@ -242,9 +248,9 @@ export default function TabReglas({ searchTerm = '' }) {
                     message: searchTerm.length >= 2
                         ? `No se encontraron productos para "${searchTerm}".`
                         : filterRule === 'con'
-                        ? 'Ningún producto en esta página tiene regla asignada.'
+                        ? 'No hay productos con regla asignada.'
                         : filterRule === 'sin'
-                        ? 'Todos los productos en esta página tienen regla.'
+                        ? 'Todos los productos tienen regla asignada.'
                         : 'Sin productos en catálogo.',
                 }}
                 minWidth="700px"
@@ -435,8 +441,8 @@ export default function TabReglas({ searchTerm = '' }) {
                 })}
             </DataTable>
 
-            {/* Pagination — hidden when rule filter is active (client-side filter makes page count misleading) */}
-            {totalPages > 1 && !filterRule && (
+            {/* Pagination */}
+            {totalPages > 1 && (
                 <div className="flex items-center justify-between px-1">
                     <span className="text-[12px] text-slate-400">
                         Página {page + 1} de {totalPages} · {totalCount.toLocaleString()} productos

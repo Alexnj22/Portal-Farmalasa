@@ -128,6 +128,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     const [snapsOpen,        setSnapsOpen]        = useState(false);
     const [confirmDelSnap,   setConfirmDelSnap]   = useState(null);
     const [deletingSnap,     setDeletingSnap]     = useState(false);
+    const [totalCounts,      setTotalCounts]      = useState(null);
 
     // ── Section toggle helpers ─────────────────────────────────────────────────
     const isSecOpen = (key, def) => sectionOpen[key] ?? def;
@@ -183,18 +184,21 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         setLoadingMore(true);
         const nextPage = page + 1;
         const from = nextPage * PAGE_SIZE;
-        const { data } = await supabase
+        let q = supabase
             .from('pedidos')
             .select('id, numero, created_at, status, notes')
-            .order('created_at', { ascending: false })
-            .range(from, from + PAGE_SIZE - 1);
+            .order('created_at', { ascending: false });
+        if (filterDesde) q = q.gte('created_at', filterDesde);
+        if (filterHasta) q = q.lte('created_at', filterHasta + 'T23:59:59');
+        q = q.range(from, from + PAGE_SIZE - 1);
+        const { data } = await q;
         const rows = data || [];
         setPedidos(prev => [...prev, ...rows]);
         setPage(nextPage);
         setHasMore(rows.length === PAGE_SIZE);
         setLoadingMore(false);
         if (rows.length) loadSucursales(rows.map(p => p.id));
-    }, [page, loadSucursales]);
+    }, [page, loadSucursales, filterDesde, filterHasta]);
 
     // Initial load
     useEffect(() => { resetLoad('', ''); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -220,6 +224,23 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     }, []);
 
     useEffect(() => { loadSnapshots(); }, [loadSnapshots]);
+
+    // ── Accurate DB-level counts (not limited to loaded page) ─────────────────
+    const reloadCounts = useCallback(async () => {
+        const statuses = ['confirmado', 'parcial', 'completado', 'anulado'];
+        const results = await Promise.all(statuses.map(async (status) => {
+            let q = supabase.from('pedidos')
+                .select('id', { count: 'exact', head: true })
+                .eq('status', status);
+            if (filterDesde) q = q.gte('created_at', filterDesde);
+            if (filterHasta) q = q.lte('created_at', filterHasta + 'T23:59:59');
+            const { count } = await q;
+            return [status, count ?? 0];
+        }));
+        setTotalCounts(Object.fromEntries(results));
+    }, [filterDesde, filterHasta]);
+
+    useEffect(() => { reloadCounts(); }, [reloadCounts]);
 
     // ── Fetch items + lotes for expanded pedido ────────────────────────────────
     const fetchPedidoItems = useCallback(async (pedidoId) => {
@@ -319,12 +340,13 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 .from('pedidos').select('id, numero, created_at, status, notes')
                 .eq('id', pedidoId).single();
             if (data) setPedidos(prev => prev.map(p => p.id === pedidoId ? data : p));
+            reloadCounts();
         } catch (e) {
             setSaveError(e.message);
         } finally {
             setSaving(false);
         }
-    }, [modal, recepVals, notaVals, fetchPedidoItems]);
+    }, [modal, recepVals, notaVals, fetchPedidoItems, reloadCounts]);
 
     // ── Anular ────────────────────────────────────────────────────────────────
     const doAnular = useCallback(async () => {
@@ -340,13 +362,14 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 .eq('id', confirmAnul.id).single();
             if (data) setPedidos(prev => prev.map(p => p.id === confirmAnul.id ? data : p));
             setConfirmAnul(null);
+            reloadCounts();
         } catch (e) {
             setAnulError(e.message);
             setConfirmAnul(null);
         } finally {
             setAnulando(null);
         }
-    }, [confirmAnul]);
+    }, [confirmAnul, reloadCounts]);
 
     // ── Todo recibido exacto ──────────────────────────────────────────────────
     const handleTodoRecibido = useCallback(() => {
@@ -362,6 +385,9 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         if (!confirmDelSnap) return;
         setDeletingSnap(true);
         await supabase.from('pedidos_snapshots').delete().eq('id', confirmDelSnap.id);
+        useStaff.getState().appendAuditLog('ELIMINAR_BORRADOR_PEDIDO', confirmDelSnap.id, {
+            nombre: confirmDelSnap.nombre,
+        });
         setConfirmDelSnap(null);
         setDeletingSnap(false);
         loadSnapshots();
@@ -394,12 +420,12 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         <div className="space-y-3 p-4">
 
             {/* ── Stats bar ──────────────────────────────────────────────── */}
-            {pedidos.length > 0 && (
+            {(pedidos.length > 0 || totalCounts) && (
                 <div className="flex flex-wrap gap-2">
-                    <StatCard label="Pendientes"  value={counts.confirmado ?? 0} color="blue"    />
-                    <StatCard label="Diferencias" value={counts.parcial    ?? 0} color="amber"   />
-                    <StatCard label="Completados" value={counts.completado ?? 0} color="emerald" />
-                    <StatCard label="Anulados"    value={counts.anulado    ?? 0} color="red"     />
+                    <StatCard label="Pendientes"  value={(totalCounts ?? counts).confirmado ?? 0} color="blue"    />
+                    <StatCard label="Diferencias" value={(totalCounts ?? counts).parcial    ?? 0} color="amber"   />
+                    <StatCard label="Completados" value={(totalCounts ?? counts).completado ?? 0} color="emerald" />
+                    <StatCard label="Anulados"    value={(totalCounts ?? counts).anulado    ?? 0} color="red"     />
                 </div>
             )}
 

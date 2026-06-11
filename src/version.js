@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.53';
+export const APP_VERSION = '2.2.54';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.54 — Pedidos FASE 6 UX: input recepción con max=cantidad_asignada (no excede asignado); guardar borrador preserva ajustes manuales (direct insert vs RPC que recalcula desde DB); aviso beforeunload al salir con ajustes sin guardar; lotes por fila en historial; conteos filter pill desde totalCounts; sin_stock en impresión con badge naranja
 // v2.2.53 — Pedidos FASE 5: reporte de diferencias — RPC get_pedido_diferencias_stats (por sucursal/producto/detalle con fecha); tab Diferencias en PedidosView con stat cards, barras de diferencia y vista detalle con búsqueda
 // v2.2.52 — Pedidos FASE 4: tab Recepción para empleados de sucursal — pedidos 'enviado' filtrados por sucursal del empleado; modal de recepción con cantidad por ítem + nota diferencia; notificación a bodega si hay diferencias; permiso pedidos_tab_recepcion en PermissionsView
 // v2.2.51 — Pedidos FASE 1.1: corrección conversión de unidades en get_pedido_preview/stats/sin_bodega — inv_dedup normaliza inventory.cantidad a unidades reales (cantidad×factor_detalle); dedup defensivo incluye presentacion+detalle; ZAMEN 1.30pk, NEUROBION 6.00pk (sale de necesidad), DOLO NEUROTROPAS 2.56pk

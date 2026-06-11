@@ -538,7 +538,9 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
             {/* ── Filter pills ──────────────────────────────────────────── */}
             <div className="flex items-center gap-1.5 flex-wrap">
                 {FILTER_TABS.map(ft => {
-                    const cnt   = ft.key === 'todos' ? pedidos.length : (counts[ft.key] ?? 0);
+                    const cnt   = ft.key === 'todos'
+                        ? ((totalCounts ? Object.values(totalCounts).reduce((s, v) => s + v, 0) : null) ?? pedidos.length)
+                        : ((totalCounts ?? counts)[ft.key] ?? 0);
                     const isAct = filterTab === ft.key;
                     return (
                         <button
@@ -792,7 +794,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                                     const diff = row.cantidad_recibida !== null
                                                                                         ? row.cantidad_recibida - row.cantidad_asignada
                                                                                         : null;
-                                                                                    const rowLotes = pedLotes[row.erp_product_id] ?? [];
+                                                                                    const rowLotes = row.lotes_asignados ?? pedLotes[row.erp_product_id] ?? [];
                                                                                     return (
                                                                                         <tr key={row.id} className={`border-t border-[#0052CC]/[0.06] transition-colors ${
                                                                                             row.status === 'con_diferencia' ? 'bg-amber-50/40 hover:bg-amber-50/70' : 'hover:bg-[#0052CC]/[0.025]'
@@ -1020,8 +1022,11 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                     </span>
                                                 )}
                                                 <input
-                                                    type="number" min={0} value={recibida}
-                                                    onChange={e => setRecepVals(prev => ({ ...prev, [row.id]: parseInt(e.target.value) || 0 }))}
+                                                    type="number" min={0} max={row.cantidad_asignada} value={recibida}
+                                                    onChange={e => {
+                                                        const v = Math.min(row.cantidad_asignada, Math.max(0, parseInt(e.target.value) || 0));
+                                                        setRecepVals(prev => ({ ...prev, [row.id]: v }));
+                                                    }}
                                                     className={`w-16 text-center border rounded-lg px-1 py-1 text-[13px] font-semibold focus:outline-none tabular-nums ${
                                                         hasDiff ? 'border-amber-400 bg-amber-50 focus:border-amber-500' : 'border-slate-200 focus:border-blue-400'
                                                     }`}

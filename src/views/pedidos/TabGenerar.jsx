@@ -232,6 +232,13 @@ export default function TabGenerar({ searchTerm = '' }) {
         }).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
     }, []);
 
+    useEffect(() => {
+        if (Object.keys(adjustments).length === 0) return;
+        const handler = (e) => { e.preventDefault(); e.returnValue = ''; };
+        window.addEventListener('beforeunload', handler);
+        return () => window.removeEventListener('beforeunload', handler);
+    }, [adjustments]);
+
     // ── Sucursal toggle ────────────────────────────────────────
     const toggleSuc = useCallback((id) => {
         setSelected(prev => {
@@ -293,14 +300,27 @@ export default function TabGenerar({ searchTerm = '' }) {
 
     // ── Guardar borrador ───────────────────────────────────────
     const handleGuardarBorrador = useCallback(async () => {
+        if (!preview || preview.length === 0) return;
         const nombre = `Borrador ${new Date().toLocaleDateString('es-SV')} — ${[...selected].map(id => ERP_NAMES[id]).join(', ')}`;
         setSavingSnap(true);
         try {
-            await supabase.rpc('save_pedido_snapshot', { p_sucursal_ids: [...selected], p_nombre: nombre });
+            const datos = preview.map(row => ({ ...row, cantidad_asignada: getAdjusted(row) }));
+            const totalFilas = datos.filter(r => !r.sin_stock).length;
+            const totalPacks = datos.filter(r => !r.sin_stock && !r.revision_minmax)
+                .reduce((s, r) => s + r.cantidad_asignada, 0);
+            const { error } = await supabase.from('pedidos_snapshots').insert({
+                nombre,
+                sucursal_ids: [...selected],
+                created_by:   user?.id ?? null,
+                total_filas:  totalFilas,
+                total_packs:  totalPacks,
+                datos,
+            });
+            if (error) throw error;
         } finally {
             setSavingSnap(false);
         }
-    }, [selected]);
+    }, [preview, selected, getAdjusted, user]);
 
     // ── Grouped preview ────────────────────────────────────────
     const grouped = useMemo(() => {

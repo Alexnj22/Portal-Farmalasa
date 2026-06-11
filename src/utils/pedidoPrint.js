@@ -70,15 +70,19 @@ function rowsToHtml(rows) {
         return '<tr><td colspan="4" style="text-align:center;color:#94a3b8;font-size:11px;padding:10px 8px;">Sin productos enviados</td></tr>';
     }
     return rows.map((r, i) => {
-        const bg = i % 2 === 1 ? 'background:#f8fafc;' : '';
+        const sinStock = r.sin_stock || r.qty === 0;
+        const bg = sinStock ? 'background:#fff7ed;opacity:0.7;' : (i % 2 === 1 ? 'background:#f8fafc;' : '');
         const abBadge = r.es_antibiotico
             ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:#ede9fe;border:1px solid #c4b5fd;font-size:8px;font-weight:700;color:#7c3aed;margin-left:3px;vertical-align:middle;">AB</span>`
             : '';
+        const ssBadge = sinStock
+            ? `<span style="margin-left:4px;font-size:8px;color:#f97316;background:#fff7ed;border:1px solid #fed7aa;padding:0 4px;border-radius:4px;">sin stock</span>`
+            : '';
         return `<tr style="${bg}">
-            <td style="padding:4px 8px;font-size:11px;color:#1e293b;border-right:1px solid #f1f5f9;">${esc(r.product_name)}${abBadge}</td>
+            <td style="padding:4px 8px;font-size:11px;color:#1e293b;border-right:1px solid #f1f5f9;">${esc(r.product_name)}${abBadge}${ssBadge}</td>
             <td style="padding:4px 8px;font-size:10px;color:#64748b;border-right:1px solid #f1f5f9;white-space:nowrap;">${esc(r.presentacion_tipo) || '—'}</td>
-            <td style="padding:4px 8px;font-size:10px;border-right:1px solid #f1f5f9;">${lotesHtml(r.lotes)}</td>
-            <td style="padding:4px 8px;font-size:13px;font-weight:700;color:#1e293b;text-align:center;">${r.qty}</td>
+            <td style="padding:4px 8px;font-size:10px;border-right:1px solid #f1f5f9;">${sinStock ? '' : lotesHtml(r.lotes)}</td>
+            <td style="padding:4px 8px;font-size:13px;font-weight:700;color:${sinStock ? '#f97316' : '#1e293b'};text-align:center;">${sinStock ? '—' : r.qty}</td>
         </tr>`;
     }).join('');
 }
@@ -242,12 +246,12 @@ export function printFromSnapshot(snapshot) {
 export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}) {
     const sections = sucGroups.map(([sucId, rows]) => {
         const printRows = rows
-            .filter(r => !r.sin_stock && !r.revision_minmax && r.cantidad_asignada > 0)
             .map(r => ({
                 product_name:     r.products?.nombre ?? '?',
                 presentacion_tipo: r.presentaciones?.tipo ?? '',
                 es_antibiotico:   r.products?.es_antibiotico ?? false,
-                qty:              r.cantidad_asignada,
+                qty:              r.cantidad_asignada ?? 0,
+                sin_stock:        r.sin_stock ?? false,
                 lotes:            Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
             }));
         return {

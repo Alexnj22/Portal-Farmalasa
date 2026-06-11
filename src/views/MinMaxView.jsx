@@ -2,17 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart2 } from 'lucide-react';
 import GlassViewLayout    from '../components/GlassViewLayout';
 import ViewTabBar         from '../components/common/ViewTabBar';
-import TabMinMax             from './productos/TabMinMax';
-import TabMinMaxNetwork      from './productos/TabMinMaxNetwork';
-import TabMinMaxComparacion  from './productos/TabMinMaxComparacion';
-import TabMinMaxRequests     from './productos/TabMinMaxRequests';
+import TabMinMax          from './productos/TabMinMax';
+import TabMinMaxNetwork   from './productos/TabMinMaxNetwork';
+import TabMinMaxRequests  from './productos/TabMinMaxRequests';
 import { supabase }      from '../supabaseClient';
 import { useAuth }       from '../context/AuthContext';
 
 const BASE_TABS = [
-    { key: 'sucursal',    label: 'Sucursal'    },
-    { key: 'red',         label: 'Red'         },
-    { key: 'comparacion', label: 'vs ERP'      },
+    { key: 'sucursal', label: 'Sucursal' },
+    { key: 'red',      label: 'Red'      },
 ];
 
 const DEFAULT_CONFIG = {
@@ -66,9 +64,8 @@ export default function MinMaxView() {
             searchValue={rawSearch}
             onSearchChange={setRawSearch}
             placeholder={
-            activeTab === 'red'         ? 'Buscar en vista red…'        :
-            activeTab === 'comparacion' ? 'Buscar en comparación ERP…'  :
-            activeTab === 'solicitudes' ? 'Buscar solicitud…'           :
+            activeTab === 'red'         ? 'Buscar en vista red…'  :
+            activeTab === 'solicitudes' ? 'Buscar solicitud…'     :
                                          'Buscar producto en Min/Max…'
         }
         />
@@ -85,9 +82,6 @@ export default function MinMaxView() {
             )}
             {configLoaded && activeTab === 'red' && (
                 <TabMinMaxNetwork searchTerm={debouncedSearch} />
-            )}
-            {activeTab === 'comparacion' && (
-                <TabMinMaxComparacion searchTerm={debouncedSearch} />
             )}
             {canApprove && activeTab === 'solicitudes' && (
                 <TabMinMaxRequests searchTerm={debouncedSearch} />

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.33';
+export const APP_VERSION = '2.2.34';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.34 — Pedidos FASE 2: receive_pedido_sucursal guard (anulado/completado + solo items pendientes); anular_pedido registra anulado_por/at/motivo; confirm_pedido valida array no vacío/qty>=0/sucursal válida; RLS pedidos+pedido_items+dispatch_rules
 // v2.2.33 — Pedidos FASE 1: inv_dedup DISTINCT ON (5585 grupos duplicados ERP corregidos); pending_committed descuenta bodega de pedidos activos; get_pedido_preview/stats/sin_bodega/count actualizados
 // v2.2.32 — notify-new-products-daily: edge fn + cron lun-sáb 8am; RPC get_logistics_chief_ids con fallback a Administrador si vacaciones/incapacidad
 // v2.2.31 — sync-erp-purchases: cron diario → cada 10 min (ayer+hoy); items upsert para todas las recepciones (no solo nuevas); productos ignoreDuplicates:false

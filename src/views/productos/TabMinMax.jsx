@@ -147,10 +147,12 @@ const validateEditForRow = (edit, row) => {
         other = Number(hasDraftRow ? (row.draft_max ?? 0) : (row.effective_max ?? 0));
     }
     if (edit.field === 'max') {
+        if (numVal === 0 && other > 0)     return 'MAX no puede ser 0 cuando MIN > 0';
         if (numVal > 0 && numVal <= other) return 'MAX debe ser mayor al MIN';
         if (other === 0 && numVal > 1)     return 'Con MIN=0 solo se permite MAX=0 o MAX=1';
     } else {
-        if (numVal > 0 && other > 0 && numVal >= other) return 'MIN debe ser menor al MAX';
+        if (numVal > 0 && other === 0)                   return 'Con MAX=0 el MIN también debe ser 0';
+        if (numVal > 0 && other > 0 && numVal >= other)  return 'MIN debe ser menor al MAX';
         if (numVal === 0 && other > 1)                   return 'Con MIN=0 el MAX no puede ser mayor a 1';
     }
     return null;
@@ -1511,7 +1513,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
                 supabase.from('stock_config').select('analysis_days').eq('id', 1).single(),
-                supabase.rpc('get_last_sale_dates',        { p_erp_sucursal_id: erpId }),
+                supabase.rpc('get_last_sale_dates',        { p_erp_sucursal_id: erpId }).range(0, 9999),
             ]);
             if (e2) throw e2;
             if (rid !== loadRef.current) return;

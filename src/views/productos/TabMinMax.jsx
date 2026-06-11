@@ -2956,7 +2956,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 </motion.button>
                                             )}
                                             {/* Restaurar a calculado */}
-                                            {canManage && (row.calc_min != null || ((dead || noHistory) && hasDraft)) && (
+                                            {canManage && (row.calc_min != null || hasDraft) && (
                                                 <motion.button
                                                     onClick={e => { e.stopPropagation(); resetToCalc(row); }}
                                                     title={row.calc_min != null ? `Restaurar a valores calculados (MIN ${row.calc_min} / MAX ${row.calc_max})` : 'Limpiar valores manuales — restaura a —'}

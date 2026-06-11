@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.41';
+export const APP_VERSION = '2.2.42';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.42 — MinMax fix: restaurar en productos sin calc_min nulifica effective_min/max en estado local y los mantiene en rama dead/noHistory (clickable) en vez de caer en rama read-only; alert_status se recalcula al instante al guardar MIN/MAX (saveDraftCell/saveDraftPair/resetToCalc) usando approaching_pct cargado de stock_config
 // v2.2.41 — MinMax fix: botón Restaurar aparece para cualquier producto con borrador activo (antes solo para productos con calc_min o dead/noHistory — noHistory nunca era true porque el SQL no retorna alert_status=no_data)
 // v2.2.40 — MinMax fix: flechas ↑↓ navegan producto a producto siempre (eliminado filtro hasDraft que saltaba filas sin borrador); valor vacío en flecha ya no cierra el editor, navega sin guardar
 // v2.2.39 — MinMax: saveDraftPair (1 sola llamada DB para par MIN+MAX); pendingMin visual en celda MIN mientras se edita MAX (borde punteado); resetToCalc limpia a null para productos sin historial (restaura a —); guardia de valor vacío en blur/Enter/Tab (no guarda 0 al tocar — sin escribir); celdas dead/noHistory muestran — en vez de 0

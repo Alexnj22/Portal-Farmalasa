@@ -1453,7 +1453,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [publishConfirm, setPublishConfirm] = useState({ open: false, ids: null, count: 0 });
     const [discardConfirm, setDiscardConfirm] = useState(false);
     const [discardingAll,  setDiscardingAll]  = useState(false);
-    const [analysisConfig, setAnalysisConfig] = useState({ analysis_days: 180 });
+    const [analysisConfig, setAnalysisConfig] = useState({ analysis_days: 180, approaching_pct: 20 });
+    const analysisConfigRef = useRef({ analysis_days: 180, approaching_pct: 20 });
+    useEffect(() => { analysisConfigRef.current = analysisConfig; }, [analysisConfig]);
 
     // Cleanup publish timer on unmount
     useEffect(() => () => clearTimeout(publishTimer.current), []);
@@ -1512,7 +1514,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             const [{ data: cost, error: e2 }, { data: draft }, { data: cfg }] = await Promise.all([
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
-                supabase.from('stock_config').select('analysis_days').eq('id', 1).single(),
+                supabase.from('stock_config').select('analysis_days,approaching_pct').eq('id', 1).single(),
             ]);
             if (e2) throw e2;
             if (rid !== loadRef.current) return;
@@ -1583,6 +1585,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const hasPublishedData = useMemo(() => data.some(r => r.published_by != null), [data]);
 
+    const calcAlertStatus = (stock, effMin, effMax) => {
+        const s  = Number(stock ?? 0);
+        const mn = Number(effMin ?? 0);
+        const mx = Number(effMax ?? 0);
+        if (s === 0) return 'out_of_stock';
+        if (mn > 0 && s < mn) return 'below_min';
+        const mult = 1 + (analysisConfigRef.current.approaching_pct ?? 20) / 100;
+        if (mn > 0 && s < mn * mult) return 'approaching';
+        if (mx > 0 && s > mx) return 'overstocked';
+        return 'ok';
+    };
+
     const zeroOutRow = useCallback(async (row) => {
         if (hasPublishedData && row.draft_status !== 'pending') {
             const { error: e } = await supabase.from('product_stock_params')
@@ -1639,10 +1653,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error');
                 return;
             }
-            setData(prev => prev.map(r =>
-                r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId
-                    ? { ...r, [effCol]: numVal ?? 0 } : r
-            ));
+            setData(prev => prev.map(r => {
+                if (r.erp_product_id !== edit.productId || r._erp_sucursal_id !== edit.sucursalId) return r;
+                const newMin = edit.field === 'min' ? (numVal ?? 0) : (r.effective_min ?? 0);
+                const newMax = edit.field === 'max' ? (numVal ?? 0) : (r.effective_max ?? 0);
+                return { ...r, [effCol]: numVal ?? 0, alert_status: calcAlertStatus(r.current_stock, newMin, newMax) };
+            }));
             Promise.all([
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
@@ -1670,10 +1686,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error');
                 return;
             }
-            setData(prev => prev.map(r =>
-                r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId
-                    ? { ...r, [col]: numVal, draft_status: 'pending' } : r
-            ));
+            setData(prev => prev.map(r => {
+                if (r.erp_product_id !== edit.productId || r._erp_sucursal_id !== edit.sucursalId) return r;
+                const newMin = edit.field === 'min' ? (numVal ?? 0) : (r.draft_min ?? r.effective_min ?? 0);
+                const newMax = edit.field === 'max' ? (numVal ?? 0) : (r.draft_max ?? r.effective_max ?? 0);
+                return { ...r, [col]: numVal, draft_status: 'pending', alert_status: calcAlertStatus(r.current_stock, newMin, newMax) };
+            }));
             Promise.all([
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
@@ -1706,18 +1724,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             const { error: e } = await supabase.from('product_stock_params')
                 .upsert({ erp_product_id: productId, erp_sucursal_id: sucursalId, min_units: minNum, max_units: maxNum, updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
             if (e) { useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return; }
-            setData(prev => prev.map(r =>
-                r.erp_product_id === productId && r._erp_sucursal_id === sucursalId
-                    ? { ...r, effective_min: minNum ?? 0, effective_max: maxNum ?? 0 } : r
-            ));
+            setData(prev => prev.map(r => {
+                if (r.erp_product_id !== productId || r._erp_sucursal_id !== sucursalId) return r;
+                return { ...r, effective_min: minNum ?? 0, effective_max: maxNum ?? 0, alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
+            }));
         } else {
             const { error: e } = await supabase.from('product_stock_params')
                 .upsert({ erp_product_id: productId, erp_sucursal_id: sucursalId, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
             if (e) { useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return; }
-            setData(prev => prev.map(r =>
-                r.erp_product_id === productId && r._erp_sucursal_id === sucursalId
-                    ? { ...r, draft_min: minNum, draft_max: maxNum, draft_status: 'pending' } : r
-            ));
+            setData(prev => prev.map(r => {
+                if (r.erp_product_id !== productId || r._erp_sucursal_id !== sucursalId) return r;
+                return { ...r, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
+            }));
         }
         Promise.all([
             supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: sucursalId }),
@@ -1769,7 +1787,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${e.message}`, 'error'); return; }
             setData(prev => prev.map(r =>
                 r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
-                    ? { ...r, draft_min: null, draft_max: null, draft_status: 'none' } : r
+                    ? { ...r, draft_min: null, draft_max: null, draft_status: 'none', effective_min: null, effective_max: null, alert_status: calcAlertStatus(r.current_stock, null, null) } : r
             ));
             useToastStore.getState().showToast(row.product_name, 'Valores limpiados a —', 'success');
             useStaff.getState().appendAuditLog('MINMAX_RESET_CLEAR', String(row.erp_product_id), { sucursal_id: row._erp_sucursal_id });
@@ -1786,9 +1804,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         if (e) { useToastStore.getState().showToast(row.product_name, `Error al restaurar: ${e.message}`, 'error'); return; }
         setData(prev => prev.map(r => {
             if (r.erp_product_id !== row.erp_product_id || r._erp_sucursal_id !== row._erp_sucursal_id) return r;
+            const newAlert = calcAlertStatus(r.current_stock, cMin, cMax);
             return saveLive
-                ? { ...r, effective_min: cMin, effective_max: cMax }
-                : { ...r, draft_min: cMin, draft_max: cMax, draft_status: 'pending' };
+                ? { ...r, effective_min: cMin, effective_max: cMax, alert_status: newAlert }
+                : { ...r, draft_min: cMin, draft_max: cMax, draft_status: 'pending', alert_status: newAlert };
         }));
         useToastStore.getState().showToast(row.product_name, `Restaurado a MIN ${cMin} / MAX ${cMax} (calculado)`, 'success');
         useStaff.getState().appendAuditLog('MINMAX_RESET_CALC', String(row.erp_product_id), {
@@ -2698,7 +2717,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
                                                 </div>
                                             )
-                                        ) : (dead || noHistory) ? (
+                                        ) : (dead || noHistory || row.effective_min === null) ? (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/min"
                                                     onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: '' }); }}>
@@ -2846,7 +2865,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
                                                 </div>
                                             )
-                                        ) : (dead || noHistory) ? (
+                                        ) : (dead || noHistory || row.effective_max === null) ? (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/max"
                                                     onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: '' }); }}>

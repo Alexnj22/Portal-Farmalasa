@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.25';
+export const APP_VERSION = '2.2.26';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.26 — TabReglas: rediseño completo — cards info izq + pill filtros der; columnas ordenables (lab/producto); click en fila abre panel edición inline; panel redesignado con toggle Solo Cajas prominente + pill-selectors; solo_cajas=true por defecto; badge "Nuevo" + filtro+contador para productos añadidos en los últimos 30 días
 // v2.2.25 — Pedidos: distribución bodega en unidades de despacho (multiplo) desde el inicio; fase complemento redistribuye packs sobrantes a mayor necesidad insatisfecha; solo_cajas=true+CAJA preserva en Bodega; presentaciones UNIDAD/BLISTER siempre envían complemento para evitar stock muerto
 // v2.2.24 — Pedidos: urgencia_pct ≥min→100 (crítico); loadMore aplica filtros fecha; StatCards desde DB (totalCounts); audit log ELIMINAR_BORRADOR_PEDIDO; TabReglas filtros server-side + paginación siempre; TabGenerar notifica sucursales al confirmar; drop get_pedido_sin_bodega_count
 // v2.2.23 — MinMax: Ocultar/Ocultos integrados como chips al final de Row1 (sin fila separada); whileHover en pill glass + amber pill; Publicar con whileHover scale+y+shadow floating; dot de estado pulsa al activarse

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.31';
+export const APP_VERSION = '2.2.32';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.32 — notify-new-products-daily: edge fn + cron lun-sáb 8am; RPC get_logistics_chief_ids con fallback a Administrador si vacaciones/incapacidad
 // v2.2.31 — sync-erp-purchases: cron diario → cada 10 min (ayer+hoy); items upsert para todas las recepciones (no solo nuevas); productos ignoreDuplicates:false
 // v2.2.30 — MinMax: tab vs ERP eliminada; get_stock_analysis Branch 4 — productos sin presencia en sucursal (is_catalog_only=true); ocultos por defecto, visibles al buscar o filtrar "Sin historial"; chip Sin historial restaurado en STAT_CFGS
 // v2.2.29 — MinMax: tab vs ERP eliminada (TabMinMaxComparacion)

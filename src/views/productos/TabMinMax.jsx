@@ -131,14 +131,21 @@ const warnIfOutrageous = (field, numVal, row) => {
 };
 
 // Pure validation: receives the edit + the current row object directly (no closure lookup)
+// edit.pendingMin is set when the user Tab-ed from MIN → MAX within the same product;
+// it holds the just-typed (but async-saving) MIN value so the cross-check stays accurate.
 const validateEditForRow = (edit, row) => {
     if (!edit || !row) return null;
     const numVal = edit.value === '' ? null : parseInt(edit.value, 10);
     if (numVal === null || Number.isNaN(numVal)) return null;
     const hasDraftRow = row.draft_status === 'pending';
-    const other = Number(edit.field === 'max'
-        ? (hasDraftRow ? (row.draft_min ?? 0) : (row.effective_min ?? 0))
-        : (hasDraftRow ? (row.draft_max ?? 0) : (row.effective_max ?? 0)));
+    let other;
+    if (edit.field === 'max') {
+        other = edit.pendingMin !== undefined
+            ? (edit.pendingMin === '' ? 0 : (parseInt(edit.pendingMin, 10) || 0))
+            : Number(hasDraftRow ? (row.draft_min ?? 0) : (row.effective_min ?? 0));
+    } else {
+        other = Number(hasDraftRow ? (row.draft_max ?? 0) : (row.effective_max ?? 0));
+    }
     if (edit.field === 'max') {
         if (numVal > 0 && numVal <= other) return 'MAX debe ser mayor al MIN';
         if (other === 0 && numVal > 1)     return 'Con MIN=0 solo se permite MAX=0 o MAX=1';
@@ -508,6 +515,7 @@ function ExpandedPanel({ row, cycleDays }) {
     const [expiryData,      setExpiryData]      = useState([]);
     const [historyData,     setHistoryData]     = useState([]);
     const [purchaseData,    setPurchaseData]    = useState([]);
+    const [saleData,        setSaleData]        = useState([]);
     const [loadingBranches, setLoadingBranches] = useState(true);
     const [deadAction,      setDeadAction]      = useState(null);
 
@@ -533,11 +541,13 @@ function ExpandedPanel({ row, cycleDays }) {
                 .eq('erp_product_id', row.erp_product_id)
                 .order('fecha', { ascending: false })
                 .limit(6),
-        ]).then(([{ data: bData }, { data: eData }, { data: hData }, { data: pData }]) => {
+            supabase.rpc('get_product_last_sales', { p_erp_product_id: row.erp_product_id, p_erp_sucursal_id: row._erp_sucursal_id }),
+        ]).then(([{ data: bData }, { data: eData }, { data: hData }, { data: pData }, { data: sData }]) => {
             setBranchData(bData || []);
             setExpiryData(eData || []);
             setHistoryData(hData || []);
             setPurchaseData(pData || []);
+            setSaleData(sData || []);
         }).finally(() => setLoadingBranches(false));
     }, [row.erp_product_id, row._erp_sucursal_id]);
 
@@ -755,28 +765,56 @@ function ExpandedPanel({ row, cycleDays }) {
                 </div>
             )}
 
-            {/* ── Últimas compras (Bodega) ── */}
-            {purchaseData.length > 0 && (
-                <div className="px-4 py-2.5 border-t border-slate-100/80 bg-slate-50/30 flex flex-col gap-2">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
-                    <div className="flex flex-col gap-1">
-                        {purchaseData.map((p, i) => (
-                            <div key={i} className="flex items-center gap-2.5 text-[10px]">
-                                <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
-                                    {new Date(p.fecha).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
-                                </span>
-                                <span className="font-bold text-slate-700 tabular-nums w-12 shrink-0 text-right">
-                                    {Number(p.cantidad).toLocaleString()} und
-                                </span>
-                                <span className="text-slate-400 shrink-0">
-                                    ${Number(p.precio_unitario).toFixed(2)}
-                                </span>
-                                <span className="text-slate-500 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
-                                {p.lote && p.lote !== 'GENERICO' && (
-                                    <span className="shrink-0 text-[8px] font-mono text-slate-400 bg-slate-100 px-1 rounded">{p.lote}</span>
-                                )}
-                            </div>
-                        ))}
+            {/* ── Últimas compras / Últimas ventas ── */}
+            {(purchaseData.length > 0 || saleData.length > 0) && (
+                <div className="border-t border-slate-100/80 bg-slate-50/30">
+                    <div className="grid grid-cols-2 divide-x divide-slate-100">
+                        {/* Compras */}
+                        <div className="px-4 py-2.5 flex flex-col gap-2">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
+                            {purchaseData.length === 0
+                                ? <span className="text-[10px] text-slate-300 italic">Sin compras registradas</span>
+                                : <div className="flex flex-col gap-1">
+                                    {purchaseData.map((p, i) => (
+                                        <div key={i} className="flex items-center gap-2 text-[10px]">
+                                            <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                {new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                            </span>
+                                            <span className="font-bold text-slate-700 tabular-nums shrink-0">
+                                                {Number(p.cantidad).toLocaleString()} und
+                                            </span>
+                                            <span className="text-slate-400 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
+                                            <span className="text-slate-500 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
+                                            {p.lote && p.lote !== 'GENERICO' && (
+                                                <span className="shrink-0 text-[8px] font-mono text-slate-400 bg-slate-100 px-1 rounded">{p.lote}</span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            }
+                        </div>
+                        {/* Ventas */}
+                        <div className="px-4 py-2.5 flex flex-col gap-2">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Últimas ventas (sucursal)</span>
+                            {saleData.length === 0
+                                ? <span className="text-[10px] text-slate-300 italic">Sin ventas registradas</span>
+                                : <div className="flex flex-col gap-1">
+                                    {saleData.map((s, i) => (
+                                        <div key={i} className="flex items-center gap-2 text-[10px]">
+                                            <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                {new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                            </span>
+                                            <span className="font-bold text-emerald-700 tabular-nums shrink-0">
+                                                {Number(s.cantidad).toLocaleString()} und
+                                            </span>
+                                            {s.total_linea > 0 && (
+                                                <span className="text-slate-400 shrink-0">${Number(s.total_linea).toFixed(2)}</span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            }
+                        </div>
                     </div>
                 </div>
             )}
@@ -1469,14 +1507,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 keepFetching = chunk && chunk.length === CHUNK;
                 from += CHUNK;
             }
-            const [{ data: cost, error: e2 }, { data: draft }, { data: cfg }] = await Promise.all([
+            const [{ data: cost, error: e2 }, { data: draft }, { data: cfg }, { data: saleDates }] = await Promise.all([
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
                 supabase.from('stock_config').select('analysis_days').eq('id', 1).single(),
+                supabase.rpc('get_last_sale_dates',        { p_erp_sucursal_id: erpId }),
             ]);
             if (e2) throw e2;
             if (rid !== loadRef.current) return;
-            const mapped = allRows.map(r => ({ ...r, _erp_sucursal_id: erpId }));
+            const saleDateMap = Object.fromEntries((saleDates || []).map(s => [s.erp_product_id, s.last_sale_date]));
+            const mapped = allRows.map(r => ({ ...r, _erp_sucursal_id: erpId, last_sale_date: saleDateMap[r.erp_product_id] ?? null }));
             setData(mapped);
             setHiddenIds(new Set(mapped.filter(r => r.is_hidden).map(r => r.erp_product_id)));
             setCostSummary(cost  || null);
@@ -2461,6 +2501,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={9} className="text-red-400 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
                                                         {Number(row.units_sold_6m) > 0 && <span className="ml-1 text-slate-500">·</span>}
                                                         {Number(row.units_sold_6m) > 0 && <span className="ml-1">{Number(row.units_sold_6m).toLocaleString()} vend.</span>}
+                                                        {row.last_sale_date && <span className="ml-1 text-slate-400">{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</span>}
                                                     </span>
                                                 )}
                                             </div>
@@ -2513,11 +2554,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
                                                         if (e.key === 'Tab' || e.key === 'ArrowRight') {
                                                             e.preventDefault();
-                                                            const err = validateEditForRow(inlineDraftEdit, row);
-                                                            if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
-                                                            setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(hasDraft ? (row.draft_max ?? '') : (row.effective_max ?? '')) });
+                                                            setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(hasDraft ? (row.draft_max ?? '') : (row.effective_max ?? '')), pendingMin: inlineDraftEdit.value });
                                                             return;
                                                         }
                                                         if (e.key === 'Enter' || e.key === 'ArrowDown') {
@@ -2622,8 +2661,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
                                                         if (e.key === 'ArrowLeft') {
                                                             e.preventDefault();
-                                                            const err = validateEditForRow(inlineDraftEdit, row);
-                                                            if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             saveDraftCell(inlineDraftEdit);
                                                             setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(hasDraft ? (row.draft_min ?? '') : (row.effective_min ?? '')) });

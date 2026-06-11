@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.51';
+export const APP_VERSION = '2.2.52';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.52 — Pedidos FASE 4: tab Recepción para empleados de sucursal — pedidos 'enviado' filtrados por sucursal del empleado; modal de recepción con cantidad por ítem + nota diferencia; notificación a bodega si hay diferencias; permiso pedidos_tab_recepcion en PermissionsView
 // v2.2.51 — Pedidos FASE 1.1: corrección conversión de unidades en get_pedido_preview/stats/sin_bodega — inv_dedup normaliza inventory.cantidad a unidades reales (cantidad×factor_detalle); dedup defensivo incluye presentacion+detalle; ZAMEN 1.30pk, NEUROBION 6.00pk (sale de necesidad), DOLO NEUROTROPAS 2.56pk
 // v2.2.50 — Pedidos FASE 3: trazabilidad completa — responsable/revisor en confirm; estado 'enviado' + RPC marcar_pedido_enviado; notificación movida a despacho; motivo en anular; received_by en recepción; nombres en impresión
 // v2.2.49 — fix(MinMax): canExpand incluye is_catalog_only — productos Branch 4 ya se pueden desplegar para ver stock en red y compras

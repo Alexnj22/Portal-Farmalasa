@@ -93,9 +93,10 @@ const MODULE_GROUPS = [
             { key: 'compras', label: 'Compras', desc: 'Historial de facturas de compra de Bodega desde el ERP: facturas por fecha y proveedor, detalle de ítems y resumen por producto', icon: ShoppingCart, hasApprove: false },
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
             { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, historial y reglas de despacho por producto', icon: Package, hasApprove: false, tabs: [
-                { key: 'pedidos_tab_generar',   label: 'Generar'           },
-                { key: 'pedidos_tab_historial', label: 'Historial'         },
-                { key: 'pedidos_tab_reglas',    label: 'Reglas de despacho'},
+                { key: 'pedidos_tab_generar',   label: 'Generar'              },
+                { key: 'pedidos_tab_historial', label: 'Historial'            },
+                { key: 'pedidos_tab_reglas',    label: 'Reglas de despacho'   },
+                { key: 'pedidos_tab_recepcion', label: 'Recepción (Sucursal)' },
             ]},
         ],
     },

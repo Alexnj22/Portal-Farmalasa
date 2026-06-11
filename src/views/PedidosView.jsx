@@ -1,30 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ClipboardList, History, Settings2 } from 'lucide-react';
+import { ClipboardList, History, Settings2, PackageCheck } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import TabGenerar      from './pedidos/TabGenerar';
 import TabHistorial    from './pedidos/TabHistorial';
 import TabReglas       from './pedidos/TabReglas';
+import TabRecepcion    from './pedidos/TabRecepcion';
 import { useAuth }     from '../context/AuthContext';
 
 const TABS = [
-    { key: 'generar',   label: 'Generar',           icon: ClipboardList },
-    { key: 'historial', label: 'Historial',          icon: History       },
-    { key: 'reglas',    label: 'Reglas de despacho', icon: Settings2     },
+    { key: 'generar',    label: 'Generar',            icon: ClipboardList },
+    { key: 'historial',  label: 'Historial',           icon: History       },
+    { key: 'reglas',     label: 'Reglas de despacho',  icon: Settings2     },
+    { key: 'recepcion',  label: 'Recepción',           icon: PackageCheck  },
 ];
 
 const SEARCH_PLACEHOLDER = {
     generar:   'Buscar producto en el pedido…',
     historial: 'Buscar pedido…',
     reglas:    'Buscar producto en reglas…',
+    recepcion: 'Buscar pedido…',
 };
 
 export default function PedidosView() {
     const { hasPermission } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const VALID       = new Set(['generar', 'historial', 'reglas']);
+    const VALID       = new Set(['generar', 'historial', 'reglas', 'recepcion']);
     const allowedTabs = TABS.filter(t => hasPermission(`pedidos_tab_${t.key}`));
     const defaultTab  = allowedTabs[0]?.key ?? 'generar';
     const rawTab      = searchParams.get('tab');
@@ -63,9 +66,10 @@ export default function PedidosView() {
 
     return (
         <GlassViewLayout icon={ClipboardList} title="Pedidos a Sucursales" filtersContent={filtersContent}>
-            <div className={activeTab === 'generar'   ? '' : 'hidden'}><TabGenerar   searchTerm={debouncedSearch} /></div>
-            <div className={activeTab === 'historial' ? '' : 'hidden'}><TabHistorial searchTerm={debouncedSearch} refreshKey={historialKey} /></div>
-            <div className={activeTab === 'reglas'    ? '' : 'hidden'}><TabReglas    searchTerm={debouncedSearch} /></div>
+            <div className={activeTab === 'generar'   ? '' : 'hidden'}><TabGenerar    searchTerm={debouncedSearch} /></div>
+            <div className={activeTab === 'historial' ? '' : 'hidden'}><TabHistorial  searchTerm={debouncedSearch} refreshKey={historialKey} /></div>
+            <div className={activeTab === 'reglas'    ? '' : 'hidden'}><TabReglas     searchTerm={debouncedSearch} /></div>
+            <div className={activeTab === 'recepcion' ? '' : 'hidden'}><TabRecepcion  searchTerm={debouncedSearch} refreshKey={historialKey} /></div>
         </GlassViewLayout>
     );
 }

@@ -170,6 +170,7 @@ AS $function$
     LEFT JOIN laboratorios lab ON lab.id = p.laboratorio_id
     LEFT JOIN inv_summary inv ON inv.erp_product_id = pr.erp_product_id
     WHERE (lab.ocultar_en_minmax IS NOT TRUE)
+      AND p.activo = true
       AND pr.daily_velocity IS NOT NULL
 
     UNION ALL
@@ -216,6 +217,7 @@ AS $function$
       WHERE psp2.erp_product_id = inv2.erp_product_id
         AND psp2.erp_sucursal_id = p_erp_sucursal_id
     )
+      AND p2.activo = true
       AND (lab2.ocultar_en_minmax IS NOT TRUE)
 
     UNION ALL
@@ -250,6 +252,7 @@ AS $function$
     LEFT JOIN laboratorios lab3 ON lab3.id = p3.laboratorio_id
     LEFT JOIN inv_summary inv3b ON inv3b.erp_product_id = psp3.erp_product_id
     WHERE psp3.erp_sucursal_id = p_erp_sucursal_id
+      AND p3.activo = true
       AND psp3.daily_velocity IS NULL
       AND psp3.draft_velocity IS NULL
       AND (lab3.ocultar_en_minmax IS NOT TRUE)
@@ -281,7 +284,8 @@ AS $function$
       true::boolean                                     AS is_catalog_only
     FROM products p4
     LEFT JOIN laboratorios lab4 ON lab4.id = p4.laboratorio_id
-    WHERE (lab4.ocultar_en_minmax IS NOT TRUE)
+    WHERE p4.activo = true
+      AND (lab4.ocultar_en_minmax IS NOT TRUE)
       AND NOT EXISTS (
         SELECT 1 FROM product_stock_params psp4
         WHERE psp4.erp_product_id = p4.id

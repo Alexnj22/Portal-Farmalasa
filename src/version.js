@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.43';
+export const APP_VERSION = '2.2.44';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.44 — MinMax fix: celdas MIN/MAX siempre editables para canManage (eliminado gate hasPublishedData en último branch — sucursales no publicadas como La Popular quedaban todas en read-only)
 // v2.2.43 — MinMax fix: canExpand incluye last_sale_date != null (antes solo stock > 0 — productos sin inventario pero con historial de ventas no se podían desplegar)
 // v2.2.42 — MinMax fix: restaurar en productos sin calc_min nulifica effective_min/max en estado local y los mantiene en rama dead/noHistory (clickable) en vez de caer en rama read-only; alert_status se recalcula al instante al guardar MIN/MAX (saveDraftCell/saveDraftPair/resetToCalc) usando approaching_pct cargado de stock_config
 // v2.2.41 — MinMax fix: botón Restaurar aparece para cualquier producto con borrador activo (antes solo para productos con calc_min o dead/noHistory — noHistory nunca era true porque el SQL no retorna alert_status=no_data)

@@ -2731,7 +2731,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 </div>
                                             )
                                         ) : (
-                                            hasPublishedData && canManage ? (
+                                            canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/min"
                                                     onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.effective_min ?? '') }); }}>
                                                     <div className={`px-2.5 py-1 rounded-lg border group-hover/min:border-emerald-400 group-hover/min:bg-emerald-50 transition-[border-color,background-color] duration-150 ${stock < minN ? 'border-orange-200' : 'border-slate-200'}`}>
@@ -2879,7 +2879,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 </div>
                                             )
                                         ) : (
-                                            hasPublishedData && canManage ? (
+                                            canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/max"
                                                     onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.effective_max ?? '') }); }}>
                                                     <div className={`px-2.5 py-1 rounded-lg border group-hover/max:border-emerald-400 group-hover/max:bg-emerald-50 transition-[border-color,background-color] duration-150 ${stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200'}`}>

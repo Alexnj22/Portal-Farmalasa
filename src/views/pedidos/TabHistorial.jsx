@@ -4,9 +4,10 @@ import {
     Loader2, ChevronRight, ChevronDown, CheckCircle2,
     X, Package, Building2, AlertTriangle, Ban, ArrowDown,
     Clock, CheckCheck, TrendingDown, FlaskConical, Printer,
-    BookMarked, Trash2, CalendarDays,
+    BookMarked, Trash2, CalendarDays, Send,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { printFromPedidoItems, printFromSnapshot } from '../../utils/pedidoPrint';
 
@@ -20,6 +21,7 @@ const GLASS     = 'rounded-2xl border border-slate-200/60 bg-white/60 backdrop-b
 
 const STATUS_PILL = {
     confirmado:     'bg-blue-100 text-blue-700 border-blue-200',
+    enviado:        'bg-indigo-100 text-indigo-700 border-indigo-200',
     parcial:        'bg-amber-100 text-amber-700 border-amber-200',
     completado:     'bg-emerald-100 text-emerald-700 border-emerald-200',
     anulado:        'bg-red-100 text-red-600 border-red-200',
@@ -29,7 +31,8 @@ const STATUS_PILL = {
 };
 
 const STATUS_LABEL = {
-    confirmado:     'Pendiente recepción',
+    confirmado:     'Por despachar',
+    enviado:        'En camino',
     parcial:        'Con diferencias',
     completado:     'Completado',
     anulado:        'Anulado',
@@ -39,11 +42,12 @@ const STATUS_LABEL = {
 };
 
 const FILTER_TABS = [
-    { key: 'todos',      label: 'Todos',               icon: null         },
-    { key: 'confirmado', label: 'Pendiente recepción',  icon: Clock        },
-    { key: 'parcial',    label: 'Con diferencias',      icon: TrendingDown },
-    { key: 'completado', label: 'Completados',          icon: CheckCheck   },
-    { key: 'anulado',    label: 'Anulados',             icon: Ban          },
+    { key: 'todos',      label: 'Todos',            icon: null         },
+    { key: 'confirmado', label: 'Por despachar',    icon: Clock        },
+    { key: 'enviado',    label: 'En camino',        icon: Send         },
+    { key: 'parcial',    label: 'Con diferencias',  icon: TrendingDown },
+    { key: 'completado', label: 'Completados',      icon: CheckCheck   },
+    { key: 'anulado',    label: 'Anulados',         icon: Ban          },
 ];
 
 function fmtDate(iso) {
@@ -63,6 +67,7 @@ function fmtMes(iso) {
 function StatCard({ label, value, color }) {
     const cls = {
         blue:    'bg-blue-50    border-blue-100   text-blue-700',
+        indigo:  'bg-indigo-50  border-indigo-100 text-indigo-700',
         amber:   'bg-amber-50   border-amber-100  text-amber-700',
         emerald: 'bg-emerald-50 border-emerald-100 text-emerald-700',
         red:     'bg-red-50     border-red-100    text-red-600',
@@ -101,6 +106,8 @@ function LotePills({ lotes }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
+    const { user } = useAuth();
+
     const [pedidos,          setPedidos]          = useState([]);
     const [loading,          setLoading]          = useState(true);
     const [loadingMore,      setLoadingMore]      = useState(false);
@@ -120,7 +127,9 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     const [saveError,        setSaveError]        = useState(null);
     const [anulando,         setAnulando]         = useState(null);
     const [confirmAnul,      setConfirmAnul]      = useState(null);
+    const [anulMotivo,       setAnulMotivo]       = useState('');
     const [anulError,        setAnulError]        = useState(null);
+    const [enviando,         setEnviando]         = useState(null);
     const [filterDesde,      setFilterDesde]      = useState('');
     const [filterHasta,      setFilterHasta]      = useState('');
     const [snapshots,        setSnapshots]        = useState([]);
@@ -166,7 +175,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         setPedidoSucursales({});
         let q = supabase
             .from('pedidos')
-            .select('id, numero, created_at, status, notes')
+            .select('id, numero, created_at, status, notes, responsable_id, revisado_por, anulado_por, motivo_anulacion')
             .order('created_at', { ascending: false });
         if (desde) q = q.gte('created_at', desde);
         if (hasta) q = q.lte('created_at', hasta + 'T23:59:59');
@@ -186,7 +195,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         const from = nextPage * PAGE_SIZE;
         let q = supabase
             .from('pedidos')
-            .select('id, numero, created_at, status, notes')
+            .select('id, numero, created_at, status, notes, responsable_id, revisado_por, anulado_por, motivo_anulacion')
             .order('created_at', { ascending: false });
         if (filterDesde) q = q.gte('created_at', filterDesde);
         if (filterHasta) q = q.lte('created_at', filterHasta + 'T23:59:59');
@@ -227,7 +236,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
 
     // ── Accurate DB-level counts (not limited to loaded page) ─────────────────
     const reloadCounts = useCallback(async () => {
-        const statuses = ['confirmado', 'parcial', 'completado', 'anulado'];
+        const statuses = ['confirmado', 'enviado', 'parcial', 'completado', 'anulado'];
         const results = await Promise.all(statuses.map(async (status) => {
             let q = supabase.from('pedidos')
                 .select('id', { count: 'exact', head: true })
@@ -328,7 +337,10 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         }));
         try {
             const { error } = await supabase.rpc('receive_pedido_sucursal', {
-                p_pedido_id: pedidoId, p_sucursal_id: sucursalId, p_items,
+                p_pedido_id:   pedidoId,
+                p_sucursal_id: sucursalId,
+                p_items,
+                p_received_by: user?.id ?? null,
             });
             if (error) throw error;
             useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedidoId, {
@@ -337,7 +349,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
             setModal(null);
             await fetchPedidoItems(pedidoId);
             const { data } = await supabase
-                .from('pedidos').select('id, numero, created_at, status, notes')
+                .from('pedidos').select('id, numero, created_at, status, notes, responsable_id, revisado_por, anulado_por, motivo_anulacion')
                 .eq('id', pedidoId).single();
             if (data) setPedidos(prev => prev.map(p => p.id === pedidoId ? data : p));
             reloadCounts();
@@ -353,23 +365,30 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         if (!confirmAnul) return;
         setAnulando(confirmAnul.id); setAnulError(null);
         try {
-            const { error } = await supabase.rpc('anular_pedido', { p_pedido_id: confirmAnul.id });
+            const { error } = await supabase.rpc('anular_pedido', {
+                p_pedido_id:   confirmAnul.id,
+                p_anulado_por: user?.id ?? null,
+                p_motivo:      anulMotivo.trim() || null,
+            });
             if (error) throw error;
-            useStaff.getState().appendAuditLog('ANULAR_PEDIDO', confirmAnul.id, { numero: confirmAnul.numero });
+            useStaff.getState().appendAuditLog('ANULAR_PEDIDO', confirmAnul.id, {
+                numero: confirmAnul.numero,
+                motivo: anulMotivo.trim() || null,
+            });
             setItems(prev => { const n = { ...prev }; delete n[confirmAnul.id]; return n; });
             const { data } = await supabase
-                .from('pedidos').select('id, numero, created_at, status, notes')
+                .from('pedidos').select('id, numero, created_at, status, notes, responsable_id, revisado_por, anulado_por, motivo_anulacion')
                 .eq('id', confirmAnul.id).single();
             if (data) setPedidos(prev => prev.map(p => p.id === confirmAnul.id ? data : p));
             setConfirmAnul(null);
+            setAnulMotivo('');
             reloadCounts();
         } catch (e) {
             setAnulError(e.message);
-            setConfirmAnul(null);
         } finally {
             setAnulando(null);
         }
-    }, [confirmAnul, reloadCounts]);
+    }, [confirmAnul, anulMotivo, user, reloadCounts]);
 
     // ── Todo recibido exacto ──────────────────────────────────────────────────
     const handleTodoRecibido = useCallback(() => {
@@ -392,6 +411,72 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         setDeletingSnap(false);
         loadSnapshots();
     }, [confirmDelSnap, loadSnapshots]);
+
+    // ── Marcar como enviado ───────────────────────────────────────────────────
+    const handleMarcarEnviado = useCallback(async (pedido) => {
+        setEnviando(pedido.id);
+        try {
+            const { error } = await supabase.rpc('marcar_pedido_enviado', {
+                p_pedido_id:   pedido.id,
+                p_enviado_por: user?.id ?? null,
+            });
+            if (error) throw error;
+            useStaff.getState().appendAuditLog('MARCAR_PEDIDO_ENVIADO', pedido.id, { numero: pedido.numero });
+
+            // Notificar sucursales afectadas
+            try {
+                const sucIds = pedidoSucursales[pedido.id] ?? [];
+                if (sucIds.length > 0) {
+                    const { data: branchRows } = await supabase
+                        .from('erp_sucursal_map')
+                        .select('branch_id')
+                        .in('erp_sucursal_id', sucIds)
+                        .eq('es_bodega', false);
+                    const branchIds = (branchRows || []).map(r => r.branch_id).filter(Boolean);
+                    if (branchIds.length > 0) {
+                        const title = `Pedido #${pedido.numero} en camino`;
+                        const msg   = `El pedido #${pedido.numero} fue despachado desde Bodega Central. Revisá los productos cuando lleguen a tu sucursal.`;
+                        await supabase.from('announcements').insert({
+                            title, message: msg,
+                            target_type: 'BRANCH', target_value: branchIds,
+                            read_by: [], is_archived: false, created_by: user?.id ?? null,
+                            priority: 'NORMAL',
+                            metadata: { pedido_id: pedido.id, numero: pedido.numero },
+                        });
+                        supabase.functions.invoke('send-push-notification', {
+                            body: { title, message: msg, url: '/pedidos', target_type: 'BRANCH', target_value: branchIds },
+                        }).catch(() => {});
+                    }
+                }
+            } catch { /* no-fatal */ }
+
+            const { data } = await supabase
+                .from('pedidos').select('id, numero, created_at, status, notes, responsable_id, revisado_por, anulado_por, motivo_anulacion')
+                .eq('id', pedido.id).single();
+            if (data) setPedidos(prev => prev.map(p => p.id === pedido.id ? data : p));
+            reloadCounts();
+        } catch (e) {
+            // Muestra el error en anulError (mismo banner) para no agregar más estado
+            setAnulError(`Error al marcar enviado: ${e.message}`);
+        } finally {
+            setEnviando(null);
+        }
+    }, [user, pedidoSucursales, reloadCounts]);
+
+    // ── Meta para impresión (nombres de empleados) ────────────────────────────
+    const loadPedidoMeta = useCallback(async (pedido) => {
+        const ids = [pedido.responsable_id, pedido.revisado_por].filter(Boolean);
+        if (!ids.length) return {};
+        const { data } = await supabase
+            .from('employees')
+            .select('id, nombre')
+            .in('id', ids);
+        const map = Object.fromEntries((data || []).map(e => [e.id, e.nombre]));
+        return {
+            responsable: map[pedido.responsable_id] ?? null,
+            revisor:     map[pedido.revisado_por]   ?? null,
+        };
+    }, []);
 
     // ── Filtered / counts ─────────────────────────────────────────────────────
     const filtered = pedidos
@@ -422,10 +507,11 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
             {/* ── Stats bar ──────────────────────────────────────────────── */}
             {(pedidos.length > 0 || totalCounts) && (
                 <div className="flex flex-wrap gap-2">
-                    <StatCard label="Pendientes"  value={(totalCounts ?? counts).confirmado ?? 0} color="blue"    />
-                    <StatCard label="Diferencias" value={(totalCounts ?? counts).parcial    ?? 0} color="amber"   />
-                    <StatCard label="Completados" value={(totalCounts ?? counts).completado ?? 0} color="emerald" />
-                    <StatCard label="Anulados"    value={(totalCounts ?? counts).anulado    ?? 0} color="red"     />
+                    <StatCard label="Por despachar" value={(totalCounts ?? counts).confirmado ?? 0} color="blue"    />
+                    <StatCard label="En camino"     value={(totalCounts ?? counts).enviado    ?? 0} color="indigo"  />
+                    <StatCard label="Diferencias"   value={(totalCounts ?? counts).parcial    ?? 0} color="amber"   />
+                    <StatCard label="Completados"   value={(totalCounts ?? counts).completado ?? 0} color="emerald" />
+                    <StatCard label="Anulados"      value={(totalCounts ?? counts).anulado    ?? 0} color="red"     />
                 </div>
             )}
 
@@ -497,7 +583,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
             {filtered.map(p => {
                 const isExp    = expanded === p.id;
                 const pedItems = items[p.id] || [];
-                const canAnul  = p.status === 'confirmado' || p.status === 'parcial';
+                const canAnul  = ['confirmado', 'enviado', 'parcial'].includes(p.status);
                 const sucIds   = pedidoSucursales[p.id] ?? [];
 
                 // Group items by sucursal
@@ -549,16 +635,30 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                 <span className="text-[12px] text-slate-400 whitespace-nowrap hidden sm:block">{fmtDate(p.created_at)}</span>
                                 {isExp && sucGroups.length > 0 && (
                                     <button
-                                        onClick={e => { e.stopPropagation(); printFromPedidoItems(p.numero, sucGroups); }}
+                                        onClick={async e => {
+                                            e.stopPropagation();
+                                            const meta = await loadPedidoMeta(p);
+                                            printFromPedidoItems(p.numero, sucGroups, meta);
+                                        }}
                                         className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
                                         title="Imprimir pedido completo"
                                     >
                                         <Printer size={11} /> Imprimir
                                     </button>
                                 )}
+                                {p.status === 'confirmado' && (
+                                    <button
+                                        onClick={() => handleMarcarEnviado(p)}
+                                        disabled={enviando === p.id}
+                                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-indigo-600 border border-indigo-200 hover:bg-indigo-50 transition-colors disabled:opacity-50"
+                                    >
+                                        {enviando === p.id ? <Loader2 size={11} className="animate-spin" /> : <Send size={11} />}
+                                        Marcar enviado
+                                    </button>
+                                )}
                                 {canAnul && (
                                     <button
-                                        onClick={() => setConfirmAnul({ id: p.id, numero: p.numero })}
+                                        onClick={() => { setConfirmAnul({ id: p.id, numero: p.numero }); setAnulMotivo(''); setAnulError(null); }}
                                         disabled={anulando === p.id}
                                         className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50"
                                     >
@@ -644,9 +744,10 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                             </button>
                                                         )}
                                                         <button
-                                                            onClick={e => {
+                                                            onClick={async e => {
                                                                 e.stopPropagation();
-                                                                printFromPedidoItems(p.numero, [[suc, rows]]);
+                                                                const meta = await loadPedidoMeta(p);
+                                                                printFromPedidoItems(p.numero, [[suc, rows]], meta);
                                                             }}
                                                             className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
                                                             title="Imprimir esta sucursal"
@@ -1018,18 +1119,52 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 )}
             </div>
 
-            {/* ── Confirm anular ──────────────────────────────────────────── */}
-            <ConfirmModal
-                isOpen={!!confirmAnul}
-                onClose={() => setConfirmAnul(null)}
-                onConfirm={doAnular}
-                title={`Anular Pedido #${confirmAnul?.numero}`}
-                message="Se cancelarán todos los ítems pendientes. Esta acción no se puede deshacer."
-                confirmText="Sí, anular pedido"
-                cancelText="Cancelar"
-                isDestructive
-                isProcessing={!!anulando}
-            />
+            {/* ── Modal anular con motivo ──────────────────────────────────── */}
+            {confirmAnul && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
+                    <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 space-y-4">
+                        <h3 className="font-bold text-slate-800 text-[16px]">
+                            Anular Pedido #{confirmAnul.numero}
+                        </h3>
+                        <p className="text-[13px] text-slate-500">
+                            Se cancelarán todos los ítems pendientes. Esta acción no se puede deshacer.
+                        </p>
+                        <div>
+                            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                                Motivo <span className="font-normal normal-case">(opcional)</span>
+                            </label>
+                            <textarea
+                                value={anulMotivo}
+                                onChange={e => setAnulMotivo(e.target.value)}
+                                placeholder="Describe el motivo de la anulación…"
+                                rows={3}
+                                className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-400 resize-none bg-white"
+                            />
+                        </div>
+                        {anulError && (
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-[12px]">
+                                <AlertTriangle size={13} /> {anulError}
+                            </div>
+                        )}
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={() => { setConfirmAnul(null); setAnulMotivo(''); setAnulError(null); }}
+                                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={doAnular}
+                                disabled={!!anulando}
+                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 text-[13px] transition-colors disabled:opacity-50"
+                            >
+                                {anulando ? <Loader2 size={13} className="animate-spin" /> : <Ban size={13} />}
+                                Sí, anular
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── Confirm borrar snapshot ─────────────────────────────────── */}
             <ConfirmModal

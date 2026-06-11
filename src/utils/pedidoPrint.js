@@ -83,7 +83,7 @@ function rowsToHtml(rows) {
     }).join('');
 }
 
-function buildSection(sec, fecha) {
+function buildSection(sec, fecha, meta = {}) {
     const totalPacks = sec.rows.reduce((t, r) => t + r.qty, 0);
     const footerParts = [];
     if (sec.sinCount > 0) footerParts.push(`Productos sin existencia en bodega: <b>${sec.sinCount}</b>`);
@@ -91,6 +91,13 @@ function buildSection(sec, fecha) {
     const footerRow = footerParts.length
         ? `<tr style="background:#fef9c3;"><td colspan="4" style="padding:5px 8px;font-size:10px;color:#92400e;border-top:1px solid #fde68a;">${footerParts.join(' &nbsp;·&nbsp; ')}</td></tr>`
         : '';
+
+    const sigCell = (nombre, label) => {
+        const nameHtml = nombre
+            ? `<div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:3px;">${esc(nombre)}</div>`
+            : '<div style="height:18px;"></div>';
+        return `<td style="border-top:1px solid #334155;padding-top:4px;text-align:center;font-size:10px;color:#475569;width:25%;">${nameHtml}${label}</td>`;
+    };
 
     return `
 <div style="page-break-after:always;margin-bottom:32px;">
@@ -121,16 +128,16 @@ function buildSection(sec, fecha) {
   </table>
   <table style="width:100%;border-collapse:collapse;margin-top:24px;">
     <tr>
-      <td style="border-top:1px solid #334155;padding-top:4px;text-align:center;font-size:10px;color:#475569;width:25%;">Responsable</td>
-      <td style="border-top:1px solid #334155;padding-top:4px;text-align:center;font-size:10px;color:#475569;width:25%;">Revisa</td>
-      <td style="border-top:1px solid #334155;padding-top:4px;text-align:center;font-size:10px;color:#475569;width:25%;">Autoriza</td>
+      ${sigCell(meta.responsable ?? null, 'Responsable')}
+      ${sigCell(meta.revisor    ?? null, 'Revisa')}
+      <td style="border-top:1px solid #334155;padding-top:4px;text-align:center;font-size:10px;color:#475569;width:25%;"><div style="height:18px;"></div>Autoriza</td>
       <td style="border:1px solid #334155;padding:20px 12px;text-align:center;font-size:10px;color:#475569;width:25%;">Sello</td>
     </tr>
   </table>
 </div>`;
 }
 
-function openPrintWindow(sections, title) {
+function openPrintWindow(sections, title, meta = {}) {
     const fecha     = fmtFechaLarga(new Date());
     const totalPks  = sections.reduce((t, s) => t + s.rows.reduce((rt, r) => rt + r.qty, 0), 0);
     const totalProds = sections.reduce((t, s) => t + s.rows.length, 0);
@@ -154,7 +161,7 @@ function openPrintWindow(sections, title) {
   </div>
   <button onclick="window.print()" style="background:#fff;color:#0052CC;border:none;padding:8px 18px;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px;">🖨 Imprimir</button>
 </div>
-${sections.map(s => buildSection(s, fecha)).join('')}
+${sections.map(s => buildSection(s, fecha, meta)).join('')}
 <script>window.print();<\/script>
 </body>
 </html>`;
@@ -232,7 +239,7 @@ export function printFromSnapshot(snapshot) {
     openPrintWindow(sections, snapshot.nombre ?? 'Borrador guardado');
 }
 
-export function printFromPedidoItems(pedidoNumero, sucGroups) {
+export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}) {
     const sections = sucGroups.map(([sucId, rows]) => {
         const printRows = rows
             .filter(r => !r.sin_stock && !r.revision_minmax && r.cantidad_asignada > 0)
@@ -251,5 +258,5 @@ export function printFromPedidoItems(pedidoNumero, sucGroups) {
             revCount: rows.filter(r => r.revision_minmax && !r.sin_stock).length,
         };
     });
-    openPrintWindow(sections, `Pedido #${pedidoNumero}`);
+    openPrintWindow(sections, `Pedido #${pedidoNumero}`, meta);
 }

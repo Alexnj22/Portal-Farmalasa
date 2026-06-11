@@ -194,6 +194,11 @@ export default function TabGenerar({ searchTerm = '' }) {
     const [sinPage,      setSinPage]      = useState(1);
     const [sinPageSize,  setSinPageSize]  = useState(25);
 
+    // Trazabilidad — empleados para responsable/revisor
+    const [employees,   setEmployees]   = useState([]);
+    const [responsable, setResponsable] = useState('');
+    const [revisado,    setRevisado]    = useState('');
+
     // ── Synced-at ──────────────────────────────────────────────
     useEffect(() => {
         supabase.from('erp_minmax').select('synced_at')
@@ -206,6 +211,15 @@ export default function TabGenerar({ searchTerm = '' }) {
         setDashLoading(true);
         supabase.rpc('get_pedido_sucursal_stats', { p_sucursal_ids: SUCURSALES })
             .then(({ data }) => { setDashStats(data || []); setDashLoading(false); });
+    }, []);
+
+    // ── Empleados (para select de responsable/revisor) ─────────
+    useEffect(() => {
+        supabase.from('employees')
+            .select('id, nombre')
+            .eq('status', 'ACTIVO')
+            .order('nombre')
+            .then(({ data }) => setEmployees(data || []));
     }, []);
 
     // ── Sin-bodega — load all once for client-side sort/filter ─
@@ -343,9 +357,12 @@ export default function TabGenerar({ searchTerm = '' }) {
                 };
             });
             const { data: pedidoId, error: rpcErr } = await supabase.rpc('confirm_pedido', {
-                p_created_by: user?.id ?? null,
-                p_notes:      notes || null,
-                p_items:      items,
+                p_created_by:     user?.id ?? null,
+                p_notes:          notes || null,
+                p_items:          items,
+                p_responsable_id: responsable || null,
+                p_revisado_por:   revisado    || null,
+                p_sucursal_ids:   [...selected],
             });
             if (rpcErr) throw rpcErr;
             const { data: ped } = await supabase
@@ -355,37 +372,15 @@ export default function TabGenerar({ searchTerm = '' }) {
                 items_count: items.length,
                 numero:      ped?.numero,
             });
-            // Notificar a las sucursales afectadas
-            try {
-                const { data: branchRows } = await supabase
-                    .from('erp_sucursal_map')
-                    .select('branch_id')
-                    .in('erp_sucursal_id', [...selected])
-                    .eq('es_bodega', false);
-                const branchIds = (branchRows || []).map(r => r.branch_id).filter(Boolean);
-                if (branchIds.length > 0) {
-                    const pedTitle = `Pedido #${ped?.numero} generado`;
-                    const pedMsg   = `Se generó el pedido #${ped?.numero} para ${[...selected].map(id => ERP_NAMES[id]).join(', ')}. Revisá la recepción en tu sucursal.`;
-                    await supabase.from('announcements').insert({
-                        title: pedTitle, message: pedMsg,
-                        target_type: 'BRANCH', target_value: branchIds,
-                        read_by: [], is_archived: false, created_by: user?.id ?? null,
-                        priority: 'NORMAL',
-                        metadata: { pedido_id: pedidoId, numero: ped?.numero, sucursales: [...selected] },
-                    });
-                    supabase.functions.invoke('send-push-notification', {
-                        body: { title: pedTitle, message: pedMsg, url: '/pedidos', target_type: 'BRANCH', target_value: branchIds },
-                    }).catch(() => {});
-                }
-            } catch { /* no-fatal */ }
             setConfirmed({ id: pedidoId, numero: ped?.numero });
             setPreview(null); setNotes(''); setAdjustments({});
+            setResponsable(''); setRevisado('');
         } catch (e) {
             setError(e.message);
         } finally {
             setConfirming(false);
         }
-    }, [preview, notes, selected, getAdjusted, user]);
+    }, [preview, notes, selected, getAdjusted, user, responsable, revisado]);
 
     const statMap = useMemo(() => {
         const m = {};
@@ -700,6 +695,34 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 placeholder="Observaciones sobre este pedido…" rows={2}
                                 className="w-full border border-slate-200 rounded-xl px-3 py-2 text-[14px] focus:outline-none focus:border-blue-400 bg-white/80 resize-none" />
                         </div>
+                        {employees.length > 0 && (
+                            <div className="flex gap-3 flex-wrap">
+                                <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
+                                    <label className="text-[12px] font-semibold text-slate-600">Responsable</label>
+                                    <select
+                                        value={responsable}
+                                        onChange={e => setResponsable(e.target.value)}
+                                        className="border border-slate-200 rounded-xl px-3 py-2 text-[13px] focus:outline-none focus:border-blue-400 bg-white/80 text-slate-700"
+                                    >
+                                        <option value="">— Sin asignar —</option>
+                                        {employees.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                                    </select>
+                                </div>
+                                <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
+                                    <label className="text-[12px] font-semibold text-slate-600">
+                                        Revisado por <span className="font-normal text-slate-400">(opcional)</span>
+                                    </label>
+                                    <select
+                                        value={revisado}
+                                        onChange={e => setRevisado(e.target.value)}
+                                        className="border border-slate-200 rounded-xl px-3 py-2 text-[13px] focus:outline-none focus:border-blue-400 bg-white/80 text-slate-700"
+                                    >
+                                        <option value="">— Sin asignar —</option>
+                                        {employees.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                        )}
                         <div className="flex items-center justify-end">
                             <button onClick={handleConfirmar} disabled={confirming}
                                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50">

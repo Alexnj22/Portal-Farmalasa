@@ -2501,7 +2501,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         const maxN       = Number(row.effective_max);
                         const v30        = Number(row.velocity_30d ?? 0);
                         const v6m        = Number(row.daily_velocity ?? 0);
-                        const canExpand  = stock > 0 || row.last_sale_date != null;
+                        const canExpand  = stock > 0 || row.last_sale_date != null || row.is_catalog_only;
                         const hasDraft   = row.draft_status === 'pending';
                         const isSparse   = row.draft_status === 'sparse_data';
                         const limitedData = hasDraft &&

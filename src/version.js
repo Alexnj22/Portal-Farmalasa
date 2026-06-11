@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.48';
+export const APP_VERSION = '2.2.49';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.49 — fix(MinMax): canExpand incluye is_catalog_only — productos Branch 4 ya se pueden desplegar para ver stock en red y compras
 // v2.2.48 — fix(MinMax): arrow nav no pone 0 en productos catalog_only (Branch 4) — effective_min/max es 0 (no null) y is_dead_stock=false, el check anterior los dejaba pasar como valor '0'
 // v2.2.47 — fix(DB): get_stock_analysis v8 — excluye productos inactivos (activo=false) de los 4 branches; 739 inactivos del catálogo ya no aparecen en MinMax
 // v2.2.46 — MinMax: get_stock_analysis v8 — Branch 4 (catalog-only) restaura productos sin presencia en sucursal (3042 en La Popular); ocultos por defecto, visibles al buscar o filtrar "Sin historial"; fix Branch 3 NOT EXISTS auto-referencial; fix arrow nav no pone 0 en productos "—" al navegar con flechas

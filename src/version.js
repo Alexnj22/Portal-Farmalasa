@@ -5,10 +5,12 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.28';
+export const APP_VERSION = '2.2.30';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.30 — MinMax: tab vs ERP eliminada; get_stock_analysis Branch 4 — productos sin presencia en sucursal (is_catalog_only=true); ocultos por defecto, visibles al buscar o filtrar "Sin historial"; chip Sin historial restaurado en STAT_CFGS
+// v2.2.29 — MinMax: tab vs ERP eliminada (TabMinMaxComparacion)
 // v2.2.28 — TabReglas: tipo de regla único (solo_cajas/multiplo/blister) con radio visual; AnimatePresence + motion.div en panel edición; guardar limpia campos del tipo no activo; validación de múltiplo requerido antes de guardar
 // v2.2.27 — TabReglas: fix 0 productos (created_at no existe en products_with_lab); DataRow+DataCell estándar; LiquidSelect labs con bare mode; stat cards estilo TabCatalogo; nuevos este mes startOfMonth; excluye labs ocultar_en_minmax igual que MinMax; filtro nuevo usa .in(newIds) server-side; TablePagination estándar
 // v2.2.26 — TabReglas: rediseño completo — cards info izq + pill filtros der; columnas ordenables (lab/producto); click en fila abre panel edición inline; panel redesignado con toggle Solo Cajas prominente + pill-selectors; solo_cajas=true por defecto; badge "Nuevo" + filtro+contador para productos añadidos en los últimos 30 días

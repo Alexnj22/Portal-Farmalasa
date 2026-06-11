@@ -66,6 +66,7 @@ const STAT_CFGS = [
     { key: 'ok',           label: 'OK',              dot: 'bg-emerald-500', active: 'bg-emerald-100/75 backdrop-blur-sm border-emerald-300/70 text-emerald-700 shadow-[0_3px_14px_rgba(16,185,129,0.22)]', chipActive: 'bg-emerald-50/90 text-emerald-700'},
     { key: 'overstocked',  label: 'Exceso',          dot: 'bg-blue-400',    active: 'bg-blue-100/75 backdrop-blur-sm border-blue-300/70 text-blue-700 shadow-[0_3px_14px_rgba(59,130,246,0.22)]',         chipActive: 'bg-blue-50/90 text-blue-700'     },
     { key: 'dead_stock',   label: 'Sin movimiento',  dot: 'bg-slate-300',   active: 'bg-slate-100/75 backdrop-blur-sm border-slate-300/70 text-slate-600 shadow-[0_3px_14px_rgba(148,163,184,0.18)]',     chipActive: 'bg-slate-100/90 text-slate-600'  },
+    { key: 'no_data',      label: 'Sin historial',   dot: 'bg-yellow-300',  active: 'bg-yellow-100/75 backdrop-blur-sm border-yellow-300/70 text-yellow-700 shadow-[0_3px_14px_rgba(234,179,8,0.18)]',          chipActive: 'bg-yellow-50/90 text-yellow-700' },
 ];
 
 const ABC_CFG = {
@@ -1807,8 +1808,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const hasActiveFilter = filterAbc !== 'all' || filterXyz !== 'all' || filterAlert !== 'all' || searchTerm !== '';
     const criticalACount  = useMemo(() => data.filter(r => r.abc_class === 'A' && (r.alert_status === 'out_of_stock' || r.alert_status === 'below_min')).length, [data]);
     const isBodega      = selectedErp === 6;
-    const neverCalc     = data.length > 0 && data.every(d => d.is_dead_stock || d.alert_status === 'no_data');
-    const hasActiveData = data.some(d => !d.is_dead_stock && d.alert_status !== 'no_data');
+    const neverCalc     = data.length > 0 && data.filter(d => !d.is_catalog_only).every(d => d.is_dead_stock || d.alert_status === 'no_data');
+    const hasActiveData = data.some(d => !d.is_dead_stock && d.alert_status !== 'no_data' && !d.is_catalog_only);
 
     const filtered = useMemo(() => {
         if (filterHidden) {
@@ -1820,6 +1821,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             if (filterSparse && r.draft_status !== 'sparse_data') return false;
             if (filterDraft && r.draft_status !== 'pending') return false;
             if (filterChangesOnly && !(r.draft_status === 'pending' && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max))) return false;
+            if (r.is_catalog_only && filterAlert !== 'no_data' && !q)                       return false;
             if (filterAbc !== 'all' && (r.draft_abc_class || r.abc_class) !== filterAbc)  return false;
             if (filterXyz !== 'all' && normXyz(r.draft_demand_variability || r.demand_variability) !== filterXyz) return false;
             if (filterAlert !== 'all' && r.alert_status !== filterAlert)                   return false;

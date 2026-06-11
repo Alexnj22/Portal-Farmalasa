@@ -72,6 +72,7 @@ serve(async (req) => {
       ? `Cálculo completado (${succeeded.length}/${ERP_ORDER.length} sucursales). Errores en: ${failed.join(", ")}. Revisá los borradores en MinMax.`
       : `${totalRows.toLocaleString()} borradores generados para las ${ERP_ORDER.length} sucursales. Revisá los cambios y publicá lo que corresponda.`;
 
+    const pushTitle = "Recálculo mensual MIN/MAX";
     try {
       const pushRes = await fetch(pushUrl, {
         method: "POST",
@@ -80,7 +81,7 @@ serve(async (req) => {
           Authorization: `Bearer ${invokeSecret}`,
         },
         body: JSON.stringify({
-          title: "Recálculo mensual MIN/MAX",
+          title: pushTitle,
           message,
           url: "/minmax",
           urgent: false,
@@ -94,6 +95,29 @@ serve(async (req) => {
       }
     } catch (err) {
       console.error("[auto-calculate-minmax] Error al enviar push:", err);
+    }
+
+    // Anuncio persistente con trazabilidad de lectura (read_by[])
+    try {
+      await supabase.from("announcements").insert({
+        title: pushTitle,
+        message,
+        target_type: "EMPLOYEE",
+        target_value: empIds,
+        read_by: [],
+        is_archived: false,
+        created_by: null,
+        priority: failed.length > 0 ? "HIGH" : "NORMAL",
+        metadata: {
+          type: "MINMAX_AUTO_CALCULATE",
+          totalRows,
+          succeeded: succeeded.length,
+          failed,
+          url: "/minmax",
+        },
+      });
+    } catch (err) {
+      console.error("[auto-calculate-minmax] Error al crear anuncio:", err);
     }
   }
 

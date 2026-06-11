@@ -168,20 +168,38 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
 
   const notifyRequester = useCallback(async (r, approved, note) => {
     if (!r.requested_by_id) return;
+    const title   = approved ? '✅ Ajuste Min/Max aprobado' : '❌ Ajuste Min/Max rechazado';
+    const message = approved
+      ? `Tu propuesta para ${r.product_name} (${ERP_NAMES[r.erp_sucursal_id] || r.erp_sucursal_id}) fue aplicada: MIN ${r.requested_min} · MAX ${r.requested_max}.`
+      : `Tu propuesta para ${r.product_name} fue rechazada.${note ? ' Motivo: ' + note : ''}`;
     try {
       await supabase.functions.invoke('send-push-notification', {
-        body: {
-          title: approved ? '✅ Ajuste Min/Max aprobado' : '❌ Ajuste Min/Max rechazado',
-          message: approved
-            ? `Tu propuesta para ${r.product_name} (${ERP_NAMES[r.erp_sucursal_id] || r.erp_sucursal_id}) fue aplicada: MIN ${r.requested_min} · MAX ${r.requested_max}.`
-            : `Tu propuesta para ${r.product_name} fue rechazada.${note ? ' Motivo: ' + note : ''}`,
-          url: '/minmax',
-          target_type: 'EMPLOYEE',
-          target_value: [r.requested_by_id],
+        body: { title, message, url: '/minmax', target_type: 'EMPLOYEE', target_value: [r.requested_by_id] },
+      });
+    } catch { /* no-fatal */ }
+    // Anuncio persistente con trazabilidad de lectura (read_by[])
+    try {
+      await supabase.from('announcements').insert({
+        title,
+        message,
+        target_type: 'EMPLOYEE',
+        target_value: [String(r.requested_by_id)],
+        read_by: [],
+        is_archived: false,
+        created_by: user?.id ?? null,
+        priority: approved ? 'NORMAL' : 'HIGH',
+        metadata: {
+          requestType: 'MINMAX',
+          status: approved ? 'APPROVED' : 'REJECTED',
+          product_name: r.product_name,
+          erp_sucursal_id: r.erp_sucursal_id,
+          requested_min: r.requested_min,
+          requested_max: r.requested_max,
+          note: note || null,
         },
       });
     } catch { /* no-fatal */ }
-  }, []);
+  }, [user]);
 
   // Lógica de decisión sin gestión de UI (reutilizable por individual y masivo)
   const runDecision = useCallback(async (r, approve, note) => {

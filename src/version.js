@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.36';
+export const APP_VERSION = '2.2.37';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.37 — MinMax: last_sale_date integrado en get_stock_analysis v6 via CTE MATERIALIZED (elimina RPC separado get_last_sale_dates que fallaba para ~50% productos); índices idx_sii_erp_product_id + idx_si_branch_estado para acelerar ventas expandidas; texto última venta más visible (slate-700 font-semibold) y "sin venta" / "Últ. venta DD Mmm" en todos los productos incluidos dead/noHistory
 // v2.2.36 — MinMax fix: get_last_sale_dates .range(0,9999) elimina cap 1000 filas PostgREST (fechas faltantes en productos >1000); validateEditForRow agrega checks MAX=0/MIN>0 y MIN>0/MAX=0 que antes pasaban silenciosamente
 // v2.2.35 — MinMax: validación diferida MIN→MAX (Tab/ArrowRight no bloquea en transición; pendingMin propaga valor para validación final); get_last_sale_dates RPC + fecha última venta junto a "N vend." en fila principal; get_product_last_sales RPC + panel expandido con dos columnas Compras/Ventas
 // v2.2.34 — Pedidos FASE 2: receive_pedido_sucursal guard (anulado/completado + solo items pendientes); anular_pedido registra anulado_por/at/motivo; confirm_pedido valida array no vacío/qty>=0/sucursal válida; RLS pedidos+pedido_items+dispatch_rules

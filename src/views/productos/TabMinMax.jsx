@@ -1509,16 +1509,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 keepFetching = chunk && chunk.length === CHUNK;
                 from += CHUNK;
             }
-            const [{ data: cost, error: e2 }, { data: draft }, { data: cfg }, { data: saleDates }] = await Promise.all([
+            const [{ data: cost, error: e2 }, { data: draft }, { data: cfg }] = await Promise.all([
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
                 supabase.from('stock_config').select('analysis_days').eq('id', 1).single(),
-                supabase.rpc('get_last_sale_dates',        { p_erp_sucursal_id: erpId }).range(0, 9999),
             ]);
             if (e2) throw e2;
             if (rid !== loadRef.current) return;
-            const saleDateMap = Object.fromEntries((saleDates || []).map(s => [s.erp_product_id, s.last_sale_date]));
-            const mapped = allRows.map(r => ({ ...r, _erp_sucursal_id: erpId, last_sale_date: saleDateMap[r.erp_product_id] ?? null }));
+            const mapped = allRows.map(r => ({ ...r, _erp_sucursal_id: erpId }));
             setData(mapped);
             setHiddenIds(new Set(mapped.filter(r => r.is_hidden).map(r => r.erp_product_id)));
             setCostSummary(cost  || null);
@@ -2483,10 +2481,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     )}
                                                 </div>
                                                 {noHistory && (
-                                                    <span className="text-[10px] text-yellow-500 italic mt-0.5">Sin ventas en esta sucursal</span>
+                                                    <span className="text-[10px] text-yellow-600 font-semibold italic mt-0.5">Sin ventas en esta sucursal</span>
                                                 )}
                                                 {isSparse && (
-                                                    <span className="text-[10px] text-orange-500 mt-0.5 flex items-center gap-0.5">
+                                                    <span className="text-[10px] text-orange-600 font-semibold mt-0.5 flex items-center gap-0.5">
                                                         <AlertTriangle size={9} />
                                                         {Number(row.units_sold_6m) >= 10
                                                             ? `Posible compra mayorista: ${Number(row.units_sold_6m).toLocaleString()} uds. en 1–2 días`
@@ -2497,13 +2495,25 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     </span>
                                                 )}
                                                 {!dead && !noHistory && !isSparse && (
-                                                    <span className="text-[10px] text-slate-600 flex items-center gap-0.5 mt-0.5">
+                                                    <span className="text-[10px] text-slate-700 flex items-center gap-0.5 mt-0.5 font-medium">
                                                         {v6m.toFixed(2)}/día
                                                         {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={9} className="text-emerald-500 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
                                                         {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={9} className="text-red-400 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
-                                                        {Number(row.units_sold_6m) > 0 && <span className="ml-1 text-slate-500">·</span>}
-                                                        {Number(row.units_sold_6m) > 0 && <span className="ml-1">{Number(row.units_sold_6m).toLocaleString()} vend.</span>}
-                                                        {row.last_sale_date && <span className="ml-1 text-slate-400">{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</span>}
+                                                        {Number(row.units_sold_6m) > 0 && <span className="ml-1 text-slate-400">·</span>}
+                                                        {Number(row.units_sold_6m) > 0 && <span className="ml-1 text-slate-700">{Number(row.units_sold_6m).toLocaleString()} vend.</span>}
+                                                        <span className="ml-1 text-slate-400">·</span>
+                                                        {row.last_sale_date
+                                                            ? <span className="ml-0.5 text-slate-700 font-semibold">{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</span>
+                                                            : <span className="ml-0.5 text-slate-400 italic">sin venta</span>
+                                                        }
+                                                    </span>
+                                                )}
+                                                {(dead || noHistory) && (
+                                                    <span className="text-[10px] mt-0.5 font-semibold text-slate-500">
+                                                        {row.last_sale_date
+                                                            ? <>Últ. venta <span className="text-slate-700">{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span></>
+                                                            : <span className="text-slate-400 italic">sin ventas registradas</span>
+                                                        }
                                                     </span>
                                                 )}
                                             </div>

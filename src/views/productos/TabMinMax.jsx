@@ -2567,7 +2567,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         if (e.key === 'Tab' || e.key === 'ArrowRight') {
                                                             e.preventDefault();
                                                             skipBlurSave.current = true;
-                                                            saveDraftCell(inlineDraftEdit);
                                                             setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(hasDraft ? (row.draft_max ?? '') : (row.effective_max ?? '')), pendingMin: inlineDraftEdit.value });
                                                             return;
                                                         }
@@ -2667,15 +2666,32 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         if (skipBlurSave.current) { skipBlurSave.current = false; return; }
                                                         const errB = validateEditForRow(inlineDraftEdit, row);
                                                         if (errB) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, errB, 'error'); setInlineDraftEdit(null); return; }
-                                                        saveDraftCell(inlineDraftEdit);
+                                                        if (inlineDraftEdit.pendingMin !== undefined) {
+                                                            const cleanMax = { ...inlineDraftEdit, pendingMin: undefined };
+                                                            const minEdit = { productId: inlineDraftEdit.productId, sucursalId: inlineDraftEdit.sucursalId, field: 'min', value: inlineDraftEdit.pendingMin };
+                                                            const curMin = row.draft_status === 'pending' ? (row.draft_min ?? 0) : (row.effective_min ?? 0);
+                                                            const newMaxNum = parseInt(inlineDraftEdit.value, 10) || 0;
+                                                            skipBlurSave.current = true;
+                                                            setInlineDraftEdit(null);
+                                                            (async () => {
+                                                                if (newMaxNum >= curMin) { await saveDraftCell(cleanMax); await saveDraftCell(minEdit); }
+                                                                else { await saveDraftCell(minEdit); await saveDraftCell(cleanMax); }
+                                                            })();
+                                                        } else {
+                                                            saveDraftCell(inlineDraftEdit);
+                                                        }
                                                     }}
                                                     onKeyDown={e => {
                                                         if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
                                                         if (e.key === 'ArrowLeft') {
                                                             e.preventDefault();
                                                             skipBlurSave.current = true;
-                                                            saveDraftCell(inlineDraftEdit);
-                                                            setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(hasDraft ? (row.draft_min ?? '') : (row.effective_min ?? '')) });
+                                                            if (inlineDraftEdit.pendingMin !== undefined) {
+                                                                setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: inlineDraftEdit.pendingMin });
+                                                            } else {
+                                                                saveDraftCell(inlineDraftEdit);
+                                                                setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(hasDraft ? (row.draft_min ?? '') : (row.effective_min ?? '')) });
+                                                            }
                                                             return;
                                                         }
                                                         if (e.key === 'Enter' || e.key === 'ArrowDown') {
@@ -2683,10 +2699,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                             const err = validateEditForRow(inlineDraftEdit, row);
                                                             if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
-                                                            saveDraftCell(inlineDraftEdit);
-                                                            const next = pageRows.slice(rowIdx + 1).find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
-                                                            if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: String(next.draft_status === 'pending' ? (next.draft_min ?? '') : (next.effective_min ?? '')) });
-                                                            else setInlineDraftEdit(null);
+                                                            if (inlineDraftEdit.pendingMin !== undefined) {
+                                                                const cleanMax = { ...inlineDraftEdit, pendingMin: undefined };
+                                                                const minEdit = { productId: inlineDraftEdit.productId, sucursalId: inlineDraftEdit.sucursalId, field: 'min', value: inlineDraftEdit.pendingMin };
+                                                                const curMin = row.draft_status === 'pending' ? (row.draft_min ?? 0) : (row.effective_min ?? 0);
+                                                                const newMaxNum = parseInt(inlineDraftEdit.value, 10) || 0;
+                                                                const next = pageRows.slice(rowIdx + 1).find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
+                                                                if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: String(next.draft_status === 'pending' ? (next.draft_min ?? '') : (next.effective_min ?? '')) });
+                                                                else setInlineDraftEdit(null);
+                                                                (async () => {
+                                                                    if (newMaxNum >= curMin) { await saveDraftCell(cleanMax); await saveDraftCell(minEdit); }
+                                                                    else { await saveDraftCell(minEdit); await saveDraftCell(cleanMax); }
+                                                                })();
+                                                            } else {
+                                                                saveDraftCell(inlineDraftEdit);
+                                                                const next = pageRows.slice(rowIdx + 1).find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
+                                                                if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: String(next.draft_status === 'pending' ? (next.draft_min ?? '') : (next.effective_min ?? '')) });
+                                                                else setInlineDraftEdit(null);
+                                                            }
                                                             return;
                                                         }
                                                         if (e.key === 'ArrowUp') {
@@ -2694,10 +2724,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                             const err = validateEditForRow(inlineDraftEdit, row);
                                                             if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
-                                                            saveDraftCell(inlineDraftEdit);
-                                                            const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
-                                                            if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: String(prev.draft_status === 'pending' ? (prev.draft_min ?? '') : (prev.effective_min ?? '')) });
-                                                            else setInlineDraftEdit(null);
+                                                            if (inlineDraftEdit.pendingMin !== undefined) {
+                                                                const cleanMax = { ...inlineDraftEdit, pendingMin: undefined };
+                                                                const minEdit = { productId: inlineDraftEdit.productId, sucursalId: inlineDraftEdit.sucursalId, field: 'min', value: inlineDraftEdit.pendingMin };
+                                                                const curMin = row.draft_status === 'pending' ? (row.draft_min ?? 0) : (row.effective_min ?? 0);
+                                                                const newMaxNum = parseInt(inlineDraftEdit.value, 10) || 0;
+                                                                const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
+                                                                if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: String(prev.draft_status === 'pending' ? (prev.draft_min ?? '') : (prev.effective_min ?? '')) });
+                                                                else setInlineDraftEdit(null);
+                                                                (async () => {
+                                                                    if (newMaxNum >= curMin) { await saveDraftCell(cleanMax); await saveDraftCell(minEdit); }
+                                                                    else { await saveDraftCell(minEdit); await saveDraftCell(cleanMax); }
+                                                                })();
+                                                            } else {
+                                                                saveDraftCell(inlineDraftEdit);
+                                                                const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
+                                                                if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: String(prev.draft_status === 'pending' ? (prev.draft_min ?? '') : (prev.effective_min ?? '')) });
+                                                                else setInlineDraftEdit(null);
+                                                            }
                                                             return;
                                                         }
                                                     }}

@@ -5,10 +5,12 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.34';
+export const APP_VERSION = '2.2.36';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.36 — MinMax fix: get_last_sale_dates .range(0,9999) elimina cap 1000 filas PostgREST (fechas faltantes en productos >1000); validateEditForRow agrega checks MAX=0/MIN>0 y MIN>0/MAX=0 que antes pasaban silenciosamente
+// v2.2.35 — MinMax: validación diferida MIN→MAX (Tab/ArrowRight no bloquea en transición; pendingMin propaga valor para validación final); get_last_sale_dates RPC + fecha última venta junto a "N vend." en fila principal; get_product_last_sales RPC + panel expandido con dos columnas Compras/Ventas
 // v2.2.34 — Pedidos FASE 2: receive_pedido_sucursal guard (anulado/completado + solo items pendientes); anular_pedido registra anulado_por/at/motivo; confirm_pedido valida array no vacío/qty>=0/sucursal válida; RLS pedidos+pedido_items+dispatch_rules
 // v2.2.33 — Pedidos FASE 1: inv_dedup DISTINCT ON (5585 grupos duplicados ERP corregidos); pending_committed descuenta bodega de pedidos activos; get_pedido_preview/stats/sin_bodega/count actualizados
 // v2.2.32 — notify-new-products-daily: edge fn + cron lun-sáb 8am; RPC get_logistics_chief_ids con fallback a Administrador si vacaciones/incapacidad

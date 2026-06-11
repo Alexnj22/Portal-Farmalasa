@@ -201,9 +201,9 @@ async function syncBranch(
     }
   }
 
-  // 3b. Upsert productos
+  // 3b. Upsert productos — ignoreDuplicates:false para que nombre se actualice si cambia en el ERP
   if (productMap.size > 0)
-    await supabase.from('products').upsert([...productMap.values()], { onConflict: 'id', ignoreDuplicates: true });
+    await supabase.from('products').upsert([...productMap.values()], { onConflict: 'id', ignoreDuplicates: false });
 
   // 4. Upsert cabeceras
   let totalItems = 0;
@@ -219,12 +219,10 @@ async function syncBranch(
     }
   }
 
-  // 5. Items — solo para recepciones nuevas
-  const itemsToInsert: any[] = [];
+  // 5. Items — upsert para todas las recepciones (nuevas y modificadas)
+  const itemsToUpsert: any[] = [];
   for (const c of compras) {
     const erpPurchaseId = Number(c.compra_id ?? c.id_compra ?? c.id_factura ?? c.id_orden ?? c.id);
-    if (!newErpIds.has(erpPurchaseId)) continue;
-
     const receiptId = existingMap.get(erpPurchaseId);
     if (!receiptId) continue;
 
@@ -233,7 +231,7 @@ async function syncBranch(
       const p = lines[lineIdx];
       const rawFecha = p.trazabilidad?.fecha_vencimiento ?? p.fecha_vencimiento ?? p.vencimiento ?? null;
 
-      itemsToInsert.push({
+      itemsToUpsert.push({
         receipt_id:        receiptId,
         linea_num:         lineIdx,
         erp_product_id:    p.producto_id ?? p.id ?? p.id_producto ?? null,
@@ -247,15 +245,15 @@ async function syncBranch(
     }
   }
 
-  if (itemsToInsert.length > 0) {
+  if (itemsToUpsert.length > 0) {
     const CHUNK = 500;
-    for (let i = 0; i < itemsToInsert.length; i += CHUNK) {
+    for (let i = 0; i < itemsToUpsert.length; i += CHUNK) {
       const { error } = await supabase
         .from('purchase_receipt_items')
-        .upsert(itemsToInsert.slice(i, i + CHUNK), { onConflict: 'receipt_id,linea_num', ignoreDuplicates: true });
+        .upsert(itemsToUpsert.slice(i, i + CHUNK), { onConflict: 'receipt_id,linea_num', ignoreDuplicates: false });
       if (error) throw new Error(`items upsert chunk ${i}: ${error.message}`);
     }
-    totalItems = itemsToInsert.length;
+    totalItems = itemsToUpsert.length;
   }
 
   return { total: compras.length, new: newErpIds.size, items: totalItems };

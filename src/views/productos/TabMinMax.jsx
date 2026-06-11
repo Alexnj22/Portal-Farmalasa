@@ -1693,6 +1693,49 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         }
     }, [data, hasPublishedData]);
 
+    // Guarda MIN y MAX en una sola llamada a la BD (par atómico).
+    const saveDraftPair = useCallback(async (productId, sucursalId, minValue, maxValue, productName) => {
+        const minNum = minValue === '' ? null : parseInt(minValue, 10);
+        const maxNum = maxValue === '' ? null : parseInt(maxValue, 10);
+        if ((Number.isNaN(minNum) && minValue !== '') || (Number.isNaN(maxNum) && maxValue !== '')) return;
+        const targetRow = data.find(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId);
+        const rowHasDraft = targetRow?.draft_status === 'pending';
+        const rowIsSparse = targetRow?.draft_status === 'sparse_data';
+        const saveLive = hasPublishedData && !rowHasDraft && !rowIsSparse;
+        if (saveLive) {
+            const { error: e } = await supabase.from('product_stock_params')
+                .upsert({ erp_product_id: productId, erp_sucursal_id: sucursalId, min_units: minNum, max_units: maxNum, updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
+            if (e) { useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return; }
+            setData(prev => prev.map(r =>
+                r.erp_product_id === productId && r._erp_sucursal_id === sucursalId
+                    ? { ...r, effective_min: minNum ?? 0, effective_max: maxNum ?? 0 } : r
+            ));
+        } else {
+            const { error: e } = await supabase.from('product_stock_params')
+                .upsert({ erp_product_id: productId, erp_sucursal_id: sucursalId, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
+            if (e) { useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return; }
+            setData(prev => prev.map(r =>
+                r.erp_product_id === productId && r._erp_sucursal_id === sucursalId
+                    ? { ...r, draft_min: minNum, draft_max: maxNum, draft_status: 'pending' } : r
+            ));
+        }
+        Promise.all([
+            supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: sucursalId }),
+            supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: sucursalId }),
+        ]).then(([{ data: cost }, { data: draft }]) => {
+            if (cost) setCostSummary(cost);
+            if (draft) setDraftCost(draft);
+        });
+        useStaff.getState().appendAuditLog(saveLive ? 'MINMAX_LIVE_EDIT' : 'MINMAX_DRAFT_EDIT', String(productId), {
+            field: 'min+max', product: productName,
+            old_min: saveLive ? (targetRow?.effective_min ?? 0) : (targetRow?.draft_min ?? targetRow?.effective_min ?? 0),
+            old_max: saveLive ? (targetRow?.effective_max ?? 0) : (targetRow?.draft_max ?? targetRow?.effective_max ?? 0),
+            new_min: minNum, new_max: maxNum, sucursal_id: sucursalId,
+        });
+        warnIfOutrageous('min', minNum, targetRow);
+        warnIfOutrageous('max', maxNum, targetRow);
+    }, [data, hasPublishedData]);
+
     const unhideProduct = useCallback(async (productId) => {
         await supabase.from('product_stock_params')
             .update({ is_hidden: false, updated_at: new Date().toISOString() })
@@ -1718,7 +1761,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const resetToCalc = useCallback(async (row) => {
         if (row.calc_min == null && row.calc_max == null) {
-            useToastStore.getState().showToast(row.product_name, 'No hay valores calculados. Corre Calcular primero.', 'error');
+            // Sin valores calculados: limpia el borrador manual dejando -- (null)
+            const { error: e } = await supabase.from('product_stock_params')
+                .update({ draft_min: null, draft_max: null, draft_status: 'none', updated_at: new Date().toISOString() })
+                .eq('erp_product_id', row.erp_product_id)
+                .eq('erp_sucursal_id', row._erp_sucursal_id);
+            if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${e.message}`, 'error'); return; }
+            setData(prev => prev.map(r =>
+                r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
+                    ? { ...r, draft_min: null, draft_max: null, draft_status: 'none' } : r
+            ));
+            useToastStore.getState().showToast(row.product_name, 'Valores limpiados a —', 'success');
+            useStaff.getState().appendAuditLog('MINMAX_RESET_CLEAR', String(row.erp_product_id), { sucursal_id: row._erp_sucursal_id });
             return;
         }
         const cMin = row.calc_min ?? 0;
@@ -2558,6 +2612,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     onFocus={e => e.target.select()}
                                                     onBlur={() => {
                                                         if (skipBlurSave.current) { skipBlurSave.current = false; return; }
+                                                        if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
                                                         const err = validateEditForRow(inlineDraftEdit, row);
                                                         if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
                                                         saveDraftCell(inlineDraftEdit);
@@ -2567,11 +2622,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         if (e.key === 'Tab' || e.key === 'ArrowRight') {
                                                             e.preventDefault();
                                                             skipBlurSave.current = true;
+                                                            if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
                                                             setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(hasDraft ? (row.draft_max ?? '') : (row.effective_max ?? '')), pendingMin: inlineDraftEdit.value });
                                                             return;
                                                         }
                                                         if (e.key === 'Enter' || e.key === 'ArrowDown') {
                                                             e.preventDefault();
+                                                            if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
                                                             const err = validateEditForRow(inlineDraftEdit, row);
                                                             if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
@@ -2583,6 +2640,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         }
                                                         if (e.key === 'ArrowUp') {
                                                             e.preventDefault();
+                                                            if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
                                                             const err = validateEditForRow(inlineDraftEdit, row);
                                                             if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
@@ -2601,6 +2659,19 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     </div>
                                                 )}
                                                 {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
+                                            </div>
+                                        ) : canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'max' && inlineDraftEdit?.pendingMin !== undefined ? (
+                                            <div className="flex flex-col items-center">
+                                                <div className={`px-2.5 py-1 rounded-lg border-2 border-dashed ${hasDraft ? 'border-amber-400 bg-amber-50' : 'border-emerald-400 bg-emerald-50'}`}>
+                                                    <span className={`text-[13px] font-black tabular-nums ${hasDraft ? 'text-amber-700' : 'text-emerald-700'}`}>
+                                                        {inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                {sortedPres(pres).length > 0 && inlineDraftEdit.pendingMin !== '' && (
+                                                    <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                        ≈ {formatDominant(parseInt(inlineDraftEdit.pendingMin, 10) || 0, pres)}
+                                                    </div>
+                                                )}
                                             </div>
                                         ) : hasDraft ? (
                                             <div className={`flex flex-col items-center ${canManage ? 'cursor-pointer group/min' : ''}`}
@@ -2630,12 +2701,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 <div className="flex flex-col items-center cursor-pointer group/min"
                                                     onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: '' }); }}>
                                                     <div className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 group-hover/min:border-amber-400 group-hover/min:bg-amber-100 transition-[border-color,background-color] duration-150">
-                                                        <span className="text-[13px] font-black tabular-nums text-amber-400">0</span>
+                                                        <span className="text-[13px] font-black tabular-nums text-amber-400">—</span>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-[12px] font-semibold tabular-nums text-slate-400">0</span>
+                                                    <span className="text-[12px] font-semibold tabular-nums text-slate-400">—</span>
                                                 </div>
                                             )
                                         ) : (
@@ -2664,19 +2735,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     onFocus={e => e.target.select()}
                                                     onBlur={() => {
                                                         if (skipBlurSave.current) { skipBlurSave.current = false; return; }
+                                                        if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
                                                         const errB = validateEditForRow(inlineDraftEdit, row);
                                                         if (errB) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, errB, 'error'); setInlineDraftEdit(null); return; }
                                                         if (inlineDraftEdit.pendingMin !== undefined) {
-                                                            const cleanMax = { ...inlineDraftEdit, pendingMin: undefined };
-                                                            const minEdit = { productId: inlineDraftEdit.productId, sucursalId: inlineDraftEdit.sucursalId, field: 'min', value: inlineDraftEdit.pendingMin };
-                                                            const curMin = row.draft_status === 'pending' ? (row.draft_min ?? 0) : (row.effective_min ?? 0);
-                                                            const newMaxNum = parseInt(inlineDraftEdit.value, 10) || 0;
+                                                            const { productId, sucursalId, pendingMin, value } = inlineDraftEdit;
                                                             skipBlurSave.current = true;
                                                             setInlineDraftEdit(null);
-                                                            (async () => {
-                                                                if (newMaxNum >= curMin) { await saveDraftCell(cleanMax); await saveDraftCell(minEdit); }
-                                                                else { await saveDraftCell(minEdit); await saveDraftCell(cleanMax); }
-                                                            })();
+                                                            saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name);
                                                         } else {
                                                             saveDraftCell(inlineDraftEdit);
                                                         }
@@ -2689,28 +2755,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                             if (inlineDraftEdit.pendingMin !== undefined) {
                                                                 setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: inlineDraftEdit.pendingMin });
                                                             } else {
-                                                                saveDraftCell(inlineDraftEdit);
+                                                                if (inlineDraftEdit.value !== '') saveDraftCell(inlineDraftEdit);
+                                                                else setInlineDraftEdit(null);
                                                                 setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(hasDraft ? (row.draft_min ?? '') : (row.effective_min ?? '')) });
                                                             }
                                                             return;
                                                         }
                                                         if (e.key === 'Enter' || e.key === 'ArrowDown') {
                                                             e.preventDefault();
+                                                            if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
                                                             const err = validateEditForRow(inlineDraftEdit, row);
                                                             if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             if (inlineDraftEdit.pendingMin !== undefined) {
-                                                                const cleanMax = { ...inlineDraftEdit, pendingMin: undefined };
-                                                                const minEdit = { productId: inlineDraftEdit.productId, sucursalId: inlineDraftEdit.sucursalId, field: 'min', value: inlineDraftEdit.pendingMin };
-                                                                const curMin = row.draft_status === 'pending' ? (row.draft_min ?? 0) : (row.effective_min ?? 0);
-                                                                const newMaxNum = parseInt(inlineDraftEdit.value, 10) || 0;
+                                                                const { productId, sucursalId, pendingMin, value } = inlineDraftEdit;
                                                                 const next = pageRows.slice(rowIdx + 1).find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
                                                                 if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: String(next.draft_status === 'pending' ? (next.draft_min ?? '') : (next.effective_min ?? '')) });
                                                                 else setInlineDraftEdit(null);
-                                                                (async () => {
-                                                                    if (newMaxNum >= curMin) { await saveDraftCell(cleanMax); await saveDraftCell(minEdit); }
-                                                                    else { await saveDraftCell(minEdit); await saveDraftCell(cleanMax); }
-                                                                })();
+                                                                saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name);
                                                             } else {
                                                                 saveDraftCell(inlineDraftEdit);
                                                                 const next = pageRows.slice(rowIdx + 1).find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
@@ -2721,21 +2783,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         }
                                                         if (e.key === 'ArrowUp') {
                                                             e.preventDefault();
+                                                            if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
                                                             const err = validateEditForRow(inlineDraftEdit, row);
                                                             if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
                                                             skipBlurSave.current = true;
                                                             if (inlineDraftEdit.pendingMin !== undefined) {
-                                                                const cleanMax = { ...inlineDraftEdit, pendingMin: undefined };
-                                                                const minEdit = { productId: inlineDraftEdit.productId, sucursalId: inlineDraftEdit.sucursalId, field: 'min', value: inlineDraftEdit.pendingMin };
-                                                                const curMin = row.draft_status === 'pending' ? (row.draft_min ?? 0) : (row.effective_min ?? 0);
-                                                                const newMaxNum = parseInt(inlineDraftEdit.value, 10) || 0;
+                                                                const { productId, sucursalId, pendingMin, value } = inlineDraftEdit;
                                                                 const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
                                                                 if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: String(prev.draft_status === 'pending' ? (prev.draft_min ?? '') : (prev.effective_min ?? '')) });
                                                                 else setInlineDraftEdit(null);
-                                                                (async () => {
-                                                                    if (newMaxNum >= curMin) { await saveDraftCell(cleanMax); await saveDraftCell(minEdit); }
-                                                                    else { await saveDraftCell(minEdit); await saveDraftCell(cleanMax); }
-                                                                })();
+                                                                saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name);
                                                             } else {
                                                                 saveDraftCell(inlineDraftEdit);
                                                                 const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => hasDraft ? r.draft_status === 'pending' : !hiddenIds.has(r.erp_product_id));
@@ -2782,12 +2839,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 <div className="flex flex-col items-center cursor-pointer group/max"
                                                     onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: '' }); }}>
                                                     <div className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 group-hover/max:border-blue-400 group-hover/max:bg-blue-100 transition-[border-color,background-color] duration-150">
-                                                        <span className="text-[13px] font-black tabular-nums text-blue-400">0</span>
+                                                        <span className="text-[13px] font-black tabular-nums text-blue-400">—</span>
                                                     </div>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-[12px] font-semibold tabular-nums text-slate-400">0</span>
+                                                    <span className="text-[12px] font-semibold tabular-nums text-slate-400">—</span>
                                                 </div>
                                             )
                                         ) : (
@@ -2887,10 +2944,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 </motion.button>
                                             )}
                                             {/* Restaurar a calculado */}
-                                            {canManage && row.calc_min != null && (
+                                            {canManage && (row.calc_min != null || ((dead || noHistory) && hasDraft)) && (
                                                 <motion.button
                                                     onClick={e => { e.stopPropagation(); resetToCalc(row); }}
-                                                    title={`Restaurar a valores calculados (MIN ${row.calc_min} / MAX ${row.calc_max})`}
+                                                    title={row.calc_min != null ? `Restaurar a valores calculados (MIN ${row.calc_min} / MAX ${row.calc_max})` : 'Limpiar valores manuales — restaura a —'}
                                                     {...iconAnim}
                                                     className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-500 hover:bg-emerald-100 hover:text-emerald-700 transition-colors">
                                                     <RotateCcw size={12} />

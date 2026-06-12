@@ -3,9 +3,10 @@ import { supabase } from '../../supabaseClient';
 import {
     Loader2, ChevronRight, ChevronDown, CheckCircle2, PackageCheck,
     AlertTriangle, X, Package, Building2, TrendingDown, CheckCheck,
-    Search, PackagePlus,
+    Search, PackagePlus, Database,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useStaffStore as useStaff } from '../../store/staffStore';
 import RecepcionModal, { EmpChip } from './RecepcionModal';
 
 const ERP_NAMES = {
@@ -87,6 +88,8 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
     const [searchOpen,    setSearchOpen]    = useState(false);
     const [firmas,        setFirmas]        = useState({});   // { pedidoId: [emp,…] }
     const [extras,        setExtras]        = useState({});   // { pedidoId: [extra,…] }
+    const [erpStatus,     setErpStatus]     = useState({});   // { pedidoId: bool } — recibido_erp_at
+    const [markingErp,    setMarkingErp]    = useState(null); // pedidoId en proceso
 
     // Resolve employee → branch → erp_sucursal_id on mount.
     // employees.id == uid de auth (no existe columna user_id).
@@ -105,7 +108,7 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                 .select('erp_sucursal_id')
                 .eq('branch_id', emp.branch_id)
                 .eq('es_bodega', false)
-                .single();
+                .maybeSingle();
             if (!mapRow) { setLoading(false); return; }
 
             setErpSucursalId(mapRow.erp_sucursal_id);
@@ -134,7 +137,7 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
     const fetchItems = useCallback(async (pedidoId) => {
         if (!erpSucursalId) return;
         setLoadingItems(true);
-        const [{ data }, { data: firmaRows }, { data: extraRows }] = await Promise.all([
+        const [{ data }, { data: firmaRows }, { data: extraRows }, { data: lcRow }] = await Promise.all([
             supabase
                 .from('pedido_items')
                 .select(`
@@ -158,10 +161,17 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                 .select('id, erp_product_id, cantidad, nota, created_at, products:erp_product_id ( nombre )')
                 .eq('pedido_id', pedidoId)
                 .eq('erp_sucursal_id', erpSucursalId),
+            supabase
+                .from('pedido_sucursal_status')
+                .select('recibido_erp_at')
+                .eq('pedido_id', pedidoId)
+                .eq('erp_sucursal_id', erpSucursalId)
+                .maybeSingle(),
         ]);
         setItems(prev => ({ ...prev, [pedidoId]: data || [] }));
         setFirmas(prev => ({ ...prev, [pedidoId]: (firmaRows || []).map(f => f.employees).filter(Boolean) }));
         setExtras(prev => ({ ...prev, [pedidoId]: extraRows || [] }));
+        setErpStatus(prev => ({ ...prev, [pedidoId]: !!lcRow?.recibido_erp_at }));
         setLoadingItems(false);
     }, [erpSucursalId]);
 
@@ -182,6 +192,27 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
         setModal({ pedido: { id: pedidoId, numero: pedido?.numero ?? '?' }, rows });
     }, [items, pedidos]);
 
+    // Marcar pedido como recibido en ERP para esta sucursal
+    const handleMarkErp = useCallback(async (pedidoId) => {
+        if (markingErp) return;
+        setMarkingErp(pedidoId);
+        try {
+            const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', {
+                p_pedido_id:   pedidoId,
+                p_sucursal_id: erpSucursalId,
+                p_stage:       'recibir_erp',
+                p_user_id:     user?.id ?? null,
+            });
+            if (error) throw error;
+            useStaff.getState().appendAuditLog('PEDIDO_LIFECYCLE_RECIBIR_ERP', pedidoId, { sucursal_id: erpSucursalId });
+            setErpStatus(prev => ({ ...prev, [pedidoId]: true }));
+        } catch (e) {
+            console.error('Error marcando ERP:', e);
+        } finally {
+            setMarkingErp(null);
+        }
+    }, [markingErp, erpSucursalId, user]);
+
     // Post-confirmación: refresca + notifica bodega si hay diferencias o extras
     const handleConfirmed = useCallback(async ({ hasDiff, extras: extrasReported }) => {
         const pedidoId = modal?.pedido?.id;
@@ -192,7 +223,7 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                     .from('erp_sucursal_map')
                     .select('branch_id')
                     .eq('es_bodega', true)
-                    .single();
+                    .maybeSingle();
                 if (bodegaMap?.branch_id) {
                     const num    = modal.pedido.numero;
                     const partes = [];
@@ -473,10 +504,30 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                                             </button>
                                         )}
 
-                                        {pedido.status === 'completado' && (
-                                            <div className="flex items-center gap-2 py-2 text-emerald-600">
-                                                <CheckCircle2 size={14} />
-                                                <span className="text-[12px] font-semibold">Pedido completamente recibido</span>
+                                        {(pedido.status === 'completado' || pedido.status === 'parcial') && (
+                                            <div className="flex items-center gap-2 pt-1">
+                                                <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                                                <span className="text-[12px] font-semibold text-emerald-600 flex-1">
+                                                    {pedido.status === 'completado' ? 'Recibido correctamente' : 'Recibido con diferencias'}
+                                                </span>
+                                                {erpStatus[pedido.id] ? (
+                                                    <span className="flex items-center gap-1 text-[11px] font-semibold text-teal-600 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-full">
+                                                        <Database size={11} />
+                                                        Ingresado al ERP
+                                                    </span>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleMarkErp(pedido.id)}
+                                                        disabled={markingErp === pedido.id}
+                                                        className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white transition-colors disabled:opacity-60"
+                                                    >
+                                                        {markingErp === pedido.id
+                                                            ? <Loader2 size={12} className="animate-spin" />
+                                                            : <Database size={12} />
+                                                        }
+                                                        Marcar ingresado al ERP
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
                                     </>

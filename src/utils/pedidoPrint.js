@@ -287,17 +287,21 @@ export function printFromSnapshot(snapshot, meta = {}) {
 }
 
 export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}) {
+    const fecha = new Date().toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        .replace(/\//g, '-');
+
     const sections = sucGroups.map(([sucId, rows]) => {
-        const printRows = rows
-            .map(r => ({
-                product_name:     r.products?.nombre ?? '?',
-                laboratorio:      r.products?.laboratorios?.nombre ?? '',
-                presentacion_tipo: r.presentaciones?.tipo ?? '',
-                es_antibiotico:   r.products?.es_antibiotico ?? false,
-                qty:              r.cantidad_asignada ?? 0,
-                sin_stock:        r.sin_stock ?? false,
-                lotes:            Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
-            }));
+        // Exclude sin_stock rows from the PDF
+        const sent = rows.filter(r => !r.sin_stock);
+        const printRows = sent.map(r => ({
+            product_name:      r.products?.nombre ?? '?',
+            laboratorio:       r.products?.laboratorios?.nombre ?? '',
+            presentacion_tipo: r.presentaciones?.tipo ?? '',
+            es_antibiotico:    r.products?.es_antibiotico ?? false,
+            qty:               r.cantidad_asignada ?? 0,
+            sin_stock:         false,
+            lotes:             Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
+        }));
         return {
             sucId,
             nombre:   ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
@@ -306,5 +310,11 @@ export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}) {
             revCount: rows.filter(r => r.revision_minmax && !r.sin_stock).length,
         };
     });
-    openPrintWindow(sections, `Pedido #${pedidoNumero}`, meta);
+
+    // Single-sucursal: use sucursal name in title so browser suggests it as PDF filename
+    const title = sucGroups.length === 1
+        ? `Pedido_${(ERP_NAMES_DEFAULT[sucGroups[0][0]] ?? `Sucursal_${sucGroups[0][0]}`).replace(/ /g, '_')}_${fecha}`
+        : `Pedido_#${pedidoNumero}_${fecha}`;
+
+    openPrintWindow(sections, title, meta);
 }

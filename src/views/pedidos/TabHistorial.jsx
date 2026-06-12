@@ -5,6 +5,7 @@ import {
     X, Package, Building2, AlertTriangle, Ban, ArrowDown,
     Clock, CheckCheck, TrendingDown, FlaskConical, Printer,
     BookMarked, Trash2, CalendarDays, Send, Search, PackagePlus,
+    Play, Flag, Database,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -60,6 +61,23 @@ function fmtDate(iso) {
         day: '2-digit', month: 'short', year: 'numeric',
         hour: '2-digit', minute: '2-digit',
     });
+}
+
+function fmtElapsed(fromIso, toIso) {
+    if (!fromIso || !toIso) return null;
+    const ms = new Date(toIso) - new Date(fromIso);
+    if (ms < 0) return null;
+    const totalMin = Math.floor(ms / 60000);
+    if (totalMin === 0) return '<1m';
+    if (totalMin < 60) return `${totalMin}m`;
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+function fmtTime(iso) {
+    if (!iso) return null;
+    return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' });
 }
 
 function fmtMes(iso) {
@@ -143,6 +161,8 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     const [confirmDelSnap,   setConfirmDelSnap]   = useState(null);
     const [deletingSnap,     setDeletingSnap]     = useState(false);
     const [totalCounts,      setTotalCounts]      = useState(null);
+    const [lifecycleMap,     setLifecycleMap]     = useState({}); // { pedidoId: { sucId: {...} } }
+    const [updatingLifecycle, setUpdatingLifecycle] = useState({}); // { 'pedidoId_sucId': bool }
 
     // ── Section toggle helpers ─────────────────────────────────────────────────
     const isSecOpen = (key, def) => sectionOpen[key] ?? def;
@@ -278,7 +298,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     // ── Fetch items + lotes + firmas + extras for expanded pedido ─────────────
     const fetchPedidoItems = useCallback(async (pedidoId) => {
         setLoadingItems(true);
-        const [{ data }, { data: firmaRows }, { data: extraRows }] = await Promise.all([
+        const [{ data }, { data: firmaRows }, { data: extraRows }, { data: lifecycleRows }] = await Promise.all([
             supabase
                 .from('pedido_items')
                 .select(`
@@ -301,13 +321,25 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 .from('pedido_recepcion_extras')
                 .select('id, erp_sucursal_id, erp_product_id, cantidad, nota, created_at, products:erp_product_id ( nombre )')
                 .eq('pedido_id', pedidoId),
+            supabase
+                .from('pedido_sucursal_status')
+                .select('erp_sucursal_id, iniciado_at, iniciado_por, finalizado_at, finalizado_por, recibido_erp_at, recibido_erp_por')
+                .eq('pedido_id', pedidoId),
         ]);
 
         const rows = data || [];
         setItems(prev => ({ ...prev, [pedidoId]: rows }));
         setFirmasMap(prev => ({ ...prev, [pedidoId]: firmaRows || [] }));
         setExtrasMap(prev => ({ ...prev, [pedidoId]: extraRows || [] }));
-        loadEmployees(rows.map(r => r.received_by));
+
+        // Index lifecycle by sucursal
+        const lcByS = {};
+        for (const row of (lifecycleRows || [])) lcByS[row.erp_sucursal_id] = row;
+        setLifecycleMap(prev => ({ ...prev, [pedidoId]: lcByS }));
+        loadEmployees([
+            ...rows.map(r => r.received_by),
+            ...(lifecycleRows || []).flatMap(r => [r.iniciado_por, r.finalizado_por, r.recibido_erp_por]),
+        ]);
 
         // Load current bodega lote info for these products
         const productIds = [...new Set(rows.map(r => r.erp_product_id))];
@@ -468,6 +500,35 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
             setEnviando(null);
         }
     }, [user, pedidoSucursales, reloadCounts]);
+
+    // ── Lifecycle actions (Iniciar / Finalizar / Recibir ERP) ─────────────────
+    const handleLifecycleAction = useCallback(async (pedidoId, sucursalId, stage) => {
+        const key = `${pedidoId}_${sucursalId}`;
+        setUpdatingLifecycle(prev => ({ ...prev, [key]: true }));
+        try {
+            const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', {
+                p_pedido_id:   pedidoId,
+                p_sucursal_id: sucursalId,
+                p_stage:       stage,
+                p_user_id:     user?.id ?? null,
+            });
+            if (error) throw error;
+            useStaff.getState().appendAuditLog(`PEDIDO_LIFECYCLE_${stage.toUpperCase()}`, pedidoId, { sucursal_id: sucursalId });
+            // Reload lifecycle for this pedido
+            const { data: lcRows } = await supabase
+                .from('pedido_sucursal_status')
+                .select('erp_sucursal_id, iniciado_at, iniciado_por, finalizado_at, finalizado_por, recibido_erp_at, recibido_erp_por')
+                .eq('pedido_id', pedidoId);
+            const lcByS = {};
+            for (const row of (lcRows || [])) lcByS[row.erp_sucursal_id] = row;
+            setLifecycleMap(prev => ({ ...prev, [pedidoId]: lcByS }));
+            loadEmployees((lcRows || []).flatMap(r => [r.iniciado_por, r.finalizado_por, r.recibido_erp_por]));
+        } catch (e) {
+            setAnulError(`Error: ${e.message}`);
+        } finally {
+            setUpdatingLifecycle(prev => ({ ...prev, [key]: false }));
+        }
+    }, [user, loadEmployees]);
 
     // ── Meta para impresión (nombres de empleados; columna real: name) ────────
     const loadPedidoMeta = useCallback(async (pedido) => {
@@ -780,6 +841,26 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                         const difCount    = sentRows.filter(r => r.status === 'con_diferencia').length;
                                         const pedLotes    = lotes[p.id] ?? {};
 
+                                        // Lifecycle para esta sucursal
+                                        const lifecycle    = lifecycleMap[p.id]?.[suc] ?? {};
+                                        const lcKey        = `${p.id}_${suc}`;
+                                        const lcBusy       = !!updatingLifecycle[lcKey];
+                                        const canIniciar   = p.status === 'confirmado' && !lifecycle.iniciado_at;
+                                        const canFinalizar = p.status === 'confirmado' && !!lifecycle.iniciado_at && !lifecycle.finalizado_at;
+                                        const erpRecibido  = !!lifecycle.recibido_erp_at;
+
+                                        // Tiempos entre etapas
+                                        const dtGenToIni   = fmtElapsed(p.created_at,         lifecycle.iniciado_at);
+                                        const dtIniToFin   = fmtElapsed(lifecycle.iniciado_at, lifecycle.finalizado_at);
+                                        const dtFinToEnv   = fmtElapsed(lifecycle.finalizado_at, p.enviado_at);
+                                        const dtEnvToRec   = sucFirmas[0]
+                                            ? fmtElapsed(p.enviado_at, sucFirmas[0]?.created_at)
+                                            : null;
+                                        const dtRecToErp   = fmtElapsed(
+                                            sucFirmas[0]?.created_at,
+                                            lifecycle.recibido_erp_at
+                                        );
+
                                         return (
                                             <div key={suc} className="border border-slate-100 rounded-xl overflow-hidden">
 
@@ -817,7 +898,28 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                         )}
                                                     </div>
                                                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                                                        {hasPending && (
+                                                        {/* Lifecycle action buttons */}
+                                                        {canIniciar && (
+                                                            <button
+                                                                onClick={e => { e.stopPropagation(); handleLifecycleAction(p.id, suc, 'iniciar'); }}
+                                                                disabled={lcBusy}
+                                                                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold bg-teal-600 text-white hover:bg-teal-700 transition-colors disabled:opacity-50"
+                                                            >
+                                                                {lcBusy ? <Loader2 size={11} className="animate-spin" /> : <Play size={11} />}
+                                                                Iniciar
+                                                            </button>
+                                                        )}
+                                                        {canFinalizar && (
+                                                            <button
+                                                                onClick={e => { e.stopPropagation(); handleLifecycleAction(p.id, suc, 'finalizar'); }}
+                                                                disabled={lcBusy}
+                                                                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                                                            >
+                                                                {lcBusy ? <Loader2 size={11} className="animate-spin" /> : <Flag size={11} />}
+                                                                Finalizar
+                                                            </button>
+                                                        )}
+                                                        {hasPending && p.status === 'enviado' && (
                                                             <button
                                                                 onClick={e => { e.stopPropagation(); openRecepcion(p.id, suc); }}
                                                                 className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
@@ -842,6 +944,68 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
 
                                                 {isSucOpen && (
                                                     <div>
+                                                        {/* ── Timeline de lifecycle ──────────────── */}
+                                                        {(lifecycle.iniciado_at || lifecycle.finalizado_at || lifecycle.recibido_erp_at || p.enviado_at) && (
+                                                            <div className="flex items-center gap-1 px-3 py-2 border-t border-slate-100 bg-slate-50/40 flex-wrap">
+                                                                <Clock size={10} className="text-slate-300 flex-shrink-0" />
+                                                                {/* Generado */}
+                                                                <span className="text-[9px] text-slate-400 whitespace-nowrap">
+                                                                    Gen: {fmtTime(p.created_at)}
+                                                                </span>
+                                                                {/* → Iniciado */}
+                                                                {lifecycle.iniciado_at && (<>
+                                                                    {dtGenToIni && <span className="text-[9px] text-slate-300">→{dtGenToIni}→</span>}
+                                                                    <span className="inline-flex items-center gap-0.5 text-[9px] bg-teal-50 text-teal-700 border border-teal-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                                        <Play size={8} />
+                                                                        {empMap[lifecycle.iniciado_por]?.name?.split(' ')[0] ?? fmtTime(lifecycle.iniciado_at)}
+                                                                    </span>
+                                                                </>)}
+                                                                {/* → Finalizado */}
+                                                                {lifecycle.finalizado_at && (<>
+                                                                    {dtIniToFin && <span className="text-[9px] text-slate-300">→{dtIniToFin}→</span>}
+                                                                    <span className="inline-flex items-center gap-0.5 text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                                        <Flag size={8} />
+                                                                        {empMap[lifecycle.finalizado_por]?.name?.split(' ')[0] ?? fmtTime(lifecycle.finalizado_at)}
+                                                                    </span>
+                                                                </>)}
+                                                                {/* → Enviado */}
+                                                                {p.enviado_at && (<>
+                                                                    {dtFinToEnv && <span className="text-[9px] text-slate-300">→{dtFinToEnv}→</span>}
+                                                                    <span className="inline-flex items-center gap-0.5 text-[9px] bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                                        <Send size={8} />
+                                                                        {fmtTime(p.enviado_at)}
+                                                                    </span>
+                                                                </>)}
+                                                                {/* → Recibido */}
+                                                                {sucFirmas[0]?.created_at && (<>
+                                                                    {dtEnvToRec && <span className="text-[9px] text-slate-300">→{dtEnvToRec}→</span>}
+                                                                    <span className="inline-flex items-center gap-0.5 text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                                        <CheckCircle2 size={8} />
+                                                                        {fmtTime(sucFirmas[0].created_at)}
+                                                                    </span>
+                                                                </>)}
+                                                                {/* → ERP */}
+                                                                {lifecycle.recibido_erp_at && (<>
+                                                                    {dtRecToErp && <span className="text-[9px] text-slate-300">→{dtRecToErp}→</span>}
+                                                                    <span className="inline-flex items-center gap-0.5 text-[9px] bg-violet-50 text-violet-700 border border-violet-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                                        <Database size={8} />
+                                                                        ERP {fmtTime(lifecycle.recibido_erp_at)}
+                                                                    </span>
+                                                                </>)}
+                                                                {/* Botón ERP si ya recibido físico pero no en ERP */}
+                                                                {sucFirmas.length > 0 && !lifecycle.recibido_erp_at && (
+                                                                    <button
+                                                                        onClick={e => { e.stopPropagation(); handleLifecycleAction(p.id, suc, 'recibir_erp'); }}
+                                                                        disabled={lcBusy}
+                                                                        className="inline-flex items-center gap-0.5 text-[9px] bg-white border border-violet-200 text-violet-600 hover:bg-violet-50 px-1.5 py-0.5 rounded-full whitespace-nowrap transition-colors disabled:opacity-50"
+                                                                    >
+                                                                        {lcBusy ? <Loader2 size={8} className="animate-spin" /> : <Database size={8} />}
+                                                                        Recibir en ERP
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        )}
+
                                                         {/* ── Productos enviados ─────────────────── */}
                                                         {sentRows.length > 0 && (
                                                             <>

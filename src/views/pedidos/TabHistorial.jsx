@@ -1,15 +1,19 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, ChevronRight, ChevronDown, CheckCircle2,
     X, Package, Building2, AlertTriangle, Ban, ArrowDown,
     Clock, CheckCheck, TrendingDown, FlaskConical, Printer,
-    BookMarked, Trash2, CalendarDays, Send,
+    BookMarked, Trash2, CalendarDays, Send, Search, PackagePlus,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import ModalShell from '../../components/common/ModalShell';
 import { printFromPedidoItems, printFromSnapshot } from '../../utils/pedidoPrint';
+import RecepcionModal, { EmpChip } from './RecepcionModal';
+
+const PEDIDO_FIELDS = 'id, numero, created_at, created_by, status, notes, responsable_id, revisado_por, anulado_por, motivo_anulacion, enviado_por, enviado_at';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
@@ -121,10 +125,11 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     const [lotes,            setLotes]            = useState({}); // { pedidoId: { productId: [{lote, fecha_vencimiento}] } }
     const [sectionOpen,      setSectionOpen]      = useState({}); // { key: bool }
     const [modal,            setModal]            = useState(null);
-    const [recepVals,        setRecepVals]        = useState({});
-    const [notaVals,         setNotaVals]         = useState({});
-    const [saving,           setSaving]           = useState(false);
-    const [saveError,        setSaveError]        = useState(null);
+    const [empMap,           setEmpMap]           = useState({});   // { empId: {id,name,photo_url} }
+    const [firmasMap,        setFirmasMap]        = useState({});   // { pedidoId: [{erp_sucursal_id, employees}] }
+    const [extrasMap,        setExtrasMap]        = useState({});   // { pedidoId: [extra,…] }
+    const [itemSearch,       setItemSearch]       = useState('');
+    const [searchOpen,       setSearchOpen]       = useState(false);
     const [anulando,         setAnulando]         = useState(null);
     const [confirmAnul,      setConfirmAnul]      = useState(null);
     const [anulMotivo,       setAnulMotivo]       = useState('');
@@ -144,6 +149,25 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     const toggleSec = useCallback((key, def) => {
         setSectionOpen(prev => ({ ...prev, [key]: !(prev[key] ?? def) }));
     }, []);
+
+    // ── Empleados (nombre + foto) para responsable/envió/recibió ──────────────
+    const requestedEmpIds = useRef(new Set());
+    const loadEmployees = useCallback(async (ids) => {
+        const missing = [...new Set(ids.filter(Boolean))].filter(id => !requestedEmpIds.current.has(id));
+        if (!missing.length) return;
+        missing.forEach(id => requestedEmpIds.current.add(id));
+        const { data } = await supabase
+            .from('employees')
+            .select('id, name, photo_url')
+            .in('id', missing);
+        if (data?.length) {
+            setEmpMap(prev => ({ ...prev, ...Object.fromEntries(data.map(e => [e.id, e])) }));
+        }
+    }, []);
+
+    const loadEmpsFromPedidos = useCallback((rows) => {
+        loadEmployees(rows.flatMap(p => [p.responsable_id, p.revisado_por, p.created_by, p.enviado_por, p.anulado_por]));
+    }, [loadEmployees]);
 
     // ── Load sucursal chips for a batch of pedidos ─────────────────────────────
     const loadSucursales = useCallback(async (pedidoIds) => {
@@ -175,7 +199,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         setPedidoSucursales({});
         let q = supabase
             .from('pedidos')
-            .select('id, numero, created_at, status, notes, responsable_id, revisado_por, anulado_por, motivo_anulacion')
+            .select(PEDIDO_FIELDS)
             .order('created_at', { ascending: false });
         if (desde) q = q.gte('created_at', desde);
         if (hasta) q = q.lte('created_at', hasta + 'T23:59:59');
@@ -185,8 +209,8 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         setPedidos(rows);
         setHasMore(rows.length === PAGE_SIZE);
         setLoading(false);
-        if (rows.length) loadSucursales(rows.map(p => p.id));
-    }, [loadSucursales]);
+        if (rows.length) { loadSucursales(rows.map(p => p.id)); loadEmpsFromPedidos(rows); }
+    }, [loadSucursales, loadEmpsFromPedidos]);
 
     // ── Load more ──────────────────────────────────────────────────────────────
     const loadMore = useCallback(async () => {
@@ -195,7 +219,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         const from = nextPage * PAGE_SIZE;
         let q = supabase
             .from('pedidos')
-            .select('id, numero, created_at, status, notes, responsable_id, revisado_por, anulado_por, motivo_anulacion')
+            .select(PEDIDO_FIELDS)
             .order('created_at', { ascending: false });
         if (filterDesde) q = q.gte('created_at', filterDesde);
         if (filterHasta) q = q.lte('created_at', filterHasta + 'T23:59:59');
@@ -206,8 +230,8 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         setPage(nextPage);
         setHasMore(rows.length === PAGE_SIZE);
         setLoadingMore(false);
-        if (rows.length) loadSucursales(rows.map(p => p.id));
-    }, [page, loadSucursales, filterDesde, filterHasta]);
+        if (rows.length) { loadSucursales(rows.map(p => p.id)); loadEmpsFromPedidos(rows); }
+    }, [page, loadSucursales, loadEmpsFromPedidos, filterDesde, filterHasta]);
 
     // Initial load
     useEffect(() => { resetLoad('', ''); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -251,26 +275,39 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
 
     useEffect(() => { reloadCounts(); }, [reloadCounts]);
 
-    // ── Fetch items + lotes for expanded pedido ────────────────────────────────
+    // ── Fetch items + lotes + firmas + extras for expanded pedido ─────────────
     const fetchPedidoItems = useCallback(async (pedidoId) => {
         setLoadingItems(true);
-        const { data } = await supabase
-            .from('pedido_items')
-            .select(`
-                id, erp_sucursal_id, erp_product_id, erp_presentacion_id,
-                cantidad_asignada, cantidad_recibida,
-                sin_stock, revision_minmax,
-                max_qty_snapshot, stock_packs_snapshot,
-                status, nota_diferencia, received_at,
-                lotes_asignados,
-                products ( nombre, es_antibiotico, laboratorios ( nombre ) ),
-                presentaciones ( tipo )
-            `)
-            .eq('pedido_id', pedidoId)
-            .range(0, 9999);
+        const [{ data }, { data: firmaRows }, { data: extraRows }] = await Promise.all([
+            supabase
+                .from('pedido_items')
+                .select(`
+                    id, erp_sucursal_id, erp_product_id, erp_presentacion_id,
+                    cantidad_asignada, cantidad_recibida,
+                    sin_stock, revision_minmax,
+                    max_qty_snapshot, stock_packs_snapshot,
+                    status, nota_diferencia, error_tipo, received_at, received_by,
+                    lotes_asignados,
+                    products ( nombre, es_antibiotico, laboratorios ( nombre ) ),
+                    presentaciones ( tipo )
+                `)
+                .eq('pedido_id', pedidoId)
+                .range(0, 9999),
+            supabase
+                .from('pedido_recepcion_firmas')
+                .select('erp_sucursal_id, created_at, employees:employee_id ( id, name, photo_url )')
+                .eq('pedido_id', pedidoId),
+            supabase
+                .from('pedido_recepcion_extras')
+                .select('id, erp_sucursal_id, erp_product_id, cantidad, nota, created_at, products:erp_product_id ( nombre )')
+                .eq('pedido_id', pedidoId),
+        ]);
 
         const rows = data || [];
         setItems(prev => ({ ...prev, [pedidoId]: rows }));
+        setFirmasMap(prev => ({ ...prev, [pedidoId]: firmaRows || [] }));
+        setExtrasMap(prev => ({ ...prev, [pedidoId]: extraRows || [] }));
+        loadEmployees(rows.map(r => r.received_by));
 
         // Load current bodega lote info for these products
         const productIds = [...new Set(rows.map(r => r.erp_product_id))];
@@ -307,59 +344,36 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         }
 
         setLoadingItems(false);
-    }, []);
+    }, [loadEmployees]);
 
     const toggleExpand = useCallback(async (pedidoId) => {
         if (expanded === pedidoId) { setExpanded(null); return; }
         setExpanded(pedidoId);
+        setItemSearch(''); setSearchOpen(false);
         if (!items[pedidoId]) await fetchPedidoItems(pedidoId);
     }, [expanded, items, fetchPedidoItems]);
 
-    // ── Reception modal ───────────────────────────────────────────────────────
+    // ── Reception modal (unificado) ───────────────────────────────────────────
     const openRecepcion = useCallback((pedidoId, sucursalId) => {
         const rows = (items[pedidoId] || []).filter(
             r => r.erp_sucursal_id === sucursalId && r.status === 'pendiente' && r.cantidad_asignada > 0
         );
         if (!rows.length) return;
-        const vals = {}, notas = {};
-        for (const r of rows) { vals[r.id] = r.cantidad_asignada; notas[r.id] = ''; }
-        setRecepVals(vals); setNotaVals(notas); setSaveError(null);
-        setModal({ pedidoId, sucursalId, rows });
-    }, [items]);
+        const pedido = pedidos.find(p => p.id === pedidoId);
+        setModal({ pedido: { id: pedidoId, numero: pedido?.numero ?? '?' }, sucursalId, rows });
+    }, [items, pedidos]);
 
-    const handleConfirmarRecepcion = useCallback(async () => {
-        if (!modal) return;
-        setSaving(true); setSaveError(null);
-        const { pedidoId, sucursalId, rows } = modal;
-        const p_items = rows.map(r => ({
-            pedido_item_id:    r.id,
-            cantidad_recibida: recepVals[r.id] ?? r.cantidad_asignada,
-            nota_diferencia:   notaVals[r.id] || null,
-        }));
-        try {
-            const { error } = await supabase.rpc('receive_pedido_sucursal', {
-                p_pedido_id:   pedidoId,
-                p_sucursal_id: sucursalId,
-                p_items,
-                p_received_by: user?.id ?? null,
-            });
-            if (error) throw error;
-            useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedidoId, {
-                sucursal_id: sucursalId, items_count: p_items.length,
-            });
-            setModal(null);
-            await fetchPedidoItems(pedidoId);
-            const { data } = await supabase
-                .from('pedidos').select('id, numero, created_at, status, notes, responsable_id, revisado_por, anulado_por, motivo_anulacion')
-                .eq('id', pedidoId).single();
-            if (data) setPedidos(prev => prev.map(p => p.id === pedidoId ? data : p));
-            reloadCounts();
-        } catch (e) {
-            setSaveError(e.message);
-        } finally {
-            setSaving(false);
-        }
-    }, [modal, recepVals, notaVals, fetchPedidoItems, reloadCounts]);
+    const handleRecepcionConfirmed = useCallback(async () => {
+        const pedidoId = modal?.pedido?.id;
+        setModal(null);
+        if (!pedidoId) return;
+        await fetchPedidoItems(pedidoId);
+        const { data } = await supabase
+            .from('pedidos').select(PEDIDO_FIELDS)
+            .eq('id', pedidoId).single();
+        if (data) setPedidos(prev => prev.map(p => p.id === pedidoId ? data : p));
+        reloadCounts();
+    }, [modal, fetchPedidoItems, reloadCounts]);
 
     // ── Anular ────────────────────────────────────────────────────────────────
     const doAnular = useCallback(async () => {
@@ -378,7 +392,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
             });
             setItems(prev => { const n = { ...prev }; delete n[confirmAnul.id]; return n; });
             const { data } = await supabase
-                .from('pedidos').select('id, numero, created_at, status, notes, responsable_id, revisado_por, anulado_por, motivo_anulacion')
+                .from('pedidos').select(PEDIDO_FIELDS)
                 .eq('id', confirmAnul.id).single();
             if (data) setPedidos(prev => prev.map(p => p.id === confirmAnul.id ? data : p));
             setConfirmAnul(null);
@@ -390,15 +404,6 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
             setAnulando(null);
         }
     }, [confirmAnul, anulMotivo, user, reloadCounts]);
-
-    // ── Todo recibido exacto ──────────────────────────────────────────────────
-    const handleTodoRecibido = useCallback(() => {
-        if (!modal) return;
-        const vals = {}, notas = {};
-        for (const r of modal.rows) { vals[r.id] = r.cantidad_asignada; notas[r.id] = ''; }
-        setRecepVals(vals);
-        setNotaVals(notas);
-    }, [modal]);
 
     // ── Borrar snapshot ────────────────────────────────────────────────────────
     const doDeleteSnap = useCallback(async () => {
@@ -452,7 +457,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
             } catch { /* no-fatal */ }
 
             const { data } = await supabase
-                .from('pedidos').select('id, numero, created_at, status, notes, responsable_id, revisado_por, anulado_por, motivo_anulacion')
+                .from('pedidos').select(PEDIDO_FIELDS)
                 .eq('id', pedido.id).single();
             if (data) setPedidos(prev => prev.map(p => p.id === pedido.id ? data : p));
             reloadCounts();
@@ -464,18 +469,20 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         }
     }, [user, pedidoSucursales, reloadCounts]);
 
-    // ── Meta para impresión (nombres de empleados) ────────────────────────────
+    // ── Meta para impresión (nombres de empleados; columna real: name) ────────
     const loadPedidoMeta = useCallback(async (pedido) => {
-        const ids = [pedido.responsable_id, pedido.revisado_por].filter(Boolean);
+        const ids = [pedido.responsable_id, pedido.revisado_por, pedido.created_by].filter(Boolean);
         if (!ids.length) return {};
         const { data } = await supabase
             .from('employees')
-            .select('id, nombre')
+            .select('id, name')
             .in('id', ids);
-        const map = Object.fromEntries((data || []).map(e => [e.id, e.nombre]));
+        const map = Object.fromEntries((data || []).map(e => [e.id, e.name]));
+        const generadoPor = map[pedido.created_by] ?? null;
         return {
-            responsable: map[pedido.responsable_id] ?? null,
+            responsable: map[pedido.responsable_id] ?? generadoPor,
             revisor:     map[pedido.revisado_por]   ?? null,
+            generadoPor,
         };
     }, []);
 
@@ -516,49 +523,53 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 </div>
             )}
 
-            {/* ── Date range filter ─────────────────────────────────────── */}
-            <div className="flex items-center gap-2 flex-wrap">
-                <CalendarDays size={13} className="text-slate-400 shrink-0" />
-                <input
-                    type="date" value={filterDesde} onChange={e => setFilterDesde(e.target.value)}
-                    className="text-[12px] border border-slate-200 rounded-lg px-2.5 py-1 bg-white text-slate-700 focus:outline-none focus:border-blue-400 transition-colors"
-                />
-                <span className="text-[11px] text-slate-400">—</span>
-                <input
-                    type="date" value={filterHasta} onChange={e => setFilterHasta(e.target.value)}
-                    className="text-[12px] border border-slate-200 rounded-lg px-2.5 py-1 bg-white text-slate-700 focus:outline-none focus:border-blue-400 transition-colors"
-                />
+            {/* ── Filter pill estándar: estados + rango de fechas ──────── */}
+            <div className="flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-sm flex-wrap w-fit max-w-full">
+                <div className="flex items-center gap-1 px-2 py-1.5 flex-wrap">
+                    {FILTER_TABS.map(ft => {
+                        const cnt   = ft.key === 'todos'
+                            ? ((totalCounts ? Object.values(totalCounts).reduce((s, v) => s + v, 0) : null) ?? pedidos.length)
+                            : ((totalCounts ?? counts)[ft.key] ?? 0);
+                        const isAct = filterTab === ft.key;
+                        return (
+                            <button
+                                key={ft.key}
+                                onClick={() => setFilterTab(ft.key)}
+                                className={`flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full border font-medium transition-colors ${
+                                    isAct
+                                        ? 'bg-blue-600 text-white border-blue-600'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+                                }`}
+                            >
+                                {ft.icon && <ft.icon size={11} />}
+                                {ft.label}
+                                <span className={`text-[10px] ${isAct ? 'text-blue-200' : 'text-slate-400'}`}>({cnt})</span>
+                            </button>
+                        );
+                    })}
+                </div>
+                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                <div className="flex items-center gap-1.5 px-3 py-1.5">
+                    <CalendarDays size={13} className="text-slate-400 shrink-0" />
+                    <input
+                        type="date" value={filterDesde} onChange={e => setFilterDesde(e.target.value)}
+                        className="text-[12px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-700 focus:outline-none focus:border-blue-400 transition-colors"
+                    />
+                    <span className="text-[11px] text-slate-400">—</span>
+                    <input
+                        type="date" value={filterHasta} onChange={e => setFilterHasta(e.target.value)}
+                        className="text-[12px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-700 focus:outline-none focus:border-blue-400 transition-colors"
+                    />
+                </div>
                 {(filterDesde || filterHasta) && (
-                    <button onClick={() => { setFilterDesde(''); setFilterHasta(''); }}
-                        className="text-[11px] text-slate-400 hover:text-red-500 transition-colors flex items-center gap-0.5">
-                        <X size={11} /> Limpiar
-                    </button>
-                )}
-            </div>
-
-            {/* ── Filter pills ──────────────────────────────────────────── */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-                {FILTER_TABS.map(ft => {
-                    const cnt   = ft.key === 'todos'
-                        ? ((totalCounts ? Object.values(totalCounts).reduce((s, v) => s + v, 0) : null) ?? pedidos.length)
-                        : ((totalCounts ?? counts)[ft.key] ?? 0);
-                    const isAct = filterTab === ft.key;
-                    return (
-                        <button
-                            key={ft.key}
-                            onClick={() => setFilterTab(ft.key)}
-                            className={`flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full border font-medium transition-colors ${
-                                isAct
-                                    ? 'bg-blue-600 text-white border-blue-600'
-                                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
-                            }`}
-                        >
-                            {ft.icon && <ft.icon size={11} />}
-                            {ft.label}
-                            <span className={`text-[10px] ${isAct ? 'text-blue-200' : 'text-slate-400'}`}>({cnt})</span>
+                    <>
+                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+                        <button onClick={() => { setFilterDesde(''); setFilterHasta(''); }}
+                            className="flex items-center gap-1 px-3 py-2 text-[11px] text-slate-400 hover:text-red-500 transition-colors whitespace-nowrap">
+                            <X size={11} /> Limpiar
                         </button>
-                    );
-                })}
+                    </>
+                )}
             </div>
 
             {/* ── Error anulación ────────────────────────────────────────── */}
@@ -589,17 +600,31 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 const canAnul  = ['confirmado', 'enviado', 'parcial'].includes(p.status);
                 const sucIds   = pedidoSucursales[p.id] ?? [];
 
-                // Group items by sucursal
-                const sucMap = {};
-                for (const row of pedItems) {
-                    const s = row.erp_sucursal_id;
-                    if (!sucMap[s]) sucMap[s] = [];
-                    sucMap[s].push(row);
-                }
-                const sucGroups = [
-                    ...ERP_ORDER.filter(id => sucMap[id]).map(id => [id, sucMap[id]]),
-                    ...Object.keys(sucMap).map(Number).filter(id => !ERP_ORDER.includes(id)).map(id => [id, sucMap[id]]),
-                ];
+                // Group items by sucursal (todos — para imprimir)
+                const groupBySuc = (rows) => {
+                    const m = {};
+                    for (const row of rows) {
+                        const s = row.erp_sucursal_id;
+                        if (!m[s]) m[s] = [];
+                        m[s].push(row);
+                    }
+                    return [
+                        ...ERP_ORDER.filter(id => m[id]).map(id => [id, m[id]]),
+                        ...Object.keys(m).map(Number).filter(id => !ERP_ORDER.includes(id)).map(id => [id, m[id]]),
+                    ];
+                };
+                const sucGroupsAll = groupBySuc(pedItems);
+                // Lupa: filtra el detalle visible sin afectar la impresión
+                const q = isExp ? itemSearch.trim().toLowerCase() : '';
+                const sucGroups = q
+                    ? groupBySuc(pedItems.filter(r => (r.products?.nombre || '').toLowerCase().includes(q)))
+                    : sucGroupsAll;
+
+                const respEmp   = empMap[p.responsable_id] ?? empMap[p.created_by] ?? null;
+                const envioEmp  = p.enviado_por ? empMap[p.enviado_por] : null;
+                const anuloEmp  = p.anulado_por ? empMap[p.anulado_por] : null;
+                const pedFirmas = firmasMap[p.id] ?? [];
+                const pedExtras = extrasMap[p.id] ?? [];
 
                 return (
                     <div key={p.id} className={GLASS + ' overflow-hidden'}>
@@ -638,6 +663,14 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                             ) : null;
                                         })()}
                                     </div>
+                                    {/* Responsables con foto */}
+                                    {(respEmp || envioEmp || anuloEmp) && (
+                                        <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                            {respEmp  && <EmpChip emp={respEmp}  sub="responsable" />}
+                                            {envioEmp && <EmpChip emp={envioEmp} sub={`envió · ${fmtDate(p.enviado_at)}`} />}
+                                            {anuloEmp && <EmpChip emp={anuloEmp} sub="anuló" />}
+                                        </div>
+                                    )}
                                     {p.notes && (
                                         <p className="text-slate-400 text-[12px] truncate italic mt-0.5">"{p.notes}"</p>
                                     )}
@@ -645,12 +678,12 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                             </button>
                             <div className="flex items-center gap-2 flex-shrink-0 ml-3">
                                 <span className="text-[12px] text-slate-400 whitespace-nowrap hidden sm:block">{fmtDate(p.created_at)}</span>
-                                {isExp && sucGroups.length > 0 && (
+                                {isExp && sucGroupsAll.length > 0 && (
                                     <button
                                         onClick={async e => {
                                             e.stopPropagation();
                                             const meta = await loadPedidoMeta(p);
-                                            printFromPedidoItems(p.numero, sucGroups, meta);
+                                            printFromPedidoItems(p.numero, sucGroupsAll, meta);
                                         }}
                                         className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
                                         title="Imprimir pedido completo"
@@ -684,18 +717,56 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                         {/* ── Expanded detail ────────────────────────────── */}
                         {isExp && (
                             <div className="border-t border-slate-100 px-4 py-3 space-y-3">
+                                {/* Lupa expansible — busca productos dentro del pedido */}
+                                {pedItems.length > 0 && (
+                                    <div className="flex items-center justify-end">
+                                        {searchOpen ? (
+                                            <div className="relative w-full max-w-[280px]">
+                                                <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                                <input
+                                                    autoFocus
+                                                    type="text" placeholder="Buscar producto en este pedido…"
+                                                    value={itemSearch}
+                                                    onChange={e => setItemSearch(e.target.value)}
+                                                    className="w-full text-[12px] border border-slate-200 rounded-lg pl-7 pr-7 py-1.5 focus:outline-none focus:border-blue-400 bg-white placeholder-slate-300"
+                                                />
+                                                <button
+                                                    onClick={() => { setSearchOpen(false); setItemSearch(''); }}
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500">
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => setSearchOpen(true)}
+                                                title="Buscar producto en este pedido"
+                                                className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 transition-colors">
+                                                <Search size={13} />
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                                 {loadingItems && pedItems.length === 0 ? (
                                     <div className="flex items-center gap-2 text-slate-400 py-4">
                                         <Loader2 size={16} className="animate-spin" />
                                         <span className="text-[13px]">Cargando ítems…</span>
                                     </div>
                                 ) : sucGroups.length === 0 ? (
-                                    <p className="text-[13px] text-slate-400 py-2">Sin ítems registrados.</p>
+                                    <p className="text-[13px] text-slate-400 py-2">
+                                        {q ? `Sin resultados para "${itemSearch}".` : 'Sin ítems registrados.'}
+                                    </p>
                                 ) : (
                                     sucGroups.map(([sucId, rows]) => {
                                         const suc        = Number(sucId);
                                         const sucKey     = `${p.id}_${suc}`;
                                         const isSucOpen  = isSecOpen(`${sucKey}_suc`, true);
+                                        const allRows    = sucGroupsAll.find(([id]) => Number(id) === suc)?.[1] ?? rows;
+                                        const sucFirmas  = pedFirmas.filter(f => f.erp_sucursal_id === suc).map(f => f.employees).filter(Boolean);
+                                        const sucExtras  = pedExtras.filter(e => e.erp_sucursal_id === suc);
+                                        // Fallback para pedidos viejos sin firmas: received_by de los ítems
+                                        const recibioEmps = sucFirmas.length > 0 ? sucFirmas
+                                            : [...new Set(rows.map(r => r.received_by).filter(Boolean))]
+                                                .map(id => empMap[id]).filter(Boolean);
 
                                         const sentRows    = rows.filter(r => !r.sin_stock && !r.revision_minmax);
                                         const sinRows     = rows.filter(r => r.sin_stock);
@@ -759,7 +830,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                             onClick={async e => {
                                                                 e.stopPropagation();
                                                                 const meta = await loadPedidoMeta(p);
-                                                                printFromPedidoItems(p.numero, [[suc, rows]], meta);
+                                                                printFromPedidoItems(p.numero, [[suc, allRows]], meta);
                                                             }}
                                                             className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
                                                             title="Imprimir esta sucursal"
@@ -834,11 +905,15 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                                                     </span>
                                                                                                 ) : <span className="text-slate-200">—</span>}
                                                                                             </td>
-                                                                                            <td className="px-3 py-2 text-slate-400 text-[11px] italic max-w-[140px]">
-                                                                                                {row.nota_diferencia
-                                                                                                    ? <span className="block truncate">"{row.nota_diferencia}"</span>
-                                                                                                    : <span className="text-slate-200">—</span>
-                                                                                                }
+                                                                                            <td className="px-3 py-2 text-slate-400 text-[11px] italic max-w-[160px]">
+                                                                                                {(row.error_tipo || row.nota_diferencia) ? (
+                                                                                                    <span className="block truncate">
+                                                                                                        {row.error_tipo && (
+                                                                                                            <span className="not-italic text-[9px] font-bold uppercase text-amber-600 mr-1">[{row.error_tipo}]</span>
+                                                                                                        )}
+                                                                                                        {row.nota_diferencia ? `"${row.nota_diferencia}"` : ''}
+                                                                                                    </span>
+                                                                                                ) : <span className="text-slate-200">—</span>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 text-center">
                                                                                                 <span className={`px-1.5 py-0.5 rounded-full border text-[10px] font-semibold ${STATUS_PILL[row.status] ?? ''}`}>
@@ -972,6 +1047,31 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                 )}
                                                             </>
                                                         )}
+                                                        {/* ── Recepción: extras + responsables con foto ── */}
+                                                        {(sucExtras.length > 0 || recibioEmps.length > 0) && (
+                                                            <div className="px-3 py-2.5 border-t border-slate-100 bg-slate-50/40 space-y-2">
+                                                                {sucExtras.length > 0 && (
+                                                                    <div className="space-y-1">
+                                                                        <p className="flex items-center gap-1 text-[10px] font-semibold text-violet-500 uppercase tracking-wide">
+                                                                            <PackagePlus size={11} /> Llegaron sin estar en el pedido ({sucExtras.length})
+                                                                        </p>
+                                                                        {sucExtras.map(ex => (
+                                                                            <div key={ex.id} className="flex items-center gap-2 py-1 px-2.5 rounded-lg bg-violet-50/70 border border-violet-100">
+                                                                                <span className="flex-1 text-[12px] font-medium text-slate-700 truncate">{ex.products?.nombre ?? '?'}</span>
+                                                                                {ex.nota && <span className="text-[10px] text-slate-400 italic truncate max-w-[160px]">"{ex.nota}"</span>}
+                                                                                <span className="text-[12px] font-bold text-violet-600 tabular-nums shrink-0">{ex.cantidad} pk</span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                                {recibioEmps.length > 0 && (
+                                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Recibido por:</span>
+                                                                        {recibioEmps.map(emp => <EmpChip key={emp.id} emp={emp} />)}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
@@ -998,97 +1098,17 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 </div>
             )}
 
-            {/* ── Reception modal ────────────────────────────────────────── */}
+            {/* ── Reception modal — unificado ───────────────────────────── */}
             {modal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
-                    <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden">
-                        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-                            <div className="flex-1 min-w-0">
-                                <h3 className="font-bold text-slate-800 text-[16px]">
-                                    Recepción — {ERP_NAMES[modal.sucursalId] ?? `Sucursal ${modal.sucursalId}`}
-                                </h3>
-                                <p className="text-[12px] text-slate-400 mt-0.5">
-                                    Ajusta la cantidad realmente recibida por producto.
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={handleTodoRecibido}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
-                                    title="Marcar todo como recibido exactamente"
-                                >
-                                    <CheckCircle2 size={12} /> Todo exacto
-                                </button>
-                                <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
-                                    <X size={18} />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="p-4 space-y-2.5 max-h-[55vh] overflow-y-auto">
-                            {modal.rows.map(row => {
-                                const recibida = recepVals[row.id] ?? row.cantidad_asignada;
-                                const hasDiff  = recibida !== row.cantidad_asignada;
-                                const delta    = recibida - row.cantidad_asignada;
-                                return (
-                                    <div key={row.id} className={`rounded-xl px-3 py-3 border transition-colors ${
-                                        hasDiff ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-100'
-                                    }`}>
-                                        <div className="flex items-center gap-3 mb-1.5">
-                                            <span className="flex-1 text-[13px] text-slate-700 font-semibold">
-                                                {row.products?.nombre}
-                                            </span>
-                                            <div className="flex items-center gap-2 flex-shrink-0">
-                                                <span className="text-[11px] text-slate-400">asignado: <b>{row.cantidad_asignada}</b></span>
-                                                {hasDiff && (
-                                                    <span className={`text-[11px] font-bold ${delta > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                                        {delta > 0 ? '+' : ''}{delta}
-                                                    </span>
-                                                )}
-                                                <input
-                                                    type="number" min={0} max={row.cantidad_asignada} value={recibida}
-                                                    onChange={e => {
-                                                        const v = Math.min(row.cantidad_asignada, Math.max(0, parseInt(e.target.value) || 0));
-                                                        setRecepVals(prev => ({ ...prev, [row.id]: v }));
-                                                    }}
-                                                    className={`w-16 text-center border rounded-lg px-1 py-1 text-[13px] font-semibold focus:outline-none tabular-nums ${
-                                                        hasDiff ? 'border-amber-400 bg-amber-50 focus:border-amber-500' : 'border-slate-200 focus:border-blue-400'
-                                                    }`}
-                                                />
-                                            </div>
-                                        </div>
-                                        {hasDiff && (
-                                            <input
-                                                type="text" placeholder="Nota sobre la diferencia (opcional)…"
-                                                value={notaVals[row.id] ?? ''}
-                                                onChange={e => setNotaVals(prev => ({ ...prev, [row.id]: e.target.value }))}
-                                                className="w-full text-[12px] border border-amber-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-amber-400 bg-white placeholder-slate-300"
-                                            />
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {saveError && (
-                            <div className="mx-5 mb-3 px-3 py-2 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2 text-red-600 text-[12px]">
-                                <AlertTriangle size={14} /> {saveError}
-                            </div>
-                        )}
-
-                        <div className="flex justify-end gap-2 px-5 py-4 border-t border-slate-100">
-                            <button onClick={() => setModal(null)}
-                                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors">
-                                Cancelar
-                            </button>
-                            <button onClick={handleConfirmarRecepcion} disabled={saving}
-                                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 text-[13px] transition-colors disabled:opacity-50">
-                                {saving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                                Confirmar recepción
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <RecepcionModal
+                    open={!!modal}
+                    onClose={() => setModal(null)}
+                    pedido={modal.pedido}
+                    sucursalId={modal.sucursalId}
+                    sucursalNombre={ERP_NAMES[modal.sucursalId] ?? `Sucursal ${modal.sucursalId}`}
+                    rows={modal.rows}
+                    onConfirmed={handleRecepcionConfirmed}
+                />
             )}
 
             {/* ── Borradores guardados ────────────────────────────────────── */}
@@ -1148,10 +1168,10 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 )}
             </div>
 
-            {/* ── Modal anular con motivo ──────────────────────────────────── */}
+            {/* ── Modal anular con motivo (ModalShell, centrado) ──────────── */}
             {confirmAnul && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
-                    <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 space-y-4">
+                <ModalShell open={!!confirmAnul} onClose={() => { setConfirmAnul(null); setAnulMotivo(''); setAnulError(null); }} maxWidthClass="max-w-sm">
+                    <div className="w-full rounded-2xl bg-white shadow-2xl p-6 space-y-4">
                         <h3 className="font-bold text-slate-800 text-[16px]">
                             Anular Pedido #{confirmAnul.numero}
                         </h3>
@@ -1192,7 +1212,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                             </button>
                         </div>
                     </div>
-                </div>
+                </ModalShell>
             )}
 
             {/* ── Confirm borrar snapshot ─────────────────────────────────── */}

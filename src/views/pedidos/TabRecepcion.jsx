@@ -3,10 +3,10 @@ import { supabase } from '../../supabaseClient';
 import {
     Loader2, ChevronRight, ChevronDown, CheckCircle2, PackageCheck,
     AlertTriangle, X, Package, Building2, TrendingDown, CheckCheck,
-    CalendarDays,
+    Search, PackagePlus,
 } from 'lucide-react';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
+import RecepcionModal, { EmpChip } from './RecepcionModal';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
@@ -83,20 +83,21 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
     const [loadingItems,  setLoadingItems]  = useState(false);
     const [filterTab,     setFilterTab]     = useState('enviado');
     const [modal,         setModal]         = useState(null);
-    const [recepVals,     setRecepVals]     = useState({});
-    const [notaVals,      setNotaVals]      = useState({});
-    const [saving,        setSaving]        = useState(false);
-    const [saveError,     setSaveError]     = useState(null);
+    const [itemSearch,    setItemSearch]    = useState('');
+    const [searchOpen,    setSearchOpen]    = useState(false);
+    const [firmas,        setFirmas]        = useState({});   // { pedidoId: [emp,…] }
+    const [extras,        setExtras]        = useState({});   // { pedidoId: [extra,…] }
 
-    // Resolve employee → branch → erp_sucursal_id on mount
+    // Resolve employee → branch → erp_sucursal_id on mount.
+    // employees.id == uid de auth (no existe columna user_id).
     useEffect(() => {
         if (!user?.id) return;
         (async () => {
             const { data: emp } = await supabase
                 .from('employees')
                 .select('branch_id')
-                .eq('user_id', user.id)
-                .single();
+                .eq('id', user.id)
+                .maybeSingle();
             if (!emp?.branch_id) { setLoading(false); return; }
 
             const { data: mapRow } = await supabase
@@ -129,30 +130,45 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
     useEffect(() => { if (erpSucursalId) loadPedidos(erpSucursalId); }, [erpSucursalId, loadPedidos]);
     useEffect(() => { if (refreshKey > 0 && erpSucursalId) loadPedidos(erpSucursalId); }, [refreshKey]); // eslint-disable-line
 
-    // Load items for a specific pedido, filtered to this branch's sucursal
+    // Load items + firmas + extras for a specific pedido, filtered to this branch's sucursal
     const fetchItems = useCallback(async (pedidoId) => {
         if (!erpSucursalId) return;
         setLoadingItems(true);
-        const { data } = await supabase
-            .from('pedido_items')
-            .select(`
-                id, erp_sucursal_id, erp_product_id, erp_presentacion_id,
-                cantidad_asignada, cantidad_recibida,
-                sin_stock, revision_minmax,
-                status, nota_diferencia, received_at, lotes_asignados,
-                products ( nombre, es_antibiotico ),
-                presentaciones ( tipo )
-            `)
-            .eq('pedido_id', pedidoId)
-            .eq('erp_sucursal_id', erpSucursalId)
-            .range(0, 999);
+        const [{ data }, { data: firmaRows }, { data: extraRows }] = await Promise.all([
+            supabase
+                .from('pedido_items')
+                .select(`
+                    id, erp_sucursal_id, erp_product_id, erp_presentacion_id,
+                    cantidad_asignada, cantidad_recibida,
+                    sin_stock, revision_minmax,
+                    status, nota_diferencia, error_tipo, received_at, lotes_asignados,
+                    products ( nombre, es_antibiotico ),
+                    presentaciones ( tipo )
+                `)
+                .eq('pedido_id', pedidoId)
+                .eq('erp_sucursal_id', erpSucursalId)
+                .range(0, 999),
+            supabase
+                .from('pedido_recepcion_firmas')
+                .select('employee_id, created_at, employees:employee_id ( id, name, photo_url )')
+                .eq('pedido_id', pedidoId)
+                .eq('erp_sucursal_id', erpSucursalId),
+            supabase
+                .from('pedido_recepcion_extras')
+                .select('id, erp_product_id, cantidad, nota, created_at, products:erp_product_id ( nombre )')
+                .eq('pedido_id', pedidoId)
+                .eq('erp_sucursal_id', erpSucursalId),
+        ]);
         setItems(prev => ({ ...prev, [pedidoId]: data || [] }));
+        setFirmas(prev => ({ ...prev, [pedidoId]: (firmaRows || []).map(f => f.employees).filter(Boolean) }));
+        setExtras(prev => ({ ...prev, [pedidoId]: extraRows || [] }));
         setLoadingItems(false);
     }, [erpSucursalId]);
 
     const toggleExpand = useCallback(async (pedidoId) => {
         if (expanded === pedidoId) { setExpanded(null); return; }
         setExpanded(pedidoId);
+        setItemSearch(''); setSearchOpen(false);
         if (!items[pedidoId]) await fetchItems(pedidoId);
     }, [expanded, items, fetchItems]);
 
@@ -162,84 +178,49 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
             r => r.status === 'pendiente' && r.cantidad_asignada > 0
         );
         if (!rows.length) return;
-        const vals = {}, notas = {};
-        for (const r of rows) { vals[r.id] = r.cantidad_asignada; notas[r.id] = ''; }
-        setRecepVals(vals); setNotaVals(notas); setSaveError(null);
-        setModal({ pedidoId, rows });
-    }, [items]);
+        const pedido = pedidos.find(p => p.id === pedidoId);
+        setModal({ pedido: { id: pedidoId, numero: pedido?.numero ?? '?' }, rows });
+    }, [items, pedidos]);
 
-    const handleTodoRecibido = useCallback(() => {
-        if (!modal) return;
-        const vals = {}, notas = {};
-        for (const r of modal.rows) { vals[r.id] = r.cantidad_asignada; notas[r.id] = ''; }
-        setRecepVals(vals); setNotaVals(notas);
-    }, [modal]);
-
-    const handleConfirmar = useCallback(async () => {
-        if (!modal || !erpSucursalId) return;
-        setSaving(true); setSaveError(null);
-        const { pedidoId, rows } = modal;
-        const p_items = rows.map(r => ({
-            pedido_item_id:    r.id,
-            cantidad_recibida: recepVals[r.id] ?? r.cantidad_asignada,
-            nota_diferencia:   notaVals[r.id] || null,
-        }));
-        try {
-            const { error } = await supabase.rpc('receive_pedido_sucursal', {
-                p_pedido_id:   pedidoId,
-                p_sucursal_id: erpSucursalId,
-                p_items,
-                p_received_by: user?.id ?? null,
-            });
-            if (error) throw error;
-            useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedidoId, {
-                sucursal_id: erpSucursalId, items_count: p_items.length,
-            });
-
-            // Notify bodega if any differences
-            const hasDiff = p_items.some(
-                (it, i) => it.cantidad_recibida < rows[i].cantidad_asignada
-            );
-            if (hasDiff) {
-                try {
-                    const { data: bodegaMap } = await supabase
-                        .from('erp_sucursal_map')
-                        .select('branch_id')
-                        .eq('es_bodega', true)
-                        .single();
-                    if (bodegaMap?.branch_id) {
-                        const pedido = pedidos.find(p => p.id === pedidoId);
-                        const num    = pedido?.numero ?? '?';
-                        const title  = `Diferencias en Pedido #${num} — ${branchName}`;
-                        const msg    = `La recepción del pedido #${num} en ${branchName} tiene diferencias de cantidad. Revisá el historial para ver los detalles.`;
-                        await supabase.from('announcements').insert({
-                            title, message: msg,
-                            target_type: 'BRANCH', target_value: [bodegaMap.branch_id],
-                            read_by: [], is_archived: false, created_by: user?.id ?? null,
-                            priority: 'NORMAL',
-                            metadata: { pedido_id: pedidoId, numero: num, sucursal_id: erpSucursalId },
-                        });
-                        supabase.functions.invoke('send-push-notification', {
-                            body: { title, message: msg, url: '/pedidos?tab=historial', target_type: 'BRANCH', target_value: [bodegaMap.branch_id] },
-                        }).catch(() => {});
-                    }
-                } catch { /* non-fatal */ }
-            }
-
-            setModal(null);
-            await fetchItems(pedidoId);
-            // Refresh pedido status
-            const { data: updated } = await supabase
-                .from('pedidos')
-                .select('id, numero, created_at, status, notes, enviado_at')
-                .eq('id', pedidoId).single();
-            if (updated) setPedidos(prev => prev.map(p => p.id === pedidoId ? updated : p));
-        } catch (e) {
-            setSaveError(e.message);
-        } finally {
-            setSaving(false);
+    // Post-confirmación: refresca + notifica bodega si hay diferencias o extras
+    const handleConfirmed = useCallback(async ({ hasDiff, extras: extrasReported }) => {
+        const pedidoId = modal?.pedido?.id;
+        if (!pedidoId) return;
+        if (hasDiff || extrasReported.length > 0) {
+            try {
+                const { data: bodegaMap } = await supabase
+                    .from('erp_sucursal_map')
+                    .select('branch_id')
+                    .eq('es_bodega', true)
+                    .single();
+                if (bodegaMap?.branch_id) {
+                    const num    = modal.pedido.numero;
+                    const partes = [];
+                    if (hasDiff) partes.push('diferencias de cantidad');
+                    if (extrasReported.length > 0) partes.push(`${extrasReported.length} producto(s) no esperado(s)`);
+                    const title = `Recepción con novedades — Pedido #${num} (${branchName})`;
+                    const msg   = `La recepción del pedido #${num} en ${branchName} reporta ${partes.join(' y ')}. Revisá el historial para ver los detalles.`;
+                    await supabase.from('announcements').insert({
+                        title, message: msg,
+                        target_type: 'BRANCH', target_value: [bodegaMap.branch_id],
+                        read_by: [], is_archived: false, created_by: user?.id ?? null,
+                        priority: 'NORMAL',
+                        metadata: { pedido_id: pedidoId, numero: num, sucursal_id: erpSucursalId },
+                    });
+                    supabase.functions.invoke('send-push-notification', {
+                        body: { title, message: msg, url: '/pedidos?tab=historial', target_type: 'BRANCH', target_value: [bodegaMap.branch_id] },
+                    }).catch(() => {});
+                }
+            } catch { /* non-fatal */ }
         }
-    }, [modal, recepVals, notaVals, erpSucursalId, user, pedidos, branchName, fetchItems]);
+        setModal(null);
+        await fetchItems(pedidoId);
+        const { data: updated } = await supabase
+            .from('pedidos')
+            .select('id, numero, created_at, status, notes, enviado_at')
+            .eq('id', pedidoId).single();
+        if (updated) setPedidos(prev => prev.map(p => p.id === pedidoId ? updated : p));
+    }, [modal, erpSucursalId, user, branchName, fetchItems]);
 
     // Filter & search
     const filtered = pedidos
@@ -320,8 +301,15 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
             {filtered.map(pedido => {
                 const isExp    = expanded === pedido.id;
                 const rowItems = items[pedido.id] || [];
-                const pending  = rowItems.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0);
-                const received = rowItems.filter(r => r.status !== 'pendiente');
+                const q        = isExp ? itemSearch.trim().toLowerCase() : '';
+                const visibles = q
+                    ? rowItems.filter(r => (r.products?.nombre || '').toLowerCase().includes(q))
+                    : rowItems;
+                const pending  = visibles.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0);
+                const received = visibles.filter(r => r.status !== 'pendiente');
+                const allPending = rowItems.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0);
+                const pedFirmas  = firmas[pedido.id] || [];
+                const pedExtras  = extras[pedido.id] || [];
 
                 return (
                     <div key={pedido.id} className={GLASS}>
@@ -353,9 +341,40 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                                     </div>
                                 ) : (
                                     <>
+                                        {/* Lupa expansible — busca dentro del pedido */}
+                                        <div className="flex items-center justify-end pt-3 gap-2">
+                                            {searchOpen ? (
+                                                <div className="relative flex-1 max-w-[260px]">
+                                                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                                    <input
+                                                        autoFocus
+                                                        type="text" placeholder="Buscar producto en este pedido…"
+                                                        value={itemSearch}
+                                                        onChange={e => setItemSearch(e.target.value)}
+                                                        className="w-full text-[12px] border border-slate-200 rounded-lg pl-7 pr-7 py-1.5 focus:outline-none focus:border-blue-400 bg-white placeholder-slate-300"
+                                                    />
+                                                    <button
+                                                        onClick={() => { setSearchOpen(false); setItemSearch(''); }}
+                                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500">
+                                                        <X size={12} />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setSearchOpen(true)}
+                                                    title="Buscar producto en este pedido"
+                                                    className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 transition-colors">
+                                                    <Search size={13} />
+                                                </button>
+                                            )}
+                                        </div>
+                                        {q && pending.length === 0 && received.length === 0 && (
+                                            <p className="text-[12px] text-slate-400 text-center py-2">Sin resultados para "{itemSearch}"</p>
+                                        )}
+
                                         {/* Pending items */}
                                         {pending.length > 0 && (
-                                            <div className="space-y-1 pt-3">
+                                            <div className="space-y-1">
                                                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">
                                                     Productos por recibir ({pending.length})
                                                 </p>
@@ -393,8 +412,13 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                                                                 <p className="text-[12px] font-medium text-slate-700 truncate">
                                                                     {r.products?.nombre ?? '?'}
                                                                 </p>
-                                                                {r.nota_diferencia && (
-                                                                    <p className="text-[10px] text-amber-600 mt-0.5">{r.nota_diferencia}</p>
+                                                                {(r.error_tipo || r.nota_diferencia) && (
+                                                                    <p className="text-[10px] text-amber-600 mt-0.5">
+                                                                        {r.error_tipo && (
+                                                                            <span className="font-bold uppercase mr-1">[{r.error_tipo}]</span>
+                                                                        )}
+                                                                        {r.nota_diferencia}
+                                                                    </p>
                                                                 )}
                                                             </div>
                                                             <div className="text-right shrink-0">
@@ -410,14 +434,42 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                                             </div>
                                         )}
 
+                                        {/* Productos no esperados reportados */}
+                                        {pedExtras.length > 0 && (
+                                            <div className="space-y-1">
+                                                <p className="flex items-center gap-1 text-[10px] font-semibold text-violet-500 uppercase tracking-wide mb-2">
+                                                    <PackagePlus size={11} /> Llegaron sin estar en el pedido ({pedExtras.length})
+                                                </p>
+                                                {pedExtras.map(ex => (
+                                                    <div key={ex.id} className="flex items-center gap-2 py-1.5 px-3 rounded-xl bg-violet-50/60 border border-violet-100">
+                                                        <span className="flex-1 text-[12px] font-medium text-slate-700 truncate">{ex.products?.nombre ?? '?'}</span>
+                                                        {ex.nota && <span className="text-[10px] text-slate-400 italic truncate max-w-[140px]">"{ex.nota}"</span>}
+                                                        <span className="text-[12px] font-bold text-violet-600 tabular-nums shrink-0">{ex.cantidad} pk</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Responsables de la recepción */}
+                                        {pedFirmas.length > 0 && (
+                                            <div className="space-y-1.5">
+                                                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
+                                                    Recepción confirmada por
+                                                </p>
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    {pedFirmas.map(emp => <EmpChip key={emp.id} emp={emp} />)}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* Action button */}
-                                        {pedido.status === 'enviado' && pending.length > 0 && (
+                                        {pedido.status === 'enviado' && allPending.length > 0 && (
                                             <button
                                                 onClick={() => openModal(pedido.id)}
                                                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-semibold transition-colors"
                                             >
                                                 <PackageCheck size={14} />
-                                                Confirmar recepción ({pending.length} productos)
+                                                Confirmar recepción ({allPending.length} productos)
                                             </button>
                                         )}
 
@@ -435,96 +487,17 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                 );
             })}
 
-            {/* Reception modal */}
+            {/* Reception modal — unificado (ModalShell via portal, centrado) */}
             {modal && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-                    <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
-                        {/* Modal header */}
-                        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
-                            <div>
-                                <h3 className="text-[14px] font-bold text-slate-800">Confirmar recepción</h3>
-                                <p className="text-[11px] text-slate-400 mt-0.5">{branchName} · {modal.rows.length} productos</p>
-                            </div>
-                            <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
-                                <X size={16} />
-                            </button>
-                        </div>
-
-                        {/* Items list */}
-                        <div className="overflow-y-auto max-h-[60vh] px-5 py-3 space-y-3">
-                            {modal.rows.map(r => {
-                                const received = recepVals[r.id] ?? r.cantidad_asignada;
-                                const diff     = received < r.cantidad_asignada;
-                                return (
-                                    <div key={r.id} className="space-y-1.5">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-[12px] font-semibold text-slate-700 leading-snug">{r.products?.nombre ?? '?'}</p>
-                                                <p className="text-[10px] text-slate-400">{r.presentaciones?.tipo ?? '—'} · Asignado: <b>{r.cantidad_asignada}</b> pk</p>
-                                                {r.lotes_asignados?.length > 0 && <LotePills lotes={r.lotes_asignados} />}
-                                            </div>
-                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                <button
-                                                    onClick={() => setRecepVals(v => ({ ...v, [r.id]: Math.max(0, (v[r.id] ?? r.cantidad_asignada) - 1) }))}
-                                                    className="w-6 h-6 rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-[14px] font-bold flex items-center justify-center"
-                                                >−</button>
-                                                <input
-                                                    type="number" min="0" max={r.cantidad_asignada}
-                                                    value={received}
-                                                    onChange={e => setRecepVals(v => ({ ...v, [r.id]: Math.max(0, Math.min(r.cantidad_asignada, Number(e.target.value))) }))}
-                                                    className={`w-14 text-center text-[13px] font-bold rounded-lg border py-1 focus:outline-none focus:ring-1 ${
-                                                        diff
-                                                            ? 'border-amber-300 text-amber-700 bg-amber-50 focus:ring-amber-400'
-                                                            : 'border-emerald-300 text-emerald-700 bg-emerald-50 focus:ring-emerald-400'
-                                                    }`}
-                                                />
-                                                <button
-                                                    onClick={() => setRecepVals(v => ({ ...v, [r.id]: Math.min(r.cantidad_asignada, (v[r.id] ?? r.cantidad_asignada) + 1) }))}
-                                                    className="w-6 h-6 rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-[14px] font-bold flex items-center justify-center"
-                                                >+</button>
-                                            </div>
-                                        </div>
-                                        {diff && (
-                                            <input
-                                                type="text"
-                                                placeholder="Motivo de la diferencia (opcional)"
-                                                value={notaVals[r.id] ?? ''}
-                                                onChange={e => setNotaVals(v => ({ ...v, [r.id]: e.target.value }))}
-                                                className="w-full text-[11px] rounded-lg border border-amber-200 bg-amber-50/50 px-2.5 py-1.5 text-slate-700 placeholder:text-slate-300 focus:outline-none focus:border-amber-300"
-                                            />
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* Footer */}
-                        <div className="px-5 py-4 border-t border-slate-100 space-y-2">
-                            {saveError && (
-                                <div className="flex items-center gap-2 text-red-600 text-[11px] bg-red-50 rounded-lg px-3 py-2">
-                                    <AlertTriangle size={12} />
-                                    {saveError}
-                                </div>
-                            )}
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={handleTodoRecibido}
-                                    className="flex-1 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 text-[12px] font-medium hover:bg-slate-50 transition-colors"
-                                >
-                                    Todo recibido
-                                </button>
-                                <button
-                                    onClick={handleConfirmar}
-                                    disabled={saving}
-                                    className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-[12px] font-semibold transition-colors flex items-center justify-center gap-1.5"
-                                >
-                                    {saving ? <Loader2 size={13} className="animate-spin" /> : <PackageCheck size={13} />}
-                                    {saving ? 'Guardando…' : 'Confirmar'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <RecepcionModal
+                    open={!!modal}
+                    onClose={() => setModal(null)}
+                    pedido={modal.pedido}
+                    sucursalId={erpSucursalId}
+                    sucursalNombre={branchName}
+                    rows={modal.rows}
+                    onConfirmed={handleConfirmed}
+                />
             )}
         </div>
     );

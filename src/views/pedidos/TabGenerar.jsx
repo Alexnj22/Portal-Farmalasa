@@ -217,13 +217,21 @@ export default function TabGenerar({ searchTerm = '' }) {
     }, []);
 
     // ── Empleados (para select de responsable/revisor) ─────────
+    // La columna real es `name` (no `nombre`); employees.id = uid de auth.
     useEffect(() => {
         supabase.from('employees')
-            .select('id, nombre')
+            .select('id, name')
             .eq('status', 'ACTIVO')
-            .order('nombre')
-            .then(({ data }) => setEmployees(data || []));
-    }, []);
+            .order('name')
+            .then(({ data }) => {
+                const emps = data || [];
+                setEmployees(emps);
+                // Responsable por defecto: quien genera el pedido (si es empleado)
+                if (user?.id && emps.some(e => e.id === user.id)) {
+                    setResponsable(prev => prev || user.id);
+                }
+            });
+    }, [user?.id]);
 
     // ── Sin-bodega — load all once for client-side sort/filter ─
     useEffect(() => {
@@ -278,10 +286,10 @@ export default function TabGenerar({ searchTerm = '' }) {
         setSinStockOpen(prev => ({ ...prev, [sucId]: !(prev[sucId] ?? false) }));
     }, []);
 
-    // ── Calculate ──────────────────────────────────────────────
+    // ── Calculate (vista previa con ajustes) ───────────────────
     const handleCalcular = useCallback(async () => {
         if (selected.size === 0) return;
-        setLoading(true); setPreview(null); setAdjustments({}); setError(null);
+        setLoading(true); setPreview(null); setAdjustments({}); setError(null); setConfirmed(null);
         setSucCollapsed({}); setSucPage({});
         try {
             const rpcParams = globalMode
@@ -302,6 +310,81 @@ export default function TabGenerar({ searchTerm = '' }) {
             setLoading(false);
         }
     }, [selected, globalMode]);
+
+    // ── Generar directo: calcula + confirma final + imprime ────
+    // El pedido queda confirmado (no borrador) y se imprime al instante
+    // sin abrir pestaña nueva; el usuario permanece en esta vista.
+    const handleGenerarDirecto = useCallback(async () => {
+        if (selected.size === 0) return;
+        setConfirming(true); setError(null); setConfirmed(null);
+        try {
+            const rpcParams = globalMode
+                ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected] }
+                : { p_sucursal_ids: [...selected] };
+            const { data, error: rpcErr } = await supabase
+                .rpc('get_pedido_preview', rpcParams)
+                .range(0, 49999);
+            if (rpcErr) throw rpcErr;
+            const rows = data || [];
+            if (rows.length === 0) {
+                setError('Las sucursales seleccionadas están abastecidas — no hay nada que pedir.');
+                return;
+            }
+            const pItems = rows.map(row => ({
+                erp_sucursal_id:       row.erp_sucursal_id,
+                erp_product_id:        row.erp_product_id,
+                erp_presentacion_id:   row.erp_presentacion_id,
+                cantidad_asignada:     row.cantidad_asignada,
+                sin_stock:             row.sin_stock,
+                revision_minmax:       row.revision_minmax,
+                stock_packs_snapshot:  Number(row.stock_packs),
+                max_qty_snapshot:      row.max_qty,
+                min_qty_snapshot:      row.min_qty,
+                urgencia_pct_snapshot: row.urgencia_pct,
+                lotes_asignados:       fefoProject(row.lotes_bodega, row.cantidad_asignada),
+            }));
+            const esEmpleado = employees.some(e => e.id === user?.id);
+            const { data: pedidoId, error: confErr } = await supabase.rpc('confirm_pedido', {
+                p_created_by:     user?.id ?? null,
+                p_notes:          null,
+                p_items:          pItems,
+                p_responsable_id: esEmpleado ? user.id : null,
+                p_revisado_por:   null,
+                p_sucursal_ids:   [...selected],
+            });
+            if (confErr) throw confErr;
+            const { data: ped } = await supabase
+                .from('pedidos').select('numero').eq('id', pedidoId).single();
+            useStaff.getState().appendAuditLog('GENERAR_PEDIDO', pedidoId, {
+                sucursales:  [...selected],
+                items_count: pItems.length,
+                numero:      ped?.numero,
+                directo:     true,
+            });
+
+            const map = {};
+            for (const row of rows) {
+                const s = row.erp_sucursal_id;
+                if (!map[s]) map[s] = { normal: [], revision: [], sinStock: [] };
+                if (row.sin_stock)            map[s].sinStock.push(row);
+                else if (row.revision_minmax) map[s].revision.push(row);
+                else                          map[s].normal.push(row);
+            }
+            const sucIds = SUCURSALES.filter(id => map[id]);
+            const meta   = { responsable: user?.name ?? null, revisor: null, generadoPor: user?.name ?? null };
+            const title  = `Pedido #${ped?.numero}`;
+            printFromPreview(map, sucIds, r => r.cantidad_asignada, title, meta);
+            setConfirmed({
+                id: pedidoId, numero: ped?.numero,
+                frozenGrouped: map, frozenSucIds: sucIds, printTitle: title, printMeta: meta,
+            });
+            setSelected(new Set());
+        } catch (e) {
+            setError(e.message);
+        } finally {
+            setConfirming(false);
+        }
+    }, [selected, globalMode, employees, user]);
 
     // ── Guardar borrador ───────────────────────────────────────
     const handleGuardarBorrador = useCallback(async () => {
@@ -403,9 +486,13 @@ export default function TabGenerar({ searchTerm = '' }) {
             });
 
             // B3: freeze print data before clearing preview
-            const respNombre = employees.find(e => e.id === responsable)?.nombre ?? '';
-            const revNombre  = employees.find(e => e.id === revisado)?.nombre    ?? '';
-            const printMeta  = { responsable: respNombre || null, revisor: revNombre || null };
+            const respNombre = employees.find(e => e.id === responsable)?.name ?? '';
+            const revNombre  = employees.find(e => e.id === revisado)?.name    ?? '';
+            const printMeta  = {
+                responsable: respNombre || user?.name || null,
+                revisor:     revNombre  || null,
+                generadoPor: user?.name || null,
+            };
             const frozenGrouped = {};
             for (const [sucId, g] of Object.entries(grouped ?? {})) {
                 frozenGrouped[sucId] = {
@@ -557,37 +644,6 @@ export default function TabGenerar({ searchTerm = '' }) {
         );
     }, [adjustments, getAdjusted, setAdjusted]);
 
-    // ── Confirmed screen ────────────────────────────────────────
-    if (confirmed) {
-        return (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <CheckCircle2 size={32} className="text-emerald-500" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-800">Pedido #{confirmed.numero} generado</h3>
-                <p className="text-slate-500 text-[14px]">La ventana de impresión se abrió automáticamente.</p>
-                <div className="flex items-center gap-3 mt-2">
-                    <button
-                        onClick={() => printFromPreview(
-                            confirmed.frozenGrouped,
-                            confirmed.frozenSucIds,
-                            r => r.cantidad_asignada,
-                            confirmed.printTitle,
-                            confirmed.printMeta,
-                        )}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium text-[13px] transition-colors"
-                    >
-                        <Printer size={14} /> Reimprimir
-                    </button>
-                    <button onClick={() => setConfirmed(null)}
-                        className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">
-                        Nuevo pedido
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
     // ── Preview screen ──────────────────────────────────────────
     if (preview) {
         return (
@@ -633,12 +689,16 @@ export default function TabGenerar({ searchTerm = '' }) {
                         </button>
                         <button
                             onClick={() => {
-                                const respNombre = employees.find(e => e.id === responsable)?.nombre ?? '';
-                                const revNombre  = employees.find(e => e.id === revisado)?.nombre    ?? '';
+                                const respNombre = employees.find(e => e.id === responsable)?.name ?? '';
+                                const revNombre  = employees.find(e => e.id === revisado)?.name    ?? '';
                                 printFromPreview(
                                     grouped, sortedSucIds, getAdjusted,
                                     `Pedido ${new Date().toLocaleDateString('es-SV')} — ${[...selected].map(id => ERP_NAMES[id]).join(', ')}`,
-                                    { responsable: respNombre || null, revisor: revNombre || null },
+                                    {
+                                        responsable: respNombre || user?.name || null,
+                                        revisor:     revNombre  || null,
+                                        generadoPor: user?.name || null,
+                                    },
                                 );
                             }}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-slate-800 text-white hover:bg-slate-700 transition-colors"
@@ -786,7 +846,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                         className="border border-slate-200 rounded-xl px-3 py-2 text-[13px] focus:outline-none focus:border-blue-400 bg-white/80 text-slate-700"
                                     >
                                         <option value="">— Sin asignar —</option>
-                                        {employees.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                                        {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                                     </select>
                                 </div>
                                 <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
@@ -799,7 +859,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                         className="border border-slate-200 rounded-xl px-3 py-2 text-[13px] focus:outline-none focus:border-blue-400 bg-white/80 text-slate-700"
                                     >
                                         <option value="">— Sin asignar —</option>
-                                        {employees.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                                        {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                                     </select>
                                 </div>
                             </div>
@@ -820,6 +880,32 @@ export default function TabGenerar({ searchTerm = '' }) {
     // ── Dashboard screen ────────────────────────────────────────
     return (
         <div className="space-y-5 p-4">
+
+            {/* ── Pedido generado — banner de éxito ──────────── */}
+            {confirmed && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3 flex-wrap">
+                    <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 size={18} className="text-emerald-500" />
+                    </div>
+                    <div className="flex-1 min-w-[180px]">
+                        <p className="font-semibold text-emerald-700 text-[14px]">Pedido #{confirmed.numero} confirmado e impreso</p>
+                        <p className="text-[11px] text-emerald-600/70">Si el diálogo de impresión no apareció, usa Reimprimir. Puedes verlo en Historial.</p>
+                    </div>
+                    <button
+                        onClick={() => printFromPreview(
+                            confirmed.frozenGrouped, confirmed.frozenSucIds,
+                            r => r.cantidad_asignada, confirmed.printTitle, confirmed.printMeta,
+                        )}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-emerald-300 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                    >
+                        <Printer size={12} /> Reimprimir
+                    </button>
+                    <button onClick={() => setConfirmed(null)}
+                        className="p-1.5 rounded-lg text-emerald-400 hover:text-emerald-600 transition-colors">
+                        <X size={14} />
+                    </button>
+                </div>
+            )}
 
             {/* ── Sucursal selector ──────────────────────────── */}
             <div className={GLASS + ' p-4'}>
@@ -918,18 +1004,33 @@ export default function TabGenerar({ searchTerm = '' }) {
                 </div>
 
                 <div className="mt-4 flex flex-col items-center gap-2">
-                    <button onClick={handleCalcular}
-                        disabled={loading || selected.size === 0}
-                        className={`flex items-center gap-2.5 px-10 py-3.5 rounded-2xl font-bold text-[15px] transition-all duration-200 ${
-                            selected.size === 0
-                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                : 'bg-slate-900 text-white hover:bg-slate-800 shadow-[0_4px_20px_rgba(15,23,42,0.22)] hover:shadow-[0_8px_28px_rgba(15,23,42,0.30)] hover:-translate-y-0.5 active:scale-[0.98]'
-                        }`}>
-                        {loading ? <Loader2 size={18} className="animate-spin" /> : <ClipboardList size={18} />}
-                        {loading
-                            ? 'Generando…'
-                            : `Generar pedido${selected.size > 0 ? ` (${selected.size} sucursal${selected.size > 1 ? 'es' : ''})` : ''}`}
-                    </button>
+                    <div className="flex items-center gap-3 flex-wrap justify-center">
+                        <button onClick={handleGenerarDirecto}
+                            disabled={confirming || loading || selected.size === 0}
+                            className={`flex items-center gap-2.5 px-10 py-3.5 rounded-2xl font-bold text-[15px] transition-all duration-200 ${
+                                selected.size === 0
+                                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                    : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-[0_4px_20px_rgba(5,150,105,0.25)] hover:shadow-[0_8px_28px_rgba(5,150,105,0.35)] hover:-translate-y-0.5 active:scale-[0.98]'
+                            }`}>
+                            {confirming ? <Loader2 size={18} className="animate-spin" /> : <ClipboardList size={18} />}
+                            {confirming
+                                ? 'Confirmando e imprimiendo…'
+                                : `Generar y confirmar${selected.size > 0 ? ` (${selected.size} sucursal${selected.size > 1 ? 'es' : ''})` : ''}`}
+                        </button>
+                        <button onClick={handleCalcular}
+                            disabled={loading || confirming || selected.size === 0}
+                            className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-semibold text-[13px] border-2 transition-all duration-200 ${
+                                selected.size === 0
+                                    ? 'border-slate-100 text-slate-300 cursor-not-allowed'
+                                    : 'border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-50'
+                            }`}>
+                            {loading ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
+                            Vista previa y ajustes
+                        </button>
+                    </div>
+                    <p className="text-[10px] text-slate-400">
+                        "Generar y confirmar" crea el pedido final y lo imprime de una vez. Usa "Vista previa" si necesitas ajustar cantidades.
+                    </p>
                     {error && (
                         <span className="text-[13px] text-red-600 flex items-center gap-1">
                             <AlertTriangle size={14} /> {error}

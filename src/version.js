@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.56';
+export const APP_VERSION = '2.2.57';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.57 — TabReglas autoguardado: tipo "Sin regla" (5to tipo, elimina la regla al seleccionarlo); seleccionar cualquier tipo aplica al instante (múltiplos arrancan en ×2, el menor); pills de múltiplo autoguardan al clic; input libre y notas guardan en blur/Enter; indicador Guardando…/Guardado en header del panel; sin botones Guardar/Cancelar/Eliminar ni ConfirmModal; rulesMap se actualiza localmente vía ref (sin re-fetch de la tabla en cada clic)
 // v2.2.56 — Pedidos QA post-v2.2.55: fix stale closure globalMode en handleCalcular (deps); PDF @page tamaño carta + márgenes 10mm + tr/sig-block page-break-inside:avoid + thead repetido; bloque firmas/sello siempre presente (antes desaparecía sin responsable); SQL solo_cajas matchea LIKE 'CAJA%' (CAJA X 24, etc.) en caja_factor_map y guard de presentación
 // v2.2.55 — Pedidos mejoras integrales: A1 fix solo_cajas SQL enforcement + data-fix multiplo rules; B1 globalMode distribución toda bodega (p_target_ids RPC); B2 multiplo_unidades regla de despacho; B3 auto-print + reimprimir al confirmar; B4 badge no-enviados + laboratorio+necesidad en secciones sin_stock/revisión; A2 sin página en blanco final PDF; A3 meta responsable/revisor en PDF; A4 feedback guardar borrador; C PDF: compact, lab column, checkbox ✓, pill AB, firmas al final
 // v2.2.54 — Pedidos FASE 6 UX: input recepción con max=cantidad_asignada (no excede asignado); guardar borrador preserva ajustes manuales (direct insert vs RPC que recalcula desde DB); aviso beforeunload al salir con ajustes sin guardar; lotes por fila en historial; conteos filter pill desde totalCounts; sin_stock en impresión con badge naranja

@@ -1,15 +1,14 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import {
-    Loader2, Check, X, Trash2, AlertTriangle, Package,
+    Loader2, Check, X, Ban, AlertTriangle, Package,
     Sparkles, FlaskConical, Box, Layers, Sigma,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination                   from '../../components/common/TablePagination';
 import LiquidSelect                      from '../../components/common/LiquidSelect';
-import ConfirmModal                      from '../../components/common/ConfirmModal';
 
 const PAGE_SIZE       = 50;
 const VALID_MULTIPLES = new Set([2, 3, 4, 5, 6, 10, 12, 20, 24, 25, 50]);
@@ -20,8 +19,15 @@ const EASE            = [0.16, 1, 0.3, 1];
 const EXPAND_BG     = 'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/30';
 const EXPAND_BORDER = 'border-blue-100/60';
 
-// Tipos de regla: solo uno activo a la vez
+// Tipos de regla: solo uno activo a la vez. Seleccionar un tipo lo aplica al instante.
 const RULE_TYPES = [
+    {
+        id:    'sin_regla',
+        label: 'Sin regla',
+        desc:  'Despacho libre, sin restricción',
+        Icon:  Ban,
+        color: 'rose',
+    },
     {
         id:    'solo_cajas',
         label: 'Solo cajas',
@@ -54,14 +60,16 @@ const RULE_TYPES = [
 
 // Detecta qué tipo de regla tiene un rule existente
 const detectType = (rule) => {
-    if (!rule) return 'solo_cajas';
+    if (!rule) return 'sin_regla';
     if (rule.multiplo           != null) return 'multiplo';
     if (rule.blister            != null) return 'blister';
     if (rule.multiplo_unidades  != null) return 'unidades';
     return 'solo_cajas';
 };
 
-const EMPTY_VALS = { ruleType: 'solo_cajas', multiplo: '', blister: '', multiplo_unidades: '', notes: '' };
+const DEFAULT_MULTIPLO = String(Math.min(...MULTIPLO_PILLS));
+
+const EMPTY_VALS = { ruleType: 'sin_regla', multiplo: '', blister: '', multiplo_unidades: '', notes: '' };
 
 const COLS = [
     { key: 'laboratorio_nombre', label: 'Laboratorio', align: 'left',   sortable: true },
@@ -94,40 +102,86 @@ function StatCard({ label, sub, value, Icon, iconBg, iconCls, countCls, active, 
     );
 }
 
-// ── Panel edición con tipo único de regla ─────────────────────────────────────
-function EditPanel({ product, rule, vals, setVals, saving, saveError, onSave, onCancel, onDelete }) {
-    const hasRule = !!rule;
+// ── Panel edición — todo se autoguarda al seleccionar (sin botón Guardar) ─────
+function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError, onApply, onCancel }) {
 
     const typeColors = {
+        sin_regla: {
+            active:   'bg-rose-500 border-rose-400 text-white shadow-lg shadow-rose-200/50',
+            inactive: 'bg-white/80 border-slate-200 text-slate-500 hover:border-rose-300 hover:bg-rose-50/40',
+            icon:     'text-rose-400',
+        },
         solo_cajas: {
             active:   'bg-slate-800 border-slate-700 text-white shadow-lg',
             inactive: 'bg-white/80 border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-white',
-            icon:     hasRule && vals.ruleType === 'solo_cajas' ? 'text-white' : 'text-slate-400',
-            dot:      'bg-slate-600',
+            icon:     'text-slate-400',
         },
         multiplo: {
             active:   'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-200/50',
             inactive: 'bg-white/80 border-slate-200 text-slate-500 hover:border-blue-300 hover:bg-blue-50/40',
-            icon:     vals.ruleType === 'multiplo' ? 'text-white' : 'text-blue-400',
-            dot:      'bg-blue-500',
+            icon:     'text-blue-400',
         },
         blister: {
             active:   'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-200/50',
             inactive: 'bg-white/80 border-slate-200 text-slate-500 hover:border-indigo-300 hover:bg-indigo-50/40',
-            icon:     vals.ruleType === 'blister' ? 'text-white' : 'text-indigo-400',
-            dot:      'bg-indigo-500',
+            icon:     'text-indigo-400',
         },
         unidades: {
             active:   'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-200/50',
             inactive: 'bg-white/80 border-slate-200 text-slate-500 hover:border-violet-300 hover:bg-violet-50/40',
-            icon:     vals.ruleType === 'unidades' ? 'text-white' : 'text-violet-400',
-            dot:      'bg-violet-500',
+            icon:     'text-violet-400',
         },
     };
 
+    // Valores tal como están guardados en DB (para no re-guardar sin cambios)
+    const savedValue = {
+        multiplo:          rule?.multiplo          != null ? String(rule.multiplo)          : '',
+        blister:           rule?.blister           != null ? String(rule.blister)           : '',
+        multiplo_unidades: rule?.multiplo_unidades != null ? String(rule.multiplo_unidades) : '',
+    };
+
+    // Cambiar de tipo aplica al instante; los tipos de múltiplo arrancan con el menor
+    const selectType = (rtId) => {
+        if (saving || vals.ruleType === rtId) return;
+        const next = {
+            ...vals,
+            ruleType:          rtId,
+            multiplo:          rtId === 'multiplo' ? (vals.multiplo          || DEFAULT_MULTIPLO) : '',
+            blister:           rtId === 'blister'  ? (vals.blister           || DEFAULT_MULTIPLO) : '',
+            multiplo_unidades: rtId === 'unidades' ? (vals.multiplo_unidades || DEFAULT_MULTIPLO) : '',
+        };
+        setVals(next);
+        onApply(next);
+    };
+
+    const selectPill = (field, n) => {
+        if (saving || vals[field] === String(n)) return;
+        const next = { ...vals, [field]: String(n) };
+        setVals(next);
+        onApply(next);
+    };
+
+    // Input libre: guarda al salir del campo (blur/Enter); vacío revierte al guardado
+    const commitInput = (field) => {
+        if (!vals[field]) {
+            setVals(p => ({ ...p, [field]: savedValue[field] || DEFAULT_MULTIPLO }));
+            return;
+        }
+        if (vals[field] === savedValue[field]) return;
+        onApply(vals);
+    };
+
+    const commitNotes = () => {
+        if (vals.ruleType === 'sin_regla') return;
+        if ((vals.notes || '') === (rule?.notes || '')) return;
+        onApply(vals);
+    };
+
+    const blurOnEnter = (e) => { if (e.key === 'Enter') e.target.blur(); };
+
     return (
         <div className="space-y-4">
-            {/* Header */}
+            {/* Header con estado de guardado */}
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <p className="font-semibold text-slate-800 text-[14px] leading-tight">{product.nombre}</p>
@@ -135,28 +189,41 @@ function EditPanel({ product, rule, vals, setVals, saving, saveError, onSave, on
                         <p className="text-[11px] text-slate-400 mt-0.5">{product.laboratorio_nombre}</p>
                     )}
                 </div>
-                <button onClick={onCancel}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/80 transition-colors flex-shrink-0">
-                    <X size={14} />
-                </button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                    {saving && (
+                        <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                            <Loader2 size={11} className="animate-spin" /> Guardando…
+                        </span>
+                    )}
+                    {!saving && justSaved && (
+                        <span className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold">
+                            <Check size={11} /> Guardado
+                        </span>
+                    )}
+                    {!saving && !justSaved && saveError && (
+                        <span className="text-[11px] text-red-600 flex items-center gap-1 max-w-[260px]">
+                            <AlertTriangle size={10} className="shrink-0" /> {saveError}
+                        </span>
+                    )}
+                    <button onClick={onCancel}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/80 transition-colors flex-shrink-0">
+                        <X size={14} />
+                    </button>
+                </div>
             </div>
 
-            {/* Selector de tipo — solo uno activo */}
+            {/* Selector de tipo — seleccionar aplica al instante */}
             <div>
-                <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-2 font-bold">Tipo de regla</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-2 font-bold">
+                    Tipo de regla <span className="normal-case tracking-normal font-medium text-slate-300">· se aplica automáticamente</span>
+                </p>
+                <div className={`flex flex-wrap gap-2 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                     {RULE_TYPES.map(rt => {
                         const isActive = vals.ruleType === rt.id;
                         const c        = typeColors[rt.id];
                         return (
                             <button key={rt.id} type="button"
-                                onClick={() => setVals(p => ({
-                                    ...p,
-                                    ruleType:          rt.id,
-                                    multiplo:          rt.id !== 'multiplo'  ? '' : p.multiplo,
-                                    blister:           rt.id !== 'blister'   ? '' : p.blister,
-                                    multiplo_unidades: rt.id !== 'unidades'  ? '' : p.multiplo_unidades,
-                                }))}
+                                onClick={() => selectType(rt.id)}
                                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 transition-all duration-150 select-none ${
                                     isActive ? c.active : c.inactive
                                 }`}
@@ -174,6 +241,24 @@ function EditPanel({ product, rule, vals, setVals, saving, saveError, onSave, on
 
             {/* Detalle según tipo */}
             <AnimatePresence mode="wait">
+                {vals.ruleType === 'sin_regla' && (
+                    <motion.div key="sin_regla"
+                        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.18, ease: EASE }}
+                        className="px-4 py-3 rounded-xl bg-rose-50/60 border border-rose-200/60 backdrop-blur-sm"
+                    >
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-rose-500 flex items-center justify-center flex-shrink-0">
+                                <Ban size={14} className="text-white" />
+                            </div>
+                            <div>
+                                <p className="text-[12px] font-semibold text-slate-700">Sin regla de despacho</p>
+                                <p className="text-[11px] text-slate-400">El producto se despacha libremente según la necesidad calculada.</p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
                 {vals.ruleType === 'solo_cajas' && (
                     <motion.div key="solo_cajas"
                         initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
@@ -199,10 +284,10 @@ function EditPanel({ product, rule, vals, setVals, saving, saveError, onSave, on
                         className="space-y-2"
                     >
                         <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Múltiplo de cajas</p>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                             {MULTIPLO_PILLS.map(n => (
                                 <button key={n} type="button"
-                                    onClick={() => setVals(p => ({ ...p, multiplo: p.multiplo === String(n) ? '' : String(n) }))}
+                                    onClick={() => selectPill('multiplo', n)}
                                     className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
                                         vals.multiplo === String(n)
                                             ? 'bg-blue-600 border-blue-500 text-white shadow-md'
@@ -214,6 +299,8 @@ function EditPanel({ product, rule, vals, setVals, saving, saveError, onSave, on
                         <input type="number" min={1} placeholder="Otro número…"
                             value={vals.multiplo}
                             onChange={e => setVals(p => ({ ...p, multiplo: e.target.value }))}
+                            onBlur={() => commitInput('multiplo')}
+                            onKeyDown={blurOnEnter}
                             className="w-36 border border-slate-200 rounded-lg px-3 py-1.5 text-[12px] focus:outline-none focus:border-blue-400 bg-white/80"
                         />
                     </motion.div>
@@ -226,10 +313,10 @@ function EditPanel({ product, rule, vals, setVals, saving, saveError, onSave, on
                         className="space-y-2"
                     >
                         <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Múltiplo de blísters</p>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                             {MULTIPLO_PILLS.map(n => (
                                 <button key={n} type="button"
-                                    onClick={() => setVals(p => ({ ...p, blister: p.blister === String(n) ? '' : String(n) }))}
+                                    onClick={() => selectPill('blister', n)}
                                     className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
                                         vals.blister === String(n)
                                             ? 'bg-indigo-600 border-indigo-500 text-white shadow-md'
@@ -241,6 +328,8 @@ function EditPanel({ product, rule, vals, setVals, saving, saveError, onSave, on
                         <input type="number" min={1} placeholder="Otro número…"
                             value={vals.blister}
                             onChange={e => setVals(p => ({ ...p, blister: e.target.value }))}
+                            onBlur={() => commitInput('blister')}
+                            onKeyDown={blurOnEnter}
                             className="w-36 border border-slate-200 rounded-lg px-3 py-1.5 text-[12px] focus:outline-none focus:border-indigo-400 bg-white/80"
                         />
                     </motion.div>
@@ -254,10 +343,10 @@ function EditPanel({ product, rule, vals, setVals, saving, saveError, onSave, on
                     >
                         <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Múltiplo de unidades base</p>
                         <p className="text-[10px] text-slate-400">El despacho garantiza que la cantidad × factor sea múltiplo de N unidades.</p>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                             {MULTIPLO_PILLS.map(n => (
                                 <button key={n} type="button"
-                                    onClick={() => setVals(p => ({ ...p, multiplo_unidades: p.multiplo_unidades === String(n) ? '' : String(n) }))}
+                                    onClick={() => selectPill('multiplo_unidades', n)}
                                     className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
                                         vals.multiplo_unidades === String(n)
                                             ? 'bg-violet-600 border-violet-500 text-white shadow-md'
@@ -269,48 +358,28 @@ function EditPanel({ product, rule, vals, setVals, saving, saveError, onSave, on
                         <input type="number" min={1} placeholder="Otro número…"
                             value={vals.multiplo_unidades}
                             onChange={e => setVals(p => ({ ...p, multiplo_unidades: e.target.value }))}
+                            onBlur={() => commitInput('multiplo_unidades')}
+                            onKeyDown={blurOnEnter}
                             className="w-36 border border-slate-200 rounded-lg px-3 py-1.5 text-[12px] focus:outline-none focus:border-violet-400 bg-white/80"
                         />
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Notas */}
+            {/* Notas — se guardan al salir del campo */}
             <div>
-                <p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1.5 font-bold">Notas internas</p>
-                <input type="text" placeholder="Observación opcional…"
+                <p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1.5 font-bold">
+                    Notas internas <span className="normal-case tracking-normal font-medium text-slate-300">· se guardan al salir del campo</span>
+                </p>
+                <input type="text"
+                    placeholder={vals.ruleType === 'sin_regla' ? 'Selecciona una regla para agregar notas' : 'Observación opcional…'}
                     value={vals.notes}
+                    disabled={vals.ruleType === 'sin_regla'}
                     onChange={e => setVals(p => ({ ...p, notes: e.target.value }))}
-                    className="w-full border border-slate-200/80 rounded-xl px-3 py-2 text-[12px] focus:outline-none focus:border-blue-400 bg-white/80 backdrop-blur-sm"
+                    onBlur={commitNotes}
+                    onKeyDown={blurOnEnter}
+                    className="w-full border border-slate-200/80 rounded-xl px-3 py-2 text-[12px] focus:outline-none focus:border-blue-400 bg-white/80 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between pt-0.5">
-                <div>
-                    {hasRule && (
-                        <button onClick={onDelete}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors">
-                            <Trash2 size={11} /> Eliminar regla
-                        </button>
-                    )}
-                </div>
-                <div className="flex items-center gap-2">
-                    {saveError && (
-                        <span className="text-[11px] text-red-600 flex items-center gap-1 max-w-[220px]">
-                            <AlertTriangle size={10} className="shrink-0" /> {saveError}
-                        </span>
-                    )}
-                    <button onClick={onCancel}
-                        className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-white text-[12px] transition-colors">
-                        Cancelar
-                    </button>
-                    <button onClick={onSave} disabled={saving}
-                        className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-emerald-600 text-white text-[12px] font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 shadow-sm">
-                        {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-                        {hasRule ? 'Actualizar' : 'Crear regla'}
-                    </button>
-                </div>
             </div>
         </div>
     );
@@ -339,8 +408,14 @@ export default function TabReglas({ searchTerm = '' }) {
     const [editVals,        setEditVals]        = useState(EMPTY_VALS);
     const [saving,          setSaving]          = useState(false);
     const [saveError,       setSaveError]       = useState(null);
-    const [confirmDel,      setConfirmDel]      = useState(null);
-    const [deleting,        setDeleting]        = useState(false);
+    const [justSaved,       setJustSaved]       = useState(false);
+
+    // Ref siempre al día para que applyVals y loadProducts lean reglas frescas
+    // sin que cada autoguardado dispare un re-fetch de la tabla de productos.
+    const rulesMapRef    = useRef({});
+    const justSavedTimer = useRef(null);
+    useEffect(() => { rulesMapRef.current = rulesMap; }, [rulesMap]);
+    useEffect(() => () => clearTimeout(justSavedTimer.current), []);
 
     // Labs con flag ocultar_en_minmax
     useEffect(() => {
@@ -412,11 +487,13 @@ export default function TabReglas({ searchTerm = '' }) {
         setLoadingProducts(false);
     }, []);
 
+    // Lee las reglas desde el ref: un autoguardado no re-fetchea la lista
+    // (la lista con filtro con/sin se refresca al cambiar página/filtros).
     useEffect(() => {
         if (loadingRules) return;
-        const ids = Object.keys(rulesMap).map(Number);
+        const ids = Object.keys(rulesMapRef.current).map(Number);
         loadProducts(page, searchTerm, filterLab, filterRule, ids, hiddenLabIds, sortKey, sortDir, newProductIds);
-    }, [page, searchTerm, filterLab, filterRule, rulesMap, hiddenLabIds, newProductIds, loadProducts, loadingRules, sortKey, sortDir]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [page, searchTerm, filterLab, filterRule, hiddenLabIds, newProductIds, loadProducts, loadingRules, sortKey, sortDir]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSort = useCallback((key) => {
         setSortDir(prev => sortKey === key ? (prev === 'asc' ? 'desc' : 'asc') : 'asc');
@@ -447,6 +524,7 @@ export default function TabReglas({ searchTerm = '' }) {
     const startEdit = useCallback((productId, rule) => {
         setEditingId(productId);
         setSaveError(null);
+        setJustSaved(false);
         setEditVals({
             ruleType:          detectType(rule),
             multiplo:          rule?.multiplo           != null ? String(rule.multiplo)           : '',
@@ -462,61 +540,63 @@ export default function TabReglas({ searchTerm = '' }) {
         startEdit(productId, rulesMap[productId] ?? null);
     }, [editingId, rulesMap, startEdit, cancelEdit]);
 
-    const handleSave = useCallback(async (productId) => {
-        const err = validateVals(editVals);
-        if (err) { setSaveError(err); return; }
+    // Autoguardado: aplica los vals recibidos al instante (insert/update/delete).
+    // El panel queda abierto; rulesMap se actualiza localmente sin recargar la tabla.
+    const applyVals = useCallback(async (productId, v) => {
+        const err = validateVals(v);
+        if (err) { setSaveError(err); setJustSaved(false); return; }
         setSaving(true); setSaveError(null);
 
-        const existing = rulesMap[productId];
-        // Garantiza un solo tipo: los campos no activos van a null
-        const payload = {
-            erp_product_id:    productId,
-            solo_cajas:        editVals.ruleType === 'solo_cajas',
-            multiplo:          editVals.ruleType === 'multiplo'  ? (parseInt(editVals.multiplo)           || null) : null,
-            blister:           editVals.ruleType === 'blister'   ? (parseInt(editVals.blister)            || null) : null,
-            multiplo_unidades: editVals.ruleType === 'unidades'  ? (parseInt(editVals.multiplo_unidades)  || null) : null,
-            notes:             editVals.notes || null,
-            updated_at:        new Date().toISOString(),
-        };
-
+        const existing = rulesMapRef.current[productId];
         try {
-            if (existing) {
-                const { error } = await supabase.from('dispatch_rules').update(payload).eq('id', existing.id);
-                if (error) throw error;
-                useStaff.getState().appendAuditLog('EDITAR_REGLA_DESPACHO', String(existing.id), payload);
+            if (v.ruleType === 'sin_regla') {
+                if (existing) {
+                    const { error } = await supabase.from('dispatch_rules').delete().eq('id', existing.id);
+                    if (error) throw error;
+                    useStaff.getState().appendAuditLog('ELIMINAR_REGLA_DESPACHO', String(existing.id), { erp_product_id: productId });
+                    const next = { ...rulesMapRef.current };
+                    delete next[productId];
+                    rulesMapRef.current = next;
+                    setRulesMap(next);
+                }
             } else {
-                const { error } = await supabase.from('dispatch_rules').insert(payload);
-                if (error) throw error;
-                useStaff.getState().appendAuditLog('CREAR_REGLA_DESPACHO', String(productId), payload);
+                // Garantiza un solo tipo: los campos no activos van a null
+                const payload = {
+                    erp_product_id:    productId,
+                    solo_cajas:        v.ruleType === 'solo_cajas',
+                    multiplo:          v.ruleType === 'multiplo'  ? (parseInt(v.multiplo)           || null) : null,
+                    blister:           v.ruleType === 'blister'   ? (parseInt(v.blister)            || null) : null,
+                    multiplo_unidades: v.ruleType === 'unidades'  ? (parseInt(v.multiplo_unidades)  || null) : null,
+                    notes:             v.notes || null,
+                    updated_at:        new Date().toISOString(),
+                };
+                let saved;
+                if (existing) {
+                    const { data, error } = await supabase.from('dispatch_rules')
+                        .update(payload).eq('id', existing.id).select().single();
+                    if (error) throw error;
+                    saved = data;
+                    useStaff.getState().appendAuditLog('EDITAR_REGLA_DESPACHO', String(existing.id), payload);
+                } else {
+                    const { data, error } = await supabase.from('dispatch_rules')
+                        .insert(payload).select().single();
+                    if (error) throw error;
+                    saved = data;
+                    useStaff.getState().appendAuditLog('CREAR_REGLA_DESPACHO', String(productId), payload);
+                }
+                const next = { ...rulesMapRef.current, [productId]: saved };
+                rulesMapRef.current = next;
+                setRulesMap(next);
             }
-            setEditingId(null);
-            await loadRules();
+            setJustSaved(true);
+            clearTimeout(justSavedTimer.current);
+            justSavedTimer.current = setTimeout(() => setJustSaved(false), 2200);
         } catch (e) {
             setSaveError(e.message);
         } finally {
             setSaving(false);
         }
-    }, [editVals, rulesMap, loadRules]);
-
-    const handleDelete = useCallback((productId) => {
-        const rule    = rulesMap[productId];
-        if (!rule) return;
-        const product = products.find(p => p.id === productId);
-        setConfirmDel({ productId, nombre: product?.nombre ?? '?', ruleId: rule.id });
-    }, [rulesMap, products]);
-
-    const doDelete = useCallback(async () => {
-        if (!confirmDel) return;
-        setDeleting(true);
-        const { error } = await supabase.from('dispatch_rules').delete().eq('id', confirmDel.ruleId);
-        if (!error) {
-            useStaff.getState().appendAuditLog('ELIMINAR_REGLA_DESPACHO', String(confirmDel.ruleId), {});
-            setEditingId(null);
-            await loadRules();
-        }
-        setDeleting(false);
-        setConfirmDel(null);
-    }, [confirmDel, loadRules]);
+    }, []);
 
     // Computed
     const rulesCount = Object.keys(rulesMap).length;
@@ -713,10 +793,9 @@ export default function TabReglas({ searchTerm = '' }) {
                                                     <EditPanel
                                                         product={prod} rule={rule}
                                                         vals={editVals} setVals={setEditVals}
-                                                        saving={saving} saveError={saveError}
-                                                        onSave={() => handleSave(prod.id)}
+                                                        saving={saving} justSaved={justSaved} saveError={saveError}
+                                                        onApply={(v) => applyVals(prod.id, v)}
                                                         onCancel={cancelEdit}
-                                                        onDelete={() => handleDelete(prod.id)}
                                                     />
                                                 </div>
                                             </motion.div>
@@ -731,13 +810,6 @@ export default function TabReglas({ searchTerm = '' }) {
 
             <TablePagination page={page} pageSize={PAGE_SIZE} total={totalCount}
                 onPageChange={setPage} onPageSizeChange={() => {}} />
-
-            <ConfirmModal
-                isOpen={!!confirmDel} onClose={() => setConfirmDel(null)} onConfirm={doDelete}
-                title="Eliminar regla"
-                message={`¿Eliminar la regla de "${confirmDel?.nombre}"? Esta acción no se puede deshacer.`}
-                confirmText="Eliminar" isDestructive isProcessing={deleting}
-            />
         </div>
     );
 }

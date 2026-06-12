@@ -130,8 +130,9 @@ function buildSection(sec, fecha, isLast) {
 </div>`;
 }
 
+// Always rendered — even without responsable/revisor the sheet needs
+// signature lines and the Sello box for physical reception.
 function buildSignatures(meta = {}) {
-    if (!meta.responsable && !meta.revisor) return '';
     const sigCell = (nombre, label) => {
         const nameHtml = nombre
             ? `<div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:4px;">${esc(nombre)}</div>`
@@ -139,7 +140,7 @@ function buildSignatures(meta = {}) {
         return `<td style="border-top:1px solid #334155;padding-top:5px;text-align:center;font-size:10px;color:#475569;width:25%;">${nameHtml}${label}</td>`;
     };
     return `
-<table style="width:100%;border-collapse:collapse;margin-top:28px;">
+<table class="sig-block" style="width:100%;border-collapse:collapse;margin-top:28px;">
   <tr>
     ${sigCell(meta.responsable ?? null, 'Responsable')}
     ${sigCell(meta.revisor    ?? null, 'Revisado por')}
@@ -161,9 +162,13 @@ function openPrintWindow(sections, title, meta = {}) {
 <title>${esc(title)}</title>
 <style>
   *{box-sizing:border-box;}
+  @page{size:letter portrait;margin:10mm 9mm;}
   body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:12px;color:#1e293b;background:#fff;}
+  thead{display:table-header-group;}
+  tr{page-break-inside:avoid;}
+  .sig-block{page-break-inside:avoid;}
   @media print{
-    body{padding:4px;}
+    body{padding:0;}
     .no-print{display:none!important;}
   }
 </style>

@@ -301,7 +301,7 @@ export default function TabGenerar({ searchTerm = '' }) {
         } finally {
             setLoading(false);
         }
-    }, [selected]);
+    }, [selected, globalMode]);
 
     // ── Guardar borrador ───────────────────────────────────────
     const handleGuardarBorrador = useCallback(async () => {

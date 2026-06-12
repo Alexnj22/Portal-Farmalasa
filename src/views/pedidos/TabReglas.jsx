@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, Check, X, Trash2, AlertTriangle, Package,
-    Sparkles, FlaskConical, Box, Layers,
+    Sparkles, FlaskConical, Box, Layers, Sigma,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -43,17 +43,25 @@ const RULE_TYPES = [
         Icon:  Layers,
         color: 'indigo',
     },
+    {
+        id:    'unidades',
+        label: 'Múltiplo unidades',
+        desc:  'Envía en múltiplos de N unidades base',
+        Icon:  Sigma,
+        color: 'violet',
+    },
 ];
 
 // Detecta qué tipo de regla tiene un rule existente
 const detectType = (rule) => {
     if (!rule) return 'solo_cajas';
-    if (rule.multiplo != null) return 'multiplo';
-    if (rule.blister  != null) return 'blister';
+    if (rule.multiplo           != null) return 'multiplo';
+    if (rule.blister            != null) return 'blister';
+    if (rule.multiplo_unidades  != null) return 'unidades';
     return 'solo_cajas';
 };
 
-const EMPTY_VALS = { ruleType: 'solo_cajas', multiplo: '', blister: '', notes: '' };
+const EMPTY_VALS = { ruleType: 'solo_cajas', multiplo: '', blister: '', multiplo_unidades: '', notes: '' };
 
 const COLS = [
     { key: 'laboratorio_nombre', label: 'Laboratorio', align: 'left',   sortable: true },
@@ -109,6 +117,12 @@ function EditPanel({ product, rule, vals, setVals, saving, saveError, onSave, on
             icon:     vals.ruleType === 'blister' ? 'text-white' : 'text-indigo-400',
             dot:      'bg-indigo-500',
         },
+        unidades: {
+            active:   'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-200/50',
+            inactive: 'bg-white/80 border-slate-200 text-slate-500 hover:border-violet-300 hover:bg-violet-50/40',
+            icon:     vals.ruleType === 'unidades' ? 'text-white' : 'text-violet-400',
+            dot:      'bg-violet-500',
+        },
     };
 
     return (
@@ -138,9 +152,10 @@ function EditPanel({ product, rule, vals, setVals, saving, saveError, onSave, on
                             <button key={rt.id} type="button"
                                 onClick={() => setVals(p => ({
                                     ...p,
-                                    ruleType: rt.id,
-                                    multiplo: rt.id !== 'multiplo' ? '' : p.multiplo,
-                                    blister:  rt.id !== 'blister'  ? '' : p.blister,
+                                    ruleType:          rt.id,
+                                    multiplo:          rt.id !== 'multiplo'  ? '' : p.multiplo,
+                                    blister:           rt.id !== 'blister'   ? '' : p.blister,
+                                    multiplo_unidades: rt.id !== 'unidades'  ? '' : p.multiplo_unidades,
                                 }))}
                                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 transition-all duration-150 select-none ${
                                     isActive ? c.active : c.inactive
@@ -230,6 +245,34 @@ function EditPanel({ product, rule, vals, setVals, saving, saveError, onSave, on
                         />
                     </motion.div>
                 )}
+
+                {vals.ruleType === 'unidades' && (
+                    <motion.div key="unidades"
+                        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.18, ease: EASE }}
+                        className="space-y-2"
+                    >
+                        <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Múltiplo de unidades base</p>
+                        <p className="text-[10px] text-slate-400">El despacho garantiza que la cantidad × factor sea múltiplo de N unidades.</p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {MULTIPLO_PILLS.map(n => (
+                                <button key={n} type="button"
+                                    onClick={() => setVals(p => ({ ...p, multiplo_unidades: p.multiplo_unidades === String(n) ? '' : String(n) }))}
+                                    className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
+                                        vals.multiplo_unidades === String(n)
+                                            ? 'bg-violet-600 border-violet-500 text-white shadow-md'
+                                            : 'bg-white border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600'
+                                    }`}
+                                >×{n}</button>
+                            ))}
+                        </div>
+                        <input type="number" min={1} placeholder="Otro número…"
+                            value={vals.multiplo_unidades}
+                            onChange={e => setVals(p => ({ ...p, multiplo_unidades: e.target.value }))}
+                            className="w-36 border border-slate-200 rounded-lg px-3 py-1.5 text-[12px] focus:outline-none focus:border-violet-400 bg-white/80"
+                        />
+                    </motion.div>
+                )}
             </AnimatePresence>
 
             {/* Notas */}
@@ -316,7 +359,7 @@ export default function TabReglas({ searchTerm = '' }) {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
         const [rulesRes, totalRes, newRes] = await Promise.all([
             supabase.from('dispatch_rules')
-                .select('id, erp_product_id, solo_cajas, multiplo, blister, notes')
+                .select('id, erp_product_id, solo_cajas, multiplo, blister, multiplo_unidades, notes')
                 .range(0, 9999),
             supabase.from('products').select('id', { count: 'exact', head: true }).eq('activo', true),
             supabase.from('products').select('id', { count: 'exact' }).eq('activo', true).gte('created_at', startOfMonth),
@@ -393,6 +436,11 @@ export default function TabReglas({ searchTerm = '' }) {
             const b = parseInt(v.blister);
             if (!VALID_MULTIPLES.has(b)) return `Múltiplo inválido (${b}). Válidos: ${[...VALID_MULTIPLES].join(', ')}`;
         }
+        if (v.ruleType === 'unidades') {
+            if (!v.multiplo_unidades) return 'Seleccioná un múltiplo de unidades.';
+            const u = parseInt(v.multiplo_unidades);
+            if (!VALID_MULTIPLES.has(u)) return `Múltiplo inválido (${u}). Válidos: ${[...VALID_MULTIPLES].join(', ')}`;
+        }
         return null;
     };
 
@@ -400,10 +448,11 @@ export default function TabReglas({ searchTerm = '' }) {
         setEditingId(productId);
         setSaveError(null);
         setEditVals({
-            ruleType: detectType(rule),
-            multiplo: rule?.multiplo != null ? String(rule.multiplo) : '',
-            blister:  rule?.blister  != null ? String(rule.blister)  : '',
-            notes:    rule?.notes    ?? '',
+            ruleType:          detectType(rule),
+            multiplo:          rule?.multiplo           != null ? String(rule.multiplo)           : '',
+            blister:           rule?.blister            != null ? String(rule.blister)            : '',
+            multiplo_unidades: rule?.multiplo_unidades  != null ? String(rule.multiplo_unidades)  : '',
+            notes:             rule?.notes              ?? '',
         });
     }, []);
 
@@ -421,12 +470,13 @@ export default function TabReglas({ searchTerm = '' }) {
         const existing = rulesMap[productId];
         // Garantiza un solo tipo: los campos no activos van a null
         const payload = {
-            erp_product_id: productId,
-            solo_cajas:  editVals.ruleType !== 'blister',
-            multiplo:    editVals.ruleType === 'multiplo' ? (parseInt(editVals.multiplo) || null) : null,
-            blister:     editVals.ruleType === 'blister'  ? (parseInt(editVals.blister)  || null) : null,
-            notes:       editVals.notes || null,
-            updated_at:  new Date().toISOString(),
+            erp_product_id:    productId,
+            solo_cajas:        editVals.ruleType === 'solo_cajas',
+            multiplo:          editVals.ruleType === 'multiplo'  ? (parseInt(editVals.multiplo)           || null) : null,
+            blister:           editVals.ruleType === 'blister'   ? (parseInt(editVals.blister)            || null) : null,
+            multiplo_unidades: editVals.ruleType === 'unidades'  ? (parseInt(editVals.multiplo_unidades)  || null) : null,
+            notes:             editVals.notes || null,
+            updated_at:        new Date().toISOString(),
         };
 
         try {
@@ -479,8 +529,9 @@ export default function TabReglas({ searchTerm = '' }) {
     // Etiqueta de tipo de regla para la tabla
     const ruleTypeLabel = (rule) => {
         if (!rule) return null;
-        if (rule.multiplo != null) return { text: `×${rule.multiplo} cajas`, cls: 'bg-blue-100 text-blue-700 border-blue-200' };
-        if (rule.blister  != null) return { text: `×${rule.blister} blíst.`, cls: 'bg-indigo-100 text-indigo-700 border-indigo-200' };
+        if (rule.multiplo           != null) return { text: `×${rule.multiplo} cajas`,    cls: 'bg-blue-100   text-blue-700   border-blue-200'   };
+        if (rule.blister            != null) return { text: `×${rule.blister} blíst.`,    cls: 'bg-indigo-100 text-indigo-700 border-indigo-200' };
+        if (rule.multiplo_unidades  != null) return { text: `×${rule.multiplo_unidades}u`, cls: 'bg-violet-100 text-violet-700 border-violet-200' };
         return { text: 'Solo cajas', cls: 'bg-slate-100 text-slate-600 border-slate-200' };
     };
 
@@ -624,7 +675,10 @@ export default function TabReglas({ searchTerm = '' }) {
 
                                 <DataCell align="center" className="text-[13px] tabular-nums text-slate-500">
                                     {hasRule
-                                        ? rule.multiplo ? `×${rule.multiplo}` : rule.blister ? `×${rule.blister}` : <span className="text-slate-300">—</span>
+                                        ? rule.multiplo          ? `×${rule.multiplo}`
+                                        : rule.blister           ? `×${rule.blister}`
+                                        : rule.multiplo_unidades ? `×${rule.multiplo_unidades}u`
+                                        : <span className="text-slate-300">—</span>
                                         : <span className="text-slate-200">—</span>
                                     }
                                 </DataCell>

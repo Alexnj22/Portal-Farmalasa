@@ -260,9 +260,10 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 id, erp_sucursal_id, erp_product_id, erp_presentacion_id,
                 cantidad_asignada, cantidad_recibida,
                 sin_stock, revision_minmax,
+                max_qty_snapshot, stock_packs_snapshot,
                 status, nota_diferencia, received_at,
                 lotes_asignados,
-                products ( nombre, es_antibiotico ),
+                products ( nombre, es_antibiotico, laboratorios ( nombre ) ),
                 presentaciones ( tipo )
             `)
             .eq('pedido_id', pedidoId)
@@ -627,6 +628,15 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                 {ERP_NAMES[sid] ?? `Suc ${sid}`}
                                             </span>
                                         ))}
+                                        {/* B4: no-enviados badge (shows once items are loaded) */}
+                                        {pedItems.length > 0 && (() => {
+                                            const n = pedItems.filter(r => r.sin_stock || r.revision_minmax).length;
+                                            return n > 0 ? (
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-amber-700 font-semibold flex-shrink-0">
+                                                    {n} no enviado{n !== 1 ? 's' : ''}
+                                                </span>
+                                            ) : null;
+                                        })()}
                                     </div>
                                     {p.notes && (
                                         <p className="text-slate-400 text-[12px] truncate italic mt-0.5">"{p.notes}"</p>
@@ -863,16 +873,21 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                 </button>
                                                                 {isSinOpen && (
                                                                     <div className="overflow-x-auto">
-                                                                        <table className="w-full text-[12px] min-w-[360px]">
+                                                                        <table className="w-full text-[12px] min-w-[480px]">
                                                                             <thead>
                                                                                 <tr className="bg-red-50/60 border-b border-red-100">
                                                                                     <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 text-left">Producto</th>
-                                                                                    <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 text-center w-20">Necesitaba</th>
+                                                                                    <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 text-left w-28">Laboratorio</th>
+                                                                                    <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 text-center w-20">Necesidad</th>
                                                                                     <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 text-center w-28">Razón</th>
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody>
-                                                                                {sinRows.map(row => (
+                                                                                {sinRows.map(row => {
+                                                                                    const nec = row.max_qty_snapshot != null && row.stock_packs_snapshot != null
+                                                                                        ? Math.max(0, row.max_qty_snapshot - Math.floor(Number(row.stock_packs_snapshot)))
+                                                                                        : (row.cantidad_asignada ?? '—');
+                                                                                    return (
                                                                                     <tr key={row.id} className="border-t border-red-50 hover:bg-red-50/50 transition-colors opacity-70">
                                                                                         <td className="px-3 py-2 font-medium text-slate-700">
                                                                                             <div className="flex items-center gap-1.5">
@@ -884,12 +899,14 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                                                 )}
                                                                                             </div>
                                                                                         </td>
-                                                                                        <td className="px-3 py-2 text-center text-slate-500 tabular-nums">{row.cantidad_asignada ?? '—'}</td>
+                                                                                        <td className="px-3 py-2 text-slate-400 text-[11px]">{row.products?.laboratorios?.nombre ?? '—'}</td>
+                                                                                        <td className="px-3 py-2 text-center text-slate-500 tabular-nums">{nec}</td>
                                                                                         <td className="px-3 py-2 text-center">
                                                                                             <span className="text-[11px] text-red-500 font-medium">Sin stock en Bodega</span>
                                                                                         </td>
                                                                                     </tr>
-                                                                                ))}
+                                                                                    );
+                                                                                })}
                                                                             </tbody>
                                                                         </table>
                                                                     </div>
@@ -915,16 +932,21 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                 </button>
                                                                 {isRevOpen && (
                                                                     <div className="overflow-x-auto">
-                                                                        <table className="w-full text-[12px] min-w-[360px]">
+                                                                        <table className="w-full text-[12px] min-w-[480px]">
                                                                             <thead>
                                                                                 <tr className="bg-amber-50/60 border-b border-amber-100">
                                                                                     <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-amber-500 text-left">Producto</th>
-                                                                                    <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-amber-500 text-center w-20">Necesitaba</th>
+                                                                                    <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-amber-500 text-left w-28">Laboratorio</th>
+                                                                                    <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-amber-500 text-center w-20">Necesidad</th>
                                                                                     <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-amber-500 text-center w-40">Razón</th>
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody>
-                                                                                {revRows.map(row => (
+                                                                                {revRows.map(row => {
+                                                                                    const nec = row.max_qty_snapshot != null && row.stock_packs_snapshot != null
+                                                                                        ? Math.max(0, row.max_qty_snapshot - Math.floor(Number(row.stock_packs_snapshot)))
+                                                                                        : (row.cantidad_asignada ?? '—');
+                                                                                    return (
                                                                                     <tr key={row.id} className="border-t border-amber-50 hover:bg-amber-50/60 transition-colors opacity-75">
                                                                                         <td className="px-3 py-2 font-medium text-slate-700">
                                                                                             <div className="flex items-center gap-1.5">
@@ -936,12 +958,14 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                                                 )}
                                                                                             </div>
                                                                                         </td>
-                                                                                        <td className="px-3 py-2 text-center text-slate-500 tabular-nums">{row.cantidad_asignada ?? '—'}</td>
+                                                                                        <td className="px-3 py-2 text-slate-400 text-[11px]">{row.products?.laboratorios?.nombre ?? '—'}</td>
+                                                                                        <td className="px-3 py-2 text-center text-slate-500 tabular-nums">{nec}</td>
                                                                                         <td className="px-3 py-2 text-center">
                                                                                             <span className="text-[11px] text-amber-600 font-medium">Stock insuficiente para múltiplo</span>
                                                                                         </td>
                                                                                     </tr>
-                                                                                ))}
+                                                                                    );
+                                                                                })}
                                                                             </tbody>
                                                                         </table>
                                                                     </div>

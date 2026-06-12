@@ -4,7 +4,7 @@ import {
     Loader2, RefreshCw, Building2, ClipboardList, CheckCircle2,
     Package, AlertTriangle, Info, ChevronDown, ChevronRight, Clock,
     FlaskConical, ArrowLeft, TriangleAlert, TrendingUp,
-    ChevronLeft, Minus, Plus, Printer, RefreshCcw, Save,
+    ChevronLeft, Minus, Plus, Printer, RefreshCcw, Save, Check, Globe,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow } from '../../components/common/DataTable';
@@ -36,9 +36,10 @@ function UrgenciaBar({ pct }) {
 function RulesTag({ row }) {
     if (!row.tiene_regla_despacho) return null;
     const parts = [];
-    if (row.regla_multiplo > 1) parts.push(`×${row.regla_multiplo}`);
-    if (row.regla_blister  > 1) parts.push(`blister×${row.regla_blister}`);
-    if (row.regla_solo_cajas)   parts.push('solo cajas');
+    if (row.regla_multiplo           > 1) parts.push(`×${row.regla_multiplo}`);
+    if (row.regla_blister            > 1) parts.push(`blister×${row.regla_blister}`);
+    if (row.regla_multiplo_unidades  > 1) parts.push(`unid×${row.regla_multiplo_unidades}`);
+    if (row.regla_solo_cajas)             parts.push('solo cajas');
     if (parts.length === 0) return null;
     return (
         <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-600 border border-violet-200 font-medium whitespace-nowrap">
@@ -162,7 +163,8 @@ export default function TabGenerar({ searchTerm = '' }) {
     const { user } = useAuth();
 
     // Sucursal selection — default ALL deselected
-    const [selected, setSelected] = useState(new Set());
+    const [selected,    setSelected]    = useState(new Set());
+    const [globalMode,  setGlobalMode]  = useState(false);
 
     // Preview
     const [preview,      setPreview]      = useState(null);
@@ -174,6 +176,7 @@ export default function TabGenerar({ searchTerm = '' }) {
     const [error,        setError]        = useState(null);
     const [syncedAt,     setSyncedAt]     = useState(null);
     const [savingSnap,   setSavingSnap]   = useState(false);
+    const [snapMsg,      setSnapMsg]      = useState(null); // { ok: bool, text: string }
 
     // Preview per-sucursal collapse + pagination
     const [sucCollapsed, setSucCollapsed] = useState({});
@@ -281,9 +284,11 @@ export default function TabGenerar({ searchTerm = '' }) {
         setLoading(true); setPreview(null); setAdjustments({}); setError(null);
         setSucCollapsed({}); setSucPage({});
         try {
-            // range(0, 49999) avoids the PostgREST 1000-row default cap
+            const rpcParams = globalMode
+                ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected] }
+                : { p_sucursal_ids: [...selected] };
             const { data, error: rpcErr } = await supabase
-                .rpc('get_pedido_preview', { p_sucursal_ids: [...selected] })
+                .rpc('get_pedido_preview', rpcParams)
                 .range(0, 49999);
             if (rpcErr) throw rpcErr;
             const rows = data || [];
@@ -302,13 +307,13 @@ export default function TabGenerar({ searchTerm = '' }) {
     const handleGuardarBorrador = useCallback(async () => {
         if (!preview || preview.length === 0) return;
         const nombre = `Borrador ${new Date().toLocaleDateString('es-SV')} — ${[...selected].map(id => ERP_NAMES[id]).join(', ')}`;
-        setSavingSnap(true);
+        setSavingSnap(true); setSnapMsg(null);
         try {
             const datos = preview.map(row => ({ ...row, cantidad_asignada: getAdjusted(row) }));
             const totalFilas = datos.filter(r => !r.sin_stock).length;
             const totalPacks = datos.filter(r => !r.sin_stock && !r.revision_minmax)
                 .reduce((s, r) => s + r.cantidad_asignada, 0);
-            const { error } = await supabase.from('pedidos_snapshots').insert({
+            const { error: insErr } = await supabase.from('pedidos_snapshots').insert({
                 nombre,
                 sucursal_ids: [...selected],
                 created_by:   user?.id ?? null,
@@ -316,7 +321,11 @@ export default function TabGenerar({ searchTerm = '' }) {
                 total_packs:  totalPacks,
                 datos,
             });
-            if (error) throw error;
+            if (insErr) throw insErr;
+            setSnapMsg({ ok: true, text: 'Borrador guardado' });
+            setTimeout(() => setSnapMsg(null), 3000);
+        } catch (e) {
+            setSnapMsg({ ok: false, text: e.message ?? 'Error al guardar' });
         } finally {
             setSavingSnap(false);
         }
@@ -392,15 +401,39 @@ export default function TabGenerar({ searchTerm = '' }) {
                 items_count: items.length,
                 numero:      ped?.numero,
             });
-            setConfirmed({ id: pedidoId, numero: ped?.numero });
+
+            // B3: freeze print data before clearing preview
+            const respNombre = employees.find(e => e.id === responsable)?.nombre ?? '';
+            const revNombre  = employees.find(e => e.id === revisado)?.nombre    ?? '';
+            const printMeta  = { responsable: respNombre || null, revisor: revNombre || null };
+            const frozenGrouped = {};
+            for (const [sucId, g] of Object.entries(grouped ?? {})) {
+                frozenGrouped[sucId] = {
+                    normal:   g.normal.map(r => ({ ...r, cantidad_asignada: getAdjusted(r) })),
+                    revision: g.revision.map(r => ({ ...r, cantidad_asignada: getAdjusted(r) })),
+                    sinStock: g.sinStock,
+                    sinCount: g.sinStock.length,
+                    revCount: g.revision.length,
+                };
+            }
+            const frozenSucIds  = [...sortedSucIds];
+            const printTitle    = `Pedido #${ped?.numero} — ${frozenSucIds.map(id => ERP_NAMES[id]).join(', ')}`;
+
+            setConfirmed({
+                id: pedidoId, numero: ped?.numero,
+                frozenGrouped, frozenSucIds, printTitle, printMeta,
+            });
             setPreview(null); setNotes(''); setAdjustments({});
             setResponsable(''); setRevisado('');
+
+            // B3: auto-print
+            printFromPreview(frozenGrouped, frozenSucIds, r => r.cantidad_asignada, printTitle, printMeta);
         } catch (e) {
             setError(e.message);
         } finally {
             setConfirming(false);
         }
-    }, [preview, notes, selected, getAdjusted, user, responsable, revisado]);
+    }, [preview, notes, selected, getAdjusted, grouped, sortedSucIds, user, responsable, revisado, employees]);
 
     const statMap = useMemo(() => {
         const m = {};
@@ -532,11 +565,25 @@ export default function TabGenerar({ searchTerm = '' }) {
                     <CheckCircle2 size={32} className="text-emerald-500" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-800">Pedido #{confirmed.numero} generado</h3>
-                <p className="text-slate-500 text-[14px]">Puedes ver el estado en la pestaña Historial.</p>
-                <button onClick={() => setConfirmed(null)}
-                    className="mt-2 px-6 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">
-                    Nuevo pedido
-                </button>
+                <p className="text-slate-500 text-[14px]">La ventana de impresión se abrió automáticamente.</p>
+                <div className="flex items-center gap-3 mt-2">
+                    <button
+                        onClick={() => printFromPreview(
+                            confirmed.frozenGrouped,
+                            confirmed.frozenSucIds,
+                            r => r.cantidad_asignada,
+                            confirmed.printTitle,
+                            confirmed.printMeta,
+                        )}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium text-[13px] transition-colors"
+                    >
+                        <Printer size={14} /> Reimprimir
+                    </button>
+                    <button onClick={() => setConfirmed(null)}
+                        className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors">
+                        Nuevo pedido
+                    </button>
+                </div>
             </div>
         );
     }
@@ -572,14 +619,28 @@ export default function TabGenerar({ searchTerm = '' }) {
                         <button
                             onClick={handleGuardarBorrador}
                             disabled={savingSnap}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border transition-colors disabled:opacity-50 ${
+                                snapMsg?.ok === true  ? 'border-emerald-300 bg-emerald-50 text-emerald-700' :
+                                snapMsg?.ok === false ? 'border-red-300 bg-red-50 text-red-700' :
+                                'border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}
                         >
-                            {savingSnap ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-                            Guardar borrador
+                            {savingSnap
+                                ? <Loader2 size={13} className="animate-spin" />
+                                : snapMsg?.ok === true  ? <Check size={13} />
+                                : <Save size={13} />}
+                            {snapMsg ? snapMsg.text : 'Guardar borrador'}
                         </button>
                         <button
-                            onClick={() => printFromPreview(grouped, sortedSucIds, getAdjusted,
-                                `Pedido ${new Date().toLocaleDateString('es-SV')} — ${[...selected].map(id => ERP_NAMES[id]).join(', ')}`)}
+                            onClick={() => {
+                                const respNombre = employees.find(e => e.id === responsable)?.nombre ?? '';
+                                const revNombre  = employees.find(e => e.id === revisado)?.nombre    ?? '';
+                                printFromPreview(
+                                    grouped, sortedSucIds, getAdjusted,
+                                    `Pedido ${new Date().toLocaleDateString('es-SV')} — ${[...selected].map(id => ERP_NAMES[id]).join(', ')}`,
+                                    { responsable: respNombre || null, revisor: revNombre || null },
+                                );
+                            }}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-slate-800 text-white hover:bg-slate-700 transition-colors"
                         >
                             <Printer size={13} /> Imprimir
@@ -777,10 +838,29 @@ export default function TabGenerar({ searchTerm = '' }) {
                         </button>
                     </div>
                 </div>
-                <p className="text-[11px] text-slate-400 mb-3 flex items-center gap-1">
+                <p className="text-[11px] text-slate-400 mb-2 flex items-center gap-1">
                     <Info size={11} />
                     Por defecto ninguna está seleccionada. Elige las sucursales a reponer y calcula el pedido.
                 </p>
+                {/* B1: Global distribution mode toggle */}
+                <button
+                    onClick={() => setGlobalMode(v => !v)}
+                    className={`inline-flex items-center gap-1.5 mb-3 px-3 py-1.5 rounded-xl border-2 text-[11px] font-semibold transition-all ${
+                        globalMode
+                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm'
+                            : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'
+                    }`}
+                >
+                    <Globe size={12} />
+                    Distribución global de bodega
+                    {globalMode && <Check size={11} />}
+                </button>
+                {globalMode && (
+                    <p className="text-[10px] text-indigo-600 mb-2 flex items-center gap-1">
+                        <Info size={10} />
+                        La bodega se distribuye considerando las necesidades de TODAS las sucursales, pero el pedido solo incluye las marcadas.
+                    </p>
+                )}
 
                 <style>{SUC_ANIM_CSS}</style>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">

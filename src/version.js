@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.54';
+export const APP_VERSION = '2.2.55';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.55 — Pedidos mejoras integrales: A1 fix solo_cajas SQL enforcement + data-fix multiplo rules; B1 globalMode distribución toda bodega (p_target_ids RPC); B2 multiplo_unidades regla de despacho; B3 auto-print + reimprimir al confirmar; B4 badge no-enviados + laboratorio+necesidad en secciones sin_stock/revisión; A2 sin página en blanco final PDF; A3 meta responsable/revisor en PDF; A4 feedback guardar borrador; C PDF: compact, lab column, checkbox ✓, pill AB, firmas al final
 // v2.2.54 — Pedidos FASE 6 UX: input recepción con max=cantidad_asignada (no excede asignado); guardar borrador preserva ajustes manuales (direct insert vs RPC que recalcula desde DB); aviso beforeunload al salir con ajustes sin guardar; lotes por fila en historial; conteos filter pill desde totalCounts; sin_stock en impresión con badge naranja
 // v2.2.53 — Pedidos FASE 5: reporte de diferencias — RPC get_pedido_diferencias_stats (por sucursal/producto/detalle con fecha); tab Diferencias en PedidosView con stat cards, barras de diferencia y vista detalle con búsqueda
 // v2.2.52 — Pedidos FASE 4: tab Recepción para empleados de sucursal — pedidos 'enviado' filtrados por sucursal del empleado; modal de recepción con cantidad por ítem + nota diferencia; notificación a bodega si hay diferencias; permiso pedidos_tab_recepcion en PermissionsView

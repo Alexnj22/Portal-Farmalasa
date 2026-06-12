@@ -1,7 +1,6 @@
-// ─── Pedido print utility ────────────────────────────────────────────────────
-// Generates a print window matching the format of the GAS PDF document.
-// Columns: Producto | Presentación | Lote(s) | Cant.
-// Supports: preview data, saved snapshots, and historical pedido_items.
+// ─── Pedido print utility ─────────────────────────────────────────────────────
+// Columns: Producto | Laboratorio | Presentación | Lote(s) | Cant. | ✓
+// Compact layout, single signatures block at document end.
 
 const ERP_NAMES_DEFAULT = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
@@ -52,77 +51,75 @@ function venceColor(iso) {
     return '#16a34a';
 }
 
-function lotesHtml(lotes) {
-    if (!lotes || !lotes.length) return '<span style="color:#cbd5e1;font-size:10px;">—</span>';
+// Compact lotes: single line with separator, no pill background
+function lotesText(lotes) {
+    if (!lotes || !lotes.length) return '<span style="color:#cbd5e1;font-size:9px;">—</span>';
     return lotes.map(l => {
         const vence = fmtVence(l.fecha_vencimiento);
         const color = venceColor(l.fecha_vencimiento);
-        return `<span style="display:inline-flex;align-items:center;gap:3px;margin:1px 2px;padding:1px 6px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:9px;font-size:9px;white-space:nowrap;">` +
-            `<b style="color:#475569;">${esc(l.lote) || '—'}</b>` +
-            (vence ? `<span style="color:${color};">${esc(vence)}</span>` : '') +
-            `<span style="color:#3b82f6;font-weight:700;">${l.take}pk</span>` +
-            `</span>`;
+        const parts = [];
+        if (l.lote) parts.push(`<b style="color:#475569;">${esc(l.lote)}</b>`);
+        if (vence)  parts.push(`<span style="color:${color};">${esc(vence)}</span>`);
+        parts.push(`<b style="color:#3b82f6;">${l.take}pk</b>`);
+        return `<span style="margin-right:8px;font-size:9px;white-space:nowrap;">${parts.join(' ')}</span>`;
     }).join('');
 }
 
 function rowsToHtml(rows) {
     if (!rows.length) {
-        return '<tr><td colspan="4" style="text-align:center;color:#94a3b8;font-size:11px;padding:10px 8px;">Sin productos enviados</td></tr>';
+        return '<tr><td colspan="6" style="text-align:center;color:#94a3b8;font-size:10px;padding:8px 6px;">Sin productos enviados</td></tr>';
     }
     return rows.map((r, i) => {
         const sinStock = r.sin_stock || r.qty === 0;
         const bg = sinStock ? 'background:#fff7ed;opacity:0.7;' : (i % 2 === 1 ? 'background:#f8fafc;' : '');
         const abBadge = r.es_antibiotico
-            ? `<span style="display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:#ede9fe;border:1px solid #c4b5fd;font-size:8px;font-weight:700;color:#7c3aed;margin-left:3px;vertical-align:middle;">AB</span>`
+            ? `<span style="display:inline-block;margin-left:4px;padding:0 4px;border-radius:3px;background:#ede9fe;border:1px solid #c4b5fd;font-size:7px;font-weight:700;color:#6d28d9;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;line-height:14px;">ANTIBIÓTICO</span>`
             : '';
         const ssBadge = sinStock
-            ? `<span style="margin-left:4px;font-size:8px;color:#f97316;background:#fff7ed;border:1px solid #fed7aa;padding:0 4px;border-radius:4px;">sin stock</span>`
+            ? `<span style="margin-left:4px;font-size:8px;color:#f97316;background:#fff7ed;border:1px solid #fed7aa;padding:0 4px;border-radius:3px;">sin stock</span>`
             : '';
         return `<tr style="${bg}">
-            <td style="padding:4px 8px;font-size:11px;color:#1e293b;border-right:1px solid #f1f5f9;">${esc(r.product_name)}${abBadge}${ssBadge}</td>
-            <td style="padding:4px 8px;font-size:10px;color:#64748b;border-right:1px solid #f1f5f9;white-space:nowrap;">${esc(r.presentacion_tipo) || '—'}</td>
-            <td style="padding:4px 8px;font-size:10px;border-right:1px solid #f1f5f9;">${sinStock ? '' : lotesHtml(r.lotes)}</td>
-            <td style="padding:4px 8px;font-size:13px;font-weight:700;color:${sinStock ? '#f97316' : '#1e293b'};text-align:center;">${sinStock ? '—' : r.qty}</td>
+            <td style="padding:2px 6px;font-size:10px;color:#1e293b;border-right:1px solid #f1f5f9;">${esc(r.product_name)}${abBadge}${ssBadge}</td>
+            <td style="padding:2px 6px;font-size:9px;color:#64748b;border-right:1px solid #f1f5f9;white-space:nowrap;">${esc(r.laboratorio) || '—'}</td>
+            <td style="padding:2px 6px;font-size:9px;color:#64748b;border-right:1px solid #f1f5f9;white-space:nowrap;">${esc(r.presentacion_tipo) || '—'}</td>
+            <td style="padding:2px 6px;font-size:9px;border-right:1px solid #f1f5f9;">${sinStock ? '' : lotesText(r.lotes)}</td>
+            <td style="padding:2px 6px;font-size:12px;font-weight:700;color:${sinStock ? '#f97316' : '#1e293b'};text-align:center;border-right:1px solid #f1f5f9;">${sinStock ? '—' : r.qty}</td>
+            <td style="padding:2px 6px;text-align:center;width:22px;"><span style="display:inline-block;width:12px;height:12px;border:1px solid #94a3b8;border-radius:2px;"></span></td>
         </tr>`;
     }).join('');
 }
 
-function buildSection(sec, fecha, meta = {}) {
+function buildSection(sec, fecha, isLast) {
     const totalPacks = sec.rows.reduce((t, r) => t + r.qty, 0);
     const footerParts = [];
-    if (sec.sinCount > 0) footerParts.push(`Productos sin existencia en bodega: <b>${sec.sinCount}</b>`);
-    if (sec.revCount > 0) footerParts.push(`A revisar min/max: <b>${sec.revCount}</b>`);
+    if (sec.sinCount > 0) footerParts.push(`Sin existencia: <b>${sec.sinCount}</b>`);
+    if (sec.revCount > 0) footerParts.push(`A revisar: <b>${sec.revCount}</b>`);
     const footerRow = footerParts.length
-        ? `<tr style="background:#fef9c3;"><td colspan="4" style="padding:5px 8px;font-size:10px;color:#92400e;border-top:1px solid #fde68a;">${footerParts.join(' &nbsp;·&nbsp; ')}</td></tr>`
+        ? `<tr style="background:#fef9c3;"><td colspan="6" style="padding:3px 6px;font-size:9px;color:#92400e;border-top:1px solid #fde68a;">${footerParts.join(' &nbsp;·&nbsp; ')}</td></tr>`
         : '';
 
-    const sigCell = (nombre, label) => {
-        const nameHtml = nombre
-            ? `<div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:3px;">${esc(nombre)}</div>`
-            : '<div style="height:18px;"></div>';
-        return `<td style="border-top:1px solid #334155;padding-top:4px;text-align:center;font-size:10px;color:#475569;width:25%;">${nameHtml}${label}</td>`;
-    };
+    // A2: page-break only between sections, never after the last one
+    const pageBreak = isLast ? '' : 'page-break-after:always;';
 
     return `
-<div style="page-break-after:always;margin-bottom:32px;">
-  <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;margin-bottom:10px;">
+<div style="${pageBreak}margin-bottom:20px;">
+  <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;">
     <thead>
       <tr style="background:#0052CC;color:white;">
-        <th colspan="3" style="padding:9px 12px;font-size:13px;font-weight:700;text-align:left;">
-          Destino: Farmacia Farmalasa — ${esc(sec.nombre)}
+        <th colspan="4" style="padding:6px 10px;font-size:12px;font-weight:700;text-align:left;">
+          Farmacia Farmalasa — ${esc(sec.nombre)}
+          <span style="font-size:9px;font-weight:400;margin-left:8px;opacity:.85;">${sec.rows.length} producto(s) · ${totalPacks} packs · ${esc(fecha)}</span>
         </th>
-        <th style="padding:9px 12px;font-size:11px;font-weight:400;text-align:right;white-space:nowrap;">${esc(fecha)}</th>
+        <th style="padding:6px 10px;font-size:10px;font-weight:700;text-align:center;color:#bfdbfe;">Cant.</th>
+        <th style="padding:6px 10px;font-size:10px;font-weight:700;text-align:center;color:#bfdbfe;">✓</th>
       </tr>
-      <tr style="background:#eff6ff;">
-        <th colspan="4" style="padding:4px 12px;font-size:10px;color:#2563eb;text-align:left;font-weight:400;">
-          Origen: Bodega Central &nbsp;·&nbsp; ${sec.rows.length} producto(s) &nbsp;·&nbsp; ${totalPacks} packs
-        </th>
-      </tr>
-      <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
-        <th style="padding:5px 8px;font-size:10px;font-weight:700;text-align:left;color:#475569;text-transform:uppercase;letter-spacing:.05em;width:36%;">Producto</th>
-        <th style="padding:5px 8px;font-size:10px;font-weight:700;text-align:left;color:#475569;text-transform:uppercase;letter-spacing:.05em;width:13%;">Presentación</th>
-        <th style="padding:5px 8px;font-size:10px;font-weight:700;text-align:left;color:#475569;text-transform:uppercase;letter-spacing:.05em;">Lote(s)</th>
-        <th style="padding:5px 8px;font-size:10px;font-weight:700;text-align:center;color:#475569;text-transform:uppercase;letter-spacing:.05em;width:56px;">Cant.</th>
+      <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+        <th style="padding:3px 6px;font-size:9px;font-weight:700;text-align:left;color:#475569;text-transform:uppercase;letter-spacing:.05em;width:30%;">Producto</th>
+        <th style="padding:3px 6px;font-size:9px;font-weight:700;text-align:left;color:#475569;text-transform:uppercase;letter-spacing:.05em;width:14%;">Laboratorio</th>
+        <th style="padding:3px 6px;font-size:9px;font-weight:700;text-align:left;color:#475569;text-transform:uppercase;letter-spacing:.05em;width:10%;">Presentación</th>
+        <th style="padding:3px 6px;font-size:9px;font-weight:700;text-align:left;color:#475569;text-transform:uppercase;letter-spacing:.05em;">Lote(s)</th>
+        <th style="padding:3px 6px;font-size:9px;font-weight:700;text-align:center;color:#475569;text-transform:uppercase;letter-spacing:.05em;width:44px;">Cant.</th>
+        <th style="padding:3px 6px;font-size:9px;font-weight:700;text-align:center;color:#475569;text-transform:uppercase;letter-spacing:.05em;width:28px;">✓</th>
       </tr>
     </thead>
     <tbody>
@@ -130,20 +127,31 @@ function buildSection(sec, fecha, meta = {}) {
       ${footerRow}
     </tbody>
   </table>
-  <table style="width:100%;border-collapse:collapse;margin-top:24px;">
-    <tr>
-      ${sigCell(meta.responsable ?? null, 'Responsable')}
-      ${sigCell(meta.revisor    ?? null, 'Revisa')}
-      <td style="border-top:1px solid #334155;padding-top:4px;text-align:center;font-size:10px;color:#475569;width:25%;"><div style="height:18px;"></div>Autoriza</td>
-      <td style="border:1px solid #334155;padding:20px 12px;text-align:center;font-size:10px;color:#475569;width:25%;">Sello</td>
-    </tr>
-  </table>
 </div>`;
 }
 
+function buildSignatures(meta = {}) {
+    if (!meta.responsable && !meta.revisor) return '';
+    const sigCell = (nombre, label) => {
+        const nameHtml = nombre
+            ? `<div style="font-size:11px;font-weight:700;color:#1e293b;margin-bottom:4px;">${esc(nombre)}</div>`
+            : '<div style="height:20px;"></div>';
+        return `<td style="border-top:1px solid #334155;padding-top:5px;text-align:center;font-size:10px;color:#475569;width:25%;">${nameHtml}${label}</td>`;
+    };
+    return `
+<table style="width:100%;border-collapse:collapse;margin-top:28px;">
+  <tr>
+    ${sigCell(meta.responsable ?? null, 'Responsable')}
+    ${sigCell(meta.revisor    ?? null, 'Revisado por')}
+    <td style="border-top:1px solid #334155;padding-top:5px;text-align:center;font-size:10px;color:#475569;width:25%;"><div style="height:20px;"></div>Autoriza</td>
+    <td style="border:1px solid #334155;padding:18px 10px;text-align:center;font-size:10px;color:#475569;width:25%;">Sello</td>
+  </tr>
+</table>`;
+}
+
 function openPrintWindow(sections, title, meta = {}) {
-    const fecha     = fmtFechaLarga(new Date());
-    const totalPks  = sections.reduce((t, s) => t + s.rows.reduce((rt, r) => rt + r.qty, 0), 0);
+    const fecha      = fmtFechaLarga(new Date());
+    const totalPks   = sections.reduce((t, s) => t + s.rows.reduce((rt, r) => rt + r.qty, 0), 0);
     const totalProds = sections.reduce((t, s) => t + s.rows.length, 0);
 
     const html = `<!DOCTYPE html>
@@ -153,19 +161,23 @@ function openPrintWindow(sections, title, meta = {}) {
 <title>${esc(title)}</title>
 <style>
   *{box-sizing:border-box;}
-  body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:16px;color:#1e293b;background:#fff;}
-  @media print{body{padding:4px;}.no-print{display:none!important;}}
+  body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:12px;color:#1e293b;background:#fff;}
+  @media print{
+    body{padding:4px;}
+    .no-print{display:none!important;}
+  }
 </style>
 </head>
 <body>
-<div class="no-print" style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#0052CC;color:#fff;border-radius:8px;margin-bottom:18px;">
+<div class="no-print" style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:#0052CC;color:#fff;border-radius:8px;margin-bottom:14px;">
   <div>
-    <span style="font-size:15px;font-weight:700;">📦 ${esc(title)}</span>
-    <span style="font-size:11px;opacity:.8;margin-left:12px;">${sections.length} sucursal(es) · ${totalProds} productos · ${totalPks} packs</span>
+    <span style="font-size:14px;font-weight:700;">📦 ${esc(title)}</span>
+    <span style="font-size:10px;opacity:.8;margin-left:10px;">${sections.length} sucursal(es) · ${totalProds} productos · ${totalPks} packs</span>
   </div>
-  <button onclick="window.print()" style="background:#fff;color:#0052CC;border:none;padding:8px 18px;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px;">🖨 Imprimir</button>
+  <button onclick="window.print()" style="background:#fff;color:#0052CC;border:none;padding:6px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-size:11px;">🖨 Imprimir</button>
 </div>
-${sections.map(s => buildSection(s, fecha, meta)).join('')}
+${sections.map((s, i) => buildSection(s, fecha, i === sections.length - 1)).join('')}
+${buildSignatures(meta)}
 <script>window.print();<\/script>
 </body>
 </html>`;
@@ -183,13 +195,14 @@ ${sections.map(s => buildSection(s, fecha, meta)).join('')}
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export function printFromPreview(grouped, sortedSucIds, getAdjusted, title) {
+export function printFromPreview(grouped, sortedSucIds, getAdjusted, title, meta = {}) {
     const sections = sortedSucIds.map(sucId => {
         const g = grouped[sucId] || { normal: [], revision: [], sinStock: [] };
         const rows = [...g.normal, ...g.revision].map(row => {
             const qty = getAdjusted(row);
             return {
                 product_name:     row.product_name,
+                laboratorio:      row.laboratorio ?? '',
                 presentacion_tipo: row.presentacion_tipo,
                 es_antibiotico:   row.es_antibiotico,
                 qty,
@@ -204,10 +217,10 @@ export function printFromPreview(grouped, sortedSucIds, getAdjusted, title) {
             revCount: g.revision.length,
         };
     });
-    openPrintWindow(sections, title ?? 'Vista previa del pedido');
+    openPrintWindow(sections, title ?? 'Vista previa del pedido', meta);
 }
 
-export function printFromSnapshot(snapshot) {
+export function printFromSnapshot(snapshot, meta = {}) {
     const datos = Array.isArray(snapshot.datos) ? snapshot.datos : [];
     const byS = {};
     for (const row of datos) {
@@ -226,6 +239,7 @@ export function printFromSnapshot(snapshot) {
             const qty = row.cantidad_asignada ?? 0;
             return {
                 product_name:     row.product_name,
+                laboratorio:      row.laboratorio ?? '',
                 presentacion_tipo: row.presentacion_tipo,
                 es_antibiotico:   row.es_antibiotico,
                 qty,
@@ -240,7 +254,7 @@ export function printFromSnapshot(snapshot) {
             revCount: 0,
         };
     });
-    openPrintWindow(sections, snapshot.nombre ?? 'Borrador guardado');
+    openPrintWindow(sections, snapshot.nombre ?? 'Borrador guardado', meta);
 }
 
 export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}) {
@@ -248,6 +262,7 @@ export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}) {
         const printRows = rows
             .map(r => ({
                 product_name:     r.products?.nombre ?? '?',
+                laboratorio:      r.products?.laboratorios?.nombre ?? '',
                 presentacion_tipo: r.presentaciones?.tipo ?? '',
                 es_antibiotico:   r.products?.es_antibiotico ?? false,
                 qty:              r.cantidad_asignada ?? 0,

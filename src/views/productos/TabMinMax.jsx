@@ -216,9 +216,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
         return m;
     }, [data]);
 
-    const xyzColors  = { X: '#10b981', Y: '#f59e0b', Z: '#ef4444' };
-    const abcColors  = { A: '#10b981', B: '#3b82f6', C: '#f59e0b', D: '#94a3b8' };
-    const maxCell    = Math.max(1, ...Object.values(matrix));
+    const maxCell = Math.max(1, ...Object.values(matrix));
 
     const toggle = (abc, xyz) => {
         setFilterAbc(pa => pa === abc ? 'all' : abc);
@@ -231,20 +229,23 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
         boxShadow: '0 8px 32px rgba(0,82,204,0.08), inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.03)',
     };
 
+    const isAbcActive = (abc) => filterAbc === abc;
+    const isXyzActive = (xyz) => filterXyz === xyz;
+
     if (loading || data.length === 0) {
         return (
-            <div className="rounded-2xl border border-white/70 p-3 flex flex-col gap-2" style={glassBox}>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">Matriz ABC × XYZ</span>
+            <div className="rounded-2xl border border-white/70 p-2.5 flex flex-col gap-1.5" style={glassBox}>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">ABC × XYZ</span>
                 {loading ? (
-                    <div className="grid gap-1.5 animate-pulse" style={{ gridTemplateColumns: '26px repeat(3, 1fr)' }}>
+                    <div className="grid gap-[3px] animate-pulse" style={{ gridTemplateColumns: '20px repeat(3, 1fr)' }}>
                         {Array.from({ length: 16 }).map((_, i) => (
-                            <div key={i} className="h-10 rounded-xl bg-slate-100/70" />
+                            <div key={i} className="h-8 rounded-lg bg-slate-100/70" />
                         ))}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-5 gap-2 text-slate-300">
-                        <BarChart2 size={28} className="text-slate-200" />
-                        <span className="text-[10px] font-semibold">Sin datos — presioná Calcular</span>
+                    <div className="flex flex-col items-center justify-center py-4 gap-1.5 text-slate-300">
+                        <BarChart2 size={22} className="text-slate-200" />
+                        <span className="text-[9px] font-semibold">Sin datos — presioná Calcular</span>
                     </div>
                 )}
             </div>
@@ -252,67 +253,64 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
     }
 
     return (
-        <div className="rounded-2xl border border-white/70 p-3 flex flex-col gap-2" style={glassBox}>
+        <div className="rounded-2xl border border-white/70 p-2.5 flex flex-col gap-1.5" style={glassBox}>
             <div className="flex items-center justify-between gap-2">
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Matriz ABC × XYZ</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">ABC × XYZ</span>
                 {(filterAbc !== 'all' || filterXyz !== 'all') && (
                     <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}
-                        className="text-[9px] font-bold text-slate-400 hover:text-slate-600 flex items-center gap-0.5 transition-colors">
+                        className="text-[9px] font-bold text-slate-400 hover:text-[#0052CC] flex items-center gap-0.5 transition-colors">
                         <X size={9} /> limpiar
                     </button>
                 )}
             </div>
 
-            {/* Grid — isolation:isolate ensures z-index on hover works within the stacking context */}
-            <div className="grid gap-1" style={{ gridTemplateColumns: '26px repeat(3, 1fr)', isolation: 'isolate' }}>
-                {/* Header row: XYZ */}
+            <div className="grid gap-[3px]" style={{ gridTemplateColumns: '20px repeat(3, 1fr)', isolation: 'isolate' }}>
+                {/* XYZ header */}
                 <div />
                 {XYZ_KEYS.map(xyz => (
-                    <button key={xyz} onClick={() => setFilterXyz(p => p === xyz ? 'all' : xyz)}
-                        className="relative py-1 rounded-lg text-[11px] font-black text-center transition-colors duration-150"
+                    <button key={xyz}
+                        onClick={() => setFilterXyz(p => p === xyz ? 'all' : xyz)}
+                        className="py-0.5 rounded-md text-[10px] font-black text-center transition-all duration-150"
                         style={{
-                            color: xyzColors[xyz],
-                            background: filterXyz === xyz ? `${xyzColors[xyz]}22` : 'transparent',
-                            boxShadow: filterXyz === xyz ? `0 2px 8px ${xyzColors[xyz]}40` : undefined,
+                            color: isXyzActive(xyz) ? '#0052CC' : '#94a3b8',
+                            background: isXyzActive(xyz) ? 'rgba(0,82,204,0.10)' : 'transparent',
                         }}>
                         {xyz}
                     </button>
                 ))}
 
-                {/* Data rows */}
+                {/* Rows */}
                 {ABC_KEYS.map(abc => (
                     <React.Fragment key={abc}>
-                        {/* ABC label */}
-                        <button onClick={() => setFilterAbc(p => p === abc ? 'all' : abc)}
-                            className="relative py-1 rounded-lg text-[11px] font-black text-center transition-colors duration-150"
+                        <button
+                            onClick={() => setFilterAbc(p => p === abc ? 'all' : abc)}
+                            className="py-0.5 rounded-md text-[10px] font-black text-center transition-all duration-150"
                             style={{
-                                color: abcColors[abc],
-                                background: filterAbc === abc ? `${abcColors[abc]}22` : 'transparent',
+                                color: isAbcActive(abc) ? '#0052CC' : '#94a3b8',
+                                background: isAbcActive(abc) ? 'rgba(0,82,204,0.10)' : 'transparent',
                             }}>
                             {abc}
                         </button>
-                        {/* Cells */}
                         {XYZ_KEYS.map(xyz => {
                             const count = matrix[`${abc}${xyz}`];
                             const isActive = filterAbc === abc && filterXyz === xyz;
-                            const intensity = count > 0 ? Math.max(0.10, (count / maxCell) * 0.38) : 0;
-                            const rgb = abc === 'A' ? '16,185,129' : abc === 'B' ? '59,130,246' : abc === 'C' ? '245,158,11' : '148,163,184';
+                            const intensity = count > 0 ? Math.max(0.07, (count / maxCell) * 0.28) : 0;
                             return (
                                 <button key={xyz} onClick={() => toggle(abc, xyz)}
-                                    className={`relative py-2 rounded-xl text-center transition-[transform,box-shadow,background-color] duration-200
-                                        ${count === 0 ? 'opacity-20 cursor-default' : 'cursor-pointer hover:z-10 hover:scale-[1.08]'}
+                                    className={`relative py-1.5 rounded-lg text-center transition-all duration-200
+                                        ${count === 0 ? 'opacity-15 cursor-default' : 'cursor-pointer hover:z-10 hover:scale-[1.06]'}
                                         ${isActive ? 'z-20' : ''}`}
                                     style={{
-                                        background: count > 0 ? `rgba(${rgb},${intensity})` : 'rgba(0,0,0,0.025)',
+                                        background: count > 0 ? `rgba(0,82,204,${intensity})` : 'rgba(0,0,0,0.02)',
                                         boxShadow: isActive
-                                            ? `0 6px 18px rgba(${rgb},0.25)`
-                                            : count > 0 ? `0 2px 8px rgba(${rgb},0.12)` : undefined,
-                                        outline: isActive ? `2.5px solid rgba(${rgb},0.80)` : undefined,
-                                        outlineOffset: isActive ? '2px' : undefined,
+                                            ? '0 4px 14px rgba(0,82,204,0.22)'
+                                            : count > 0 ? '0 1px 4px rgba(0,82,204,0.07)' : undefined,
+                                        outline: isActive ? '2px solid rgba(0,82,204,0.70)' : undefined,
+                                        outlineOffset: isActive ? '1px' : undefined,
                                     }}
                                     disabled={count === 0}>
-                                    <span className="text-[12px] font-black text-slate-700 tabular-nums leading-none">{count || '—'}</span>
-                                    {count > 0 && <span className="text-[9px] font-bold text-slate-400 block mt-0.5 tracking-wider">{abc}{xyz}</span>}
+                                    <span className="text-[11px] font-black text-slate-700 tabular-nums leading-none">{count || '—'}</span>
+                                    {count > 0 && <span className="text-[8px] font-semibold text-slate-400 block mt-0.5">{abc}{xyz}</span>}
                                 </button>
                             );
                         })}
@@ -320,15 +318,17 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                 ))}
             </div>
 
-            {/* XYZ legend */}
-            <div className="flex items-center gap-4 flex-wrap border-t border-white/60 pt-2">
-                {XYZ_KEYS.map(xyz => (
-                    <span key={xyz} className="flex items-center gap-1.5 text-[9px]">
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: xyzColors[xyz], boxShadow: `0 0 6px ${xyzColors[xyz]}60` }} />
-                        <span className="font-black" style={{ color: xyzColors[xyz] }}>{xyz}</span>
-                        <span className="text-slate-400">{XYZ_CFG[xyz].desc}</span>
-                    </span>
-                ))}
+            {/* Legend */}
+            <div className="flex items-center gap-3 border-t border-white/60 pt-1.5">
+                {XYZ_KEYS.map((xyz, i) => {
+                    const descs = ['Estable', 'Moderada', 'Errática'];
+                    return (
+                        <span key={xyz} className="flex items-center gap-1 text-[8.5px]">
+                            <span className={`font-black text-[9px] transition-colors ${isXyzActive(xyz) ? 'text-[#0052CC]' : 'text-slate-400'}`}>{xyz}</span>
+                            <span className="text-slate-400">{descs[i]}</span>
+                        </span>
+                    );
+                })}
             </div>
         </div>
     );
@@ -595,8 +595,14 @@ function ExpandedPanel({ row, cycleDays }) {
     }, [branchData, row._erp_sucursal_id, pedir]);
 
     return (
-        <div className="mx-4 mb-2 rounded-xl border border-slate-100 overflow-hidden"
-            style={{ background: 'rgba(248,250,252,0.8)' }}>
+        <div className="mx-3 mb-3 rounded-2xl overflow-hidden"
+            style={{
+                background: 'rgba(255,255,255,0.78)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.85)',
+                boxShadow: '0 8px 32px rgba(0,82,204,0.08), inset 0 1px 0 rgba(255,255,255,0.95)',
+            }}>
 
             {/* ── Multi-branch grid ── */}
             <div className="px-4 pt-3 pb-2">
@@ -1453,7 +1459,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [calcMode,     setCalcMode]     = useState('single'); // 'single' | 'all'
     const [calcProgress, setCalcProgress] = useState(null); // { current, total, name }
     const [error,        setError]        = useState(null);
-    const [expandedIds,  setExpandedIds]  = useState(new Set());
+    const [expandedId,   setExpandedId]   = useState(null);
     const [configOpen,   setConfigOpen]   = useState(false);
     const [labsOpen,     setLabsOpen]     = useState(false);
     const [sortBy,       setSortBy]       = useState('laboratorio');
@@ -1507,16 +1513,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     }, []);
 
     const toggleExpand = useCallback((id) => {
-        setExpandedIds(prev => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id); else next.add(id);
-            return next;
-        });
+        setExpandedId(prev => prev === id ? null : id);
     }, []);
 
     const loadData = useCallback(async (erpId) => {
         const rid = ++loadRef.current;
-        setLoading(true); setData([]); setError(null); setInlineDraftEdit(null); setExpandedIds(new Set());
+        setLoading(true); setData([]); setError(null); setInlineDraftEdit(null); setExpandedId(null);
         try {
             // PostgREST caps at 1000 rows per request — fetch in chunks until exhausted
             const allRows = [];
@@ -1905,7 +1907,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             const { data: res, error: e } = await supabase.rpc('publish_stock_params', rpcParams);
             if (e) throw e;
             useStaff.getState().appendAuditLog('MINMAX_PUBLISH', String(selectedErp), {
-                sucursal_id: selectedErp, product_ids: productIds, published: res?.published,
+                sucursal: ERP_NAMES[selectedErp],
+                sucursal_id: selectedErp,
+                published_by: user?.email ?? null,
+                published_count: res?.published,
+                scope: productIds ? 'selective' : 'all',
+                product_ids: productIds ?? null,
             });
             await loadData(selectedErp);
             const n = res?.published ?? 0;
@@ -2059,7 +2066,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
-        <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
+        <div className="px-4 lg:px-5 py-4 flex flex-col gap-4 w-full min-w-0">
 
             {/* ── Config panel ── */}
             {configOpen && config && (
@@ -2277,8 +2284,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 <div className="flex flex-col gap-2.5">
 
                     {/* Row 1 — Status filters + visibility controls (liquid glass pill) */}
+                    <div className="overflow-x-auto max-w-full pb-0.5">
                     <motion.div
-                        className="flex items-center rounded-2xl overflow-hidden self-start transition-shadow duration-300"
+                        className="flex items-center rounded-2xl overflow-hidden self-start transition-shadow duration-300 w-max"
                         whileHover={{ boxShadow: '0 12px 40px rgba(0,82,204,0.11), inset 0 1px 0 rgba(255,255,255,0.95)' }}
                         style={{
                             background: 'rgba(255,255,255,0.58)',
@@ -2394,6 +2402,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         )}
                         </AnimatePresence>
                     </motion.div>
+                    </div>
 
                     {/* Row 2 — Draft workflow (only when drafts exist) */}
                     <AnimatePresence>
@@ -2517,7 +2526,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 >
 
                     {pageRows.map((row, rowIdx) => {
-                        const isExpanded = expandedIds.has(row.erp_product_id);
+                        const isExpanded = expandedId === row.erp_product_id;
                         const alert      = ALERT[row.alert_status] ?? ALERT.ok;
                         const pres       = row.presentations || [];
                         const dead       = row.is_dead_stock;
@@ -2722,7 +2731,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             </div>
                                         ) : hasDraft ? (
                                             <div className={`flex flex-col items-center ${canManage ? 'cursor-pointer group/min' : ''}`}
-                                                onClick={canManage ? e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); } : undefined}>
+                                                onClick={canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); } : undefined}>
                                                 <div className={`px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 ${canManage ? 'group-hover/min:border-amber-400 group-hover/min:bg-amber-100' : ''} transition-[border-color,background-color] duration-150`}>
                                                     <span className="text-[13px] font-black tabular-nums text-amber-700">{(row.draft_min ?? 0).toLocaleString()}</span>
                                                 </div>
@@ -2759,7 +2768,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         ) : (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/min"
-                                                    onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.effective_min ?? '') }); }}>
+                                                    onClick={e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.effective_min ?? '') }); }}>
                                                     <div className={`px-2.5 py-1 rounded-lg border group-hover/min:border-emerald-400 group-hover/min:bg-emerald-50 transition-[border-color,background-color] duration-150 ${stock < minN ? 'border-orange-200' : 'border-slate-200'}`}>
                                                         <span className={`text-[13px] font-black tabular-nums ${stock < minN ? 'text-orange-600' : 'text-slate-600'}`}>{minN.toLocaleString()}</span>
                                                     </div>
@@ -2870,7 +2879,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             </div>
                                         ) : hasDraft ? (
                                             <div className={`flex flex-col items-center ${canManage ? 'cursor-pointer group/max' : ''}`}
-                                                onClick={canManage ? e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); } : undefined}>
+                                                onClick={canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); } : undefined}>
                                                 <div className={`px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 ${canManage ? 'group-hover/max:border-blue-400 group-hover/max:bg-blue-100' : ''} transition-[border-color,background-color] duration-150`}>
                                                     <span className="text-[13px] font-black tabular-nums text-blue-700">{(row.draft_max ?? 0).toLocaleString()}</span>
                                                 </div>
@@ -2907,7 +2916,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         ) : (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/max"
-                                                    onClick={e => { e.stopPropagation(); setExpandedIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; }); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.effective_max ?? '') }); }}>
+                                                    onClick={e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.effective_max ?? '') }); }}>
                                                     <div className={`px-2.5 py-1 rounded-lg border group-hover/max:border-emerald-400 group-hover/max:bg-emerald-50 transition-[border-color,background-color] duration-150 ${stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200'}`}>
                                                         <span className={`text-[13px] font-black tabular-nums ${stock > maxN && maxN > 0 ? 'text-blue-600' : 'text-slate-600'}`}>{maxN.toLocaleString()}</span>
                                                     </div>
@@ -2951,9 +2960,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 }
 
                                                 const sp = smallestPres(pres);
-                                                const baseLabel = sp
-                                                    ? `${sp.tipo.trim()}${sp.factor > 1 ? ` ×${sp.factor}` : ''}`
-                                                    : 'und';
+                                                const spTipo = sp?.tipo?.trim() ?? '';
+                                                const isGenericUnit = !spTipo || spTipo.toLowerCase() === 'und' || spTipo.toLowerCase() === 'unidad';
+                                                const displayTipo = isGenericUnit
+                                                    ? (row.presentacion?.trim() || spTipo || 'und')
+                                                    : spTipo;
+                                                const displayFactor = sp?.factor ?? 1;
+                                                const baseLabel = displayFactor > 1
+                                                    ? `${displayTipo} ×${displayFactor}`
+                                                    : displayTipo || 'und';
 
                                                 return (
                                                     <div className="flex flex-col items-center gap-1">
@@ -3075,13 +3090,23 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     </DataCell>
                                 </DataRow>
 
-                                {isExpanded && canExpand && (
-                                    <tr>
-                                        <td colSpan={COLS.length} className="p-0">
-                                            <ExpandedPanel row={row} cycleDays={cycleDays} />
-                                        </td>
-                                    </tr>
-                                )}
+                                <tr>
+                                    <td colSpan={COLS.length} className="p-0">
+                                        <AnimatePresence initial={false}>
+                                        {isExpanded && canExpand && (
+                                            <motion.div
+                                                key={`exp-${row.erp_product_id}`}
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } }}
+                                                exit={{ height: 0, opacity: 0, transition: { duration: 0.22, ease: [0.4, 0, 1, 1] } }}
+                                                style={{ overflow: 'hidden' }}
+                                            >
+                                                <ExpandedPanel row={row} cycleDays={cycleDays} />
+                                            </motion.div>
+                                        )}
+                                        </AnimatePresence>
+                                    </td>
+                                </tr>
                             </React.Fragment>
                         );
                     })}

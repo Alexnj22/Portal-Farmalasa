@@ -100,7 +100,7 @@ export function DataTable({
         )}
 
         {/* ── Tabla ───────────────────────────────────────────────────────── */}
-        <div className="overflow-x-auto">
+        <div style={{ overflowX: 'auto', overflowY: 'visible' }}>
           <table className="w-full" style={{ minWidth }}>
 
             {/* ── Thead ──────────────────────────────────────────────────── */}

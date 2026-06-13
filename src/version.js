@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.61';
+export const APP_VERSION = '2.2.62';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.62 — fix(minmax): fecha últ. venta en alerta "Rotación mínima"; "--" solo cuando MIN=0 y MAX=0 simultáneamente (MIN=0/MAX=1 ya muestra los valores); falta de ABC explicada (producto sin revenue_6m no entra al ranking ABC, XYZ sí se calcula)
 // v2.2.61 — fix(minmax): 6 ajustes de detalle — última venta muestra año (2-digit); alerta "rotación mínima" quita "· confirmar MIN/MAX"; "Inversión proyectada" persiste aunque no haya borradores (basado en costo min/max, no en product_count); historial filtra por sucursal (filter details->>sucursal_id); deadstock/sin-historial con min>0 ya muestran el valor editable (condición !minN / !maxN); AbcXyzBadge muestra "—" cuando abc/xyz es null (no badge vacío)
 // v2.2.60 — fix(pedidos): ReferenceError: Can't find variable: X — ícono X (cerrar banner confirmado) no estaba importado de lucide-react en TabGenerar; la página quedaba blanca al renderizar el banner después de confirmar/imprimir
 // v2.2.59 — Pedidos lifecycle v2: código de pedido xx-aabbcc-d-yy por sucursal; PDF separado por sucursal (printPerSucursal, 1 diálogo por sucursal escalonados 1s); botones Pausar (modal de razón: Almuerzo/Actividades/Interrupción/Otro) y Reanudar por sucursal; DB nuevas columnas codigo/pausado_at/pausa_razon/reanudado_at; RPCs init_pedido_sucursal_codigos y update_pedido_sucursal_lifecycle v2 (stages pausar/reanudar); badge código en header sucursal; nodo Pausado/Reanudado en timeline; canFinalizar bloquea si pausado; fix ReferenceError: catch {} → catch(err) {}

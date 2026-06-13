@@ -2566,6 +2566,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                                 ? `Rotación mínima: ${Number(row.units_sold_6m).toLocaleString()} uds. en 6 meses`
                                                                 : 'Sin ventas registradas'
                                                         }
+                                                        {row.last_sale_date && <span className="text-orange-400">· {new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>}
                                                     </span>
                                                 )}
                                                 {!dead && !noHistory && !isSparse && (
@@ -2718,7 +2719,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
                                                 </div>
                                             )
-                                        ) : ((dead || noHistory) && !minN) || row.effective_min === null ? (
+                                        ) : ((dead || noHistory) && minN === 0 && maxN === 0) || row.effective_min === null ? (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/min"
                                                     onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: '' }); }}>
@@ -2866,7 +2867,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
                                                 </div>
                                             )
-                                        ) : ((dead || noHistory) && !maxN) || row.effective_max === null ? (
+                                        ) : ((dead || noHistory) && maxN === 0 && minN === 0) || row.effective_max === null ? (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/max"
                                                     onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: '' }); }}>

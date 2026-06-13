@@ -369,9 +369,16 @@ function CostCards({ summary, isBodega }) {
 }
 
 function DraftCostCard({ draftCost }) {
-    const minC = Number(draftCost?.min_cost);
-    const maxC = Number(draftCost?.max_cost);
-    if (!draftCost || (!minC && !maxC)) return null;
+    const pubMin  = Number(draftCost?.pub_min_cost  ?? draftCost?.min_cost  ?? 0);
+    const pubMax  = Number(draftCost?.pub_max_cost  ?? draftCost?.max_cost  ?? 0);
+    const effMin  = Number(draftCost?.eff_min_cost  ?? pubMin);
+    const effMax  = Number(draftCost?.eff_max_cost  ?? pubMax);
+    const hasDraft = Number(draftCost?.draft_count ?? 0) > 0;
+    const deltaMin = effMin - pubMin;
+    const deltaMax = effMax - pubMax;
+    const hasAnyDelta = hasDraft && (Math.abs(deltaMin) > 0.01 || Math.abs(deltaMax) > 0.01);
+    if (!draftCost || (!pubMin && !pubMax && !effMin && !effMax)) return null;
+    const fmtDelta = (v) => `${v >= 0 ? '+' : ''}${fmtMoney(v)}`;
     return (
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm"
             style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
@@ -379,10 +386,18 @@ function DraftCostCard({ draftCost }) {
             <div className="flex flex-col leading-snug gap-0.5">
                 <span className="text-[10px] font-semibold text-slate-500">Inversión proyectada</span>
                 <div className="flex items-baseline gap-1.5">
-                    <span className="text-[14px] font-black tabular-nums text-amber-700">{fmtMoney(minC)}</span>
+                    <span className="text-[14px] font-black tabular-nums text-amber-700">{fmtMoney(hasDraft ? effMin : pubMin)}</span>
                     <span className="text-[10px] text-slate-300">→</span>
-                    <span className="text-[14px] font-black tabular-nums text-blue-700">{fmtMoney(maxC)}</span>
+                    <span className="text-[14px] font-black tabular-nums text-blue-700">{fmtMoney(hasDraft ? effMax : pubMax)}</span>
                 </div>
+                {hasAnyDelta && (
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[9px] text-slate-400">vs publicado</span>
+                        <span className={`text-[9px] font-bold tabular-nums ${deltaMin >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{fmtDelta(deltaMin)}</span>
+                        <span className="text-[8px] text-slate-300">·</span>
+                        <span className={`text-[9px] font-bold tabular-nums ${deltaMax >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{fmtDelta(deltaMax)}</span>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -1921,6 +1936,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const hasActiveFilter = filterAbc !== 'all' || filterXyz !== 'all' || filterAlert !== 'all' || searchTerm !== '';
     const criticalACount  = useMemo(() => data.filter(r => r.abc_class === 'A' && (r.alert_status === 'out_of_stock' || r.alert_status === 'below_min')).length, [data]);
+    const criticalAOut    = useMemo(() => data.filter(r => r.abc_class === 'A' && r.alert_status === 'out_of_stock').length, [data]);
+    const criticalABelow  = useMemo(() => data.filter(r => r.abc_class === 'A' && r.alert_status === 'below_min').length, [data]);
     const isBodega      = selectedErp === 6;
     const neverCalc     = data.length > 0 && data.filter(d => !d.is_catalog_only).every(d => d.is_dead_stock || d.alert_status === 'no_data');
     const hasActiveData = data.some(d => !d.is_dead_stock && d.alert_status !== 'no_data' && !d.is_catalog_only);
@@ -2211,11 +2228,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-700 font-medium">
                     <AlertTriangle size={14} className="shrink-0 text-red-500" />
                     <span className="flex-1">
-                        <strong className="font-black">{criticalACount}</strong> producto{criticalACount !== 1 ? 's' : ''} clase <strong>A</strong> {criticalACount === 1 ? 'está' : 'están'} bajo mínimo o sin stock — alto impacto en revenue.
+                        <strong className="font-black">{criticalACount}</strong> producto{criticalACount !== 1 ? 's' : ''} clase <strong>A</strong> {criticalACount === 1 ? 'necesita' : 'necesitan'} reabastecimiento urgente
+                        {criticalAOut > 0 && <> · <strong className="font-black">{criticalAOut}</strong> sin stock</>}
+                        {criticalABelow > 0 && <> · <strong className="font-black">{criticalABelow}</strong> bajo mínimo</>}.
                     </span>
-                    <button onClick={() => { setFilterAbc('A'); setFilterAlert('out_of_stock'); setPage(1); }}
+                    <button onClick={() => { setFilterAbc('A'); setFilterAlert('all'); setPage(1); }}
                         className="text-[11px] font-bold text-red-600 hover:text-red-800 underline underline-offset-2 shrink-0">
-                        Ver clase A críticos
+                        Ver clase A
                     </button>
                 </div>
             )}

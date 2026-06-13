@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.63';
+export const APP_VERSION = '2.2.64';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.64 — fix(minmax): inversión proyectada visible aunque esté todo publicado; card muestra delta +/- vs publicado cuando hay borradores; alerta clase A con desglose "X sin stock · Y bajo mínimo"; botón filtra clase A completa (no solo sin stock)
 // v2.2.63 — fix(minmax): elimina badge "POCOS DATOS" de filas isSparse — la leyenda naranja ya lo comunica
 // v2.2.62 — fix(minmax): fecha últ. venta en alerta "Rotación mínima"; "--" solo cuando MIN=0 y MAX=0 simultáneamente (MIN=0/MAX=1 ya muestra los valores); falta de ABC explicada (producto sin revenue_6m no entra al ranking ABC, XYZ sí se calcula)
 // v2.2.61 — fix(minmax): 6 ajustes de detalle — última venta muestra año (2-digit); alerta "rotación mínima" quita "· confirmar MIN/MAX"; "Inversión proyectada" persiste aunque no haya borradores (basado en costo min/max, no en product_count); historial filtra por sucursal (filter details->>sucursal_id); deadstock/sin-historial con min>0 ya muestran el valor editable (condición !minN / !maxN); AbcXyzBadge muestra "—" cuando abc/xyz es null (no badge vacío)

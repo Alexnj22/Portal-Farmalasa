@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.68';
+export const APP_VERSION = '2.2.69';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.69 — fix(minmax): Despacho siempre visible (dead stock inclusive); sin regla = cantidades exactas; con regla = nota pequeña gris (und×N/blist×N/caja×N/solo cajas) + redondeo ≥50%
 // v2.2.68 — feat(minmax): paginación framer-motion layoutId sliding pill (azul se desliza entre páginas), NavBtn whileHover/whileTap spring, ellipsis "•••" sutil; Despacho: fetch product_precios+presentaciones como fallback cuando presentations=[], capTipo capitaliza tipo, displayDesc muestra "Caja 1x1" desde product_precios.descripcion; ventas: calculate_stock_params usa CURRENT_DATE-6months (meses calendario) en lugar de analysis_days días → units_sold_6m coincide con filtro 6m en Ventas
 // v2.2.67 — feat(minmax): paginación glassmorphism con animaciones, hover, input manual de página (click en "···"), botones primera/última; fila expandida única (Set→null, AnimatePresence height:0→auto), panel glassmorphism; columna Despacho fallback a row.presentacion cuando smallestPres.tipo="und"; AbcXyzMatrix colores azul unificado por intensidad, grid compacto gap-[3px]; fix DataTable overflow-y:visible para liberar scroll vertical; fix filtro pill overflow-x:auto para evitar scroll horizontal; audit MINMAX_PUBLISH con published_by+published_count+scope
 // v2.2.66 — fix(minmax): columna Despacho — pill siempre visible (gris neutral para sin-regla, coloreado para reglas); equivalentes MIN/MAX más pequeños y tenues (text-[9px] amber-500/blue-500 sin bold); padding !px-2 en DataCell; minWidth 960→860px + className width en Clase/MIN/MAX/Despacho/Estado/Acciones para evitar scroll horizontal al expandir inline

@@ -369,15 +369,15 @@ function CostCards({ summary, isBodega }) {
 }
 
 function DraftCostCard({ draftCost }) {
-    if (!draftCost || !Number(draftCost.product_count)) return null;
-    const minC = Number(draftCost.min_cost);
-    const maxC = Number(draftCost.max_cost);
+    const minC = Number(draftCost?.min_cost);
+    const maxC = Number(draftCost?.max_cost);
+    if (!draftCost || (!minC && !maxC)) return null;
     return (
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm"
             style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
             <Target size={13} className="shrink-0 text-violet-400" />
             <div className="flex flex-col leading-snug gap-0.5">
-                <span className="text-[10px] font-semibold text-slate-500">Inversión borrador</span>
+                <span className="text-[10px] font-semibold text-slate-500">Inversión proyectada</span>
                 <div className="flex items-baseline gap-1.5">
                     <span className="text-[14px] font-black tabular-nums text-amber-700">{fmtMoney(minC)}</span>
                     <span className="text-[10px] text-slate-300">→</span>
@@ -496,8 +496,8 @@ function AbcXyzBadge({ abc, xyz }) {
     const xyzCfg = XYZ_CFG[normXyz(xyz)] ?? XYZ_CFG.X;
     return (
         <div className="flex items-center gap-0.5 shrink-0">
-            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-l-md border-y border-l ${abcCfg.bg}`} title={abcCfg.title}>{abc}</span>
-            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-r-md border ${xyzCfg.cls}`} title={xyzCfg.desc}>{normXyz(xyz)}</span>
+            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-l-md border-y border-l ${abcCfg.bg}`} title={abcCfg.title}>{abc || '—'}</span>
+            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-r-md border ${xyzCfg.cls}`} title={xyzCfg.desc}>{normXyz(xyz) || 'X'}</span>
         </div>
     );
 }
@@ -1858,6 +1858,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 .select('id,user_name,user_id,action,details,created_at')
                 .in('action', ['MINMAX_LIVE_EDIT','MINMAX_DRAFT_EDIT','MINMAX_RESET_CALC','MINMAX_MANUAL_OVERRIDE','MINMAX_ZERO_OUT','MINMAX_LIVE_ZERO'])
                 .eq('target_id', String(row.erp_product_id))
+                .filter('details->>sucursal_id', 'eq', String(row._erp_sucursal_id))
                 .order('created_at', { ascending: false })
                 .limit(80),
             supabase.from('employees').select('name,photo_url'),
@@ -2564,7 +2565,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                             : Number(row.units_sold_6m) > 0
                                                                 ? `Rotación mínima: ${Number(row.units_sold_6m).toLocaleString()} uds. en 6 meses`
                                                                 : 'Sin ventas registradas'
-                                                        } · confirmar MIN/MAX
+                                                        }
                                                     </span>
                                                 )}
                                                 {!dead && !noHistory && !isSparse && (
@@ -2576,7 +2577,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         {Number(row.units_sold_6m) > 0 && <span className="ml-1 text-slate-700">{Number(row.units_sold_6m).toLocaleString()} vend.</span>}
                                                         <span className="ml-1 text-slate-400">·</span>
                                                         {row.last_sale_date
-                                                            ? <span className="ml-0.5 text-slate-700 font-semibold">{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</span>
+                                                            ? <span className="ml-0.5 text-slate-700 font-semibold">{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
                                                             : <span className="ml-0.5 text-slate-400 italic">sin venta</span>
                                                         }
                                                     </span>
@@ -2717,7 +2718,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
                                                 </div>
                                             )
-                                        ) : (dead || noHistory || row.effective_min === null) ? (
+                                        ) : ((dead || noHistory) && !minN) || row.effective_min === null ? (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/min"
                                                     onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: '' }); }}>
@@ -2865,7 +2866,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
                                                 </div>
                                             )
-                                        ) : (dead || noHistory || row.effective_max === null) ? (
+                                        ) : ((dead || noHistory) && !maxN) || row.effective_max === null ? (
                                             canManage ? (
                                                 <div className="flex flex-col items-center cursor-pointer group/max"
                                                     onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: '' }); }}>

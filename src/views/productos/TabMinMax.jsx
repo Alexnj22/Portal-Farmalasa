@@ -2046,12 +2046,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const COLS = [
         { key: 'product_name',  label: 'Producto',    align: 'left',   sortable: true },
         { key: 'laboratorio',   label: 'Laboratorio', align: 'left',   sortable: true },
-        { key: 'abc_xyz',       label: 'Clase',       align: 'center', sortable: true },
-        { key: 'effective_min', label: 'MIN',         align: 'center', sortable: true },
-        { key: 'effective_max', label: 'MAX',         align: 'center', sortable: true },
-        { key: 'presentacion',  label: 'Despacho',    align: 'center' },
-        { key: 'alert_status',  label: 'Estado',      align: 'center' },
-        { key: 'acciones',      label: 'Acciones',    align: 'center' },
+        { key: 'abc_xyz',       label: 'Clase',       align: 'center', sortable: true, className: 'w-14' },
+        { key: 'effective_min', label: 'MIN',         align: 'center', sortable: true, className: 'w-[76px]' },
+        { key: 'effective_max', label: 'MAX',         align: 'center', sortable: true, className: 'w-[76px]' },
+        { key: 'presentacion',  label: 'Despacho',    align: 'center', className: 'w-[104px]' },
+        { key: 'alert_status',  label: 'Estado',      align: 'center', className: 'w-28' },
+        { key: 'acciones',      label: 'Acciones',    align: 'center', className: 'w-20' },
     ];
 
     const glass = 'rounded-2xl border border-white/60 backdrop-blur-sm';
@@ -2513,7 +2513,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         message: 'Sin productos con ese filtro',
                         action: { label: 'Quitar filtros', onClick: () => { setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); } },
                     }}
-                    minWidth="960px"
+                    minWidth="860px"
                 >
 
                     {pageRows.map((row, rowIdx) => {
@@ -2921,7 +2921,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     </DataCell>
 
                                     {/* Despacho — regla + presentación MIN/MAX */}
-                                    <DataCell align="center" className="!py-2.5">
+                                    <DataCell align="center" className="!py-2 !px-2">
                                         {dead
                                             ? <span className="text-slate-200 text-xs">—</span>
                                             : (() => {
@@ -2938,16 +2938,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 let ruleLabel = null, ruleCls = '';
                                                 if (muN > 1) {
                                                     ruleLabel = `und ×${muN}`;
-                                                    ruleCls = 'bg-violet-50 text-violet-600 border-violet-200';
+                                                    ruleCls = 'bg-violet-50 text-violet-700 border-violet-200';
                                                 } else if (bN > 1) {
                                                     ruleLabel = `blist ×${bN}`;
-                                                    ruleCls = 'bg-indigo-50 text-indigo-600 border-indigo-200';
+                                                    ruleCls = 'bg-indigo-50 text-indigo-700 border-indigo-200';
                                                 } else if (mN > 1) {
                                                     ruleLabel = `caja ×${mN}`;
-                                                    ruleCls = 'bg-blue-50 text-blue-600 border-blue-200';
+                                                    ruleCls = 'bg-blue-50 text-blue-700 border-blue-200';
                                                 } else if (sc) {
                                                     ruleLabel = 'solo cajas';
-                                                    ruleCls = 'bg-slate-100 text-slate-600 border-slate-200';
+                                                    ruleCls = 'bg-slate-100 text-slate-700 border-slate-300';
                                                 }
 
                                                 const sp = smallestPres(pres);
@@ -2956,20 +2956,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     : 'und';
 
                                                 return (
-                                                    <div className="flex flex-col items-center gap-0.5">
-                                                        {hasRule ? (
-                                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap ${ruleCls}`}>
-                                                                {ruleLabel}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide leading-none">
-                                                                {baseLabel}
-                                                            </span>
-                                                        )}
-                                                        <span className={`text-[10px] font-bold tabular-nums leading-none ${hasPres ? 'text-amber-600' : 'text-slate-400'}`}>
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        {/* Label — pill siempre, regla coloreada o base neutral */}
+                                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap leading-tight ${
+                                                            hasRule ? ruleCls : 'bg-slate-100 text-slate-600 border-slate-200'
+                                                        }`}>
+                                                            {hasRule ? ruleLabel : baseLabel}
+                                                        </span>
+                                                        {/* Equivalentes — más pequeños y tenues */}
+                                                        <span className={`text-[9px] tabular-nums leading-none ${hasPres ? 'text-amber-500' : 'text-slate-300'}`}>
                                                             {dispMin ? formatUnits(dispMin, pres) : '—'}
                                                         </span>
-                                                        <span className={`text-[10px] font-bold tabular-nums leading-none ${hasPres ? 'text-blue-600' : 'text-slate-400'}`}>
+                                                        <span className={`text-[9px] tabular-nums leading-none ${hasPres ? 'text-blue-500' : 'text-slate-300'}`}>
                                                             {dispMax ? formatUnits(dispMax, pres) : '—'}
                                                         </span>
                                                     </div>

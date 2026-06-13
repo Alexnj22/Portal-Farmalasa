@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.65';
+export const APP_VERSION = '2.2.66';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.66 — fix(minmax): columna Despacho — pill siempre visible (gris neutral para sin-regla, coloreado para reglas); equivalentes MIN/MAX más pequeños y tenues (text-[9px] amber-500/blue-500 sin bold); padding !px-2 en DataCell; minWidth 960→860px + className width en Clase/MIN/MAX/Despacho/Estado/Acciones para evitar scroll horizontal al expandir inline
 // v2.2.65 — feat(minmax): columna "Equiv." → "Despacho" — muestra chip de regla de despacho (und×N, blist×N, caja×N, solo cajas) o presentación base (UNIDAD/FRASCO/BLISTER) cuando no hay regla; MIN/MAX desglosados en presentaciones disponibles usando formatUnits; get_stock_analysis v9 agrega dispatch_rules JOIN (4 nuevas cols: dispatch_solo_cajas/multiplo/blister/multiplo_unidades)
 // v2.2.64 — fix(minmax): inversión proyectada visible aunque esté todo publicado; card muestra delta +/- vs publicado cuando hay borradores; alerta clase A con desglose "X sin stock · Y bajo mínimo"; botón filtra clase A completa (no solo sin stock)
 // v2.2.63 — fix(minmax): elimina badge "POCOS DATOS" de filas isSparse — la leyenda naranja ya lo comunica

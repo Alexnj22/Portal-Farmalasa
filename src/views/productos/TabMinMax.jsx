@@ -2951,7 +2951,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         )}
                                     </DataCell>
 
-                                    {/* Despacho — regla + presentación MIN/MAX */}
+                                    {/* Despacho — presentación catálogo + cantidades ajustadas por regla */}
                                     <DataCell align="center" className="!py-2 !px-2">
                                         {dead
                                             ? <span className="text-slate-200 text-xs">—</span>
@@ -2960,27 +2960,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 const dispMax = hasDraft ? (row.draft_max ?? 0) : maxN;
                                                 const hasPres = sortedPres(pres).length > 0;
 
-                                                const muN = Number(row.dispatch_multiplo_unidades ?? 0);
-                                                const bN  = Number(row.dispatch_blister          ?? 0);
-                                                const mN  = Number(row.dispatch_multiplo          ?? 0);
-                                                const sc  = row.dispatch_solo_cajas;
-                                                const hasRule = sc || muN > 1 || bN > 1 || mN > 1;
-
-                                                let ruleLabel = null, ruleCls = '';
-                                                if (muN > 1) {
-                                                    ruleLabel = `und ×${muN}`;
-                                                    ruleCls = 'bg-violet-50 text-violet-700 border-violet-200';
-                                                } else if (bN > 1) {
-                                                    ruleLabel = `blist ×${bN}`;
-                                                    ruleCls = 'bg-indigo-50 text-indigo-700 border-indigo-200';
-                                                } else if (mN > 1) {
-                                                    ruleLabel = `caja ×${mN}`;
-                                                    ruleCls = 'bg-blue-50 text-blue-700 border-blue-200';
-                                                } else if (sc) {
-                                                    ruleLabel = 'solo cajas';
-                                                    ruleCls = 'bg-slate-100 text-slate-700 border-slate-300';
-                                                }
-
+                                                // Catalog presentation label
                                                 const sp = smallestPres(pres);
                                                 const spTipo = sp?.tipo?.trim() ?? '';
                                                 const isGenericUnit = !spTipo || spTipo.toLowerCase() === 'und' || spTipo.toLowerCase() === 'unidad';
@@ -2994,20 +2974,39 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     ? `${displayTipo} ${displayDesc}`
                                                     : displayTipo || 'und';
 
+                                                // Dispatch rule — used only for quantity rounding, not displayed
+                                                const muN = Number(row.dispatch_multiplo_unidades ?? 0);
+                                                const bN  = Number(row.dispatch_blister          ?? 0);
+                                                const mN  = Number(row.dispatch_multiplo          ?? 0);
+                                                const sc  = row.dispatch_solo_cajas;
+                                                const sortedP = sortedPres(pres); // factor > 1, desc
+                                                const boxFactor = sortedP[0]?.factor ?? 1;
+                                                const blisterFactor = sortedP.find(p => p.tipo?.toLowerCase().includes('blist'))?.factor
+                                                    ?? sortedP[1]?.factor ?? boxFactor;
+
+                                                const applyRule = (qty) => {
+                                                    if (!qty || qty <= 0) return qty;
+                                                    if (sc) return Math.ceil(qty / boxFactor) * boxFactor;
+                                                    const packSize = muN > 1 ? muN
+                                                        : bN > 1 ? bN * blisterFactor
+                                                        : mN > 1 ? mN * boxFactor
+                                                        : 1;
+                                                    if (packSize <= 1) return qty;
+                                                    // >=50% of next pack → round up
+                                                    const rounded = Math.round(qty / packSize) * packSize;
+                                                    return rounded > 0 ? rounded : packSize;
+                                                };
+
                                                 return (
                                                     <div className="flex flex-col items-center gap-1">
-                                                        {/* Label — pill siempre, regla coloreada o base neutral */}
-                                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap leading-tight ${
-                                                            hasRule ? ruleCls : 'bg-slate-100 text-slate-600 border-slate-200'
-                                                        }`}>
-                                                            {hasRule ? ruleLabel : baseLabel}
+                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap leading-tight bg-slate-100 text-slate-600 border-slate-200">
+                                                            {baseLabel}
                                                         </span>
-                                                        {/* Equivalentes — más pequeños y tenues */}
                                                         <span className={`text-[9px] tabular-nums leading-none ${hasPres ? 'text-amber-500' : 'text-slate-300'}`}>
-                                                            {dispMin ? formatUnits(dispMin, pres) : '—'}
+                                                            {dispMin ? formatUnits(applyRule(dispMin), pres) : '—'}
                                                         </span>
                                                         <span className={`text-[9px] tabular-nums leading-none ${hasPres ? 'text-blue-500' : 'text-slate-300'}`}>
-                                                            {dispMax ? formatUnits(dispMax, pres) : '—'}
+                                                            {dispMax ? formatUnits(applyRule(dispMax), pres) : '—'}
                                                         </span>
                                                     </div>
                                                 );

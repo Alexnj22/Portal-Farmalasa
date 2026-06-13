@@ -1534,14 +1534,35 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 keepFetching = chunk && chunk.length === CHUNK;
                 from += CHUNK;
             }
-            const [{ data: cost, error: e2 }, { data: draft }, { data: cfg }] = await Promise.all([
+            const [{ data: cost, error: e2 }, { data: draft }, { data: cfg }, { data: presData }, { data: presTypes }] = await Promise.all([
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
                 supabase.from('stock_config').select('analysis_days,approaching_pct').eq('id', 1).single(),
+                supabase.from('product_precios').select('product_id,id_presentacion,factor,descripcion').eq('activo', true).range(0, 2999),
+                supabase.from('presentaciones').select('id,tipo'),
             ]);
             if (e2) throw e2;
             if (rid !== loadRef.current) return;
-            const mapped = allRows.map(r => ({ ...r, _erp_sucursal_id: erpId }));
+
+            // Build catalog presentations fallback for products without inventory
+            const presTypeMap = Object.fromEntries((presTypes || []).map(p => [p.id, p.tipo]));
+            const catalogPresMap = {};
+            for (const row of presData || []) {
+                if (!catalogPresMap[row.product_id]) catalogPresMap[row.product_id] = [];
+                catalogPresMap[row.product_id].push({
+                    tipo: presTypeMap[row.id_presentacion] ?? 'UND',
+                    factor: row.factor ?? 1,
+                    descripcion: row.descripcion ?? null,
+                });
+            }
+
+            const mapped = allRows.map(r => ({
+                ...r,
+                _erp_sucursal_id: erpId,
+                presentations: (r.presentations?.length > 0)
+                    ? r.presentations
+                    : (catalogPresMap[r.erp_product_id] ?? []),
+            }));
             setData(mapped);
             setHiddenIds(new Set(mapped.filter(r => r.is_hidden).map(r => r.erp_product_id)));
             setCostSummary(cost  || null);
@@ -2962,12 +2983,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 const sp = smallestPres(pres);
                                                 const spTipo = sp?.tipo?.trim() ?? '';
                                                 const isGenericUnit = !spTipo || spTipo.toLowerCase() === 'und' || spTipo.toLowerCase() === 'unidad';
-                                                const displayTipo = isGenericUnit
-                                                    ? (row.presentacion?.trim() || spTipo || 'und')
-                                                    : spTipo;
+                                                const capTipo = t => t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : 'und';
+                                                const displayTipo = capTipo(isGenericUnit ? (spTipo || 'und') : spTipo);
                                                 const displayFactor = sp?.factor ?? 1;
+                                                const displayDesc = sp?.descripcion ?? null;
                                                 const baseLabel = displayFactor > 1
                                                     ? `${displayTipo} ×${displayFactor}`
+                                                    : displayDesc
+                                                    ? `${displayTipo} ${displayDesc}`
                                                     : displayTipo || 'und';
 
                                                 return (

@@ -1,7 +1,31 @@
 import { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 export const PAGE_SIZE_OPTIONS = [25, 50, 100];
+
+const navCls = (disabled) =>
+    `w-8 h-8 flex items-center justify-center rounded-xl text-[11px] font-bold border transition-colors duration-150 ${
+        disabled
+            ? 'bg-white/30 border-white/40 text-slate-200 cursor-not-allowed'
+            : 'bg-white/70 backdrop-blur-sm border-white/80 text-slate-500 hover:border-[#0052CC]/30 hover:text-[#0052CC] hover:bg-white shadow-sm'
+    }`;
+
+function NavBtn({ disabled, onClick, title, children }) {
+    return (
+        <motion.button
+            disabled={disabled}
+            onClick={onClick}
+            title={title}
+            whileHover={!disabled ? { scale: 1.1, y: -1.5 } : {}}
+            whileTap={!disabled ? { scale: 0.92 } : {}}
+            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            className={navCls(disabled)}
+        >
+            {children}
+        </motion.button>
+    );
+}
 
 function SmartPagination({ page, total, onChange }) {
     const [editing, setEditing] = useState(false);
@@ -29,73 +53,92 @@ function SmartPagination({ page, total, onChange }) {
         setInputVal('');
     };
 
-    const navCls = (disabled) =>
-        `w-8 h-8 flex items-center justify-center rounded-xl text-[11px] font-bold transition-all duration-150 border ${
-            disabled
-                ? 'bg-white/40 border-white/60 text-slate-300 cursor-not-allowed'
-                : 'bg-white/70 backdrop-blur-sm border-white/80 text-slate-500 hover:border-[#0052CC]/30 hover:text-[#0052CC] hover:shadow-[0_2px_8px_rgba(0,82,204,0.15)] hover:-translate-y-[1px] active:translate-y-0 active:shadow-none shadow-sm'
-        }`;
-
     return (
-        <div className="flex items-center gap-1">
-            {/* First */}
-            <button disabled={page <= 1} onClick={() => onChange(1)} className={navCls(page <= 1)} title="Primera página">
+        <div className="flex items-center gap-1.5">
+            <NavBtn disabled={page <= 1} onClick={() => onChange(1)} title="Primera página">
                 <ChevronsLeft size={12} strokeWidth={2.5} />
-            </button>
-            {/* Prev */}
-            <button disabled={page <= 1} onClick={() => onChange(page - 1)} className={navCls(page <= 1)} title="Página anterior">
+            </NavBtn>
+            <NavBtn disabled={page <= 1} onClick={() => onChange(page - 1)} title="Página anterior">
                 <ChevronLeft size={12} strokeWidth={2.5} />
-            </button>
+            </NavBtn>
 
-            {/* Page numbers */}
-            <div className="flex items-center gap-0.5 mx-0.5">
+            {/* Page numbers — sliding blue pill via layoutId */}
+            <div className="flex items-center gap-0.5 mx-1">
                 {buildPages().map((p, i) =>
                     p === '…'
-                        ? <button key={`e${i}`}
-                            onClick={() => { setEditing(true); setInputVal(''); requestAnimationFrame(() => inputRef.current?.focus()); }}
-                            className="w-7 h-8 flex items-center justify-center text-[11px] font-bold text-slate-300 hover:text-[#0052CC] transition-colors select-none tracking-widest">
-                            ···
+                        ? <button
+                            key={`e${i}`}
+                            onClick={() => {
+                                setEditing(true);
+                                setInputVal('');
+                                requestAnimationFrame(() => inputRef.current?.focus());
+                            }}
+                            className="w-7 h-8 flex items-center justify-center transition-all duration-200 hover:scale-110 select-none group"
+                          >
+                            <span className="text-[9px] tracking-[3px] text-slate-300 group-hover:text-[#0052CC] transition-colors leading-none translate-y-[-1px]">
+                                •••
+                            </span>
                           </button>
-                        : <button key={p} onClick={() => onChange(p)}
-                            className={`w-8 h-8 rounded-xl text-[12px] font-black transition-all duration-200 border ${
-                                p === page
-                                    ? 'bg-[#0052CC] text-white shadow-[0_4px_12px_rgba(0,82,204,0.35)] scale-110 border-[#0052CC]'
-                                    : 'text-slate-500 border-transparent bg-white/60 hover:bg-white hover:border-[#0052CC]/20 hover:shadow-sm hover:text-slate-800 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none'
+                        : <motion.button
+                            key={p}
+                            onClick={() => onChange(p)}
+                            whileHover={p !== page ? { scale: 1.1, y: -1.5 } : {}}
+                            whileTap={p !== page ? { scale: 0.9 } : {}}
+                            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                            className="relative w-8 h-8 rounded-xl"
+                          >
+                            {p === page && (
+                                <motion.div
+                                    layoutId="activePage"
+                                    className="absolute inset-0 rounded-xl bg-[#0052CC]"
+                                    style={{ boxShadow: '0 4px 14px rgba(0,82,204,0.40)' }}
+                                    transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                                />
+                            )}
+                            <span className={`relative z-10 text-[12px] font-black transition-colors duration-150 ${
+                                p === page ? 'text-white' : 'text-slate-500 group-hover:text-slate-800'
                             }`}>
-                            {p}
-                          </button>
+                                {p}
+                            </span>
+                          </motion.button>
                 )}
             </div>
 
-            {/* Manual page input — appears when user clicks ellipsis */}
-            {editing && (
-                <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-bottom-1 duration-150 ml-1">
-                    <span className="text-[9px] text-slate-400 font-semibold whitespace-nowrap">Ir a</span>
-                    <input
-                        ref={inputRef}
-                        type="number" min={1} max={total}
-                        value={inputVal}
-                        onChange={e => setInputVal(e.target.value)}
-                        onKeyDown={e => {
-                            if (e.key === 'Enter') commit();
-                            if (e.key === 'Escape') { setEditing(false); setInputVal(''); }
-                        }}
-                        onBlur={commit}
-                        placeholder={String(page)}
-                        className="w-12 h-7 text-center text-[12px] font-bold text-slate-700 bg-white border border-[#0052CC]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0052CC]/25 focus:border-[#0052CC] shadow-sm transition-shadow"
-                    />
-                    <span className="text-[9px] text-slate-400 tabular-nums">/ {total}</span>
-                </div>
-            )}
+            {/* Manual page input */}
+            <AnimatePresence>
+                {editing && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.88, x: -6 }}
+                        animate={{ opacity: 1, scale: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.88, x: -6 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                        className="flex items-center gap-1.5 ml-0.5"
+                    >
+                        <span className="text-[9px] text-slate-400 font-semibold whitespace-nowrap">Ir a</span>
+                        <input
+                            ref={inputRef}
+                            type="number" min={1} max={total}
+                            value={inputVal}
+                            onChange={e => setInputVal(e.target.value)}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter') commit();
+                                if (e.key === 'Escape') { setEditing(false); setInputVal(''); }
+                            }}
+                            onBlur={commit}
+                            placeholder={String(page)}
+                            className="w-12 h-7 text-center text-[12px] font-bold text-slate-700 bg-white border border-[#0052CC]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0052CC]/25 focus:border-[#0052CC] shadow-sm transition-shadow"
+                        />
+                        <span className="text-[9px] text-slate-400 tabular-nums">/ {total}</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-            {/* Next */}
-            <button disabled={page >= total} onClick={() => onChange(page + 1)} className={navCls(page >= total)} title="Página siguiente">
+            <NavBtn disabled={page >= total} onClick={() => onChange(page + 1)} title="Página siguiente">
                 <ChevronRight size={12} strokeWidth={2.5} />
-            </button>
-            {/* Last */}
-            <button disabled={page >= total} onClick={() => onChange(total)} className={navCls(page >= total)} title="Última página">
+            </NavBtn>
+            <NavBtn disabled={page >= total} onClick={() => onChange(total)} title="Última página">
                 <ChevronsRight size={12} strokeWidth={2.5} />
-            </button>
+            </NavBtn>
         </div>
     );
 }
@@ -119,17 +162,20 @@ export default function TablePagination({
             {/* Page-size pills */}
             <div className="flex items-center gap-0.5 p-1 rounded-2xl bg-white/60 backdrop-blur-md border border-white/80 shadow-[0_2px_8px_rgba(0,82,204,0.07)]">
                 {PAGE_SIZE_OPTIONS.map(size => (
-                    <button
+                    <motion.button
                         key={size}
                         onClick={() => { onPageSizeChange(size); onPageChange(1); }}
+                        whileHover={pageSize !== size ? { scale: 1.05 } : {}}
+                        whileTap={pageSize !== size ? { scale: 0.95 } : {}}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                         className={`px-3 h-7 rounded-xl text-[10px] font-bold transition-all duration-200 ${
                             pageSize === size
                                 ? 'bg-[#0052CC] text-white shadow-[0_2px_8px_rgba(0,82,204,0.30)] scale-[1.04]'
-                                : 'text-slate-400 hover:text-slate-700 hover:bg-white/70 hover:scale-[1.03]'
+                                : 'text-slate-400 hover:text-slate-700 hover:bg-white/70'
                         }`}
                     >
                         {size}
-                    </button>
+                    </motion.button>
                 ))}
             </div>
 

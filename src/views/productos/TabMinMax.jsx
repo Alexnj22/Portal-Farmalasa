@@ -1518,30 +1518,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const loadData = useCallback(async (erpId) => {
         const rid = ++loadRef.current;
-        setLoading(true); setData([]); setError(null); setInlineDraftEdit(null); setExpandedId(null);
+        setLoading(true); setError(null); setInlineDraftEdit(null); setExpandedId(null);
         try {
-            // PostgREST caps at 1000 rows per request — fetch in chunks until exhausted
-            const allRows = [];
-            const CHUNK = 1000;
-            let from = 0;
-            let keepFetching = true;
-            while (keepFetching) {
-                const { data: chunk, error: e1 } = await supabase
-                    .rpc('get_stock_analysis', { p_erp_sucursal_id: erpId })
-                    .range(from, from + CHUNK - 1);
-                if (e1) throw e1;
-                allRows.push(...(chunk || []));
-                keepFetching = chunk && chunk.length === CHUNK;
-                from += CHUNK;
-            }
-            const [{ data: cost, error: e2 }, { data: draft }, { data: cfg }] = await Promise.all([
+            const [{ data: rows, error: e1 }, { data: cost, error: e2 }, { data: draft }, { data: cfg }] = await Promise.all([
+                supabase.rpc('get_stock_analysis', { p_erp_sucursal_id: erpId }).range(0, 4999),
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
                 supabase.from('stock_config').select('analysis_days,approaching_pct').eq('id', 1).single(),
             ]);
+            if (e1) throw e1;
             if (e2) throw e2;
             if (rid !== loadRef.current) return;
-            const mapped = allRows.map(r => ({ ...r, _erp_sucursal_id: erpId }));
+            const mapped = (rows || []).map(r => ({ ...r, _erp_sucursal_id: erpId }));
             setData(mapped);
             setHiddenIds(new Set(mapped.filter(r => r.is_hidden).map(r => r.erp_product_id)));
             setCostSummary(cost  || null);

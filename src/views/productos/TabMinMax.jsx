@@ -428,6 +428,12 @@ function sortedPres(presentations) {
         .filter(p => p.factor > 1).sort((a, b) => b.factor - a.factor);
 }
 
+function smallestPres(presentations) {
+    const all = presentations || [];
+    const unit = all.find(p => p.factor === 1);
+    return unit ?? ([...all].sort((a, b) => a.factor - b.factor)[0] ?? null);
+}
+
 function formatUnits(units, presentations) {
     const n = Number(units);
     if (n === 0) return '0';
@@ -2043,7 +2049,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         { key: 'abc_xyz',       label: 'Clase',       align: 'center', sortable: true },
         { key: 'effective_min', label: 'MIN',         align: 'center', sortable: true },
         { key: 'effective_max', label: 'MAX',         align: 'center', sortable: true },
-        { key: 'presentacion',  label: 'Equiv.',      align: 'center' },
+        { key: 'presentacion',  label: 'Despacho',    align: 'center' },
         { key: 'alert_status',  label: 'Estado',      align: 'center' },
         { key: 'acciones',      label: 'Acciones',    align: 'center' },
     ];
@@ -2914,7 +2920,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         )}
                                     </DataCell>
 
-                                    {/* Equiv. — presentación calculada de MIN / MAX */}
+                                    {/* Despacho — regla + presentación MIN/MAX */}
                                     <DataCell align="center" className="!py-2.5">
                                         {dead
                                             ? <span className="text-slate-200 text-xs">—</span>
@@ -2922,13 +2928,49 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 const dispMin = hasDraft ? (row.draft_min ?? 0) : minN;
                                                 const dispMax = hasDraft ? (row.draft_max ?? 0) : maxN;
                                                 const hasPres = sortedPres(pres).length > 0;
+
+                                                const muN = Number(row.dispatch_multiplo_unidades ?? 0);
+                                                const bN  = Number(row.dispatch_blister          ?? 0);
+                                                const mN  = Number(row.dispatch_multiplo          ?? 0);
+                                                const sc  = row.dispatch_solo_cajas;
+                                                const hasRule = sc || muN > 1 || bN > 1 || mN > 1;
+
+                                                let ruleLabel = null, ruleCls = '';
+                                                if (muN > 1) {
+                                                    ruleLabel = `und ×${muN}`;
+                                                    ruleCls = 'bg-violet-50 text-violet-600 border-violet-200';
+                                                } else if (bN > 1) {
+                                                    ruleLabel = `blist ×${bN}`;
+                                                    ruleCls = 'bg-indigo-50 text-indigo-600 border-indigo-200';
+                                                } else if (mN > 1) {
+                                                    ruleLabel = `caja ×${mN}`;
+                                                    ruleCls = 'bg-blue-50 text-blue-600 border-blue-200';
+                                                } else if (sc) {
+                                                    ruleLabel = 'solo cajas';
+                                                    ruleCls = 'bg-slate-100 text-slate-600 border-slate-200';
+                                                }
+
+                                                const sp = smallestPres(pres);
+                                                const baseLabel = sp
+                                                    ? `${sp.tipo.trim()}${sp.factor > 1 ? ` ×${sp.factor}` : ''}`
+                                                    : 'und';
+
                                                 return (
                                                     <div className="flex flex-col items-center gap-0.5">
-                                                        <span className={`text-[10px] font-bold tabular-nums ${hasPres ? 'text-amber-600' : 'text-slate-400'}`}>
-                                                            {formatDominant(dispMin, pres)}
+                                                        {hasRule ? (
+                                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap ${ruleCls}`}>
+                                                                {ruleLabel}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide leading-none">
+                                                                {baseLabel}
+                                                            </span>
+                                                        )}
+                                                        <span className={`text-[10px] font-bold tabular-nums leading-none ${hasPres ? 'text-amber-600' : 'text-slate-400'}`}>
+                                                            {dispMin ? formatUnits(dispMin, pres) : '—'}
                                                         </span>
-                                                        <span className={`text-[10px] font-bold tabular-nums ${hasPres ? 'text-blue-600' : 'text-slate-400'}`}>
-                                                            {formatDominant(dispMax, pres)}
+                                                        <span className={`text-[10px] font-bold tabular-nums leading-none ${hasPres ? 'text-blue-600' : 'text-slate-400'}`}>
+                                                            {dispMax ? formatUnits(dispMax, pres) : '—'}
                                                         </span>
                                                     </div>
                                                 );

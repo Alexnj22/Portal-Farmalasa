@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.64';
+export const APP_VERSION = '2.2.65';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.65 — feat(minmax): columna "Equiv." → "Despacho" — muestra chip de regla de despacho (und×N, blist×N, caja×N, solo cajas) o presentación base (UNIDAD/FRASCO/BLISTER) cuando no hay regla; MIN/MAX desglosados en presentaciones disponibles usando formatUnits; get_stock_analysis v9 agrega dispatch_rules JOIN (4 nuevas cols: dispatch_solo_cajas/multiplo/blister/multiplo_unidades)
 // v2.2.64 — fix(minmax): inversión proyectada visible aunque esté todo publicado; card muestra delta +/- vs publicado cuando hay borradores; alerta clase A con desglose "X sin stock · Y bajo mínimo"; botón filtra clase A completa (no solo sin stock)
 // v2.2.63 — fix(minmax): elimina badge "POCOS DATOS" de filas isSparse — la leyenda naranja ya lo comunica
 // v2.2.62 — fix(minmax): fecha últ. venta en alerta "Rotación mínima"; "--" solo cuando MIN=0 y MAX=0 simultáneamente (MIN=0/MAX=1 ya muestra los valores); falta de ABC explicada (producto sin revenue_6m no entra al ranking ABC, XYZ sí se calcula)

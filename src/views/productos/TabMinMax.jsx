@@ -1559,9 +1559,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             const mapped = allRows.map(r => ({
                 ...r,
                 _erp_sucursal_id: erpId,
-                presentations: (r.presentations?.length > 0)
-                    ? r.presentations
-                    : (catalogPresMap[r.erp_product_id] ?? []),
+                // Catalog is the authoritative source; inventory ERP data as fallback
+                presentations: catalogPresMap[r.erp_product_id]?.length > 0
+                    ? catalogPresMap[r.erp_product_id]
+                    : (r.presentations ?? []),
             }));
             setData(mapped);
             setHiddenIds(new Set(mapped.filter(r => r.is_hidden).map(r => r.erp_product_id)));

@@ -2951,67 +2951,74 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         )}
                                     </DataCell>
 
-                                    {/* Despacho — presentación catálogo + cantidades ajustadas por regla */}
+                                    {/* Despacho — presentación catálogo siempre visible + regla + cantidades */}
                                     <DataCell align="center" className="!py-2 !px-2">
-                                        {dead
-                                            ? <span className="text-slate-200 text-xs">—</span>
-                                            : (() => {
-                                                const dispMin = hasDraft ? (row.draft_min ?? 0) : minN;
-                                                const dispMax = hasDraft ? (row.draft_max ?? 0) : maxN;
-                                                const hasPres = sortedPres(pres).length > 0;
+                                        {(() => {
+                                            const dispMin = hasDraft ? (row.draft_min ?? 0) : minN;
+                                            const dispMax = hasDraft ? (row.draft_max ?? 0) : maxN;
+                                            const hasPres = sortedPres(pres).length > 0;
 
-                                                // Catalog presentation label
-                                                const sp = smallestPres(pres);
-                                                const spTipo = sp?.tipo?.trim() ?? '';
-                                                const isGenericUnit = !spTipo || spTipo.toLowerCase() === 'und' || spTipo.toLowerCase() === 'unidad';
-                                                const capTipo = t => t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : 'und';
-                                                const displayTipo = capTipo(isGenericUnit ? (spTipo || 'und') : spTipo);
-                                                const displayFactor = sp?.factor ?? 1;
-                                                const displayDesc = sp?.descripcion ?? null;
-                                                const baseLabel = displayFactor > 1
-                                                    ? `${displayTipo} ×${displayFactor}`
-                                                    : displayDesc
-                                                    ? `${displayTipo} ${displayDesc}`
-                                                    : displayTipo || 'und';
+                                            // Catalog presentation label (always shown)
+                                            const sp = smallestPres(pres);
+                                            const spTipo = sp?.tipo?.trim() ?? '';
+                                            const isGenericUnit = !spTipo || spTipo.toLowerCase() === 'und' || spTipo.toLowerCase() === 'unidad';
+                                            const capTipo = t => t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : 'und';
+                                            const displayTipo = capTipo(isGenericUnit ? (spTipo || 'und') : spTipo);
+                                            const displayFactor = sp?.factor ?? 1;
+                                            const displayDesc = sp?.descripcion ?? null;
+                                            const baseLabel = displayFactor > 1
+                                                ? `${displayTipo} ×${displayFactor}`
+                                                : displayDesc
+                                                ? `${displayTipo} ${displayDesc}`
+                                                : displayTipo || 'und';
 
-                                                // Dispatch rule — used only for quantity rounding, not displayed
-                                                const muN = Number(row.dispatch_multiplo_unidades ?? 0);
-                                                const bN  = Number(row.dispatch_blister          ?? 0);
-                                                const mN  = Number(row.dispatch_multiplo          ?? 0);
-                                                const sc  = row.dispatch_solo_cajas;
-                                                const sortedP = sortedPres(pres); // factor > 1, desc
-                                                const boxFactor = sortedP[0]?.factor ?? 1;
-                                                const blisterFactor = sortedP.find(p => p.tipo?.toLowerCase().includes('blist'))?.factor
-                                                    ?? sortedP[1]?.factor ?? boxFactor;
+                                            // Dispatch rule — rounds quantities, always shown as note when present
+                                            const muN = Number(row.dispatch_multiplo_unidades ?? 0);
+                                            const bN  = Number(row.dispatch_blister          ?? 0);
+                                            const mN  = Number(row.dispatch_multiplo          ?? 0);
+                                            const sc  = row.dispatch_solo_cajas;
+                                            const hasRule = sc || muN > 1 || bN > 1 || mN > 1;
+                                            const ruleNote = muN > 1 ? `und ×${muN}`
+                                                : bN > 1 ? `blist ×${bN}`
+                                                : mN > 1 ? `caja ×${mN}`
+                                                : sc ? 'solo cajas' : null;
 
-                                                const applyRule = (qty) => {
-                                                    if (!qty || qty <= 0) return qty;
-                                                    if (sc) return Math.ceil(qty / boxFactor) * boxFactor;
-                                                    const packSize = muN > 1 ? muN
-                                                        : bN > 1 ? bN * blisterFactor
-                                                        : mN > 1 ? mN * boxFactor
-                                                        : 1;
-                                                    if (packSize <= 1) return qty;
-                                                    // >=50% of next pack → round up
-                                                    const rounded = Math.round(qty / packSize) * packSize;
-                                                    return rounded > 0 ? rounded : packSize;
-                                                };
+                                            const sortedP = sortedPres(pres);
+                                            const boxFactor = sortedP[0]?.factor ?? 1;
+                                            const blisterFactor = sortedP.find(p => p.tipo?.toLowerCase().includes('blist'))?.factor
+                                                ?? sortedP[1]?.factor ?? boxFactor;
 
-                                                return (
-                                                    <div className="flex flex-col items-center gap-1">
-                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap leading-tight bg-slate-100 text-slate-600 border-slate-200">
-                                                            {baseLabel}
+                                            const applyRule = (qty) => {
+                                                if (!qty || qty <= 0 || !hasRule) return qty;
+                                                if (sc) return Math.ceil(qty / boxFactor) * boxFactor;
+                                                const packSize = muN > 1 ? muN
+                                                    : bN > 1 ? bN * blisterFactor
+                                                    : mN > 1 ? mN * boxFactor
+                                                    : 1;
+                                                if (packSize <= 1) return qty;
+                                                const rounded = Math.round(qty / packSize) * packSize;
+                                                return rounded > 0 ? rounded : packSize;
+                                            };
+
+                                            return (
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap leading-tight bg-slate-100 text-slate-600 border-slate-200">
+                                                        {baseLabel}
+                                                    </span>
+                                                    {ruleNote && (
+                                                        <span className="text-[8px] text-slate-400 font-medium leading-none">
+                                                            {ruleNote}
                                                         </span>
-                                                        <span className={`text-[9px] tabular-nums leading-none ${hasPres ? 'text-amber-500' : 'text-slate-300'}`}>
-                                                            {dispMin ? formatUnits(applyRule(dispMin), pres) : '—'}
-                                                        </span>
-                                                        <span className={`text-[9px] tabular-nums leading-none ${hasPres ? 'text-blue-500' : 'text-slate-300'}`}>
-                                                            {dispMax ? formatUnits(applyRule(dispMax), pres) : '—'}
-                                                        </span>
-                                                    </div>
-                                                );
-                                            })()
-                                        }
+                                                    )}
+                                                    <span className={`text-[9px] tabular-nums leading-none ${hasPres ? 'text-amber-500' : 'text-slate-300'}`}>
+                                                        {dispMin ? formatUnits(applyRule(dispMin), pres) : '—'}
+                                                    </span>
+                                                    <span className={`text-[9px] tabular-nums leading-none ${hasPres ? 'text-blue-500' : 'text-slate-300'}`}>
+                                                        {dispMax ? formatUnits(applyRule(dispMax), pres) : '—'}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })()}
                                     </DataCell>
 
                                     {/* Estado */}

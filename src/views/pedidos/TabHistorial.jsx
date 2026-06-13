@@ -5,7 +5,7 @@ import {
     X, Package, Building2, AlertTriangle, Ban, ArrowDown,
     Clock, CheckCheck, TrendingDown, FlaskConical, Printer,
     BookMarked, Trash2, CalendarDays, Send, Search, PackagePlus,
-    Play, Flag, Database,
+    Play, Pause, Flag, Database,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -163,6 +163,9 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     const [totalCounts,      setTotalCounts]      = useState(null);
     const [lifecycleMap,     setLifecycleMap]     = useState({}); // { pedidoId: { sucId: {...} } }
     const [updatingLifecycle, setUpdatingLifecycle] = useState({}); // { 'pedidoId_sucId': bool }
+    const [pauseModal,       setPauseModal]       = useState(null); // { pedidoId, sucId } | null
+    const [pauseRazonSel,    setPauseRazonSel]    = useState('almuerzo');
+    const [pauseRazonText,   setPauseRazonText]   = useState('');
 
     // ── Section toggle helpers ─────────────────────────────────────────────────
     const isSecOpen = (key, def) => sectionOpen[key] ?? def;
@@ -323,7 +326,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 .eq('pedido_id', pedidoId),
             supabase
                 .from('pedido_sucursal_status')
-                .select('erp_sucursal_id, iniciado_at, iniciado_por, finalizado_at, finalizado_por, recibido_erp_at, recibido_erp_por')
+                .select('erp_sucursal_id, codigo, iniciado_at, iniciado_por, pausado_at, pausa_razon, reanudado_at, finalizado_at, finalizado_por, recibido_erp_at, recibido_erp_por')
                 .eq('pedido_id', pedidoId),
         ]);
 
@@ -501,8 +504,8 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         }
     }, [user, pedidoSucursales, reloadCounts]);
 
-    // ── Lifecycle actions (Iniciar / Finalizar / Recibir ERP) ─────────────────
-    const handleLifecycleAction = useCallback(async (pedidoId, sucursalId, stage) => {
+    // ── Lifecycle actions (Iniciar / Pausar / Reanudar / Finalizar / Recibir ERP)
+    const handleLifecycleAction = useCallback(async (pedidoId, sucursalId, stage, razon = null) => {
         const key = `${pedidoId}_${sucursalId}`;
         setUpdatingLifecycle(prev => ({ ...prev, [key]: true }));
         try {
@@ -511,13 +514,17 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 p_sucursal_id: sucursalId,
                 p_stage:       stage,
                 p_user_id:     user?.id ?? null,
+                p_razon:       razon,
             });
             if (error) throw error;
-            useStaff.getState().appendAuditLog(`PEDIDO_LIFECYCLE_${stage.toUpperCase()}`, pedidoId, { sucursal_id: sucursalId });
+            useStaff.getState().appendAuditLog(
+                `PEDIDO_LIFECYCLE_${stage.toUpperCase()}`, pedidoId,
+                { sucursal_id: sucursalId, razon },
+            );
             // Reload lifecycle for this pedido
             const { data: lcRows } = await supabase
                 .from('pedido_sucursal_status')
-                .select('erp_sucursal_id, iniciado_at, iniciado_por, finalizado_at, finalizado_por, recibido_erp_at, recibido_erp_por')
+                .select('erp_sucursal_id, codigo, iniciado_at, iniciado_por, pausado_at, pausa_razon, reanudado_at, finalizado_at, finalizado_por, recibido_erp_at, recibido_erp_por')
                 .eq('pedido_id', pedidoId);
             const lcByS = {};
             for (const row of (lcRows || [])) lcByS[row.erp_sucursal_id] = row;
@@ -842,16 +849,21 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                         const pedLotes    = lotes[p.id] ?? {};
 
                                         // Lifecycle para esta sucursal
-                                        const lifecycle    = lifecycleMap[p.id]?.[suc] ?? {};
-                                        const lcKey        = `${p.id}_${suc}`;
-                                        const lcBusy       = !!updatingLifecycle[lcKey];
-                                        const canIniciar   = p.status === 'confirmado' && !lifecycle.iniciado_at;
-                                        const canFinalizar = p.status === 'confirmado' && !!lifecycle.iniciado_at && !lifecycle.finalizado_at;
-                                        const erpRecibido  = !!lifecycle.recibido_erp_at;
+                                        const lifecycle     = lifecycleMap[p.id]?.[suc] ?? {};
+                                        const lcKey         = `${p.id}_${suc}`;
+                                        const lcBusy        = !!updatingLifecycle[lcKey];
+                                        const isPausado     = !!lifecycle.pausado_at && !lifecycle.reanudado_at;
+                                        const canIniciar    = p.status === 'confirmado' && !lifecycle.iniciado_at;
+                                        const canPausar     = p.status === 'confirmado' && !!lifecycle.iniciado_at && !lifecycle.finalizado_at && !isPausado;
+                                        const canReanudar   = isPausado && !lifecycle.finalizado_at;
+                                        const canFinalizar  = p.status === 'confirmado' && !!lifecycle.iniciado_at && !lifecycle.finalizado_at && !isPausado;
+                                        const erpRecibido   = !!lifecycle.recibido_erp_at;
 
                                         // Tiempos entre etapas
-                                        const dtGenToIni   = fmtElapsed(p.created_at,         lifecycle.iniciado_at);
-                                        const dtIniToFin   = fmtElapsed(lifecycle.iniciado_at, lifecycle.finalizado_at);
+                                        const dtGenToIni   = fmtElapsed(p.created_at,           lifecycle.iniciado_at);
+                                        const dtIniToPause = fmtElapsed(lifecycle.iniciado_at,   lifecycle.pausado_at);
+                                        const dtPauseToRes = fmtElapsed(lifecycle.pausado_at,    lifecycle.reanudado_at);
+                                        const dtIniToFin   = fmtElapsed(lifecycle.reanudado_at ?? lifecycle.iniciado_at, lifecycle.finalizado_at);
                                         const dtFinToEnv   = fmtElapsed(lifecycle.finalizado_at, p.enviado_at);
                                         const dtEnvToRec   = sucFirmas[0]
                                             ? fmtElapsed(p.enviado_at, sucFirmas[0]?.created_at)
@@ -880,6 +892,16 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                         <span className="font-semibold text-[13px] text-slate-700">
                                                             {ERP_NAMES[suc] ?? `Sucursal ${suc}`}
                                                         </span>
+                                                        {lifecycle.codigo && (
+                                                            <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200 tracking-wide">
+                                                                {lifecycle.codigo}
+                                                            </span>
+                                                        )}
+                                                        {isPausado && (
+                                                            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                                                <Pause size={9} /> Pausado{lifecycle.pausa_razon ? ` · ${lifecycle.pausa_razon}` : ''}
+                                                            </span>
+                                                        )}
                                                         <span className="text-[11px] text-slate-400">· {sentRows.length} enviados</span>
                                                         {difCount > 0 && (
                                                             <span className="text-[11px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full border border-amber-100">
@@ -909,6 +931,31 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                 Iniciar
                                                             </button>
                                                         )}
+                                                        {canPausar && (
+                                                            <button
+                                                                onClick={e => {
+                                                                    e.stopPropagation();
+                                                                    setPauseRazonSel('almuerzo');
+                                                                    setPauseRazonText('');
+                                                                    setPauseModal({ pedidoId: p.id, sucId: suc });
+                                                                }}
+                                                                disabled={lcBusy}
+                                                                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-colors disabled:opacity-50"
+                                                            >
+                                                                <Pause size={11} />
+                                                                Pausar
+                                                            </button>
+                                                        )}
+                                                        {canReanudar && (
+                                                            <button
+                                                                onClick={e => { e.stopPropagation(); handleLifecycleAction(p.id, suc, 'reanudar'); }}
+                                                                disabled={lcBusy}
+                                                                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold bg-teal-600 text-white hover:bg-teal-700 transition-colors disabled:opacity-50"
+                                                            >
+                                                                {lcBusy ? <Loader2 size={11} className="animate-spin" /> : <Play size={11} />}
+                                                                Reanudar
+                                                            </button>
+                                                        )}
                                                         {canFinalizar && (
                                                             <button
                                                                 onClick={e => { e.stopPropagation(); handleLifecycleAction(p.id, suc, 'finalizar'); }}
@@ -932,7 +979,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                             onClick={async e => {
                                                                 e.stopPropagation();
                                                                 const meta = await loadPedidoMeta(p);
-                                                                printFromPedidoItems(p.numero, [[suc, allRows]], meta);
+                                                                printFromPedidoItems(p.numero, [[suc, allRows]], meta, lifecycle.codigo ?? null);
                                                             }}
                                                             className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium border border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
                                                             title="Imprimir esta sucursal"
@@ -959,6 +1006,21 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                         <Play size={8} />
                                                                         {empMap[lifecycle.iniciado_por]?.name?.split(' ')[0] ?? fmtTime(lifecycle.iniciado_at)}
                                                                     </span>
+                                                                </>)}
+                                                                {/* → Pausado */}
+                                                                {lifecycle.pausado_at && (<>
+                                                                    {dtIniToPause && <span className="text-[9px] text-slate-300">→{dtIniToPause}→</span>}
+                                                                    <span className="inline-flex items-center gap-0.5 text-[9px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                                        <Pause size={8} />
+                                                                        {lifecycle.pausa_razon ?? fmtTime(lifecycle.pausado_at)}
+                                                                    </span>
+                                                                    {lifecycle.reanudado_at && (<>
+                                                                        {dtPauseToRes && <span className="text-[9px] text-slate-300">→{dtPauseToRes}→</span>}
+                                                                        <span className="inline-flex items-center gap-0.5 text-[9px] bg-teal-50 text-teal-700 border border-teal-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                                            <Play size={8} />
+                                                                            {fmtTime(lifecycle.reanudado_at)}
+                                                                        </span>
+                                                                    </>)}
                                                                 </>)}
                                                                 {/* → Finalizado */}
                                                                 {lifecycle.finalizado_at && (<>
@@ -1391,6 +1453,74 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 isDestructive
                 isProcessing={deletingSnap}
             />
+
+            {/* ── Pausa reason modal ──────────────────────────────────────── */}
+            {pauseModal && (
+                <ModalShell onClose={() => setPauseModal(null)}>
+                    <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 space-y-4">
+                        <h3 className="font-bold text-slate-800 text-[16px]">¿Por qué pausas este despacho?</h3>
+                        <p className="text-[12px] text-slate-400">
+                            {ERP_NAMES[pauseModal.sucId] ?? `Sucursal ${pauseModal.sucId}`}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                            {[
+                                { key: 'almuerzo',      label: 'Almuerzo' },
+                                { key: 'actividades',   label: 'Otras actividades' },
+                                { key: 'interrupcion',  label: 'Interrupción temporal' },
+                                { key: 'otro',          label: 'Otro…' },
+                            ].map(opt => (
+                                <button
+                                    key={opt.key}
+                                    onClick={() => setPauseRazonSel(opt.key)}
+                                    className={`px-3 py-2 rounded-xl border text-[12px] font-medium transition-colors text-left ${
+                                        pauseRazonSel === opt.key
+                                            ? 'border-amber-400 bg-amber-50 text-amber-700'
+                                            : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                        {pauseRazonSel === 'otro' && (
+                            <input
+                                type="text"
+                                value={pauseRazonText}
+                                onChange={e => setPauseRazonText(e.target.value)}
+                                placeholder="Describe la razón…"
+                                className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400 bg-white"
+                                autoFocus
+                            />
+                        )}
+                        <div className="flex justify-end gap-2 pt-1">
+                            <button
+                                onClick={() => setPauseModal(null)}
+                                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const razonLabel = {
+                                        almuerzo:    'Almuerzo',
+                                        actividades: 'Otras actividades',
+                                        interrupcion:'Interrupción temporal',
+                                    };
+                                    const razon = pauseRazonSel === 'otro'
+                                        ? (pauseRazonText.trim() || 'Otro')
+                                        : (razonLabel[pauseRazonSel] ?? pauseRazonSel);
+                                    handleLifecycleAction(pauseModal.pedidoId, pauseModal.sucId, 'pausar', razon);
+                                    setPauseModal(null);
+                                }}
+                                disabled={pauseRazonSel === 'otro' && !pauseRazonText.trim()}
+                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 text-[13px] transition-colors disabled:opacity-50"
+                            >
+                                <Pause size={13} /> Confirmar pausa
+                            </button>
+                        </div>
+                    </div>
+                </ModalShell>
+            )}
         </div>
     );
 }

@@ -10,7 +10,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
-import { printFromPreview, fefoProject } from '../../utils/pedidoPrint';
+import { printFromPreview, printPerSucursal, buildPedidoCodigo, fefoProject } from '../../utils/pedidoPrint';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
@@ -370,13 +370,22 @@ export default function TabGenerar({ searchTerm = '' }) {
                 else if (row.revision_minmax) map[s].revision.push(row);
                 else                          map[s].normal.push(row);
             }
-            const sucIds = SUCURSALES.filter(id => map[id]);
-            const meta   = { responsable: user?.name ?? null, revisor: null, generadoPor: user?.name ?? null };
-            const title  = `Pedido #${ped?.numero}`;
-            printFromPreview(map, sucIds, r => r.cantidad_asignada, title, meta);
+            const sucIds   = SUCURSALES.filter(id => map[id]);
+            const meta     = { responsable: user?.name ?? null, revisor: null, generadoPor: user?.name ?? null };
+            const codigoFn = buildPedidoCodigo(ped?.numero, new Date(), sucIds.length);
+            const codigosMap = {};
+            for (const id of sucIds) codigosMap[id] = codigoFn(id);
+
+            // Store codigos in DB (fire-and-forget)
+            supabase.rpc('init_pedido_sucursal_codigos', {
+                p_pedido_id: pedidoId,
+                p_codigos:   sucIds.map(id => ({ erp_sucursal_id: id, codigo: codigosMap[id] })),
+            }).then(() => {}).catch(() => {});
+
+            printPerSucursal(map, sucIds, r => r.cantidad_asignada, codigoFn, meta);
             setConfirmed({
                 id: pedidoId, numero: ped?.numero,
-                frozenGrouped: map, frozenSucIds: sucIds, printTitle: title, printMeta: meta,
+                frozenGrouped: map, frozenSucIds: sucIds, codigosMap, printMeta: meta,
             });
             setSelected(new Set());
         } catch (e) {
@@ -503,18 +512,26 @@ export default function TabGenerar({ searchTerm = '' }) {
                     revCount: g.revision.length,
                 };
             }
-            const frozenSucIds  = [...sortedSucIds];
-            const printTitle    = `Pedido #${ped?.numero} — ${frozenSucIds.map(id => ERP_NAMES[id]).join(', ')}`;
+            const frozenSucIds = [...sortedSucIds];
+            const codigoFn     = buildPedidoCodigo(ped?.numero, new Date(), frozenSucIds.length);
+            const codigosMap   = {};
+            for (const id of frozenSucIds) codigosMap[id] = codigoFn(id);
+
+            // Store codigos in DB (fire-and-forget)
+            supabase.rpc('init_pedido_sucursal_codigos', {
+                p_pedido_id: pedidoId,
+                p_codigos:   frozenSucIds.map(id => ({ erp_sucursal_id: id, codigo: codigosMap[id] })),
+            }).then(() => {}).catch(() => {});
 
             setConfirmed({
                 id: pedidoId, numero: ped?.numero,
-                frozenGrouped, frozenSucIds, printTitle, printMeta,
+                frozenGrouped, frozenSucIds, codigosMap, printMeta,
             });
             setPreview(null); setNotes(''); setAdjustments({});
             setResponsable(''); setRevisado('');
 
-            // B3: auto-print
-            printFromPreview(frozenGrouped, frozenSucIds, r => r.cantidad_asignada, printTitle, printMeta);
+            // Auto-print one PDF per sucursal
+            printPerSucursal(frozenGrouped, frozenSucIds, r => r.cantidad_asignada, codigoFn, printMeta);
         } catch (e) {
             setError(e.message);
         } finally {
@@ -892,9 +909,11 @@ export default function TabGenerar({ searchTerm = '' }) {
                         <p className="text-[11px] text-emerald-600/70">Si el diálogo de impresión no apareció, usa Reimprimir. Puedes verlo en Historial.</p>
                     </div>
                     <button
-                        onClick={() => printFromPreview(
+                        onClick={() => printPerSucursal(
                             confirmed.frozenGrouped, confirmed.frozenSucIds,
-                            r => r.cantidad_asignada, confirmed.printTitle, confirmed.printMeta,
+                            r => r.cantidad_asignada,
+                            (id) => confirmed.codigosMap?.[id],
+                            confirmed.printMeta,
                         )}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-emerald-300 text-emerald-700 hover:bg-emerald-100 transition-colors"
                     >

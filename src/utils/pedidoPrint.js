@@ -8,7 +8,9 @@ const ERP_NAMES_DEFAULT = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
     4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
 };
-const SUCURSALES_ORDER = [5, 1, 2, 3, 4, 7];
+const SUCURSALES_ORDER   = [5, 1, 2, 3, 4, 7];
+const SUCURSAL_CODES     = { 1: 'S1', 2: 'S2', 3: 'S3', 4: 'S4', 5: 'PO', 6: 'BO', 7: 'S5' };
+const TOTAL_NON_BODEGA   = 6;
 
 function esc(str) {
     if (!str) return '';
@@ -182,13 +184,13 @@ function printHtml(html) {
         try {
             iframe.contentWindow.focus();
             iframe.contentWindow.print();
-        } catch {
+        } catch (err) {
             iframe.remove();
             return;
         }
         // Cleanup after the print dialog closes (afterprint isn't reliable cross-browser)
         const cleanup = () => iframe.remove();
-        try { iframe.contentWindow.addEventListener('afterprint', cleanup, { once: true }); } catch { /* noop */ }
+        try { iframe.contentWindow.addEventListener('afterprint', cleanup, { once: true }); } catch (err) { /* noop */ }
         setTimeout(cleanup, 120_000);
     };
     iframe.srcdoc = html;
@@ -223,6 +225,55 @@ ${buildSignatures(meta)}
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
+
+/**
+ * Returns a function (sucId) => codigo string in the format xx-aabbcc-d-yy.
+ * d: 1=solo esa sucursal, 2=varias, 3=todas las sucursales no-bodega.
+ */
+export function buildPedidoCodigo(numero, date, nSelected) {
+    const nn      = String(numero ?? 0).padStart(2, '0');
+    const d       = date instanceof Date ? date : new Date();
+    const dd      = String(d.getDate()).padStart(2, '0');
+    const mm      = String(d.getMonth() + 1).padStart(2, '0');
+    const yy      = String(d.getFullYear()).slice(-2);
+    const aabbcc  = `${dd}${mm}${yy}`;
+    const dist    = nSelected >= TOTAL_NON_BODEGA ? '3' : nSelected > 1 ? '2' : '1';
+    return (sucId) => `${nn}-${aabbcc}-${dist}-${SUCURSAL_CODES[sucId] ?? `S${sucId}`}`;
+}
+
+/**
+ * Prints one PDF window per sucursal, staggered 1 s apart.
+ * codigoFn: (sucId) => string — used as the suggested PDF filename.
+ */
+export function printPerSucursal(grouped, sortedSucIds, getAdjusted, codigoFn, meta = {}) {
+    sortedSucIds.forEach((sucId, idx) => {
+        setTimeout(() => {
+            const g    = grouped[sucId] || { normal: [], revision: [], sinStock: [] };
+            const rows = [...g.normal, ...g.revision].map(row => {
+                const qty = getAdjusted(row);
+                return {
+                    product_name:      row.product_name,
+                    laboratorio:       row.laboratorio ?? '',
+                    presentacion_tipo: row.presentacion_tipo,
+                    es_antibiotico:    row.es_antibiotico,
+                    qty,
+                    lotes: fefoProject(row.lotes_bodega, qty),
+                };
+            });
+            const section = {
+                sucId,
+                nombre:   ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
+                rows,
+                sinCount: g.sinStock.length,
+                revCount: g.revision.length,
+            };
+            const titulo = codigoFn
+                ? codigoFn(sucId)
+                : `Pedido_${(ERP_NAMES_DEFAULT[sucId] ?? `Sucursal_${sucId}`).replace(/ /g, '_')}`;
+            openPrintWindow([section], titulo, meta);
+        }, idx * 1000);
+    });
+}
 
 export function printFromPreview(grouped, sortedSucIds, getAdjusted, title, meta = {}) {
     const sections = sortedSucIds.map(sucId => {
@@ -286,7 +337,7 @@ export function printFromSnapshot(snapshot, meta = {}) {
     openPrintWindow(sections, snapshot.nombre ?? 'Borrador guardado', meta);
 }
 
-export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}) {
+export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, titleOverride = null) {
     const fecha = new Date().toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' })
         .replace(/\//g, '-');
 
@@ -311,10 +362,10 @@ export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}) {
         };
     });
 
-    // Single-sucursal: use sucursal name in title so browser suggests it as PDF filename
-    const title = sucGroups.length === 1
-        ? `Pedido_${(ERP_NAMES_DEFAULT[sucGroups[0][0]] ?? `Sucursal_${sucGroups[0][0]}`).replace(/ /g, '_')}_${fecha}`
-        : `Pedido_#${pedidoNumero}_${fecha}`;
+    const title = titleOverride
+        ?? (sucGroups.length === 1
+            ? `Pedido_${(ERP_NAMES_DEFAULT[sucGroups[0][0]] ?? `Sucursal_${sucGroups[0][0]}`).replace(/ /g, '_')}_${fecha}`
+            : `Pedido_#${pedidoNumero}_${fecha}`);
 
     openPrintWindow(sections, title, meta);
 }

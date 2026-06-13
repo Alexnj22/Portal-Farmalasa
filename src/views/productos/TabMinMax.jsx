@@ -2540,7 +2540,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         </span>
                                                     )}
                                                     {noHistory && <span className="shrink-0 text-[8px] font-black text-yellow-700 bg-yellow-50 border border-yellow-200 px-1.5 py-0.5 rounded-full">SIN HISTORIAL</span>}
-                                                    {isSparse && <span className="shrink-0 text-[8px] font-black text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded-full" title="Vendió en menos de 3 días distintos — MIN/MAX requiere confirmación manual">POCOS DATOS</span>}
                                                 </div>
                                                 {/* Stock actual inline */}
                                                 <div className="flex items-center gap-1.5 mt-0.5">

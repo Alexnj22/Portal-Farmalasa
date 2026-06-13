@@ -1534,36 +1534,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 keepFetching = chunk && chunk.length === CHUNK;
                 from += CHUNK;
             }
-            const [{ data: cost, error: e2 }, { data: draft }, { data: cfg }, { data: presData }, { data: presTypes }] = await Promise.all([
+            const [{ data: cost, error: e2 }, { data: draft }, { data: cfg }] = await Promise.all([
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
                 supabase.from('stock_config').select('analysis_days,approaching_pct').eq('id', 1).single(),
-                supabase.from('product_precios').select('product_id,id_presentacion,factor,descripcion').eq('activo', true).range(0, 2999),
-                supabase.from('presentaciones').select('id,tipo'),
             ]);
             if (e2) throw e2;
             if (rid !== loadRef.current) return;
-
-            // Build catalog presentations fallback for products without inventory
-            const presTypeMap = Object.fromEntries((presTypes || []).map(p => [p.id, p.tipo]));
-            const catalogPresMap = {};
-            for (const row of presData || []) {
-                if (!catalogPresMap[row.product_id]) catalogPresMap[row.product_id] = [];
-                catalogPresMap[row.product_id].push({
-                    tipo: presTypeMap[row.id_presentacion] ?? 'UND',
-                    factor: row.factor ?? 1,
-                    descripcion: row.descripcion ?? null,
-                });
-            }
-
-            const mapped = allRows.map(r => ({
-                ...r,
-                _erp_sucursal_id: erpId,
-                // Catalog is the authoritative source; inventory ERP data as fallback
-                presentations: catalogPresMap[r.erp_product_id]?.length > 0
-                    ? catalogPresMap[r.erp_product_id]
-                    : (r.presentations ?? []),
-            }));
+            const mapped = allRows.map(r => ({ ...r, _erp_sucursal_id: erpId }));
             setData(mapped);
             setHiddenIds(new Set(mapped.filter(r => r.is_hidden).map(r => r.erp_product_id)));
             setCostSummary(cost  || null);
@@ -2956,7 +2934,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         {(() => {
                                             const dispMin = hasDraft ? (row.draft_min ?? 0) : minN;
                                             const dispMax = hasDraft ? (row.draft_max ?? 0) : maxN;
-                                            const hasPres = sortedPres(pres).length > 0;
+                                            const hasPres = pres.length > 0;
 
                                             // Catalog presentation label (always shown)
                                             const sp = smallestPres(pres);
@@ -3001,19 +2979,22 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             };
 
                                             return (
-                                                <div className="flex flex-col items-center gap-0.5">
-                                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap leading-tight bg-slate-100 text-slate-600 border-slate-200">
-                                                        {baseLabel}
-                                                    </span>
-                                                    {ruleNote && (
-                                                        <span className="text-[8px] text-slate-400 font-medium leading-none">
-                                                            {ruleNote}
+                                                <div className="flex flex-col items-center gap-1">
+                                                    {/* Pill + rule inline */}
+                                                    <div className="flex items-center gap-1 flex-wrap justify-center">
+                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap leading-tight bg-slate-100 text-slate-600 border-slate-200">
+                                                            {baseLabel}
                                                         </span>
-                                                    )}
-                                                    <span className={`text-[9px] tabular-nums leading-none ${hasPres ? 'text-amber-500' : 'text-slate-300'}`}>
+                                                        {ruleNote && (
+                                                            <span className="text-[8px] font-semibold text-slate-400 whitespace-nowrap leading-tight">
+                                                                {ruleNote}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className={`text-[10px] font-semibold tabular-nums leading-none ${hasPres ? 'text-amber-600' : 'text-slate-400'}`}>
                                                         {dispMin ? formatUnits(applyRule(dispMin), pres) : '—'}
                                                     </span>
-                                                    <span className={`text-[9px] tabular-nums leading-none ${hasPres ? 'text-blue-500' : 'text-slate-300'}`}>
+                                                    <span className={`text-[10px] font-semibold tabular-nums leading-none ${hasPres ? 'text-blue-600' : 'text-slate-400'}`}>
                                                         {dispMax ? formatUnits(applyRule(dispMax), pres) : '—'}
                                                     </span>
                                                 </div>

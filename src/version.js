@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.69';
+export const APP_VERSION = '2.2.70';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.70 — fix(minmax): get_stock_analysis incluye catalog_pres CTE (product_precios+presentaciones con descripcion) en los 4 branches → Levoxanet y dead stock siempre ven presentación del catálogo; hasPres=pres.length>0 (factor=1 ya no queda invisible); regla de despacho inline con pill; MIN/MAX text-[10px] font-semibold amber-600/blue-600
 // v2.2.69 — fix(minmax): Despacho siempre visible (dead stock inclusive); sin regla = cantidades exactas; con regla = nota pequeña gris (und×N/blist×N/caja×N/solo cajas) + redondeo ≥50%
 // v2.2.68 — feat(minmax): paginación framer-motion layoutId sliding pill (azul se desliza entre páginas), NavBtn whileHover/whileTap spring, ellipsis "•••" sutil; Despacho: fetch product_precios+presentaciones como fallback cuando presentations=[], capTipo capitaliza tipo, displayDesc muestra "Caja 1x1" desde product_precios.descripcion; ventas: calculate_stock_params usa CURRENT_DATE-6months (meses calendario) en lugar de analysis_days días → units_sold_6m coincide con filtro 6m en Ventas
 // v2.2.67 — feat(minmax): paginación glassmorphism con animaciones, hover, input manual de página (click en "···"), botones primera/última; fila expandida única (Set→null, AnimatePresence height:0→auto), panel glassmorphism; columna Despacho fallback a row.presentacion cuando smallestPres.tipo="und"; AbcXyzMatrix colores azul unificado por intensidad, grid compacto gap-[3px]; fix DataTable overflow-y:visible para liberar scroll vertical; fix filtro pill overflow-x:auto para evitar scroll horizontal; audit MINMAX_PUBLISH con published_by+published_count+scope

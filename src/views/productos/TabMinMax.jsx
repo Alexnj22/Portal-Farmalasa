@@ -2272,7 +2272,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 return { ...r,
                     effective_min: newEff, effective_max: newEffMax,
                     has_manual: false,
-                    pub_min: fresh?.min_units ?? 0, pub_max: fresh?.max_units ?? 0,
+                    pub_min: Math.max(fresh?.min_units ?? 0, fresh?.draft_min ?? 0), pub_max: Math.max(fresh?.max_units ?? 0, fresh?.draft_max ?? 0),
                     draft_min: fresh?.draft_min ?? null, draft_max: fresh?.draft_max ?? null,
                     draft_status: fresh?.draft_status ?? 'none',
                     alert_status: calcAlertStatus(r.current_stock, newEff, newEffMax),
@@ -3356,8 +3356,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         {sep}
                                                         {box(maxN > 0 ? maxN.toLocaleString() : '—', stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-slate-500 bg-white/70', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
                                                     </div>
-                                                    {row.has_manual && (row.pub_min > 0 || row.pub_max > 0) && (
-                                                        <div className="text-[8px] font-semibold text-violet-500 tabular-nums">Σ {(row.pub_min ?? 0).toLocaleString()}·{(row.pub_max ?? 0).toLocaleString()}</div>
+                                                    {row.has_manual && (row.pub_min > 0 || row.pub_max > 0 || (row.draft_min ?? 0) > 0 || (row.draft_max ?? 0) > 0) && (
+                                                        <div className="text-[8px] font-semibold text-violet-500 tabular-nums">Σ {Math.max(row.pub_min ?? 0, row.draft_min ?? 0).toLocaleString()}·{Math.max(row.pub_max ?? 0, row.draft_max ?? 0).toLocaleString()}</div>
                                                     )}
                                                     <div className="text-[9px] text-amber-500 tabular-nums">→ {(row.draft_min ?? 0).toLocaleString()}·{(row.draft_max ?? 0).toLocaleString()} prev.</div>
                                                 </div>

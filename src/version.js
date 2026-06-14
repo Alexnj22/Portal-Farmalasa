@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.89';
+export const APP_VERSION = '2.2.90';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.90 — fix(minmax): publish_stock_params v6 — Bodega se auto-confirma al publicar cualquier sucursal: min_units/max_units = Σ sucursales publicadas; draft preview (→ Σ efectivo) solo si quedan borradores pendientes; cuando todas publican, draft de Bodega se limpia; Bodega nunca requiere publicación manual; sucursal_id=6 excluida del paso 1 (no puede publicarse como sucursal normal)
 // v2.2.89 — feat(minmax): ExpandedPanel — borrador visible en cards de sucursal (→ draftMin·draftMax en dashed amber); ventas: últimas 6 sin importar sucursal (badge sucursal en cada fila); 3ª columna "MIN·MAX red" compacta con indicador de borrador por sucursal; get_product_branch_summary retorna draft_min/draft_max/draft_status; get_product_last_sales soporta p_erp_sucursal_id=null (todas las sucursales) + retorna erp_sucursal_id
 // v2.2.88 — feat(minmax): calculate_stock_params v3 — auto-aplica borradores ≤40% cambio o primera asignación; >40% o 0→0 quedan como borrador; Bodega excluida del cron mensual (se mantiene sola); nightly-minmax-recalc eliminado; notificación mensual muestra X auto-aplicados · Y pendientes
 // v2.2.87 — fix(minmax): MIN·MAX centrado en columna (wrapper w-full justify-center); companion value restaurado con borde punteado border-2 border-dashed (estado puntuado) al editar MIN o MAX

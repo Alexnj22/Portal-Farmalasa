@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.95';
+export const APP_VERSION = '2.2.96';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.96 — fix(minmax): Restaurar Bodega mostraba "--" cuando pub_min era stale (0 en estado local aunque sucursales ya publicaron) → después de limpiar manual_min/max, re-lee min_units/max_units/draft_min/max desde product_stock_params para obtener Σ real actual
 // v2.2.95 — fix(minmax): 3 bugs Bodega — (1) indicador MANUAL persiste al abrir/cerrar sin editar → saveDraftCell/saveDraftPair skip si valor no cambió; (2) Restaurar no limpiaba manual → resetToCalc path Bodega UPDATE manual_min=NULL; hasRestaura incluye isBodegaRow&&has_manual; (3) botón Más siempre visible → renderizado condicional dropdownBtns.length>0; toast 0/0 → mensaje contextual "sin publicar" cuando pub_min=pub_max=0
 // v2.2.94 — feat(minmax): Bodega override manual con piso Σ — get_stock_analysis v10 expone pub_min/pub_max; validateEditForRow bloquea valores menores a Σ sucursales; saveDraftCell/saveDraftPair para Bodega guardan en manual_min/manual_max (no draft); celda muestra "Σ N·N" en violeta bajo el override; toast al abrir celda informa la Σ actual
 // v2.2.93 — fix(minmax): Bodega — banners unificados en 1 strip liquid glass (Info + "Al día"/"N pendientes" pill); RowActions recibe isBodegaRow → oculta Publicar/Descartar/Poner0 para Bodega; "Más" dropdown de Bodega queda limpio

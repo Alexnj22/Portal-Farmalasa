@@ -2238,15 +2238,30 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 .eq('erp_product_id', row.erp_product_id)
                 .eq('erp_sucursal_id', 6);
             if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${e.message}`, 'error'); return; }
-            const newEff = row.pub_min ?? 0;
-            const newEffMax = row.pub_max ?? 0;
+            // Re-leer desde DB: pub_min local puede ser stale si sucursales publicaron después del último fetch
+            const { data: fresh } = await supabase
+                .from('product_stock_params')
+                .select('min_units, max_units, draft_min, draft_max, draft_status')
+                .eq('erp_product_id', row.erp_product_id)
+                .eq('erp_sucursal_id', 6)
+                .single();
+            const newEff    = fresh?.min_units ?? fresh?.draft_min ?? 0;
+            const newEffMax = fresh?.max_units ?? fresh?.draft_max ?? 0;
             setData(prev => prev.map(r => {
                 if (r.erp_product_id !== row.erp_product_id || r._erp_sucursal_id !== 6) return r;
-                return { ...r, effective_min: newEff, effective_max: newEffMax, has_manual: false, alert_status: calcAlertStatus(r.current_stock, newEff, newEffMax) };
+                return { ...r,
+                    effective_min: newEff, effective_max: newEffMax,
+                    has_manual: false,
+                    pub_min: fresh?.min_units ?? 0, pub_max: fresh?.max_units ?? 0,
+                    draft_min: fresh?.draft_min ?? null, draft_max: fresh?.draft_max ?? null,
+                    draft_status: fresh?.draft_status ?? 'none',
+                    alert_status: calcAlertStatus(r.current_stock, newEff, newEffMax),
+                };
             }));
             useToastStore.getState().showToast(row.product_name, 'Manual eliminado — Bodega vuelve a Σ sucursales', 'success');
             useStaff.getState().appendAuditLog('MINMAX_BODEGA_RESET_MANUAL', String(row.erp_product_id), {
-                product: row.product_name, sucursal_id: 6, pub_min: row.pub_min, pub_max: row.pub_max,
+                product: row.product_name, sucursal_id: 6,
+                restored_min: newEff, restored_max: newEffMax,
             });
             return;
         }

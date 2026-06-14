@@ -64,10 +64,12 @@ const STAT_CFGS = [
     { key: 'below_min',    label: 'Bajo mínimo',    dot: 'bg-orange-500',  active: 'bg-orange-100/75 backdrop-blur-sm border-orange-300/70 text-orange-700 shadow-[0_3px_14px_rgba(249,115,22,0.22)]',   chipActive: 'bg-orange-50/90 text-orange-700' },
     { key: 'approaching',  label: 'Próx. mínimo',   dot: 'bg-amber-400',   active: 'bg-amber-100/75 backdrop-blur-sm border-amber-300/70 text-amber-700 shadow-[0_3px_14px_rgba(245,158,11,0.22)]',      chipActive: 'bg-amber-50/90 text-amber-700'   },
     { key: 'ok',           label: 'OK',              dot: 'bg-emerald-500', active: 'bg-emerald-100/75 backdrop-blur-sm border-emerald-300/70 text-emerald-700 shadow-[0_3px_14px_rgba(16,185,129,0.22)]', chipActive: 'bg-emerald-50/90 text-emerald-700'},
-    { key: 'overstocked',  label: 'Exceso',          dot: 'bg-blue-400',    active: 'bg-blue-100/75 backdrop-blur-sm border-blue-300/70 text-blue-700 shadow-[0_3px_14px_rgba(59,130,246,0.22)]',         chipActive: 'bg-blue-50/90 text-blue-700'     },
+    { key: 'overstocked',  label: 'Excesos',         dot: 'bg-blue-400',    active: 'bg-blue-100/75 backdrop-blur-sm border-blue-300/70 text-blue-700 shadow-[0_3px_14px_rgba(59,130,246,0.22)]',         chipActive: 'bg-blue-50/90 text-blue-700'     },
     { key: 'dead_stock',   label: 'Sin movimiento',  dot: 'bg-slate-300',   active: 'bg-slate-100/75 backdrop-blur-sm border-slate-300/70 text-slate-600 shadow-[0_3px_14px_rgba(148,163,184,0.18)]',     chipActive: 'bg-slate-100/90 text-slate-600'  },
-    { key: 'no_data',      label: 'Sin historial',   dot: 'bg-yellow-300',  active: 'bg-yellow-100/75 backdrop-blur-sm border-yellow-300/70 text-yellow-700 shadow-[0_3px_14px_rgba(234,179,8,0.18)]',          chipActive: 'bg-yellow-50/90 text-yellow-700' },
+    { key: 'no_data',      label: 'Sin historial',   dot: 'bg-yellow-300',  active: 'bg-yellow-100/75 backdrop-blur-sm border-yellow-300/70 text-yellow-700 shadow-[0_3px_14px_rgba(234,179,8,0.18)]',    chipActive: 'bg-yellow-50/90 text-yellow-700' },
 ];
+// Solo estos chips se muestran en el filtro bar
+const VISIBLE_STAT_KEYS = ['overstocked', 'dead_stock', 'no_data'];
 
 const ABC_CFG = {
     A: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', title: 'Clase A — top 70% ingresos', color: '#10b981' },
@@ -260,7 +262,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
              : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`;
 
     return (
-        <div className="rounded-2xl border border-white/70 p-2 flex flex-col gap-1" style={glassBox}>
+        <div className="rounded-2xl border border-white/70 p-3 flex flex-col gap-1.5" style={glassBox}>
             <div className="flex items-center justify-between gap-2">
                 <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-400">ABC × XYZ</span>
                 {(filterAbc !== 'all' || filterXyz !== 'all') && (
@@ -273,7 +275,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                 )}
             </div>
 
-            <div className="grid gap-[3px]" style={{ gridTemplateColumns: '18px repeat(3, 1fr)', isolation: 'isolate' }}>
+            <div className="grid gap-1" style={{ gridTemplateColumns: '20px repeat(3, 1fr)', isolation: 'isolate' }}>
                 {/* XYZ header */}
                 <div />
                 {XYZ_KEYS.map(xyz => (
@@ -305,7 +307,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                                     onClick={() => count > 0 && toggle(abc, xyz)}
                                     whileHover={count > 0 && !isActive ? { scale: 1.08, zIndex: 10, transition: { type: 'spring', stiffness: 480, damping: 26 } } : {}}
                                     whileTap={count > 0 ? { scale: 0.90, transition: { duration: 0.06 } } : {}}
-                                    className={`relative py-1 rounded-lg text-center
+                                    className={`relative py-1.5 rounded-lg text-center
                                         ${count === 0 ? 'opacity-20 cursor-default' : 'cursor-pointer'}
                                         ${isActive ? 'z-20' : ''}`}
                                     style={{
@@ -355,12 +357,12 @@ function CostCards({ summary, isBodega }) {
     const dead   = Number(summary.dead_cost)   || 0;
 
     const STATS = [
-        { label: 'Total retenido', value: fmtMoney(total),  color: 'text-slate-800',   icon: DollarSign,  iconCls: 'text-slate-400'   },
+        { label: 'Total retenido', value: fmtMoney(total),  color: 'text-slate-800', icon: DollarSign,  iconCls: 'text-slate-400' },
         ...(!isBodega ? [
-            { label: 'Inventario útil',  value: fmtMoney(useful), color: 'text-emerald-700', icon: TrendingUp,  iconCls: 'text-emerald-500' },
-            { label: 'Capital excedente',value: fmtMoney(excess), color: 'text-orange-700',  icon: TrendingDown,iconCls: 'text-orange-500'  },
+            { label: 'Inventario útil',  value: fmtMoney(useful), color: 'text-slate-800', icon: TrendingUp,  iconCls: 'text-slate-400' },
+            { label: 'Capital excedente',value: fmtMoney(excess), color: 'text-slate-800', icon: TrendingDown,iconCls: 'text-slate-400' },
         ] : []),
-        { label: 'Sin movimiento', value: fmtMoney(dead),   color: 'text-slate-500',   icon: Layers,      iconCls: 'text-slate-400'   },
+        { label: 'Sin movimiento', value: fmtMoney(dead),   color: 'text-slate-800', icon: Layers,      iconCls: 'text-slate-400' },
     ];
 
     return (
@@ -403,9 +405,9 @@ function DraftCostCard({ draftCost }) {
                     )}
                 </span>
                 <div className="flex items-baseline gap-1">
-                    <span className="text-[14px] font-black tabular-nums leading-none text-amber-700">{fmtMoney(hasDraft ? effMin : pubMin)}</span>
+                    <span className="text-[14px] font-black tabular-nums leading-none text-slate-800">{fmtMoney(hasDraft ? effMin : pubMin)}</span>
                     <span className="text-[10px] text-slate-400 leading-none">→</span>
-                    <span className="text-[14px] font-black tabular-nums leading-none text-blue-700">{fmtMoney(hasDraft ? effMax : pubMax)}</span>
+                    <span className="text-[14px] font-black tabular-nums leading-none text-slate-800">{fmtMoney(hasDraft ? effMax : pubMax)}</span>
                 </div>
             </div>
         </div>
@@ -1469,6 +1471,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [calcProgress, setCalcProgress] = useState(null); // { current, total, name }
     const [error,        setError]        = useState(null);
     const [expandedId,   setExpandedId]   = useState(null);
+    const [zoomPhoto,    setZoomPhoto]    = useState(null);
     const [configOpen,   setConfigOpen]   = useState(false);
     const [labsOpen,     setLabsOpen]     = useState(false);
     const [sortBy,       setSortBy]       = useState('laboratorio');
@@ -2093,12 +2096,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
     const COLS = [
-        { key: 'product_name',  label: 'Producto',    align: 'left',   sortable: true },
-        { key: 'laboratorio',   label: 'Laboratorio', align: 'left',   sortable: true },
+        { key: 'product_name',  label: 'Producto',    align: 'left',   sortable: true, className: 'w-[30%]' },
+        { key: 'laboratorio',   label: 'Laboratorio', align: 'left',   sortable: true, className: 'w-[18%]' },
         { key: 'abc_xyz',       label: 'Clase',       align: 'center', sortable: true, className: 'w-14' },
         { key: 'effective_min', label: 'MIN',         align: 'center', sortable: true, className: 'w-[76px]' },
         { key: 'effective_max', label: 'MAX',         align: 'center', sortable: true, className: 'w-[76px]' },
-        { key: 'presentacion',  label: 'Despacho',    align: 'center', className: 'w-[104px]' },
+        { key: 'presentacion',  label: 'Despacho',    align: 'center', className: 'w-[130px]' },
         { key: 'alert_status',  label: 'Estado',      align: 'center', className: 'w-28' },
         { key: 'acciones',      label: 'Acciones',    align: 'center', className: 'w-20' },
     ];
@@ -2280,16 +2283,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             )}
 
             {!loading && criticalACount > 0 && (
-                <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-700 font-medium">
-                    <AlertTriangle size={14} className="shrink-0 text-red-500" />
-                    <span className="flex-1">
-                        <strong className="font-black">{criticalACount}</strong> producto{criticalACount !== 1 ? 's' : ''} clase <strong>A</strong> {criticalACount === 1 ? 'necesita' : 'necesitan'} reabastecimiento urgente
-                        {criticalAOut > 0 && <> · <strong className="font-black">{criticalAOut}</strong> sin stock</>}
-                        {criticalABelow > 0 && <> · <strong className="font-black">{criticalABelow}</strong> bajo mínimo</>}.
-                    </span>
+                <div className="flex items-center gap-2 flex-wrap px-3 py-1.5 rounded-xl backdrop-blur-sm"
+                    style={{ background: 'rgba(255,248,248,0.75)', border: '1px solid rgba(239,68,68,0.14)', boxShadow: '0 2px 8px rgba(239,68,68,0.06)' }}>
+                    <AlertTriangle size={11} className="shrink-0 text-rose-400" />
+                    <span className="text-[10px] font-semibold text-slate-600">Clase <strong className="font-black text-slate-800">A</strong></span>
+                    {criticalAOut > 0 && <span className="px-1.5 py-0.5 rounded-lg text-[10px] font-bold bg-red-100/80 text-red-700">{criticalAOut} sin stock</span>}
+                    {criticalABelow > 0 && <span className="px-1.5 py-0.5 rounded-lg text-[10px] font-bold bg-orange-100/80 text-orange-700">{criticalABelow} bajo mínimo</span>}
+                    <span className="text-[9px] text-slate-400">({criticalACount} total)</span>
                     <button onClick={() => { setFilterAbc('A'); setFilterAlert('all'); setPage(1); }}
-                        className="text-[11px] font-bold text-red-600 hover:text-red-800 underline underline-offset-2 shrink-0">
-                        Ver clase A
+                        className="ml-auto text-[10px] font-bold text-[#0052CC] hover:underline shrink-0 whitespace-nowrap">
+                        Ver clase A →
                     </button>
                 </div>
             )}
@@ -2337,7 +2340,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             border: '1px solid rgba(255,255,255,0.85)',
                             boxShadow: '0 8px 32px rgba(0,82,204,0.07), inset 0 1px 0 rgba(255,255,255,0.92)',
                         }}>
-                        {STAT_CFGS.map((cfg, i) => {
+                        {STAT_CFGS.filter(cfg => VISIBLE_STAT_KEYS.includes(cfg.key)).map((cfg, i) => {
                             const active = filterAlert === cfg.key;
                             return (
                                 <React.Fragment key={cfg.key}>
@@ -2371,7 +2374,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             );
                         })}
 
-                        {/* Pocos datos */}
+                        {/* Revisar (pocos datos) — mismo estilo que otros chips */}
                         <AnimatePresence>
                         {sparseCount > 0 && !loading && (
                             <motion.div key="sparse" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
@@ -2379,14 +2382,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <motion.button
                                     whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                                     onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
-                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold whitespace-nowrap backdrop-blur-sm
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold select-none whitespace-nowrap backdrop-blur-sm
                                         transition-[background-color,border-color,color,box-shadow] duration-100
                                         ${filterSparse
                                             ? 'bg-orange-50/90 text-orange-700 font-bold border border-orange-200/70 shadow-[0_2px_10px_rgba(0,0,0,0.09),inset_0_1px_0_rgba(255,255,255,0.88)]'
-                                            : 'text-orange-500 border border-transparent hover:bg-white/55 hover:text-orange-700'}`}>
-                                    <AlertTriangle size={10} strokeWidth={2.5} className="shrink-0" />
-                                    <span className="tabular-nums font-black text-[12px]">{sparseCount}</span>
-                                    pocos datos
+                                            : 'text-slate-500 border border-transparent hover:bg-white/55 hover:text-slate-700'}`}>
+                                    <motion.span
+                                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterSparse ? 'bg-orange-400' : 'bg-orange-300'}`}
+                                        animate={filterSparse ? { scale: [1, 1.5, 1] } : { scale: 1 }}
+                                        transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
+                                    />
+                                    <span className={`tabular-nums font-black text-[11px] ${filterSparse ? '' : 'text-slate-700'}`}>{sparseCount}</span>
+                                    <span>Revisar</span>
                                     <AnimatePresence>
                                     {filterSparse && (
                                         <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.5 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
@@ -2399,34 +2406,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         )}
                         </AnimatePresence>
 
-                        {/* ── Limpiar todos los filtros ── */}
+                        {/* Limpiar — siempre rojo cuando hay filtro activo */}
                         <AnimatePresence>
                         {hasAnyFilter && (
                             <motion.div key="clear-all" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.15, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
-                                <div className="h-5 w-px bg-slate-200/50 shrink-0" />
+                                <div className="h-5 w-px bg-rose-200/60 shrink-0" />
                                 <motion.button
                                     whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                                     onClick={clearAllFilters}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-slate-500 hover:text-rose-600 backdrop-blur-sm border border-transparent hover:border-rose-200/70 hover:bg-rose-50/80 hover:shadow-[0_2px_8px_rgba(244,63,94,0.12)] transition-[background-color,border-color,color,box-shadow] duration-100 whitespace-nowrap">
+                                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-rose-600 bg-rose-50/80 border border-rose-200/70 shadow-[0_2px_8px_rgba(244,63,94,0.10)] backdrop-blur-sm whitespace-nowrap
+                                        transition-[background-color,box-shadow] duration-100 hover:bg-rose-100/80 hover:shadow-[0_2px_12px_rgba(244,63,94,0.18)]">
                                     <X size={10} strokeWidth={2.5} />
                                     Limpiar
-                                </motion.button>
-                            </motion.div>
-                        )}
-                        </AnimatePresence>
-
-                        {/* Ocultar filtrados (contextual) */}
-                        <AnimatePresence>
-                        {hasActiveFilter && filtered.length > 0 && (
-                            <motion.div key="hide-action" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
-                                <div className="h-5 w-px bg-slate-200/50 shrink-0" />
-                                <motion.button
-                                    whileTap={{ scale: 0.92 }}
-                                    whileHover={{ backgroundColor: 'rgba(255,235,235,0.5)' }}
-                                    onClick={hideFiltered}
-                                    className="flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold text-rose-400 hover:text-rose-600 transition-colors duration-150 whitespace-nowrap">
-                                    <EyeOff size={10} className="shrink-0" />
-                                    Ocultar {filterLabel} ({filtered.length})
                                 </motion.button>
                             </motion.div>
                         )}
@@ -2618,11 +2609,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     {/* Producto */}
                                     <DataCell align="left" className="!py-2.5">
                                         <div className="flex items-center gap-2 min-w-0">
-                                            {/* Product photo */}
-                                            <div className="shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center">
+                                            {/* Product photo — click to zoom */}
+                                            <div
+                                                className={`shrink-0 w-7 h-7 rounded-md overflow-hidden bg-slate-50/80 border border-slate-100 flex items-center justify-center ${row.foto_url ? 'cursor-zoom-in' : ''}`}
+                                                onClick={row.foto_url ? e => { e.stopPropagation(); setZoomPhoto(row.foto_url); } : undefined}
+                                            >
                                                 {row.foto_url
                                                     ? <img src={row.foto_url} alt="" className="w-full h-full object-contain" />
-                                                    : <Package size={16} className="text-slate-400" />}
+                                                    : <Package size={13} className="text-slate-400" />}
                                             </div>
                                             <div className={`shrink-0 w-4 h-4 flex items-center justify-center ${!canExpand ? 'opacity-0' : ''}`}>
                                                 <ChevronRight size={12} className={`text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
@@ -2638,7 +2632,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                             {row.draft_data_days}d DATOS
                                                         </span>
                                                     )}
-                                                    {noHistory && <span className="shrink-0 text-[8px] font-black text-yellow-700 bg-yellow-50 border border-yellow-200 px-1.5 py-0.5 rounded-full">SIN HISTORIAL</span>}
                                                 </div>
                                                 {/* Stock actual inline */}
                                                 <div className="flex items-center gap-1.5 mt-0.5">
@@ -2695,7 +2688,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                                     {/* Laboratorio */}
                                     <DataCell align="left" className="!py-2.5">
-                                        <span className="text-[11px] text-slate-700 truncate block max-w-[120px]">
+                                        <span className="text-[11px] text-slate-700 truncate block max-w-[160px]">
                                             {row.laboratorio_nombre || <span className="text-slate-400">—</span>}
                                         </span>
                                     </DataCell>
@@ -3314,6 +3307,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             })}
                         </div>
                     </div>
+                </div>,
+                document.body
+            )}
+
+            {/* ── Photo zoom overlay ── */}
+            {zoomPhoto && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center"
+                    style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+                    onClick={() => setZoomPhoto(null)}>
+                    <motion.img
+                        src={zoomPhoto}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                        className="max-w-[320px] max-h-[320px] rounded-2xl shadow-2xl object-contain cursor-zoom-out"
+                        onClick={e => e.stopPropagation()}
+                    />
                 </div>,
                 document.body
             )}

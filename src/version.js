@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.77';
+export const APP_VERSION = '2.2.78';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.78 — fix(minmax): 7 mejoras UI — solo filtros Excesos/Sin mov./Sin hist./Revisar+ocultos; Limpiar siempre rojo; pocos datos=chip igual; cards montos slate-800 uniforme; alerta A compacta glass; badge SIN HISTORIAL eliminado; foto w-7 zoom overlay; cols lab 18%+despacho 130px; ABC matrix p-3 gap-1
 // v2.2.77 — fix(minmax): chips sin lag (transition-all→transition-[bg,border,color] duration-100 + backdrop-blur-sm siempre); botón global "Limpiar" (aparece con cualquier filtro activo, limpia todo); ABC matrix más compacta + liquid glass real en celdas (backdrop-blur+inner shadow cuando activa, spring whileHover/whileTap en celdas y header); scroll al expandir → data-expand-row + 380ms delay (espera animación 350ms)
 // v2.2.76 — fix(minmax): stat filter chips más compactos + glass activo (px-2.5 py-1.5, rounded-xl, backdrop-blur+shadow cuando activo); DraftCostCard misma altura que CostCards (delta integrado en label, sin fila extra); scroll suave al expandir producto (scrollIntoView block:nearest con 60ms delay)
 // v2.2.75 — fix(minmax): PostgREST cap en HEAD request — reemplaza count:exact/head:true por RPC get_stock_analysis_count (lee directo de mv_stock_analysis con índice, sub-ms); parallel chunks ahora usan count real → todos los productos cargados

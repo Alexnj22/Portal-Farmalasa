@@ -430,15 +430,16 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
                 onClick: () => onHide(), disabled: hidingIds.has(row.erp_product_id) },
     ].filter(Boolean);
 
-    const visibleBtns  = pool.slice(0, 2);
-    const dropdownBtns = [
-        ...pool.slice(2),
+    const extraBtns = [
         hasDraft && canManage && !isBodegaRow && { key: 'desc', icon: <Trash2 size={12}/>, label: 'Descartar',
             cls: 'text-rose-400 hover:text-rose-600 hover:bg-rose-50', onClick: () => onDiscardDraft() },
         hasDraft && canManage && !isBodegaRow && { key: 'pub', icon: <Upload size={12}/>, label: 'Publicar',
             cls: 'text-[#0052CC] hover:text-[#003D99] hover:bg-blue-50',
             onClick: () => onPublish([row.erp_product_id]), disabled: publishing },
     ].filter(Boolean);
+    const allBtns      = [...pool, ...extraBtns];
+    const visibleBtns  = allBtns.length <= 3 ? allBtns : allBtns.slice(0, 2);
+    const dropdownBtns = allBtns.length <= 3 ? []      : allBtns.slice(2);
 
     return (
         /* Single group wrapper: onMouseLeave fires only when cursor exits ALL 3 buttons */

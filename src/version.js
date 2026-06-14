@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.83';
+export const APP_VERSION = '2.2.84';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.84 — fix(minmax): RowActions AnimatePresence dentro de createPortal (fix dropdown invisible); wrapper group único onMouseLeave (sin dead zones al pasar entre botones); spring stiffness 900/26 más fluido; expansión spring stiffness 380 mass 0.7 willChange:height; ExpandedPanel AnimatePresence mode:wait en branch grid + detail sections con fade+slide entry
 // v2.2.83 — fix(minmax): RowActions portal dropdown (createPortal+fixed position, siempre visible sin clipping); siempre 3 elementos (pool prioritario: Poner0→Restaurar→Historial→Ocultar, 1eros 2 visibles + Más); cierre en scroll; ExpandedPanel 2-wave loading (branches primero, detalles en paralelo); breakdown sin columna und; ventas con cliente; proyección+historial en 2 columnas al fondo; liquid glass design
 // v2.2.82 — feat(minmax): RowActions component — máx 3 visibles (Poner 0 + Restaurar + Más); hover en Más abre dropdown glass con animación spring+stagger (Historial, Descartar, Publicar, Ocultar); fallback Ocultar/Mostrar cuando no hay primarios
 // v2.2.81 — fix(minmax): acciones botones spring y-shift fluido (sin scale, stiffness 800 damping 30); publicar=glass igual a otros; ABC matrix: gap-[3px] compacto, hover y-shift sin overlap, header con padding; estados pill neutral slate, solo el dot con color

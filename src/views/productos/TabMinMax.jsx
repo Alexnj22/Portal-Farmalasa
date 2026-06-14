@@ -355,15 +355,16 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
     const closeRef = useRef(null);
     const btnRef   = useRef(null);
 
-    const openMenu = () => {
+    const openMenu = useCallback(() => {
         clearTimeout(closeRef.current);
         if (btnRef.current) {
             const r = btnRef.current.getBoundingClientRect();
             setMenuPos({ right: window.innerWidth - r.right, bottom: window.innerHeight - r.top + 4 });
         }
         setOpen(true);
-    };
-    const closeMenu = () => { closeRef.current = setTimeout(() => setOpen(false), 150); };
+    }, []);
+    const closeMenu = useCallback(() => { closeRef.current = setTimeout(() => setOpen(false), 180); }, []);
+    const cancelClose = useCallback(() => clearTimeout(closeRef.current), []);
 
     useEffect(() => {
         if (!open) return;
@@ -377,44 +378,47 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
 
     const B = 'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors duration-75';
     const sp = {
-        whileHover: { y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } },
-        whileTap:   { scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } },
+        whileHover: { y: -2, transition: { type: 'spring', stiffness: 900, damping: 26 } },
+        whileTap:   { scale: 0.87, y: 0, transition: { type: 'spring', stiffness: 900, damping: 24 } },
     };
 
-    // Priority pool — first 2 become visible buttons; the rest feed the dropdown
     const pool = [
-        hasPoner0   && { key: 'poner0',   icon: <XCircle size={12}/>,   label: 'Poner 0',
+        hasPoner0   && { key: 'poner0',   icon: <XCircle size={13}/>,   label: 'Poner 0',
             cls: `${B} text-rose-400 hover:text-rose-600 hover:bg-rose-50`,
             onClick: () => onZeroOut() },
-        hasRestaura && { key: 'restaurar', icon: <RotateCcw size={12}/>, label: 'Restaurar',
+        hasRestaura && { key: 'restaurar', icon: <RotateCcw size={13}/>, label: 'Restaurar',
             cls: `${B} text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50`,
             onClick: () => onResetToCalc() },
-        { key: 'hist', icon: <History size={12}/>, label: 'Historial',
+        { key: 'hist', icon: <History size={13}/>, label: 'Historial',
             cls: `${B} text-blue-400 hover:text-[#0052CC] hover:bg-blue-50`,
             onClick: () => onOpenHistory() },
         filterHidden
-            ? { key: 'show', icon: <Eye size={12}/>, label: 'Mostrar',
+            ? { key: 'show', icon: <Eye size={13}/>, label: 'Mostrar',
                 cls: `${B} text-violet-500 hover:text-violet-700 hover:bg-violet-50`,
                 onClick: () => onUnhide() }
-            : { key: 'hide', icon: hidingIds.has(row.erp_product_id) ? <Loader2 size={12} className="animate-spin"/> : <EyeOff size={12}/>,
+            : { key: 'hide', icon: hidingIds.has(row.erp_product_id) ? <Loader2 size={13} className="animate-spin"/> : <EyeOff size={13}/>,
                 label: 'Ocultar',
                 cls: `${B} text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none`,
                 onClick: () => onHide(), disabled: hidingIds.has(row.erp_product_id) },
     ].filter(Boolean);
 
-    const visibleBtns = pool.slice(0, 2);
+    const visibleBtns  = pool.slice(0, 2);
     const dropdownBtns = [
         ...pool.slice(2),
         hasDraft && canManage && { key: 'desc', icon: <Trash2 size={12}/>, label: 'Descartar',
             cls: 'text-rose-400 hover:text-rose-600 hover:bg-rose-50', onClick: () => onDiscardDraft() },
-        hasDraft && canManage && { key: 'pub', icon: <Upload size={11}/>, label: 'Publicar',
+        hasDraft && canManage && { key: 'pub', icon: <Upload size={12}/>, label: 'Publicar',
             cls: 'text-[#0052CC] hover:text-[#003D99] hover:bg-blue-50',
             onClick: () => onPublish([row.erp_product_id]), disabled: publishing },
     ].filter(Boolean);
 
     return (
-        <div className="flex items-center justify-center gap-0.5">
-
+        /* Single group wrapper: onMouseLeave fires only when cursor exits ALL 3 buttons */
+        <div
+            className="flex items-center justify-center"
+            onMouseEnter={cancelClose}
+            onMouseLeave={closeMenu}
+        >
             {visibleBtns.map(btn => (
                 <motion.button key={btn.key}
                     onClick={e => { e.stopPropagation(); if (!btn.disabled) btn.onClick(); }}
@@ -427,60 +431,65 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
                 </motion.button>
             ))}
 
-            {/* Botón "Más" — siempre el 3er elemento, dropdown via portal */}
-            <div ref={btnRef} onMouseEnter={openMenu} onMouseLeave={closeMenu}>
+            {/* Más — 3rd slot, onMouseEnter opens the portal dropdown */}
+            <div ref={btnRef} onMouseEnter={openMenu}>
                 <motion.button
-                    onClick={e => { e.stopPropagation(); open ? setOpen(false) : openMenu(); }}
+                    onClick={e => { e.stopPropagation(); open ? closeMenu() : openMenu(); }}
                     {...sp}
                     className={`${B} text-slate-400 hover:text-slate-600 hover:bg-slate-100`}>
-                    <MoreHorizontal size={12}/>
+                    <MoreHorizontal size={13}/>
                     <span className="text-[7px] font-bold leading-none">Más</span>
                 </motion.button>
             </div>
 
-            <AnimatePresence>
-            {open && dropdownBtns.length > 0 && menuPos && createPortal(
-                <motion.div
-                    key="more-menu"
-                    initial={{ opacity: 0, y: 8, scale: 0.88 }}
-                    animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 500, damping: 30 } }}
-                    exit={{ opacity: 0, y: 5, scale: 0.92, transition: { duration: 0.11, ease: 'easeIn' } }}
-                    onMouseEnter={openMenu}
-                    onMouseLeave={closeMenu}
-                    style={{
-                        position: 'fixed',
-                        right: menuPos.right,
-                        bottom: menuPos.bottom,
-                        zIndex: 9999,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '2px',
-                        padding: '6px',
-                        borderRadius: '12px',
-                        minWidth: '100px',
-                        background: 'rgba(255,255,255,0.96)',
-                        backdropFilter: 'blur(28px) saturate(200%)',
-                        WebkitBackdropFilter: 'blur(28px) saturate(200%)',
-                        border: '1px solid rgba(255,255,255,0.95)',
-                        boxShadow: '0 10px 40px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,1)',
-                    }}>
-                    {dropdownBtns.map((item, i) => (
-                        <motion.button key={item.key}
-                            initial={{ opacity: 0, x: 8 }}
-                            animate={{ opacity: 1, x: 0, transition: { delay: i * 0.038, type: 'spring', stiffness: 580, damping: 30 } }}
-                            whileHover={{ x: 2, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
-                            whileTap={{ scale: 0.93, x: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
-                            disabled={item.disabled}
-                            onClick={e => { e.stopPropagation(); if (!item.disabled) { item.onClick(); setOpen(false); } }}
-                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-colors duration-75 disabled:opacity-40 disabled:pointer-events-none ${item.cls}`}>
-                            {item.icon}
-                            {item.label}
-                        </motion.button>
-                    ))}
-                </motion.div>,
+            {/* AnimatePresence INSIDE createPortal so it can track its children */}
+            {createPortal(
+                <AnimatePresence>
+                {open && dropdownBtns.length > 0 && menuPos && (
+                    <motion.div
+                        key="more-menu"
+                        initial={{ opacity: 0, y: 6, scale: 0.93 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                        transition={{ type: 'spring', stiffness: 600, damping: 28 }}
+                        onMouseEnter={cancelClose}
+                        onMouseLeave={closeMenu}
+                        style={{
+                            position: 'fixed',
+                            right: menuPos.right,
+                            bottom: menuPos.bottom,
+                            zIndex: 9999,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                            padding: '6px',
+                            borderRadius: '14px',
+                            minWidth: '108px',
+                            background: 'rgba(252,253,255,0.95)',
+                            backdropFilter: 'blur(24px) saturate(180%)',
+                            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+                            border: '1px solid rgba(255,255,255,0.92)',
+                            boxShadow: '0 12px 40px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1)',
+                        }}>
+                        {dropdownBtns.map((item, i) => (
+                            <motion.button key={item.key}
+                                initial={{ opacity: 0, y: 4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.028, type: 'spring', stiffness: 700, damping: 30 }}
+                                whileHover={{ x: 3, transition: { type: 'spring', stiffness: 900, damping: 28 } }}
+                                whileTap={{ scale: 0.93, transition: { type: 'spring', stiffness: 900, damping: 26 } }}
+                                disabled={item.disabled}
+                                onClick={e => { e.stopPropagation(); if (!item.disabled) { item.onClick(); setOpen(false); } }}
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-colors duration-75 disabled:opacity-40 disabled:pointer-events-none ${item.cls}`}>
+                                {item.icon}
+                                {item.label}
+                            </motion.button>
+                        ))}
+                    </motion.div>
+                )}
+                </AnimatePresence>,
                 document.body
             )}
-            </AnimatePresence>
         </div>
     );
 }
@@ -780,12 +789,21 @@ function ExpandedPanel({ row, cycleDays }) {
                     )}
                 </div>
 
+                <AnimatePresence mode="wait" initial={false}>
                 {!branchReady ? (
-                    <div className="flex items-center justify-center py-5">
+                    <motion.div key="branch-loading"
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        transition={{ duration: 0.12 }}
+                        className="flex items-center justify-center py-5">
                         <Loader2 size={14} className="animate-spin text-slate-400" />
-                    </div>
+                    </motion.div>
                 ) : (
-                    <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+                    <motion.div key="branch-grid"
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ type: 'spring', stiffness: 480, damping: 34 }}
+                        className="grid gap-1.5"
+                        style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
                         {ERP_ORDER.map(erpId => {
                             const bd        = branchData?.find(b => b.erp_sucursal_id === erpId);
                             const isCurrent = erpId === row._erp_sucursal_id;
@@ -826,8 +844,9 @@ function ExpandedPanel({ row, cycleDays }) {
                                 </div>
                             );
                         })}
-                    </div>
+                    </motion.div>
                 )}
+                </AnimatePresence>
             </div>
 
             {/* ── Current branch breakdown by presentation (sin columna und) ── */}
@@ -914,15 +933,25 @@ function ExpandedPanel({ row, cycleDays }) {
                 </div>
             )}
 
-            {/* ── Wave 2 detail: skeleton while loading ── */}
-            {!detailReady && (
-                <div className="px-4 py-4 flex items-center justify-center gap-2" style={glassSection}>
-                    <Loader2 size={12} className="animate-spin text-slate-300" />
-                    <span className="text-[10px] text-slate-300">Cargando detalles…</span>
-                </div>
-            )}
-
-            {detailReady && (
+            {/* ── Wave 2 detail: skeleton → content ── */}
+            <AnimatePresence mode="wait" initial={false}>
+            {!detailReady ? (
+                <motion.div key="detail-loading"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    transition={{ duration: 0.14 }}
+                    className="px-4 py-4 flex items-center gap-2" style={glassSection}>
+                    <div className="flex gap-1.5 items-center">
+                        {[0,1,2,3].map(i => (
+                            <div key={i} className="h-1.5 rounded-full bg-slate-200/70 animate-pulse"
+                                style={{ width: `${32 + i * 12}px`, animationDelay: `${i * 0.12}s` }} />
+                        ))}
+                    </div>
+                </motion.div>
+            ) : (
+                <motion.div key="detail-content"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 36 }}>
                 <>
                     {/* ── Vencimientos próximos (60 días) ── */}
                     {expiryData.length > 0 && (
@@ -1085,7 +1114,9 @@ function ExpandedPanel({ row, cycleDays }) {
                         </div>
                     )}
                 </>
+                </motion.div>
             )}
+            </AnimatePresence>
         </div>
     );
 }
@@ -3319,9 +3350,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             <motion.div
                                                 key={`exp-${row.erp_product_id}`}
                                                 initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } }}
-                                                exit={{ height: 0, opacity: 0, transition: { duration: 0.22, ease: [0.4, 0, 1, 1] } }}
-                                                style={{ overflow: 'hidden' }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0, transition: { duration: 0.18, ease: [0.4, 0, 1, 1] } }}
+                                                transition={{ type: 'spring', stiffness: 380, damping: 36, mass: 0.7, opacity: { duration: 0.15 } }}
+                                                style={{ overflow: 'hidden', willChange: 'height' }}
                                             >
                                                 <ExpandedPanel row={row} cycleDays={cycleDays} />
                                             </motion.div>

@@ -139,7 +139,7 @@ const validateEditForRow = (edit, row) => {
     if (!edit || !row) return null;
     const numVal = edit.value === '' ? null : parseInt(edit.value, 10);
     if (numVal === null || Number.isNaN(numVal)) return null;
-    const hasDraftRow = row.draft_status === 'pending';
+    const hasDraftRow = row.draft_status === 'pending' && row._erp_sucursal_id !== 6;
     let other;
     if (edit.field === 'max') {
         other = edit.pendingMin !== undefined
@@ -1927,18 +1927,23 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const {
         hasPublishedData, draftCount, sparseCount, changesCount,
+        bodegaPendingCount,
         stats, lastCalcAt, lastDraftCalcAt,
         criticalACount, criticalAOut, criticalABelow,
     } = useMemo(() => {
         const statCounts = Object.fromEntries(STAT_CFGS.map(s => [s.key, 0]));
-        let hasPublished = false, drafts = 0, sparse = 0, changes = 0;
+        let hasPublished = false, drafts = 0, sparse = 0, changes = 0, bPending = 0;
         let firstCalc = null, firstDraftCalc = null;
         let critA = 0, critAOut = 0, critABelow = 0;
         for (const r of data) {
             if (r.published_by != null) hasPublished = true;
             if (r.draft_status === 'pending') {
-                drafts++;
-                if (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max) changes++;
+                if (r._erp_sucursal_id === 6) {
+                    bPending++;
+                } else {
+                    drafts++;
+                    if (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max) changes++;
+                }
             }
             if (r.draft_status === 'sparse_data') sparse++;
             if (r.alert_status in statCounts) statCounts[r.alert_status]++;
@@ -1953,6 +1958,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         return {
             hasPublishedData: hasPublished,
             draftCount: drafts, sparseCount: sparse, changesCount: changes,
+            bodegaPendingCount: bPending,
             stats: statCounts,
             lastCalcAt: firstCalc, lastDraftCalcAt: firstDraftCalc,
             criticalACount: critA, criticalAOut: critAOut, criticalABelow: critABelow,
@@ -2589,6 +2595,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     </span>
                 </div>
             )}
+            {!loading && isBodega && bodegaPendingCount > 0 && (
+                <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-[12px] text-amber-800">
+                    <AlertTriangle size={14} className="shrink-0 mt-0.5 text-amber-500" />
+                    <span>
+                        <strong>{bodegaPendingCount} producto{bodegaPendingCount !== 1 ? 's tienen' : ' tiene'} sucursales con borradores pendientes de publicar.</strong>{' '}
+                        Bodega se actualizará automáticamente cuando esas sucursales publiquen sus MIN/MAX.
+                    </span>
+                </div>
+            )}
             {!loading && neverCalc && (
                 <div className={`${glass} py-16 text-center`} style={glassStyle}>
                     <Package size={36} className="opacity-30 mx-auto mb-4 text-slate-500" />
@@ -2769,7 +2784,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                     {/* Draft pill + Publicar — liquid glass, integrado a la derecha */}
                     <AnimatePresence>
-                    {draftCount > 0 && !loading && canManage && (
+                    {draftCount > 0 && !loading && canManage && !isBodega && (
                         <motion.div
                             key="draft-pub-pill"
                             initial={{ opacity: 0, x: 12, scale: 0.95 }}
@@ -2952,7 +2967,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 <div className="flex items-center gap-1.5 min-w-0">
                                                     <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">{row.product_name || '—'}</span>
                                                     {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
-                                                    {hasDraft && <span className="shrink-0 text-[8px] font-black text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
+                                                    {hasDraft && !isBodega && <span className="shrink-0 text-[8px] font-black text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
                                                     {limitedData && (
                                                         <span title={`Solo ${row.draft_data_days} días de historial de compras (ventana: ${analysisConfig.analysis_days} días)`}
                                                             className="shrink-0 text-[8px] font-black text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-full cursor-help">
@@ -3152,8 +3167,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             );
 
                                             // ── Display (non-editing) ──
-                                            const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: hasDraft ? String(row.draft_min ?? '') : ((dead || noHistory) ? '' : String(row.effective_min ?? '')) }); } : undefined;
-                                            const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: hasDraft ? String(row.draft_max ?? '') : ((dead || noHistory) ? '' : String(row.effective_max ?? '')) }); } : undefined;
+                                            const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: (hasDraft && !isBodega) ? String(row.draft_min ?? '') : ((dead || noHistory) ? '' : String(row.effective_min ?? '')) }); } : undefined;
+                                            const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: (hasDraft && !isBodega) ? String(row.draft_max ?? '') : ((dead || noHistory) ? '' : String(row.effective_max ?? '')) }); } : undefined;
 
                                             const box = (val, colorCls, borderCls, clickFn) => (
                                                 <div onClick={clickFn}
@@ -3162,7 +3177,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 </div>
                                             );
 
-                                            if (hasDraft) return (
+                                            if (hasDraft) return isBodega ? (
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <div className="flex items-center gap-1">
+                                                        {box(minN > 0 ? minN.toLocaleString() : '—', stock < minN ? 'text-orange-600 bg-orange-50' : 'text-slate-600 bg-white/70', stock < minN ? 'border-orange-200' : 'border-slate-200', openMinEdit)}
+                                                        {sep}
+                                                        {box(maxN > 0 ? maxN.toLocaleString() : '—', stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-slate-500 bg-white/70', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
+                                                    </div>
+                                                    <div className="text-[9px] text-amber-500 tabular-nums">→ {(row.draft_min ?? 0).toLocaleString()} · {(row.draft_max ?? 0).toLocaleString()} prev.</div>
+                                                </div>
+                                            ) : (
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="flex items-center gap-1">
                                                         {box((row.draft_min ?? 0).toLocaleString(), 'text-amber-700 bg-amber-50', 'border-amber-200', openMinEdit)}
@@ -3206,8 +3230,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     {/* Despacho — presentación catálogo siempre visible + regla + cantidades */}
                                     <DataCell align="center" className="!py-2 !px-2">
                                         {(() => {
-                                            const dispMin = hasDraft ? (row.draft_min ?? 0) : minN;
-                                            const dispMax = hasDraft ? (row.draft_max ?? 0) : maxN;
+                                            const dispMin = (hasDraft && !isBodega) ? (row.draft_min ?? 0) : minN;
+                                            const dispMax = (hasDraft && !isBodega) ? (row.draft_max ?? 0) : maxN;
                                             const hasPres = pres.length > 0;
 
                                             // Catalog presentation label (always shown)

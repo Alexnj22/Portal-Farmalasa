@@ -351,13 +351,29 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
     onUnhide, onHide, onZeroOut, onResetToCalc, onOpenHistory, onDiscardDraft, onPublish }) {
 
     const [open, setOpen]   = useState(false);
-    const closeRef          = useRef(null);
-    const openMenu  = () => { clearTimeout(closeRef.current); setOpen(true); };
+    const [menuPos, setMenuPos] = useState(null);
+    const closeRef = useRef(null);
+    const btnRef   = useRef(null);
+
+    const openMenu = () => {
+        clearTimeout(closeRef.current);
+        if (btnRef.current) {
+            const r = btnRef.current.getBoundingClientRect();
+            setMenuPos({ right: window.innerWidth - r.right, bottom: window.innerHeight - r.top + 4 });
+        }
+        setOpen(true);
+    };
     const closeMenu = () => { closeRef.current = setTimeout(() => setOpen(false), 150); };
+
+    useEffect(() => {
+        if (!open) return;
+        const close = () => setOpen(false);
+        window.addEventListener('scroll', close, true);
+        return () => window.removeEventListener('scroll', close, true);
+    }, [open]);
 
     const hasPoner0   = !dead && !noHistory && canManage;
     const hasRestaura = canManage && (row.calc_min != null || hasDraft);
-    const hasPrimary  = hasPoner0 || hasRestaura;
 
     const B = 'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors duration-75';
     const sp = {
@@ -365,107 +381,106 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
         whileTap:   { scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } },
     };
 
-    const secondary = [
+    // Priority pool — first 2 become visible buttons; the rest feed the dropdown
+    const pool = [
+        hasPoner0   && { key: 'poner0',   icon: <XCircle size={12}/>,   label: 'Poner 0',
+            cls: `${B} text-rose-400 hover:text-rose-600 hover:bg-rose-50`,
+            onClick: () => onZeroOut() },
+        hasRestaura && { key: 'restaurar', icon: <RotateCcw size={12}/>, label: 'Restaurar',
+            cls: `${B} text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50`,
+            onClick: () => onResetToCalc() },
         { key: 'hist', icon: <History size={12}/>, label: 'Historial',
-          cls: 'text-blue-400 hover:text-[#0052CC] hover:bg-blue-50', onClick: onOpenHistory },
+            cls: `${B} text-blue-400 hover:text-[#0052CC] hover:bg-blue-50`,
+            onClick: () => onOpenHistory() },
+        filterHidden
+            ? { key: 'show', icon: <Eye size={12}/>, label: 'Mostrar',
+                cls: `${B} text-violet-500 hover:text-violet-700 hover:bg-violet-50`,
+                onClick: () => onUnhide() }
+            : { key: 'hide', icon: hidingIds.has(row.erp_product_id) ? <Loader2 size={12} className="animate-spin"/> : <EyeOff size={12}/>,
+                label: 'Ocultar',
+                cls: `${B} text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none`,
+                onClick: () => onHide(), disabled: hidingIds.has(row.erp_product_id) },
+    ].filter(Boolean);
+
+    const visibleBtns = pool.slice(0, 2);
+    const dropdownBtns = [
+        ...pool.slice(2),
         hasDraft && canManage && { key: 'desc', icon: <Trash2 size={12}/>, label: 'Descartar',
-          cls: 'text-rose-400 hover:text-rose-600 hover:bg-rose-50', onClick: onDiscardDraft },
+            cls: 'text-rose-400 hover:text-rose-600 hover:bg-rose-50', onClick: () => onDiscardDraft() },
         hasDraft && canManage && { key: 'pub', icon: <Upload size={11}/>, label: 'Publicar',
-          cls: 'text-[#0052CC] hover:text-[#003D99] hover:bg-blue-50',
-          onClick: () => onPublish([row.erp_product_id]), disabled: publishing },
-        hasPrimary && !filterHidden && { key: 'hide', icon: <EyeOff size={12}/>, label: 'Ocultar',
-          cls: 'text-slate-400 hover:text-slate-600 hover:bg-slate-100',
-          onClick: onHide, disabled: hidingIds.has(row.erp_product_id) },
-        hasPrimary && filterHidden && { key: 'show', icon: <Eye size={12}/>, label: 'Mostrar',
-          cls: 'text-violet-500 hover:text-violet-700 hover:bg-violet-50', onClick: onUnhide },
+            cls: 'text-[#0052CC] hover:text-[#003D99] hover:bg-blue-50',
+            onClick: () => onPublish([row.erp_product_id]), disabled: publishing },
     ].filter(Boolean);
 
     return (
         <div className="flex items-center justify-center gap-0.5">
 
-            {/* Primario: Poner 0 */}
-            {hasPoner0 && (
-                <motion.button onClick={e => { e.stopPropagation(); onZeroOut(); }} {...sp}
-                    title="Poner MIN/MAX en 0"
-                    className={`${B} text-rose-400 hover:text-rose-600 hover:bg-rose-50`}>
-                    <XCircle size={12}/>
-                    <span className="text-[7px] font-bold leading-none">Poner 0</span>
+            {visibleBtns.map(btn => (
+                <motion.button key={btn.key}
+                    onClick={e => { e.stopPropagation(); if (!btn.disabled) btn.onClick(); }}
+                    disabled={btn.disabled}
+                    title={btn.label}
+                    {...sp}
+                    className={btn.cls}>
+                    {btn.icon}
+                    <span className="text-[7px] font-bold leading-none">{btn.label}</span>
                 </motion.button>
-            )}
+            ))}
 
-            {/* Primario: Restaurar */}
-            {hasRestaura && (
-                <motion.button onClick={e => { e.stopPropagation(); onResetToCalc(); }} {...sp}
-                    title={row.calc_min != null ? `Restaurar MIN ${row.calc_min} / MAX ${row.calc_max}` : 'Limpiar borrador'}
-                    className={`${B} text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50`}>
-                    <RotateCcw size={12}/>
-                    <span className="text-[7px] font-bold leading-none">Restaurar</span>
-                </motion.button>
-            )}
-
-            {/* Fallback: Ocultar/Mostrar cuando no hay primarios */}
-            {!hasPrimary && (
-                filterHidden ? (
-                    <motion.button onClick={e => { e.stopPropagation(); onUnhide(); }} {...sp}
-                        className={`${B} text-violet-500 hover:text-violet-700 hover:bg-violet-50`}>
-                        <Eye size={12}/>
-                        <span className="text-[7px] font-bold leading-none">Mostrar</span>
-                    </motion.button>
-                ) : (
-                    <motion.button onClick={e => { e.stopPropagation(); onHide(); }}
-                        disabled={hidingIds.has(row.erp_product_id)} {...sp}
-                        className={`${B} text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none`}>
-                        {hidingIds.has(row.erp_product_id)
-                            ? <Loader2 size={12} className="animate-spin"/>
-                            : <EyeOff size={12}/>}
-                        <span className="text-[7px] font-bold leading-none">Ocultar</span>
-                    </motion.button>
-                )
-            )}
-
-            {/* Botón "Más" — hover abre dropdown con el resto */}
-            <div className="relative" onMouseEnter={openMenu} onMouseLeave={closeMenu}>
-                <AnimatePresence>
-                {open && secondary.length > 0 && (
-                    <motion.div
-                        key="more-menu"
-                        initial={{ opacity: 0, y: 8, scale: 0.88 }}
-                        animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 500, damping: 30 } }}
-                        exit={{ opacity: 0, y: 5, scale: 0.92, transition: { duration: 0.11, ease: 'easeIn' } }}
-                        className="absolute bottom-full right-0 mb-1 z-50 flex flex-col gap-0.5 p-1.5 rounded-xl"
-                        style={{
-                            background: 'rgba(255,255,255,0.94)',
-                            backdropFilter: 'blur(28px) saturate(200%)',
-                            WebkitBackdropFilter: 'blur(28px) saturate(200%)',
-                            border: '1px solid rgba(255,255,255,0.95)',
-                            boxShadow: '0 10px 36px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,1)',
-                            minWidth: '92px',
-                        }}>
-                        {secondary.map((item, i) => (
-                            <motion.button key={item.key}
-                                initial={{ opacity: 0, x: 8 }}
-                                animate={{ opacity: 1, x: 0, transition: { delay: i * 0.038, type: 'spring', stiffness: 580, damping: 30 } }}
-                                whileHover={{ x: 2, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
-                                whileTap={{ scale: 0.93, x: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
-                                disabled={item.disabled}
-                                onClick={e => { e.stopPropagation(); if (!item.disabled) { item.onClick(); setOpen(false); } }}
-                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-colors duration-75 disabled:opacity-40 disabled:pointer-events-none ${item.cls}`}>
-                                {item.icon}
-                                {item.label}
-                            </motion.button>
-                        ))}
-                    </motion.div>
-                )}
-                </AnimatePresence>
-
+            {/* Botón "Más" — siempre el 3er elemento, dropdown via portal */}
+            <div ref={btnRef} onMouseEnter={openMenu} onMouseLeave={closeMenu}>
                 <motion.button
-                    onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+                    onClick={e => { e.stopPropagation(); open ? setOpen(false) : openMenu(); }}
                     {...sp}
                     className={`${B} text-slate-400 hover:text-slate-600 hover:bg-slate-100`}>
                     <MoreHorizontal size={12}/>
                     <span className="text-[7px] font-bold leading-none">Más</span>
                 </motion.button>
             </div>
+
+            <AnimatePresence>
+            {open && dropdownBtns.length > 0 && menuPos && createPortal(
+                <motion.div
+                    key="more-menu"
+                    initial={{ opacity: 0, y: 8, scale: 0.88 }}
+                    animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 500, damping: 30 } }}
+                    exit={{ opacity: 0, y: 5, scale: 0.92, transition: { duration: 0.11, ease: 'easeIn' } }}
+                    onMouseEnter={openMenu}
+                    onMouseLeave={closeMenu}
+                    style={{
+                        position: 'fixed',
+                        right: menuPos.right,
+                        bottom: menuPos.bottom,
+                        zIndex: 9999,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '2px',
+                        padding: '6px',
+                        borderRadius: '12px',
+                        minWidth: '100px',
+                        background: 'rgba(255,255,255,0.96)',
+                        backdropFilter: 'blur(28px) saturate(200%)',
+                        WebkitBackdropFilter: 'blur(28px) saturate(200%)',
+                        border: '1px solid rgba(255,255,255,0.95)',
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,1)',
+                    }}>
+                    {dropdownBtns.map((item, i) => (
+                        <motion.button key={item.key}
+                            initial={{ opacity: 0, x: 8 }}
+                            animate={{ opacity: 1, x: 0, transition: { delay: i * 0.038, type: 'spring', stiffness: 580, damping: 30 } }}
+                            whileHover={{ x: 2, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
+                            whileTap={{ scale: 0.93, x: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
+                            disabled={item.disabled}
+                            onClick={e => { e.stopPropagation(); if (!item.disabled) { item.onClick(); setOpen(false); } }}
+                            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-colors duration-75 disabled:opacity-40 disabled:pointer-events-none ${item.cls}`}>
+                            {item.icon}
+                            {item.label}
+                        </motion.button>
+                    ))}
+                </motion.div>,
+                document.body
+            )}
+            </AnimatePresence>
         </div>
     );
 }
@@ -667,13 +682,14 @@ function ExpandedPanel({ row, cycleDays }) {
     const hasDominant = sortedPres(pres).length > 0;
     const coverDays   = row.daily_velocity > 0 ? (stock / row.daily_velocity).toFixed(1) : null;
 
-    const [branchData,      setBranchData]      = useState(null);
-    const [expiryData,      setExpiryData]      = useState([]);
-    const [historyData,     setHistoryData]     = useState([]);
-    const [purchaseData,    setPurchaseData]    = useState([]);
-    const [saleData,        setSaleData]        = useState([]);
-    const [loadingBranches, setLoadingBranches] = useState(true);
-    const [deadAction,      setDeadAction]      = useState(null);
+    const [branchData,   setBranchData]   = useState(null);
+    const [branchReady,  setBranchReady]  = useState(false);
+    const [expiryData,   setExpiryData]   = useState([]);
+    const [historyData,  setHistoryData]  = useState([]);
+    const [purchaseData, setPurchaseData] = useState([]);
+    const [saleData,     setSaleData]     = useState([]);
+    const [detailReady,  setDetailReady]  = useState(false);
+    const [deadAction,   setDeadAction]   = useState(null);
 
     const logDeadStockAction = async (action) => {
         setDeadAction(action);
@@ -682,10 +698,20 @@ function ExpandedPanel({ row, cycleDays }) {
         });
     };
 
+    // Wave 1: branch summary (renders the cards immediately)
+    // Wave 2: everything else in parallel
     useEffect(() => {
+        setBranchReady(false);
+        setDetailReady(false);
+
+        supabase.rpc('get_product_branch_summary', { p_erp_product_id: row.erp_product_id })
+            .then(({ data }) => {
+                setBranchData(data || []);
+                setBranchReady(true);
+            });
+
         Promise.all([
-            supabase.rpc('get_product_branch_summary', { p_erp_product_id: row.erp_product_id }),
-            supabase.rpc('get_product_expiring_lots',  { p_erp_product_id: row.erp_product_id }),
+            supabase.rpc('get_product_expiring_lots', { p_erp_product_id: row.erp_product_id }),
             supabase.from('product_stock_params_history')
                 .select('captured_at, min_units, max_units, daily_velocity, velocity_30d, abc_class, demand_variability')
                 .eq('erp_product_id', row.erp_product_id)
@@ -698,13 +724,13 @@ function ExpandedPanel({ row, cycleDays }) {
                 .order('fecha', { ascending: false })
                 .limit(6),
             supabase.rpc('get_product_last_sales', { p_erp_product_id: row.erp_product_id, p_erp_sucursal_id: row._erp_sucursal_id }),
-        ]).then(([{ data: bData }, { data: eData }, { data: hData }, { data: pData }, { data: sData }]) => {
-            setBranchData(bData || []);
+        ]).then(([{ data: eData }, { data: hData }, { data: pData }, { data: sData }]) => {
             setExpiryData(eData || []);
             setHistoryData(hData || []);
             setPurchaseData(pData || []);
             setSaleData(sData || []);
-        }).finally(() => setLoadingBranches(false));
+            setDetailReady(true);
+        });
     }, [row.erp_product_id, row._erp_sucursal_id]);
 
     const netStock   = branchData?.filter(b => b.erp_sucursal_id !== 6).reduce((s, b) => s + Number(b.current_stock), 0) ?? null;
@@ -727,13 +753,17 @@ function ExpandedPanel({ row, cycleDays }) {
             .sort((a, b) => b.transferable - a.transferable);
     }, [branchData, row._erp_sucursal_id, pedir]);
 
+    const glassSection = {
+        borderTop: '1px solid rgba(255,255,255,0.50)',
+    };
+
     return (
         <div className="mx-3 mb-3 rounded-2xl overflow-hidden"
             style={{
-                background: 'rgba(255,255,255,0.78)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255,255,255,0.85)',
+                background: 'rgba(240,244,255,0.72)',
+                backdropFilter: 'blur(32px) saturate(200%)',
+                WebkitBackdropFilter: 'blur(32px) saturate(200%)',
+                border: '1px solid rgba(255,255,255,0.90)',
                 boxShadow: '0 8px 32px rgba(0,82,204,0.08), inset 0 1px 0 rgba(255,255,255,0.95)',
             }}>
 
@@ -750,7 +780,7 @@ function ExpandedPanel({ row, cycleDays }) {
                     )}
                 </div>
 
-                {loadingBranches ? (
+                {!branchReady ? (
                     <div className="flex items-center justify-center py-5">
                         <Loader2 size={14} className="animate-spin text-slate-400" />
                     </div>
@@ -770,7 +800,7 @@ function ExpandedPanel({ row, cycleDays }) {
                                     className={`rounded-xl px-2 py-2 border transition-colors ${
                                         isCurrent
                                             ? 'border-[#0052CC]/40 bg-blue-50/60 ring-1 ring-[#0052CC]/20'
-                                            : 'border-slate-100 bg-white/60'
+                                            : 'border-white/70 bg-white/50'
                                     } ${!hasData ? 'opacity-35' : ''}`}>
                                     <div className="flex items-center justify-between gap-0.5 mb-0.5">
                                         <span className="text-[8px] font-black text-slate-500 truncate leading-tight">
@@ -800,39 +830,38 @@ function ExpandedPanel({ row, cycleDays }) {
                 )}
             </div>
 
-            {/* ── Current branch breakdown by presentation ── */}
+            {/* ── Current branch breakdown by presentation (sin columna und) ── */}
             {breakdown.length > 0 ? (
-                <div className="border-t border-slate-100/80 divide-y divide-slate-100">
+                <div style={glassSection} className="divide-y divide-white/50">
                     {breakdown.map(({ tipo, factor, qty, base }, i) => {
                         const pct = stock > 0 ? (base / stock) * 100 : 0;
                         return (
                             <div key={i} className="grid items-center px-4 py-2"
-                                style={{ gridTemplateColumns: '120px 1fr 72px 64px' }}>
+                                style={{ gridTemplateColumns: '120px 1fr 52px' }}>
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-[12px] font-bold text-slate-700">{tipo}</span>
-                                    {factor > 1 && <span className="text-[9px] font-mono text-slate-400 bg-slate-200/60 px-1 rounded">×{factor}</span>}
+                                    {factor > 1 && <span className="text-[9px] font-mono text-slate-400 bg-white/60 px-1 rounded">×{factor}</span>}
                                 </div>
                                 <div className="flex items-center gap-2.5 pr-4">
-                                    <div className="flex-1 h-[5px] bg-slate-200 rounded-full overflow-hidden">
+                                    <div className="flex-1 h-[5px] bg-white/60 rounded-full overflow-hidden">
                                         <div className="h-full bg-emerald-400/70 rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%` }} />
                                     </div>
                                     <span className="text-[14px] font-black text-slate-800 tabular-nums shrink-0 w-8 text-right">{qty}</span>
                                 </div>
-                                <div className="text-right text-[10px] text-slate-500 tabular-nums font-mono">{base.toLocaleString()} und</div>
                                 <div className="text-right text-[10px] text-slate-400 tabular-nums">{pct.toFixed(0)}%</div>
                             </div>
                         );
                     })}
                 </div>
-            ) : !loadingBranches && stock === 0 && (
-                <div className="px-4 py-3 border-t border-slate-100 flex items-center gap-2 text-[11px] text-slate-400 italic">
+            ) : branchReady && stock === 0 && (
+                <div className="px-4 py-3 flex items-center gap-2 text-[11px] text-slate-400 italic" style={glassSection}>
                     <Package size={13} className="shrink-0 text-slate-400" /> Sin existencias en esta sucursal
                 </div>
             )}
 
             {/* ── Referencia pedido (sucursal actual) ── */}
             {!row.is_dead_stock && (minN > 0 || coverDays) && (
-                <div className="px-4 py-2.5 border-t border-slate-200/60 bg-white/50 flex items-center gap-5 flex-wrap">
+                <div className="px-4 py-2.5 flex items-center gap-5 flex-wrap" style={glassSection}>
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Referencia pedido</span>
                     {coverDays && (
                         <span className="flex items-center gap-1.5 text-[11px]">
@@ -871,11 +900,11 @@ function ExpandedPanel({ row, cycleDays }) {
 
             {/* ── Traslado sugerido ── */}
             {transferSuggestions.length > 0 && (
-                <div className="px-4 py-2.5 border-t border-amber-100/80 bg-amber-50/30 flex flex-col gap-1.5">
+                <div className="px-4 py-2.5 flex flex-col gap-1.5" style={{ borderTop: '1px solid rgba(251,191,36,0.3)', background: 'rgba(255,251,235,0.40)' }}>
                     <span className="text-[9px] font-black uppercase tracking-widest text-amber-600">Traslado sugerido</span>
                     <div className="flex flex-wrap gap-2">
                         {transferSuggestions.map(s => (
-                            <div key={s.name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200">
+                            <div key={s.name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100/80 border border-amber-200/80">
                                 <Building2 size={9} className="text-amber-600 shrink-0" />
                                 <span className="text-[10px] font-black text-amber-800">{s.name}</span>
                                 <span className="text-[10px] font-bold text-amber-600 tabular-nums">{s.transferable.toLocaleString()} und disponibles</span>
@@ -885,151 +914,177 @@ function ExpandedPanel({ row, cycleDays }) {
                 </div>
             )}
 
-            {/* ── Vencimientos próximos (60 días) ── */}
-            {expiryData.length > 0 && (
-                <div className="px-4 py-2.5 border-t border-orange-100/80 bg-orange-50/20 flex flex-col gap-2">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-orange-500">Vencimientos próximos (60 días)</span>
-                    <div className="flex flex-col gap-1">
-                        {expiryData.map((lot, i) => {
-                            const daysLeft = Math.ceil((new Date(lot.fecha_vencimiento) - Date.now()) / 86400000);
-                            const urgent   = daysLeft <= 30;
-                            return (
-                                <div key={i} className="flex items-center gap-3 text-[10px]">
-                                    <span className={`font-black tabular-nums w-8 shrink-0 ${urgent ? 'text-red-600' : 'text-orange-600'}`}>{daysLeft}d</span>
-                                    <span className="text-slate-400 font-mono text-[9px] shrink-0">{lot.lote || '—'}</span>
-                                    <span className="text-slate-600 font-semibold tabular-nums">{Number(lot.cantidad).toLocaleString()} und</span>
-                                    <span className="text-slate-400 text-[9px]">{new Date(lot.fecha_vencimiento).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
-                                </div>
-                            );
-                        })}
-                    </div>
+            {/* ── Wave 2 detail: skeleton while loading ── */}
+            {!detailReady && (
+                <div className="px-4 py-4 flex items-center justify-center gap-2" style={glassSection}>
+                    <Loader2 size={12} className="animate-spin text-slate-300" />
+                    <span className="text-[10px] text-slate-300">Cargando detalles…</span>
                 </div>
             )}
 
-            {/* ── Historial de cálculos ── */}
-            {historyData.length > 0 && (
-                <div className="px-4 py-2.5 border-t border-slate-100/80 bg-slate-50/30 flex flex-col gap-2">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Historial de cálculos</span>
-                    <div className="flex flex-col gap-1">
-                        {historyData.map((h, i) => (
-                            <div key={i} className="flex items-center gap-3 text-[10px] text-slate-500">
-                                <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
-                                    {new Date(h.captured_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
-                                </span>
-                                <span className="font-bold text-orange-500">{(h.min_units ?? 0).toLocaleString()}</span>
-                                <span className="text-slate-400">→</span>
-                                <span className="font-bold text-blue-500">{(h.max_units ?? 0).toLocaleString()}</span>
-                                <span className="text-slate-400">{Number(h.daily_velocity || 0).toFixed(1)}/día</span>
-                                {h.abc_class && <AbcXyzBadge abc={h.abc_class} xyz={h.demand_variability} />}
+            {detailReady && (
+                <>
+                    {/* ── Vencimientos próximos (60 días) ── */}
+                    {expiryData.length > 0 && (
+                        <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderTop: '1px solid rgba(251,146,60,0.25)', background: 'rgba(255,247,237,0.35)' }}>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-orange-500">Vencimientos próximos (60 días)</span>
+                            <div className="flex flex-col gap-1">
+                                {expiryData.map((lot, i) => {
+                                    const daysLeft = Math.ceil((new Date(lot.fecha_vencimiento) - Date.now()) / 86400000);
+                                    const urgent   = daysLeft <= 30;
+                                    return (
+                                        <div key={i} className="flex items-center gap-3 text-[10px]">
+                                            <span className={`font-black tabular-nums w-8 shrink-0 ${urgent ? 'text-red-600' : 'text-orange-600'}`}>{daysLeft}d</span>
+                                            <span className="text-slate-400 font-mono text-[9px] shrink-0">{lot.lote || '—'}</span>
+                                            <span className="text-slate-600 font-semibold tabular-nums">{Number(lot.cantidad).toLocaleString()} und</span>
+                                            <span className="text-slate-400 text-[9px]">{new Date(lot.fecha_vencimiento).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* ── Últimas compras / Últimas ventas ── */}
-            {(purchaseData.length > 0 || saleData.length > 0) && (
-                <div className="border-t border-slate-100/80 bg-slate-50/30">
-                    <div className="grid grid-cols-2 divide-x divide-slate-100">
-                        {/* Compras */}
-                        <div className="px-4 py-2.5 flex flex-col gap-2">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
-                            {purchaseData.length === 0
-                                ? <span className="text-[10px] text-slate-500 italic">Sin compras registradas</span>
-                                : <div className="flex flex-col gap-1">
-                                    {purchaseData.map((p, i) => (
-                                        <div key={i} className="flex items-center gap-2 text-[10px]">
-                                            <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
-                                                {new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
-                                            </span>
-                                            <span className="font-bold text-slate-700 tabular-nums shrink-0">
-                                                {Number(p.cantidad).toLocaleString()} und
-                                            </span>
-                                            <span className="text-slate-400 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
-                                            <span className="text-slate-500 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
-                                            {p.lote && p.lote !== 'GENERICO' && (
-                                                <span className="shrink-0 text-[8px] font-mono text-slate-400 bg-slate-100 px-1 rounded">{p.lote}</span>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            }
-                        </div>
-                        {/* Ventas */}
-                        <div className="px-4 py-2.5 flex flex-col gap-2">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Últimas ventas (sucursal)</span>
-                            {saleData.length === 0
-                                ? <span className="text-[10px] text-slate-500 italic">Sin ventas registradas</span>
-                                : <div className="flex flex-col gap-1">
-                                    {saleData.map((s, i) => (
-                                        <div key={i} className="flex items-center gap-2 text-[10px]">
-                                            <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
-                                                {new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
-                                            </span>
-                                            <span className="font-bold text-emerald-700 tabular-nums shrink-0">
-                                                {Number(s.cantidad).toLocaleString()} und
-                                            </span>
-                                            {s.total_linea > 0 && (
-                                                <span className="text-slate-400 shrink-0">${Number(s.total_linea).toFixed(2)}</span>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ── Proyección de cobertura (productos activos) ── */}
-            {!row.is_dead_stock && row.daily_velocity > 0 && stock > 0 && (
-                <div className="px-4 py-2.5 border-t border-slate-100/80 bg-slate-50/20 flex flex-col gap-2">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Proyección de stock</span>
-                    <div className="flex items-center gap-6 flex-wrap">
-                        {[30, 60, 90].map(days => {
-                            const projected = Math.max(0, Math.round(stock - row.daily_velocity * days));
-                            const depleted  = projected === 0;
-                            const low       = projected > 0 && projected < minN;
-                            const color     = depleted ? 'text-red-600' : low ? 'text-orange-600' : 'text-emerald-600';
-                            return (
-                                <div key={days} className="flex flex-col items-center gap-0.5">
-                                    <span className="text-[9px] text-slate-400 font-semibold">+{days}d</span>
-                                    <span className={`text-[15px] font-black tabular-nums leading-none ${color}`}>
-                                        {depleted ? '0 ✗' : projected.toLocaleString()}
-                                    </span>
-                                    <span className="text-[8px] text-slate-400">und</span>
-                                </div>
-                            );
-                        })}
-                        <div className="flex-1 text-[9px] text-slate-400 leading-snug">
-                            a {Number(row.daily_velocity).toFixed(2)} und/día promedio
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ── Acciones para dead stock ── */}
-            {row.is_dead_stock && (
-                <div className="px-4 py-2.5 border-t border-slate-100/80 bg-slate-50/40 flex flex-col gap-2">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Opciones</span>
-                    {deadAction ? (
-                        <div className="flex items-center gap-2 text-[11px] text-emerald-700 font-semibold">
-                            <CheckCircle2 size={12} />
-                            {deadAction === 'transfer' ? 'Marcado para traslado' : 'Marcado para liquidación'} — registrado en auditoría
-                        </div>
-                    ) : (
-                        <div className="flex flex-wrap gap-2">
-                            <button onClick={() => logDeadStockAction('transfer')}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors">
-                                <Building2 size={11} /> Marcar para traslado
-                            </button>
-                            <button onClick={() => logDeadStockAction('liquidate')}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors">
-                                <TrendingDown size={11} /> Marcar para liquidación
-                            </button>
                         </div>
                     )}
-                </div>
+
+                    {/* ── Últimas compras / Últimas ventas ── */}
+                    {(purchaseData.length > 0 || saleData.length > 0) && (
+                        <div style={glassSection}>
+                            <div className="grid grid-cols-2" style={{ divideX: '1px solid rgba(255,255,255,0.50)' }}>
+                                {/* Compras */}
+                                <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
+                                    {purchaseData.length === 0
+                                        ? <span className="text-[10px] text-slate-500 italic">Sin compras registradas</span>
+                                        : <div className="flex flex-col gap-1">
+                                            {purchaseData.map((p, i) => (
+                                                <div key={i} className="flex items-center gap-2 text-[10px]">
+                                                    <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                        {new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                                    </span>
+                                                    <span className="font-bold text-slate-700 tabular-nums shrink-0">
+                                                        {Number(p.cantidad).toLocaleString()} und
+                                                    </span>
+                                                    <span className="text-slate-400 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
+                                                    <span className="text-slate-500 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
+                                                    {p.lote && p.lote !== 'GENERICO' && (
+                                                        <span className="shrink-0 text-[8px] font-mono text-slate-400 bg-white/60 px-1 rounded">{p.lote}</span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    }
+                                </div>
+                                {/* Ventas con cliente */}
+                                <div className="px-4 py-2.5 flex flex-col gap-2">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Últimas ventas (sucursal)</span>
+                                    {saleData.length === 0
+                                        ? <span className="text-[10px] text-slate-500 italic">Sin ventas registradas</span>
+                                        : <div className="flex flex-col gap-1">
+                                            {saleData.map((s, i) => (
+                                                <div key={i} className="flex items-center gap-2 text-[10px]">
+                                                    <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                        {new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                                    </span>
+                                                    <span className="font-bold text-emerald-700 tabular-nums shrink-0">
+                                                        {Number(s.cantidad).toLocaleString()} und
+                                                    </span>
+                                                    {s.total_linea > 0 && (
+                                                        <span className="text-slate-400 shrink-0">${Number(s.total_linea).toFixed(2)}</span>
+                                                    )}
+                                                    {s.cliente && (
+                                                        <span className="text-slate-500 truncate min-w-0 flex-1">{s.cliente}</span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Proyección + Historial (2 columnas en la misma fila al fondo) ── */}
+                    {(!row.is_dead_stock && row.daily_velocity > 0 && stock > 0) || historyData.length > 0 ? (
+                        <div style={glassSection}>
+                            <div className="grid grid-cols-2">
+                                {/* Proyección de stock */}
+                                <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Proyección de stock</span>
+                                    {(!row.is_dead_stock && row.daily_velocity > 0 && stock > 0) ? (
+                                        <div className="flex items-center gap-6 flex-wrap">
+                                            {[30, 60, 90].map(days => {
+                                                const projected = Math.max(0, Math.round(stock - row.daily_velocity * days));
+                                                const depleted  = projected === 0;
+                                                const low       = projected > 0 && projected < minN;
+                                                const color     = depleted ? 'text-red-600' : low ? 'text-orange-600' : 'text-emerald-600';
+                                                return (
+                                                    <div key={days} className="flex flex-col items-center gap-0.5">
+                                                        <span className="text-[9px] text-slate-400 font-semibold">+{days}d</span>
+                                                        <span className={`text-[15px] font-black tabular-nums leading-none ${color}`}>
+                                                            {depleted ? '0 ✗' : projected.toLocaleString()}
+                                                        </span>
+                                                        <span className="text-[8px] text-slate-400">und</span>
+                                                    </div>
+                                                );
+                                            })}
+                                            <div className="flex-1 text-[9px] text-slate-400 leading-snug">
+                                                a {Number(row.daily_velocity).toFixed(2)} und/día
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <span className="text-[10px] text-slate-400 italic">No disponible</span>
+                                    )}
+                                </div>
+
+                                {/* Historial de cálculos */}
+                                <div className="px-4 py-2.5 flex flex-col gap-2">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Historial de cálculos</span>
+                                    {historyData.length === 0 ? (
+                                        <span className="text-[10px] text-slate-400 italic">Sin historial</span>
+                                    ) : (
+                                        <div className="flex flex-col gap-1">
+                                            {historyData.map((h, i) => (
+                                                <div key={i} className="flex items-center gap-3 text-[10px] text-slate-500">
+                                                    <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                        {new Date(h.captured_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
+                                                    </span>
+                                                    <span className="font-bold text-orange-500">{(h.min_units ?? 0).toLocaleString()}</span>
+                                                    <span className="text-slate-400">→</span>
+                                                    <span className="font-bold text-blue-500">{(h.max_units ?? 0).toLocaleString()}</span>
+                                                    <span className="text-slate-400">{Number(h.daily_velocity || 0).toFixed(1)}/d</span>
+                                                    {h.abc_class && <AbcXyzBadge abc={h.abc_class} xyz={h.demand_variability} />}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ) : null}
+
+                    {/* ── Acciones para dead stock ── */}
+                    {row.is_dead_stock && (
+                        <div className="px-4 py-2.5 flex flex-col gap-2" style={glassSection}>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Opciones</span>
+                            {deadAction ? (
+                                <div className="flex items-center gap-2 text-[11px] text-emerald-700 font-semibold">
+                                    <CheckCircle2 size={12} />
+                                    {deadAction === 'transfer' ? 'Marcado para traslado' : 'Marcado para liquidación'} — registrado en auditoría
+                                </div>
+                            ) : (
+                                <div className="flex flex-wrap gap-2">
+                                    <button onClick={() => logDeadStockAction('transfer')}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-amber-700 bg-amber-50/80 border border-amber-200/80 rounded-xl hover:bg-amber-100/80 transition-colors">
+                                        <Building2 size={11} /> Marcar para traslado
+                                    </button>
+                                    <button onClick={() => logDeadStockAction('liquidate')}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-blue-700 bg-blue-50/80 border border-blue-200/80 rounded-xl hover:bg-blue-100/80 transition-colors">
+                                        <TrendingDown size={11} /> Marcar para liquidación
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );

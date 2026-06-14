@@ -401,8 +401,7 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
 
     const B = 'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors duration-75';
     const sp = {
-        whileHover: { y: -2, transition: { type: 'spring', stiffness: 900, damping: 26 } },
-        whileTap:   { scale: 0.87, y: 0, transition: { type: 'spring', stiffness: 900, damping: 24 } },
+        whileTap: { scale: 0.87, transition: { type: 'spring', stiffness: 1200, damping: 40 } },
     };
 
     const pool = [
@@ -479,10 +478,10 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
                 {open && dropdownBtns.length > 0 && menuPos && (
                     <motion.div
                         key="more-menu"
-                        initial={{ opacity: 0, y: 6, scale: 0.93 }}
+                        initial={{ opacity: 0, y: 4, scale: 0.96 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                        transition={{ type: 'spring', stiffness: 600, damping: 28 }}
+                        exit={{ opacity: 0, y: 2, scale: 0.97 }}
+                        transition={{ duration: 0.1, ease: 'easeOut' }}
                         onMouseEnter={cancelClose}
                         onMouseLeave={closeMenu}
                         style={{
@@ -504,11 +503,7 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
                         }}>
                         {dropdownBtns.map((item, i) => (
                             <motion.button key={item.key}
-                                initial={{ opacity: 0, y: 4 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.028, type: 'spring', stiffness: 700, damping: 30 }}
-                                whileHover={{ x: 3, transition: { type: 'spring', stiffness: 900, damping: 28 } }}
-                                whileTap={{ scale: 0.93, transition: { type: 'spring', stiffness: 900, damping: 26 } }}
+                                whileTap={{ scale: 0.93, transition: { type: 'spring', stiffness: 1200, damping: 40 } }}
                                 disabled={item.disabled}
                                 onClick={e => { e.stopPropagation(); if (!item.disabled) { item.onClick(); setOpen(false); } }}
                                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-colors duration-75 disabled:opacity-40 disabled:pointer-events-none ${item.dropCls ?? item.cls}`}>

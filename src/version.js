@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.101';
+export const APP_VERSION = '2.2.102';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.102 — fix(minmax): RowActions hover lag — elimina whileHover y:-2 (spring underdamped ζ≈0.43 que oscilaba/bounceaba); elimina delay stagger de items dropdown; apertura dropdown: spring→easeOut 100ms; queda solo whileTap con spring crítico (damping 40) para feedback de clic inmediato
 // v2.2.101 — fix(minmax): RowActions — "Más" solo aparece cuando hay >3 botones en total; con ≤3 se muestran todos directamente (Bodega: Restaurar+Historial+Ocultar sin dropdown)
 // v2.2.100 — fix(minmax): Bodega pub_min histórico incorrecto — min_units en Bodega estaba puesto como Σ efectivo (incluyendo sucursales en borrador) en lugar de Σ publicado; migración retroactiva corrige todos los registros (manual_min IS NULL); get_stock_analysis ya retorna effective_min=pub_sum; tooltip on-hover "→ N·N prev." muestra sucursales pendientes con su draft_min·draft_max
 // v2.2.99 — fix(minmax): 2 gaps cosméticos Bodega — (1) DataCell Σ no aparecía en carga inicial para productos con min_units=NULL pero draft_min>0 (pub_min=0 desde get_stock_analysis); condición extendida a draft_min/draft_max y valor muestra max(pub,draft); (2) resetToCalc dejaba pub_min=min_units??0 en estado → tras Restaurar, DataCell mostraba Σ incorrecto hasta próximo _openBodegaEdit; ahora pub_min=max(min_units,draft_min) igual que _openBodegaEdit

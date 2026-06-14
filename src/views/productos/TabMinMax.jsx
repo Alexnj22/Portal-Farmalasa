@@ -3307,35 +3307,36 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             );
 
                                             // ── Display (non-editing) ──
-                                            // Para Bodega: fetch fresco de min_units/max_units antes de mostrar el editor,
-                                            // porque pub_min en estado local puede ser stale si sucursales publicaron
-                                            // en otra sesión/tab después del último loadData.
+                                            // Para Bodega: fetch fresco antes de mostrar el editor.
+                                            // Floor = max(min_units, draft_min) porque Bodega puede no estar publicada
+                                            // pero ya tener un draft_min > 0 (Σ efectivo de sucursales via trigger).
                                             const _openBodegaEdit = async (field) => {
                                                 const { data: fresh } = await supabase
                                                     .from('product_stock_params')
-                                                    .select('min_units, max_units')
+                                                    .select('min_units, max_units, draft_min, draft_max')
                                                     .eq('erp_product_id', row.erp_product_id)
                                                     .eq('erp_sucursal_id', 6)
                                                     .single();
-                                                const freshPubMin = fresh?.min_units ?? 0;
-                                                const freshPubMax = fresh?.max_units ?? 0;
-                                                if (freshPubMin !== (row.pub_min ?? 0) || freshPubMax !== (row.pub_max ?? 0)) {
+                                                // Floor = mayor entre publicado y borrador (sucursales sin publicar solo tienen draft)
+                                                const freshFloorMin = Math.max(fresh?.min_units ?? 0, fresh?.draft_min ?? 0);
+                                                const freshFloorMax = Math.max(fresh?.max_units ?? 0, fresh?.draft_max ?? 0);
+                                                if (freshFloorMin !== (row.pub_min ?? 0) || freshFloorMax !== (row.pub_max ?? 0)) {
                                                     setData(prev => prev.map(r =>
                                                         r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === 6
-                                                            ? { ...r, pub_min: freshPubMin, pub_max: freshPubMax }
+                                                            ? { ...r, pub_min: freshFloorMin, pub_max: freshFloorMax }
                                                             : r
                                                     ));
                                                 }
-                                                const toastMsg = (freshPubMin > 0 || freshPubMax > 0)
-                                                    ? `Σ sucursales: MIN ${freshPubMin.toLocaleString()} · MAX ${freshPubMax.toLocaleString()} — el valor debe ser igual o mayor.`
-                                                    : 'Bodega sin valores publicados en sucursales aún. Podés ingresar un valor manual.';
+                                                const toastMsg = (freshFloorMin > 0 || freshFloorMax > 0)
+                                                    ? `Σ sucursales: MIN ${freshFloorMin.toLocaleString()} · MAX ${freshFloorMax.toLocaleString()} — el valor debe ser igual o mayor.`
+                                                    : 'Bodega sin valores en sucursales aún. Podés ingresar un valor manual.';
                                                 useToastStore.getState().showToast('Bodega', toastMsg, 'info');
                                                 setInlineDraftEdit({
                                                     productId: row.erp_product_id, sucursalId: row._erp_sucursal_id,
                                                     field,
                                                     value: (hasDraft && !isBodega) ? String(field === 'min' ? (row.draft_min ?? '') : (row.draft_max ?? '')) : ((dead || noHistory) ? '' : String(field === 'min' ? (row.effective_min ?? '') : (row.effective_max ?? ''))),
-                                                    bodegaPubMin: freshPubMin,
-                                                    bodegaPubMax: freshPubMax,
+                                                    bodegaPubMin: freshFloorMin,
+                                                    bodegaPubMax: freshFloorMax,
                                                 });
                                             };
                                             const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) { _openBodegaEdit('min'); return; } setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: hasDraft ? String(row.draft_min ?? '') : ((dead || noHistory) ? '' : String(row.effective_min ?? '')) }); } : undefined;

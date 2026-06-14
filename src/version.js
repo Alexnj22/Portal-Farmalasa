@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.97';
+export const APP_VERSION = '2.2.98';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.98 — fix(minmax): floor Bodega ignoraba draft_min — productos sin publicar (min_units=NULL) tienen effective_min desde draft_min (trigger Σ sucursales); floor ahora = max(min_units, draft_min) → ENSURE ADVANCE LIQ con draft_min=34 ya no permite poner 1
 // v2.2.97 — fix(minmax): validación floor Bodega no funcionaba cuando pub_min era stale → openBodegaEdit hace fetch fresco de min_units/max_units antes de abrir el editor y almacena bodegaPubMin/Max en inlineDraftEdit; validateEditForRow usa esos valores frescos; saveDraftCell/saveDraftPair tienen segunda línea de defensa con floor re-validado
 // v2.2.96 — fix(minmax): Restaurar Bodega mostraba "--" cuando pub_min era stale (0 en estado local aunque sucursales ya publicaron) → después de limpiar manual_min/max, re-lee min_units/max_units/draft_min/max desde product_stock_params para obtener Σ real actual
 // v2.2.95 — fix(minmax): 3 bugs Bodega — (1) indicador MANUAL persiste al abrir/cerrar sin editar → saveDraftCell/saveDraftPair skip si valor no cambió; (2) Restaurar no limpiaba manual → resetToCalc path Bodega UPDATE manual_min=NULL; hasRestaura incluye isBodegaRow&&has_manual; (3) botón Más siempre visible → renderizado condicional dropdownBtns.length>0; toast 0/0 → mensaje contextual "sin publicar" cuando pub_min=pub_max=0

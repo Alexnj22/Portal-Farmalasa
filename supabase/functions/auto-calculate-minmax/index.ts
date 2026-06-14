@@ -34,8 +34,10 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const results: { id: number; name: string; rows?: number; error?: string }[] = [];
+  const results: { id: number; name: string; rows?: number; auto_applied?: number; drafted?: number; error?: string }[] = [];
   let totalRows = 0;
+  let totalAutoApplied = 0;
+  let totalDrafted = 0;
 
   for (const id of ERP_ORDER) {
     const { data, error } = await supabase.rpc("calculate_stock_params", {
@@ -45,9 +47,14 @@ serve(async (req) => {
       results.push({ id, name: ERP_NAMES[id], error: error.message });
       console.error(`[auto-calculate-minmax] Error en ${ERP_NAMES[id]}:`, error.message);
     } else {
-      const rows = (data as { rows?: number })?.rows ?? 0;
+      const r = (data as { rows?: number; auto_applied?: number; drafted?: number }) ?? {};
+      const rows = r.rows ?? 0;
+      const autoApplied = r.auto_applied ?? 0;
+      const drafted = r.drafted ?? 0;
       totalRows += rows;
-      results.push({ id, name: ERP_NAMES[id], rows });
+      totalAutoApplied += autoApplied;
+      totalDrafted += drafted;
+      results.push({ id, name: ERP_NAMES[id], rows, auto_applied: autoApplied, drafted });
     }
   }
 
@@ -69,8 +76,10 @@ serve(async (req) => {
     const invokeSecret = Deno.env.get("ADMIN_INVOKE_SECRET")!;
 
     const message = failed.length > 0
-      ? `Cálculo completado (${succeeded.length}/${ERP_ORDER.length} sucursales). Errores en: ${failed.join(", ")}. Revisá los borradores en MinMax.`
-      : `${totalRows.toLocaleString()} borradores generados para las ${ERP_ORDER.length} sucursales. Revisá los cambios y publicá lo que corresponda.`;
+      ? `Recálculo completado con errores (${succeeded.length}/${ERP_ORDER.length} sucursales). Errores en: ${failed.join(", ")}. Revisá los borradores en MinMax.`
+      : totalDrafted > 0
+        ? `Recálculo mensual completado. ${totalAutoApplied.toLocaleString()} productos actualizados automáticamente · ${totalDrafted.toLocaleString()} requieren revisión en MinMax.`
+        : `Recálculo mensual completado. ${totalAutoApplied.toLocaleString()} productos actualizados automáticamente. No hay borradores pendientes.`;
 
     const pushTitle = "Recálculo mensual MIN/MAX";
     try {
@@ -111,6 +120,8 @@ serve(async (req) => {
         metadata: {
           type: "MINMAX_AUTO_CALCULATE",
           totalRows,
+          totalAutoApplied,
+          totalDrafted,
           succeeded: succeeded.length,
           failed,
           url: "/minmax",
@@ -122,7 +133,7 @@ serve(async (req) => {
   }
 
   console.log(
-    `[auto-calculate-minmax] totalRows=${totalRows} failed=${failed.length} notified=${notified}`,
+    `[auto-calculate-minmax] totalRows=${totalRows} autoApplied=${totalAutoApplied} drafted=${totalDrafted} failed=${failed.length} notified=${notified}`,
   );
 
   return new Response(

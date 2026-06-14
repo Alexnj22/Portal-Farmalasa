@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.87';
+export const APP_VERSION = '2.2.88';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.88 — feat(minmax): calculate_stock_params v3 — auto-aplica borradores ≤40% cambio o primera asignación; >40% o 0→0 quedan como borrador; Bodega excluida del cron mensual (se mantiene sola); nightly-minmax-recalc eliminado; notificación mensual muestra X auto-aplicados · Y pendientes
 // v2.2.87 — fix(minmax): MIN·MAX centrado en columna (wrapper w-full justify-center); companion value restaurado con borde punteado border-2 border-dashed (estado puntuado) al editar MIN o MAX
 // v2.2.86 — fix(minmax): MIN·MAX valores en recuadros con ancho fijo min-w-[36px] (sin salto al editar); Despacho MIN·MAX en 1 línea con separador; dropdown Más items horizontales (icono+texto) via dropCls sin flex-col
 // v2.2.85 — feat(minmax): 10 mejoras UI — Fórmula actual card igual alto que matrix (items-stretch) + colores monocromáticos slate; cantidad siempre slate-700 (sin rojo/naranja condicional); AbcXyzBadge solo texto plano (C=amber, Z=rose, resto slate); celda Producto 1 fila compacta (Package icon + stock | BarChart2 icon + v/día · 6m · última venta); Despacho pill incluye regla con separador "|"; MIN·MAX celda combinada (1 línea con "·"); columna Estado eliminada → dot badge en foto del producto (title=label, hover info); dropdown Más icono+texto ya en v2.2.84; ExpandedPanel sin backdropFilter (sin lag al expandir); ExpandedPanel sin breakdown de presentaciones

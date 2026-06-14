@@ -1831,6 +1831,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [historyLogs,     setHistoryLogs]     = useState([]);
     const [historyLoading,  setHistoryLoading]  = useState(false);
     const [empPhotoMap,     setEmpPhotoMap]     = useState({});
+    const [bodegaTooltip,   setBodegaTooltip]   = useState(null); // { productId, pending:[{erp_sucursal_id,draft_min,draft_max}], rect }
     const loadRef = useRef(0);
 
     useEffect(() => {
@@ -3359,7 +3360,19 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     {row.has_manual && (row.pub_min > 0 || row.pub_max > 0 || (row.draft_min ?? 0) > 0 || (row.draft_max ?? 0) > 0) && (
                                                         <div className="text-[8px] font-semibold text-violet-500 tabular-nums">Σ {Math.max(row.pub_min ?? 0, row.draft_min ?? 0).toLocaleString()}·{Math.max(row.pub_max ?? 0, row.draft_max ?? 0).toLocaleString()}</div>
                                                     )}
-                                                    <div className="text-[9px] text-amber-500 tabular-nums">→ {(row.draft_min ?? 0).toLocaleString()}·{(row.draft_max ?? 0).toLocaleString()} prev.</div>
+                                                    <div
+                                                        className="text-[9px] text-amber-500 tabular-nums cursor-help hover:underline decoration-dashed underline-offset-2"
+                                                        onMouseEnter={async (e) => {
+                                                            if (bodegaTooltip?.productId === row.erp_product_id) return;
+                                                            const rect = e.currentTarget.getBoundingClientRect();
+                                                            const { data: branches } = await supabase.rpc('get_product_branch_summary', { p_erp_product_id: row.erp_product_id });
+                                                            const pending = (branches || []).filter(b => b.erp_sucursal_id !== 6 && b.draft_status === 'pending');
+                                                            setBodegaTooltip({ productId: row.erp_product_id, pending, rect });
+                                                        }}
+                                                        onMouseLeave={() => setBodegaTooltip(null)}
+                                                    >
+                                                        → {(row.draft_min ?? 0).toLocaleString()}·{(row.draft_max ?? 0).toLocaleString()} prev.
+                                                    </div>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center gap-0.5">
@@ -3553,6 +3566,30 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     />
                 )}
                 </>
+            )}
+
+            {/* ── Bodega pending-branch tooltip ── */}
+            {bodegaTooltip && bodegaTooltip.pending.length > 0 && createPortal(
+                <div
+                    style={{
+                        position: 'fixed',
+                        top:  bodegaTooltip.rect.bottom + 6,
+                        left: bodegaTooltip.rect.left + bodegaTooltip.rect.width / 2,
+                        transform: 'translateX(-50%)',
+                        zIndex: 10001,
+                        pointerEvents: 'none',
+                    }}
+                    className="bg-white/95 backdrop-blur-md border border-amber-200 rounded-xl shadow-xl px-3 py-2 min-w-[148px]"
+                >
+                    <div className="text-[9px] font-bold text-amber-500 uppercase tracking-wide mb-1.5">Sucursales pendientes</div>
+                    {bodegaTooltip.pending.map(b => (
+                        <div key={b.erp_sucursal_id} className="flex items-center justify-between gap-3">
+                            <span className="text-[10px] text-slate-600 font-medium">{ERP_NAMES[b.erp_sucursal_id] ?? `Suc. ${b.erp_sucursal_id}`}</span>
+                            <span className="text-[10px] text-amber-500 tabular-nums font-semibold">{(b.draft_min ?? 0).toLocaleString()}·{(b.draft_max ?? 0).toLocaleString()}</span>
+                        </div>
+                    ))}
+                </div>,
+                document.body
             )}
 
             {/* ── Toast notification (portal → fuera de backdrop-filter, siempre en viewport) ── */}

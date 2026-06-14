@@ -737,7 +737,7 @@ function ExpandedPanel({ row, cycleDays }) {
                 .eq('erp_product_id', row.erp_product_id)
                 .order('fecha', { ascending: false })
                 .limit(6),
-            supabase.rpc('get_product_last_sales', { p_erp_product_id: row.erp_product_id, p_erp_sucursal_id: row._erp_sucursal_id }),
+            supabase.rpc('get_product_last_sales', { p_erp_product_id: row.erp_product_id, p_erp_sucursal_id: null }),
         ]).then(([{ data: eData }, { data: hData }, { data: pData }, { data: sData }]) => {
             setExpiryData(eData || []);
             setHistoryData(hData || []);
@@ -815,6 +815,9 @@ function ExpandedPanel({ row, cycleDays }) {
                             const bMax      = Number(bd?.effective_max ?? 0);
                             const alert     = ALERT[bd?.alert_status ?? 'ok'] ?? ALERT.ok;
                             const hasData   = !!bd;
+                            const hasDraft  = bd?.draft_status === 'pending';
+                            const bDraftMin = hasDraft ? Number(bd?.draft_min ?? 0) : null;
+                            const bDraftMax = hasDraft ? Number(bd?.draft_max ?? 0) : null;
 
                             return (
                                 <div key={erpId}
@@ -837,11 +840,23 @@ function ExpandedPanel({ row, cycleDays }) {
                                         {!hasData ? '—' : bStock === 0 ? '0' : bStock.toLocaleString()}
                                     </div>
                                     {hasData && <StockBar current={bStock} min={bMin} max={bMax} />}
-                                    {hasData && (bMin > 0 || bMax > 0) && (
-                                        <div className="flex items-center gap-0.5 mt-0.5 text-[9px] tabular-nums leading-tight">
-                                            <span className="text-orange-500 font-black">{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
-                                            <span className="text-slate-400">·</span>
-                                            <span className="text-blue-500 font-black">{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
+                                    {hasData && (bMin > 0 || bMax > 0 || hasDraft) && (
+                                        <div className="flex flex-col gap-0.5 mt-0.5">
+                                            {(bMin > 0 || bMax > 0) && (
+                                                <div className="flex items-center gap-0.5 text-[9px] tabular-nums leading-tight">
+                                                    <span className={`font-black ${hasDraft ? 'text-orange-400/70' : 'text-orange-500'}`}>{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
+                                                    <span className="text-slate-300">·</span>
+                                                    <span className={`font-black ${hasDraft ? 'text-blue-400/70' : 'text-blue-500'}`}>{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
+                                                </div>
+                                            )}
+                                            {hasDraft && (
+                                                <div className="flex items-center gap-0.5 text-[8px] tabular-nums leading-tight rounded px-0.5 py-px border border-dashed border-amber-300 bg-amber-50/50">
+                                                    <span className="text-amber-400 text-[7px] leading-none">→</span>
+                                                    <span className="text-amber-600 font-black">{bDraftMin > 0 ? bDraftMin.toLocaleString() : '—'}</span>
+                                                    <span className="text-amber-300">·</span>
+                                                    <span className="text-amber-600 font-black">{bDraftMax > 0 ? bDraftMax.toLocaleString() : '—'}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -955,10 +970,10 @@ function ExpandedPanel({ row, cycleDays }) {
                         </div>
                     )}
 
-                    {/* ── Últimas compras / Últimas ventas ── */}
-                    {(purchaseData.length > 0 || saleData.length > 0) && (
+                    {/* ── Últimas compras / Últimas ventas / MIN·MAX red ── */}
+                    {(purchaseData.length > 0 || saleData.length > 0 || branchData?.some(b => Number(b.effective_min ?? 0) > 0 || Number(b.effective_max ?? 0) > 0)) && (
                         <div style={glassSection}>
-                            <div className="grid grid-cols-2" style={{ divideX: '1px solid rgba(255,255,255,0.50)' }}>
+                            <div className="grid grid-cols-3">
                                 {/* Compras */}
                                 <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
                                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
@@ -983,9 +998,9 @@ function ExpandedPanel({ row, cycleDays }) {
                                         </div>
                                     }
                                 </div>
-                                {/* Ventas con cliente */}
-                                <div className="px-4 py-2.5 flex flex-col gap-2">
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Últimas ventas (sucursal)</span>
+                                {/* Ventas */}
+                                <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Últimas ventas</span>
                                     {saleData.length === 0
                                         ? <span className="text-[10px] text-slate-500 italic">Sin ventas registradas</span>
                                         : <div className="flex flex-col gap-1">
@@ -993,6 +1008,9 @@ function ExpandedPanel({ row, cycleDays }) {
                                                 <div key={i} className="flex items-center gap-2 text-[10px]">
                                                     <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
                                                         {new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                                    </span>
+                                                    <span className="text-[8px] font-bold text-slate-400 shrink-0 bg-slate-100/80 rounded px-1">
+                                                        {(ERP_NAMES[s.erp_sucursal_id] ?? `S${s.erp_sucursal_id}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
                                                     </span>
                                                     <span className="font-bold text-emerald-700 tabular-nums shrink-0">
                                                         {Number(s.cantidad).toLocaleString()} und
@@ -1005,6 +1023,40 @@ function ExpandedPanel({ row, cycleDays }) {
                                                     )}
                                                 </div>
                                             ))}
+                                        </div>
+                                    }
+                                </div>
+                                {/* MIN · MAX por sucursal */}
+                                <div className="px-4 py-2.5 flex flex-col gap-2">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">MIN · MAX red</span>
+                                    {!branchReady
+                                        ? <Loader2 size={10} className="animate-spin text-slate-300" />
+                                        : <div className="flex flex-col gap-1">
+                                            {ERP_ORDER.map(erpId => {
+                                                const bd = branchData?.find(b => b.erp_sucursal_id === erpId);
+                                                if (!bd) return null;
+                                                const bMin = Number(bd.effective_min ?? 0);
+                                                const bMax = Number(bd.effective_max ?? 0);
+                                                const hasDraft = bd.draft_status === 'pending';
+                                                const dMin = hasDraft ? Number(bd.draft_min ?? 0) : null;
+                                                const dMax = hasDraft ? Number(bd.draft_max ?? 0) : null;
+                                                if (bMin === 0 && bMax === 0 && !hasDraft) return null;
+                                                return (
+                                                    <div key={erpId} className="flex items-center gap-1.5 text-[10px]">
+                                                        <span className="text-slate-400 shrink-0 w-9 text-[8px] truncate">
+                                                            {(ERP_NAMES[erpId] ?? `S${erpId}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.').replace('Bodega', 'Bod.')}
+                                                        </span>
+                                                        <span className="text-orange-500 font-black tabular-nums">{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
+                                                        <span className="text-slate-300">·</span>
+                                                        <span className="text-blue-500 font-black tabular-nums">{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
+                                                        {hasDraft && (
+                                                            <span className="text-[8px] text-amber-500 font-semibold border border-dashed border-amber-300 rounded px-0.5 tabular-nums whitespace-nowrap">
+                                                                →{dMin > 0 ? dMin.toLocaleString() : '—'}·{dMax > 0 ? dMax.toLocaleString() : '—'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     }
                                 </div>

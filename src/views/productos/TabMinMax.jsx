@@ -385,20 +385,25 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
     const pool = [
         hasPoner0   && { key: 'poner0',   icon: <XCircle size={13}/>,   label: 'Poner 0',
             cls: `${B} text-rose-400 hover:text-rose-600 hover:bg-rose-50`,
+            dropCls: 'text-rose-500 hover:text-rose-700 hover:bg-rose-50',
             onClick: () => onZeroOut() },
         hasRestaura && { key: 'restaurar', icon: <RotateCcw size={13}/>, label: 'Restaurar',
             cls: `${B} text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50`,
+            dropCls: 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50',
             onClick: () => onResetToCalc() },
         { key: 'hist', icon: <History size={13}/>, label: 'Historial',
             cls: `${B} text-blue-400 hover:text-[#0052CC] hover:bg-blue-50`,
+            dropCls: 'text-blue-500 hover:text-[#0052CC] hover:bg-blue-50',
             onClick: () => onOpenHistory() },
         filterHidden
             ? { key: 'show', icon: <Eye size={13}/>, label: 'Mostrar',
                 cls: `${B} text-violet-500 hover:text-violet-700 hover:bg-violet-50`,
+                dropCls: 'text-violet-600 hover:text-violet-700 hover:bg-violet-50',
                 onClick: () => onUnhide() }
             : { key: 'hide', icon: hidingIds.has(row.erp_product_id) ? <Loader2 size={13} className="animate-spin"/> : <EyeOff size={13}/>,
                 label: 'Ocultar',
                 cls: `${B} text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none`,
+                dropCls: 'text-slate-500 hover:text-slate-700 hover:bg-slate-100',
                 onClick: () => onHide(), disabled: hidingIds.has(row.erp_product_id) },
     ].filter(Boolean);
 
@@ -480,7 +485,7 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
                                 whileTap={{ scale: 0.93, transition: { type: 'spring', stiffness: 900, damping: 26 } }}
                                 disabled={item.disabled}
                                 onClick={e => { e.stopPropagation(); if (!item.disabled) { item.onClick(); setOpen(false); } }}
-                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-colors duration-75 disabled:opacity-40 disabled:pointer-events-none ${item.cls}`}>
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-colors duration-75 disabled:opacity-40 disabled:pointer-events-none ${item.dropCls ?? item.cls}`}>
                                 {item.icon}
                                 {item.label}
                             </motion.button>
@@ -2975,9 +2980,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                                 }
                                                             }}
                                                             onClick={e => e.stopPropagation()}
-                                                            className={`w-16 text-center text-[12px] font-black rounded-lg px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-amber-800 bg-amber-50 border-amber-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
+                                                            className={`min-w-[36px] w-14 text-center text-[12px] font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-amber-800 bg-amber-50 border-amber-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
                                                         {sep}
-                                                        <span className={`text-[12px] font-black tabular-nums ${hasDraft ? 'text-blue-400' : 'text-slate-400'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</span>
+                                                        <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border px-1 py-0.5 ${hasDraft ? 'text-blue-300 bg-blue-50 border-blue-100' : 'text-slate-300 bg-white/70 border-slate-100'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-amber-700' : 'text-emerald-700'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
                                                     {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
@@ -2987,7 +2992,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             if (isEditMax) return (
                                                 <div className="flex flex-col items-center">
                                                     <div className="flex items-center gap-1.5">
-                                                        <span className={`text-[12px] font-black tabular-nums ${hasDraft ? 'text-amber-400' : 'text-slate-400'}`}>{inlineDraftEdit.pendingMin !== undefined ? (inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()) : (minN > 0 ? minN.toLocaleString() : '—')}</span>
+                                                        <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border px-1 py-0.5 ${hasDraft ? 'text-amber-300 bg-amber-50 border-amber-100' : 'text-slate-300 bg-white/70 border-slate-100'}`}>{inlineDraftEdit.pendingMin !== undefined ? (inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()) : (minN > 0 ? minN.toLocaleString() : '—')}</div>
                                                         {sep}
                                                         <input autoFocus type="number" min="0"
                                                             value={inlineDraftEdit.value}
@@ -3030,7 +3035,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                                 }
                                                             }}
                                                             onClick={e => e.stopPropagation()}
-                                                            className={`w-16 text-center text-[12px] font-black rounded-lg px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-blue-800 bg-blue-50 border-blue-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
+                                                            className={`min-w-[36px] w-14 text-center text-[12px] font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-blue-800 bg-blue-50 border-blue-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-blue-700' : 'text-emerald-700'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
                                                 </div>
@@ -3040,41 +3045,48 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: hasDraft ? String(row.draft_min ?? '') : ((dead || noHistory) ? '' : String(row.effective_min ?? '')) }); } : undefined;
                                             const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: hasDraft ? String(row.draft_max ?? '') : ((dead || noHistory) ? '' : String(row.effective_max ?? '')) }); } : undefined;
 
+                                            const box = (val, colorCls, borderCls, clickFn) => (
+                                                <div onClick={clickFn}
+                                                    className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border px-1 py-0.5 transition-colors duration-100 ${colorCls} ${borderCls} ${clickFn ? 'cursor-pointer hover:brightness-95' : ''}`}>
+                                                    {val}
+                                                </div>
+                                            );
+
                                             if (hasDraft) return (
-                                                <div className="flex flex-col items-center">
-                                                    <div className="flex items-center">
-                                                        <span className={`text-[13px] font-black tabular-nums text-amber-700 ${canManage ? 'cursor-pointer hover:text-amber-900' : ''}`} onClick={openMinEdit}>{(row.draft_min ?? 0).toLocaleString()}</span>
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <div className="flex items-center gap-1">
+                                                        {box((row.draft_min ?? 0).toLocaleString(), 'text-amber-700 bg-amber-50', 'border-amber-200', openMinEdit)}
                                                         {sep}
-                                                        <span className={`text-[13px] font-black tabular-nums text-blue-700 ${canManage ? 'cursor-pointer hover:text-blue-900' : ''}`} onClick={openMaxEdit}>{(row.draft_max ?? 0).toLocaleString()}</span>
+                                                        {box((row.draft_max ?? 0).toLocaleString(), 'text-blue-700 bg-blue-50', 'border-blue-200', openMaxEdit)}
                                                     </div>
-                                                    {(minN > 0 || maxN > 0) && <div className="text-[9px] text-slate-400 tabular-nums mt-0.5">{minN.toLocaleString()} · {maxN.toLocaleString()} act.</div>}
+                                                    {(minN > 0 || maxN > 0) && <div className="text-[9px] text-slate-400 tabular-nums">{minN.toLocaleString()} · {maxN.toLocaleString()} act.</div>}
                                                 </div>
                                             );
 
                                             if (isSparse) return (
-                                                <div className="flex flex-col items-center">
-                                                    <div className="flex items-center">
-                                                        <span className={`text-[12px] font-black tabular-nums text-orange-400 ${canManage ? 'cursor-pointer hover:text-orange-600' : ''}`} onClick={openMinEdit}>{minN > 0 ? minN.toLocaleString() : '—'}</span>
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <div className="flex items-center gap-1">
+                                                        {box(minN > 0 ? minN.toLocaleString() : '—', 'text-orange-500 bg-orange-50', 'border-dashed border-orange-300', openMinEdit)}
                                                         {sep}
-                                                        <span className={`text-[12px] font-black tabular-nums text-orange-400 ${canManage ? 'cursor-pointer hover:text-orange-600' : ''}`} onClick={openMaxEdit}>{maxN > 0 ? maxN.toLocaleString() : '—'}</span>
+                                                        {box(maxN > 0 ? maxN.toLocaleString() : '—', 'text-orange-500 bg-orange-50', 'border-dashed border-orange-300', openMaxEdit)}
                                                     </div>
-                                                    <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
+                                                    <div className="text-[8px] text-orange-500 font-semibold">⚠ Confirmar</div>
                                                 </div>
                                             );
 
                                             if (((dead || noHistory) && minN === 0 && maxN === 0) || (row.effective_min === null && row.effective_max === null)) return (
-                                                <div className="flex items-center">
-                                                    <span className={`text-[12px] font-semibold tabular-nums text-slate-300 ${canManage ? 'cursor-pointer hover:text-amber-400' : ''}`} onClick={openMinEdit}>—</span>
+                                                <div className="flex items-center gap-1">
+                                                    {box('—', 'text-slate-300 bg-white/60', 'border-slate-100', openMinEdit)}
                                                     {sep}
-                                                    <span className={`text-[12px] font-semibold tabular-nums text-slate-300 ${canManage ? 'cursor-pointer hover:text-blue-400' : ''}`} onClick={openMaxEdit}>—</span>
+                                                    {box('—', 'text-slate-300 bg-white/60', 'border-slate-100', openMaxEdit)}
                                                 </div>
                                             );
 
                                             return (
-                                                <div className="flex items-center">
-                                                    <span className={`text-[13px] font-black tabular-nums ${stock < minN ? 'text-orange-600' : 'text-slate-600'} ${canManage ? 'cursor-pointer hover:text-emerald-700' : ''}`} onClick={openMinEdit}>{minN.toLocaleString()}</span>
+                                                <div className="flex items-center gap-1">
+                                                    {box(minN.toLocaleString(), stock < minN ? 'text-orange-600 bg-orange-50' : 'text-slate-600 bg-white/70', stock < minN ? 'border-orange-200' : 'border-slate-200', openMinEdit)}
                                                     {sep}
-                                                    <span className={`text-[13px] font-black tabular-nums ${stock > maxN && maxN > 0 ? 'text-blue-600' : 'text-slate-500'} ${canManage ? 'cursor-pointer hover:text-emerald-700' : ''}`} onClick={openMaxEdit}>{maxN.toLocaleString()}</span>
+                                                    {box(maxN.toLocaleString(), stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-slate-500 bg-white/70', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
                                                 </div>
                                             );
                                         })()}
@@ -3139,11 +3151,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                             <span className="text-[9px] font-semibold text-slate-400">{ruleNote}</span>
                                                         </>}
                                                     </span>
-                                                    <span className={`text-[10px] font-semibold tabular-nums leading-none ${hasPres ? 'text-slate-700' : 'text-slate-400'}`}>
-                                                        {dispMin ? formatUnits(applyRule(dispMin), pres) : '—'}
-                                                    </span>
-                                                    <span className={`text-[10px] font-semibold tabular-nums leading-none ${hasPres ? 'text-slate-500' : 'text-slate-400'}`}>
-                                                        {dispMax ? formatUnits(applyRule(dispMax), pres) : '—'}
+                                                    <span className={`text-[10px] font-semibold tabular-nums leading-none ${hasPres ? 'text-slate-600' : 'text-slate-400'} flex items-center gap-0.5`}>
+                                                        <span>{dispMin ? formatUnits(applyRule(dispMin), pres) : '—'}</span>
+                                                        <span className="text-slate-300 mx-0.5">·</span>
+                                                        <span className="text-slate-400">{dispMax ? formatUnits(applyRule(dispMax), pres) : '—'}</span>
                                                     </span>
                                                 </div>
                                             );

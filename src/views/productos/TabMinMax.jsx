@@ -235,7 +235,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
     if (loading || data.length === 0) {
         return (
             <div className="rounded-2xl border border-white/70 p-2.5 flex flex-col gap-1.5" style={glassBox}>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">ABC × XYZ</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">ABC × XYZ</span>
                 {loading ? (
                     <div className="grid gap-[3px] animate-pulse" style={{ gridTemplateColumns: '20px repeat(3, 1fr)' }}>
                         {Array.from({ length: 16 }).map((_, i) => (
@@ -243,8 +243,8 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                         ))}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-4 gap-1.5 text-slate-300">
-                        <BarChart2 size={22} className="text-slate-200" />
+                    <div className="flex flex-col items-center justify-center py-4 gap-1.5 text-slate-500">
+                        <BarChart2 size={22} className="text-slate-400" />
                         <span className="text-[9px] font-semibold">Sin datos — presioná Calcular</span>
                     </div>
                 )}
@@ -387,14 +387,14 @@ function DraftCostCard({ draftCost }) {
                 <span className="text-[10px] font-semibold text-slate-500">Inversión proyectada</span>
                 <div className="flex items-baseline gap-1.5">
                     <span className="text-[14px] font-black tabular-nums text-amber-700">{fmtMoney(hasDraft ? effMin : pubMin)}</span>
-                    <span className="text-[10px] text-slate-300">→</span>
+                    <span className="text-[10px] text-slate-400">→</span>
                     <span className="text-[14px] font-black tabular-nums text-blue-700">{fmtMoney(hasDraft ? effMax : pubMax)}</span>
                 </div>
                 {hasAnyDelta && (
                     <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-[9px] text-slate-400">vs publicado</span>
                         <span className={`text-[9px] font-bold tabular-nums ${deltaMin >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{fmtDelta(deltaMin)}</span>
-                        <span className="text-[8px] text-slate-300">·</span>
+                        <span className="text-[8px] text-slate-400">·</span>
                         <span className={`text-[9px] font-bold tabular-nums ${deltaMax >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{fmtDelta(deltaMax)}</span>
                     </div>
                 )}
@@ -611,7 +611,7 @@ function ExpandedPanel({ row, cycleDays }) {
                     {netStock !== null && (
                         <div className="flex items-center gap-3 text-[9px] text-slate-400">
                             <span>Red: <strong className="text-slate-600 tabular-nums">{netStock.toLocaleString()} und</strong></span>
-                            <span className="text-slate-300">·</span>
+                            <span className="text-slate-400">·</span>
                             <span>Incl. Bodega: <strong className="text-slate-600 tabular-nums">{totalStock.toLocaleString()} und</strong></span>
                         </div>
                     )}
@@ -619,7 +619,7 @@ function ExpandedPanel({ row, cycleDays }) {
 
                 {loadingBranches ? (
                     <div className="flex items-center justify-center py-5">
-                        <Loader2 size={14} className="animate-spin text-slate-300" />
+                        <Loader2 size={14} className="animate-spin text-slate-400" />
                     </div>
                 ) : (
                     <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
@@ -656,7 +656,7 @@ function ExpandedPanel({ row, cycleDays }) {
                                     {hasData && (bMin > 0 || bMax > 0) && (
                                         <div className="flex items-center gap-0.5 mt-0.5 text-[9px] tabular-nums leading-tight">
                                             <span className="text-orange-500 font-black">{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
-                                            <span className="text-slate-200">·</span>
+                                            <span className="text-slate-400">·</span>
                                             <span className="text-blue-500 font-black">{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
                                         </div>
                                     )}
@@ -693,7 +693,7 @@ function ExpandedPanel({ row, cycleDays }) {
                 </div>
             ) : !loadingBranches && stock === 0 && (
                 <div className="px-4 py-3 border-t border-slate-100 flex items-center gap-2 text-[11px] text-slate-400 italic">
-                    <Package size={13} className="shrink-0 text-slate-300" /> Sin existencias en esta sucursal
+                    <Package size={13} className="shrink-0 text-slate-400" /> Sin existencias en esta sucursal
                 </div>
             )}
 
@@ -784,7 +784,7 @@ function ExpandedPanel({ row, cycleDays }) {
                                     {new Date(h.captured_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
                                 </span>
                                 <span className="font-bold text-orange-500">{(h.min_units ?? 0).toLocaleString()}</span>
-                                <span className="text-slate-300">→</span>
+                                <span className="text-slate-400">→</span>
                                 <span className="font-bold text-blue-500">{(h.max_units ?? 0).toLocaleString()}</span>
                                 <span className="text-slate-400">{Number(h.daily_velocity || 0).toFixed(1)}/día</span>
                                 {h.abc_class && <AbcXyzBadge abc={h.abc_class} xyz={h.demand_variability} />}
@@ -802,7 +802,7 @@ function ExpandedPanel({ row, cycleDays }) {
                         <div className="px-4 py-2.5 flex flex-col gap-2">
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
                             {purchaseData.length === 0
-                                ? <span className="text-[10px] text-slate-300 italic">Sin compras registradas</span>
+                                ? <span className="text-[10px] text-slate-500 italic">Sin compras registradas</span>
                                 : <div className="flex flex-col gap-1">
                                     {purchaseData.map((p, i) => (
                                         <div key={i} className="flex items-center gap-2 text-[10px]">
@@ -826,7 +826,7 @@ function ExpandedPanel({ row, cycleDays }) {
                         <div className="px-4 py-2.5 flex flex-col gap-2">
                             <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Últimas ventas (sucursal)</span>
                             {saleData.length === 0
-                                ? <span className="text-[10px] text-slate-300 italic">Sin ventas registradas</span>
+                                ? <span className="text-[10px] text-slate-500 italic">Sin ventas registradas</span>
                                 : <div className="flex flex-col gap-1">
                                     {saleData.map((s, i) => (
                                         <div key={i} className="flex items-center gap-2 text-[10px]">
@@ -1383,10 +1383,10 @@ function LabsPanel({ onClose, onChanged }) {
                 <div className="px-3 pb-2 flex flex-col gap-1 overflow-y-auto" style={{ maxHeight: '54vh' }}>
                     {loading ? (
                         <div className="flex items-center justify-center py-10">
-                            <Loader2 size={18} className="animate-spin text-slate-300" />
+                            <Loader2 size={18} className="animate-spin text-slate-400" />
                         </div>
                     ) : visible.length === 0 ? (
-                        <div className="flex flex-col items-center py-8 gap-2 text-slate-300">
+                        <div className="flex flex-col items-center py-8 gap-2 text-slate-500">
                             <FlaskConical size={22} />
                             <span className="text-[10px] font-semibold">Sin resultados</span>
                         </div>
@@ -1594,7 +1594,39 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     const handleEditSave = useCallback(() => { loadData(selectedErp); }, [selectedErp, loadData]);
 
-    const hasPublishedData = useMemo(() => data.some(r => r.published_by != null), [data]);
+    const {
+        hasPublishedData, draftCount, sparseCount, changesCount,
+        stats, lastCalcAt, lastDraftCalcAt,
+        criticalACount, criticalAOut, criticalABelow,
+    } = useMemo(() => {
+        const statCounts = Object.fromEntries(STAT_CFGS.map(s => [s.key, 0]));
+        let hasPublished = false, drafts = 0, sparse = 0, changes = 0;
+        let firstCalc = null, firstDraftCalc = null;
+        let critA = 0, critAOut = 0, critABelow = 0;
+        for (const r of data) {
+            if (r.published_by != null) hasPublished = true;
+            if (r.draft_status === 'pending') {
+                drafts++;
+                if (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max) changes++;
+            }
+            if (r.draft_status === 'sparse_data') sparse++;
+            if (r.alert_status in statCounts) statCounts[r.alert_status]++;
+            if (!firstCalc && r.calculated_at && !r.is_dead_stock) firstCalc = r.calculated_at;
+            if (!firstDraftCalc && r.draft_status === 'pending' && r.draft_calculated_at) firstDraftCalc = r.draft_calculated_at;
+            if (r.abc_class === 'A') {
+                if (r.alert_status === 'out_of_stock' || r.alert_status === 'below_min') critA++;
+                if (r.alert_status === 'out_of_stock') critAOut++;
+                if (r.alert_status === 'below_min') critABelow++;
+            }
+        }
+        return {
+            hasPublishedData: hasPublished,
+            draftCount: drafts, sparseCount: sparse, changesCount: changes,
+            stats: statCounts,
+            lastCalcAt: firstCalc, lastDraftCalcAt: firstDraftCalc,
+            criticalACount: critA, criticalAOut: critAOut, criticalABelow: critABelow,
+        };
+    }, [data]);
 
     const calcAlertStatus = (stock, effMin, effMax) => {
         const s  = Number(stock ?? 0);
@@ -1856,9 +1888,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         await loadData(selectedErp);
     }, [selectedErp, loadData]);
 
-    const draftCount   = useMemo(() => data.filter(r => r.draft_status === 'pending').length, [data]);
-    const sparseCount  = useMemo(() => data.filter(r => r.draft_status === 'sparse_data').length, [data]);
-    const changesCount = useMemo(() => data.filter(r => r.draft_status === 'pending' && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max)).length, [data]);
 
     const openHistory = useCallback(async (row) => {
         setHistoryRow(row);
@@ -1928,17 +1957,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     }, [handlePublish]);
 
     // ── Derived ──────────────────────────────────────────────────────────────
-    const stats = useMemo(() => Object.fromEntries(
-        STAT_CFGS.map(s => [s.key, data.filter(d => d.alert_status === s.key).length])
-    ), [data]);
-
-    const lastCalcAt      = useMemo(() => data.find(d => d.calculated_at && !d.is_dead_stock)?.calculated_at ?? null, [data]);
-    const lastDraftCalcAt = useMemo(() => data.find(r => r.draft_status === 'pending' && r.draft_calculated_at)?.draft_calculated_at ?? null, [data]);
-
     const hasActiveFilter = filterAbc !== 'all' || filterXyz !== 'all' || filterAlert !== 'all' || searchTerm !== '';
-    const criticalACount  = useMemo(() => data.filter(r => r.abc_class === 'A' && (r.alert_status === 'out_of_stock' || r.alert_status === 'below_min')).length, [data]);
-    const criticalAOut    = useMemo(() => data.filter(r => r.abc_class === 'A' && r.alert_status === 'out_of_stock').length, [data]);
-    const criticalABelow  = useMemo(() => data.filter(r => r.abc_class === 'A' && r.alert_status === 'below_min').length, [data]);
     const isBodega      = selectedErp === 6;
     const neverCalc     = data.length > 0 && data.filter(d => !d.is_catalog_only).every(d => d.is_dead_stock || d.alert_status === 'no_data');
     const hasActiveData = data.some(d => !d.is_dead_stock && d.alert_status !== 'no_data' && !d.is_catalog_only);
@@ -2252,7 +2271,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             )}
             {!loading && neverCalc && (
                 <div className={`${glass} py-16 text-center`} style={glassStyle}>
-                    <Package size={36} className="opacity-15 mx-auto mb-4 text-slate-500" />
+                    <Package size={36} className="opacity-30 mx-auto mb-4 text-slate-500" />
                     <p className="text-[15px] font-bold text-slate-700 mb-2">Sin datos para {ERP_NAMES[selectedErp]}</p>
                     <p className="text-[12px] text-slate-400 mb-6 max-w-sm mx-auto leading-relaxed">
                         {isBodega
@@ -2545,7 +2564,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             <div className="shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center">
                                                 {row.foto_url
                                                     ? <img src={row.foto_url} alt="" className="w-full h-full object-contain" />
-                                                    : <Package size={16} className="text-slate-300" />}
+                                                    : <Package size={16} className="text-slate-400" />}
                                             </div>
                                             <div className={`shrink-0 w-4 h-4 flex items-center justify-center ${!canExpand ? 'opacity-0' : ''}`}>
                                                 <ChevronRight size={12} className={`text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
@@ -2619,7 +2638,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     {/* Laboratorio */}
                                     <DataCell align="left" className="!py-2.5">
                                         <span className="text-[11px] text-slate-700 truncate block max-w-[120px]">
-                                            {row.laboratorio_nombre || <span className="text-slate-300">—</span>}
+                                            {row.laboratorio_nombre || <span className="text-slate-400">—</span>}
                                         </span>
                                     </DataCell>
 
@@ -2635,7 +2654,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         normXyz(row.draft_demand_variability) !== normXyz(row.demand_variability)
                                                     ) && (
                                                         <div className="flex items-center gap-0.5">
-                                                            <span className="text-[8px] text-slate-300">→</span>
+                                                            <span className="text-[8px] text-slate-400">→</span>
                                                             <AbcXyzBadge abc={row.draft_abc_class} xyz={row.draft_demand_variability} />
                                                         </div>
                                                     )}
@@ -3163,7 +3182,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden shrink-0 flex items-center justify-center">
                                 {historyRow.foto_url
                                     ? <img src={historyRow.foto_url} alt="" className="w-full h-full object-contain" />
-                                    : <Package size={22} className="text-slate-300" />}
+                                    : <Package size={22} className="text-slate-400" />}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-[13px] font-black text-slate-800 truncate leading-tight">{historyRow.product_name}</p>
@@ -3179,12 +3198,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2">
                             {historyLoading && (
                                 <div className="flex justify-center py-10">
-                                    <Loader2 size={22} className="animate-spin text-slate-300" />
+                                    <Loader2 size={22} className="animate-spin text-slate-400" />
                                 </div>
                             )}
                             {!historyLoading && historyLogs.length === 0 && (
                                 <div className="flex flex-col items-center gap-2 py-10">
-                                    <History size={28} className="text-slate-200" />
+                                    <History size={28} className="text-slate-400" />
                                     <p className="text-[12px] text-slate-400">Sin cambios registrados aún</p>
                                 </div>
                             )}
@@ -3222,7 +3241,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${fieldLabel === 'MIN' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{fieldLabel}</span>
                                                     {d.old_value != null && (
                                                         <><span className="text-[11px] font-semibold text-slate-500">{d.old_value}</span>
-                                                        <span className="text-[10px] text-slate-300">→</span></>
+                                                        <span className="text-[10px] text-slate-400">→</span></>
                                                     )}
                                                     <span className="text-[11px] font-black text-slate-800">{d.new_value ?? d.value ?? '?'}</span>
                                                     {sucName && <span className="text-[9px] text-slate-400 ml-1">{sucName}</span>}

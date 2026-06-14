@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.93';
+export const APP_VERSION = '2.2.94';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.94 — feat(minmax): Bodega override manual con piso Σ — get_stock_analysis v10 expone pub_min/pub_max; validateEditForRow bloquea valores menores a Σ sucursales; saveDraftCell/saveDraftPair para Bodega guardan en manual_min/manual_max (no draft); celda muestra "Σ N·N" en violeta bajo el override; toast al abrir celda informa la Σ actual
 // v2.2.93 — fix(minmax): Bodega — banners unificados en 1 strip liquid glass (Info + "Al día"/"N pendientes" pill); RowActions recibe isBodegaRow → oculta Publicar/Descartar/Poner0 para Bodega; "Más" dropdown de Bodega queda limpio
 // v2.2.92 — fix(minmax): Bodega no muestra botón Publicar ni badge BORRADOR — filas Bodega se excluyen de draftCount; bodegaPendingCount alerta cuántos productos tienen sucursales pendientes; DataCell muestra min_units/max_units publicados como primario y draft como "→ N·N prev."; Despacho y validateEditForRow usan valores publicados para Bodega; BORRADOR badge oculto para Bodega
 // v2.2.91 — fix(minmax): ExpandedPanel ventas + MIN·MAX red solo en Bodega (isBodega=erp_sucursal_id===6); sucursales vuelven a 2 columnas con ventas filtradas por sucursal; Bodega mantiene 3 columnas con ventas de toda la red + badge sucursal + MIN·MAX red

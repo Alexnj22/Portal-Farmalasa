@@ -139,7 +139,8 @@ const validateEditForRow = (edit, row) => {
     if (!edit || !row) return null;
     const numVal = edit.value === '' ? null : parseInt(edit.value, 10);
     if (numVal === null || Number.isNaN(numVal)) return null;
-    const hasDraftRow = row.draft_status === 'pending' && row._erp_sucursal_id !== 6;
+    const isBodegaRow = row._erp_sucursal_id === 6;
+    const hasDraftRow = row.draft_status === 'pending' && !isBodegaRow;
     let other;
     if (edit.field === 'max') {
         other = edit.pendingMin !== undefined
@@ -147,6 +148,25 @@ const validateEditForRow = (edit, row) => {
             : Number(hasDraftRow ? (row.draft_min ?? 0) : (row.effective_min ?? 0));
     } else {
         other = Number(hasDraftRow ? (row.draft_max ?? 0) : (row.effective_max ?? 0));
+    }
+    // Bodega: el valor manual no puede ser menor que la Σ de sucursales publicadas
+    if (isBodegaRow) {
+        if (edit.field === 'min') {
+            const floor = row.pub_min ?? 0;
+            if (floor > 0 && numVal < floor)
+                return `MIN de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString()})`;
+        }
+        if (edit.field === 'max') {
+            const floor = row.pub_max ?? 0;
+            if (floor > 0 && numVal < floor)
+                return `MAX de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString()})`;
+            if (edit.pendingMin !== undefined) {
+                const pendMinNum = parseInt(edit.pendingMin, 10) || 0;
+                const floorMin = row.pub_min ?? 0;
+                if (floorMin > 0 && pendMinNum < floorMin)
+                    return `MIN de Bodega no puede ser menor a la Σ sucursales (${floorMin.toLocaleString()})`;
+            }
+        }
     }
     if (edit.field === 'max') {
         if (numVal === 0 && other > 0)     return 'MAX no puede ser 0 cuando MIN > 0';
@@ -2022,6 +2042,33 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         const saveLive = hasPublishedData && !rowHasDraft && !rowIsSparse;
 
         setInlineDraftEdit(null);
+
+        // Bodega: siempre guarda en manual_min/manual_max (los draft son auto-gestionados por el trigger)
+        if (targetRow?._erp_sucursal_id === 6) {
+            const col    = edit.field === 'min' ? 'manual_min' : 'manual_max';
+            const effCol = edit.field === 'min' ? 'effective_min' : 'effective_max';
+            const { error: e } = await supabase.from('product_stock_params')
+                .upsert(
+                    { erp_product_id: edit.productId, erp_sucursal_id: 6, [col]: numVal, updated_at: new Date().toISOString() },
+                    { onConflict: 'erp_product_id,erp_sucursal_id' }
+                );
+            if (e) { useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error'); return; }
+            setData(prev => prev.map(r => {
+                if (r.erp_product_id !== edit.productId || r._erp_sucursal_id !== 6) return r;
+                const newMin = edit.field === 'min' ? (numVal ?? 0) : (r.effective_min ?? 0);
+                const newMax = edit.field === 'max' ? (numVal ?? 0) : (r.effective_max ?? 0);
+                return { ...r, [effCol]: numVal ?? 0, has_manual: true, alert_status: calcAlertStatus(r.current_stock, newMin, newMax) };
+            }));
+            useStaff.getState().appendAuditLog('MINMAX_BODEGA_MANUAL_OVERRIDE', String(edit.productId), {
+                field: edit.field === 'min' ? 'MIN' : 'MAX',
+                product: targetRow?.product_name,
+                old_value: edit.field === 'min' ? (targetRow?.effective_min ?? 0) : (targetRow?.effective_max ?? 0),
+                new_value: numVal,
+                pub_sum: edit.field === 'min' ? (targetRow?.pub_min ?? 0) : (targetRow?.pub_max ?? 0),
+            });
+            return;
+        }
+
         if (saveLive) {
             const col    = edit.field === 'min' ? 'min_units'    : 'max_units';
             const effCol = edit.field === 'min' ? 'effective_min' : 'effective_max';
@@ -2098,6 +2145,25 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         const maxNum = maxValue === '' ? null : parseInt(maxValue, 10);
         if ((Number.isNaN(minNum) && minValue !== '') || (Number.isNaN(maxNum) && maxValue !== '')) return;
         const targetRow = data.find(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId);
+
+        // Bodega: par MIN+MAX siempre a manual_min/manual_max
+        if (targetRow?._erp_sucursal_id === 6) {
+            const { error: e } = await supabase.from('product_stock_params')
+                .upsert({ erp_product_id: productId, erp_sucursal_id: 6, manual_min: minNum, manual_max: maxNum, updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
+            if (e) { useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return; }
+            setData(prev => prev.map(r => {
+                if (r.erp_product_id !== productId || r._erp_sucursal_id !== 6) return r;
+                return { ...r, effective_min: minNum ?? 0, effective_max: maxNum ?? 0, has_manual: true, alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
+            }));
+            useStaff.getState().appendAuditLog('MINMAX_BODEGA_MANUAL_OVERRIDE', String(productId), {
+                field: 'min+max', product: productName,
+                old_min: targetRow?.effective_min ?? 0, old_max: targetRow?.effective_max ?? 0,
+                new_min: minNum, new_max: maxNum,
+                pub_sum_min: targetRow?.pub_min ?? 0, pub_sum_max: targetRow?.pub_max ?? 0,
+            });
+            return;
+        }
+
         const rowHasDraft = targetRow?.draft_status === 'pending';
         const rowIsSparse = targetRow?.draft_status === 'sparse_data';
         const saveLive = hasPublishedData && !rowHasDraft && !rowIsSparse;
@@ -3181,8 +3247,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             );
 
                                             // ── Display (non-editing) ──
-                                            const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: (hasDraft && !isBodega) ? String(row.draft_min ?? '') : ((dead || noHistory) ? '' : String(row.effective_min ?? '')) }); } : undefined;
-                                            const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: (hasDraft && !isBodega) ? String(row.draft_max ?? '') : ((dead || noHistory) ? '' : String(row.effective_max ?? '')) }); } : undefined;
+                                            const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', `Σ sucursales: MIN ${(row.pub_min ?? 0).toLocaleString()} · MAX ${(row.pub_max ?? 0).toLocaleString()} — el valor manual debe ser igual o mayor.`, 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: (hasDraft && !isBodega) ? String(row.draft_min ?? '') : ((dead || noHistory) ? '' : String(row.effective_min ?? '')) }); } : undefined;
+                                            const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', `Σ sucursales: MIN ${(row.pub_min ?? 0).toLocaleString()} · MAX ${(row.pub_max ?? 0).toLocaleString()} — el valor manual debe ser igual o mayor.`, 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: (hasDraft && !isBodega) ? String(row.draft_max ?? '') : ((dead || noHistory) ? '' : String(row.effective_max ?? '')) }); } : undefined;
 
                                             const box = (val, colorCls, borderCls, clickFn) => (
                                                 <div onClick={clickFn}
@@ -3198,7 +3264,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         {sep}
                                                         {box(maxN > 0 ? maxN.toLocaleString() : '—', stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-slate-500 bg-white/70', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
                                                     </div>
-                                                    <div className="text-[9px] text-amber-500 tabular-nums">→ {(row.draft_min ?? 0).toLocaleString()} · {(row.draft_max ?? 0).toLocaleString()} prev.</div>
+                                                    {row.has_manual && (row.pub_min > 0 || row.pub_max > 0) && (
+                                                        <div className="text-[8px] font-semibold text-violet-500 tabular-nums">Σ {(row.pub_min ?? 0).toLocaleString()}·{(row.pub_max ?? 0).toLocaleString()}</div>
+                                                    )}
+                                                    <div className="text-[9px] text-amber-500 tabular-nums">→ {(row.draft_min ?? 0).toLocaleString()}·{(row.draft_max ?? 0).toLocaleString()} prev.</div>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center gap-0.5">
@@ -3227,6 +3296,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     {box('—', 'text-slate-300 bg-white/60', 'border-slate-100', openMinEdit)}
                                                     {sep}
                                                     {box('—', 'text-slate-300 bg-white/60', 'border-slate-100', openMaxEdit)}
+                                                </div>
+                                            );
+
+                                            if (isBodega && row.has_manual && (row.pub_min > 0 || row.pub_max > 0)) return (
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <div className="flex items-center gap-1">
+                                                        {box(minN.toLocaleString(), stock < minN ? 'text-orange-600 bg-orange-50' : 'text-slate-600 bg-white/70', stock < minN ? 'border-orange-200' : 'border-slate-200', openMinEdit)}
+                                                        {sep}
+                                                        {box(maxN.toLocaleString(), stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-slate-500 bg-white/70', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
+                                                    </div>
+                                                    <div className="text-[8px] font-semibold text-violet-500 tabular-nums">Σ {(row.pub_min ?? 0).toLocaleString()}·{(row.pub_max ?? 0).toLocaleString()}</div>
                                                 </div>
                                             );
 

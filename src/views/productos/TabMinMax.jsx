@@ -2937,6 +2937,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                                     {/* MIN · MAX — combined cell; Tab/ArrowRight moves min→max */}
                                     <DataCell align="center" className="!py-2.5">
+                                        <div className="flex flex-col items-center w-full">
                                         {(() => {
                                             const isEditMin = canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'min';
                                             const isEditMax = canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'max';
@@ -2982,7 +2983,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                             onClick={e => e.stopPropagation()}
                                                             className={`min-w-[36px] w-14 text-center text-[12px] font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-amber-800 bg-amber-50 border-amber-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
                                                         {sep}
-                                                        <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border px-1 py-0.5 ${hasDraft ? 'text-blue-300 bg-blue-50 border-blue-100' : 'text-slate-300 bg-white/70 border-slate-100'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
+                                                        <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-blue-500 bg-blue-50 border-blue-300' : 'text-slate-400 bg-slate-50 border-slate-300'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-amber-700' : 'text-emerald-700'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
                                                     {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
@@ -2992,7 +2993,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             if (isEditMax) return (
                                                 <div className="flex flex-col items-center">
                                                     <div className="flex items-center gap-1.5">
-                                                        <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border px-1 py-0.5 ${hasDraft ? 'text-amber-300 bg-amber-50 border-amber-100' : 'text-slate-300 bg-white/70 border-slate-100'}`}>{inlineDraftEdit.pendingMin !== undefined ? (inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()) : (minN > 0 ? minN.toLocaleString() : '—')}</div>
+                                                        <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-amber-600 bg-amber-50 border-amber-400' : 'text-emerald-700 bg-emerald-50 border-emerald-400'}`}>{inlineDraftEdit.pendingMin !== undefined ? (inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()) : (minN > 0 ? minN.toLocaleString() : '—')}</div>
                                                         {sep}
                                                         <input autoFocus type="number" min="0"
                                                             value={inlineDraftEdit.value}
@@ -3090,6 +3091,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 </div>
                                             );
                                         })()}
+                                        </div>
                                     </DataCell>
 
                                     {/* Despacho — presentación catálogo siempre visible + regla + cantidades */}

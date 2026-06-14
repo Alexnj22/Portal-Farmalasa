@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.81';
+export const APP_VERSION = '2.2.82';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.82 — feat(minmax): RowActions component — máx 3 visibles (Poner 0 + Restaurar + Más); hover en Más abre dropdown glass con animación spring+stagger (Historial, Descartar, Publicar, Ocultar); fallback Ocultar/Mostrar cuando no hay primarios
 // v2.2.81 — fix(minmax): acciones botones spring y-shift fluido (sin scale, stiffness 800 damping 30); publicar=glass igual a otros; ABC matrix: gap-[3px] compacto, hover y-shift sin overlap, header con padding; estados pill neutral slate, solo el dot con color
 // v2.2.80 — fix(minmax): 8 ajustes UI — clase A chip dentro del filtro pill (togglable, no separado); publicar botón sólido azul #0052CC + texto blanco (más prominente); draft pill color neutro blanco glass (sin ámbar); badge BORRADOR en tabla color neutro slate; ABC: A/B neutrales, solo C con tono ámbar; XYZ: X/Y neutrales, solo Z con rose; Despacho MIN/MAX unificados a slate-700/500; Acciones botones flex-col icon+label estandarizados
 // v2.2.79 — feat(minmax): publicar liquid glass (shimmer sweep + spring hover/tap); draft+publicar integrado en pill amber a la derecha de filtros (una sola fila); clase A como pill glass solo cuando hasPublishedData (⚠ + pills sin stock/bajo mín + click → Ver A); eliminado Row 2 separado

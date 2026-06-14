@@ -6,7 +6,7 @@ import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download, Trash2,
     CheckCircle2, Check, Info, RotateCcw, ChevronRight, History,
-    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2, Target, FlaskConical, Search,
+    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2, Target, FlaskConical, Search, MoreHorizontal,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -341,6 +341,130 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                         </span>
                     );
                 })}
+            </div>
+        </div>
+    );
+}
+
+// ─── RowActions — máx 3 elementos visibles + dropdown "Más" ──────────────────
+function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, publishing, hidingIds,
+    onUnhide, onHide, onZeroOut, onResetToCalc, onOpenHistory, onDiscardDraft, onPublish }) {
+
+    const [open, setOpen]   = useState(false);
+    const closeRef          = useRef(null);
+    const openMenu  = () => { clearTimeout(closeRef.current); setOpen(true); };
+    const closeMenu = () => { closeRef.current = setTimeout(() => setOpen(false), 150); };
+
+    const hasPoner0   = !dead && !noHistory && canManage;
+    const hasRestaura = canManage && (row.calc_min != null || hasDraft);
+    const hasPrimary  = hasPoner0 || hasRestaura;
+
+    const B = 'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors duration-75';
+    const sp = {
+        whileHover: { y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } },
+        whileTap:   { scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } },
+    };
+
+    const secondary = [
+        { key: 'hist', icon: <History size={12}/>, label: 'Historial',
+          cls: 'text-blue-400 hover:text-[#0052CC] hover:bg-blue-50', onClick: onOpenHistory },
+        hasDraft && canManage && { key: 'desc', icon: <Trash2 size={12}/>, label: 'Descartar',
+          cls: 'text-rose-400 hover:text-rose-600 hover:bg-rose-50', onClick: onDiscardDraft },
+        hasDraft && canManage && { key: 'pub', icon: <Upload size={11}/>, label: 'Publicar',
+          cls: 'text-[#0052CC] hover:text-[#003D99] hover:bg-blue-50',
+          onClick: () => onPublish([row.erp_product_id]), disabled: publishing },
+        hasPrimary && !filterHidden && { key: 'hide', icon: <EyeOff size={12}/>, label: 'Ocultar',
+          cls: 'text-slate-400 hover:text-slate-600 hover:bg-slate-100',
+          onClick: onHide, disabled: hidingIds.has(row.erp_product_id) },
+        hasPrimary && filterHidden && { key: 'show', icon: <Eye size={12}/>, label: 'Mostrar',
+          cls: 'text-violet-500 hover:text-violet-700 hover:bg-violet-50', onClick: onUnhide },
+    ].filter(Boolean);
+
+    return (
+        <div className="flex items-center justify-center gap-0.5">
+
+            {/* Primario: Poner 0 */}
+            {hasPoner0 && (
+                <motion.button onClick={e => { e.stopPropagation(); onZeroOut(); }} {...sp}
+                    title="Poner MIN/MAX en 0"
+                    className={`${B} text-rose-400 hover:text-rose-600 hover:bg-rose-50`}>
+                    <XCircle size={12}/>
+                    <span className="text-[7px] font-bold leading-none">Poner 0</span>
+                </motion.button>
+            )}
+
+            {/* Primario: Restaurar */}
+            {hasRestaura && (
+                <motion.button onClick={e => { e.stopPropagation(); onResetToCalc(); }} {...sp}
+                    title={row.calc_min != null ? `Restaurar MIN ${row.calc_min} / MAX ${row.calc_max}` : 'Limpiar borrador'}
+                    className={`${B} text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50`}>
+                    <RotateCcw size={12}/>
+                    <span className="text-[7px] font-bold leading-none">Restaurar</span>
+                </motion.button>
+            )}
+
+            {/* Fallback: Ocultar/Mostrar cuando no hay primarios */}
+            {!hasPrimary && (
+                filterHidden ? (
+                    <motion.button onClick={e => { e.stopPropagation(); onUnhide(); }} {...sp}
+                        className={`${B} text-violet-500 hover:text-violet-700 hover:bg-violet-50`}>
+                        <Eye size={12}/>
+                        <span className="text-[7px] font-bold leading-none">Mostrar</span>
+                    </motion.button>
+                ) : (
+                    <motion.button onClick={e => { e.stopPropagation(); onHide(); }}
+                        disabled={hidingIds.has(row.erp_product_id)} {...sp}
+                        className={`${B} text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none`}>
+                        {hidingIds.has(row.erp_product_id)
+                            ? <Loader2 size={12} className="animate-spin"/>
+                            : <EyeOff size={12}/>}
+                        <span className="text-[7px] font-bold leading-none">Ocultar</span>
+                    </motion.button>
+                )
+            )}
+
+            {/* Botón "Más" — hover abre dropdown con el resto */}
+            <div className="relative" onMouseEnter={openMenu} onMouseLeave={closeMenu}>
+                <AnimatePresence>
+                {open && secondary.length > 0 && (
+                    <motion.div
+                        key="more-menu"
+                        initial={{ opacity: 0, y: 8, scale: 0.88 }}
+                        animate={{ opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 500, damping: 30 } }}
+                        exit={{ opacity: 0, y: 5, scale: 0.92, transition: { duration: 0.11, ease: 'easeIn' } }}
+                        className="absolute bottom-full right-0 mb-1 z-50 flex flex-col gap-0.5 p-1.5 rounded-xl"
+                        style={{
+                            background: 'rgba(255,255,255,0.94)',
+                            backdropFilter: 'blur(28px) saturate(200%)',
+                            WebkitBackdropFilter: 'blur(28px) saturate(200%)',
+                            border: '1px solid rgba(255,255,255,0.95)',
+                            boxShadow: '0 10px 36px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,1)',
+                            minWidth: '92px',
+                        }}>
+                        {secondary.map((item, i) => (
+                            <motion.button key={item.key}
+                                initial={{ opacity: 0, x: 8 }}
+                                animate={{ opacity: 1, x: 0, transition: { delay: i * 0.038, type: 'spring', stiffness: 580, damping: 30 } }}
+                                whileHover={{ x: 2, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
+                                whileTap={{ scale: 0.93, x: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
+                                disabled={item.disabled}
+                                onClick={e => { e.stopPropagation(); if (!item.disabled) { item.onClick(); setOpen(false); } }}
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-colors duration-75 disabled:opacity-40 disabled:pointer-events-none ${item.cls}`}>
+                                {item.icon}
+                                {item.label}
+                            </motion.button>
+                        ))}
+                    </motion.div>
+                )}
+                </AnimatePresence>
+
+                <motion.button
+                    onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+                    {...sp}
+                    className={`${B} text-slate-400 hover:text-slate-600 hover:bg-slate-100`}>
+                    <MoreHorizontal size={12}/>
+                    <span className="text-[7px] font-bold leading-none">Más</span>
+                </motion.button>
             </div>
         </div>
     );
@@ -3102,99 +3226,34 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                                     {/* Acciones */}
                                     <DataCell align="center" className="!py-2">
-                                        <div className="flex items-center justify-center gap-0.5">
-                                            {/* Mostrar / Ocultar según modo */}
-                                            {filterHidden ? (
-                                                <motion.button onClick={async e => { e.stopPropagation(); await unhideProduct(row.erp_product_id); }}
-                                                    title="Mostrar producto"
-                                                    whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
-                                                    whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
-                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-violet-500 hover:text-violet-700 hover:bg-violet-50 transition-colors duration-75">
-                                                    <Eye size={12} />
-                                                    <span className="text-[7px] font-bold leading-none">Mostrar</span>
-                                                </motion.button>
-                                            ) : (
-                                                <motion.button onClick={async e => {
-                                                    e.stopPropagation();
-                                                    setHidingIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });
-                                                    await supabase.from('product_stock_params')
-                                                        .upsert(
-                                                            { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() },
-                                                            { onConflict: 'erp_product_id,erp_sucursal_id' }
-                                                        );
-                                                    setHidingIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; });
-                                                    setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });
-                                                    setData(prev => prev.map(r => r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
-                                                        ? { ...r, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r));
-                                                    useStaff.getState().appendAuditLog('MINMAX_HIDE', String(row.erp_product_id), { product: row.product_name, sucursal_id: row._erp_sucursal_id });
-                                                }}
-                                                    disabled={hidingIds.has(row.erp_product_id)}
-                                                    title="Ocultar producto (pone MIN/MAX en 0 y excluye de recálculos)"
-                                                    whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
-                                                    whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
-                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none transition-colors duration-75">
-                                                    {hidingIds.has(row.erp_product_id)
-                                                        ? <Loader2 size={12} className="animate-spin text-slate-400" />
-                                                        : <EyeOff size={12} />}
-                                                    <span className="text-[7px] font-bold leading-none">Ocultar</span>
-                                                </motion.button>
-                                            )}
-                                            {/* Poner en 0 */}
-                                            {!dead && !noHistory && canManage && (
-                                                <motion.button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title={hasPublishedData && !hasDraft ? 'Poner MIN/MAX en 0 (en vivo)' : 'Crear borrador 0 / 0 (pone en 0 sin publicar)'}
-                                                    whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
-                                                    whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
-                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-colors duration-75">
-                                                    <XCircle size={12} />
-                                                    <span className="text-[7px] font-bold leading-none">Poner 0</span>
-                                                </motion.button>
-                                            )}
-                                            {/* Restaurar a calculado */}
-                                            {canManage && (row.calc_min != null || hasDraft) && (
-                                                <motion.button
-                                                    onClick={e => { e.stopPropagation(); resetToCalc(row); }}
-                                                    title={row.calc_min != null ? `Restaurar a valores calculados (MIN ${row.calc_min} / MAX ${row.calc_max})` : 'Limpiar valores manuales — restaura a —'}
-                                                    whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
-                                                    whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
-                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 transition-colors duration-75">
-                                                    <RotateCcw size={12} />
-                                                    <span className="text-[7px] font-bold leading-none">Restaurar</span>
-                                                </motion.button>
-                                            )}
-                                            {/* Historial */}
-                                            <motion.button
-                                                onClick={e => { e.stopPropagation(); openHistory(row); }}
-                                                title="Ver historial de cambios MIN/MAX"
-                                                whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
-                                                whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
-                                                className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-blue-400 hover:text-[#0052CC] hover:bg-blue-50 transition-colors duration-75">
-                                                <History size={12} />
-                                                <span className="text-[7px] font-bold leading-none">Historial</span>
-                                            </motion.button>
-                                            {/* Descartar borrador individual */}
-                                            {hasDraft && canManage && (
-                                                <motion.button
-                                                    onClick={e => { e.stopPropagation(); discardDraft(row); }}
-                                                    title="Descartar borrador — vuelve al valor publicado"
-                                                    whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
-                                                    whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
-                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-colors duration-75">
-                                                    <Trash2 size={12} />
-                                                    <span className="text-[7px] font-bold leading-none">Descartar</span>
-                                                </motion.button>
-                                            )}
-                                            {/* Publicar borrador */}
-                                            {hasDraft && canManage && (
-                                                <motion.button onClick={e => { e.stopPropagation(); requestPublish([row.erp_product_id]); }}
-                                                    disabled={publishing}
-                                                    whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
-                                                    whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
-                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-[#0052CC] hover:text-[#003D99] hover:bg-blue-50 transition-colors duration-75 disabled:opacity-50">
-                                                    {publishing ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
-                                                    <span className="text-[7px] font-bold leading-none">Publicar</span>
-                                                </motion.button>
-                                            )}
-                                        </div>
+                                        <RowActions
+                                            row={row}
+                                            filterHidden={filterHidden}
+                                            hasDraft={hasDraft}
+                                            dead={dead}
+                                            noHistory={noHistory}
+                                            canManage={canManage}
+                                            publishing={publishing}
+                                            hidingIds={hidingIds}
+                                            onUnhide={async () => { await unhideProduct(row.erp_product_id); }}
+                                            onHide={async () => {
+                                                setHidingIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });
+                                                await supabase.from('product_stock_params').upsert(
+                                                    { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() },
+                                                    { onConflict: 'erp_product_id,erp_sucursal_id' }
+                                                );
+                                                setHidingIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; });
+                                                setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });
+                                                setData(prev => prev.map(r => r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
+                                                    ? { ...r, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r));
+                                                useStaff.getState().appendAuditLog('MINMAX_HIDE', String(row.erp_product_id), { product: row.product_name, sucursal_id: row._erp_sucursal_id });
+                                            }}
+                                            onZeroOut={() => zeroOutRow(row)}
+                                            onResetToCalc={() => resetToCalc(row)}
+                                            onOpenHistory={() => openHistory(row)}
+                                            onDiscardDraft={() => discardDraft(row)}
+                                            onPublish={(ids) => requestPublish(ids)}
+                                        />
                                     </DataCell>
                                 </DataRow>
 

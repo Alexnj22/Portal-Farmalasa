@@ -374,30 +374,27 @@ function DraftCostCard({ draftCost }) {
     const effMin  = Number(draftCost?.eff_min_cost  ?? pubMin);
     const effMax  = Number(draftCost?.eff_max_cost  ?? pubMax);
     const hasDraft = Number(draftCost?.draft_count ?? 0) > 0;
-    const deltaMin = effMin - pubMin;
     const deltaMax = effMax - pubMax;
-    const hasAnyDelta = hasDraft && (Math.abs(deltaMin) > 0.01 || Math.abs(deltaMax) > 0.01);
+    const hasAnyDelta = hasDraft && Math.abs(deltaMax) > 0.01;
     if (!draftCost || (!pubMin && !pubMax && !effMin && !effMax)) return null;
-    const fmtDelta = (v) => `${v >= 0 ? '+' : ''}${fmtMoney(v)}`;
     return (
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm"
             style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
             <Target size={13} className="shrink-0 text-violet-400" />
             <div className="flex flex-col leading-snug gap-0.5">
-                <span className="text-[10px] font-semibold text-slate-500">Inversión proyectada</span>
-                <div className="flex items-baseline gap-1.5">
-                    <span className="text-[14px] font-black tabular-nums text-amber-700">{fmtMoney(hasDraft ? effMin : pubMin)}</span>
-                    <span className="text-[10px] text-slate-400">→</span>
-                    <span className="text-[14px] font-black tabular-nums text-blue-700">{fmtMoney(hasDraft ? effMax : pubMax)}</span>
+                <span className="text-[10px] font-semibold text-slate-500">
+                    Inversión proyectada
+                    {hasAnyDelta && (
+                        <span className={`ml-1.5 tabular-nums font-bold ${deltaMax >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                            {deltaMax >= 0 ? '+' : ''}{fmtMoney(deltaMax)}
+                        </span>
+                    )}
+                </span>
+                <div className="flex items-baseline gap-1">
+                    <span className="text-[14px] font-black tabular-nums leading-none text-amber-700">{fmtMoney(hasDraft ? effMin : pubMin)}</span>
+                    <span className="text-[10px] text-slate-400 leading-none">→</span>
+                    <span className="text-[14px] font-black tabular-nums leading-none text-blue-700">{fmtMoney(hasDraft ? effMax : pubMax)}</span>
                 </div>
-                {hasAnyDelta && (
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[9px] text-slate-400">vs publicado</span>
-                        <span className={`text-[9px] font-bold tabular-nums ${deltaMin >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{fmtDelta(deltaMin)}</span>
-                        <span className="text-[8px] text-slate-400">·</span>
-                        <span className={`text-[9px] font-bold tabular-nums ${deltaMax >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{fmtDelta(deltaMax)}</span>
-                    </div>
-                )}
             </div>
         </div>
     );
@@ -1516,6 +1513,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         setExpandedId(prev => prev === id ? null : id);
     }, []);
 
+    useEffect(() => {
+        if (!expandedId) return;
+        const timer = setTimeout(() => {
+            document.querySelector(`[data-product-row="${expandedId}"]`)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 60);
+        return () => clearTimeout(timer);
+    }, [expandedId]);
+
     const loadData = useCallback(async (erpId) => {
         const rid = ++loadRef.current;
         setLoading(true); setError(null); setInlineDraftEdit(null); setExpandedId(null);
@@ -2319,16 +2325,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <React.Fragment key={cfg.key}>
                                     {i > 0 && <div className="h-5 w-px bg-slate-200/50 shrink-0" />}
                                     <motion.button
-                                        whileTap={{ scale: 0.92 }}
-                                        whileHover={{ backgroundColor: active ? undefined : 'rgba(255,255,255,0.65)' }}
+                                        whileTap={{ scale: 0.91 }}
+                                        whileHover={!active ? { backgroundColor: 'rgba(255,255,255,0.60)' } : {}}
                                         onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
-                                        className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 select-none whitespace-nowrap ${active ? cfg.chipActive + ' font-bold' : 'text-slate-500 hover:text-slate-700'}`}>
+                                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold select-none whitespace-nowrap transition-all duration-200 ${active ? cfg.chipActive + ' font-bold border' : 'text-slate-500 hover:text-slate-700'}`}
+                                        style={active ? {
+                                            backdropFilter: 'blur(14px) saturate(180%)',
+                                            WebkitBackdropFilter: 'blur(14px) saturate(180%)',
+                                            boxShadow: '0 2px 10px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,0.88)',
+                                        } : {}}>
                                         <motion.span
-                                            className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`}
-                                            animate={active ? { scale: [1, 1.3, 1] } : { scale: 1 }}
-                                            transition={{ duration: 0.3 }}
+                                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`}
+                                            animate={active ? { scale: [1, 1.4, 1] } : { scale: 1 }}
+                                            transition={{ duration: 0.28 }}
                                         />
-                                        <span className={`tabular-nums font-black text-[12px] ${active ? '' : 'text-slate-700'}`}>
+                                        <span className={`tabular-nums font-black text-[11px] ${active ? '' : 'text-slate-700'}`}>
                                             {loading ? '–' : stats[cfg.key]}
                                         </span>
                                         <span>{cfg.label}</span>
@@ -2350,10 +2361,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             <motion.div key="sparse" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
                                 <div className="h-5 w-px bg-slate-200/50 shrink-0" />
                                 <motion.button
-                                    whileTap={{ scale: 0.92 }}
-                                    whileHover={{ backgroundColor: 'rgba(255,255,255,0.65)' }}
+                                    whileTap={{ scale: 0.91 }}
+                                    whileHover={!filterSparse ? { backgroundColor: 'rgba(255,255,255,0.60)' } : {}}
                                     onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
-                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 whitespace-nowrap ${filterSparse ? 'bg-orange-50/90 text-orange-700 font-bold' : 'text-orange-500 hover:text-orange-700'}`}>
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold transition-all duration-200 whitespace-nowrap ${filterSparse ? 'bg-orange-50/90 text-orange-700 font-bold border border-orange-200/70' : 'text-orange-500 hover:text-orange-700'}`}
+                                    style={filterSparse ? {
+                                        backdropFilter: 'blur(14px) saturate(180%)',
+                                        WebkitBackdropFilter: 'blur(14px) saturate(180%)',
+                                        boxShadow: '0 2px 10px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,0.88)',
+                                    } : {}}>
                                     <AlertTriangle size={10} strokeWidth={2.5} className="shrink-0" />
                                     <span className="tabular-nums font-black text-[12px]">{sparseCount}</span>
                                     pocos datos
@@ -2567,6 +2583,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     index={rowIdx}
                                     onClick={canExpand ? () => toggleExpand(row.erp_product_id) : undefined}
                                     className={alert.row}
+                                    data-product-row={row.erp_product_id}
                                 >
                                     {/* Producto */}
                                     <DataCell align="left" className="!py-2.5">

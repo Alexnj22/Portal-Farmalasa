@@ -149,20 +149,22 @@ const validateEditForRow = (edit, row) => {
     } else {
         other = Number(hasDraftRow ? (row.draft_max ?? 0) : (row.effective_max ?? 0));
     }
-    // Bodega: el valor manual no puede ser menor que la Σ de sucursales publicadas
+    // Bodega: el valor manual no puede ser menor que la Σ de sucursales publicadas.
+    // edit.bodegaPubMin/Max contiene el valor fresco leído de DB al abrir la celda;
+    // row.pub_min puede ser stale si sucursales publicaron después del último fetch.
     if (isBodegaRow) {
         if (edit.field === 'min') {
-            const floor = row.pub_min ?? 0;
+            const floor = edit.bodegaPubMin ?? row.pub_min ?? 0;
             if (floor > 0 && numVal < floor)
                 return `MIN de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString()})`;
         }
         if (edit.field === 'max') {
-            const floor = row.pub_max ?? 0;
+            const floor = edit.bodegaPubMax ?? row.pub_max ?? 0;
             if (floor > 0 && numVal < floor)
                 return `MAX de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString()})`;
             if (edit.pendingMin !== undefined) {
                 const pendMinNum = parseInt(edit.pendingMin, 10) || 0;
-                const floorMin = row.pub_min ?? 0;
+                const floorMin = edit.bodegaPubMin ?? row.pub_min ?? 0;
                 if (floorMin > 0 && pendMinNum < floorMin)
                     return `MIN de Bodega no puede ser menor a la Σ sucursales (${floorMin.toLocaleString()})`;
             }
@@ -2049,6 +2051,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         if (targetRow?._erp_sucursal_id === 6) {
             const currentEffective = edit.field === 'min' ? (targetRow?.effective_min ?? 0) : (targetRow?.effective_max ?? 0);
             if (numVal === currentEffective) return; // Valor sin cambio — evita marcar como manual innecesariamente
+            // Segunda línea de defensa: re-valida el floor (edit.bodegaPubMin/Max viene del fetch fresco de openBodegaEdit)
+            const floor = edit.field === 'min' ? (edit.bodegaPubMin ?? targetRow?.pub_min ?? 0) : (edit.bodegaPubMax ?? targetRow?.pub_max ?? 0);
+            if (floor > 0 && numVal < floor) {
+                useToastStore.getState().showToast(targetRow?.product_name || 'Producto',
+                    `${edit.field === 'min' ? 'MIN' : 'MAX'} de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString()})`, 'error');
+                return;
+            }
             const col    = edit.field === 'min' ? 'manual_min' : 'manual_max';
             const effCol = edit.field === 'min' ? 'effective_min' : 'effective_max';
             const { error: e } = await supabase.from('product_stock_params')
@@ -2068,7 +2077,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 product: targetRow?.product_name,
                 old_value: edit.field === 'min' ? (targetRow?.effective_min ?? 0) : (targetRow?.effective_max ?? 0),
                 new_value: numVal,
-                pub_sum: edit.field === 'min' ? (targetRow?.pub_min ?? 0) : (targetRow?.pub_max ?? 0),
+                pub_sum: floor,
             });
             return;
         }
@@ -2153,6 +2162,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         // Bodega: par MIN+MAX siempre a manual_min/manual_max
         if (targetRow?._erp_sucursal_id === 6) {
             if (minNum === (targetRow?.effective_min ?? 0) && maxNum === (targetRow?.effective_max ?? 0)) return; // Sin cambio
+            // Floor: targetRow.pub_min ya fue actualizado por _openBodegaEdit antes de que el usuario pudiera editar
+            const floorMin = targetRow?.pub_min ?? 0;
+            const floorMax = targetRow?.pub_max ?? 0;
+            if (floorMin > 0 && (minNum ?? 0) < floorMin) {
+                useToastStore.getState().showToast(productName || 'Producto', `MIN de Bodega no puede ser menor a la Σ sucursales (${floorMin.toLocaleString()})`, 'error');
+                return;
+            }
+            if (floorMax > 0 && (maxNum ?? 0) < floorMax) {
+                useToastStore.getState().showToast(productName || 'Producto', `MAX de Bodega no puede ser menor a la Σ sucursales (${floorMax.toLocaleString()})`, 'error');
+                return;
+            }
             const { error: e } = await supabase.from('product_stock_params')
                 .upsert({ erp_product_id: productId, erp_sucursal_id: 6, manual_min: minNum, manual_max: maxNum, updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
             if (e) { useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return; }
@@ -3287,11 +3307,39 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             );
 
                                             // ── Display (non-editing) ──
-                                            const _bodegaToastMsg = ((row.pub_min ?? 0) > 0 || (row.pub_max ?? 0) > 0)
-                                                ? `Σ sucursales: MIN ${(row.pub_min ?? 0).toLocaleString()} · MAX ${(row.pub_max ?? 0).toLocaleString()} — el valor debe ser igual o mayor.`
-                                                : 'Bodega sin valores publicados en sucursales aún. Podés ingresar un valor manual.';
-                                            const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', _bodegaToastMsg, 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: (hasDraft && !isBodega) ? String(row.draft_min ?? '') : ((dead || noHistory) ? '' : String(row.effective_min ?? '')) }); } : undefined;
-                                            const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', _bodegaToastMsg, 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: (hasDraft && !isBodega) ? String(row.draft_max ?? '') : ((dead || noHistory) ? '' : String(row.effective_max ?? '')) }); } : undefined;
+                                            // Para Bodega: fetch fresco de min_units/max_units antes de mostrar el editor,
+                                            // porque pub_min en estado local puede ser stale si sucursales publicaron
+                                            // en otra sesión/tab después del último loadData.
+                                            const _openBodegaEdit = async (field) => {
+                                                const { data: fresh } = await supabase
+                                                    .from('product_stock_params')
+                                                    .select('min_units, max_units')
+                                                    .eq('erp_product_id', row.erp_product_id)
+                                                    .eq('erp_sucursal_id', 6)
+                                                    .single();
+                                                const freshPubMin = fresh?.min_units ?? 0;
+                                                const freshPubMax = fresh?.max_units ?? 0;
+                                                if (freshPubMin !== (row.pub_min ?? 0) || freshPubMax !== (row.pub_max ?? 0)) {
+                                                    setData(prev => prev.map(r =>
+                                                        r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === 6
+                                                            ? { ...r, pub_min: freshPubMin, pub_max: freshPubMax }
+                                                            : r
+                                                    ));
+                                                }
+                                                const toastMsg = (freshPubMin > 0 || freshPubMax > 0)
+                                                    ? `Σ sucursales: MIN ${freshPubMin.toLocaleString()} · MAX ${freshPubMax.toLocaleString()} — el valor debe ser igual o mayor.`
+                                                    : 'Bodega sin valores publicados en sucursales aún. Podés ingresar un valor manual.';
+                                                useToastStore.getState().showToast('Bodega', toastMsg, 'info');
+                                                setInlineDraftEdit({
+                                                    productId: row.erp_product_id, sucursalId: row._erp_sucursal_id,
+                                                    field,
+                                                    value: (hasDraft && !isBodega) ? String(field === 'min' ? (row.draft_min ?? '') : (row.draft_max ?? '')) : ((dead || noHistory) ? '' : String(field === 'min' ? (row.effective_min ?? '') : (row.effective_max ?? ''))),
+                                                    bodegaPubMin: freshPubMin,
+                                                    bodegaPubMax: freshPubMax,
+                                                });
+                                            };
+                                            const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) { _openBodegaEdit('min'); return; } setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: hasDraft ? String(row.draft_min ?? '') : ((dead || noHistory) ? '' : String(row.effective_min ?? '')) }); } : undefined;
+                                            const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) { _openBodegaEdit('max'); return; } setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: hasDraft ? String(row.draft_max ?? '') : ((dead || noHistory) ? '' : String(row.effective_max ?? '')) }); } : undefined;
 
                                             const box = (val, colorCls, borderCls, clickFn) => (
                                                 <div onClick={clickFn}

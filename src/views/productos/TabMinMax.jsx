@@ -395,7 +395,7 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
     }, [open]);
 
     const hasPoner0   = !dead && !noHistory && canManage && !isBodegaRow;
-    const hasRestaura = canManage && (row.calc_min != null || hasDraft);
+    const hasRestaura = canManage && (row.calc_min != null || hasDraft || (isBodegaRow && row.has_manual));
 
     const B = 'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors duration-75';
     const sp = {
@@ -457,16 +457,18 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
                 </motion.button>
             ))}
 
-            {/* Más — 3rd slot, onMouseEnter opens the portal dropdown */}
-            <div ref={btnRef} onMouseEnter={openMenu}>
-                <motion.button
-                    onClick={e => { e.stopPropagation(); open ? closeMenu() : openMenu(); }}
-                    {...sp}
-                    className={`${B} text-slate-400 hover:text-slate-600 hover:bg-slate-100`}>
-                    <MoreHorizontal size={13}/>
-                    <span className="text-[7px] font-bold leading-none">Más</span>
-                </motion.button>
-            </div>
+            {/* Más — solo cuando hay items en el dropdown */}
+            {dropdownBtns.length > 0 && (
+                <div ref={btnRef} onMouseEnter={openMenu}>
+                    <motion.button
+                        onClick={e => { e.stopPropagation(); open ? closeMenu() : openMenu(); }}
+                        {...sp}
+                        className={`${B} text-slate-400 hover:text-slate-600 hover:bg-slate-100`}>
+                        <MoreHorizontal size={13}/>
+                        <span className="text-[7px] font-bold leading-none">Más</span>
+                    </motion.button>
+                </div>
+            )}
 
             {/* AnimatePresence INSIDE createPortal so it can track its children */}
             {createPortal(
@@ -2045,6 +2047,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
         // Bodega: siempre guarda en manual_min/manual_max (los draft son auto-gestionados por el trigger)
         if (targetRow?._erp_sucursal_id === 6) {
+            const currentEffective = edit.field === 'min' ? (targetRow?.effective_min ?? 0) : (targetRow?.effective_max ?? 0);
+            if (numVal === currentEffective) return; // Valor sin cambio — evita marcar como manual innecesariamente
             const col    = edit.field === 'min' ? 'manual_min' : 'manual_max';
             const effCol = edit.field === 'min' ? 'effective_min' : 'effective_max';
             const { error: e } = await supabase.from('product_stock_params')
@@ -2148,6 +2152,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
         // Bodega: par MIN+MAX siempre a manual_min/manual_max
         if (targetRow?._erp_sucursal_id === 6) {
+            if (minNum === (targetRow?.effective_min ?? 0) && maxNum === (targetRow?.effective_max ?? 0)) return; // Sin cambio
             const { error: e } = await supabase.from('product_stock_params')
                 .upsert({ erp_product_id: productId, erp_sucursal_id: 6, manual_min: minNum, manual_max: maxNum, updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
             if (e) { useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return; }
@@ -2225,6 +2230,26 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     }, [hiddenIds, selectedErp]);
 
     const resetToCalc = useCallback(async (row) => {
+        // Bodega: "Restaurar" significa limpiar el override manual → vuelve a Σ sucursales automáticamente
+        if (row._erp_sucursal_id === 6) {
+            if (!row.has_manual) return;
+            const { error: e } = await supabase.from('product_stock_params')
+                .update({ manual_min: null, manual_max: null, updated_at: new Date().toISOString() })
+                .eq('erp_product_id', row.erp_product_id)
+                .eq('erp_sucursal_id', 6);
+            if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${e.message}`, 'error'); return; }
+            const newEff = row.pub_min ?? 0;
+            const newEffMax = row.pub_max ?? 0;
+            setData(prev => prev.map(r => {
+                if (r.erp_product_id !== row.erp_product_id || r._erp_sucursal_id !== 6) return r;
+                return { ...r, effective_min: newEff, effective_max: newEffMax, has_manual: false, alert_status: calcAlertStatus(r.current_stock, newEff, newEffMax) };
+            }));
+            useToastStore.getState().showToast(row.product_name, 'Manual eliminado — Bodega vuelve a Σ sucursales', 'success');
+            useStaff.getState().appendAuditLog('MINMAX_BODEGA_RESET_MANUAL', String(row.erp_product_id), {
+                product: row.product_name, sucursal_id: 6, pub_min: row.pub_min, pub_max: row.pub_max,
+            });
+            return;
+        }
         if (row.calc_min == null && row.calc_max == null) {
             // Sin valores calculados: limpia el borrador manual dejando -- (null)
             const { error: e } = await supabase.from('product_stock_params')
@@ -3247,8 +3272,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             );
 
                                             // ── Display (non-editing) ──
-                                            const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', `Σ sucursales: MIN ${(row.pub_min ?? 0).toLocaleString()} · MAX ${(row.pub_max ?? 0).toLocaleString()} — el valor manual debe ser igual o mayor.`, 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: (hasDraft && !isBodega) ? String(row.draft_min ?? '') : ((dead || noHistory) ? '' : String(row.effective_min ?? '')) }); } : undefined;
-                                            const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', `Σ sucursales: MIN ${(row.pub_min ?? 0).toLocaleString()} · MAX ${(row.pub_max ?? 0).toLocaleString()} — el valor manual debe ser igual o mayor.`, 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: (hasDraft && !isBodega) ? String(row.draft_max ?? '') : ((dead || noHistory) ? '' : String(row.effective_max ?? '')) }); } : undefined;
+                                            const _bodegaToastMsg = ((row.pub_min ?? 0) > 0 || (row.pub_max ?? 0) > 0)
+                                                ? `Σ sucursales: MIN ${(row.pub_min ?? 0).toLocaleString()} · MAX ${(row.pub_max ?? 0).toLocaleString()} — el valor debe ser igual o mayor.`
+                                                : 'Bodega sin valores publicados en sucursales aún. Podés ingresar un valor manual.';
+                                            const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', _bodegaToastMsg, 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: (hasDraft && !isBodega) ? String(row.draft_min ?? '') : ((dead || noHistory) ? '' : String(row.effective_min ?? '')) }); } : undefined;
+                                            const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', _bodegaToastMsg, 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: (hasDraft && !isBodega) ? String(row.draft_max ?? '') : ((dead || noHistory) ? '' : String(row.effective_max ?? '')) }); } : undefined;
 
                                             const box = (val, colorCls, borderCls, clickFn) => (
                                                 <div onClick={clickFn}

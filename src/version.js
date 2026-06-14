@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.72';
+export const APP_VERSION = '2.2.73';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.73 — fix(minmax): restaura while-loop con metadata paralela (PostgREST cap 1000 → todos los productos); fix(pagination): scrollIntoView instant al cambiar página (ya no sube el scroll); feat(layout): botones flotantes glassmorphism subir/bajar (GlassViewLayout, aparecen tras scroll > 150px)
 // v2.2.72 — perf(minmax): consolida 10+ useMemo passes en un solo O(N) derivado; fix colores invisibles en glass (text-slate-200→400, opacity-15→30, spinners/icons/text-slate-300→400/500); paginación: "···" siempre visible con mayor contraste, input "Ir a / [n]" siempre disponible cuando totalPages>7 (sin clic previo)
 // v2.2.71 — perf(minmax): mv_product_last_sale reemplaza last_sale CTE (533K→16K filas indexadas); loadData usa Promise.all paralelo + single range(0,4999) en lugar de while-loop secuencial; stale-while-revalidate (sin setData([])); calculate_stock_params refresca el MV al finalizar
 // v2.2.70 — fix(minmax): get_stock_analysis incluye catalog_pres CTE (product_precios+presentaciones con descripcion) en los 4 branches → Levoxanet y dead stock siempre ven presentación del catálogo; hasPres=pres.length>0 (factor=1 ya no queda invisible); regla de despacho inline con pill; MIN/MAX text-[10px] font-semibold amber-600/blue-600

@@ -1,4 +1,6 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 
 const GlassViewLayout = ({
     icon: Icon,
@@ -13,24 +15,33 @@ const GlassViewLayout = ({
 }) => {
     const scrollContainerRef = useRef(null);
     const [isScrolled, setIsScrolled] = useState(false);
-
-    useEffect(() => {
-        if (fixedScrollMode && scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = 0;
-        }
-    }, [fixedScrollMode]);
+    const [showScrollNav, setShowScrollNav] = useState(false);
 
     const handleInternalScroll = useCallback(() => {
         if (!scrollContainerRef.current) return;
         requestAnimationFrame(() => {
-            const scrolled = scrollContainerRef.current.scrollTop > 15;
-            if (scrolled !== isScrolled) setIsScrolled(scrolled);
+            const { scrollTop } = scrollContainerRef.current;
+            setIsScrolled(scrollTop > 15);
+            setShowScrollNav(scrollTop > 150);
         });
-    }, [isScrolled]);
+    }, []);
+
+    const scrollTo = useCallback((pos) => {
+        scrollContainerRef.current?.scrollTo({ top: pos, behavior: 'smooth' });
+    }, []);
 
     const bodyCardCls = transparentBody
         ? 'bg-transparent'
         : 'bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.80),0_14px_40px_rgba(0,0,0,0.05)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] hover:-translate-y-[2px] rounded-[1.5rem] lg:rounded-[2.5rem] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]';
+
+    const floatBtn = 'w-10 h-10 rounded-2xl flex items-center justify-center';
+    const floatStyle = {
+        background: 'rgba(255,255,255,0.72)',
+        backdropFilter: 'blur(24px) saturate(200%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+        border: '1px solid rgba(255,255,255,0.88)',
+        boxShadow: '0 8px 28px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.95)',
+    };
 
     return (
         <div className="max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto lg:h-full w-full font-sans relative">
@@ -133,6 +144,42 @@ const GlassViewLayout = ({
                     </div>
                 </div>
             </div>
+
+            {/* ── Floating scroll nav ── */}
+            <AnimatePresence>
+                {showScrollNav && (
+                    <motion.div
+                        initial={{ opacity: 0, x: 16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 16 }}
+                        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                        className="fixed bottom-8 right-8 z-50 flex flex-col gap-2 pointer-events-auto"
+                    >
+                        <motion.button
+                            onClick={() => scrollTo(0)}
+                            whileHover={{ scale: 1.1, y: -2 }}
+                            whileTap={{ scale: 0.90 }}
+                            transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+                            title="Ir al inicio"
+                            className={floatBtn}
+                            style={floatStyle}
+                        >
+                            <ChevronUp size={18} strokeWidth={2.5} className="text-slate-600" />
+                        </motion.button>
+                        <motion.button
+                            onClick={() => scrollTo(scrollContainerRef.current?.scrollHeight ?? 99999)}
+                            whileHover={{ scale: 1.1, y: 2 }}
+                            whileTap={{ scale: 0.90 }}
+                            transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+                            title="Ir al final"
+                            className={floatBtn}
+                            style={floatStyle}
+                        >
+                            <ChevronDown size={18} strokeWidth={2.5} className="text-slate-600" />
+                        </motion.button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

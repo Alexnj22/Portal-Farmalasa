@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
@@ -140,17 +140,26 @@ export default function TablePagination({
     unit = 'total',
     filteredTotal,
 }) {
+    const rootRef = useRef();
     const isFiltered = filteredTotal != null && filteredTotal !== total;
 
+    // After any page/size change, keep pagination visible in the scroll container
+    const navigate = useCallback((fn) => {
+        fn();
+        requestAnimationFrame(() => {
+            rootRef.current?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+        });
+    }, []);
+
     return (
-        <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div ref={rootRef} className="flex items-center justify-between gap-3 flex-wrap">
 
             {/* Page-size pills */}
             <div className="flex items-center gap-0.5 p-1 rounded-2xl bg-white/60 backdrop-blur-md border border-white/80 shadow-[0_2px_8px_rgba(0,82,204,0.07)]">
                 {PAGE_SIZE_OPTIONS.map(size => (
                     <motion.button
                         key={size}
-                        onClick={() => { onPageSizeChange(size); onPageChange(1); }}
+                        onClick={() => navigate(() => { onPageSizeChange(size); onPageChange(1); })}
                         whileHover={pageSize !== size ? { scale: 1.05 } : {}}
                         whileTap={pageSize !== size ? { scale: 0.95 } : {}}
                         transition={{ type: 'spring', stiffness: 500, damping: 30 }}
@@ -166,7 +175,7 @@ export default function TablePagination({
             </div>
 
             {/* Navigation */}
-            <SmartPagination page={page} total={totalPages} onChange={onPageChange} />
+            <SmartPagination page={page} total={totalPages} onChange={(p) => navigate(() => onPageChange(p))} />
 
             {/* Total badge */}
             <div className="flex items-center gap-1 px-3 h-8 rounded-2xl bg-white/60 backdrop-blur-md border border-white/80 shadow-[0_2px_8px_rgba(0,82,204,0.07)] min-w-[90px] justify-end">

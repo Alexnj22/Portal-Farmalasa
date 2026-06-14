@@ -1920,7 +1920,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const handleRecalcularAll = async () => {
         const wasPublished = hasPublishedData;
         setCalculating(true); setCalcMode('all'); setError(null); setConfigChanged(false);
-        const ids = ERP_ORDER;
+        const ids = ERP_ORDER.filter(id => id !== 6); // Bodega se actualiza sola vía trigger + publish_stock_params
         let totalRows = 0;
         const failed = [];
         for (let i = 0; i < ids.length; i++) {
@@ -2633,7 +2633,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                         {/* Todas las sucursales */}
                         <motion.button onClick={handleRecalcularAll} disabled={!canManage || calculating || loading}
-                            title="Recalcular todas las sucursales y Bodega"
+                            title="Recalcular todas las sucursales (Bodega se actualiza sola)"
                             {...chipAnim}
                             className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 disabled:opacity-40 disabled:pointer-events-none">
                             {calculating && calcMode === 'all'
@@ -2642,14 +2642,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         </motion.button>
                     </div>
 
-                    {/* Calcular — blue right cap */}
-                    <motion.button onClick={handleRecalcular} disabled={!canManage || calculating || loading}
-                        {...ctaAnim}
-                        className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
-                        {calculating && calcMode === 'single'
-                            ? <><Loader2 size={12} className="animate-spin" /> Calculando…</>
-                            : <><RefreshCw size={12} /> Calcular</>}
-                    </motion.button>
+                    {/* Calcular — blue right cap (oculto para Bodega: se actualiza sola) */}
+                    {!isBodega && (
+                        <motion.button onClick={handleRecalcular} disabled={!canManage || calculating || loading}
+                            {...ctaAnim}
+                            className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
+                            {calculating && calcMode === 'single'
+                                ? <><Loader2 size={12} className="animate-spin" /> Calculando…</>
+                                : <><RefreshCw size={12} /> Calcular</>}
+                        </motion.button>
+                    )}
                 </div>
             </div>
 
@@ -2747,14 +2749,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     <p className="text-[15px] font-bold text-slate-700 mb-2">Sin datos para {ERP_NAMES[selectedErp]}</p>
                     <p className="text-[12px] text-slate-400 mb-6 max-w-sm mx-auto leading-relaxed">
                         {isBodega
-                            ? `Haz clic en Recalcular para generar los parámetros MIN/MAX de Bodega basados en la demanda consolidada de todas las sucursales (${config?.analysis_days ?? 180} días).`
-                            : `Haz clic en Recalcular para analizar ${config?.analysis_days ?? 180} días de ventas y generar los parámetros MIN/MAX con clasificación ABC×XYZ.`}
+                            ? 'Bodega se actualiza automáticamente cuando las sucursales publican sus MIN/MAX. Seleccioná una sucursal, calculá y publicá sus borradores.'
+                            : `Haz clic en Calcular para analizar ${config?.analysis_days ?? 180} días de ventas y generar los parámetros MIN/MAX con clasificación ABC×XYZ.`}
                     </p>
-                    <button onClick={handleRecalcular} disabled={calculating}
-                        className="inline-flex items-center gap-2 px-6 py-2.5 text-[13px] font-bold text-white bg-[#0052CC] rounded-xl shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-60">
-                        {calculating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                        Calcular {ERP_NAMES[selectedErp]}
-                    </button>
+                    {!isBodega && (
+                        <button onClick={handleRecalcular} disabled={calculating}
+                            className="inline-flex items-center gap-2 px-6 py-2.5 text-[13px] font-bold text-white bg-[#0052CC] rounded-xl shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-60">
+                            {calculating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                            Calcular {ERP_NAMES[selectedErp]}
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -3105,6 +3109,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">{row.product_name || '—'}</span>
                                                     {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
                                                     {hasDraft && !isBodega && <span className="shrink-0 text-[8px] font-black text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
+                                                    {hasDraft && isBodega && <span className="shrink-0 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">SUC. PEND.</span>}
                                                     {limitedData && (
                                                         <span title={`Solo ${row.draft_data_days} días de historial de compras (ventana: ${analysisConfig.analysis_days} días)`}
                                                             className="shrink-0 text-[8px] font-black text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-full cursor-help">

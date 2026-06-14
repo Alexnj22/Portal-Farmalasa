@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.102';
+export const APP_VERSION = '2.2.103';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.103 — fix(minmax): (1) Bodega sin botón Calcular — se actualiza sola vía trigger+publish; handleRecalcularAll excluye id=6; empty state Bodega explica flujo correcto; (2) badge "SUC. PEND." ámbar en columna producto cuando Bodega row tiene draft_status=pending (alguna sucursal no ha publicado); hover "→ N·N prev." ya muestra qué sucursales
 // v2.2.102 — fix(minmax): RowActions hover lag — elimina whileHover y:-2 (spring underdamped ζ≈0.43 que oscilaba/bounceaba); elimina delay stagger de items dropdown; apertura dropdown: spring→easeOut 100ms; queda solo whileTap con spring crítico (damping 40) para feedback de clic inmediato
 // v2.2.101 — fix(minmax): RowActions — "Más" solo aparece cuando hay >3 botones en total; con ≤3 se muestran todos directamente (Bodega: Restaurar+Historial+Ocultar sin dropdown)
 // v2.2.100 — fix(minmax): Bodega pub_min histórico incorrecto — min_units en Bodega estaba puesto como Σ efectivo (incluyendo sucursales en borrador) en lugar de Σ publicado; migración retroactiva corrige todos los registros (manual_min IS NULL); get_stock_analysis ya retorna effective_min=pub_sum; tooltip on-hover "→ N·N prev." muestra sucursales pendientes con su draft_min·draft_max

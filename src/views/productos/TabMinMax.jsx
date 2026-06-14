@@ -348,6 +348,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
 
 // ─── RowActions — máx 3 elementos visibles + dropdown "Más" ──────────────────
 function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, publishing, hidingIds,
+    isBodegaRow,
     onUnhide, onHide, onZeroOut, onResetToCalc, onOpenHistory, onDiscardDraft, onPublish }) {
 
     const [open, setOpen]   = useState(false);
@@ -373,7 +374,7 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
         return () => window.removeEventListener('scroll', close, true);
     }, [open]);
 
-    const hasPoner0   = !dead && !noHistory && canManage;
+    const hasPoner0   = !dead && !noHistory && canManage && !isBodegaRow;
     const hasRestaura = canManage && (row.calc_min != null || hasDraft);
 
     const B = 'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors duration-75';
@@ -410,9 +411,9 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
     const visibleBtns  = pool.slice(0, 2);
     const dropdownBtns = [
         ...pool.slice(2),
-        hasDraft && canManage && { key: 'desc', icon: <Trash2 size={12}/>, label: 'Descartar',
+        hasDraft && canManage && !isBodegaRow && { key: 'desc', icon: <Trash2 size={12}/>, label: 'Descartar',
             cls: 'text-rose-400 hover:text-rose-600 hover:bg-rose-50', onClick: () => onDiscardDraft() },
-        hasDraft && canManage && { key: 'pub', icon: <Upload size={12}/>, label: 'Publicar',
+        hasDraft && canManage && !isBodegaRow && { key: 'pub', icon: <Upload size={12}/>, label: 'Publicar',
             cls: 'text-[#0052CC] hover:text-[#003D99] hover:bg-blue-50',
             onClick: () => onPublish([row.erp_product_id]), disabled: publishing },
     ].filter(Boolean);
@@ -2586,22 +2587,35 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
 
             {!loading && isBodega && (
-                <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-violet-50 border border-violet-200 text-[12px] text-violet-800">
-                    <Info size={14} className="shrink-0 mt-0.5 text-violet-500" />
-                    <span>
-                        <strong>Bodega — valores calculados automáticamente.</strong>{' '}
-                        MIN y MAX se calculan como la <strong>suma de los MIN/MAX publicados de cada sucursal</strong> y se actualizan solos al publicar cualquier sucursal.
-                        Puedes sobreescribirlos manualmente si necesitas ajustar.
+                <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl"
+                    style={{
+                        background: 'rgba(255,255,255,0.70)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        border: '1px solid rgba(255,255,255,0.82)',
+                        boxShadow: '0 2px 14px rgba(109,40,217,0.06), inset 0 1px 0 rgba(255,255,255,0.92)',
+                    }}>
+                    <div className="shrink-0 w-6 h-6 rounded-lg bg-violet-100/90 border border-violet-200/60 flex items-center justify-center">
+                        <Info size={11} className="text-violet-600" />
+                    </div>
+                    <span className="text-[11px] text-slate-600 flex-1 min-w-0 leading-snug">
+                        <strong className="font-bold text-slate-800">Bodega</strong>{' — '}
+                        MIN/MAX = Σ publicados de cada sucursal. Se actualizan solos al publicar.
+                        <span className="text-slate-400 ml-1">Se puede sobreescribir manualmente.</span>
                     </span>
-                </div>
-            )}
-            {!loading && isBodega && bodegaPendingCount > 0 && (
-                <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-[12px] text-amber-800">
-                    <AlertTriangle size={14} className="shrink-0 mt-0.5 text-amber-500" />
-                    <span>
-                        <strong>{bodegaPendingCount} producto{bodegaPendingCount !== 1 ? 's tienen' : ' tiene'} sucursales con borradores pendientes de publicar.</strong>{' '}
-                        Bodega se actualizará automáticamente cuando esas sucursales publiquen sus MIN/MAX.
-                    </span>
+                    {bodegaPendingCount > 0 ? (
+                        <div className="flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full bg-amber-50/90 border border-amber-200/80">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block shrink-0" />
+                            <span className="text-[10px] font-bold text-amber-700 whitespace-nowrap">
+                                {bodegaPendingCount} pendiente{bodegaPendingCount !== 1 ? 's' : ''}
+                            </span>
+                        </div>
+                    ) : hasPublishedData ? (
+                        <div className="flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full bg-emerald-50/90 border border-emerald-200/70">
+                            <CheckCircle2 size={10} className="text-emerald-600 shrink-0" />
+                            <span className="text-[10px] font-bold text-emerald-700 whitespace-nowrap">Al día</span>
+                        </div>
+                    ) : null}
                 </div>
             )}
             {!loading && neverCalc && (
@@ -3307,6 +3321,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             canManage={canManage}
                                             publishing={publishing}
                                             hidingIds={hidingIds}
+                                            isBodegaRow={isBodega}
                                             onUnhide={async () => { await unhideProduct(row.erp_product_id); }}
                                             onHide={async () => {
                                                 setHidingIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });

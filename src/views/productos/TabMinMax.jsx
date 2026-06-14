@@ -695,6 +695,7 @@ function ExpandedPanel({ row, cycleDays }) {
     const maxN        = Number(row.effective_max);
     const hasDominant = sortedPres(pres).length > 0;
     const coverDays   = row.daily_velocity > 0 ? (stock / row.daily_velocity).toFixed(1) : null;
+    const isBodega    = row._erp_sucursal_id === 6;
 
     const [branchData,   setBranchData]   = useState(null);
     const [branchReady,  setBranchReady]  = useState(false);
@@ -737,7 +738,7 @@ function ExpandedPanel({ row, cycleDays }) {
                 .eq('erp_product_id', row.erp_product_id)
                 .order('fecha', { ascending: false })
                 .limit(6),
-            supabase.rpc('get_product_last_sales', { p_erp_product_id: row.erp_product_id, p_erp_sucursal_id: null }),
+            supabase.rpc('get_product_last_sales', { p_erp_product_id: row.erp_product_id, p_erp_sucursal_id: row._erp_sucursal_id === 6 ? null : row._erp_sucursal_id }),
         ]).then(([{ data: eData }, { data: hData }, { data: pData }, { data: sData }]) => {
             setExpiryData(eData || []);
             setHistoryData(hData || []);
@@ -970,97 +971,153 @@ function ExpandedPanel({ row, cycleDays }) {
                         </div>
                     )}
 
-                    {/* ── Últimas compras / Últimas ventas / MIN·MAX red ── */}
-                    {(purchaseData.length > 0 || saleData.length > 0 || branchData?.some(b => Number(b.effective_min ?? 0) > 0 || Number(b.effective_max ?? 0) > 0)) && (
+                    {/* ── Últimas compras / Últimas ventas ── */}
+                    {(purchaseData.length > 0 || saleData.length > 0 || (isBodega && branchData?.some(b => Number(b.effective_min ?? 0) > 0 || Number(b.effective_max ?? 0) > 0))) && (
                         <div style={glassSection}>
-                            <div className="grid grid-cols-3">
-                                {/* Compras */}
-                                <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
-                                    {purchaseData.length === 0
-                                        ? <span className="text-[10px] text-slate-500 italic">Sin compras registradas</span>
-                                        : <div className="flex flex-col gap-1">
-                                            {purchaseData.map((p, i) => (
-                                                <div key={i} className="flex items-center gap-2 text-[10px]">
-                                                    <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
-                                                        {new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
-                                                    </span>
-                                                    <span className="font-bold text-slate-700 tabular-nums shrink-0">
-                                                        {Number(p.cantidad).toLocaleString()} und
-                                                    </span>
-                                                    <span className="text-slate-400 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
-                                                    <span className="text-slate-500 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
-                                                    {p.lote && p.lote !== 'GENERICO' && (
-                                                        <span className="shrink-0 text-[8px] font-mono text-slate-400 bg-white/60 px-1 rounded">{p.lote}</span>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    }
-                                </div>
-                                {/* Ventas */}
-                                <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Últimas ventas</span>
-                                    {saleData.length === 0
-                                        ? <span className="text-[10px] text-slate-500 italic">Sin ventas registradas</span>
-                                        : <div className="flex flex-col gap-1">
-                                            {saleData.map((s, i) => (
-                                                <div key={i} className="flex items-center gap-2 text-[10px]">
-                                                    <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
-                                                        {new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
-                                                    </span>
-                                                    <span className="text-[8px] font-bold text-slate-400 shrink-0 bg-slate-100/80 rounded px-1">
-                                                        {(ERP_NAMES[s.erp_sucursal_id] ?? `S${s.erp_sucursal_id}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
-                                                    </span>
-                                                    <span className="font-bold text-emerald-700 tabular-nums shrink-0">
-                                                        {Number(s.cantidad).toLocaleString()} und
-                                                    </span>
-                                                    {s.total_linea > 0 && (
-                                                        <span className="text-slate-400 shrink-0">${Number(s.total_linea).toFixed(2)}</span>
-                                                    )}
-                                                    {s.cliente && (
-                                                        <span className="text-slate-500 truncate min-w-0 flex-1">{s.cliente}</span>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    }
-                                </div>
-                                {/* MIN · MAX por sucursal */}
-                                <div className="px-4 py-2.5 flex flex-col gap-2">
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">MIN · MAX red</span>
-                                    {!branchReady
-                                        ? <Loader2 size={10} className="animate-spin text-slate-300" />
-                                        : <div className="flex flex-col gap-1">
-                                            {ERP_ORDER.map(erpId => {
-                                                const bd = branchData?.find(b => b.erp_sucursal_id === erpId);
-                                                if (!bd) return null;
-                                                const bMin = Number(bd.effective_min ?? 0);
-                                                const bMax = Number(bd.effective_max ?? 0);
-                                                const hasDraft = bd.draft_status === 'pending';
-                                                const dMin = hasDraft ? Number(bd.draft_min ?? 0) : null;
-                                                const dMax = hasDraft ? Number(bd.draft_max ?? 0) : null;
-                                                if (bMin === 0 && bMax === 0 && !hasDraft) return null;
-                                                return (
-                                                    <div key={erpId} className="flex items-center gap-1.5 text-[10px]">
-                                                        <span className="text-slate-400 shrink-0 w-9 text-[8px] truncate">
-                                                            {(ERP_NAMES[erpId] ?? `S${erpId}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.').replace('Bodega', 'Bod.')}
+                            {isBodega ? (
+                                /* Bodega: 3 columnas — compras + ventas red + MIN·MAX por sucursal */
+                                <div className="grid grid-cols-3">
+                                    {/* Compras */}
+                                    <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
+                                        {purchaseData.length === 0
+                                            ? <span className="text-[10px] text-slate-500 italic">Sin compras registradas</span>
+                                            : <div className="flex flex-col gap-1">
+                                                {purchaseData.map((p, i) => (
+                                                    <div key={i} className="flex items-center gap-2 text-[10px]">
+                                                        <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                            {new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
-                                                        <span className="text-orange-500 font-black tabular-nums">{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
-                                                        <span className="text-slate-300">·</span>
-                                                        <span className="text-blue-500 font-black tabular-nums">{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
-                                                        {hasDraft && (
-                                                            <span className="text-[8px] text-amber-500 font-semibold border border-dashed border-amber-300 rounded px-0.5 tabular-nums whitespace-nowrap">
-                                                                →{dMin > 0 ? dMin.toLocaleString() : '—'}·{dMax > 0 ? dMax.toLocaleString() : '—'}
-                                                            </span>
+                                                        <span className="font-bold text-slate-700 tabular-nums shrink-0">
+                                                            {Number(p.cantidad).toLocaleString()} und
+                                                        </span>
+                                                        <span className="text-slate-400 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
+                                                        <span className="text-slate-500 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
+                                                        {p.lote && p.lote !== 'GENERICO' && (
+                                                            <span className="shrink-0 text-[8px] font-mono text-slate-400 bg-white/60 px-1 rounded">{p.lote}</span>
                                                         )}
                                                     </div>
-                                                );
-                                            })}
-                                        </div>
-                                    }
+                                                ))}
+                                            </div>
+                                        }
+                                    </div>
+                                    {/* Ventas — todas las sucursales con badge */}
+                                    <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Últimas ventas</span>
+                                        {saleData.length === 0
+                                            ? <span className="text-[10px] text-slate-500 italic">Sin ventas registradas</span>
+                                            : <div className="flex flex-col gap-1">
+                                                {saleData.map((s, i) => (
+                                                    <div key={i} className="flex items-center gap-2 text-[10px]">
+                                                        <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                            {new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                                        </span>
+                                                        <span className="text-[8px] font-bold text-slate-400 shrink-0 bg-slate-100/80 rounded px-1">
+                                                            {(ERP_NAMES[s.erp_sucursal_id] ?? `S${s.erp_sucursal_id}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
+                                                        </span>
+                                                        <span className="font-bold text-emerald-700 tabular-nums shrink-0">
+                                                            {Number(s.cantidad).toLocaleString()} und
+                                                        </span>
+                                                        {s.total_linea > 0 && (
+                                                            <span className="text-slate-400 shrink-0">${Number(s.total_linea).toFixed(2)}</span>
+                                                        )}
+                                                        {s.cliente && (
+                                                            <span className="text-slate-500 truncate min-w-0 flex-1">{s.cliente}</span>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        }
+                                    </div>
+                                    {/* MIN · MAX por sucursal */}
+                                    <div className="px-4 py-2.5 flex flex-col gap-2">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">MIN · MAX red</span>
+                                        {!branchReady
+                                            ? <Loader2 size={10} className="animate-spin text-slate-300" />
+                                            : <div className="flex flex-col gap-1">
+                                                {ERP_ORDER.map(erpId => {
+                                                    const bd = branchData?.find(b => b.erp_sucursal_id === erpId);
+                                                    if (!bd) return null;
+                                                    const bMin = Number(bd.effective_min ?? 0);
+                                                    const bMax = Number(bd.effective_max ?? 0);
+                                                    const hasDraft = bd.draft_status === 'pending';
+                                                    const dMin = hasDraft ? Number(bd.draft_min ?? 0) : null;
+                                                    const dMax = hasDraft ? Number(bd.draft_max ?? 0) : null;
+                                                    if (bMin === 0 && bMax === 0 && !hasDraft) return null;
+                                                    return (
+                                                        <div key={erpId} className="flex items-center gap-1.5 text-[10px]">
+                                                            <span className="text-slate-400 shrink-0 w-9 text-[8px] truncate">
+                                                                {(ERP_NAMES[erpId] ?? `S${erpId}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.').replace('Bodega', 'Bod.')}
+                                                            </span>
+                                                            <span className="text-orange-500 font-black tabular-nums">{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
+                                                            <span className="text-slate-300">·</span>
+                                                            <span className="text-blue-500 font-black tabular-nums">{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
+                                                            {hasDraft && (
+                                                                <span className="text-[8px] text-amber-500 font-semibold border border-dashed border-amber-300 rounded px-0.5 tabular-nums whitespace-nowrap">
+                                                                    →{dMin > 0 ? dMin.toLocaleString() : '—'}·{dMax > 0 ? dMax.toLocaleString() : '—'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        }
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                /* Sucursales: 2 columnas — compras + ventas de la sucursal */
+                                <div className="grid grid-cols-2" style={{ divideX: '1px solid rgba(255,255,255,0.50)' }}>
+                                    {/* Compras */}
+                                    <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
+                                        {purchaseData.length === 0
+                                            ? <span className="text-[10px] text-slate-500 italic">Sin compras registradas</span>
+                                            : <div className="flex flex-col gap-1">
+                                                {purchaseData.map((p, i) => (
+                                                    <div key={i} className="flex items-center gap-2 text-[10px]">
+                                                        <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                            {new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                                        </span>
+                                                        <span className="font-bold text-slate-700 tabular-nums shrink-0">
+                                                            {Number(p.cantidad).toLocaleString()} und
+                                                        </span>
+                                                        <span className="text-slate-400 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
+                                                        <span className="text-slate-500 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
+                                                        {p.lote && p.lote !== 'GENERICO' && (
+                                                            <span className="shrink-0 text-[8px] font-mono text-slate-400 bg-white/60 px-1 rounded">{p.lote}</span>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        }
+                                    </div>
+                                    {/* Ventas de la sucursal */}
+                                    <div className="px-4 py-2.5 flex flex-col gap-2">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Últimas ventas (sucursal)</span>
+                                        {saleData.length === 0
+                                            ? <span className="text-[10px] text-slate-500 italic">Sin ventas registradas</span>
+                                            : <div className="flex flex-col gap-1">
+                                                {saleData.map((s, i) => (
+                                                    <div key={i} className="flex items-center gap-2 text-[10px]">
+                                                        <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                            {new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                                        </span>
+                                                        <span className="font-bold text-emerald-700 tabular-nums shrink-0">
+                                                            {Number(s.cantidad).toLocaleString()} und
+                                                        </span>
+                                                        {s.total_linea > 0 && (
+                                                            <span className="text-slate-400 shrink-0">${Number(s.total_linea).toFixed(2)}</span>
+                                                        )}
+                                                        {s.cliente && (
+                                                            <span className="text-slate-500 truncate min-w-0 flex-1">{s.cliente}</span>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

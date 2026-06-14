@@ -72,21 +72,21 @@ const STAT_CFGS = [
 const VISIBLE_STAT_KEYS = ['overstocked', 'dead_stock', 'no_data'];
 
 const ABC_CFG = {
-    A: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', title: 'Clase A — top 70% ingresos', color: '#10b981' },
-    B: { bg: 'bg-blue-50 text-blue-700 border-blue-200',          title: 'Clase B — siguiente 20%',    color: '#3b82f6' },
-    C: { bg: 'bg-amber-50 text-amber-700 border-amber-200',       title: 'Clase C — restante 10%',     color: '#f59e0b' },
+    A: { bg: 'bg-slate-50 text-slate-600 border-slate-200',       title: 'Clase A — top 70% ingresos', color: '#64748b' },
+    B: { bg: 'bg-slate-50 text-slate-500 border-slate-200',       title: 'Clase B — siguiente 20%',    color: '#94a3b8' },
+    C: { bg: 'bg-amber-50 text-amber-600 border-amber-200',       title: 'Clase C — restante 10%',     color: '#f59e0b' },
     D: { bg: 'bg-slate-50 text-slate-400 border-slate-200',       title: 'Sin ventas en período',      color: '#94a3b8' },
 };
 
 // XYZ — demand variability (replaces stable/moderate/erratic)
 const XYZ_CFG = {
-    X: { label: 'X', desc: 'Estable',   cls: 'text-emerald-600 bg-emerald-50 border-emerald-200', color: '#10b981' },
-    Y: { label: 'Y', desc: 'Moderada',  cls: 'text-amber-600 bg-amber-50 border-amber-200',       color: '#f59e0b' },
-    Z: { label: 'Z', desc: 'Errática',  cls: 'text-red-500 bg-red-50 border-red-200',             color: '#ef4444' },
+    X: { label: 'X', desc: 'Estable',   cls: 'text-slate-600 bg-slate-50 border-slate-200', color: '#64748b' },
+    Y: { label: 'Y', desc: 'Moderada',  cls: 'text-slate-500 bg-slate-50 border-slate-200', color: '#94a3b8' },
+    Z: { label: 'Z', desc: 'Errática',  cls: 'text-rose-600 bg-rose-50 border-rose-200',    color: '#e11d48' },
     // Legacy support (old data before migration)
-    stable:   { label: 'X', desc: 'Estable',  cls: 'text-emerald-600 bg-emerald-50 border-emerald-200', color: '#10b981' },
-    moderate: { label: 'Y', desc: 'Moderada', cls: 'text-amber-600 bg-amber-50 border-amber-200',       color: '#f59e0b' },
-    erratic:  { label: 'Z', desc: 'Errática', cls: 'text-red-500 bg-red-50 border-red-200',             color: '#ef4444' },
+    stable:   { label: 'X', desc: 'Estable',  cls: 'text-slate-600 bg-slate-50 border-slate-200', color: '#64748b' },
+    moderate: { label: 'Y', desc: 'Moderada', cls: 'text-slate-500 bg-slate-50 border-slate-200', color: '#94a3b8' },
+    erratic:  { label: 'Z', desc: 'Errática', cls: 'text-rose-600 bg-rose-50 border-rose-200',    color: '#e11d48' },
 };
 
 // Normalize legacy demand_variability values → X/Y/Z
@@ -2360,6 +2360,32 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             );
                         })}
 
+                        {/* Clase A — urgente, visible cuando hay datos publicados */}
+                        {hasPublishedData && criticalACount > 0 && !loading && (
+                            <>
+                                <div className="h-5 w-px bg-slate-200/50 shrink-0" />
+                                <motion.button
+                                    whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
+                                    onClick={() => { setFilterAbc(prev => prev === 'A' ? 'all' : 'A'); setPage(1); }}
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold select-none whitespace-nowrap backdrop-blur-sm
+                                        transition-[background-color,border-color,color,box-shadow] duration-100
+                                        ${filterAbc === 'A'
+                                            ? 'bg-rose-50/90 text-rose-700 font-bold border border-rose-200/70 shadow-[0_2px_10px_rgba(0,0,0,0.09),inset_0_1px_0_rgba(255,255,255,0.88)]'
+                                            : 'text-slate-500 border border-transparent hover:bg-white/55 hover:text-slate-700'}`}>
+                                    <AlertTriangle size={9} className={`shrink-0 ${filterAbc === 'A' ? 'text-rose-500' : 'text-rose-400'}`} />
+                                    <span className="font-black">A</span>
+                                    <span className="tabular-nums font-black text-[11px]">{criticalACount}</span>
+                                    <AnimatePresence>
+                                    {filterAbc === 'A' && (
+                                        <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.5 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
+                                            <X size={9} className="ml-0.5" />
+                                        </motion.span>
+                                    )}
+                                    </AnimatePresence>
+                                </motion.button>
+                            </>
+                        )}
+
                         {/* Revisar (pocos datos) — mismo estilo que otros chips */}
                         <AnimatePresence>
                         {sparseCount > 0 && !loading && (
@@ -2455,42 +2481,42 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             exit={{ opacity: 0, x: 12, scale: 0.95, transition: { duration: 0.18 } }}
                             className="flex items-center rounded-2xl overflow-hidden shrink-0"
                             style={{
-                                background: 'rgba(255,251,235,0.72)',
+                                background: 'rgba(255,255,255,0.72)',
                                 backdropFilter: 'blur(24px)',
                                 WebkitBackdropFilter: 'blur(24px)',
-                                border: '1px solid rgba(251,191,36,0.28)',
-                                boxShadow: '0 4px 20px rgba(245,158,11,0.10), inset 0 1px 0 rgba(255,255,255,0.92)',
+                                border: '1px solid rgba(255,255,255,0.85)',
+                                boxShadow: '0 4px 20px rgba(0,82,204,0.07), inset 0 1px 0 rgba(255,255,255,0.92)',
                             }}>
                             {/* Dot + count */}
                             <div className="flex items-center gap-1.5 px-3 py-2 shrink-0">
                                 <span className="relative flex h-2 w-2 shrink-0">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
                                 </span>
-                                <span className="text-[11px] font-black text-amber-800 tabular-nums">{draftCount}</span>
-                                <span className="text-[10px] text-amber-600/80 font-medium">borrador{draftCount !== 1 ? 'es' : ''}</span>
+                                <span className="text-[11px] font-black text-slate-800 tabular-nums">{draftCount}</span>
+                                <span className="text-[10px] text-slate-500 font-medium">borrador{draftCount !== 1 ? 'es' : ''}</span>
                             </div>
-                            <div className="h-4 w-px bg-amber-200/70 shrink-0" />
+                            <div className="h-4 w-px bg-slate-200/70 shrink-0" />
                             {/* Solo borradores */}
                             <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
                                 onClick={() => { setFilterDraft(f => !f); setFilterSparse(false); setFilterChangesOnly(false); }}
-                                className={`flex items-center gap-1 px-2.5 py-2 text-[10px] font-semibold transition-[background-color,color] duration-100 whitespace-nowrap ${filterDraft ? 'bg-amber-100/70 text-amber-800 font-bold' : 'text-amber-700/80 hover:bg-amber-100/50 hover:text-amber-900'}`}>
+                                className={`flex items-center gap-1 px-2.5 py-2 text-[10px] font-semibold transition-[background-color,color] duration-100 whitespace-nowrap ${filterDraft ? 'bg-slate-100/80 text-slate-800 font-bold' : 'text-slate-600 hover:bg-slate-100/60 hover:text-slate-800'}`}>
                                 {filterDraft ? <><X size={8} strokeWidth={2.5} className="shrink-0" /> Ver todos</> : 'Solo borradores'}
                             </motion.button>
                             {/* Solo cambios */}
                             {hasPublishedData && changesCount > 0 && (
                                 <>
-                                    <div className="h-4 w-px bg-amber-200/70 shrink-0" />
+                                    <div className="h-4 w-px bg-slate-200/70 shrink-0" />
                                     <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
                                         onClick={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); setFilterSparse(false); }}
-                                        className={`flex items-center gap-1 px-2.5 py-2 text-[10px] font-semibold transition-[background-color,color] duration-100 whitespace-nowrap ${filterChangesOnly ? 'bg-violet-100/70 text-violet-800 font-bold' : 'text-amber-700/80 hover:bg-amber-100/50 hover:text-amber-900'}`}>
+                                        className={`flex items-center gap-1 px-2.5 py-2 text-[10px] font-semibold transition-[background-color,color] duration-100 whitespace-nowrap ${filterChangesOnly ? 'bg-violet-100/70 text-violet-800 font-bold' : 'text-slate-600 hover:bg-slate-100/60 hover:text-slate-800'}`}>
                                         {filterChangesOnly ? <><X size={8} strokeWidth={2.5} className="shrink-0" /> Ver todos</> : `Cambios (${changesCount})`}
                                     </motion.button>
                                 </>
                             )}
                             {/* Descartar */}
                             <>
-                                <div className="h-4 w-px bg-amber-200/70 shrink-0" />
+                                <div className="h-4 w-px bg-slate-200/70 shrink-0" />
                                 <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
                                     onClick={() => setDiscardConfirm(true)}
                                     disabled={discardingAll}
@@ -2514,12 +2540,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         disabled={publishing}
                                         className="relative overflow-hidden flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-bold rounded-xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap"
                                         style={{
-                                            background: 'rgba(0,82,204,0.11)',
+                                            background: '#0052CC',
                                             backdropFilter: 'blur(20px) saturate(180%)',
                                             WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                                            border: '1px solid rgba(0,82,204,0.24)',
-                                            boxShadow: '0 3px 14px rgba(0,82,204,0.16), inset 0 1px 0 rgba(255,255,255,0.62)',
-                                            color: '#0052CC',
+                                            border: '1px solid rgba(0,52,153,0.30)',
+                                            boxShadow: '0 4px 16px rgba(0,82,204,0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
+                                            color: 'white',
                                         }}>
                                         <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12 pointer-events-none"
                                             animate={{ x: ['-160%', '160%'] }} transition={{ duration: 2.8, repeat: Infinity, ease: 'linear', repeatDelay: 2.5 }} />
@@ -2537,12 +2563,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         disabled={publishing}
                                         className="relative overflow-hidden flex items-center gap-1.5 px-3.5 py-1.5 text-[11px] font-bold rounded-xl disabled:opacity-60 disabled:pointer-events-none whitespace-nowrap"
                                         style={{
-                                            background: 'rgba(0,82,204,0.11)',
+                                            background: '#0052CC',
                                             backdropFilter: 'blur(20px) saturate(180%)',
                                             WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                                            border: '1px solid rgba(0,82,204,0.24)',
-                                            boxShadow: '0 3px 14px rgba(0,82,204,0.16), inset 0 1px 0 rgba(255,255,255,0.62)',
-                                            color: '#0052CC',
+                                            border: '1px solid rgba(0,52,153,0.30)',
+                                            boxShadow: '0 4px 16px rgba(0,82,204,0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
+                                            color: 'white',
                                         }}>
                                         <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12 pointer-events-none"
                                             animate={{ x: ['-160%', '160%'] }} transition={{ duration: 2.8, repeat: Infinity, ease: 'linear', repeatDelay: 2.5 }} />
@@ -2556,35 +2582,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     )}
                     </AnimatePresence>
 
-                    {/* Clase A pill — liquid glass, solo cuando ya está publicado */}
-                    <AnimatePresence>
-                    {hasPublishedData && criticalACount > 0 && !loading && (
-                        <motion.div
-                            key="clase-a-pill"
-                            initial={{ opacity: 0, x: 12, scale: 0.95 }}
-                            animate={{ opacity: 1, x: 0, scale: 1, transition: { duration: 0.28, ease: EASE_OUT_EXPO } }}
-                            exit={{ opacity: 0, x: 12, scale: 0.95, transition: { duration: 0.18 } }}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl shrink-0 cursor-pointer"
-                            onClick={() => { setFilterAbc('A'); setFilterAlert('all'); setPage(1); }}
-                            style={{
-                                background: 'rgba(255,255,255,0.62)',
-                                backdropFilter: 'blur(24px) saturate(200%)',
-                                WebkitBackdropFilter: 'blur(24px) saturate(200%)',
-                                border: '1px solid rgba(255,255,255,0.85)',
-                                boxShadow: '0 4px 16px rgba(239,68,68,0.08), inset 0 1px 0 rgba(255,255,255,0.92)',
-                            }}>
-                            <AlertTriangle size={10} className="shrink-0 text-rose-400" />
-                            <span className="text-[10px] font-black text-slate-700">A</span>
-                            {criticalAOut > 0 && (
-                                <span className="px-1.5 py-0.5 rounded-lg text-[9px] font-bold bg-red-100/80 text-red-700 whitespace-nowrap">{criticalAOut} sin stock</span>
-                            )}
-                            {criticalABelow > 0 && (
-                                <span className="px-1.5 py-0.5 rounded-lg text-[9px] font-bold bg-orange-100/80 text-orange-700 whitespace-nowrap">{criticalABelow} bajo mín.</span>
-                            )}
-                            <ChevronRight size={10} className="text-slate-400 shrink-0 ml-0.5" />
-                        </motion.div>
-                    )}
-                    </AnimatePresence>
                 </div>
             )}
 
@@ -2655,7 +2652,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 <div className="flex items-center gap-1.5 min-w-0">
                                                     <span className="text-[13px] font-medium text-slate-800 truncate leading-tight">{row.product_name || '—'}</span>
                                                     {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
-                                                    {hasDraft && <span className="shrink-0 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
+                                                    {hasDraft && <span className="shrink-0 text-[8px] font-black text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
                                                     {limitedData && (
                                                         <span title={`Solo ${row.draft_data_days} días de historial de compras (ventana: ${analysisConfig.analysis_days} días)`}
                                                             className="shrink-0 text-[8px] font-black text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-full cursor-help">
@@ -3079,10 +3076,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <span className={`text-[10px] font-semibold tabular-nums leading-none ${hasPres ? 'text-amber-600' : 'text-slate-400'}`}>
+                                                    <span className={`text-[10px] font-semibold tabular-nums leading-none ${hasPres ? 'text-slate-700' : 'text-slate-400'}`}>
                                                         {dispMin ? formatUnits(applyRule(dispMin), pres) : '—'}
                                                     </span>
-                                                    <span className={`text-[10px] font-semibold tabular-nums leading-none ${hasPres ? 'text-blue-600' : 'text-slate-400'}`}>
+                                                    <span className={`text-[10px] font-semibold tabular-nums leading-none ${hasPres ? 'text-slate-500' : 'text-slate-400'}`}>
                                                         {dispMax ? formatUnits(applyRule(dispMax), pres) : '—'}
                                                     </span>
                                                 </div>
@@ -3106,15 +3103,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     </DataCell>
 
                                     {/* Acciones */}
-                                    <DataCell align="center" className="!py-2.5">
-                                        <div className="flex items-center justify-center gap-1">
+                                    <DataCell align="center" className="!py-2">
+                                        <div className="flex items-center justify-center gap-0.5">
                                             {/* Mostrar / Ocultar según modo */}
                                             {filterHidden ? (
                                                 <motion.button onClick={async e => { e.stopPropagation(); await unhideProduct(row.erp_product_id); }}
                                                     title="Mostrar producto"
                                                     {...iconAnim}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-violet-400 hover:text-violet-600 hover:bg-violet-50">
-                                                    <Eye size={13} />
+                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-violet-500 hover:text-violet-700 hover:bg-violet-50 transition-colors duration-100">
+                                                    <Eye size={12} />
+                                                    <span className="text-[7px] font-bold leading-none">Mostrar</span>
                                                 </motion.button>
                                             ) : (
                                                 <motion.button onClick={async e => {
@@ -3134,18 +3132,20 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     disabled={hidingIds.has(row.erp_product_id)}
                                                     title="Ocultar producto (pone MIN/MAX en 0 y excluye de recálculos)"
                                                     {...iconAnim}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 disabled:pointer-events-none">
+                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none transition-colors duration-100">
                                                     {hidingIds.has(row.erp_product_id)
-                                                        ? <Loader2 size={12} className="animate-spin text-rose-400" />
+                                                        ? <Loader2 size={12} className="animate-spin text-slate-400" />
                                                         : <EyeOff size={12} />}
+                                                    <span className="text-[7px] font-bold leading-none">Ocultar</span>
                                                 </motion.button>
                                             )}
                                             {/* Poner en 0 */}
                                             {!dead && !noHistory && canManage && (
                                                 <motion.button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title={hasPublishedData && !hasDraft ? 'Poner MIN/MAX en 0 (en vivo)' : 'Crear borrador 0 / 0 (pone en 0 sin publicar)'}
                                                     {...iconAnim}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600">
-                                                    <XCircle size={14} />
+                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-colors duration-100">
+                                                    <XCircle size={12} />
+                                                    <span className="text-[7px] font-bold leading-none">Poner 0</span>
                                                 </motion.button>
                                             )}
                                             {/* Restaurar a calculado */}
@@ -3154,8 +3154,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     onClick={e => { e.stopPropagation(); resetToCalc(row); }}
                                                     title={row.calc_min != null ? `Restaurar a valores calculados (MIN ${row.calc_min} / MAX ${row.calc_max})` : 'Limpiar valores manuales — restaura a —'}
                                                     {...iconAnim}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-500 hover:bg-emerald-100 hover:text-emerald-700 transition-colors">
+                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 transition-colors duration-100">
                                                     <RotateCcw size={12} />
+                                                    <span className="text-[7px] font-bold leading-none">Restaurar</span>
                                                 </motion.button>
                                             )}
                                             {/* Historial */}
@@ -3163,8 +3164,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 onClick={e => { e.stopPropagation(); openHistory(row); }}
                                                 title="Ver historial de cambios MIN/MAX"
                                                 {...iconAnim}
-                                                className="w-7 h-7 flex items-center justify-center rounded-lg text-blue-400 hover:text-[#0052CC] hover:bg-blue-50 transition-colors">
+                                                className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-blue-400 hover:text-[#0052CC] hover:bg-blue-50 transition-colors duration-100">
                                                 <History size={12} />
+                                                <span className="text-[7px] font-bold leading-none">Historial</span>
                                             </motion.button>
                                             {/* Descartar borrador individual */}
                                             {hasDraft && canManage && (
@@ -3172,17 +3174,19 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     onClick={e => { e.stopPropagation(); discardDraft(row); }}
                                                     title="Descartar borrador — vuelve al valor publicado"
                                                     {...iconAnim}
-                                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-colors duration-100">
                                                     <Trash2 size={12} />
+                                                    <span className="text-[7px] font-bold leading-none">Descartar</span>
                                                 </motion.button>
                                             )}
                                             {/* Publicar borrador */}
                                             {hasDraft && canManage && (
                                                 <motion.button onClick={e => { e.stopPropagation(); requestPublish([row.erp_product_id]); }}
                                                     disabled={publishing}
-                                                    {...chipAnim}
-                                                    className="text-[9px] font-bold text-[#0052CC] hover:text-white hover:bg-[#0052CC] bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg disabled:opacity-50">
-                                                    {publishing ? <Loader2 size={9} className="animate-spin" /> : 'Publicar'}
+                                                    {...iconAnim}
+                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg bg-[#0052CC] text-white hover:bg-[#003D99] transition-colors duration-100 disabled:opacity-50">
+                                                    {publishing ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
+                                                    <span className="text-[7px] font-bold leading-none">Publicar</span>
                                                 </motion.button>
                                             )}
                                         </div>

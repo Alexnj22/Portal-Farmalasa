@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.74';
+export const APP_VERSION = '2.2.75';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.75 — fix(minmax): PostgREST cap en HEAD request — reemplaza count:exact/head:true por RPC get_stock_analysis_count (lee directo de mv_stock_analysis con índice, sub-ms); parallel chunks ahora usan count real → todos los productos cargados
 // v2.2.74 — perf(minmax): A+B architecture — mv_stock_analysis MV (pre-computa branches/dead_stock en 4,279 filas × 7 sucursales); get_stock_analysis usa MV lookup + live JOINs en 45ms; loadData carga count+meta en paralelo (Phase 1) luego todos los chunks simultáneos Promise.all (Phase 2); calculate_stock_params refresca mv_stock_analysis al finalizar
 // v2.2.73 — fix(minmax): restaura while-loop con metadata paralela (PostgREST cap 1000 → todos los productos); fix(pagination): scrollIntoView instant al cambiar página (ya no sube el scroll); feat(layout): botones flotantes glassmorphism subir/bajar (GlassViewLayout, aparecen tras scroll > 150px)
 // v2.2.72 — perf(minmax): consolida 10+ useMemo passes en un solo O(N) derivado; fix colores invisibles en glass (text-slate-200→400, opacity-15→30, spinners/icons/text-slate-300→400/500); paginación: "···" siempre visible con mayor contraste, input "Ir a / [n]" siempre disponible cuando totalPages>7 (sin clic previo)

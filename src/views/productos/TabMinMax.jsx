@@ -1521,10 +1521,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         setLoading(true); setError(null); setInlineDraftEdit(null); setExpandedId(null);
         try {
             const CHUNK = 1000;
-            // Phase 1: count + metadata all in parallel
+            // Phase 1: exact count (via MV index) + metadata — all in parallel
             const [countRes, costRes, draftRes, cfgRes] = await Promise.all([
-                supabase.rpc('get_stock_analysis', { p_erp_sucursal_id: erpId })
-                    .select('*', { count: 'exact', head: true }),
+                supabase.rpc('get_stock_analysis_count', { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
                 supabase.from('stock_config').select('analysis_days,approaching_pct').eq('id', 1).single(),
@@ -1532,7 +1531,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             if (countRes.error) throw countRes.error;
             if (costRes.error)  throw costRes.error;
             // Phase 2: all row chunks in parallel
-            const numChunks = Math.max(1, Math.ceil((countRes.count ?? CHUNK) / CHUNK));
+            const numChunks = Math.max(1, Math.ceil((countRes.data ?? CHUNK) / CHUNK));
             const chunkResults = await Promise.all(
                 Array.from({ length: numChunks }, (_, i) =>
                     supabase.rpc('get_stock_analysis', { p_erp_sucursal_id: erpId })

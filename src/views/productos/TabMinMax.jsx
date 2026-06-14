@@ -30,10 +30,10 @@ const ctaAnim = {
     whileHover: { scale: 1.03,  transition: { duration: 0.18, ease: EASE_OUT_EXPO } },
     whileTap:   { scale: 0.97,  transition: { duration: 0.06, ease: 'easeIn' } },
 };
-// Icon button — snappier, tighter
+// Icon button — spring para que sea fluido sin lag
 const iconAnim = {
-    whileHover: { scale: 1.15,  transition: { duration: 0.14, ease: EASE_OUT_EXPO } },
-    whileTap:   { scale: 0.88,  transition: { duration: 0.06, ease: 'easeIn' } },
+    whileHover: { scale: 1.08, transition: { type: 'spring', stiffness: 700, damping: 28 } },
+    whileTap:   { scale: 0.88, transition: { type: 'spring', stiffness: 700, damping: 22 } },
 };
 // Entrance — fade up, stagger via delay passed at call site
 const fadeUp = (delay = 0) => ({
@@ -50,13 +50,13 @@ const ERP_NAMES = {
 const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
 const ALERT = {
-    out_of_stock: { label: 'Sin stock',     pill: 'bg-red-100 text-red-700 border-red-200',            dot: 'bg-red-500',     row: 'bg-red-50/40'    },
-    below_min:    { label: 'Bajo mínimo',   pill: 'bg-orange-100 text-orange-700 border-orange-200',   dot: 'bg-orange-500',  row: 'bg-orange-50/20' },
-    approaching:  { label: 'Próx. mínimo',  pill: 'bg-amber-100 text-amber-700 border-amber-200',      dot: 'bg-amber-400',   row: ''                },
-    ok:           { label: 'OK',            pill: 'bg-emerald-100 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500', row: ''                },
-    overstocked:  { label: 'Exceso',        pill: 'bg-blue-100 text-blue-700 border-blue-200',          dot: 'bg-blue-400',    row: 'bg-blue-50/10'   },
-    dead_stock:   { label: 'Sin movimiento',pill: 'bg-slate-100 text-slate-500 border-slate-200',       dot: 'bg-slate-300',   row: 'bg-slate-50/60'  },
-    no_data:      { label: 'Sin historial', pill: 'bg-yellow-50 text-yellow-700 border-yellow-200',      dot: 'bg-yellow-300',  row: ''                },
+    out_of_stock: { label: 'Sin stock',     pill: 'bg-slate-100/90 text-slate-600 border-slate-200', dot: 'bg-red-500',     row: 'bg-red-50/40'    },
+    below_min:    { label: 'Bajo mínimo',   pill: 'bg-slate-100/90 text-slate-600 border-slate-200', dot: 'bg-orange-500',  row: 'bg-orange-50/20' },
+    approaching:  { label: 'Próx. mínimo',  pill: 'bg-slate-100/90 text-slate-600 border-slate-200', dot: 'bg-amber-400',   row: ''                },
+    ok:           { label: 'OK',            pill: 'bg-slate-100/90 text-slate-600 border-slate-200', dot: 'bg-emerald-500', row: ''                },
+    overstocked:  { label: 'Exceso',        pill: 'bg-slate-100/90 text-slate-600 border-slate-200', dot: 'bg-blue-400',    row: 'bg-blue-50/10'   },
+    dead_stock:   { label: 'Sin movimiento',pill: 'bg-slate-100/90 text-slate-500 border-slate-200', dot: 'bg-slate-300',   row: 'bg-slate-50/60'  },
+    no_data:      { label: 'Sin historial', pill: 'bg-slate-100/90 text-slate-500 border-slate-200', dot: 'bg-slate-300',   row: ''                },
 };
 
 const STAT_CFGS = [
@@ -255,35 +255,34 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
     }
 
     const headerBtnCls = (active) =>
-        `py-0.5 px-1.5 rounded-lg text-[10px] font-black text-center backdrop-blur-sm
-         transition-[background-color,box-shadow,color] duration-100
+        `py-1 px-2 rounded-md text-[10px] font-black text-center
+         transition-[background-color,box-shadow,color] duration-75
          ${active
-             ? 'text-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
-             : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`;
+             ? 'text-[#0052CC] bg-[rgba(0,82,204,0.11)] shadow-[0_2px_8px_rgba(0,82,204,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
+             : 'text-slate-400 hover:text-slate-600 hover:bg-white/60'}`;
 
     return (
-        <div className="rounded-2xl border border-white/70 p-3 flex flex-col gap-1.5" style={glassBox}>
+        <div className="rounded-2xl border border-white/70 p-2 flex flex-col gap-1" style={glassBox}>
             <div className="flex items-center justify-between gap-2">
-                <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-400">ABC × XYZ</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">ABC × XYZ</span>
                 {(filterAbc !== 'all' || filterXyz !== 'all') && (
                     <motion.button
                         whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                         onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}
-                        className="text-[9px] font-bold text-slate-400 hover:text-rose-500 flex items-center gap-0.5 transition-colors duration-100 px-1.5 py-0.5 rounded-lg hover:bg-rose-50/70">
+                        className="text-[9px] font-bold text-slate-400 hover:text-rose-500 flex items-center gap-0.5 transition-colors duration-75 px-1.5 py-0.5 rounded-md hover:bg-rose-50/70">
                         <X size={8} strokeWidth={2.5} /> limpiar
                     </motion.button>
                 )}
             </div>
 
-            <div className="grid gap-1" style={{ gridTemplateColumns: '20px repeat(3, 1fr)', isolation: 'isolate' }}>
+            <div className="grid gap-[3px]" style={{ gridTemplateColumns: '18px repeat(3, 1fr)' }}>
                 {/* XYZ header */}
                 <div />
                 {XYZ_KEYS.map(xyz => (
                     <motion.button key={xyz}
-                        whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
+                        whileTap={{ scale: 0.90, transition: { type: 'spring', stiffness: 700, damping: 25 } }}
                         onClick={() => setFilterXyz(p => p === xyz ? 'all' : xyz)}
-                        className={headerBtnCls(isXyzActive(xyz))}
-                        style={isXyzActive(xyz) ? { background: 'rgba(0,82,204,0.11)' } : {}}>
+                        className={headerBtnCls(isXyzActive(xyz))}>
                         {xyz}
                     </motion.button>
                 ))}
@@ -292,10 +291,9 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                 {ABC_KEYS.map(abc => (
                     <React.Fragment key={abc}>
                         <motion.button
-                            whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
+                            whileTap={{ scale: 0.90, transition: { type: 'spring', stiffness: 700, damping: 25 } }}
                             onClick={() => setFilterAbc(p => p === abc ? 'all' : abc)}
-                            className={headerBtnCls(isAbcActive(abc))}
-                            style={isAbcActive(abc) ? { background: 'rgba(0,82,204,0.11)' } : {}}>
+                            className={headerBtnCls(isAbcActive(abc))}>
                             {abc}
                         </motion.button>
                         {XYZ_KEYS.map(xyz => {
@@ -305,11 +303,11 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                             return (
                                 <motion.button key={xyz}
                                     onClick={() => count > 0 && toggle(abc, xyz)}
-                                    whileHover={count > 0 && !isActive ? { scale: 1.08, zIndex: 10, transition: { type: 'spring', stiffness: 480, damping: 26 } } : {}}
-                                    whileTap={count > 0 ? { scale: 0.90, transition: { duration: 0.06 } } : {}}
-                                    className={`relative py-1.5 rounded-lg text-center
+                                    whileHover={count > 0 && !isActive ? { y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } } : {}}
+                                    whileTap={count > 0 ? { scale: 0.92, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } } : {}}
+                                    className={`relative py-1.5 rounded-md text-center
                                         ${count === 0 ? 'opacity-20 cursor-default' : 'cursor-pointer'}
-                                        ${isActive ? 'z-20' : ''}`}
+                                        ${isActive ? 'z-10' : ''}`}
                                     style={{
                                         background: isActive
                                             ? `rgba(0,82,204,${Math.min(0.22, intensity + 0.10)})`
@@ -3109,8 +3107,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             {filterHidden ? (
                                                 <motion.button onClick={async e => { e.stopPropagation(); await unhideProduct(row.erp_product_id); }}
                                                     title="Mostrar producto"
-                                                    {...iconAnim}
-                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-violet-500 hover:text-violet-700 hover:bg-violet-50 transition-colors duration-100">
+                                                    whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
+                                                    whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
+                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-violet-500 hover:text-violet-700 hover:bg-violet-50 transition-colors duration-75">
                                                     <Eye size={12} />
                                                     <span className="text-[7px] font-bold leading-none">Mostrar</span>
                                                 </motion.button>
@@ -3131,8 +3130,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 }}
                                                     disabled={hidingIds.has(row.erp_product_id)}
                                                     title="Ocultar producto (pone MIN/MAX en 0 y excluye de recálculos)"
-                                                    {...iconAnim}
-                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none transition-colors duration-100">
+                                                    whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
+                                                    whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
+                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none transition-colors duration-75">
                                                     {hidingIds.has(row.erp_product_id)
                                                         ? <Loader2 size={12} className="animate-spin text-slate-400" />
                                                         : <EyeOff size={12} />}
@@ -3142,8 +3142,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             {/* Poner en 0 */}
                                             {!dead && !noHistory && canManage && (
                                                 <motion.button onClick={e => { e.stopPropagation(); zeroOutRow(row); }} title={hasPublishedData && !hasDraft ? 'Poner MIN/MAX en 0 (en vivo)' : 'Crear borrador 0 / 0 (pone en 0 sin publicar)'}
-                                                    {...iconAnim}
-                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-colors duration-100">
+                                                    whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
+                                                    whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
+                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-colors duration-75">
                                                     <XCircle size={12} />
                                                     <span className="text-[7px] font-bold leading-none">Poner 0</span>
                                                 </motion.button>
@@ -3153,8 +3154,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 <motion.button
                                                     onClick={e => { e.stopPropagation(); resetToCalc(row); }}
                                                     title={row.calc_min != null ? `Restaurar a valores calculados (MIN ${row.calc_min} / MAX ${row.calc_max})` : 'Limpiar valores manuales — restaura a —'}
-                                                    {...iconAnim}
-                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 transition-colors duration-100">
+                                                    whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
+                                                    whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
+                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 transition-colors duration-75">
                                                     <RotateCcw size={12} />
                                                     <span className="text-[7px] font-bold leading-none">Restaurar</span>
                                                 </motion.button>
@@ -3163,8 +3165,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             <motion.button
                                                 onClick={e => { e.stopPropagation(); openHistory(row); }}
                                                 title="Ver historial de cambios MIN/MAX"
-                                                {...iconAnim}
-                                                className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-blue-400 hover:text-[#0052CC] hover:bg-blue-50 transition-colors duration-100">
+                                                whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
+                                                whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
+                                                className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-blue-400 hover:text-[#0052CC] hover:bg-blue-50 transition-colors duration-75">
                                                 <History size={12} />
                                                 <span className="text-[7px] font-bold leading-none">Historial</span>
                                             </motion.button>
@@ -3173,8 +3176,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 <motion.button
                                                     onClick={e => { e.stopPropagation(); discardDraft(row); }}
                                                     title="Descartar borrador — vuelve al valor publicado"
-                                                    {...iconAnim}
-                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-colors duration-100">
+                                                    whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
+                                                    whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
+                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-colors duration-75">
                                                     <Trash2 size={12} />
                                                     <span className="text-[7px] font-bold leading-none">Descartar</span>
                                                 </motion.button>
@@ -3183,8 +3187,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             {hasDraft && canManage && (
                                                 <motion.button onClick={e => { e.stopPropagation(); requestPublish([row.erp_product_id]); }}
                                                     disabled={publishing}
-                                                    {...iconAnim}
-                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg bg-[#0052CC] text-white hover:bg-[#003D99] transition-colors duration-100 disabled:opacity-50">
+                                                    whileHover={{ y: -1.5, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
+                                                    whileTap={{ scale: 0.90, y: 0, transition: { type: 'spring', stiffness: 800, damping: 25 } }}
+                                                    className="flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg text-[#0052CC] hover:text-[#003D99] hover:bg-blue-50 transition-colors duration-75 disabled:opacity-50">
                                                     {publishing ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
                                                     <span className="text-[7px] font-bold leading-none">Publicar</span>
                                                 </motion.button>

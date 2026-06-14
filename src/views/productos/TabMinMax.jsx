@@ -252,79 +252,91 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
         );
     }
 
+    const headerBtnCls = (active) =>
+        `py-0.5 px-1.5 rounded-lg text-[10px] font-black text-center backdrop-blur-sm
+         transition-[background-color,box-shadow,color] duration-100
+         ${active
+             ? 'text-[#0052CC] shadow-[0_2px_8px_rgba(0,82,204,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
+             : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`;
+
     return (
-        <div className="rounded-2xl border border-white/70 p-2.5 flex flex-col gap-1.5" style={glassBox}>
+        <div className="rounded-2xl border border-white/70 p-2 flex flex-col gap-1" style={glassBox}>
             <div className="flex items-center justify-between gap-2">
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">ABC × XYZ</span>
+                <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-400">ABC × XYZ</span>
                 {(filterAbc !== 'all' || filterXyz !== 'all') && (
-                    <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}
-                        className="text-[9px] font-bold text-slate-400 hover:text-[#0052CC] flex items-center gap-0.5 transition-colors">
-                        <X size={9} /> limpiar
-                    </button>
+                    <motion.button
+                        whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
+                        onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}
+                        className="text-[9px] font-bold text-slate-400 hover:text-rose-500 flex items-center gap-0.5 transition-colors duration-100 px-1.5 py-0.5 rounded-lg hover:bg-rose-50/70">
+                        <X size={8} strokeWidth={2.5} /> limpiar
+                    </motion.button>
                 )}
             </div>
 
-            <div className="grid gap-[3px]" style={{ gridTemplateColumns: '20px repeat(3, 1fr)', isolation: 'isolate' }}>
+            <div className="grid gap-[3px]" style={{ gridTemplateColumns: '18px repeat(3, 1fr)', isolation: 'isolate' }}>
                 {/* XYZ header */}
                 <div />
                 {XYZ_KEYS.map(xyz => (
-                    <button key={xyz}
+                    <motion.button key={xyz}
+                        whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                         onClick={() => setFilterXyz(p => p === xyz ? 'all' : xyz)}
-                        className="py-0.5 rounded-md text-[10px] font-black text-center transition-all duration-150"
-                        style={{
-                            color: isXyzActive(xyz) ? '#0052CC' : '#94a3b8',
-                            background: isXyzActive(xyz) ? 'rgba(0,82,204,0.10)' : 'transparent',
-                        }}>
+                        className={headerBtnCls(isXyzActive(xyz))}
+                        style={isXyzActive(xyz) ? { background: 'rgba(0,82,204,0.11)' } : {}}>
                         {xyz}
-                    </button>
+                    </motion.button>
                 ))}
 
                 {/* Rows */}
                 {ABC_KEYS.map(abc => (
                     <React.Fragment key={abc}>
-                        <button
+                        <motion.button
+                            whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                             onClick={() => setFilterAbc(p => p === abc ? 'all' : abc)}
-                            className="py-0.5 rounded-md text-[10px] font-black text-center transition-all duration-150"
-                            style={{
-                                color: isAbcActive(abc) ? '#0052CC' : '#94a3b8',
-                                background: isAbcActive(abc) ? 'rgba(0,82,204,0.10)' : 'transparent',
-                            }}>
+                            className={headerBtnCls(isAbcActive(abc))}
+                            style={isAbcActive(abc) ? { background: 'rgba(0,82,204,0.11)' } : {}}>
                             {abc}
-                        </button>
+                        </motion.button>
                         {XYZ_KEYS.map(xyz => {
                             const count = matrix[`${abc}${xyz}`];
                             const isActive = filterAbc === abc && filterXyz === xyz;
                             const intensity = count > 0 ? Math.max(0.07, (count / maxCell) * 0.28) : 0;
                             return (
-                                <button key={xyz} onClick={() => toggle(abc, xyz)}
-                                    className={`relative py-1.5 rounded-lg text-center transition-all duration-200
-                                        ${count === 0 ? 'opacity-15 cursor-default' : 'cursor-pointer hover:z-10 hover:scale-[1.06]'}
+                                <motion.button key={xyz}
+                                    onClick={() => count > 0 && toggle(abc, xyz)}
+                                    whileHover={count > 0 && !isActive ? { scale: 1.08, zIndex: 10, transition: { type: 'spring', stiffness: 480, damping: 26 } } : {}}
+                                    whileTap={count > 0 ? { scale: 0.90, transition: { duration: 0.06 } } : {}}
+                                    className={`relative py-1 rounded-lg text-center
+                                        ${count === 0 ? 'opacity-20 cursor-default' : 'cursor-pointer'}
                                         ${isActive ? 'z-20' : ''}`}
                                     style={{
-                                        background: count > 0 ? `rgba(0,82,204,${intensity})` : 'rgba(0,0,0,0.02)',
+                                        background: isActive
+                                            ? `rgba(0,82,204,${Math.min(0.22, intensity + 0.10)})`
+                                            : count > 0 ? `rgba(0,82,204,${intensity})` : 'rgba(0,0,0,0.02)',
+                                        backdropFilter: isActive ? 'blur(10px) saturate(180%)' : undefined,
+                                        WebkitBackdropFilter: isActive ? 'blur(10px) saturate(180%)' : undefined,
                                         boxShadow: isActive
-                                            ? '0 4px 14px rgba(0,82,204,0.22)'
+                                            ? '0 4px 14px rgba(0,82,204,0.24), inset 0 1px 0 rgba(255,255,255,0.85)'
                                             : count > 0 ? '0 1px 4px rgba(0,82,204,0.07)' : undefined,
-                                        outline: isActive ? '2px solid rgba(0,82,204,0.70)' : undefined,
-                                        outlineOffset: isActive ? '1px' : undefined,
+                                        outline: isActive ? '1.5px solid rgba(0,82,204,0.55)' : undefined,
+                                        outlineOffset: isActive ? '1.5px' : undefined,
                                     }}
                                     disabled={count === 0}>
                                     <span className="text-[11px] font-black text-slate-700 tabular-nums leading-none">{count || '—'}</span>
-                                    {count > 0 && <span className="text-[8px] font-semibold text-slate-400 block mt-0.5">{abc}{xyz}</span>}
-                                </button>
+                                    {count > 0 && <span className="text-[8px] font-semibold text-slate-400 block">{abc}{xyz}</span>}
+                                </motion.button>
                             );
                         })}
                     </React.Fragment>
                 ))}
             </div>
 
-            {/* Legend */}
-            <div className="flex items-center gap-3 border-t border-white/60 pt-1.5">
+            {/* Legend — one line */}
+            <div className="flex items-center gap-2.5 border-t border-white/50 pt-1">
                 {XYZ_KEYS.map((xyz, i) => {
-                    const descs = ['Estable', 'Moderada', 'Errática'];
+                    const descs = ['Estable', 'Mod.', 'Errática'];
                     return (
-                        <span key={xyz} className="flex items-center gap-1 text-[8.5px]">
-                            <span className={`font-black text-[9px] transition-colors ${isXyzActive(xyz) ? 'text-[#0052CC]' : 'text-slate-400'}`}>{xyz}</span>
+                        <span key={xyz} className="flex items-center gap-0.5 text-[8px]">
+                            <span className={`font-black transition-colors duration-100 ${isXyzActive(xyz) ? 'text-[#0052CC]' : 'text-slate-400'}`}>{xyz}</span>
                             <span className="text-slate-400">{descs[i]}</span>
                         </span>
                     );
@@ -1515,11 +1527,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     useEffect(() => {
         if (!expandedId) return;
-        const timer = setTimeout(() => {
-            document.querySelector(`[data-product-row="${expandedId}"]`)
+        // Wait for the height animation to finish (350ms), then scroll the panel into view
+        const t = setTimeout(() => {
+            document.querySelector(`[data-expand-row="${expandedId}"]`)
                 ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 60);
-        return () => clearTimeout(timer);
+        }, 380);
+        return () => clearTimeout(t);
     }, [expandedId]);
 
     const loadData = useCallback(async (erpId) => {
@@ -1975,6 +1988,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
     // ── Derived ──────────────────────────────────────────────────────────────
     const hasActiveFilter = filterAbc !== 'all' || filterXyz !== 'all' || filterAlert !== 'all' || searchTerm !== '';
+    const hasAnyFilter    = hasActiveFilter || filterDraft || filterSparse || filterChangesOnly;
+    const clearAllFilters = useCallback(() => {
+        setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all');
+        setFilterDraft(false); setFilterSparse(false); setFilterChangesOnly(false);
+    }, []);
     const isBodega      = selectedErp === 6;
     const neverCalc     = data.length > 0 && data.filter(d => !d.is_catalog_only).every(d => d.is_dead_stock || d.alert_status === 'no_data');
     const hasActiveData = data.some(d => !d.is_dead_stock && d.alert_status !== 'no_data' && !d.is_catalog_only);
@@ -2325,19 +2343,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <React.Fragment key={cfg.key}>
                                     {i > 0 && <div className="h-5 w-px bg-slate-200/50 shrink-0" />}
                                     <motion.button
-                                        whileTap={{ scale: 0.91 }}
-                                        whileHover={!active ? { backgroundColor: 'rgba(255,255,255,0.60)' } : {}}
+                                        whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                                         onClick={() => setFilterAlert(prev => prev === cfg.key ? 'all' : cfg.key)}
-                                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold select-none whitespace-nowrap transition-all duration-200 ${active ? cfg.chipActive + ' font-bold border' : 'text-slate-500 hover:text-slate-700'}`}
-                                        style={active ? {
-                                            backdropFilter: 'blur(14px) saturate(180%)',
-                                            WebkitBackdropFilter: 'blur(14px) saturate(180%)',
-                                            boxShadow: '0 2px 10px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,0.88)',
-                                        } : {}}>
+                                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold select-none whitespace-nowrap backdrop-blur-sm
+                                            transition-[background-color,border-color,color,box-shadow] duration-100
+                                            ${active
+                                                ? cfg.chipActive + ' font-bold border shadow-[0_2px_10px_rgba(0,0,0,0.09),inset_0_1px_0_rgba(255,255,255,0.88)]'
+                                                : 'text-slate-500 border border-transparent hover:bg-white/55 hover:text-slate-700'}`}>
                                         <motion.span
                                             className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`}
-                                            animate={active ? { scale: [1, 1.4, 1] } : { scale: 1 }}
-                                            transition={{ duration: 0.28 }}
+                                            animate={active ? { scale: [1, 1.5, 1] } : { scale: 1 }}
+                                            transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
                                         />
                                         <span className={`tabular-nums font-black text-[11px] ${active ? '' : 'text-slate-700'}`}>
                                             {loading ? '–' : stats[cfg.key]}
@@ -2361,15 +2377,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             <motion.div key="sparse" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
                                 <div className="h-5 w-px bg-slate-200/50 shrink-0" />
                                 <motion.button
-                                    whileTap={{ scale: 0.91 }}
-                                    whileHover={!filterSparse ? { backgroundColor: 'rgba(255,255,255,0.60)' } : {}}
+                                    whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                                     onClick={() => { setFilterSparse(f => !f); setFilterDraft(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
-                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold transition-all duration-200 whitespace-nowrap ${filterSparse ? 'bg-orange-50/90 text-orange-700 font-bold border border-orange-200/70' : 'text-orange-500 hover:text-orange-700'}`}
-                                    style={filterSparse ? {
-                                        backdropFilter: 'blur(14px) saturate(180%)',
-                                        WebkitBackdropFilter: 'blur(14px) saturate(180%)',
-                                        boxShadow: '0 2px 10px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,0.88)',
-                                    } : {}}>
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold whitespace-nowrap backdrop-blur-sm
+                                        transition-[background-color,border-color,color,box-shadow] duration-100
+                                        ${filterSparse
+                                            ? 'bg-orange-50/90 text-orange-700 font-bold border border-orange-200/70 shadow-[0_2px_10px_rgba(0,0,0,0.09),inset_0_1px_0_rgba(255,255,255,0.88)]'
+                                            : 'text-orange-500 border border-transparent hover:bg-white/55 hover:text-orange-700'}`}>
                                     <AlertTriangle size={10} strokeWidth={2.5} className="shrink-0" />
                                     <span className="tabular-nums font-black text-[12px]">{sparseCount}</span>
                                     pocos datos
@@ -2380,6 +2394,22 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         </motion.span>
                                     )}
                                     </AnimatePresence>
+                                </motion.button>
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
+
+                        {/* ── Limpiar todos los filtros ── */}
+                        <AnimatePresence>
+                        {hasAnyFilter && (
+                            <motion.div key="clear-all" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.15, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
+                                <div className="h-5 w-px bg-slate-200/50 shrink-0" />
+                                <motion.button
+                                    whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
+                                    onClick={clearAllFilters}
+                                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-slate-500 hover:text-rose-600 backdrop-blur-sm border border-transparent hover:border-rose-200/70 hover:bg-rose-50/80 hover:shadow-[0_2px_8px_rgba(244,63,94,0.12)] transition-[background-color,border-color,color,box-shadow] duration-100 whitespace-nowrap">
+                                    <X size={10} strokeWidth={2.5} />
+                                    Limpiar
                                 </motion.button>
                             </motion.div>
                         )}
@@ -3136,7 +3166,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     </DataCell>
                                 </DataRow>
 
-                                <tr>
+                                <tr data-expand-row={row.erp_product_id}>
                                     <td colSpan={COLS.length} className="p-0">
                                         <AnimatePresence initial={false}>
                                         {isExpanded && canExpand && (

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.76';
+export const APP_VERSION = '2.2.77';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.77 — fix(minmax): chips sin lag (transition-all→transition-[bg,border,color] duration-100 + backdrop-blur-sm siempre); botón global "Limpiar" (aparece con cualquier filtro activo, limpia todo); ABC matrix más compacta + liquid glass real en celdas (backdrop-blur+inner shadow cuando activa, spring whileHover/whileTap en celdas y header); scroll al expandir → data-expand-row + 380ms delay (espera animación 350ms)
 // v2.2.76 — fix(minmax): stat filter chips más compactos + glass activo (px-2.5 py-1.5, rounded-xl, backdrop-blur+shadow cuando activo); DraftCostCard misma altura que CostCards (delta integrado en label, sin fila extra); scroll suave al expandir producto (scrollIntoView block:nearest con 60ms delay)
 // v2.2.75 — fix(minmax): PostgREST cap en HEAD request — reemplaza count:exact/head:true por RPC get_stock_analysis_count (lee directo de mv_stock_analysis con índice, sub-ms); parallel chunks ahora usan count real → todos los productos cargados
 // v2.2.74 — perf(minmax): A+B architecture — mv_stock_analysis MV (pre-computa branches/dead_stock en 4,279 filas × 7 sucursales); get_stock_analysis usa MV lookup + live JOINs en 45ms; loadData carga count+meta en paralelo (Phase 1) luego todos los chunks simultáneos Promise.all (Phase 2); calculate_stock_params refresca mv_stock_analysis al finalizar

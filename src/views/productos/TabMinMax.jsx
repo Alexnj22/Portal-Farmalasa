@@ -667,16 +667,17 @@ function StockBar({ current, min, max }) {
     );
 }
 
-// ─── Combined ABC×XYZ badge ───────────────────────────────────────────────────
+// ─── Combined ABC×XYZ badge — plain text, only C/Z get color ────────────────
 
 function AbcXyzBadge({ abc, xyz }) {
-    const abcCfg = ABC_CFG[abc] ?? ABC_CFG.D;
-    const xyzCfg = XYZ_CFG[normXyz(xyz)] ?? XYZ_CFG.X;
+    const xyzKey = normXyz(xyz);
+    const abcColor = abc === 'C' ? 'text-amber-600' : 'text-slate-500';
+    const xyzColor = xyzKey === 'Z' ? 'text-rose-500' : 'text-slate-400';
     return (
-        <div className="flex items-center gap-0.5 shrink-0">
-            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-l-md border-y border-l ${abcCfg.bg}`} title={abcCfg.title}>{abc || '—'}</span>
-            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-r-md border ${xyzCfg.cls}`} title={xyzCfg.desc}>{normXyz(xyz) || 'X'}</span>
-        </div>
+        <span className="font-black tracking-tight shrink-0" title={`${ABC_CFG[abc]?.title ?? ''} · ${XYZ_CFG[xyzKey]?.desc ?? ''}`}>
+            <span className={`text-[11px] ${abcColor}`}>{abc || '—'}</span>
+            <span className={`text-[10px] ${xyzColor}`}>{xyzKey || 'X'}</span>
+        </span>
     );
 }
 
@@ -687,7 +688,6 @@ function ExpandedPanel({ row, cycleDays }) {
     const stock       = Number(row.current_stock);
     const minN        = Number(row.effective_min);
     const maxN        = Number(row.effective_max);
-    const breakdown   = getBreakdown(stock, pres);
     const hasDominant = sortedPres(pres).length > 0;
     const coverDays   = row.daily_velocity > 0 ? (stock / row.daily_velocity).toFixed(1) : null;
 
@@ -769,10 +769,8 @@ function ExpandedPanel({ row, cycleDays }) {
     return (
         <div className="mx-3 mb-3 rounded-2xl overflow-hidden"
             style={{
-                background: 'rgba(240,244,255,0.72)',
-                backdropFilter: 'blur(32px) saturate(200%)',
-                WebkitBackdropFilter: 'blur(32px) saturate(200%)',
-                border: '1px solid rgba(255,255,255,0.90)',
+                background: 'rgba(238,243,255,0.96)',
+                border: '1px solid rgba(220,228,255,0.80)',
                 boxShadow: '0 8px 32px rgba(0,82,204,0.08), inset 0 1px 0 rgba(255,255,255,0.95)',
             }}>
 
@@ -849,30 +847,8 @@ function ExpandedPanel({ row, cycleDays }) {
                 </AnimatePresence>
             </div>
 
-            {/* ── Current branch breakdown by presentation (sin columna und) ── */}
-            {breakdown.length > 0 ? (
-                <div style={glassSection} className="divide-y divide-white/50">
-                    {breakdown.map(({ tipo, factor, qty, base }, i) => {
-                        const pct = stock > 0 ? (base / stock) * 100 : 0;
-                        return (
-                            <div key={i} className="grid items-center px-4 py-2"
-                                style={{ gridTemplateColumns: '120px 1fr 52px' }}>
-                                <div className="flex items-center gap-1.5">
-                                    <span className="text-[12px] font-bold text-slate-700">{tipo}</span>
-                                    {factor > 1 && <span className="text-[9px] font-mono text-slate-400 bg-white/60 px-1 rounded">×{factor}</span>}
-                                </div>
-                                <div className="flex items-center gap-2.5 pr-4">
-                                    <div className="flex-1 h-[5px] bg-white/60 rounded-full overflow-hidden">
-                                        <div className="h-full bg-emerald-400/70 rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%` }} />
-                                    </div>
-                                    <span className="text-[14px] font-black text-slate-800 tabular-nums shrink-0 w-8 text-right">{qty}</span>
-                                </div>
-                                <div className="text-right text-[10px] text-slate-400 tabular-nums">{pct.toFixed(0)}%</div>
-                            </div>
-                        );
-                    })}
-                </div>
-            ) : branchReady && stock === 0 && (
+            {/* Sin stock indicator */}
+            {branchReady && stock === 0 && (
                 <div className="px-4 py-3 flex items-center gap-2 text-[11px] text-slate-400 italic" style={glassSection}>
                     <Package size={13} className="shrink-0 text-slate-400" /> Sin existencias en esta sucursal
                 </div>
@@ -2307,10 +2283,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         { key: 'product_name',  label: 'Producto',    align: 'left',   sortable: true, className: 'w-[30%]' },
         { key: 'laboratorio',   label: 'Laboratorio', align: 'left',   sortable: true, className: 'w-[18%]' },
         { key: 'abc_xyz',       label: 'Clase',       align: 'center', sortable: true, className: 'w-14' },
-        { key: 'effective_min', label: 'MIN',         align: 'center', sortable: true, className: 'w-[76px]' },
-        { key: 'effective_max', label: 'MAX',         align: 'center', sortable: true, className: 'w-[76px]' },
+        { key: 'effective_min', label: 'MIN · MAX',   align: 'center', sortable: true, className: 'w-[150px]' },
         { key: 'presentacion',  label: 'Despacho',    align: 'center', className: 'w-[130px]' },
-        { key: 'alert_status',  label: 'Estado',      align: 'center', className: 'w-28' },
         { key: 'acciones',      label: 'Acciones',    align: 'center', className: 'w-20' },
     ];
 
@@ -2437,7 +2411,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
             {/* ── ABC × XYZ Matrix + info strip ── */}
             {!isBodega && (
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 items-stretch">
                     <AbcXyzMatrix
                         data={data}
                         filterAbc={filterAbc} setFilterAbc={setFilterAbc}
@@ -2448,20 +2422,20 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Fórmula actual</span>
                         <div className="flex flex-col gap-1.5">
                             <div className="flex items-center justify-between gap-4">
-                                <span className="font-semibold">MAX (objetivo)</span>
-                                <span className="font-black text-[#0052CC]">{cycleDays} días</span>
+                                <span className="font-semibold text-slate-600">MAX (objetivo)</span>
+                                <span className="font-black text-slate-800">{cycleDays} días</span>
                             </div>
                             <div className="flex items-center justify-between gap-4">
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /> MIN (X)</span>
-                                <span className="font-black text-emerald-600">{config?.reorder_x_days ?? 7}d</span>
+                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-600 inline-block" /> MIN (X)</span>
+                                <span className="font-black text-slate-700">{config?.reorder_x_days ?? 7}d</span>
                             </div>
                             <div className="flex items-center justify-between gap-4">
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> MIN (Y)</span>
-                                <span className="font-black text-amber-600">{config?.reorder_y_days ?? 10}d</span>
+                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-400 inline-block" /> MIN (Y)</span>
+                                <span className="font-black text-slate-500">{config?.reorder_y_days ?? 10}d</span>
                             </div>
                             <div className="flex items-center justify-between gap-4">
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> MIN (Z)</span>
-                                <span className="font-black text-red-500">{config?.reorder_z_days ?? 15}d</span>
+                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-300 inline-block" /> MIN (Z)</span>
+                                <span className="font-black text-slate-400">{config?.reorder_z_days ?? 15}d</span>
                             </div>
                             <div className="h-px bg-slate-100 my-0.5" />
                             <div className="flex items-center justify-between gap-4">
@@ -2469,7 +2443,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <span className="font-bold text-slate-600">{config?.analysis_days ?? 180}d</span>
                             </div>
                         </div>
-                        <p className="text-[9px] text-slate-400 mt-1 leading-snug">
+                        <p className="text-[9px] text-slate-400 mt-auto pt-2 leading-snug">
                             XYZ: X≤{config?.xyz_x_cv_max ?? 30}% CV · Y≤{config?.xyz_y_cv_max ?? 70}% CV · Z&gt;{config?.xyz_y_cv_max ?? 70}%<br />
                             ABC: A&lt;{config?.abc_a_pct ?? 70}% revenue · B&lt;{config?.abc_b_pct ?? 90}%
                         </p>
@@ -2844,14 +2818,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                     {/* Producto */}
                                     <DataCell align="left" className="!py-2.5">
                                         <div className="flex items-center gap-2 min-w-0">
-                                            {/* Product photo — click to zoom */}
+                                            {/* Product photo — click to zoom; alert dot badge */}
                                             <div
-                                                className={`shrink-0 w-7 h-7 rounded-md overflow-hidden bg-slate-50/80 border border-slate-100 flex items-center justify-center ${row.foto_url ? 'cursor-zoom-in' : ''}`}
+                                                className={`shrink-0 relative w-7 h-7 rounded-md overflow-visible bg-slate-50/80 border border-slate-100 flex items-center justify-center ${row.foto_url ? 'cursor-zoom-in' : ''}`}
                                                 onClick={row.foto_url ? e => { e.stopPropagation(); setZoomPhoto(row.foto_url); } : undefined}
+                                                title={alert.label}
                                             >
                                                 {row.foto_url
-                                                    ? <img src={row.foto_url} alt="" className="w-full h-full object-contain" />
+                                                    ? <img src={row.foto_url} alt="" className="w-full h-full object-contain rounded-md" />
                                                     : <Package size={13} className="text-slate-400" />}
+                                                {row.alert_status && row.alert_status !== 'ok' && (
+                                                    <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full border border-white shadow-sm shrink-0 ${alert.dot}`} />
+                                                )}
                                             </div>
                                             <div className={`shrink-0 w-4 h-4 flex items-center justify-center ${!canExpand ? 'opacity-0' : ''}`}>
                                                 <ChevronRight size={12} className={`text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
@@ -2869,8 +2847,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     )}
                                                 </div>
                                                 {/* Stock actual inline */}
-                                                <div className="flex items-center gap-1.5 mt-0.5">
-                                                    <span className={`text-[11px] font-black tabular-nums ${stock === 0 ? 'text-red-500' : stock < minN ? 'text-orange-500' : 'text-slate-600'}`}>
+                                                {/* Stock + velocity — single compact row */}
+                                                <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                                                    <Package size={10} className="text-slate-400 shrink-0" />
+                                                    <span className="text-[11px] font-black tabular-nums text-slate-700">
                                                         {formatUnits(stock, pres)}
                                                     </span>
                                                     {!dead && minN > 0 && stock < minN && (
@@ -2879,44 +2859,45 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     {!dead && maxN > 0 && stock > maxN && (
                                                         <span className="text-[9px] font-bold text-blue-400">↑{(stock - maxN).toLocaleString()}</span>
                                                     )}
+                                                    <span className="text-slate-200 text-[10px] select-none mx-0.5">|</span>
+                                                    {noHistory && (
+                                                        <span className="text-[10px] text-yellow-600 font-semibold italic">Sin ventas</span>
+                                                    )}
+                                                    {isSparse && (
+                                                        <span className="text-[10px] text-orange-600 font-semibold flex items-center gap-0.5">
+                                                            <AlertTriangle size={9} />
+                                                            {Number(row.units_sold_6m) >= 10
+                                                                ? `Mayorista: ${Number(row.units_sold_6m).toLocaleString()} uds.`
+                                                                : Number(row.units_sold_6m) > 0
+                                                                    ? `${Number(row.units_sold_6m).toLocaleString()} uds. 6m`
+                                                                    : 'Sin ventas'
+                                                            }
+                                                            {row.last_sale_date && <span className="text-orange-400 ml-0.5">· {new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>}
+                                                        </span>
+                                                    )}
+                                                    {!dead && !noHistory && !isSparse && (
+                                                        <span className="text-[10px] text-slate-500 flex items-center gap-0.5 font-medium">
+                                                            <BarChart2 size={9} className="text-slate-400 shrink-0" />
+                                                            {v6m.toFixed(2)}/día
+                                                            {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={9} className="text-emerald-500 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
+                                                            {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={9} className="text-red-400 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
+                                                            {Number(row.units_sold_6m) > 0 && <><span className="text-slate-300 mx-0.5">·</span>{Number(row.units_sold_6m).toLocaleString()} vend.</>}
+                                                            <span className="text-slate-300 mx-0.5">·</span>
+                                                            {row.last_sale_date
+                                                                ? <span className="font-semibold text-slate-600">{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                                                                : <span className="text-slate-400 italic">sin venta</span>
+                                                            }
+                                                        </span>
+                                                    )}
+                                                    {(dead || noHistory) && (
+                                                        <span className="text-[10px] font-semibold text-slate-500">
+                                                            {row.last_sale_date
+                                                                ? <><span className="text-slate-400">Últ.</span> {new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</>
+                                                                : <span className="text-slate-400 italic">sin ventas</span>
+                                                            }
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                {noHistory && (
-                                                    <span className="text-[10px] text-yellow-600 font-semibold italic mt-0.5">Sin ventas en esta sucursal</span>
-                                                )}
-                                                {isSparse && (
-                                                    <span className="text-[10px] text-orange-600 font-semibold mt-0.5 flex items-center gap-0.5">
-                                                        <AlertTriangle size={9} />
-                                                        {Number(row.units_sold_6m) >= 10
-                                                            ? `Posible compra mayorista: ${Number(row.units_sold_6m).toLocaleString()} uds. en 1–2 días`
-                                                            : Number(row.units_sold_6m) > 0
-                                                                ? `Rotación mínima: ${Number(row.units_sold_6m).toLocaleString()} uds. en 6 meses`
-                                                                : 'Sin ventas registradas'
-                                                        }
-                                                        {row.last_sale_date && <span className="text-orange-400">· {new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>}
-                                                    </span>
-                                                )}
-                                                {!dead && !noHistory && !isSparse && (
-                                                    <span className="text-[10px] text-slate-700 flex items-center gap-0.5 mt-0.5 font-medium">
-                                                        {v6m.toFixed(2)}/día
-                                                        {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={9} className="text-emerald-500 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
-                                                        {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={9} className="text-red-400 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
-                                                        {Number(row.units_sold_6m) > 0 && <span className="ml-1 text-slate-400">·</span>}
-                                                        {Number(row.units_sold_6m) > 0 && <span className="ml-1 text-slate-700">{Number(row.units_sold_6m).toLocaleString()} vend.</span>}
-                                                        <span className="ml-1 text-slate-400">·</span>
-                                                        {row.last_sale_date
-                                                            ? <span className="ml-0.5 text-slate-700 font-semibold">{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
-                                                            : <span className="ml-0.5 text-slate-400 italic">sin venta</span>
-                                                        }
-                                                    </span>
-                                                )}
-                                                {(dead || noHistory) && (
-                                                    <span className="text-[10px] mt-0.5 font-semibold text-slate-500">
-                                                        {row.last_sale_date
-                                                            ? <>Últ. venta <span className="text-slate-700">{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span></>
-                                                            : <span className="text-slate-400 italic">sin ventas registradas</span>
-                                                        }
-                                                    </span>
-                                                )}
                                             </div>
                                         </div>
                                     </DataCell>
@@ -2949,277 +2930,154 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                         }
                                     </DataCell>
 
-                                    {/* MIN — inline edit on click (draft→amber, live→emerald) */}
+                                    {/* MIN · MAX — combined cell; Tab/ArrowRight moves min→max */}
                                     <DataCell align="center" className="!py-2.5">
-                                        {canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'min' ? (
-                                            <div className="flex flex-col items-center">
-                                                <input autoFocus type="number" min="0"
-                                                    value={inlineDraftEdit.value}
-                                                    onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value, error: undefined }))}
-                                                    onFocus={e => e.target.select()}
-                                                    onBlur={() => {
-                                                        if (skipBlurSave.current) { skipBlurSave.current = false; return; }
-                                                        if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
-                                                        const err = validateEditForRow(inlineDraftEdit, row);
-                                                        if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
-                                                        saveDraftCell(inlineDraftEdit);
-                                                    }}
-                                                    onKeyDown={e => {
-                                                        if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
-                                                        if (e.key === 'Tab' || e.key === 'ArrowRight') {
-                                                            e.preventDefault();
-                                                            skipBlurSave.current = true;
-                                                            if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
-                                                            setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(hasDraft ? (row.draft_max ?? '') : (row.effective_max ?? '')), pendingMin: inlineDraftEdit.value });
-                                                            return;
-                                                        }
-                                                        if (e.key === 'Enter' || e.key === 'ArrowDown') {
-                                                            e.preventDefault();
-                                                            if (inlineDraftEdit.value !== '') {
-                                                                const err = validateEditForRow(inlineDraftEdit, row);
-                                                                if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
-                                                                skipBlurSave.current = true;
-                                                                saveDraftCell(inlineDraftEdit);
-                                                            }
-                                                            const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id));
-                                                            if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? String(next.draft_min ?? '') : (next.is_dead_stock || next.is_catalog_only || next.effective_min === null ? '' : String(next.effective_min ?? '')) });
-                                                            else setInlineDraftEdit(null);
-                                                            return;
-                                                        }
-                                                        if (e.key === 'ArrowUp') {
-                                                            e.preventDefault();
-                                                            if (inlineDraftEdit.value !== '') {
-                                                                const err = validateEditForRow(inlineDraftEdit, row);
-                                                                if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
-                                                                skipBlurSave.current = true;
-                                                                saveDraftCell(inlineDraftEdit);
-                                                            }
-                                                            const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id));
-                                                            if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? String(prev.draft_min ?? '') : (prev.is_dead_stock || prev.is_catalog_only || prev.effective_min === null ? '' : String(prev.effective_min ?? '')) });
-                                                            else setInlineDraftEdit(null);
-                                                            return;
-                                                        }
-                                                    }}
-                                                    onClick={e => e.stopPropagation()}
-                                                    className={`w-20 text-center text-[13px] font-black rounded-lg px-1 py-1 focus:outline-none border-2 ${hasDraft ? 'text-amber-800 bg-amber-50 border-amber-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
-                                                {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && (
-                                                    <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-amber-700' : 'text-emerald-700'}`}>
-                                                        ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
-                                                    </div>
-                                                )}
-                                                {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
-                                            </div>
-                                        ) : canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'max' && inlineDraftEdit?.pendingMin !== undefined ? (
-                                            <div className="flex flex-col items-center">
-                                                <div className={`px-2.5 py-1 rounded-lg border-2 border-dashed ${hasDraft ? 'border-amber-400 bg-amber-50' : 'border-emerald-400 bg-emerald-50'}`}>
-                                                    <span className={`text-[13px] font-black tabular-nums ${hasDraft ? 'text-amber-700' : 'text-emerald-700'}`}>
-                                                        {inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()}
-                                                    </span>
-                                                </div>
-                                                {sortedPres(pres).length > 0 && inlineDraftEdit.pendingMin !== '' && (
-                                                    <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                        ≈ {formatDominant(parseInt(inlineDraftEdit.pendingMin, 10) || 0, pres)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ) : hasDraft ? (
-                                            <div className={`flex flex-col items-center ${canManage ? 'cursor-pointer group/min' : ''}`}
-                                                onClick={canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.draft_min ?? '') }); } : undefined}>
-                                                <div className={`px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 ${canManage ? 'group-hover/min:border-amber-400 group-hover/min:bg-amber-100' : ''} transition-[border-color,background-color] duration-150`}>
-                                                    <span className="text-[13px] font-black tabular-nums text-amber-700">{(row.draft_min ?? 0).toLocaleString()}</span>
-                                                </div>
-                                                {minN > 0 && <div className="text-[9px] text-slate-600 tabular-nums mt-0.5">{minN.toLocaleString()} act.</div>}
-                                            </div>
-                                        ) : isSparse ? (
-                                            canManage ? (
-                                                <div className="flex flex-col items-center cursor-pointer group/min"
-                                                    onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: minN > 0 ? String(minN) : '' }); }}>
-                                                    <div className="px-2.5 py-1 rounded-lg bg-orange-50 border border-dashed border-orange-300 group-hover/min:border-orange-400 group-hover/min:bg-orange-100 transition-[border-color,background-color] duration-150">
-                                                        <span className="text-[13px] font-black tabular-nums text-orange-400">{minN > 0 ? minN.toLocaleString() : '—'}</span>
-                                                    </div>
-                                                    <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-[12px] font-semibold tabular-nums text-orange-400">{minN > 0 ? minN.toLocaleString() : '—'}</span>
-                                                    <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
-                                                </div>
-                                            )
-                                        ) : ((dead || noHistory) && minN === 0 && maxN === 0) || row.effective_min === null ? (
-                                            canManage ? (
-                                                <div className="flex flex-col items-center cursor-pointer group/min"
-                                                    onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: '' }); }}>
-                                                    <div className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 group-hover/min:border-amber-400 group-hover/min:bg-amber-100 transition-[border-color,background-color] duration-150">
-                                                        <span className="text-[13px] font-black tabular-nums text-amber-400">—</span>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-[12px] font-semibold tabular-nums text-slate-400">—</span>
-                                                </div>
-                                            )
-                                        ) : (
-                                            canManage ? (
-                                                <div className="flex flex-col items-center cursor-pointer group/min"
-                                                    onClick={e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(row.effective_min ?? '') }); }}>
-                                                    <div className={`px-2.5 py-1 rounded-lg border group-hover/min:border-emerald-400 group-hover/min:bg-emerald-50 transition-[border-color,background-color] duration-150 ${stock < minN ? 'border-orange-200' : 'border-slate-200'}`}>
-                                                        <span className={`text-[13px] font-black tabular-nums ${stock < minN ? 'text-orange-600' : 'text-slate-600'}`}>{minN.toLocaleString()}</span>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center">
-                                                    <div className={`text-[12px] font-semibold tabular-nums ${stock < minN ? 'text-orange-600 font-bold' : 'text-slate-500'}`}>{minN.toLocaleString()}</div>
-                                                </div>
-                                            )
-                                        )}
-                                    </DataCell>
+                                        {(() => {
+                                            const isEditMin = canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'min';
+                                            const isEditMax = canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'max';
+                                            const sep = <span className="text-slate-300 mx-1 select-none text-[11px]">·</span>;
 
-                                    {/* MAX — inline edit on click (draft→blue, live→emerald) */}
-                                    <DataCell align="center" className="!py-2.5">
-                                        {canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'max' ? (
-                                            <div className="flex flex-col items-center">
-                                                <input autoFocus type="number" min="0"
-                                                    value={inlineDraftEdit.value}
-                                                    onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value, error: undefined }))}
-                                                    onFocus={e => e.target.select()}
-                                                    onBlur={() => {
-                                                        if (skipBlurSave.current) { skipBlurSave.current = false; return; }
-                                                        if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
-                                                        const errB = validateEditForRow(inlineDraftEdit, row);
-                                                        if (errB) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, errB, 'error'); setInlineDraftEdit(null); return; }
-                                                        if (inlineDraftEdit.pendingMin !== undefined) {
-                                                            const { productId, sucursalId, pendingMin, value } = inlineDraftEdit;
-                                                            skipBlurSave.current = true;
-                                                            setInlineDraftEdit(null);
-                                                            saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name);
-                                                        } else {
-                                                            saveDraftCell(inlineDraftEdit);
-                                                        }
-                                                    }}
-                                                    onKeyDown={e => {
-                                                        if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
-                                                        if (e.key === 'ArrowLeft') {
-                                                            e.preventDefault();
-                                                            skipBlurSave.current = true;
-                                                            if (inlineDraftEdit.pendingMin !== undefined) {
-                                                                setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: inlineDraftEdit.pendingMin });
-                                                            } else {
-                                                                if (inlineDraftEdit.value !== '') saveDraftCell(inlineDraftEdit);
-                                                                else setInlineDraftEdit(null);
-                                                                setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(hasDraft ? (row.draft_min ?? '') : (row.effective_min ?? '')) });
-                                                            }
-                                                            return;
-                                                        }
-                                                        if (e.key === 'Enter' || e.key === 'ArrowDown') {
-                                                            e.preventDefault();
-                                                            if (inlineDraftEdit.value === '') {
-                                                                const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id));
-                                                                if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? String(next.draft_min ?? '') : (next.is_dead_stock || next.is_catalog_only || next.effective_min === null ? '' : String(next.effective_min ?? '')) });
-                                                                else setInlineDraftEdit(null);
-                                                                return;
-                                                            }
-                                                            const err = validateEditForRow(inlineDraftEdit, row);
-                                                            if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
-                                                            skipBlurSave.current = true;
-                                                            if (inlineDraftEdit.pendingMin !== undefined) {
-                                                                const { productId, sucursalId, pendingMin, value } = inlineDraftEdit;
-                                                                const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id));
-                                                                if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? String(next.draft_min ?? '') : (next.is_dead_stock || next.is_catalog_only || next.effective_min === null ? '' : String(next.effective_min ?? '')) });
-                                                                else setInlineDraftEdit(null);
-                                                                saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name);
-                                                            } else {
+                                            if (isEditMin) return (
+                                                <div className="flex flex-col items-center">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <input autoFocus type="number" min="0"
+                                                            value={inlineDraftEdit.value}
+                                                            onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value, error: undefined }))}
+                                                            onFocus={e => e.target.select()}
+                                                            onBlur={() => {
+                                                                if (skipBlurSave.current) { skipBlurSave.current = false; return; }
+                                                                if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
+                                                                const err = validateEditForRow(inlineDraftEdit, row);
+                                                                if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
                                                                 saveDraftCell(inlineDraftEdit);
-                                                                const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id));
-                                                                if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? String(next.draft_min ?? '') : (next.is_dead_stock || next.is_catalog_only || next.effective_min === null ? '' : String(next.effective_min ?? '')) });
-                                                                else setInlineDraftEdit(null);
-                                                            }
-                                                            return;
-                                                        }
-                                                        if (e.key === 'ArrowUp') {
-                                                            e.preventDefault();
-                                                            if (inlineDraftEdit.value === '') {
-                                                                const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id));
-                                                                if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? String(prev.draft_min ?? '') : (prev.is_dead_stock || prev.is_catalog_only || prev.effective_min === null ? '' : String(prev.effective_min ?? '')) });
-                                                                else setInlineDraftEdit(null);
-                                                                return;
-                                                            }
-                                                            const err = validateEditForRow(inlineDraftEdit, row);
-                                                            if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
-                                                            skipBlurSave.current = true;
-                                                            if (inlineDraftEdit.pendingMin !== undefined) {
-                                                                const { productId, sucursalId, pendingMin, value } = inlineDraftEdit;
-                                                                const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id));
-                                                                if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? String(prev.draft_min ?? '') : (prev.is_dead_stock || prev.is_catalog_only || prev.effective_min === null ? '' : String(prev.effective_min ?? '')) });
-                                                                else setInlineDraftEdit(null);
-                                                                saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name);
-                                                            } else {
-                                                                saveDraftCell(inlineDraftEdit);
-                                                                const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id));
-                                                                if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? String(prev.draft_min ?? '') : (prev.is_dead_stock || prev.is_catalog_only || prev.effective_min === null ? '' : String(prev.effective_min ?? '')) });
-                                                                else setInlineDraftEdit(null);
-                                                            }
-                                                            return;
-                                                        }
-                                                    }}
-                                                    onClick={e => e.stopPropagation()}
-                                                    className={`w-20 text-center text-[13px] font-black rounded-lg px-1 py-1 focus:outline-none border-2 ${hasDraft ? 'text-blue-800 bg-blue-50 border-blue-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
-                                                {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && (
-                                                    <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-blue-700' : 'text-emerald-700'}`}>
-                                                        ≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}
+                                                            }}
+                                                            onKeyDown={e => {
+                                                                if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
+                                                                if (e.key === 'Tab' || e.key === 'ArrowRight') {
+                                                                    e.preventDefault(); skipBlurSave.current = true;
+                                                                    if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
+                                                                    setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(hasDraft ? (row.draft_max ?? '') : (row.effective_max ?? '')), pendingMin: inlineDraftEdit.value });
+                                                                    return;
+                                                                }
+                                                                if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                                                                    e.preventDefault();
+                                                                    if (inlineDraftEdit.value !== '') { const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; } skipBlurSave.current = true; saveDraftCell(inlineDraftEdit); }
+                                                                    const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id));
+                                                                    if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? String(next.draft_min ?? '') : (next.is_dead_stock || next.is_catalog_only || next.effective_min === null ? '' : String(next.effective_min ?? '')) });
+                                                                    else setInlineDraftEdit(null); return;
+                                                                }
+                                                                if (e.key === 'ArrowUp') {
+                                                                    e.preventDefault();
+                                                                    if (inlineDraftEdit.value !== '') { const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; } skipBlurSave.current = true; saveDraftCell(inlineDraftEdit); }
+                                                                    const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id));
+                                                                    if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? String(prev.draft_min ?? '') : (prev.is_dead_stock || prev.is_catalog_only || prev.effective_min === null ? '' : String(prev.effective_min ?? '')) });
+                                                                    else setInlineDraftEdit(null); return;
+                                                                }
+                                                            }}
+                                                            onClick={e => e.stopPropagation()}
+                                                            className={`w-16 text-center text-[12px] font-black rounded-lg px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-amber-800 bg-amber-50 border-amber-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
+                                                        {sep}
+                                                        <span className={`text-[12px] font-black tabular-nums ${hasDraft ? 'text-blue-400' : 'text-slate-400'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</span>
                                                     </div>
-                                                )}
-                                                {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
-                                            </div>
-                                        ) : hasDraft ? (
-                                            <div className={`flex flex-col items-center ${canManage ? 'cursor-pointer group/max' : ''}`}
-                                                onClick={canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.draft_max ?? '') }); } : undefined}>
-                                                <div className={`px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 ${canManage ? 'group-hover/max:border-blue-400 group-hover/max:bg-blue-100' : ''} transition-[border-color,background-color] duration-150`}>
-                                                    <span className="text-[13px] font-black tabular-nums text-blue-700">{(row.draft_max ?? 0).toLocaleString()}</span>
+                                                    {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-amber-700' : 'text-emerald-700'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
+                                                    {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
                                                 </div>
-                                                {maxN > 0 && <div className="text-[9px] text-slate-600 tabular-nums mt-0.5">{maxN.toLocaleString()} act.</div>}
-                                            </div>
-                                        ) : isSparse ? (
-                                            canManage ? (
-                                                <div className="flex flex-col items-center cursor-pointer group/max"
-                                                    onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: maxN > 0 ? String(maxN) : '' }); }}>
-                                                    <div className="px-2.5 py-1 rounded-lg bg-orange-50 border border-dashed border-orange-300 group-hover/max:border-orange-400 group-hover/max:bg-orange-100 transition-[border-color,background-color] duration-150">
-                                                        <span className="text-[13px] font-black tabular-nums text-orange-400">{maxN > 0 ? maxN.toLocaleString() : '—'}</span>
+                                            );
+
+                                            if (isEditMax) return (
+                                                <div className="flex flex-col items-center">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className={`text-[12px] font-black tabular-nums ${hasDraft ? 'text-amber-400' : 'text-slate-400'}`}>{inlineDraftEdit.pendingMin !== undefined ? (inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()) : (minN > 0 ? minN.toLocaleString() : '—')}</span>
+                                                        {sep}
+                                                        <input autoFocus type="number" min="0"
+                                                            value={inlineDraftEdit.value}
+                                                            onChange={e => setInlineDraftEdit(p => ({ ...p, value: e.target.value, error: undefined }))}
+                                                            onFocus={e => e.target.select()}
+                                                            onBlur={() => {
+                                                                if (skipBlurSave.current) { skipBlurSave.current = false; return; }
+                                                                if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
+                                                                const errB = validateEditForRow(inlineDraftEdit, row);
+                                                                if (errB) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, errB, 'error'); setInlineDraftEdit(null); return; }
+                                                                if (inlineDraftEdit.pendingMin !== undefined) { const { productId, sucursalId, pendingMin, value } = inlineDraftEdit; skipBlurSave.current = true; setInlineDraftEdit(null); saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name); } else { saveDraftCell(inlineDraftEdit); }
+                                                            }}
+                                                            onKeyDown={e => {
+                                                                if (e.key === 'Escape') { setInlineDraftEdit(null); return; }
+                                                                if (e.key === 'ArrowLeft') {
+                                                                    e.preventDefault(); skipBlurSave.current = true;
+                                                                    if (inlineDraftEdit.pendingMin !== undefined) { setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: inlineDraftEdit.pendingMin }); }
+                                                                    else { if (inlineDraftEdit.value !== '') saveDraftCell(inlineDraftEdit); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(hasDraft ? (row.draft_min ?? '') : (row.effective_min ?? '')) }); }
+                                                                    return;
+                                                                }
+                                                                if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                                                                    e.preventDefault();
+                                                                    if (inlineDraftEdit.value === '') { const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id)); if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? String(next.draft_min ?? '') : (next.is_dead_stock || next.is_catalog_only || next.effective_min === null ? '' : String(next.effective_min ?? '')) }); else setInlineDraftEdit(null); return; }
+                                                                    const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
+                                                                    skipBlurSave.current = true;
+                                                                    const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id));
+                                                                    if (inlineDraftEdit.pendingMin !== undefined) { const { productId, sucursalId, pendingMin, value } = inlineDraftEdit; if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? String(next.draft_min ?? '') : (next.is_dead_stock || next.is_catalog_only || next.effective_min === null ? '' : String(next.effective_min ?? '')) }); else setInlineDraftEdit(null); saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name); }
+                                                                    else { saveDraftCell(inlineDraftEdit); if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? String(next.draft_min ?? '') : (next.is_dead_stock || next.is_catalog_only || next.effective_min === null ? '' : String(next.effective_min ?? '')) }); else setInlineDraftEdit(null); }
+                                                                    return;
+                                                                }
+                                                                if (e.key === 'ArrowUp') {
+                                                                    e.preventDefault();
+                                                                    if (inlineDraftEdit.value === '') { const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id)); if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? String(prev.draft_min ?? '') : (prev.is_dead_stock || prev.is_catalog_only || prev.effective_min === null ? '' : String(prev.effective_min ?? '')) }); else setInlineDraftEdit(null); return; }
+                                                                    const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
+                                                                    skipBlurSave.current = true;
+                                                                    const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id));
+                                                                    if (inlineDraftEdit.pendingMin !== undefined) { const { productId, sucursalId, pendingMin, value } = inlineDraftEdit; if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? String(prev.draft_min ?? '') : (prev.is_dead_stock || prev.is_catalog_only || prev.effective_min === null ? '' : String(prev.effective_min ?? '')) }); else setInlineDraftEdit(null); saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name); }
+                                                                    else { saveDraftCell(inlineDraftEdit); if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? String(prev.draft_min ?? '') : (prev.is_dead_stock || prev.is_catalog_only || prev.effective_min === null ? '' : String(prev.effective_min ?? '')) }); else setInlineDraftEdit(null); }
+                                                                    return;
+                                                                }
+                                                            }}
+                                                            onClick={e => e.stopPropagation()}
+                                                            className={`w-16 text-center text-[12px] font-black rounded-lg px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-blue-800 bg-blue-50 border-blue-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
+                                                    </div>
+                                                    {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-blue-700' : 'text-emerald-700'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
+                                                </div>
+                                            );
+
+                                            // ── Display (non-editing) ──
+                                            const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: hasDraft ? String(row.draft_min ?? '') : ((dead || noHistory) ? '' : String(row.effective_min ?? '')) }); } : undefined;
+                                            const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: hasDraft ? String(row.draft_max ?? '') : ((dead || noHistory) ? '' : String(row.effective_max ?? '')) }); } : undefined;
+
+                                            if (hasDraft) return (
+                                                <div className="flex flex-col items-center">
+                                                    <div className="flex items-center">
+                                                        <span className={`text-[13px] font-black tabular-nums text-amber-700 ${canManage ? 'cursor-pointer hover:text-amber-900' : ''}`} onClick={openMinEdit}>{(row.draft_min ?? 0).toLocaleString()}</span>
+                                                        {sep}
+                                                        <span className={`text-[13px] font-black tabular-nums text-blue-700 ${canManage ? 'cursor-pointer hover:text-blue-900' : ''}`} onClick={openMaxEdit}>{(row.draft_max ?? 0).toLocaleString()}</span>
+                                                    </div>
+                                                    {(minN > 0 || maxN > 0) && <div className="text-[9px] text-slate-400 tabular-nums mt-0.5">{minN.toLocaleString()} · {maxN.toLocaleString()} act.</div>}
+                                                </div>
+                                            );
+
+                                            if (isSparse) return (
+                                                <div className="flex flex-col items-center">
+                                                    <div className="flex items-center">
+                                                        <span className={`text-[12px] font-black tabular-nums text-orange-400 ${canManage ? 'cursor-pointer hover:text-orange-600' : ''}`} onClick={openMinEdit}>{minN > 0 ? minN.toLocaleString() : '—'}</span>
+                                                        {sep}
+                                                        <span className={`text-[12px] font-black tabular-nums text-orange-400 ${canManage ? 'cursor-pointer hover:text-orange-600' : ''}`} onClick={openMaxEdit}>{maxN > 0 ? maxN.toLocaleString() : '—'}</span>
                                                     </div>
                                                     <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
                                                 </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-[12px] font-semibold tabular-nums text-orange-400">{maxN > 0 ? maxN.toLocaleString() : '—'}</span>
-                                                    <div className="text-[8px] text-orange-500 font-semibold mt-0.5">⚠ Confirmar</div>
+                                            );
+
+                                            if (((dead || noHistory) && minN === 0 && maxN === 0) || (row.effective_min === null && row.effective_max === null)) return (
+                                                <div className="flex items-center">
+                                                    <span className={`text-[12px] font-semibold tabular-nums text-slate-300 ${canManage ? 'cursor-pointer hover:text-amber-400' : ''}`} onClick={openMinEdit}>—</span>
+                                                    {sep}
+                                                    <span className={`text-[12px] font-semibold tabular-nums text-slate-300 ${canManage ? 'cursor-pointer hover:text-blue-400' : ''}`} onClick={openMaxEdit}>—</span>
                                                 </div>
-                                            )
-                                        ) : ((dead || noHistory) && maxN === 0 && minN === 0) || row.effective_max === null ? (
-                                            canManage ? (
-                                                <div className="flex flex-col items-center cursor-pointer group/max"
-                                                    onClick={e => { e.stopPropagation(); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: '' }); }}>
-                                                    <div className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 group-hover/max:border-blue-400 group-hover/max:bg-blue-100 transition-[border-color,background-color] duration-150">
-                                                        <span className="text-[13px] font-black tabular-nums text-blue-400">—</span>
-                                                    </div>
+                                            );
+
+                                            return (
+                                                <div className="flex items-center">
+                                                    <span className={`text-[13px] font-black tabular-nums ${stock < minN ? 'text-orange-600' : 'text-slate-600'} ${canManage ? 'cursor-pointer hover:text-emerald-700' : ''}`} onClick={openMinEdit}>{minN.toLocaleString()}</span>
+                                                    {sep}
+                                                    <span className={`text-[13px] font-black tabular-nums ${stock > maxN && maxN > 0 ? 'text-blue-600' : 'text-slate-500'} ${canManage ? 'cursor-pointer hover:text-emerald-700' : ''}`} onClick={openMaxEdit}>{maxN.toLocaleString()}</span>
                                                 </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-[12px] font-semibold tabular-nums text-slate-400">—</span>
-                                                </div>
-                                            )
-                                        ) : (
-                                            canManage ? (
-                                                <div className="flex flex-col items-center cursor-pointer group/max"
-                                                    onClick={e => { e.stopPropagation(); setExpandedId(null); if (isBodega) useToastStore.getState().showToast('Bodega', 'MIN/MAX se calculan como Σ sucursales. Puedes sobreescribirlo manualmente.', 'info'); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(row.effective_max ?? '') }); }}>
-                                                    <div className={`px-2.5 py-1 rounded-lg border group-hover/max:border-emerald-400 group-hover/max:bg-emerald-50 transition-[border-color,background-color] duration-150 ${stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200'}`}>
-                                                        <span className={`text-[13px] font-black tabular-nums ${stock > maxN && maxN > 0 ? 'text-blue-600' : 'text-slate-600'}`}>{maxN.toLocaleString()}</span>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center">
-                                                    <div className={`text-[12px] font-semibold tabular-nums ${stock > maxN ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>{maxN.toLocaleString()}</div>
-                                                </div>
-                                            )
-                                        )}
+                                            );
+                                        })()}
                                     </DataCell>
 
                                     {/* Despacho — presentación catálogo siempre visible + regla + cantidades */}
@@ -3273,17 +3131,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                                             return (
                                                 <div className="flex flex-col items-center gap-1">
-                                                    {/* Pill + rule inline */}
-                                                    <div className="flex items-center gap-1 flex-wrap justify-center">
-                                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border whitespace-nowrap leading-tight bg-slate-100 text-slate-600 border-slate-200">
-                                                            {baseLabel}
-                                                        </span>
-                                                        {ruleNote && (
-                                                            <span className="text-[8px] font-semibold text-slate-400 whitespace-nowrap leading-tight">
-                                                                {ruleNote}
-                                                            </span>
-                                                        )}
-                                                    </div>
+                                                    {/* Pill: baseLabel + rule separator inline */}
+                                                    <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border leading-tight bg-slate-100 text-slate-600 border-slate-200 gap-1 whitespace-nowrap">
+                                                        {baseLabel}
+                                                        {ruleNote && <>
+                                                            <span className="w-px h-2.5 bg-slate-300 inline-block" />
+                                                            <span className="text-[9px] font-semibold text-slate-400">{ruleNote}</span>
+                                                        </>}
+                                                    </span>
                                                     <span className={`text-[10px] font-semibold tabular-nums leading-none ${hasPres ? 'text-slate-700' : 'text-slate-400'}`}>
                                                         {dispMin ? formatUnits(applyRule(dispMin), pres) : '—'}
                                                     </span>
@@ -3293,21 +3148,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                 </div>
                                             );
                                         })()}
-                                    </DataCell>
-
-                                    {/* Estado */}
-                                    <DataCell align="center" className="!py-2.5">
-                                        <div className="flex flex-col items-center gap-0.5">
-                                            <span className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-1 rounded-full border ${alert.pill}`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
-                                                {alert.label}
-                                            </span>
-                                            {!dead && (row.alert_status === 'out_of_stock' || row.alert_status === 'below_min') && maxN > 0 && (
-                                                <span className="text-[8px] font-bold text-slate-400 tabular-nums">
-                                                    Pedir {Math.max(0, maxN - stock).toLocaleString()}u
-                                                </span>
-                                            )}
-                                        </div>
                                     </DataCell>
 
                                     {/* Acciones */}

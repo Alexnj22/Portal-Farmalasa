@@ -235,7 +235,7 @@ AS $function$
       pp.factor AS caja_factor
     FROM product_precios pp
     JOIN presentaciones pr ON pr.id = pp.id_presentacion
-    WHERE pr.tipo = 'CAJA'
+    WHERE pr.tipo ILIKE 'CAJA%'
     ORDER BY pp.product_id, pp.factor DESC
   ),
 

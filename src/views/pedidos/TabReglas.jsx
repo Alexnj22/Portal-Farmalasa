@@ -327,10 +327,14 @@ export default function TabReglas({ searchTerm = '' }) {
     // sin que cada autoguardado dispare un re-fetch de la tabla de productos.
     const rulesMapRef    = useRef({});
     const justSavedTimer = useRef(null);
-    // Cache de presentaciones por product_id: evita re-fetch al reabrir el panel
     const presCache      = useRef({});
+    const tableTopRef    = useRef(null);
     useEffect(() => { rulesMapRef.current = rulesMap; }, [rulesMap]);
     useEffect(() => () => clearTimeout(justSavedTimer.current), []);
+    // Scroll al tope de la tabla al cambiar página
+    useEffect(() => {
+        tableTopRef.current?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+    }, [page]);
 
     // Carga IDs de labs ocultos en MinMax para excluirlos
     useEffect(() => {
@@ -578,6 +582,9 @@ export default function TabReglas({ searchTerm = '' }) {
                     </button>
                 )}
             </div>
+
+            {/* Sentinel para scroll-to-top al cambiar página */}
+            <div ref={tableTopRef} />
 
             {/* ── Tabla ─────────────────────────────────────────────────────── */}
             <DataTable columns={COLS} sortKey={sortKey} sortDir={sortDir} onSort={handleSort}

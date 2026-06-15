@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.125';
+export const APP_VERSION = '2.2.126';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.126 — perf(reglas): JOIN presentaciones en dispatch_rules (elimina query serial); hiddenLabIds null-check evita doble fetch inicial; dispatch_tipo desde presCache post-save (badge instantáneo); ruleTypeLabel fuera del componente
 // v2.2.125 — fix(reglas): sort estado/despacho client-side; quita filtro lab; dedup presentaciones por factor (prefiere la de la regla existente); paginación correcta con pageSize dinámico y totalPages
 // v2.2.124 — fix(reglas): quita columna AB, agrega badge "Bajo receta" inline en nombre del producto, laboratorio completo sin truncar, col lab+producto ya ordenables por header
 // v2.2.123 — fix(reglas): solo_cajas NOT NULL → false al guardar; cache presentaciones en presCache ref (sin re-fetch al reabrir panel)

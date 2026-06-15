@@ -25,6 +25,21 @@ const COLS = [
     { key: 'notas',              label: 'Notas',           align: 'left'   },
 ];
 
+// Badge para la columna "Regla despacho" — fuera del componente, no se recrea en cada render
+function ruleTypeLabel(rule) {
+    if (!rule) return null;
+    if (rule.dispatch_id_presentacion) {
+        const tipo  = rule.dispatch_tipo ?? '–';
+        const mult  = rule.dispatch_multiplo ?? 1;
+        const style = presStyle(tipo);
+        return { text: mult > 1 ? `${tipo} ×${mult}` : tipo, bg: style.bg, txt: style.text };
+    }
+    if (rule.multiplo          != null) return { text: `×${rule.multiplo} cajas`,     bg: 'bg-blue-100',   txt: 'text-blue-700'   };
+    if (rule.blister           != null) return { text: `×${rule.blister} blíst.`,     bg: 'bg-indigo-100', txt: 'text-indigo-700' };
+    if (rule.multiplo_unidades != null) return { text: `×${rule.multiplo_unidades}u`, bg: 'bg-violet-100', txt: 'text-violet-700' };
+    return { text: 'Solo cajas', bg: 'bg-slate-100', txt: 'text-slate-600' };
+}
+
 // Icono + colores según tipo de presentación
 const presStyle = (tipo) => {
     const t = (tipo || '').toUpperCase();
@@ -300,7 +315,7 @@ export default function TabReglas({ searchTerm = '' }) {
     const [thisMonthCount,  setThisMonthCount]  = useState(0);
     const [sortKey,         setSortKey]         = useState('laboratorio_nombre');
     const [sortDir,         setSortDir]         = useState('asc');
-    const [hiddenLabIds,    setHiddenLabIds]    = useState([]);
+    const [hiddenLabIds,    setHiddenLabIds]    = useState(null); // null = aún cargando
     const [filterRule,      setFilterRule]      = useState('');
     const [editingId,       setEditingId]       = useState(null);
     const [editVals,        setEditVals]        = useState(EMPTY_VALS);
@@ -331,26 +346,19 @@ export default function TabReglas({ searchTerm = '' }) {
         setStatsLoading(true);
         const now          = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        // JOIN presentaciones directamente — elimina la query serial extra
         const [rulesRes, totalRes, newRes] = await Promise.all([
             supabase.from('dispatch_rules')
-                .select('id, erp_product_id, solo_cajas, multiplo, blister, multiplo_unidades, notes, dispatch_id_presentacion, dispatch_multiplo')
+                .select('id, erp_product_id, solo_cajas, multiplo, blister, multiplo_unidades, notes, dispatch_id_presentacion, dispatch_multiplo, presentaciones(tipo)')
                 .range(0, 9999),
             supabase.from('products').select('id', { count: 'exact', head: true }).eq('activo', true),
             supabase.from('products').select('id', { count: 'exact' }).eq('activo', true).gte('created_at', startOfMonth),
         ]);
-        // Resuelve tipos de presentación para reglas nuevas
-        const presIds = [...new Set((rulesRes.data || [])
-            .map(r => r.dispatch_id_presentacion).filter(Boolean))];
-        let presMap = {};
-        if (presIds.length > 0) {
-            const { data: presData } = await supabase.from('presentaciones').select('id, tipo').in('id', presIds);
-            for (const p of (presData || [])) presMap[p.id] = p.tipo;
-        }
         const map = {};
         for (const r of (rulesRes.data || [])) {
             map[r.erp_product_id] = {
                 ...r,
-                dispatch_tipo: r.dispatch_id_presentacion ? (presMap[r.dispatch_id_presentacion] ?? null) : null,
+                dispatch_tipo: r.presentaciones?.tipo ?? null,
             };
         }
         setRulesMap(map);
@@ -376,7 +384,7 @@ export default function TabReglas({ searchTerm = '' }) {
             .eq('activo', true)
             .range(offset, offset + pgSize - 1);
 
-        if (hiddenLabs.length > 0)
+        if (hiddenLabs?.length > 0)
             q = q.not('laboratorio_id', 'in', `(${hiddenLabs.join(',')})`);
 
         const asc = sd !== 'desc';
@@ -401,9 +409,9 @@ export default function TabReglas({ searchTerm = '' }) {
     }, []);
 
     // Lee las reglas desde el ref: un autoguardado no re-fetchea la lista
-    // (la lista con filtro con/sin se refresca al cambiar página/filtros).
+    // hiddenLabIds=null significa que el fetch de labs aún no terminó — esperar para no hacer doble fetch.
     useEffect(() => {
-        if (loadingRules) return;
+        if (loadingRules || hiddenLabIds === null) return;
         const ids = Object.keys(rulesMapRef.current).map(Number);
         loadProducts(page, pageSize, searchTerm, filterRule, ids, hiddenLabIds, sortKey, sortDir, newProductIds);
     }, [page, pageSize, searchTerm, filterRule, hiddenLabIds, newProductIds, loadProducts, loadingRules, sortKey, sortDir]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -473,8 +481,11 @@ export default function TabReglas({ searchTerm = '' }) {
                     saved = data;
                     useStaff.getState().appendAuditLog('CREAR_REGLA_DESPACHO', String(productId), payload);
                 }
-                // Refresca dispatch_tipo para el badge en tabla
-                const next = { ...rulesMapRef.current, [productId]: { ...saved, dispatch_tipo: null } };
+                // dispatch_tipo desde presCache (ya cargado al abrir el panel)
+                const cachedPres = presCache.current[productId] ?? [];
+                const matchPres  = cachedPres.find(p => p.id_presentacion === v.dispatch_id_presentacion);
+                const dispatch_tipo = matchPres?.presentaciones?.tipo ?? null;
+                const next = { ...rulesMapRef.current, [productId]: { ...saved, dispatch_tipo } };
                 rulesMapRef.current = next;
                 setRulesMap(next);
             }
@@ -491,24 +502,7 @@ export default function TabReglas({ searchTerm = '' }) {
     // Computed
     const rulesCount = Object.keys(rulesMap).length;
     const sinRegla   = Math.max(0, allCount - rulesCount);
-    const mesActual  = new Date().toLocaleDateString('es-SV', { month: 'long' });
-
-    // Badge para la columna "Regla despacho" en tabla
-    const ruleTypeLabel = (rule) => {
-        if (!rule) return null;
-        // Regla nueva: presentación seleccionada
-        if (rule.dispatch_id_presentacion) {
-            const tipo = rule.dispatch_tipo ?? '–';
-            const mult = rule.dispatch_multiplo ?? 1;
-            const style = presStyle(tipo);
-            return { text: mult > 1 ? `${tipo} ×${mult}` : tipo, bg: style.bg, txt: style.text };
-        }
-        // Legacy
-        if (rule.multiplo          != null) return { text: `×${rule.multiplo} cajas`,     bg: 'bg-blue-100',   txt: 'text-blue-700'   };
-        if (rule.blister           != null) return { text: `×${rule.blister} blíst.`,     bg: 'bg-indigo-100', txt: 'text-indigo-700' };
-        if (rule.multiplo_unidades != null) return { text: `×${rule.multiplo_unidades}u`, bg: 'bg-violet-100', txt: 'text-violet-700' };
-        return { text: 'Solo cajas', bg: 'bg-slate-100', txt: 'text-slate-600' };
-    };
+    const mesActual  = useMemo(() => new Date().toLocaleDateString('es-SV', { month: 'long' }), []);
 
     // Sort client-side para columnas computed (estado/despacho) — opera sobre la página actual
     const sortedProducts = useMemo(() => {

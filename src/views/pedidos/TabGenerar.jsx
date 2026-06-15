@@ -203,12 +203,14 @@ export default function TabGenerar({ searchTerm = '' }) {
             .then(({ data }) => setSyncedAt(data?.synced_at ?? null));
     }, []);
 
-    // ── Dashboard stats ────────────────────────────────────────
+    // ── Dashboard stats — reactivo al selector MIN/MAX ─────────
     useEffect(() => {
         setDashLoading(true);
-        supabase.rpc('get_pedido_sucursal_stats', { p_sucursal_ids: SUCURSALES })
-            .then(({ data }) => { setDashStats(data || []); setDashLoading(false); });
-    }, []);
+        supabase.rpc('get_pedido_sucursal_stats', {
+            p_sucursal_ids:      SUCURSALES,
+            p_use_portal_minmax: minmaxSource === 'portal',
+        }).then(({ data }) => { setDashStats(data || []); setDashLoading(false); });
+    }, [minmaxSource]);
 
     // ── Empleados (para select de responsable/revisor) ─────────
     // La columna real es `name` (no `nombre`); employees.id = uid de auth.
@@ -239,15 +241,17 @@ export default function TabGenerar({ searchTerm = '' }) {
 
     const refreshStats = useCallback(() => {
         setDashLoading(true);
-        supabase.rpc('get_pedido_sucursal_stats', { p_sucursal_ids: SUCURSALES })
-            .then(({ data }) => { setDashStats(data || []); setDashLoading(false); });
+        supabase.rpc('get_pedido_sucursal_stats', {
+            p_sucursal_ids:      SUCURSALES,
+            p_use_portal_minmax: minmaxSource === 'portal',
+        }).then(({ data }) => { setDashStats(data || []); setDashLoading(false); });
         setSinBodegaLoad(true);
         supabase.rpc('get_pedido_sin_bodega', {
             p_sucursal_ids: SUCURSALES,
             p_limit:        9999,
             p_offset:       0,
         }).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
-    }, []);
+    }, [minmaxSource]);
 
     useEffect(() => {
         if (Object.keys(adjustments).length === 0) return;
@@ -936,25 +940,29 @@ export default function TabGenerar({ searchTerm = '' }) {
                         {globalMode && <Check size={11} />}
                     </button>
 
-                    {/* Selector de fuente MIN/MAX */}
-                    <div className="inline-flex items-center rounded-xl border-2 border-slate-200 overflow-hidden text-[11px] font-semibold bg-white">
+                    {/* Selector fuente MIN/MAX — liquid glass */}
+                    <div className="relative inline-flex items-stretch rounded-xl p-[3px] bg-white/60 border border-white/80 backdrop-blur-md shadow-[0_2px_12px_rgba(0,82,204,0.10),inset_0_1px_0_rgba(255,255,255,0.7)]">
+                        {/* Sliding pill */}
+                        <span
+                            aria-hidden
+                            className={`absolute top-[3px] bottom-[3px] rounded-[9px] transition-all duration-200 ease-out pointer-events-none ${
+                                minmaxSource === 'erp'
+                                    ? 'left-[3px] right-[calc(50%+1.5px)] bg-white/90 shadow-[0_1px_4px_rgba(0,0,0,0.10)] border border-white/60'
+                                    : 'left-[calc(50%+1.5px)] right-[3px] bg-[#0052CC]/90 shadow-[0_1px_6px_rgba(0,82,204,0.30)] border border-blue-400/40'
+                            }`}
+                        />
                         <button
                             onClick={() => setMinmaxSource('erp')}
-                            className={`px-3 py-1.5 transition-colors ${
-                                minmaxSource === 'erp'
-                                    ? 'bg-slate-800 text-white'
-                                    : 'text-slate-500 hover:bg-slate-50'
+                            className={`relative z-10 px-3 py-1.5 text-[11px] font-semibold rounded-[9px] transition-colors duration-150 select-none ${
+                                minmaxSource === 'erp' ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'
                             }`}
                         >
                             MIN/MAX ERP
                         </button>
-                        <span className="w-px h-5 bg-slate-200" />
                         <button
                             onClick={() => setMinmaxSource('portal')}
-                            className={`px-3 py-1.5 transition-colors ${
-                                minmaxSource === 'portal'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-slate-500 hover:bg-slate-50'
+                            className={`relative z-10 px-3 py-1.5 text-[11px] font-semibold rounded-[9px] transition-colors duration-150 select-none ${
+                                minmaxSource === 'portal' ? 'text-white' : 'text-slate-400 hover:text-slate-600'
                             }`}
                         >
                             MIN/MAX Portal
@@ -1010,11 +1018,11 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 {stat && !dashLoading ? (<>
                                     <div className={`flex items-center gap-1 text-[10px] font-semibold ${isOn ? 'text-slate-300' : 'text-emerald-500'}`}>
                                         <span className="text-[9px] font-black">✓</span>
-                                        {stat.con_bodega_packs.toLocaleString()}
+                                        {(stat.con_bodega_productos ?? 0).toLocaleString()}
                                     </div>
                                     <div className={`flex items-center gap-1 text-[10px] font-semibold ${isOn ? 'text-rose-300' : 'text-red-500'}`}>
                                         <span className="text-[9px] font-black">✗</span>
-                                        {stat.sin_bodega_packs.toLocaleString()}
+                                        {(stat.sin_bodega_productos ?? 0).toLocaleString()}
                                     </div>
                                 </>) : (
                                     <div className="h-6 w-12 rounded bg-slate-100 animate-pulse mt-1" />

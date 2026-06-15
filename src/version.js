@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.111';
+export const APP_VERSION = '2.2.112';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.112 — fix(pedidos): selector MIN/MAX liquid glass + stats reactivos + conteo productos — toggle pill sliding con glassmorphism; get_pedido_sucursal_stats v2 acepta p_use_portal_minmax y retorna con/sin_bodega_productos; stats se re-fetcha al cambiar fuente; cards de sucursal muestran productos (no packs)
 // v2.2.111 — feat(pedidos): selector MIN/MAX ERP vs Portal en TabGenerar — toggle pill "MIN/MAX ERP / MIN/MAX Portal"; get_pedido_preview v13 acepta p_use_portal_minmax (lee product_stock_params.manual_min/min_units ÷ factor en lugar de erp_minmax); badge en pantalla de preview indica fuente activa
 // v2.2.110 — fix(pedidos): elimina borradores de TabGenerar — flujo migrado a "Generar y confirmar" directo; se removieron estado/funciones/UI de savingSnap/snapMsg/snapshots/loadingSnaps/snapsOpen/deletingSnap/handleGuardarBorrador/loadSnapshots/handleLoadSnapshot/handleDeleteSnapshot e imports Save+Trash2
 // v2.2.109 — feat(pedidos): Realtime en TabRecepcion — canal supabase_realtime para tabla pedidos (ALTER PUBLICATION); suscripción filtra client-side por sucursal_ids.includes(erpSucursalId); refresca lista automáticamente ante INSERT/UPDATE; banner pulsante "Nuevo pedido #N" con auto-dismiss 8s cuando llega pedido enviado

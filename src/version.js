@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.110';
+export const APP_VERSION = '2.2.111';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.111 — feat(pedidos): selector MIN/MAX ERP vs Portal en TabGenerar — toggle pill "MIN/MAX ERP / MIN/MAX Portal"; get_pedido_preview v13 acepta p_use_portal_minmax (lee product_stock_params.manual_min/min_units ÷ factor en lugar de erp_minmax); badge en pantalla de preview indica fuente activa
 // v2.2.110 — fix(pedidos): elimina borradores de TabGenerar — flujo migrado a "Generar y confirmar" directo; se removieron estado/funciones/UI de savingSnap/snapMsg/snapshots/loadingSnaps/snapsOpen/deletingSnap/handleGuardarBorrador/loadSnapshots/handleLoadSnapshot/handleDeleteSnapshot e imports Save+Trash2
 // v2.2.109 — feat(pedidos): Realtime en TabRecepcion — canal supabase_realtime para tabla pedidos (ALTER PUBLICATION); suscripción filtra client-side por sucursal_ids.includes(erpSucursalId); refresca lista automáticamente ante INSERT/UPDATE; banner pulsante "Nuevo pedido #N" con auto-dismiss 8s cuando llega pedido enviado
 // v2.2.108 — fix(pedidos): 3 mejoras — (1) TabGenerar: borradores cargables — sección "Borradores guardados" en dashboard lista snapshots con Cargar (carga datos+sucursales en preview) y Eliminar; ERP_NAMES/SUCURSALES ahora importados de constants/erp.js; (2) TabDiferencias: resolución de diferencias — columnas resuelta_at/resuelta_por en pedido_items (DB migration); botón "Resolver" por fila en vista Detalle marca la diferencia cerrada; toggle "Mostrar/Ocultar resueltas"; get_pedido_diferencias_stats v2 expone pedido_item_id+resuelta_at+limit 500; (3) ERP_NAMES dedup en TabRecepcion, TabDiferencias, TabGenerar → importan desde constants/erp.js

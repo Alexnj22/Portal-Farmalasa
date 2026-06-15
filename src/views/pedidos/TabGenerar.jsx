@@ -160,6 +160,8 @@ export default function TabGenerar({ searchTerm = '' }) {
     // Sucursal selection — default ALL deselected
     const [selected,    setSelected]    = useState(new Set());
     const [globalMode,  setGlobalMode]  = useState(false);
+    // MIN/MAX source: 'erp' = valores del ERP | 'portal' = product_stock_params publicados
+    const [minmaxSource, setMinmaxSource] = useState('erp');
 
     // Preview
     const [preview,      setPreview]      = useState(null);
@@ -297,8 +299,8 @@ export default function TabGenerar({ searchTerm = '' }) {
         setSucCollapsed({}); setSucPage({});
         try {
             const rpcParams = globalMode
-                ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected] }
-                : { p_sucursal_ids: [...selected] };
+                ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected], p_use_portal_minmax: minmaxSource === 'portal' }
+                : { p_sucursal_ids: [...selected], p_use_portal_minmax: minmaxSource === 'portal' };
             const { data, error: rpcErr } = await supabase
                 .rpc('get_pedido_preview', rpcParams)
                 .range(0, 49999);
@@ -313,7 +315,7 @@ export default function TabGenerar({ searchTerm = '' }) {
         } finally {
             setLoading(false);
         }
-    }, [selected, globalMode]);
+    }, [selected, globalMode, minmaxSource]);
 
     // ── Generar directo: calcula + confirma final + imprime ────
     // El pedido queda confirmado (no borrador) y se imprime al instante
@@ -323,8 +325,8 @@ export default function TabGenerar({ searchTerm = '' }) {
         setConfirming(true); setError(null); setConfirmed(null);
         try {
             const rpcParams = globalMode
-                ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected] }
-                : { p_sucursal_ids: [...selected] };
+                ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected], p_use_portal_minmax: minmaxSource === 'portal' }
+                : { p_sucursal_ids: [...selected], p_use_portal_minmax: minmaxSource === 'portal' };
             const { data, error: rpcErr } = await supabase
                 .rpc('get_pedido_preview', rpcParams)
                 .range(0, 49999);
@@ -398,7 +400,7 @@ export default function TabGenerar({ searchTerm = '' }) {
         } finally {
             setConfirming(false);
         }
-    }, [selected, globalMode, employees, user, refreshStats]);
+    }, [selected, globalMode, minmaxSource, employees, user, refreshStats]);
 
     // ── Grouped preview ────────────────────────────────────────
     const grouped = useMemo(() => {
@@ -644,10 +646,19 @@ export default function TabGenerar({ searchTerm = '' }) {
         return (
             <div className="space-y-4 p-4">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                    <button onClick={() => { setPreview(null); setAdjustments({}); }}
-                        className="flex items-center gap-1.5 text-[13px] text-slate-500 hover:text-blue-600 transition-colors font-medium">
-                        <ArrowLeft size={15} /> Volver al resumen
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => { setPreview(null); setAdjustments({}); }}
+                            className="flex items-center gap-1.5 text-[13px] text-slate-500 hover:text-blue-600 transition-colors font-medium">
+                            <ArrowLeft size={15} /> Volver al resumen
+                        </button>
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full border font-semibold ${
+                            minmaxSource === 'portal'
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : 'bg-slate-100 text-slate-600 border-slate-200'
+                        }`}>
+                            {minmaxSource === 'portal' ? 'MIN/MAX Portal' : 'MIN/MAX ERP'}
+                        </span>
+                    </div>
                     <div className="flex items-center gap-2 flex-wrap">
                         {searchTerm && (
                             <span className="text-[12px] text-slate-500">
@@ -910,19 +921,52 @@ export default function TabGenerar({ searchTerm = '' }) {
                     <Info size={11} />
                     Por defecto ninguna está seleccionada. Elige las sucursales a reponer y calcula el pedido.
                 </p>
-                {/* B1: Global distribution mode toggle */}
-                <button
-                    onClick={() => setGlobalMode(v => !v)}
-                    className={`inline-flex items-center gap-1.5 mb-3 px-3 py-1.5 rounded-xl border-2 text-[11px] font-semibold transition-all ${
-                        globalMode
-                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm'
-                            : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'
-                    }`}
-                >
-                    <Globe size={12} />
-                    Distribución global de bodega
-                    {globalMode && <Check size={11} />}
-                </button>
+                {/* Modos: globalMode + fuente MIN/MAX */}
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    <button
+                        onClick={() => setGlobalMode(v => !v)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 text-[11px] font-semibold transition-all ${
+                            globalMode
+                                ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm'
+                                : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'
+                        }`}
+                    >
+                        <Globe size={12} />
+                        Distribución global de bodega
+                        {globalMode && <Check size={11} />}
+                    </button>
+
+                    {/* Selector de fuente MIN/MAX */}
+                    <div className="inline-flex items-center rounded-xl border-2 border-slate-200 overflow-hidden text-[11px] font-semibold bg-white">
+                        <button
+                            onClick={() => setMinmaxSource('erp')}
+                            className={`px-3 py-1.5 transition-colors ${
+                                minmaxSource === 'erp'
+                                    ? 'bg-slate-800 text-white'
+                                    : 'text-slate-500 hover:bg-slate-50'
+                            }`}
+                        >
+                            MIN/MAX ERP
+                        </button>
+                        <span className="w-px h-5 bg-slate-200" />
+                        <button
+                            onClick={() => setMinmaxSource('portal')}
+                            className={`px-3 py-1.5 transition-colors ${
+                                minmaxSource === 'portal'
+                                    ? 'bg-blue-600 text-white'
+                                    : 'text-slate-500 hover:bg-slate-50'
+                            }`}
+                        >
+                            MIN/MAX Portal
+                        </button>
+                    </div>
+                </div>
+                {minmaxSource === 'portal' && (
+                    <p className="text-[10px] text-blue-600 mb-2 flex items-center gap-1">
+                        <Info size={10} />
+                        Usando los MIN/MAX definidos en el Portal. Productos sin valores publicados no aparecerán en el pedido.
+                    </p>
+                )}
                 {globalMode && (
                     <p className="text-[10px] text-indigo-600 mb-2 flex items-center gap-1">
                         <Info size={10} />

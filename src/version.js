@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.129';
+export const APP_VERSION = '2.2.130';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.130 — fix(pedidos/rpc): umbral mínimo de despacho 40% — si reponer < 40% de la unidad de despacho (CAJA/BLISTER/etc.), asignado=0 y el producto cae en revision_minmax. Evita enviar 1 CAJA completa cuando solo se necesitan 1-2 unidades. El operador ajusta la regla o MIN/MAX de esa sucursal. Aplica a todos los tipos de regla (nueva + legado).
 // v2.2.129 — fix(pedidos/rpc): dispatch cap en get_pedido_preview v17 — si CEIL(raw/múltiplo)×múltiplo excede el disponible de bodega para esa sucursal, se despacha asignado_raw usando presentación ERP base (sin redondeo). Elimina sobre-asignación de min-stock en TABCIN (2 und en vez de 72), ALCOHOL (8 en vez de 10) y ALERFIN (disponible real en vez de blisters de más). Test: 0 LOTE_MISMATCH, 0 DISPATCH_OVERFLOW
 // v2.2.128 — fix(pedidos/pdf): dispatch_tipo+dispatch_factor en get_pedido_preview v16; PDF convierte qty y lotes a packs de despacho (JERINGA INSULINA 0.5ML mostraba 100 unidades → ahora 1 CAJA; FARSENTAL BLISTER×2 correcto; cualquier producto con presentación de despacho distinta a la ERP se muestra correctamente)
 // v2.2.127 — fix(pdf): reemplaza <tbody>-por-fila por filas display:flex con break-inside:avoid (fiable en Chrome print); encabezado de columnas se repite cada 28 filas en secciones largas; lotes ya no desbordan (word-break:break-word en celda flex); centrado vertical en todas las celdas (align-items:center); menos ancho al ✓ (22px) y más al Producto (flex:2)

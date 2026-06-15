@@ -1,7 +1,9 @@
--- get_pedido_preview v17: dispatch cap — si el redondeo al múltiplo de despacho excede
--- el inventario disponible de bodega para esa sucursal, se envía el disponible real
--- (asignado_raw) usando la presentación ERP base en lugar de la presentación de despacho.
--- Esto previene que CEIL infle cantidades por encima del stock neto disponible.
+-- get_pedido_preview v17+v18:
+-- v17: dispatch cap — si CEIL excede el disponible proporcional de la sucursal, envía
+--      asignado_raw en presentación ERP base (no infla cantidades sobre el stock disponible).
+-- v18: umbral mínimo de despacho — si reponer < 40% de la unidad de despacho (CAJA/BLISTER/etc.),
+--      asignado=0 y el producto cae en revision_minmax. El operador debe ajustar la regla
+--      o cambiar MIN/MAX de esa sucursal para que en el próximo pedido llegue completo.
 
 DROP FUNCTION IF EXISTS get_pedido_preview(integer[], integer[], boolean);
 
@@ -285,6 +287,26 @@ AS $function$
       cfm.caja_factor,
       CASE
         WHEN d.asignado_raw <= 0 OR d.bodega_disponible <= 0 THEN 0
+
+        -- v18: umbral mínimo de despacho — reponer debe cubrir ≥40% de la unidad de despacho.
+        -- Si no alcanza, asignado=0 → cae en revision_minmax para ajustar regla o MIN/MAX.
+        WHEN dpf.dp_factor IS NOT NULL
+             AND d.reponer::numeric * d.factor < 0.40 * dpf.dp_factor * dpf.dp_multiplo
+          THEN 0
+        WHEN COALESCE(dr.solo_cajas, false) = true
+             AND dr.multiplo IS NULL AND dr.blister IS NULL AND dr.multiplo_unidades IS NULL
+             AND d.presentacion_tipo != 'CAJA' AND cfm.caja_factor IS NOT NULL
+             AND d.reponer::numeric * d.factor < 0.40 * cfm.caja_factor
+          THEN 0
+        WHEN dr.multiplo IS NOT NULL
+             AND d.reponer::numeric < 0.40 * dr.multiplo
+          THEN 0
+        WHEN dr.blister IS NOT NULL
+             AND d.reponer::numeric < 0.40 * dr.blister
+          THEN 0
+        WHEN dr.multiplo_unidades IS NOT NULL
+             AND d.reponer::numeric * d.factor < 0.40 * dr.multiplo_unidades
+          THEN 0
 
         -- v15/v16/v17: regla por presentación explícita (prioridad sobre legado)
         WHEN dpf.dp_factor IS NOT NULL

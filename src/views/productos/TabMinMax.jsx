@@ -556,7 +556,7 @@ function CostCards({ summary, isBodega }) {
     );
 }
 
-function DraftCostCard({ draftCost }) {
+function DraftCostCard({ draftCost, isBodega }) {
     const pubMin  = Number(draftCost?.pub_min_cost  ?? draftCost?.min_cost  ?? 0);
     const pubMax  = Number(draftCost?.pub_max_cost  ?? draftCost?.max_cost  ?? 0);
     const effMin  = Number(draftCost?.eff_min_cost  ?? pubMin);
@@ -565,13 +565,14 @@ function DraftCostCard({ draftCost }) {
     const deltaMax = effMax - pubMax;
     const hasAnyDelta = hasDraft && Math.abs(deltaMax) > 0.01;
     if (!draftCost || (!pubMin && !pubMax && !effMin && !effMax)) return null;
+    const label = isBodega ? 'Σ red efectiva' : 'Inversión proyectada';
     return (
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm"
             style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
-            <Target size={13} className="shrink-0 text-violet-400" />
+            <Target size={13} className={`shrink-0 ${isBodega ? 'text-amber-400' : 'text-violet-400'}`} />
             <div className="flex flex-col leading-snug gap-0.5">
                 <span className="text-[10px] font-semibold text-slate-500">
-                    Inversión proyectada
+                    {label}
                     {hasAnyDelta && (
                         <span className={`ml-1.5 tabular-nums font-bold ${deltaMax >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                             {deltaMax >= 0 ? '+' : ''}{fmtMoney(deltaMax)}
@@ -2568,7 +2569,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         : costSummary
                             ? <CostCards summary={costSummary} isBodega={isBodega} />
                             : null}
-                    {!loading && draftCost && <DraftCostCard draftCost={draftCost} />}
+                    {!loading && draftCost && <DraftCostCard draftCost={draftCost} isBodega={isBodega} />}
                 </div>
 
                 <div className="flex-1" />
@@ -3372,8 +3373,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     {row.has_manual && (row.pub_min > 0 || row.pub_max > 0 || (row.draft_min ?? 0) > 0 || (row.draft_max ?? 0) > 0) && (
                                                         <div className="text-[8px] font-semibold text-violet-500 tabular-nums">Σ {Math.max(row.pub_min ?? 0, row.draft_min ?? 0).toLocaleString()}·{Math.max(row.pub_max ?? 0, row.draft_max ?? 0).toLocaleString()}</div>
                                                     )}
-                                                    <div
-                                                        className="text-[9px] text-amber-500 tabular-nums cursor-help hover:underline decoration-dashed underline-offset-2"
+                                                    <span
+                                                        title="Hover para ver sucursales pendientes"
+                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 cursor-help select-none"
                                                         onMouseEnter={async (e) => {
                                                             if (bodegaTooltip?.productId === row.erp_product_id) return;
                                                             const rect = e.currentTarget.getBoundingClientRect();
@@ -3383,8 +3385,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                         }}
                                                         onMouseLeave={() => setBodegaTooltip(null)}
                                                     >
-                                                        → {(row.draft_min ?? 0).toLocaleString()}·{(row.draft_max ?? 0).toLocaleString()} prev.
-                                                    </div>
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block shrink-0" />
+                                                        {(row.draft_min ?? 0).toLocaleString()}·{(row.draft_max ?? 0).toLocaleString()}
+                                                    </span>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center gap-0.5">

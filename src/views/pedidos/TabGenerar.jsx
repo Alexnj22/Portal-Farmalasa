@@ -381,7 +381,7 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                         // Card background + border by urgency (only when not selected)
                         const cardCls = isOn
-                            ? 'suc-pop border-blue-400 shadow-[0_16px_48px_rgba(0,82,204,0.60),0_6px_20px_rgba(0,82,204,0.40),inset_0_1px_0_rgba(255,255,255,0.25)] ring-2 ring-blue-300/40 ring-offset-1'
+                            ? 'suc-pop border-blue-300/80 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,82,204,0.45),0_8px_24px_rgba(0,82,204,0.30),inset_0_1px_0_rgba(255,255,255,0.50),inset_0_-1px_0_rgba(0,82,204,0.20)] ring-2 ring-blue-400/30 ring-offset-1'
                             : urgLevel === 'high'
                                 ? 'bg-gradient-to-b from-red-50/90 to-white/50 border-red-200/80 backdrop-blur-sm hover:border-red-300 hover:shadow-[0_8px_24px_rgba(239,68,68,0.18)] transition-all duration-200'
                                 : urgLevel === 'mid'
@@ -402,15 +402,18 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 key={id}
                                 onClick={() => toggleSuc(id)}
                                 style={isOn ? {
-                                    background: 'linear-gradient(160deg, #1565D8 0%, #0042A8 55%, #003590 100%)',
+                                    background: 'linear-gradient(160deg, rgba(0,102,255,0.22) 0%, rgba(0,82,204,0.14) 50%, rgba(0,60,160,0.18) 100%)',
                                 } : {}}
                                 className={`relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center group overflow-hidden ${cardCls}`}
                             >
-                                {/* Top highlight — glass shimmer */}
-                                <span className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent ${isOn ? 'via-white/40' : 'via-white/80'} to-transparent pointer-events-none`} />
-                                {/* Selected inner top-glow */}
+                                {/* Top highlight — glass shimmer, más brillante al seleccionar */}
+                                <span className={`absolute inset-x-2 top-0 h-px bg-gradient-to-r from-transparent ${isOn ? 'via-white/90' : 'via-white/70'} to-transparent pointer-events-none`} />
+                                {/* Selected: capa de luz difusa en la parte superior */}
                                 {isOn && (
-                                    <span className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+                                    <>
+                                        <span className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-t-2xl" />
+                                        <span className="absolute inset-x-3 top-px h-6 bg-gradient-to-b from-white/20 to-transparent pointer-events-none blur-[2px]" />
+                                    </>
                                 )}
 
                                 {/* Urgency % badge — top-left */}

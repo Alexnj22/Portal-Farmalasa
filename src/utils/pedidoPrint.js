@@ -1,6 +1,7 @@
 // ─── Pedido print utility ─────────────────────────────────────────────────────
 // B&W optimized. Blob URL + @page margin:0 eliminates browser header/footer.
-// div-grid layout: break-inside:avoid on grid rows is reliable in Chrome (unlike <tbody>).
+// Real <table><thead> layout: thead repeats natively on every printed page (Chrome),
+// no manual row-counting needed. break-inside:avoid on <tr> keeps rows intact.
 // qty is always in PACKS (cajas/frascos/blisters), not units.
 
 const ERP_NAMES_DEFAULT = {
@@ -41,25 +42,16 @@ function fmtFechaLarga(date) {
     return date.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
-// Lotes: max 4 visibles, wrapping habilitado para evitar overflow horizontal.
-function lotesText(lotes) {
-    if (!lotes || !lotes.length) return '<span style="font-size:9px;color:#999;">—</span>';
-    const MAX   = 4;
-    const shown = lotes.slice(0, MAX);
-    const extra = lotes.length - MAX;
-    const lines = shown.map(l => {
-        const count = l.take ?? l.cantidad ?? l.packs ?? '?';
-        const vence = fmtVence(l.fecha_vencimiento);
-        const parts = [];
-        if (l.lote) parts.push(`<b>${esc(l.lote)}</b>`);
-        if (vence)  parts.push(`<i>${esc(vence)}</i>`);
-        parts.push(`<b>${count}pk</b>`);
-        return `<span style="display:block;font-size:8px;line-height:1.6;word-break:break-word;">${parts.join('&nbsp;·&nbsp;')}</span>`;
-    }).join('');
-    const more = extra > 0
-        ? `<span style="display:block;font-size:7px;color:#777;">+${extra} más</span>`
-        : '';
-    return lines + more;
+// Una sola línea por lote (sin stack vertical) — la fila completa de la tabla es el lote.
+function loteCellHtml(lot) {
+    if (!lot) return '<span style="font-size:9px;color:#999;">—</span>';
+    const count = lot.take ?? lot.cantidad ?? lot.packs ?? '?';
+    const vence = fmtVence(lot.fecha_vencimiento);
+    const parts = [];
+    if (lot.lote) parts.push(`<b>${esc(lot.lote)}</b>`);
+    if (vence)  parts.push(`<i>${esc(vence)}</i>`);
+    parts.push(`<b>${count}pk</b>`);
+    return `<span style="font-size:8.5px;word-break:break-word;">${parts.join('&nbsp;·&nbsp;')}</span>`;
 }
 
 function sortRows(rows) {
@@ -69,43 +61,48 @@ function sortRows(rows) {
     );
 }
 
-// Flex rows: break-inside:avoid en display:flex es fiable en Chrome print (vs <tbody> o grid).
-// Anchos: Producto flex-grow:2 | Lab flex-grow:1 | Cant 42px | Pres 72px | Lotes flex-grow:1 | ✓ 22px
-const TH_S = 'display:flex;align-items:center;padding:4px 5px;font-size:7.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.06em;border-right:1px solid #bbb;overflow:hidden;';
-const TD_S = 'display:flex;align-items:center;padding:4px 5px;border-right:1px solid #ddd;font-size:9px;word-break:break-word;overflow:hidden;min-height:24px;';
+// Tabla real con <thead>: el navegador repite el encabezado en cada hoja impresa
+// automáticamente (sin contar filas a mano). Orden: Laboratorio, Producto,
+// Presentación, Cantidad, Lote, Check.
+const COLGROUP = `<colgroup>
+  <col style="width:16%"><col style="width:31%"><col style="width:13%"><col style="width:9%"><col style="width:25%"><col style="width:6%">
+</colgroup>`;
+const TH_S = 'display:flex;align-items:center;padding:3px 5px;font-size:7.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.06em;border-right:1px solid #bbb;overflow:hidden;';
+const TD_S = 'display:flex;align-items:center;padding:2px 5px;border-right:1px solid #ddd;font-size:9px;word-break:break-word;overflow:hidden;min-height:16px;';
+const BADGE_AB    = 'display:inline-block;margin-left:4px;padding:1px 4px;border:1.3px solid #000;border-radius:2px;font-size:6.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;vertical-align:middle;line-height:1.3;';
+const BADGE_REGLA = 'display:inline-block;margin-left:4px;width:11px;height:11px;border:1.3px solid #000;border-radius:50%;font-size:7px;font-weight:800;line-height:11px;text-align:center;vertical-align:middle;';
 
 function colHeaderHtml() {
-    return `<div style="display:flex;background:#e0e0e0;border-bottom:2px solid #999;">
-  <div style="${TH_S}flex:2 1 0;min-width:0;">Producto</div>
-  <div style="${TH_S}flex:1 1 0;min-width:0;">Laboratorio</div>
-  <div style="${TH_S}flex:0 0 42px;justify-content:center;">Cant.</div>
-  <div style="${TH_S}flex:0 0 72px;">Presentación</div>
-  <div style="${TH_S}flex:1 1 0;min-width:0;">Lote(s)</div>
-  <div style="${TH_S}flex:0 0 22px;border-right:none;justify-content:center;">✓</div>
-</div>`;
+    return `<thead><tr style="background:#e0e0e0;border-bottom:2px solid #999;">
+  <th style="${TH_S}">Laboratorio</th>
+  <th style="${TH_S}">Producto</th>
+  <th style="${TH_S}">Presentación</th>
+  <th style="${TH_S}justify-content:center;">Cant.</th>
+  <th style="${TH_S}">Lote</th>
+  <th style="${TH_S}border-right:none;justify-content:center;">✓</th>
+</tr></thead>`;
 }
 
-// Repite encabezado de columnas cada 28 filas para secciones largas (>1 página).
-const HEADER_REPEAT = 28;
+// Un producto con varios lotes genera varias filas (una por lote), por fila completa
+// en lugar de apilarlas dentro de una sola celda. Lab/Producto/Presentación/Cant solo
+// se imprimen en la primera fila; las filas de continuación quedan vacías ahí.
+function productRowsHtml(r, idx) {
+    const bg        = idx % 2 === 1 ? 'background:#f2f2f2;' : 'background:#fff;';
+    const abBadge   = r.es_antibiotico ? `<span style="${BADGE_AB}">Bajo Receta</span>` : '';
+    const reglaBadge = r.tiene_regla ? `<span style="${BADGE_REGLA}" title="Regla de despacho aplicada">R</span>` : '';
+    const lts = (r.lotes && r.lotes.length) ? r.lotes : [null];
 
-function rowsToHtml(rows) {
-    if (!rows.length) {
-        return `<div style="padding:10px;text-align:center;font-size:10px;color:#555;border-bottom:1px solid #ccc;">Sin productos para esta sucursal</div>`;
-    }
-    return sortRows(rows).map((r, i) => {
-        const bg      = i % 2 === 1 ? 'background:#f2f2f2;' : 'background:#fff;';
-        const abBadge = r.es_antibiotico
-            ? `<span style="display:inline-block;margin-left:4px;padding:0 3px;border:1.5px solid #000;font-size:7px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;line-height:13px;">AB</span>`
-            : '';
-        const hdrRepeat = i > 0 && i % HEADER_REPEAT === 0 ? colHeaderHtml() : '';
-        return `${hdrRepeat}<div style="display:flex;${bg}border-bottom:1px solid #ccc;break-inside:avoid;page-break-inside:avoid;">
-  <div style="${TD_S}flex:2 1 0;min-width:0;font-size:9.5px;">${esc(r.product_name)}${abBadge}</div>
-  <div style="${TD_S}flex:1 1 0;min-width:0;font-size:8px;color:#333;">${esc(r.laboratorio) || '—'}</div>
-  <div style="${TD_S}flex:0 0 42px;justify-content:center;font-size:13px;font-weight:800;">${r.qty}</div>
-  <div style="${TD_S}flex:0 0 72px;font-size:8px;color:#333;">${esc(r.presentacion_tipo) || '—'}</div>
-  <div style="${TD_S}flex:1 1 0;min-width:0;">${lotesText(r.lotes)}</div>
-  <div style="${TD_S}flex:0 0 22px;border-right:none;justify-content:center;"><span style="display:inline-block;width:13px;height:13px;border:1.5px solid #555;border-radius:2px;flex-shrink:0;"></span></div>
-</div>`;
+    return lts.map((lot, li) => {
+        const first      = li === 0;
+        const rowBorder  = first ? 'border-top:1px solid #ccc;' : 'border-top:1px dashed #ddd;';
+        return `<tr style="${bg}${rowBorder}break-inside:avoid;page-break-inside:avoid;">
+  <td style="${TD_S}font-size:8px;color:#333;">${first ? (esc(r.laboratorio) || '—') : ''}</td>
+  <td style="${TD_S}font-size:9.5px;">${first ? `${esc(r.product_name)}${abBadge}${reglaBadge}` : ''}</td>
+  <td style="${TD_S}font-size:8px;color:#333;">${first ? (esc(r.presentacion_tipo) || '—') : ''}</td>
+  <td style="${TD_S}justify-content:center;font-size:11px;font-weight:700;">${first ? r.qty : ''}</td>
+  <td style="${TD_S}">${loteCellHtml(lot)}</td>
+  <td style="${TD_S}border-right:none;justify-content:center;"><span style="display:inline-block;width:11px;height:11px;border:1.5px solid #555;border-radius:2px;flex-shrink:0;"></span></td>
+</tr>`;
     }).join('');
 }
 
@@ -120,15 +117,22 @@ function buildSection(sec, fecha, isLast) {
         ? `<div style="padding:4px 8px;font-size:9px;color:#000;background:#ebebeb;border-top:2px dashed #888;">${footerParts.join('&nbsp;·&nbsp;')}</div>`
         : '';
 
+    const bodyRows = sec.rows.length
+        ? sortRows(sec.rows).map((r, i) => productRowsHtml(r, i)).join('')
+        : `<tr><td colspan="6" style="padding:10px;text-align:center;font-size:10px;color:#555;">Sin productos para esta sucursal</td></tr>`;
+
     return `
 <div style="${pageBreak}margin-bottom:10px;">
   <div style="width:100%;border:1px solid #999;border-bottom:none;">
-    <div style="background:#000;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:6px 10px;">
+    <div style="background:#000;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:5px 10px;">
       <span style="font-size:11.5px;font-weight:700;letter-spacing:.01em;">Farmacia Farmalasa &mdash; ${esc(sec.nombre)}</span>
       <span style="font-size:9px;font-weight:400;white-space:nowrap;">${sec.rows.length} productos &nbsp;·&nbsp; ${totalPacks} packs &nbsp;·&nbsp; ${esc(fecha)}</span>
     </div>
-    ${colHeaderHtml()}
-    ${rowsToHtml(sec.rows)}
+    <table style="width:100%;table-layout:fixed;border-collapse:collapse;">
+      ${COLGROUP}
+      ${colHeaderHtml()}
+      <tbody>${bodyRows}</tbody>
+    </table>
     ${footer}
   </div>
 </div>`;
@@ -205,6 +209,12 @@ function printHtml(html) {
 function openPrintWindow(sections, title, meta = {}) {
     const fecha = fmtFechaLarga(new Date());
 
+    const last = sections.length ? sections[sections.length - 1] : null;
+    const head = sections.length > 1
+        ? sections.slice(0, -1).map(s => buildSection(s, fecha, false)).join('\n')
+        : '';
+    const lastHtml = last ? buildSection(last, fecha, true) : '';
+
     const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -214,7 +224,6 @@ function openPrintWindow(sections, title, meta = {}) {
   *{box-sizing:border-box;margin:0;padding:0;}
   @page{size:letter portrait;margin:0;}
   body{font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;font-size:10px;padding:10mm 9mm 12mm;}
-  /* signature block uses <table> — keep minimal table resets */
   table{border-collapse:collapse;}
   td,th{vertical-align:bottom;}
   .sig-block{
@@ -228,8 +237,12 @@ function openPrintWindow(sections, title, meta = {}) {
 </style>
 </head>
 <body>
-${sections.map((s, i) => buildSection(s, fecha, i === sections.length - 1)).join('\n')}
-${buildSignatures(meta)}
+${head}
+<div style="display:flex;flex-direction:column;min-height:calc(100vh - 14mm);">
+  ${lastHtml}
+  <div style="flex:1 0 auto;"></div>
+  ${buildSignatures(meta)}
+</div>
 </body>
 </html>`;
 
@@ -275,6 +288,7 @@ export function printPerSucursal(grouped, sortedSucIds, getAdjusted, codigoFn, m
                     laboratorio:       row.laboratorio ?? '',
                     presentacion_tipo: dispTipo,
                     es_antibiotico:    row.es_antibiotico,
+                    tiene_regla:       !!row.tiene_regla_despacho,
                     qty,
                     lotes: fefoProject(lotesToDispatch(row.lotes_bodega, erpFactor, dispFactor), qty),
                 };
@@ -307,6 +321,7 @@ export function printFromPreview(grouped, sortedSucIds, getAdjusted, title, meta
                 laboratorio:       row.laboratorio ?? '',
                 presentacion_tipo: dispTipo,
                 es_antibiotico:    row.es_antibiotico,
+                tiene_regla:       !!row.tiene_regla_despacho,
                 qty,
                 lotes: fefoProject(lotesToDispatch(row.lotes_bodega, erpFactor, dispFactor), qty),
             };
@@ -344,6 +359,7 @@ export function printFromSnapshot(snapshot, meta = {}) {
                 laboratorio:       row.laboratorio ?? '',
                 presentacion_tipo: row.presentacion_tipo,
                 es_antibiotico:    row.es_antibiotico,
+                tiene_regla:       !!row.tiene_regla_despacho,
                 qty,
                 lotes: fefoProject(row.lotes_bodega, qty),
             };
@@ -370,6 +386,7 @@ export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, titleOv
             laboratorio:       r.products?.laboratorios?.nombre ?? '',
             presentacion_tipo: r.presentaciones?.tipo ?? '',
             es_antibiotico:    r.products?.es_antibiotico ?? false,
+            tiene_regla:       false,
             qty:               r.cantidad_asignada ?? 0,
             // lotes_asignados from DB may have {cantidad} or {packs} instead of {take}
             lotes:             Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],

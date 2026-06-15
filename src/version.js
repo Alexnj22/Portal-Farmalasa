@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.132';
+export const APP_VERSION = '2.2.133';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.133 — fix(pedidos/pdf): rediseño completo de impresión — (1) tabla real <table><thead> en vez de flex+conteo manual de filas: el encabezado ahora se repite nativamente en cada hoja, elimina bug de header apareciendo a media página; (2) orden de columnas: Laboratorio, Producto, Presentación, Cantidad, Lote, ✓; (3) lotes múltiples salen una fila por lote (no apilados en una celda) — Lab/Producto/Presentación/Cant solo en la primera fila, continuación con borde punteado; (4) badge AB renombrado a "Bajo Receta" en negrita pequeña; (5) nuevo indicador circular "R" junto al producto cuando tiene_regla_despacho=true (printPerSucursal/printFromPreview); (6) firmas ancladas al fondo de la última hoja vía flex+min-height:calc(100vh-14mm), ya no quedan pegadas al final de la tabla; (7) padding vertical de filas reducido (4px→2px, min-height 24px→16px) y cantidad menos pesada (13px/800→11px/700) — más filas por hoja; tamaño carta sin cambios (@page size:letter).
 // v2.2.132 — fix(minmax): 0 es válido cuando max>0 — regla: mostrar 0 solo si el par tiene max>0; — si ambos son 0/null. Display, inline edit, arrow nav y CSV corregidos.
 // v2.2.131 — fix(minmax): 3 bugs — (1) null/0 coerción: inline edit y CSV ya no muestran ni guardan 0 cuando MIN/MAX no está asignado (0 → —); (2) borrador en publicados: live save ahora incluye draft_status:'none' + cross-validation en saveDraftPair; (3) latencia: setData optimista antes del await, revert si error.
 // v2.2.130 — fix(pedidos/rpc): umbral mínimo de despacho 40% — si reponer < 40% de la unidad de despacho (CAJA/BLISTER/etc.), asignado=0 y el producto cae en revision_minmax. Evita enviar 1 CAJA completa cuando solo se necesitan 1-2 unidades. El operador ajusta la regla o MIN/MAX de esa sucursal. Aplica a todos los tipos de regla (nueva + legado).

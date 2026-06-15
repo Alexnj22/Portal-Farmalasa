@@ -20,20 +20,20 @@ import { useAuth } from '../../context/AuthContext';
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
 
-// Chip / pill — subtle lift, no bounce
+// Chip / pill — instant color via CSS, scale muy sutil y rápido
 const chipAnim = {
-    whileHover: { scale: 1.045, transition: { duration: 0.18, ease: EASE_OUT_EXPO } },
-    whileTap:   { scale: 0.955, transition: { duration: 0.06, ease: 'easeIn' } },
+    whileHover: { scale: 1.025, transition: { duration: 0.1, ease: EASE_OUT_EXPO } },
+    whileTap:   { scale: 0.96,  transition: { duration: 0.05 } },
 };
-// CTA button (Calcular, Publicar) — a bit more prominent
+// CTA button (Calcular, Publicar)
 const ctaAnim = {
-    whileHover: { scale: 1.03,  transition: { duration: 0.18, ease: EASE_OUT_EXPO } },
-    whileTap:   { scale: 0.97,  transition: { duration: 0.06, ease: 'easeIn' } },
+    whileHover: { scale: 1.02,  transition: { duration: 0.1, ease: EASE_OUT_EXPO } },
+    whileTap:   { scale: 0.97,  transition: { duration: 0.05 } },
 };
-// Icon button — spring para que sea fluido sin lag
+// Icon button — easeOut consistente (sin spring underdamped que rebotaba)
 const iconAnim = {
-    whileHover: { scale: 1.08, transition: { type: 'spring', stiffness: 700, damping: 28 } },
-    whileTap:   { scale: 0.88, transition: { type: 'spring', stiffness: 700, damping: 22 } },
+    whileHover: { scale: 1.07, transition: { duration: 0.1, ease: EASE_OUT_EXPO } },
+    whileTap:   { scale: 0.88, transition: { duration: 0.05 } },
 };
 // Entrance — fade up, stagger via delay passed at call site
 const fadeUp = (delay = 0) => ({
@@ -2571,11 +2571,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                 <div className="flex-1" />
 
-                {/* RIGHT: pill — white section + blue Calcular cap as sibling */}
-                <div className="flex items-center shrink-0 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] transition-shadow duration-300">
+                {/* RIGHT: pill — glassmorphism, siempre rounded-2xl completo */}
+                <div className="flex items-center shrink-0 rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.07),inset_0_1px_0_rgba(255,255,255,0.92)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.11),inset_0_1px_0_rgba(255,255,255,0.95)] transition-shadow duration-300"
+                     style={{
+                         background: 'rgba(255,255,255,0.70)',
+                         backdropFilter: 'blur(20px) saturate(180%)',
+                         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                         border: '1px solid rgba(255,255,255,0.82)',
+                     }}>
 
-                    {/* White section */}
-                    <div className="flex items-center rounded-l-2xl border border-r-0 border-slate-200/70 bg-white/80 backdrop-blur-sm overflow-visible">
+                    {/* Buttons section — sin bg propio, el glass del outer cubre */}
+                    <div className="flex items-center overflow-visible">
 
                         {/* Branch selector */}
                         <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
@@ -2589,7 +2595,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         {/* Active ABC/XYZ filter badge + clear */}
                         {(filterAbc !== 'all' || filterXyz !== 'all') && (
                             <>
-                                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                                <div className="h-5 w-px bg-slate-200/60 shrink-0" />
                                 <button onClick={() => { setFilterAbc('all'); setFilterXyz('all'); setPage(1); }}
                                     className="mx-2 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[11px] font-black text-blue-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors shrink-0">
                                     {filterAbc !== 'all' ? filterAbc : '·'}{filterXyz !== 'all' ? filterXyz : ''}
@@ -2598,44 +2604,44 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             </>
                         )}
 
-                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+                        <div className="h-5 w-px bg-slate-200/60 shrink-0" />
 
                         {/* CSV */}
                         <motion.button onClick={() => exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp])}
                             disabled={data.length === 0 || loading}
                             title="Exportar CSV"
                             {...chipAnim}
-                            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 disabled:opacity-30">
+                            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-30">
                             <Download size={12} /> CSV
                         </motion.button>
 
-                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+                        <div className="h-5 w-px bg-slate-200/60 shrink-0" />
 
                         {/* Config */}
                         <motion.button onClick={() => setConfigOpen(o => !o)}
                             title="Configurar parámetros"
                             {...iconAnim}
-                            className={`px-3 py-2.5 rounded-xl ${configOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
+                            className={`px-3 py-2.5 rounded-xl transition-colors ${configOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
                             <Settings2 size={13} />
                         </motion.button>
 
-                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+                        <div className="h-5 w-px bg-slate-200/60 shrink-0" />
 
                         {/* Labs visibility */}
                         <motion.button onClick={() => setLabsOpen(o => !o)}
                             title="Laboratorios ocultos en MinMax"
                             {...iconAnim}
-                            className={`px-3 py-2.5 rounded-xl ${labsOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
+                            className={`px-3 py-2.5 rounded-xl transition-colors ${labsOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
                             <FlaskConical size={13} />
                         </motion.button>
 
-                        <div className="h-5 w-px bg-slate-100 shrink-0" />
+                        <div className="h-5 w-px bg-slate-200/60 shrink-0" />
 
                         {/* Todas las sucursales */}
                         <motion.button onClick={handleRecalcularAll} disabled={!canManage || calculating || loading}
                             title="Recalcular todas las sucursales (Bodega se actualiza sola)"
                             {...chipAnim}
-                            className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 disabled:opacity-40 disabled:pointer-events-none">
+                            className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-40 disabled:pointer-events-none">
                             {calculating && calcMode === 'all'
                                 ? <><Loader2 size={11} className="animate-spin" /> {calcProgress ? `${calcProgress.name} ${calcProgress.current}/${calcProgress.total}` : 'Calculando…'}</>
                                 : <><Layers size={11} /> Todas las sucursales</>}
@@ -2644,13 +2650,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
 
                     {/* Calcular — blue right cap (oculto para Bodega: se actualiza sola) */}
                     {!isBodega && (
-                        <motion.button onClick={handleRecalcular} disabled={!canManage || calculating || loading}
-                            {...ctaAnim}
-                            className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
-                            {calculating && calcMode === 'single'
-                                ? <><Loader2 size={12} className="animate-spin" /> Calculando…</>
-                                : <><RefreshCw size={12} /> Calcular</>}
-                        </motion.button>
+                        <>
+                            <div className="self-stretch w-px bg-slate-200/60 shrink-0" />
+                            <motion.button onClick={handleRecalcular} disabled={!canManage || calculating || loading}
+                                {...ctaAnim}
+                                className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 transition-colors rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
+                                {calculating && calcMode === 'single'
+                                    ? <><Loader2 size={12} className="animate-spin" /> Calculando…</>
+                                    : <><RefreshCw size={12} /> Calcular</>}
+                            </motion.button>
+                        </>
                     )}
                 </div>
             </div>

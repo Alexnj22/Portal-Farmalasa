@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.103';
+export const APP_VERSION = '2.2.104';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.104 — fix(minmax): pill de filtros rediseñada — glassmorphism real (rgba bg + blur(20px) saturate(180%) + border blanco) en el outer; siempre rounded-2xl completo (sin border-r-0 que dejaba el lado derecho cortado en Bodega); separador vertical antes de Calcular en lugar de border-r-0 en el inner; animaciones chipAnim/iconAnim/ctaAnim más rápidas (100ms easeOutExpo) y sin spring underdamped (ζ≈0.53→easeOut); transition-colors en todos los botones de la pill
 // v2.2.103 — fix(minmax): (1) Bodega sin botón Calcular — se actualiza sola vía trigger+publish; handleRecalcularAll excluye id=6; empty state Bodega explica flujo correcto; (2) badge "SUC. PEND." ámbar en columna producto cuando Bodega row tiene draft_status=pending (alguna sucursal no ha publicado); hover "→ N·N prev." ya muestra qué sucursales
 // v2.2.102 — fix(minmax): RowActions hover lag — elimina whileHover y:-2 (spring underdamped ζ≈0.43 que oscilaba/bounceaba); elimina delay stagger de items dropdown; apertura dropdown: spring→easeOut 100ms; queda solo whileTap con spring crítico (damping 40) para feedback de clic inmediato
 // v2.2.101 — fix(minmax): RowActions — "Más" solo aparece cuando hay >3 botones en total; con ≤3 se muestran todos directamente (Bodega: Restaurar+Historial+Ocultar sin dropdown)

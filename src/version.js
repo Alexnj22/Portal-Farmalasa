@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.109';
+export const APP_VERSION = '2.2.110';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.110 — fix(pedidos): elimina borradores de TabGenerar — flujo migrado a "Generar y confirmar" directo; se removieron estado/funciones/UI de savingSnap/snapMsg/snapshots/loadingSnaps/snapsOpen/deletingSnap/handleGuardarBorrador/loadSnapshots/handleLoadSnapshot/handleDeleteSnapshot e imports Save+Trash2
 // v2.2.109 — feat(pedidos): Realtime en TabRecepcion — canal supabase_realtime para tabla pedidos (ALTER PUBLICATION); suscripción filtra client-side por sucursal_ids.includes(erpSucursalId); refresca lista automáticamente ante INSERT/UPDATE; banner pulsante "Nuevo pedido #N" con auto-dismiss 8s cuando llega pedido enviado
 // v2.2.108 — fix(pedidos): 3 mejoras — (1) TabGenerar: borradores cargables — sección "Borradores guardados" en dashboard lista snapshots con Cargar (carga datos+sucursales en preview) y Eliminar; ERP_NAMES/SUCURSALES ahora importados de constants/erp.js; (2) TabDiferencias: resolución de diferencias — columnas resuelta_at/resuelta_por en pedido_items (DB migration); botón "Resolver" por fila en vista Detalle marca la diferencia cerrada; toggle "Mostrar/Ocultar resueltas"; get_pedido_diferencias_stats v2 expone pedido_item_id+resuelta_at+limit 500; (3) ERP_NAMES dedup en TabRecepcion, TabDiferencias, TabGenerar → importan desde constants/erp.js
 // v2.2.107 — fix(pedidos): 6 correcciones — (1) TabRecepcion paginación aumentada a 500 pedidos (era 100); (2) TabDiferencias timezone El Salvador UTC-6 en filtros de fecha (era UTC 0); (3) RecepcionModal quita cap max en cantidad recibida (permite registrar más de lo asignado); (4) TabGenerar re-fetcha dashStats+sinBodega tras confirmar pedido (datos ya no quedan stale); (5) PedidosView lazy mount tabs (no montados hasta navegar) + recepcionKey separado de historialKey; (6) src/constants/erp.js centraliza ERP_NAMES, SUCURSALES y ERP_BODEGA_ID

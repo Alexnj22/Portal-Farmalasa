@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.131';
+export const APP_VERSION = '2.2.132';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.132 — fix(minmax): 0 es válido cuando max>0 — regla: mostrar 0 solo si el par tiene max>0; — si ambos son 0/null. Display, inline edit, arrow nav y CSV corregidos.
 // v2.2.131 — fix(minmax): 3 bugs — (1) null/0 coerción: inline edit y CSV ya no muestran ni guardan 0 cuando MIN/MAX no está asignado (0 → —); (2) borrador en publicados: live save ahora incluye draft_status:'none' + cross-validation en saveDraftPair; (3) latencia: setData optimista antes del await, revert si error.
 // v2.2.130 — fix(pedidos/rpc): umbral mínimo de despacho 40% — si reponer < 40% de la unidad de despacho (CAJA/BLISTER/etc.), asignado=0 y el producto cae en revision_minmax. Evita enviar 1 CAJA completa cuando solo se necesitan 1-2 unidades. El operador ajusta la regla o MIN/MAX de esa sucursal. Aplica a todos los tipos de regla (nueva + legado).
 // v2.2.129 — fix(pedidos/rpc): dispatch cap en get_pedido_preview v17 — si CEIL(raw/múltiplo)×múltiplo excede el disponible de bodega para esa sucursal, se despacha asignado_raw usando presentación ERP base (sin redondeo). Elimina sobre-asignación de min-stock en TABCIN (2 und en vez de 72), ALCOHOL (8 en vez de 10) y ALERFIN (disponible real en vez de blisters de más). Test: 0 LOTE_MISMATCH, 0 DISPATCH_OVERFLOW

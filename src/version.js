@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.107';
+export const APP_VERSION = '2.2.108';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.108 — fix(pedidos): 3 mejoras — (1) TabGenerar: borradores cargables — sección "Borradores guardados" en dashboard lista snapshots con Cargar (carga datos+sucursales en preview) y Eliminar; ERP_NAMES/SUCURSALES ahora importados de constants/erp.js; (2) TabDiferencias: resolución de diferencias — columnas resuelta_at/resuelta_por en pedido_items (DB migration); botón "Resolver" por fila en vista Detalle marca la diferencia cerrada; toggle "Mostrar/Ocultar resueltas"; get_pedido_diferencias_stats v2 expone pedido_item_id+resuelta_at+limit 500; (3) ERP_NAMES dedup en TabRecepcion, TabDiferencias, TabGenerar → importan desde constants/erp.js
 // v2.2.107 — fix(pedidos): 6 correcciones — (1) TabRecepcion paginación aumentada a 500 pedidos (era 100); (2) TabDiferencias timezone El Salvador UTC-6 en filtros de fecha (era UTC 0); (3) RecepcionModal quita cap max en cantidad recibida (permite registrar más de lo asignado); (4) TabGenerar re-fetcha dashStats+sinBodega tras confirmar pedido (datos ya no quedan stale); (5) PedidosView lazy mount tabs (no montados hasta navegar) + recepcionKey separado de historialKey; (6) src/constants/erp.js centraliza ERP_NAMES, SUCURSALES y ERP_BODEGA_ID
 // v2.2.106 — fix(minmax): (1) DraftCostCard en Bodega cambia etiqueta a "Σ red efectiva" + icono ámbar (vs violeta en sucursales) — deja claro que es la suma auto-calculada, no un borrador manual; (2) badge "N·N" ámbar con dot pulsante reemplaza "→ N·N prev." en DataCell Bodega — más reconocible como estado accionable; title="Hover para ver sucursales pendientes" para discoverability
 // v2.2.105 — fix(minmax): (1) CSV semicolons + BOM para Excel — sep=; + ﻿ elimina el problema de columnas unidas en Excel español; (2) Bodega: oculta "Todas las sucursales" (ya estaba oculto Calcular); (3) aviso Bodega movido inline al filter bar (chip compacto con estado pendientes/al-día), elimina la fila extra; (4) canExpand incluye effective_min>0 || effective_max>0 — productos con params pero sin inventario (p.ej. Bodega) ya se pueden desplegar

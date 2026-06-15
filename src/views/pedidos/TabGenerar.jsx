@@ -4,19 +4,14 @@ import {
     Loader2, RefreshCw, Building2, ClipboardList, CheckCircle2,
     Package, AlertTriangle, Info, ChevronDown, ChevronRight, Clock,
     FlaskConical, ArrowLeft, TriangleAlert, TrendingUp,
-    ChevronLeft, Minus, Plus, Printer, RefreshCcw, Save, Check, Globe, X,
+    ChevronLeft, Minus, Plus, Printer, RefreshCcw, Save, Check, Globe, X, Trash2,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
 import { printFromPreview, printPerSucursal, buildPedidoCodigo, fefoProject } from '../../utils/pedidoPrint';
-
-const ERP_NAMES = {
-    1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
-    4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
-};
-const SUCURSALES   = [5, 1, 2, 3, 4, 7];
+import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
 const PAGE_PREV    = 30;   // preview per-sucursal page size
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -177,6 +172,10 @@ export default function TabGenerar({ searchTerm = '' }) {
     const [syncedAt,     setSyncedAt]     = useState(null);
     const [savingSnap,   setSavingSnap]   = useState(false);
     const [snapMsg,      setSnapMsg]      = useState(null); // { ok: bool, text: string }
+    const [snapshots,    setSnapshots]    = useState([]);
+    const [loadingSnaps, setLoadingSnaps] = useState(false);
+    const [snapsOpen,    setSnapsOpen]    = useState(false);
+    const [deletingSnap, setDeletingSnap] = useState(null);
 
     // Preview per-sucursal collapse + pagination
     const [sucCollapsed, setSucCollapsed] = useState({});
@@ -435,6 +434,48 @@ export default function TabGenerar({ searchTerm = '' }) {
             setSavingSnap(false);
         }
     }, [preview, selected, getAdjusted, user]);
+
+    // ── Snapshots — cargar / eliminar ──────────────────────────
+    const loadSnapshots = useCallback(async () => {
+        setLoadingSnaps(true);
+        const { data } = await supabase
+            .from('pedidos_snapshots')
+            .select('id, nombre, sucursal_ids, total_filas, total_packs, created_at')
+            .order('created_at', { ascending: false })
+            .limit(15);
+        setSnapshots(data || []);
+        setLoadingSnaps(false);
+    }, []);
+
+    useEffect(() => { loadSnapshots(); }, [loadSnapshots]);
+
+    const handleLoadSnapshot = useCallback(async (snapId) => {
+        setLoading(true); setError(null); setConfirmed(null);
+        const { data } = await supabase
+            .from('pedidos_snapshots')
+            .select('datos, sucursal_ids')
+            .eq('id', snapId)
+            .single();
+        if (data?.datos) {
+            setSelected(new Set(data.sucursal_ids ?? []));
+            setPreview(data.datos);
+            setAdjustments({});
+            setNotes('');
+            setSnapMsg(null);
+            const initRev = {}, initSin = {};
+            for (const id of SUCURSALES) { initRev[id] = true; initSin[id] = false; }
+            setRevisionOpen(initRev); setSinStockOpen(initSin);
+            setSucCollapsed({}); setSucPage({});
+        }
+        setLoading(false);
+    }, []);
+
+    const handleDeleteSnapshot = useCallback(async (snapId) => {
+        setDeletingSnap(snapId);
+        await supabase.from('pedidos_snapshots').delete().eq('id', snapId);
+        setSnapshots(prev => prev.filter(s => s.id !== snapId));
+        setDeletingSnap(null);
+    }, []);
 
     // ── Grouped preview ────────────────────────────────────────
     const grouped = useMemo(() => {
@@ -1071,6 +1112,75 @@ export default function TabGenerar({ searchTerm = '' }) {
                     )}
                 </div>
             </div>
+
+            {/* ── Borradores guardados ───────────────────────── */}
+            {(loadingSnaps || snapshots.length > 0) && (
+                <div className={GLASS + ' overflow-hidden'}>
+                    <button
+                        onClick={() => setSnapsOpen(v => !v)}
+                        className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-50/50 transition-colors"
+                    >
+                        {snapsOpen
+                            ? <ChevronDown  size={14} className="text-slate-400 shrink-0" />
+                            : <ChevronRight size={14} className="text-slate-400 shrink-0" />}
+                        <Save size={14} className="text-indigo-400 shrink-0" />
+                        <span className="font-semibold text-slate-700 text-[14px]">Borradores guardados</span>
+                        {snapshots.length > 0 && (
+                            <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-600 border border-indigo-200 font-semibold ml-1">
+                                {snapshots.length}
+                            </span>
+                        )}
+                        {loadingSnaps && <Loader2 size={12} className="animate-spin text-slate-300 ml-auto" />}
+                    </button>
+                    {snapsOpen && (
+                        <div className="border-t border-slate-100 divide-y divide-slate-50">
+                            {snapshots.length === 0 && (
+                                <p className="px-4 py-3 text-[12px] text-slate-400">No hay borradores guardados.</p>
+                            )}
+                            {snapshots.map(snap => (
+                                <div key={snap.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/50 transition-colors">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[13px] font-medium text-slate-700 truncate">{snap.nombre}</p>
+                                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                            <span className="text-[10px] text-slate-400">
+                                                {new Date(snap.created_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                            <span className="text-[10px] text-slate-300">·</span>
+                                            <span className="text-[10px] text-slate-400">
+                                                {snap.total_filas} productos · {snap.total_packs} packs
+                                            </span>
+                                            <div className="flex gap-1">
+                                                {(snap.sucursal_ids || []).map(id => (
+                                                    <span key={id} className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">
+                                                        {ERP_NAMES[id]}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleLoadSnapshot(snap.id)}
+                                        disabled={loading}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors disabled:opacity-50 shrink-0"
+                                    >
+                                        <RefreshCw size={12} /> Cargar
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteSnapshot(snap.id)}
+                                        disabled={deletingSnap === snap.id}
+                                        title="Eliminar borrador"
+                                        className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 shrink-0"
+                                    >
+                                        {deletingSnap === snap.id
+                                            ? <Loader2 size={13} className="animate-spin" />
+                                            : <Trash2 size={13} />}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* ── Productos sin stock en Bodega ──────────────── */}
             <div className={GLASS + ' px-4 py-3 flex items-center gap-2'}>

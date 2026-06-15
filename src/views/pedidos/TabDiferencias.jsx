@@ -2,15 +2,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, CalendarDays, TrendingDown, Package, Building2,
-    AlertTriangle, X,
+    AlertTriangle, X, CheckCircle2, Check,
 } from 'lucide-react';
 import { DataTable, DataRow } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
-
-const ERP_NAMES = {
-    1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
-    4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
-};
+import { useAuth } from '../../context/AuthContext';
+import { ERP_NAMES } from '../../constants/erp';
 
 const GLASS = 'rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
 
@@ -91,13 +88,17 @@ const DET_COLS = [
     { key: 'cantidad_asignada', label: 'Asig.',     align: 'center', sortable: true },
     { key: 'cantidad_recibida', label: 'Recib.',    align: 'center', sortable: true },
     { key: 'nota_diferencia',   label: 'Nota',      align: 'left',   hideBelow: 'md' },
+    { key: 'resuelta_at',       label: 'Estado',    align: 'center', className: 'w-28' },
 ];
 
 export default function TabDiferencias({ searchTerm = '' }) {
-    const [loading,  setLoading]  = useState(false);
-    const [data,     setData]     = useState(null);
-    const [desde,    setDesde]    = useState('');
-    const [hasta,    setHasta]    = useState('');
+    const { user } = useAuth();
+    const [loading,        setLoading]        = useState(false);
+    const [data,           setData]           = useState(null);
+    const [desde,          setDesde]          = useState('');
+    const [hasta,          setHasta]          = useState('');
+    const [resolving,      setResolving]      = useState(null);
+    const [hideResueltas,  setHideResueltas]  = useState(true);
     const [viewMode, setViewMode] = useState('sucursal');
 
     const [prodSortKey,  setProdSortKey]  = useState('packs_faltantes');
@@ -122,6 +123,24 @@ export default function TabDiferencias({ searchTerm = '' }) {
     }, []);
 
     useEffect(() => { loadStats(desde, hasta); }, [desde, hasta, loadStats]);
+
+    const handleResolver = useCallback(async (pedidoItemId) => {
+        setResolving(pedidoItemId);
+        const { error } = await supabase
+            .from('pedido_items')
+            .update({ resuelta_at: new Date().toISOString(), resuelta_por: user?.id ?? null })
+            .eq('id', pedidoItemId);
+        if (!error) {
+            const now = new Date().toISOString();
+            setData(prev => prev ? {
+                ...prev,
+                detalle: (prev.detalle ?? []).map(d =>
+                    d.pedido_item_id === pedidoItemId ? { ...d, resuelta_at: now } : d
+                ),
+            } : prev);
+        }
+        setResolving(null);
+    }, [user]);
 
     useEffect(() => { setProdPage(1); setDetPage(1); }, [viewMode, searchTerm]);
 
@@ -160,6 +179,7 @@ export default function TabDiferencias({ searchTerm = '' }) {
 
     const detSorted = useMemo(() => {
         let rows = detalle;
+        if (hideResueltas) rows = rows.filter(r => !r.resuelta_at);
         if (searchTerm.trim()) {
             const q = searchTerm.toLowerCase();
             rows = rows.filter(r =>
@@ -168,7 +188,7 @@ export default function TabDiferencias({ searchTerm = '' }) {
             );
         }
         return clientSort(rows, detSortKey, detSortDir);
-    }, [detalle, searchTerm, detSortKey, detSortDir]);
+    }, [detalle, searchTerm, detSortKey, detSortDir, hideResueltas]);
 
     const detTotalPages = Math.max(1, Math.ceil(detSorted.length / detPageSize));
     const detRows       = detSorted.slice((detPage - 1) * detPageSize, detPage * detPageSize);
@@ -350,6 +370,24 @@ export default function TabDiferencias({ searchTerm = '' }) {
                     {/* ── Detalle ─────────────────────────────────── */}
                     {viewMode === 'detalle' && (
                         <>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <button
+                                    onClick={() => setHideResueltas(v => !v)}
+                                    className={`flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full border font-medium transition-colors ${
+                                        hideResueltas
+                                            ? 'bg-white text-slate-500 border-slate-200 hover:border-emerald-300'
+                                            : 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                    }`}
+                                >
+                                    <CheckCircle2 size={11} />
+                                    {hideResueltas ? 'Mostrar resueltas' : 'Ocultar resueltas'}
+                                </button>
+                                {!hideResueltas && detalle.filter(d => d.resuelta_at).length > 0 && (
+                                    <span className="text-[10px] text-slate-400">
+                                        {detalle.filter(d => d.resuelta_at).length} resueltas
+                                    </span>
+                                )}
+                            </div>
                             <DataTable
                                 columns={DET_COLS}
                                 sortKey={detSortKey}
@@ -360,7 +398,7 @@ export default function TabDiferencias({ searchTerm = '' }) {
                                 minWidth="600px"
                             >
                                 {detRows.map((row, i) => (
-                                    <DataRow key={i} index={i}>
+                                    <DataRow key={row.pedido_item_id ?? i} index={i}>
                                         <td className="px-4 py-3">
                                             <p className="text-[13px] font-semibold text-slate-800 leading-snug">{row.product_name}</p>
                                             <p className="text-[10px] text-slate-400">{fmtDate(row.received_at)}</p>
@@ -384,6 +422,24 @@ export default function TabDiferencias({ searchTerm = '' }) {
                                         </td>
                                         <td className="px-4 py-3 text-[11px] text-slate-400 hidden md:table-cell max-w-[200px]">
                                             <span className="truncate block">{row.nota_diferencia || '—'}</span>
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            {row.resuelta_at ? (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                                    <Check size={9} /> Resuelta
+                                                </span>
+                                            ) : row.pedido_item_id ? (
+                                                <button
+                                                    onClick={() => handleResolver(row.pedido_item_id)}
+                                                    disabled={resolving === row.pedido_item_id}
+                                                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 hover:border-emerald-300 hover:text-emerald-700 hover:bg-emerald-50 px-2 py-0.5 rounded-full transition-colors disabled:opacity-50"
+                                                >
+                                                    {resolving === row.pedido_item_id
+                                                        ? <Loader2 size={9} className="animate-spin" />
+                                                        : <CheckCircle2 size={9} />}
+                                                    Resolver
+                                                </button>
+                                            ) : <span className="text-slate-200">—</span>}
                                         </td>
                                     </DataRow>
                                 ))}

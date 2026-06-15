@@ -8,11 +8,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import RecepcionModal, { EmpChip } from './RecepcionModal';
-
-const ERP_NAMES = {
-    1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
-    4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5',
-};
+import { ERP_NAMES } from '../../constants/erp';
 
 const GLASS = 'rounded-2xl border border-slate-200/60 bg-white/60 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.07)]';
 

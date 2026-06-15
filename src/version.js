@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.115';
+export const APP_VERSION = '2.2.116';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.116 — feat(pedidos): urgencia ponderada por reponer + indicador último pedido — avg_urgencia_pct ahora es media ponderada por unidades a reponer (productos A con más necesidad pesan más); stats v4 agrega last_pedido_at; cards muestran "hoy/ayer/hace Xd" con color verde<7d ámbar<14d rojo≥14d
 // v2.2.115 — fix(pedidos): card seleccionada liquid glass encendida — glass azul translúcido (no sólido), sombra 45% difusa, highlight top más brillante (via-white/90), doble capa de luz difusa con blur interno
 // v2.2.114 — fix(pedidos): urgencia absoluta + cards seleccionadas azul encendido — get_pedido_sucursal_stats v3 agrega avg_urgencia_pct (AVG reponer/max×100 por sucursal); thresholds absolutos ≥65%=rojo ≥40%=ámbar <40%=verde; badge muestra % real; selected = gradiente azul sólido #1565D8→#003590 con glow 60% y ring
 // v2.2.113 — refactor(pedidos): elimina Vista previa + rediseña cards sucursal liquid glass — se remueven handleCalcular, handleConfirmar, preview screen, renderRow, grouped/sortedSucIds/globalTotals, ajustes, notas, responsable/revisado (~500 líneas); cards de sucursal rediseñadas con glassmorphism (backdrop-blur, gradient, highlight line, inner glow, badge pills animados)

@@ -22,6 +22,16 @@ function fmtSyncedAt(iso) {
     });
 }
 
+function fmtTimeSince(iso) {
+    if (!iso) return null;
+    const d = Math.floor((Date.now() - new Date(iso)) / 86_400_000);
+    if (d === 0) return 'hoy';
+    if (d === 1) return 'ayer';
+    if (d < 14)  return `hace ${d}d`;
+    if (d < 60)  return `hace ${Math.floor(d / 7)}sem`;
+    return `hace ${Math.floor(d / 30)}m`;
+}
+
 const SIN_BODEGA_COLS = [
     { key: 'product_name',    label: 'Producto',    align: 'left',  sortable: true },
     { key: 'laboratorio',     label: 'Laboratorio', align: 'left',  sortable: true },
@@ -439,20 +449,42 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 </span>
 
                                 {stat && !dashLoading ? (
-                                    <div className="flex items-center gap-1.5 mt-0.5 relative z-10">
-                                        <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                            isOn ? 'bg-white/15 text-emerald-200 border border-white/20' : 'bg-emerald-100 text-emerald-700'
-                                        }`}>
-                                            <span className="text-[8px]">✓</span>
-                                            {(stat.con_bodega_productos ?? 0)}
-                                        </span>
-                                        <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                            isOn ? 'bg-white/15 text-red-200 border border-white/20' : 'bg-red-100 text-red-600'
-                                        }`}>
-                                            <span className="text-[8px]">✗</span>
-                                            {(stat.sin_bodega_productos ?? 0)}
-                                        </span>
-                                    </div>
+                                    <>
+                                        <div className="flex items-center gap-1.5 mt-0.5 relative z-10">
+                                            <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                                isOn ? 'bg-white/15 text-emerald-200 border border-white/20' : 'bg-emerald-100 text-emerald-700'
+                                            }`}>
+                                                <span className="text-[8px]">✓</span>
+                                                {(stat.con_bodega_productos ?? 0)}
+                                            </span>
+                                            <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                                isOn ? 'bg-white/15 text-red-200 border border-white/20' : 'bg-red-100 text-red-600'
+                                            }`}>
+                                                <span className="text-[8px]">✗</span>
+                                                {(stat.sin_bodega_productos ?? 0)}
+                                            </span>
+                                        </div>
+                                        {/* Último pedido */}
+                                        {(() => {
+                                            const label = fmtTimeSince(stat.last_pedido_at);
+                                            if (!label) return (
+                                                <span className={`text-[9px] relative z-10 ${isOn ? 'text-white/40' : 'text-slate-300'}`}>sin pedidos</span>
+                                            );
+                                            const days = stat.last_pedido_at
+                                                ? Math.floor((Date.now() - new Date(stat.last_pedido_at)) / 86_400_000)
+                                                : 999;
+                                            const timeCls = isOn
+                                                ? 'text-white/60'
+                                                : days <= 7  ? 'text-emerald-500'
+                                                : days <= 14 ? 'text-amber-500'
+                                                : 'text-red-400';
+                                            return (
+                                                <span className={`text-[9px] font-medium relative z-10 ${timeCls}`}>
+                                                    {label}
+                                                </span>
+                                            );
+                                        })()}
+                                    </>
                                 ) : (
                                     <div className="h-6 w-14 rounded-lg bg-slate-100 animate-pulse mt-0.5" />
                                 )}

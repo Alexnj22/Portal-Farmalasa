@@ -10,76 +10,35 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination                   from '../../components/common/TablePagination';
 import LiquidSelect                      from '../../components/common/LiquidSelect';
 
-const PAGE_SIZE       = 50;
-const VALID_MULTIPLES = new Set([2, 3, 4, 5, 6, 10, 12, 20, 24, 25, 50]);
-const MULTIPLO_PILLS  = [2, 3, 6, 10, 12, 20, 24, 50];
-const EASE            = [0.16, 1, 0.3, 1];
+const PAGE_SIZE      = 50;
+const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
+const EASE           = [0.16, 1, 0.3, 1];
 
-// Tokens del expand row (valores fijos de DataTable.useTokens)
 const EXPAND_BG     = 'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/30';
 const EXPAND_BORDER = 'border-blue-100/60';
 
-// Tipos de regla: solo uno activo a la vez. Seleccionar un tipo lo aplica al instante.
-const RULE_TYPES = [
-    {
-        id:    'sin_regla',
-        label: 'Sin regla',
-        desc:  'Despacho libre, sin restricción',
-        Icon:  Ban,
-        color: 'rose',
-    },
-    {
-        id:    'solo_cajas',
-        label: 'Solo cajas',
-        desc:  'Despacha únicamente cajas completas',
-        Icon:  Box,
-        color: 'slate',
-    },
-    {
-        id:    'multiplo',
-        label: 'Múltiplo caja',
-        desc:  'Distribuye en múltiplos de N cajas',
-        Icon:  Layers,
-        color: 'blue',
-    },
-    {
-        id:    'blister',
-        label: 'Múltiplo blíster',
-        desc:  'Redondea a N blísters por envío',
-        Icon:  Layers,
-        color: 'indigo',
-    },
-    {
-        id:    'unidades',
-        label: 'Múltiplo unidades',
-        desc:  'Envía en múltiplos de N unidades base',
-        Icon:  Sigma,
-        color: 'violet',
-    },
-];
-
-// Detecta qué tipo de regla tiene un rule existente
-const detectType = (rule) => {
-    if (!rule) return 'sin_regla';
-    if (rule.multiplo           != null) return 'multiplo';
-    if (rule.blister            != null) return 'blister';
-    if (rule.multiplo_unidades  != null) return 'unidades';
-    return 'solo_cajas';
-};
-
-const DEFAULT_MULTIPLO = String(Math.min(...MULTIPLO_PILLS));
-
-const EMPTY_VALS = { ruleType: 'sin_regla', multiplo: '', blister: '', multiplo_unidades: '', notes: '' };
+const EMPTY_VALS = { dispatch_id_presentacion: null, dispatch_multiplo: '1', notes: '' };
 
 const COLS = [
-    { key: 'laboratorio_nombre', label: 'Laboratorio', align: 'left',   sortable: true },
-    { key: 'nombre',             label: 'Producto',    align: 'left',   sortable: true },
-    { key: 'ab',                 label: 'AB',          align: 'center', className: 'w-10' },
-    { key: 'estado',             label: 'Estado',      align: 'center', className: 'w-28' },
-    { key: 'tipo',               label: 'Tipo regla',  align: 'center', className: 'w-32' },
-    { key: 'valor',              label: 'Valor',       align: 'center', className: 'w-20' },
-    { key: 'notas',              label: 'Notas',       align: 'left'   },
+    { key: 'laboratorio_nombre', label: 'Laboratorio',     align: 'left',   sortable: true },
+    { key: 'nombre',             label: 'Producto',        align: 'left',   sortable: true },
+    { key: 'ab',                 label: 'AB',              align: 'center', className: 'w-10' },
+    { key: 'estado',             label: 'Estado',          align: 'center', className: 'w-28' },
+    { key: 'despacho',           label: 'Regla despacho',  align: 'center', className: 'w-44' },
+    { key: 'notas',              label: 'Notas',           align: 'left'   },
 ];
+
+// Icono + colores según tipo de presentación
+const presStyle = (tipo) => {
+    const t = (tipo || '').toUpperCase();
+    if (t.startsWith('CAJA') || t.startsWith('BOLSA'))
+        return { Icon: Box,     bg: 'bg-slate-800', text: 'text-white', iconInactive: 'text-slate-400' };
+    if (t.startsWith('BLISTER') || t.startsWith('SOBRE'))
+        return { Icon: Layers,  bg: 'bg-indigo-600', text: 'text-white', iconInactive: 'text-indigo-400' };
+    if (t === 'UNIDAD' || t === 'UNIDADES' || t === 'PAR' || t === 'PARES')
+        return { Icon: Sigma,   bg: 'bg-violet-600', text: 'text-white', iconInactive: 'text-violet-400' };
+    return { Icon: Package, bg: 'bg-blue-600',   text: 'text-white', iconInactive: 'text-blue-400' };
+};
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 function StatCard({ label, sub, value, Icon, iconBg, iconCls, countCls, active, activeBg, inactiveBg, loading, onClick }) {
@@ -102,86 +61,66 @@ function StatCard({ label, sub, value, Icon, iconBg, iconCls, countCls, active, 
     );
 }
 
-// ── Panel edición — todo se autoguarda al seleccionar (sin botón Guardar) ─────
+// ── Panel edición — basado en presentaciones reales del producto ──────────────
 function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError, onApply, onCancel }) {
+    const [presentations, setPresentations] = useState([]);
+    const [loadingPres,   setLoadingPres]   = useState(true);
 
-    const typeColors = {
-        sin_regla: {
-            active:   'bg-rose-500 border-rose-400 text-white shadow-lg shadow-rose-200/50',
-            inactive: 'bg-white/80 border-slate-200 text-slate-500 hover:border-rose-300 hover:bg-rose-50/40',
-            icon:     'text-rose-400',
-        },
-        solo_cajas: {
-            active:   'bg-slate-800 border-slate-700 text-white shadow-lg',
-            inactive: 'bg-white/80 border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-white',
-            icon:     'text-slate-400',
-        },
-        multiplo: {
-            active:   'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-200/50',
-            inactive: 'bg-white/80 border-slate-200 text-slate-500 hover:border-blue-300 hover:bg-blue-50/40',
-            icon:     'text-blue-400',
-        },
-        blister: {
-            active:   'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-200/50',
-            inactive: 'bg-white/80 border-slate-200 text-slate-500 hover:border-indigo-300 hover:bg-indigo-50/40',
-            icon:     'text-indigo-400',
-        },
-        unidades: {
-            active:   'bg-violet-600 border-violet-500 text-white shadow-lg shadow-violet-200/50',
-            inactive: 'bg-white/80 border-slate-200 text-slate-500 hover:border-violet-300 hover:bg-violet-50/40',
-            icon:     'text-violet-400',
-        },
-    };
+    useEffect(() => {
+        setLoadingPres(true);
+        supabase
+            .from('product_precios')
+            .select('id, id_presentacion, factor, descripcion, presentaciones!inner(id, tipo)')
+            .eq('product_id', product.id)
+            .order('factor', { ascending: false })
+            .then(({ data }) => {
+                // Deduplica por id_presentacion — queda la de mayor factor
+                const seen = new Set();
+                const uniq = (data || []).filter(row => {
+                    if (seen.has(row.id_presentacion)) return false;
+                    seen.add(row.id_presentacion);
+                    return true;
+                });
+                setPresentations(uniq);
+                setLoadingPres(false);
+            });
+    }, [product.id]);
 
-    // Valores tal como están guardados en DB (para no re-guardar sin cambios)
-    const savedValue = {
-        multiplo:          rule?.multiplo          != null ? String(rule.multiplo)          : '',
-        blister:           rule?.blister           != null ? String(rule.blister)           : '',
-        multiplo_unidades: rule?.multiplo_unidades != null ? String(rule.multiplo_unidades) : '',
-    };
+    const multiplo      = Number(vals.dispatch_multiplo) || 1;
+    const selectedPres  = presentations.find(p => p.id_presentacion === vals.dispatch_id_presentacion);
+    const selectedTipo  = selectedPres?.presentaciones?.tipo ?? '';
 
-    // Cambiar de tipo aplica al instante; los tipos de múltiplo arrancan con el menor
-    const selectType = (rtId) => {
-        if (saving || vals.ruleType === rtId) return;
-        const next = {
-            ...vals,
-            ruleType:          rtId,
-            multiplo:          rtId === 'multiplo' ? (vals.multiplo          || DEFAULT_MULTIPLO) : '',
-            blister:           rtId === 'blister'  ? (vals.blister           || DEFAULT_MULTIPLO) : '',
-            multiplo_unidades: rtId === 'unidades' ? (vals.multiplo_unidades || DEFAULT_MULTIPLO) : '',
-        };
+    const selectPres = (idPres) => {
+        if (saving) return;
+        const next = { ...vals, dispatch_id_presentacion: idPres };
         setVals(next);
         onApply(next);
     };
 
-    const selectPill = (field, n) => {
-        if (saving || vals[field] === String(n)) return;
-        const next = { ...vals, [field]: String(n) };
+    const selectMultiplo = (n) => {
+        if (saving) return;
+        const next = { ...vals, dispatch_multiplo: String(n) };
         setVals(next);
         onApply(next);
     };
 
-    // Input libre: guarda al salir del campo (blur/Enter); vacío revierte al guardado
-    const commitInput = (field) => {
-        if (!vals[field]) {
-            setVals(p => ({ ...p, [field]: savedValue[field] || DEFAULT_MULTIPLO }));
-            return;
-        }
-        if (vals[field] === savedValue[field]) return;
-        onApply(vals);
+    const clearRule = () => {
+        if (saving) return;
+        const next = { ...vals, dispatch_id_presentacion: null, dispatch_multiplo: '1' };
+        setVals(next);
+        onApply(next);
     };
 
     const commitNotes = () => {
-        if (vals.ruleType === 'sin_regla') return;
+        if (!vals.dispatch_id_presentacion) return;
         if ((vals.notes || '') === (rule?.notes || '')) return;
         onApply(vals);
     };
 
-    const blurOnEnter = (e) => { if (e.key === 'Enter') e.target.blur(); };
-
     return (
         <div className="space-y-4">
-            {/* Header con estado de guardado */}
+
+            {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div>
                     <p className="font-semibold text-slate-800 text-[14px] leading-tight">{product.nombre}</p>
@@ -212,172 +151,115 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                 </div>
             </div>
 
-            {/* Selector de tipo — seleccionar aplica al instante */}
+            {/* Presentaciones del producto */}
             <div>
                 <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-2 font-bold">
-                    Tipo de regla <span className="normal-case tracking-normal font-medium text-slate-300">· se aplica automáticamente</span>
+                    Presentación de despacho
+                    <span className="normal-case tracking-normal font-medium text-slate-300"> · se aplica automáticamente</span>
                 </p>
-                <div className={`flex flex-wrap gap-2 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
-                    {RULE_TYPES.map(rt => {
-                        const isActive = vals.ruleType === rt.id;
-                        const c        = typeColors[rt.id];
-                        return (
-                            <button key={rt.id} type="button"
-                                onClick={() => selectType(rt.id)}
-                                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 transition-all duration-150 select-none ${
-                                    isActive ? c.active : c.inactive
-                                }`}
-                            >
-                                <rt.Icon size={14} className={isActive ? 'text-white' : c.icon} />
-                                <div className="text-left">
-                                    <p className="text-[12px] font-semibold leading-tight">{rt.label}</p>
-                                    <p className={`text-[9px] leading-tight ${isActive ? 'text-white/70' : 'text-slate-400'}`}>{rt.desc}</p>
-                                </div>
-                            </button>
-                        );
-                    })}
-                </div>
+                {loadingPres ? (
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                        <Loader2 size={12} className="animate-spin" /> Cargando presentaciones…
+                    </div>
+                ) : presentations.length === 0 ? (
+                    <div className="px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700">
+                        Sin presentaciones en catálogo — no se puede asignar regla de despacho.
+                    </div>
+                ) : (
+                    <div className={`flex flex-wrap gap-2 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
+                        {presentations.map(pres => {
+                            const tipo     = pres.presentaciones?.tipo ?? 'DESCONOCIDO';
+                            const isActive = vals.dispatch_id_presentacion === pres.id_presentacion;
+                            const style    = presStyle(tipo);
+                            const { Icon } = style;
+                            return (
+                                <button key={pres.id_presentacion} type="button"
+                                    onClick={() => selectPres(pres.id_presentacion)}
+                                    className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border-2 transition-all duration-150 select-none text-left ${
+                                        isActive
+                                            ? `${style.bg} border-transparent ${style.text} shadow-lg`
+                                            : 'bg-white/80 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-white'
+                                    }`}
+                                >
+                                    <Icon size={15} className={isActive ? 'text-white' : style.iconInactive} />
+                                    <div>
+                                        <p className="text-[12px] font-semibold leading-tight">{tipo}</p>
+                                        <p className={`text-[9px] leading-tight ${isActive ? 'text-white/70' : 'text-slate-400'}`}>
+                                            {pres.factor > 1 ? `${pres.factor} und. por pack` : 'unidad base'}
+                                            {pres.descripcion ? ` · ${pres.descripcion}` : ''}
+                                        </p>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
-            {/* Detalle según tipo */}
-            <AnimatePresence mode="wait">
-                {vals.ruleType === 'sin_regla' && (
-                    <motion.div key="sin_regla"
-                        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.18, ease: EASE }}
-                        className="px-4 py-3 rounded-xl bg-rose-50/60 border border-rose-200/60 backdrop-blur-sm"
-                    >
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-rose-500 flex items-center justify-center flex-shrink-0">
-                                <Ban size={14} className="text-white" />
-                            </div>
-                            <div>
-                                <p className="text-[12px] font-semibold text-slate-700">Sin regla de despacho</p>
-                                <p className="text-[11px] text-slate-400">El producto se despacha libremente según la necesidad calculada.</p>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-
-                {vals.ruleType === 'solo_cajas' && (
-                    <motion.div key="solo_cajas"
-                        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.18, ease: EASE }}
-                        className="px-4 py-3 rounded-xl bg-slate-50/80 border border-slate-200/60 backdrop-blur-sm"
-                    >
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0">
-                                <Box size={14} className="text-white" />
-                            </div>
-                            <div>
-                                <p className="text-[12px] font-semibold text-slate-700">Solo cajas completas activado</p>
-                                <p className="text-[11px] text-slate-400">El despacho no fraccionará cajas. El complemento queda en Bodega.</p>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-
-                {vals.ruleType === 'multiplo' && (
-                    <motion.div key="multiplo"
+            {/* Cantidad por lote — solo si hay presentación seleccionada */}
+            <AnimatePresence>
+                {vals.dispatch_id_presentacion && (
+                    <motion.div
+                        key="multiplo-block"
                         initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.18, ease: EASE }}
                         className="space-y-2"
                     >
-                        <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Múltiplo de cajas</p>
+                        <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Por lote</p>
                         <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                             {MULTIPLO_PILLS.map(n => (
                                 <button key={n} type="button"
-                                    onClick={() => selectPill('multiplo', n)}
+                                    onClick={() => selectMultiplo(n)}
                                     className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
-                                        vals.multiplo === String(n)
+                                        multiplo === n
                                             ? 'bg-blue-600 border-blue-500 text-white shadow-md'
                                             : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
                                     }`}
                                 >×{n}</button>
                             ))}
+                            <input type="number" min={1} placeholder="Otro…"
+                                value={MULTIPLO_PILLS.includes(multiplo) ? '' : multiplo}
+                                onChange={e => {
+                                    const n = parseInt(e.target.value);
+                                    if (n > 0) selectMultiplo(n);
+                                }}
+                                className="w-20 border border-slate-200 rounded-xl px-2 py-1.5 text-[12px] focus:outline-none focus:border-blue-400 bg-white/80"
+                            />
                         </div>
-                        <input type="number" min={1} placeholder="Otro número…"
-                            value={vals.multiplo}
-                            onChange={e => setVals(p => ({ ...p, multiplo: e.target.value }))}
-                            onBlur={() => commitInput('multiplo')}
-                            onKeyDown={blurOnEnter}
-                            className="w-36 border border-slate-200 rounded-lg px-3 py-1.5 text-[12px] focus:outline-none focus:border-blue-400 bg-white/80"
-                        />
-                    </motion.div>
-                )}
 
-                {vals.ruleType === 'blister' && (
-                    <motion.div key="blister"
-                        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.18, ease: EASE }}
-                        className="space-y-2"
-                    >
-                        <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Múltiplo de blísters</p>
-                        <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
-                            {MULTIPLO_PILLS.map(n => (
-                                <button key={n} type="button"
-                                    onClick={() => selectPill('blister', n)}
-                                    className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
-                                        vals.blister === String(n)
-                                            ? 'bg-indigo-600 border-indigo-500 text-white shadow-md'
-                                            : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'
-                                    }`}
-                                >×{n}</button>
-                            ))}
+                        {/* Ejemplo de redondeo */}
+                        <div className="px-3 py-2 rounded-xl bg-blue-50/60 border border-blue-200/60 text-[11px] text-blue-700">
+                            <span className="font-medium">Ejemplo:</span> necesidad de 7 packs
+                            {' → '}despacha{' '}
+                            <strong>{Math.ceil(7 / multiplo) * multiplo} pack(s)</strong>
+                            {' '}de{' '}<strong>{selectedTipo}</strong>
+                            {multiplo > 1 ? ` (múltiplo de ${multiplo})` : ''}
                         </div>
-                        <input type="number" min={1} placeholder="Otro número…"
-                            value={vals.blister}
-                            onChange={e => setVals(p => ({ ...p, blister: e.target.value }))}
-                            onBlur={() => commitInput('blister')}
-                            onKeyDown={blurOnEnter}
-                            className="w-36 border border-slate-200 rounded-lg px-3 py-1.5 text-[12px] focus:outline-none focus:border-indigo-400 bg-white/80"
-                        />
-                    </motion.div>
-                )}
-
-                {vals.ruleType === 'unidades' && (
-                    <motion.div key="unidades"
-                        initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.18, ease: EASE }}
-                        className="space-y-2"
-                    >
-                        <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Múltiplo de unidades base</p>
-                        <p className="text-[10px] text-slate-400">El despacho garantiza que la cantidad × factor sea múltiplo de N unidades.</p>
-                        <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
-                            {MULTIPLO_PILLS.map(n => (
-                                <button key={n} type="button"
-                                    onClick={() => selectPill('multiplo_unidades', n)}
-                                    className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
-                                        vals.multiplo_unidades === String(n)
-                                            ? 'bg-violet-600 border-violet-500 text-white shadow-md'
-                                            : 'bg-white border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600'
-                                    }`}
-                                >×{n}</button>
-                            ))}
-                        </div>
-                        <input type="number" min={1} placeholder="Otro número…"
-                            value={vals.multiplo_unidades}
-                            onChange={e => setVals(p => ({ ...p, multiplo_unidades: e.target.value }))}
-                            onBlur={() => commitInput('multiplo_unidades')}
-                            onKeyDown={blurOnEnter}
-                            className="w-36 border border-slate-200 rounded-lg px-3 py-1.5 text-[12px] focus:outline-none focus:border-violet-400 bg-white/80"
-                        />
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Notas — se guardan al salir del campo */}
+            {/* Botón quitar regla */}
+            {vals.dispatch_id_presentacion && (
+                <button onClick={clearRule} disabled={saving}
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 bg-white/80 border-slate-200 text-slate-400 hover:border-rose-300 hover:bg-rose-50/40 hover:text-rose-500 transition-all text-[12px]">
+                    <Ban size={13} /> Quitar regla de despacho
+                </button>
+            )}
+
+            {/* Notas */}
             <div>
                 <p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1.5 font-bold">
-                    Notas internas <span className="normal-case tracking-normal font-medium text-slate-300">· se guardan al salir del campo</span>
+                    Notas internas
+                    <span className="normal-case tracking-normal font-medium text-slate-300"> · se guardan al salir del campo</span>
                 </p>
                 <input type="text"
-                    placeholder={vals.ruleType === 'sin_regla' ? 'Selecciona una regla para agregar notas' : 'Observación opcional…'}
+                    placeholder={!vals.dispatch_id_presentacion ? 'Selecciona una presentación para agregar notas' : 'Observación opcional…'}
                     value={vals.notes}
-                    disabled={vals.ruleType === 'sin_regla'}
+                    disabled={!vals.dispatch_id_presentacion}
                     onChange={e => setVals(p => ({ ...p, notes: e.target.value }))}
                     onBlur={commitNotes}
-                    onKeyDown={blurOnEnter}
+                    onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
                     className="w-full border border-slate-200/80 rounded-xl px-3 py-2 text-[12px] focus:outline-none focus:border-blue-400 bg-white/80 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 />
             </div>
@@ -434,13 +316,26 @@ export default function TabReglas({ searchTerm = '' }) {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
         const [rulesRes, totalRes, newRes] = await Promise.all([
             supabase.from('dispatch_rules')
-                .select('id, erp_product_id, solo_cajas, multiplo, blister, multiplo_unidades, notes')
+                .select('id, erp_product_id, solo_cajas, multiplo, blister, multiplo_unidades, notes, dispatch_id_presentacion, dispatch_multiplo')
                 .range(0, 9999),
             supabase.from('products').select('id', { count: 'exact', head: true }).eq('activo', true),
             supabase.from('products').select('id', { count: 'exact' }).eq('activo', true).gte('created_at', startOfMonth),
         ]);
+        // Resuelve tipos de presentación para reglas nuevas
+        const presIds = [...new Set((rulesRes.data || [])
+            .map(r => r.dispatch_id_presentacion).filter(Boolean))];
+        let presMap = {};
+        if (presIds.length > 0) {
+            const { data: presData } = await supabase.from('presentaciones').select('id, tipo').in('id', presIds);
+            for (const p of (presData || [])) presMap[p.id] = p.tipo;
+        }
         const map = {};
-        for (const r of (rulesRes.data || [])) map[r.erp_product_id] = r;
+        for (const r of (rulesRes.data || [])) {
+            map[r.erp_product_id] = {
+                ...r,
+                dispatch_tipo: r.dispatch_id_presentacion ? (presMap[r.dispatch_id_presentacion] ?? null) : null,
+            };
+        }
         setRulesMap(map);
         setAllCount(totalRes.count ?? 0);
         setThisMonthCount(newRes.count ?? 0);
@@ -501,36 +396,14 @@ export default function TabReglas({ searchTerm = '' }) {
         setPage(1);
     }, [sortKey]);
 
-    // Validación: solo un tipo activo, y el valor requerido
-    const validateVals = (v) => {
-        if (v.ruleType === 'multiplo') {
-            if (!v.multiplo) return 'Seleccioná un múltiplo de cajas.';
-            const m = parseInt(v.multiplo);
-            if (!VALID_MULTIPLES.has(m)) return `Múltiplo inválido (${m}). Válidos: ${[...VALID_MULTIPLES].join(', ')}`;
-        }
-        if (v.ruleType === 'blister') {
-            if (!v.blister) return 'Seleccioná un múltiplo de blíster.';
-            const b = parseInt(v.blister);
-            if (!VALID_MULTIPLES.has(b)) return `Múltiplo inválido (${b}). Válidos: ${[...VALID_MULTIPLES].join(', ')}`;
-        }
-        if (v.ruleType === 'unidades') {
-            if (!v.multiplo_unidades) return 'Seleccioná un múltiplo de unidades.';
-            const u = parseInt(v.multiplo_unidades);
-            if (!VALID_MULTIPLES.has(u)) return `Múltiplo inválido (${u}). Válidos: ${[...VALID_MULTIPLES].join(', ')}`;
-        }
-        return null;
-    };
-
     const startEdit = useCallback((productId, rule) => {
         setEditingId(productId);
         setSaveError(null);
         setJustSaved(false);
         setEditVals({
-            ruleType:          detectType(rule),
-            multiplo:          rule?.multiplo           != null ? String(rule.multiplo)           : '',
-            blister:           rule?.blister            != null ? String(rule.blister)            : '',
-            multiplo_unidades: rule?.multiplo_unidades  != null ? String(rule.multiplo_unidades)  : '',
-            notes:             rule?.notes              ?? '',
+            dispatch_id_presentacion: rule?.dispatch_id_presentacion ?? null,
+            dispatch_multiplo:        String(rule?.dispatch_multiplo ?? 1),
+            notes:                    rule?.notes ?? '',
         });
     }, []);
 
@@ -540,16 +413,13 @@ export default function TabReglas({ searchTerm = '' }) {
         startEdit(productId, rulesMap[productId] ?? null);
     }, [editingId, rulesMap, startEdit, cancelEdit]);
 
-    // Autoguardado: aplica los vals recibidos al instante (insert/update/delete).
-    // El panel queda abierto; rulesMap se actualiza localmente sin recargar la tabla.
+    // Autoguardado: aplica los vals al instante. Sin botón Guardar.
     const applyVals = useCallback(async (productId, v) => {
-        const err = validateVals(v);
-        if (err) { setSaveError(err); setJustSaved(false); return; }
         setSaving(true); setSaveError(null);
-
         const existing = rulesMapRef.current[productId];
         try {
-            if (v.ruleType === 'sin_regla') {
+            if (!v.dispatch_id_presentacion) {
+                // Quitar regla → delete si existe
                 if (existing) {
                     const { error } = await supabase.from('dispatch_rules').delete().eq('id', existing.id);
                     if (error) throw error;
@@ -560,15 +430,17 @@ export default function TabReglas({ searchTerm = '' }) {
                     setRulesMap(next);
                 }
             } else {
-                // Garantiza un solo tipo: los campos no activos van a null
                 const payload = {
-                    erp_product_id:    productId,
-                    solo_cajas:        v.ruleType === 'solo_cajas',
-                    multiplo:          v.ruleType === 'multiplo'  ? (parseInt(v.multiplo)           || null) : null,
-                    blister:           v.ruleType === 'blister'   ? (parseInt(v.blister)            || null) : null,
-                    multiplo_unidades: v.ruleType === 'unidades'  ? (parseInt(v.multiplo_unidades)  || null) : null,
-                    notes:             v.notes || null,
-                    updated_at:        new Date().toISOString(),
+                    erp_product_id:           productId,
+                    dispatch_id_presentacion: v.dispatch_id_presentacion,
+                    dispatch_multiplo:        Number(v.dispatch_multiplo) || 1,
+                    // Limpia columnas legacy al guardar con el nuevo sistema
+                    solo_cajas:               null,
+                    multiplo:                 null,
+                    blister:                  null,
+                    multiplo_unidades:        null,
+                    notes:                    v.notes || null,
+                    updated_at:               new Date().toISOString(),
                 };
                 let saved;
                 if (existing) {
@@ -584,7 +456,8 @@ export default function TabReglas({ searchTerm = '' }) {
                     saved = data;
                     useStaff.getState().appendAuditLog('CREAR_REGLA_DESPACHO', String(productId), payload);
                 }
-                const next = { ...rulesMapRef.current, [productId]: saved };
+                // Refresca dispatch_tipo para el badge en tabla
+                const next = { ...rulesMapRef.current, [productId]: { ...saved, dispatch_tipo: null } };
                 rulesMapRef.current = next;
                 setRulesMap(next);
             }
@@ -606,13 +479,21 @@ export default function TabReglas({ searchTerm = '' }) {
         labs.filter(l => !l.ocultar_en_minmax).map(l => ({ value: String(l.id), label: l.nombre })),
         [labs]);
 
-    // Etiqueta de tipo de regla para la tabla
+    // Badge para la columna "Regla despacho" en tabla
     const ruleTypeLabel = (rule) => {
         if (!rule) return null;
-        if (rule.multiplo           != null) return { text: `×${rule.multiplo} cajas`,    cls: 'bg-blue-100   text-blue-700   border-blue-200'   };
-        if (rule.blister            != null) return { text: `×${rule.blister} blíst.`,    cls: 'bg-indigo-100 text-indigo-700 border-indigo-200' };
-        if (rule.multiplo_unidades  != null) return { text: `×${rule.multiplo_unidades}u`, cls: 'bg-violet-100 text-violet-700 border-violet-200' };
-        return { text: 'Solo cajas', cls: 'bg-slate-100 text-slate-600 border-slate-200' };
+        // Regla nueva: presentación seleccionada
+        if (rule.dispatch_id_presentacion) {
+            const tipo = rule.dispatch_tipo ?? '–';
+            const mult = rule.dispatch_multiplo ?? 1;
+            const style = presStyle(tipo);
+            return { text: mult > 1 ? `${tipo} ×${mult}` : tipo, bg: style.bg, txt: style.text };
+        }
+        // Legacy
+        if (rule.multiplo          != null) return { text: `×${rule.multiplo} cajas`,     bg: 'bg-blue-100',   txt: 'text-blue-700'   };
+        if (rule.blister           != null) return { text: `×${rule.blister} blíst.`,     bg: 'bg-indigo-100', txt: 'text-indigo-700' };
+        if (rule.multiplo_unidades != null) return { text: `×${rule.multiplo_unidades}u`, bg: 'bg-violet-100', txt: 'text-violet-700' };
+        return { text: 'Solo cajas', bg: 'bg-slate-100', txt: 'text-slate-600' };
     };
 
     return (
@@ -748,18 +629,8 @@ export default function TabReglas({ searchTerm = '' }) {
 
                                 <DataCell align="center">
                                     {typeTag
-                                        ? <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${typeTag.cls}`}>{typeTag.text}</span>
+                                        ? <span className={`inline-block text-[10px] px-2.5 py-0.5 rounded-full font-semibold ${typeTag.bg} ${typeTag.txt}`}>{typeTag.text}</span>
                                         : <span className="text-slate-200 text-[13px]">—</span>
-                                    }
-                                </DataCell>
-
-                                <DataCell align="center" className="text-[13px] tabular-nums text-slate-500">
-                                    {hasRule
-                                        ? rule.multiplo          ? `×${rule.multiplo}`
-                                        : rule.blister           ? `×${rule.blister}`
-                                        : rule.multiplo_unidades ? `×${rule.multiplo_unidades}u`
-                                        : <span className="text-slate-300">—</span>
-                                        : <span className="text-slate-200">—</span>
                                     }
                                 </DataCell>
 

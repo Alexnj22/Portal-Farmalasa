@@ -86,6 +86,7 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
     const [extras,        setExtras]        = useState({});   // { pedidoId: [extra,…] }
     const [erpStatus,     setErpStatus]     = useState({});   // { pedidoId: bool } — recibido_erp_at
     const [markingErp,    setMarkingErp]    = useState(null); // pedidoId en proceso
+    const [newAlert,      setNewAlert]      = useState(null); // { numero } — banner pedido nuevo
 
     // Resolve employee → branch → erp_sucursal_id on mount.
     // employees.id == uid de auth (no existe columna user_id).
@@ -128,6 +129,30 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
 
     useEffect(() => { if (erpSucursalId) loadPedidos(erpSucursalId); }, [erpSucursalId, loadPedidos]);
     useEffect(() => { if (refreshKey > 0 && erpSucursalId) loadPedidos(erpSucursalId); }, [refreshKey]); // eslint-disable-line
+
+    // Realtime: escucha cambios en pedidos y refresca si corresponde a esta sucursal
+    useEffect(() => {
+        if (!erpSucursalId) return;
+        const channel = supabase
+            .channel(`pedidos-recepcion-${erpSucursalId}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, (payload) => {
+                const ids = payload.new?.sucursal_ids ?? [];
+                if (!ids.includes(erpSucursalId)) return;
+                if (!['enviado', 'parcial', 'completado'].includes(payload.new?.status)) return;
+                // Notifica si llega un pedido nuevo (INSERT) o si cambia a 'enviado' (UPDATE)
+                const isNuevo = payload.eventType === 'INSERT' ||
+                    (payload.eventType === 'UPDATE' &&
+                     payload.old?.status !== 'enviado' &&
+                     payload.new?.status === 'enviado');
+                if (isNuevo) {
+                    setNewAlert({ numero: payload.new.numero });
+                    setTimeout(() => setNewAlert(null), 8000);
+                }
+                loadPedidos(erpSucursalId);
+            })
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [erpSucursalId, loadPedidos]);
 
     // Load items + firmas + extras for a specific pedido, filtered to this branch's sucursal
     const fetchItems = useCallback(async (pedidoId) => {
@@ -288,6 +313,22 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                 <span className="text-[12px] font-semibold text-slate-600">{branchName}</span>
                 <span className="text-[11px] text-slate-400">— Pedidos asignados a esta sucursal</span>
             </div>
+
+            {/* Realtime: banner pedido nuevo */}
+            {newAlert && (
+                <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
+                    <span className="text-[13px] font-semibold text-blue-700">
+                        Nuevo pedido #{newAlert.numero} asignado a {branchName}
+                    </span>
+                    <button
+                        onClick={() => setNewAlert(null)}
+                        className="ml-auto text-blue-300 hover:text-blue-500 transition-colors"
+                    >
+                        <X size={14} />
+                    </button>
+                </div>
+            )}
 
             {/* Filter tabs */}
             <div className="flex items-center gap-1.5 flex-wrap">

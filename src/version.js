@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.118';
+export const APP_VERSION = '2.2.119';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.119 — fix(pedidos/pdf): build error + rediseño PDF completo — (1) buildSignatures faltaba } de cierre → printHtml/openPrintWindow/exports quedaban dentro de la función, rollup rechazaba export fuera de módulo; (2) position:fixed en sig-block eliminado — firmas en flujo normal del documento (no se repiten en cada página); (3) @page margins en lugar de padding en body — page-break-inside+break-inside en tr para cortes correctos; (4) diseño compacto: TH 7.5px uppercase tracking, filas 3px vertical, cantidad 14px bold, lote 8px; tabla table-layout:fixed
 // v2.2.118 — fix(pedidos/pdf): excluye productos qty=0 del PDF + orden columnas + firmas al fondo — filter qty>0 en printPerSucursal/printFromPreview; columnas: Producto|Lab|Cant|Present|Lote|✓; firmas fixed bottom:10mm con padding-bottom:52mm en body; estructura firmas mejorada con border-spacing
 // v2.2.117 — fix(pedidos): selección = glow ring solo, sin cambio de color — card mantiene fondo/texto original; selección agrega ring-blue-400 + shadow glow + shimmer line más brillante + checkmark azul sólido; se eliminan todos los overrides isOn de colores internos
 // v2.2.116 — feat(pedidos): urgencia ponderada por reponer + indicador último pedido — avg_urgencia_pct ahora es media ponderada por unidades a reponer (productos A con más necesidad pesan más); stats v4 agrega last_pedido_at; cards muestran "hoy/ayer/hace Xd" con color verde<7d ámbar<14d rojo≥14d

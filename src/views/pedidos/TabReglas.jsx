@@ -22,7 +22,6 @@ const EMPTY_VALS = { dispatch_id_presentacion: null, dispatch_multiplo: '1', not
 const COLS = [
     { key: 'laboratorio_nombre', label: 'Laboratorio',     align: 'left',   sortable: true },
     { key: 'nombre',             label: 'Producto',        align: 'left',   sortable: true },
-    { key: 'ab',                 label: 'AB',              align: 'center', className: 'w-10' },
     { key: 'estado',             label: 'Estado',          align: 'center', className: 'w-28' },
     { key: 'despacho',           label: 'Regla despacho',  align: 'center', className: 'w-44' },
     { key: 'notas',              label: 'Notas',           align: 'left'   },
@@ -601,7 +600,7 @@ export default function TabReglas({ searchTerm = '' }) {
                                 className={isEditing ? 'bg-blue-50/60' : ''}>
 
                                 <DataCell className="text-slate-400 text-[12px]">
-                                    <span className="block truncate max-w-[150px]">{prod.laboratorio_nombre ?? '—'}</span>
+                                    <span className="block">{prod.laboratorio_nombre ?? '—'}</span>
                                 </DataCell>
 
                                 <DataCell>
@@ -612,15 +611,12 @@ export default function TabReglas({ searchTerm = '' }) {
                                                 <Sparkles size={8} /> Nuevo
                                             </span>
                                         )}
+                                        {prod.es_antibiotico && (
+                                            <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200 font-bold uppercase tracking-wide flex-shrink-0">
+                                                <FlaskConical size={8} /> Bajo receta
+                                            </span>
+                                        )}
                                     </div>
-                                </DataCell>
-
-                                <DataCell align="center">
-                                    {prod.es_antibiotico && (
-                                        <span title="Antibiótico" className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 border border-violet-200">
-                                            <FlaskConical size={10} className="text-violet-600" />
-                                        </span>
-                                    )}
                                 </DataCell>
 
                                 <DataCell align="center">

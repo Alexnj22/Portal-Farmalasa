@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.113';
+export const APP_VERSION = '2.2.114';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.114 — fix(pedidos): urgencia absoluta + cards seleccionadas azul encendido — get_pedido_sucursal_stats v3 agrega avg_urgencia_pct (AVG reponer/max×100 por sucursal); thresholds absolutos ≥65%=rojo ≥40%=ámbar <40%=verde; badge muestra % real; selected = gradiente azul sólido #1565D8→#003590 con glow 60% y ring
 // v2.2.113 — refactor(pedidos): elimina Vista previa + rediseña cards sucursal liquid glass — se remueven handleCalcular, handleConfirmar, preview screen, renderRow, grouped/sortedSucIds/globalTotals, ajustes, notas, responsable/revisado (~500 líneas); cards de sucursal rediseñadas con glassmorphism (backdrop-blur, gradient, highlight line, inner glow, badge pills animados)
 // v2.2.112 — fix(pedidos): selector MIN/MAX liquid glass + stats reactivos + conteo productos — toggle pill sliding con glassmorphism; get_pedido_sucursal_stats v2 acepta p_use_portal_minmax y retorna con/sin_bodega_productos; stats se re-fetcha al cambiar fuente; cards de sucursal muestran productos (no packs)
 // v2.2.111 — feat(pedidos): selector MIN/MAX ERP vs Portal en TabGenerar — toggle pill "MIN/MAX ERP / MIN/MAX Portal"; get_pedido_preview v13 acepta p_use_portal_minmax (lee product_stock_params.manual_min/min_units ÷ factor en lugar de erp_minmax); badge en pantalla de preview indica fuente activa

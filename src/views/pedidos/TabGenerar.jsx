@@ -218,14 +218,14 @@ export default function TabGenerar({ searchTerm = '' }) {
         return m;
     }, [dashStats]);
 
-    const urgRank = useMemo(() => {
-        const sorted = [...SUCURSALES].sort(
-            (a, b) => (statMap[b]?.total_productos ?? 0) - (statMap[a]?.total_productos ?? 0)
-        );
-        const r = {};
-        sorted.forEach((id, i) => { r[id] = i; });
-        return r;
-    }, [statMap]);
+    // urgLevel: 'high' ≥65% depleción · 'mid' ≥40% · 'low' <40% · 'none' sin datos
+    const getUrgLevel = (stat) => {
+        const pct = stat?.avg_urgencia_pct;
+        if (pct == null) return 'none';
+        if (pct >= 65) return 'high';
+        if (pct >= 40) return 'mid';
+        return 'low';
+    };
 
     // ── Sin-bodega — client-side filter + sort + paginate ─────
     const sinFiltered = useMemo(() => {
@@ -374,70 +374,77 @@ export default function TabGenerar({ searchTerm = '' }) {
                 <style>{SUC_ANIM_CSS}</style>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                     {SUCURSALES.map((id) => {
-                        const stat  = statMap[id];
-                        const isOn  = selected.has(id);
-                        const rank  = urgRank[id] ?? 5;
+                        const stat     = statMap[id];
+                        const isOn     = selected.has(id);
+                        const urgLevel = getUrgLevel(stat);
+                        const urgPct   = stat?.avg_urgencia_pct ?? null;
 
+                        // Card background + border by urgency (only when not selected)
                         const cardCls = isOn
-                            ? 'suc-pop border-blue-400/60 shadow-[0_8px_32px_rgba(0,82,204,0.22),inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md'
-                            : rank < 2
-                                ? 'bg-gradient-to-b from-red-50/90 to-white/50 border-red-200/70 backdrop-blur-sm hover:border-red-300 hover:shadow-[0_6px_20px_rgba(239,68,68,0.14)] transition-all duration-200'
-                                : rank < 4
-                                    ? 'bg-gradient-to-b from-amber-50/90 to-white/50 border-amber-200/70 backdrop-blur-sm hover:border-amber-300 hover:shadow-[0_6px_20px_rgba(245,158,11,0.14)] transition-all duration-200'
-                                    : 'bg-gradient-to-b from-white/80 to-white/40 border-white/80 backdrop-blur-sm hover:border-slate-200 hover:shadow-[0_6px_20px_rgba(0,82,204,0.09)] transition-all duration-200';
+                            ? 'suc-pop border-blue-400 shadow-[0_16px_48px_rgba(0,82,204,0.60),0_6px_20px_rgba(0,82,204,0.40),inset_0_1px_0_rgba(255,255,255,0.25)] ring-2 ring-blue-300/40 ring-offset-1'
+                            : urgLevel === 'high'
+                                ? 'bg-gradient-to-b from-red-50/90 to-white/50 border-red-200/80 backdrop-blur-sm hover:border-red-300 hover:shadow-[0_8px_24px_rgba(239,68,68,0.18)] transition-all duration-200'
+                                : urgLevel === 'mid'
+                                    ? 'bg-gradient-to-b from-amber-50/90 to-white/50 border-amber-200/80 backdrop-blur-sm hover:border-amber-300 hover:shadow-[0_8px_24px_rgba(245,158,11,0.18)] transition-all duration-200'
+                                    : urgLevel === 'low'
+                                        ? 'bg-gradient-to-b from-emerald-50/60 to-white/40 border-emerald-200/60 backdrop-blur-sm hover:border-emerald-300 hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)] transition-all duration-200'
+                                        : 'bg-gradient-to-b from-slate-50/60 to-white/40 border-slate-200/60 backdrop-blur-sm hover:border-slate-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-200';
 
-                        const rankBadgeCls = isOn
-                            ? 'bg-white/20 text-white/80 border border-white/25 backdrop-blur-sm'
-                            : rank < 2 ? 'bg-red-100 text-red-600'
-                            : rank < 4 ? 'bg-amber-100 text-amber-600'
-                            : 'bg-emerald-100/80 text-emerald-600';
+                        // Urgency % badge colors
+                        const urgBadgeCls = urgLevel === 'high'
+                            ? 'bg-red-100 text-red-600 border-red-200/80'
+                            : urgLevel === 'mid'
+                                ? 'bg-amber-100 text-amber-700 border-amber-200/80'
+                                : 'bg-emerald-100 text-emerald-700 border-emerald-200/80';
 
                         return (
                             <button
                                 key={id}
                                 onClick={() => toggleSuc(id)}
                                 style={isOn ? {
-                                    background: 'linear-gradient(145deg, rgba(0,82,204,0.18) 0%, rgba(0,82,204,0.07) 100%)',
+                                    background: 'linear-gradient(160deg, #1565D8 0%, #0042A8 55%, #003590 100%)',
                                 } : {}}
                                 className={`relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center group overflow-hidden ${cardCls}`}
                             >
-                                {/* Top highlight line */}
-                                <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent pointer-events-none" />
-                                {/* Selected inner glow */}
+                                {/* Top highlight — glass shimmer */}
+                                <span className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent ${isOn ? 'via-white/40' : 'via-white/80'} to-transparent pointer-events-none`} />
+                                {/* Selected inner top-glow */}
                                 {isOn && (
-                                    <span className="absolute inset-0 bg-gradient-to-b from-white/15 via-transparent to-transparent pointer-events-none rounded-2xl" />
+                                    <span className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
                                 )}
 
-                                {/* Urgency rank badge */}
-                                <span className={`absolute top-2 left-2 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black leading-none ${rankBadgeCls}`}>
-                                    {rank + 1}
-                                </span>
+                                {/* Urgency % badge — top-left */}
+                                {!isOn && stat && !dashLoading && urgPct != null && urgPct > 0 && (
+                                    <span className={`absolute top-2 left-2 min-w-[28px] h-4 px-1 rounded-full flex items-center justify-center text-[8px] font-black leading-none border ${urgBadgeCls}`}>
+                                        {urgPct}%
+                                    </span>
+                                )}
 
-                                {/* Checkmark badge when selected */}
+                                {/* Checkmark — top-right when selected */}
                                 {isOn && (
-                                    <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-white/25 border border-white/30 flex items-center justify-center">
+                                    <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-white/25 border border-white/40 flex items-center justify-center">
                                         <CheckCircle2 size={10} className="text-white" />
                                     </span>
                                 )}
 
                                 <Building2
                                     size={20}
-                                    className={isOn ? 'text-white/70 relative z-10' : 'text-slate-400 group-hover:text-slate-600 transition-colors relative z-10'}
+                                    className={isOn ? 'text-white/80 relative z-10 mt-1' : 'text-slate-400 group-hover:text-slate-600 transition-colors relative z-10 mt-1'}
                                 />
-                                <span className={`text-[12px] font-bold leading-tight relative z-10 ${isOn ? 'text-white' : 'text-slate-800'}`}>
+                                <span className={`text-[12px] font-bold leading-tight relative z-10 ${isOn ? 'text-white drop-shadow-sm' : 'text-slate-800'}`}>
                                     {ERP_NAMES[id]}
                                 </span>
 
                                 {stat && !dashLoading ? (
                                     <div className="flex items-center gap-1.5 mt-0.5 relative z-10">
                                         <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                            isOn ? 'bg-emerald-400/20 text-emerald-200 border border-emerald-400/20' : 'bg-emerald-100 text-emerald-700'
+                                            isOn ? 'bg-white/15 text-emerald-200 border border-white/20' : 'bg-emerald-100 text-emerald-700'
                                         }`}>
                                             <span className="text-[8px]">✓</span>
                                             {(stat.con_bodega_productos ?? 0)}
                                         </span>
                                         <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                            isOn ? 'bg-rose-400/20 text-rose-200 border border-rose-400/20' : 'bg-red-100 text-red-600'
+                                            isOn ? 'bg-white/15 text-red-200 border border-white/20' : 'bg-red-100 text-red-600'
                                         }`}>
                                             <span className="text-[8px]">✗</span>
                                             {(stat.sin_bodega_productos ?? 0)}

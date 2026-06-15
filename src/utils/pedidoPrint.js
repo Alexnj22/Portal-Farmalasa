@@ -1,6 +1,6 @@
 // ─── Pedido print utility ─────────────────────────────────────────────────────
 // B&W optimized. Blob URL + @page margin:0 eliminates browser header/footer.
-// tbody-per-row: Chrome ignores break-inside:avoid on <tr> but respects it on <tbody>.
+// div-grid layout: break-inside:avoid on grid rows is reliable in Chrome (unlike <tbody>).
 // qty is always in PACKS (cajas/frascos/blisters), not units.
 
 const ERP_NAMES_DEFAULT = {
@@ -41,19 +41,25 @@ function fmtFechaLarga(date) {
     return date.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
-// Each lote on its own line — avoids overflow:hidden cutting extra lotes.
-// Defensive: reads l.take (fefoProject) or l.cantidad / l.packs (lotes_asignados from DB).
+// Lotes: max 4 visibles, wrapping habilitado para evitar overflow horizontal.
 function lotesText(lotes) {
-    if (!lotes || !lotes.length) return '<span style="font-size:9px;">—</span>';
-    return lotes.map(l => {
+    if (!lotes || !lotes.length) return '<span style="font-size:9px;color:#999;">—</span>';
+    const MAX   = 4;
+    const shown = lotes.slice(0, MAX);
+    const extra = lotes.length - MAX;
+    const lines = shown.map(l => {
         const count = l.take ?? l.cantidad ?? l.packs ?? '?';
         const vence = fmtVence(l.fecha_vencimiento);
         const parts = [];
         if (l.lote) parts.push(`<b>${esc(l.lote)}</b>`);
         if (vence)  parts.push(`<i>${esc(vence)}</i>`);
         parts.push(`<b>${count}pk</b>`);
-        return `<span style="display:block;font-size:8px;white-space:nowrap;line-height:1.5;">${parts.join('&nbsp;·&nbsp;')}</span>`;
+        return `<span style="display:block;font-size:8px;line-height:1.6;word-break:break-word;">${parts.join('&nbsp;·&nbsp;')}</span>`;
     }).join('');
+    const more = extra > 0
+        ? `<span style="display:block;font-size:7px;color:#777;">+${extra} más</span>`
+        : '';
+    return lines + more;
 }
 
 function sortRows(rows) {
@@ -63,69 +69,68 @@ function sortRows(rows) {
     );
 }
 
-// Returns <tbody> elements — one per row so Chrome respects break-inside:avoid on tbody.
+// Flex rows: break-inside:avoid en display:flex es fiable en Chrome print (vs <tbody> o grid).
+// Anchos: Producto flex-grow:2 | Lab flex-grow:1 | Cant 42px | Pres 72px | Lotes flex-grow:1 | ✓ 22px
+const TH_S = 'display:flex;align-items:center;padding:4px 5px;font-size:7.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.06em;border-right:1px solid #bbb;overflow:hidden;';
+const TD_S = 'display:flex;align-items:center;padding:4px 5px;border-right:1px solid #ddd;font-size:9px;word-break:break-word;overflow:hidden;min-height:24px;';
+
+function colHeaderHtml() {
+    return `<div style="display:flex;background:#e0e0e0;border-bottom:2px solid #999;">
+  <div style="${TH_S}flex:2 1 0;min-width:0;">Producto</div>
+  <div style="${TH_S}flex:1 1 0;min-width:0;">Laboratorio</div>
+  <div style="${TH_S}flex:0 0 42px;justify-content:center;">Cant.</div>
+  <div style="${TH_S}flex:0 0 72px;">Presentación</div>
+  <div style="${TH_S}flex:1 1 0;min-width:0;">Lote(s)</div>
+  <div style="${TH_S}flex:0 0 22px;border-right:none;justify-content:center;">✓</div>
+</div>`;
+}
+
+// Repite encabezado de columnas cada 28 filas para secciones largas (>1 página).
+const HEADER_REPEAT = 28;
+
 function rowsToHtml(rows) {
     if (!rows.length) {
-        return '<tbody><tr><td colspan="6" style="text-align:center;font-size:10px;padding:10px 6px;color:#555;">Sin productos para esta sucursal</td></tr></tbody>';
+        return `<div style="padding:10px;text-align:center;font-size:10px;color:#555;border-bottom:1px solid #ccc;">Sin productos para esta sucursal</div>`;
     }
-    const bb = 'border-bottom:1px solid #ccc;';
-    const br = 'border-right:1px solid #ddd;';
     return sortRows(rows).map((r, i) => {
-        const bg = i % 2 === 1 ? 'background:#f2f2f2;' : '';
+        const bg      = i % 2 === 1 ? 'background:#f2f2f2;' : 'background:#fff;';
         const abBadge = r.es_antibiotico
-            ? `<span style="display:inline-block;margin-left:4px;padding:0 3px;border:1.5px solid #000;font-size:7px;font-weight:700;color:#000;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;line-height:13px;">AB</span>`
+            ? `<span style="display:inline-block;margin-left:4px;padding:0 3px;border:1.5px solid #000;font-size:7px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;line-height:13px;">AB</span>`
             : '';
-        return `<tbody style="page-break-inside:avoid;break-inside:avoid;">
-<tr style="${bg}">
-  <td style="${bb}${br}padding:3px 6px;font-size:9.5px;color:#000;white-space:normal;word-break:break-word;">${esc(r.product_name)}${abBadge}</td>
-  <td style="${bb}${br}padding:3px 5px;font-size:8px;color:#333;white-space:nowrap;">${esc(r.laboratorio) || '—'}</td>
-  <td style="${bb}${br}padding:3px 5px;font-size:13px;font-weight:800;color:#000;text-align:center;white-space:nowrap;">${r.qty}</td>
-  <td style="${bb}${br}padding:3px 5px;font-size:8px;color:#333;white-space:nowrap;">${esc(r.presentacion_tipo) || '—'}</td>
-  <td style="${bb}${br}padding:3px 5px;">${lotesText(r.lotes)}</td>
-  <td style="${bb}padding:3px 4px;text-align:center;"><span style="display:inline-block;width:13px;height:13px;border:1.5px solid #555;border-radius:2px;"></span></td>
-</tr>
-</tbody>`;
+        const hdrRepeat = i > 0 && i % HEADER_REPEAT === 0 ? colHeaderHtml() : '';
+        return `${hdrRepeat}<div style="display:flex;${bg}border-bottom:1px solid #ccc;break-inside:avoid;page-break-inside:avoid;">
+  <div style="${TD_S}flex:2 1 0;min-width:0;font-size:9.5px;">${esc(r.product_name)}${abBadge}</div>
+  <div style="${TD_S}flex:1 1 0;min-width:0;font-size:8px;color:#333;">${esc(r.laboratorio) || '—'}</div>
+  <div style="${TD_S}flex:0 0 42px;justify-content:center;font-size:13px;font-weight:800;">${r.qty}</div>
+  <div style="${TD_S}flex:0 0 72px;font-size:8px;color:#333;">${esc(r.presentacion_tipo) || '—'}</div>
+  <div style="${TD_S}flex:1 1 0;min-width:0;">${lotesText(r.lotes)}</div>
+  <div style="${TD_S}flex:0 0 22px;border-right:none;justify-content:center;"><span style="display:inline-block;width:13px;height:13px;border:1.5px solid #555;border-radius:2px;flex-shrink:0;"></span></div>
+</div>`;
     }).join('');
 }
 
 function buildSection(sec, fecha, isLast) {
     const totalPacks = sec.rows.reduce((t, r) => t + r.qty, 0);
+    const pageBreak  = isLast ? '' : 'break-after:page;page-break-after:always;';
 
     const footerParts = [];
     if (sec.sinCount > 0) footerParts.push(`Sin stock en Bodega: <b>${sec.sinCount} producto(s)</b>`);
     if (sec.revCount  > 0) footerParts.push(`Sin asignación (revisar): <b>${sec.revCount}</b>`);
-    const footerBody = footerParts.length
-        ? `<tbody><tr style="background:#ebebeb;"><td colspan="6" style="padding:4px 8px;font-size:9px;color:#000;border-top:2px dashed #888;">${footerParts.join('&nbsp; · &nbsp;')}</td></tr></tbody>`
+    const footer = footerParts.length
+        ? `<div style="padding:4px 8px;font-size:9px;color:#000;background:#ebebeb;border-top:2px dashed #888;">${footerParts.join('&nbsp;·&nbsp;')}</div>`
         : '';
-
-    const pageBreak = isLast ? '' : 'break-after:page;page-break-after:always;';
-
-    const TH = 'padding:4px 5px;font-size:7.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.06em;background:#e0e0e0;border-bottom:2px solid #999;';
 
     return `
 <div style="${pageBreak}margin-bottom:10px;">
-  <table>
-    <thead>
-      <tr style="background:#000;color:#fff;">
-        <th colspan="4" style="padding:6px 10px;font-size:11.5px;font-weight:700;text-align:left;letter-spacing:.01em;">
-          Farmacia Farmalasa &mdash; ${esc(sec.nombre)}
-        </th>
-        <th colspan="2" style="padding:6px 10px;font-size:9px;font-weight:400;text-align:right;white-space:nowrap;">
-          ${sec.rows.length} productos &nbsp;·&nbsp; ${totalPacks} packs &nbsp;·&nbsp; ${esc(fecha)}
-        </th>
-      </tr>
-      <tr>
-        <th style="${TH}text-align:left;width:34%;">Producto</th>
-        <th style="${TH}text-align:left;width:14%;">Laboratorio</th>
-        <th style="${TH}text-align:center;width:40px;">Cant.</th>
-        <th style="${TH}text-align:left;width:9%;">Presentación</th>
-        <th style="${TH}text-align:left;">Lote(s)</th>
-        <th style="${TH}text-align:center;width:26px;">✓</th>
-      </tr>
-    </thead>
+  <div style="width:100%;border:1px solid #999;border-bottom:none;">
+    <div style="background:#000;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:6px 10px;">
+      <span style="font-size:11.5px;font-weight:700;letter-spacing:.01em;">Farmacia Farmalasa &mdash; ${esc(sec.nombre)}</span>
+      <span style="font-size:9px;font-weight:400;white-space:nowrap;">${sec.rows.length} productos &nbsp;·&nbsp; ${totalPacks} packs &nbsp;·&nbsp; ${esc(fecha)}</span>
+    </div>
+    ${colHeaderHtml()}
     ${rowsToHtml(sec.rows)}
-    ${footerBody}
-  </table>
+    ${footer}
+  </div>
 </div>`;
 }
 
@@ -209,9 +214,9 @@ function openPrintWindow(sections, title, meta = {}) {
   *{box-sizing:border-box;margin:0;padding:0;}
   @page{size:letter portrait;margin:0;}
   body{font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;font-size:10px;padding:10mm 9mm 12mm;}
-  table{width:100%;border-collapse:collapse;border:1px solid #999;table-layout:fixed;}
-  thead{display:table-header-group;}
-  td,th{vertical-align:top;}
+  /* signature block uses <table> — keep minimal table resets */
+  table{border-collapse:collapse;}
+  td,th{vertical-align:bottom;}
   .sig-block{
     margin-top:20px;
     padding-top:10px;

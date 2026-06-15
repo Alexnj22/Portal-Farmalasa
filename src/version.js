@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.124';
+export const APP_VERSION = '2.2.125';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.125 — fix(reglas): sort estado/despacho client-side; quita filtro lab; dedup presentaciones por factor (prefiere la de la regla existente); paginación correcta con pageSize dinámico y totalPages
 // v2.2.124 — fix(reglas): quita columna AB, agrega badge "Bajo receta" inline en nombre del producto, laboratorio completo sin truncar, col lab+producto ya ordenables por header
 // v2.2.123 — fix(reglas): solo_cajas NOT NULL → false al guardar; cache presentaciones en presCache ref (sin re-fetch al reabrir panel)
 // v2.2.122 — feat(reglas): rediseño TabReglas por presentación real + migración total 710 reglas — TabReglas nuevo panel: muestra presentaciones reales del producto (CAJA/BLISTER/UNIDAD/etc.), usuario selecciona cuál es la unidad de despacho y cuántas por lote (×1..×50+); get_pedido_preview v15 con CTE dispatch_pres_factor (fórmula universal CEIL(raw×factor/(dp_factor×dp_multiplo))×dp_factor×dp_multiplo/factor); backward-compat con reglas legacy (solo_cajas/multiplo/blister/multiplo_unidades); migración automática DB: 710/710 reglas convertidas al nuevo sistema

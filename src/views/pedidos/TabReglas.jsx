@@ -8,9 +8,7 @@ import {
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination                   from '../../components/common/TablePagination';
-import LiquidSelect                      from '../../components/common/LiquidSelect';
 
-const PAGE_SIZE      = 50;
 const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
 const EASE           = [0.16, 1, 0.3, 1];
 
@@ -22,8 +20,8 @@ const EMPTY_VALS = { dispatch_id_presentacion: null, dispatch_multiplo: '1', not
 const COLS = [
     { key: 'laboratorio_nombre', label: 'Laboratorio',     align: 'left',   sortable: true },
     { key: 'nombre',             label: 'Producto',        align: 'left',   sortable: true },
-    { key: 'estado',             label: 'Estado',          align: 'center', className: 'w-28' },
-    { key: 'despacho',           label: 'Regla despacho',  align: 'center', className: 'w-44' },
+    { key: 'estado',             label: 'Estado',          align: 'center', className: 'w-28', sortable: true },
+    { key: 'despacho',           label: 'Regla despacho',  align: 'center', className: 'w-44', sortable: true },
     { key: 'notas',              label: 'Notas',           align: 'left'   },
 ];
 
@@ -92,8 +90,21 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
             });
     }, [product.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Deduplica por factor numérico — si dos presentaciones tienen el mismo factor,
+    // muestra solo una. Prefiere la que ya apunta la regla existente.
+    const dedupedPres = useMemo(() => {
+        const existingId = rule?.dispatch_id_presentacion ?? null;
+        const groups = new Map(); // factor → pres row
+        for (const pres of presentations) {
+            const f = pres.factor;
+            if (!groups.has(f)) groups.set(f, pres);
+            if (pres.id_presentacion === existingId) groups.set(f, pres);
+        }
+        return [...groups.values()].sort((a, b) => b.factor - a.factor);
+    }, [presentations, rule?.dispatch_id_presentacion]);
+
     const multiplo      = Number(vals.dispatch_multiplo) || 1;
-    const selectedPres  = presentations.find(p => p.id_presentacion === vals.dispatch_id_presentacion);
+    const selectedPres  = dedupedPres.find(p => p.id_presentacion === vals.dispatch_id_presentacion);
     const selectedTipo  = selectedPres?.presentaciones?.tipo ?? '';
 
     const selectPres = (idPres) => {
@@ -167,13 +178,13 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     <div className="flex items-center gap-2 text-[11px] text-slate-400">
                         <Loader2 size={12} className="animate-spin" /> Cargando presentaciones…
                     </div>
-                ) : presentations.length === 0 ? (
+                ) : dedupedPres.length === 0 ? (
                     <div className="px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700">
                         Sin presentaciones en catálogo — no se puede asignar regla de despacho.
                     </div>
                 ) : (
                     <div className={`flex flex-wrap gap-2 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
-                        {presentations.map(pres => {
+                        {dedupedPres.map(pres => {
                             const tipo     = pres.presentaciones?.tipo ?? 'DESCONOCIDO';
                             const isActive = vals.dispatch_id_presentacion === pres.id_presentacion;
                             const style    = presStyle(tipo);
@@ -282,15 +293,14 @@ export default function TabReglas({ searchTerm = '' }) {
     const [totalCount,      setTotalCount]      = useState(0);
     const [loadingProducts, setLoadingProducts] = useState(true);
     const [page,            setPage]            = useState(1);
+    const [pageSize,        setPageSize]        = useState(50);
     const [allCount,        setAllCount]        = useState(0);
     const [statsLoading,    setStatsLoading]    = useState(true);
     const [newProductIds,   setNewProductIds]   = useState(new Set());
     const [thisMonthCount,  setThisMonthCount]  = useState(0);
     const [sortKey,         setSortKey]         = useState('laboratorio_nombre');
     const [sortDir,         setSortDir]         = useState('asc');
-    const [labs,            setLabs]            = useState([]);
     const [hiddenLabIds,    setHiddenLabIds]    = useState([]);
-    const [filterLab,       setFilterLab]       = useState(null);
     const [filterRule,      setFilterRule]      = useState('');
     const [editingId,       setEditingId]       = useState(null);
     const [editVals,        setEditVals]        = useState(EMPTY_VALS);
@@ -307,11 +317,10 @@ export default function TabReglas({ searchTerm = '' }) {
     useEffect(() => { rulesMapRef.current = rulesMap; }, [rulesMap]);
     useEffect(() => () => clearTimeout(justSavedTimer.current), []);
 
-    // Labs con flag ocultar_en_minmax
+    // Carga IDs de labs ocultos en MinMax para excluirlos
     useEffect(() => {
-        supabase.from('laboratorios').select('id, nombre, ocultar_en_minmax').order('nombre')
+        supabase.from('laboratorios').select('id, ocultar_en_minmax')
             .then(({ data }) => {
-                setLabs(data || []);
                 setHiddenLabIds((data || []).filter(l => l.ocultar_en_minmax).map(l => l.id));
             });
     }, []);
@@ -353,27 +362,28 @@ export default function TabReglas({ searchTerm = '' }) {
     }, []);
 
     useEffect(() => { loadRules(); }, [loadRules]);
-    useEffect(() => { setPage(1); }, [searchTerm, filterLab, filterRule, sortKey, sortDir]);
+    useEffect(() => { setPage(1); }, [searchTerm, filterRule, sortKey, sortDir, pageSize]);
 
     // Productos paginados
-    const loadProducts = useCallback(async (pg, term, labId, ruleFilter, ruleIds, hiddenLabs, sk, sd, newIds) => {
+    const loadProducts = useCallback(async (pg, pgSize, term, ruleFilter, ruleIds, hiddenLabs, sk, sd, newIds) => {
         setLoadingProducts(true);
-        const offset = (pg - 1) * PAGE_SIZE;
+        const offset = (pg - 1) * pgSize;
+        // Estado y despacho son computed — ordenar server-side por lab para consistencia entre páginas
+        const dbSk = (sk === 'estado' || sk === 'despacho') ? 'laboratorio_nombre' : sk;
         let q = supabase
             .from('products_with_lab')
             .select('id, nombre, es_antibiotico, laboratorio_nombre, laboratorio_id', { count: 'exact' })
             .eq('activo', true)
-            .range(offset, offset + PAGE_SIZE - 1);
+            .range(offset, offset + pgSize - 1);
 
         if (hiddenLabs.length > 0)
             q = q.not('laboratorio_id', 'in', `(${hiddenLabs.join(',')})`);
 
         const asc = sd !== 'desc';
-        q = q.order(sk, { ascending: asc });
-        if (sk !== 'nombre') q = q.order('nombre', { ascending: true });
+        q = q.order(dbSk, { ascending: asc });
+        if (dbSk !== 'nombre') q = q.order('nombre', { ascending: true });
 
         if (term.length >= 2) q = q.ilike('nombre', `%${term}%`);
-        if (labId) q = q.eq('laboratorio_id', parseInt(labId));
 
         if (ruleFilter === 'con') {
             q = ruleIds.length > 0 ? q.in('id', ruleIds) : q.in('id', [0]);
@@ -395,8 +405,8 @@ export default function TabReglas({ searchTerm = '' }) {
     useEffect(() => {
         if (loadingRules) return;
         const ids = Object.keys(rulesMapRef.current).map(Number);
-        loadProducts(page, searchTerm, filterLab, filterRule, ids, hiddenLabIds, sortKey, sortDir, newProductIds);
-    }, [page, searchTerm, filterLab, filterRule, hiddenLabIds, newProductIds, loadProducts, loadingRules, sortKey, sortDir]); // eslint-disable-line react-hooks/exhaustive-deps
+        loadProducts(page, pageSize, searchTerm, filterRule, ids, hiddenLabIds, sortKey, sortDir, newProductIds);
+    }, [page, pageSize, searchTerm, filterRule, hiddenLabIds, newProductIds, loadProducts, loadingRules, sortKey, sortDir]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSort = useCallback((key) => {
         setSortDir(prev => sortKey === key ? (prev === 'asc' ? 'desc' : 'asc') : 'asc');
@@ -482,9 +492,6 @@ export default function TabReglas({ searchTerm = '' }) {
     const rulesCount = Object.keys(rulesMap).length;
     const sinRegla   = Math.max(0, allCount - rulesCount);
     const mesActual  = new Date().toLocaleDateString('es-SV', { month: 'long' });
-    const labOptions = useMemo(() =>
-        labs.filter(l => !l.ocultar_en_minmax).map(l => ({ value: String(l.id), label: l.nombre })),
-        [labs]);
 
     // Badge para la columna "Regla despacho" en tabla
     const ruleTypeLabel = (rule) => {
@@ -502,6 +509,22 @@ export default function TabReglas({ searchTerm = '' }) {
         if (rule.multiplo_unidades != null) return { text: `×${rule.multiplo_unidades}u`, bg: 'bg-violet-100', txt: 'text-violet-700' };
         return { text: 'Solo cajas', bg: 'bg-slate-100', txt: 'text-slate-600' };
     };
+
+    // Sort client-side para columnas computed (estado/despacho) — opera sobre la página actual
+    const sortedProducts = useMemo(() => {
+        if (sortKey !== 'estado' && sortKey !== 'despacho') return products;
+        const asc = sortDir !== 'desc';
+        return [...products].sort((a, b) => {
+            if (sortKey === 'estado') {
+                const av = rulesMap[a.id] ? 1 : 0;
+                const bv = rulesMap[b.id] ? 1 : 0;
+                return asc ? av - bv : bv - av;
+            }
+            const at = ruleTypeLabel(rulesMap[a.id] ?? null)?.text ?? '';
+            const bt = ruleTypeLabel(rulesMap[b.id] ?? null)?.text ?? '';
+            return asc ? at.localeCompare(bt, 'es') : bt.localeCompare(at, 'es');
+        });
+    }, [products, sortKey, sortDir, rulesMap]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">
@@ -553,25 +576,13 @@ export default function TabReglas({ searchTerm = '' }) {
                     />
                 </div>
 
-                {/* Pill filtros */}
-                <div className="flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-sm">
-                    <div style={{ minWidth: 210 }}>
-                        <LiquidSelect bare compact icon={FlaskConical}
-                            placeholder="Todos los laboratorios"
-                            options={labOptions} value={filterLab}
-                            onChange={v => { setFilterLab(v); setPage(1); }} clearable
-                        />
-                    </div>
-                    {(filterLab || filterRule) && (
-                        <>
-                            <div className="h-5 w-px bg-slate-100 shrink-0" />
-                            <button onClick={() => { setFilterLab(null); setFilterRule(''); }}
-                                className="flex items-center gap-1 px-3 py-2 text-[11px] text-slate-400 hover:text-red-500 transition-colors whitespace-nowrap">
-                                <X size={11} /> Limpiar
-                            </button>
-                        </>
-                    )}
-                </div>
+                {/* Botón limpiar filtro regla */}
+                {filterRule && (
+                    <button onClick={() => setFilterRule('')}
+                        className="flex items-center gap-1 px-3 py-2 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-sm text-[11px] text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors whitespace-nowrap">
+                        <X size={11} /> Limpiar filtro
+                    </button>
+                )}
             </div>
 
             {/* ── Tabla ─────────────────────────────────────────────────────── */}
@@ -587,7 +598,7 @@ export default function TabReglas({ searchTerm = '' }) {
                 }}
                 minWidth="720px"
             >
-                {products.map((prod, i) => {
+                {sortedProducts.map((prod, i) => {
                     const isEditing = editingId === prod.id;
                     const rule      = rulesMap[prod.id] ?? null;
                     const hasRule   = !!rule;
@@ -684,8 +695,14 @@ export default function TabReglas({ searchTerm = '' }) {
                 })}
             </DataTable>
 
-            <TablePagination page={page} pageSize={PAGE_SIZE} total={totalCount}
-                onPageChange={setPage} onPageSizeChange={() => {}} />
+            <TablePagination
+                page={page} pageSize={pageSize}
+                totalPages={Math.ceil(totalCount / pageSize)}
+                total={totalCount}
+                onPageChange={setPage}
+                onPageSizeChange={sz => { setPageSize(sz); setPage(1); }}
+                unit="productos"
+            />
         </div>
     );
 }

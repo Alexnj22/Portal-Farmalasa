@@ -201,21 +201,23 @@ function relativeTime(iso) {
 }
 
 function exportCsv(rows, name, sucursalName) {
+    const SEP = ';';
     const h = ['Sucursal','Laboratorio','Producto','Clase','MIN (und)','MAX (und)','Ventas período'];
     const lines = rows.map(r => {
-        const abc = (r.draft_abc_class || r.abc_class || '—');
+        const abc = (r.draft_abc_class || r.abc_class || '');
         const xyz = normXyz(r.draft_demand_variability || r.demand_variability);
         return [
             `"${(sucursalName||'').replace(/"/g,'""')}"`,
             `"${(r.laboratorio_nombre||'').replace(/"/g,'""')}"`,
             `"${(r.product_name||'').replace(/"/g,'""')}"`,
             `${abc}${xyz}`,
-            r.effective_min ?? '—',
-            r.effective_max ?? '—',
+            r.effective_min ?? '',
+            r.effective_max ?? '',
             r.units_sold_6m ?? 0,
-        ].join(',');
+        ].join(SEP);
     });
-    const blob = new Blob([[h.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
+    // BOM + semicolon-separated + CRLF for Excel compatibility (Spanish locale)
+    const blob = new Blob(['﻿' + [h.join(SEP), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8;' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `minmax_${name}_${new Date().toISOString().slice(0,10)}.csv` });
     a.click(); URL.revokeObjectURL(a.href);
 }
@@ -2635,17 +2637,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                             <FlaskConical size={13} />
                         </motion.button>
 
-                        <div className="h-5 w-px bg-slate-200/60 shrink-0" />
+                        {!isBodega && (
+                            <>
+                                <div className="h-5 w-px bg-slate-200/60 shrink-0" />
 
-                        {/* Todas las sucursales */}
-                        <motion.button onClick={handleRecalcularAll} disabled={!canManage || calculating || loading}
-                            title="Recalcular todas las sucursales (Bodega se actualiza sola)"
-                            {...chipAnim}
-                            className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-40 disabled:pointer-events-none">
-                            {calculating && calcMode === 'all'
-                                ? <><Loader2 size={11} className="animate-spin" /> {calcProgress ? `${calcProgress.name} ${calcProgress.current}/${calcProgress.total}` : 'Calculando…'}</>
-                                : <><Layers size={11} /> Todas las sucursales</>}
-                        </motion.button>
+                                {/* Todas las sucursales — oculto en Bodega (se actualiza sola vía trigger) */}
+                                <motion.button onClick={handleRecalcularAll} disabled={!canManage || calculating || loading}
+                                    title="Recalcular todas las sucursales (Bodega se actualiza sola)"
+                                    {...chipAnim}
+                                    className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-40 disabled:pointer-events-none">
+                                    {calculating && calcMode === 'all'
+                                        ? <><Loader2 size={11} className="animate-spin" /> {calcProgress ? `${calcProgress.name} ${calcProgress.current}/${calcProgress.total}` : 'Calculando…'}</>
+                                        : <><Layers size={11} /> Todas las sucursales</>}
+                                </motion.button>
+                            </>
+                        )}
                     </div>
 
                     {/* Calcular — blue right cap (oculto para Bodega: se actualiza sola) */}
@@ -2720,38 +2726,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             )}
 
 
-            {!loading && isBodega && (
-                <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl"
-                    style={{
-                        background: 'rgba(255,255,255,0.70)',
-                        backdropFilter: 'blur(20px)',
-                        WebkitBackdropFilter: 'blur(20px)',
-                        border: '1px solid rgba(255,255,255,0.82)',
-                        boxShadow: '0 2px 14px rgba(109,40,217,0.06), inset 0 1px 0 rgba(255,255,255,0.92)',
-                    }}>
-                    <div className="shrink-0 w-6 h-6 rounded-lg bg-violet-100/90 border border-violet-200/60 flex items-center justify-center">
-                        <Info size={11} className="text-violet-600" />
-                    </div>
-                    <span className="text-[11px] text-slate-600 flex-1 min-w-0 leading-snug">
-                        <strong className="font-bold text-slate-800">Bodega</strong>{' — '}
-                        MIN/MAX = Σ publicados de cada sucursal. Se actualizan solos al publicar.
-                        <span className="text-slate-400 ml-1">Se puede sobreescribir manualmente.</span>
-                    </span>
-                    {bodegaPendingCount > 0 ? (
-                        <div className="flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full bg-amber-50/90 border border-amber-200/80">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block shrink-0" />
-                            <span className="text-[10px] font-bold text-amber-700 whitespace-nowrap">
-                                {bodegaPendingCount} pendiente{bodegaPendingCount !== 1 ? 's' : ''}
-                            </span>
-                        </div>
-                    ) : hasPublishedData ? (
-                        <div className="flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-full bg-emerald-50/90 border border-emerald-200/70">
-                            <CheckCircle2 size={10} className="text-emerald-600 shrink-0" />
-                            <span className="text-[10px] font-bold text-emerald-700 whitespace-nowrap">Al día</span>
-                        </div>
-                    ) : null}
-                </div>
-            )}
             {!loading && neverCalc && (
                 <div className={`${glass} py-16 text-center`} style={glassStyle}>
                     <Package size={36} className="opacity-30 mx-auto mb-4 text-slate-500" />
@@ -3043,6 +3017,34 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     )}
                     </AnimatePresence>
 
+                    {/* Bodega info chip — inline para no ocupar fila extra */}
+                    {!loading && isBodega && (
+                        <div className="flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-xl"
+                             style={{
+                                 background: 'rgba(255,255,255,0.72)',
+                                 backdropFilter: 'blur(20px)',
+                                 WebkitBackdropFilter: 'blur(20px)',
+                                 border: '1px solid rgba(255,255,255,0.82)',
+                                 boxShadow: '0 2px 10px rgba(109,40,217,0.05), inset 0 1px 0 rgba(255,255,255,0.92)',
+                             }}>
+                            <Info size={10} className="text-violet-500 shrink-0" />
+                            <span className="text-[10px] text-slate-600 whitespace-nowrap">MIN/MAX = Σ sucursales publicadas</span>
+                            {bodegaPendingCount > 0 ? (
+                                <>
+                                    <div className="h-3.5 w-px bg-slate-200/70 mx-0.5 shrink-0" />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse inline-block shrink-0" />
+                                    <span className="text-[10px] font-bold text-amber-700 whitespace-nowrap">{bodegaPendingCount} pendiente{bodegaPendingCount !== 1 ? 's' : ''}</span>
+                                </>
+                            ) : hasPublishedData ? (
+                                <>
+                                    <div className="h-3.5 w-px bg-slate-200/70 mx-0.5 shrink-0" />
+                                    <CheckCircle2 size={9} className="text-emerald-500 shrink-0" />
+                                    <span className="text-[10px] font-bold text-emerald-700 whitespace-nowrap">Al día</span>
+                                </>
+                            ) : null}
+                        </div>
+                    )}
+
                 </div>
             )}
 
@@ -3079,7 +3081,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         const maxN       = Number(row.effective_max);
                         const v30        = Number(row.velocity_30d ?? 0);
                         const v6m        = Number(row.daily_velocity ?? 0);
-                        const canExpand  = stock > 0 || row.last_sale_date != null || row.is_catalog_only;
+                        const canExpand  = stock > 0 || row.last_sale_date != null || row.is_catalog_only || (row.effective_min ?? 0) > 0 || (row.effective_max ?? 0) > 0;
                         const hasDraft   = row.draft_status === 'pending';
                         const isSparse   = row.draft_status === 'sparse_data';
                         const limitedData = hasDraft &&

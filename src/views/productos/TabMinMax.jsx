@@ -211,8 +211,8 @@ function exportCsv(rows, name, sucursalName) {
             `"${(r.laboratorio_nombre||'').replace(/"/g,'""')}"`,
             `"${(r.product_name||'').replace(/"/g,'""')}"`,
             `${abc}${xyz}`,
-            r.effective_min ?? '',
-            r.effective_max ?? '',
+            r.effective_min || '',
+            r.effective_max || '',
             r.units_sold_6m ?? 0,
         ].join(SEP);
     });
@@ -2085,21 +2085,22 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         if (saveLive) {
             const col    = edit.field === 'min' ? 'min_units'    : 'max_units';
             const effCol = edit.field === 'min' ? 'effective_min' : 'effective_max';
+            const newMin = edit.field === 'min' ? numVal : (targetRow?.effective_min ?? null);
+            const newMax = edit.field === 'max' ? numVal : (targetRow?.effective_max ?? null);
+            setData(prev => prev.map(r => {
+                if (r.erp_product_id !== edit.productId || r._erp_sucursal_id !== edit.sucursalId) return r;
+                return { ...r, [effCol]: numVal, draft_status: 'none', alert_status: calcAlertStatus(r.current_stock, newMin, newMax) };
+            }));
             const { error: e } = await supabase.from('product_stock_params')
                 .upsert(
-                    { erp_product_id: edit.productId, erp_sucursal_id: edit.sucursalId, [col]: numVal, updated_at: new Date().toISOString() },
+                    { erp_product_id: edit.productId, erp_sucursal_id: edit.sucursalId, [col]: numVal, draft_status: 'none', draft_min: null, draft_max: null, updated_at: new Date().toISOString() },
                     { onConflict: 'erp_product_id,erp_sucursal_id' }
                 );
             if (e) {
+                setData(prev => prev.map(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId ? targetRow : r));
                 useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error');
                 return;
             }
-            setData(prev => prev.map(r => {
-                if (r.erp_product_id !== edit.productId || r._erp_sucursal_id !== edit.sucursalId) return r;
-                const newMin = edit.field === 'min' ? (numVal ?? 0) : (r.effective_min ?? 0);
-                const newMax = edit.field === 'max' ? (numVal ?? 0) : (r.effective_max ?? 0);
-                return { ...r, [effCol]: numVal ?? 0, alert_status: calcAlertStatus(r.current_stock, newMin, newMax) };
-            }));
             Promise.all([
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
@@ -2118,21 +2119,22 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             warnIfOutrageous(edit.field, numVal, targetRow);
         } else {
             const col = edit.field === 'min' ? 'draft_min' : 'draft_max';
+            const newMin = edit.field === 'min' ? numVal : (targetRow?.draft_min ?? targetRow?.effective_min ?? null);
+            const newMax = edit.field === 'max' ? numVal : (targetRow?.draft_max ?? targetRow?.effective_max ?? null);
+            setData(prev => prev.map(r => {
+                if (r.erp_product_id !== edit.productId || r._erp_sucursal_id !== edit.sucursalId) return r;
+                return { ...r, [col]: numVal, draft_status: 'pending', alert_status: calcAlertStatus(r.current_stock, newMin, newMax) };
+            }));
             const { error: e } = await supabase.from('product_stock_params')
                 .upsert(
                     { erp_product_id: edit.productId, erp_sucursal_id: edit.sucursalId, [col]: numVal, draft_status: 'pending', updated_at: new Date().toISOString() },
                     { onConflict: 'erp_product_id,erp_sucursal_id' }
                 );
             if (e) {
+                setData(prev => prev.map(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId ? targetRow : r));
                 useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error');
                 return;
             }
-            setData(prev => prev.map(r => {
-                if (r.erp_product_id !== edit.productId || r._erp_sucursal_id !== edit.sucursalId) return r;
-                const newMin = edit.field === 'min' ? (numVal ?? 0) : (r.draft_min ?? r.effective_min ?? 0);
-                const newMax = edit.field === 'max' ? (numVal ?? 0) : (r.draft_max ?? r.effective_max ?? 0);
-                return { ...r, [col]: numVal, draft_status: 'pending', alert_status: calcAlertStatus(r.current_stock, newMin, newMax) };
-            }));
             Promise.all([
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: edit.sucursalId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: edit.sucursalId }),
@@ -2192,22 +2194,33 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         const rowHasDraft = targetRow?.draft_status === 'pending';
         const rowIsSparse = targetRow?.draft_status === 'sparse_data';
         const saveLive = hasPublishedData && !rowHasDraft && !rowIsSparse;
+        // Safety cross-validation: max must be > min when both are positive
+        if (minNum > 0 && maxNum > 0 && minNum >= maxNum) {
+            useToastStore.getState().showToast(productName || 'Producto', 'MAX debe ser mayor al MIN', 'error');
+            return;
+        }
         if (saveLive) {
-            const { error: e } = await supabase.from('product_stock_params')
-                .upsert({ erp_product_id: productId, erp_sucursal_id: sucursalId, min_units: minNum, max_units: maxNum, updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
-            if (e) { useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return; }
             setData(prev => prev.map(r => {
                 if (r.erp_product_id !== productId || r._erp_sucursal_id !== sucursalId) return r;
-                return { ...r, effective_min: minNum ?? 0, effective_max: maxNum ?? 0, alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
+                return { ...r, effective_min: minNum, effective_max: maxNum, draft_status: 'none', alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
             }));
-        } else {
             const { error: e } = await supabase.from('product_stock_params')
-                .upsert({ erp_product_id: productId, erp_sucursal_id: sucursalId, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
-            if (e) { useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return; }
+                .upsert({ erp_product_id: productId, erp_sucursal_id: sucursalId, min_units: minNum, max_units: maxNum, draft_status: 'none', draft_min: null, draft_max: null, updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
+            if (e) {
+                setData(prev => prev.map(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId ? targetRow : r));
+                useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return;
+            }
+        } else {
             setData(prev => prev.map(r => {
                 if (r.erp_product_id !== productId || r._erp_sucursal_id !== sucursalId) return r;
                 return { ...r, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
             }));
+            const { error: e } = await supabase.from('product_stock_params')
+                .upsert({ erp_product_id: productId, erp_sucursal_id: sucursalId, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
+            if (e) {
+                setData(prev => prev.map(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId ? targetRow : r));
+                useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return;
+            }
         }
         Promise.all([
             supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: sucursalId }),
@@ -3240,21 +3253,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                                 if (e.key === 'Tab' || e.key === 'ArrowRight') {
                                                                     e.preventDefault(); skipBlurSave.current = true;
                                                                     if (inlineDraftEdit.value === '') { setInlineDraftEdit(null); return; }
-                                                                    setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: String(hasDraft ? (row.draft_max ?? '') : (row.effective_max ?? '')), pendingMin: inlineDraftEdit.value });
+                                                                    setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: hasDraft ? (!row.draft_max ? '' : String(row.draft_max)) : (!row.effective_max ? '' : String(row.effective_max)), pendingMin: inlineDraftEdit.value });
                                                                     return;
                                                                 }
                                                                 if (e.key === 'Enter' || e.key === 'ArrowDown') {
                                                                     e.preventDefault();
                                                                     if (inlineDraftEdit.value !== '') { const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; } skipBlurSave.current = true; saveDraftCell(inlineDraftEdit); }
                                                                     const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id));
-                                                                    if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? String(next.draft_min ?? '') : (next.is_dead_stock || next.is_catalog_only || next.effective_min === null ? '' : String(next.effective_min ?? '')) });
+                                                                    if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? (!next.draft_min ? '' : String(next.draft_min)) : (next.is_dead_stock || next.is_catalog_only || !next.effective_min ? '' : String(next.effective_min)) });
                                                                     else setInlineDraftEdit(null); return;
                                                                 }
                                                                 if (e.key === 'ArrowUp') {
                                                                     e.preventDefault();
                                                                     if (inlineDraftEdit.value !== '') { const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; } skipBlurSave.current = true; saveDraftCell(inlineDraftEdit); }
                                                                     const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id));
-                                                                    if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? String(prev.draft_min ?? '') : (prev.is_dead_stock || prev.is_catalog_only || prev.effective_min === null ? '' : String(prev.effective_min ?? '')) });
+                                                                    if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? (!prev.draft_min ? '' : String(prev.draft_min)) : (prev.is_dead_stock || prev.is_catalog_only || !prev.effective_min ? '' : String(prev.effective_min)) });
                                                                     else setInlineDraftEdit(null); return;
                                                                 }
                                                             }}
@@ -3289,27 +3302,27 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                                 if (e.key === 'ArrowLeft') {
                                                                     e.preventDefault(); skipBlurSave.current = true;
                                                                     if (inlineDraftEdit.pendingMin !== undefined) { setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: inlineDraftEdit.pendingMin }); }
-                                                                    else { if (inlineDraftEdit.value !== '') saveDraftCell(inlineDraftEdit); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: String(hasDraft ? (row.draft_min ?? '') : (row.effective_min ?? '')) }); }
+                                                                    else { if (inlineDraftEdit.value !== '') saveDraftCell(inlineDraftEdit); setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: hasDraft ? (!row.draft_min ? '' : String(row.draft_min)) : (!row.effective_min ? '' : String(row.effective_min)) }); }
                                                                     return;
                                                                 }
                                                                 if (e.key === 'Enter' || e.key === 'ArrowDown') {
                                                                     e.preventDefault();
-                                                                    if (inlineDraftEdit.value === '') { const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id)); if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? String(next.draft_min ?? '') : (next.is_dead_stock || next.is_catalog_only || next.effective_min === null ? '' : String(next.effective_min ?? '')) }); else setInlineDraftEdit(null); return; }
+                                                                    if (inlineDraftEdit.value === '') { const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id)); if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? (!next.draft_min ? '' : String(next.draft_min)) : (next.is_dead_stock || next.is_catalog_only || !next.effective_min ? '' : String(next.effective_min)) }); else setInlineDraftEdit(null); return; }
                                                                     const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
                                                                     skipBlurSave.current = true;
                                                                     const next = pageRows.slice(rowIdx + 1).find(r => !hiddenIds.has(r.erp_product_id));
-                                                                    if (inlineDraftEdit.pendingMin !== undefined) { const { productId, sucursalId, pendingMin, value } = inlineDraftEdit; if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? String(next.draft_min ?? '') : (next.is_dead_stock || next.is_catalog_only || next.effective_min === null ? '' : String(next.effective_min ?? '')) }); else setInlineDraftEdit(null); saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name); }
-                                                                    else { saveDraftCell(inlineDraftEdit); if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? String(next.draft_min ?? '') : (next.is_dead_stock || next.is_catalog_only || next.effective_min === null ? '' : String(next.effective_min ?? '')) }); else setInlineDraftEdit(null); }
+                                                                    if (inlineDraftEdit.pendingMin !== undefined) { const { productId, sucursalId, pendingMin, value } = inlineDraftEdit; if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? (!next.draft_min ? '' : String(next.draft_min)) : (next.is_dead_stock || next.is_catalog_only || !next.effective_min ? '' : String(next.effective_min)) }); else setInlineDraftEdit(null); saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name); }
+                                                                    else { saveDraftCell(inlineDraftEdit); if (next) setInlineDraftEdit({ productId: next.erp_product_id, sucursalId: next._erp_sucursal_id, field: 'min', value: next.draft_status === 'pending' ? (!next.draft_min ? '' : String(next.draft_min)) : (next.is_dead_stock || next.is_catalog_only || !next.effective_min ? '' : String(next.effective_min)) }); else setInlineDraftEdit(null); }
                                                                     return;
                                                                 }
                                                                 if (e.key === 'ArrowUp') {
                                                                     e.preventDefault();
-                                                                    if (inlineDraftEdit.value === '') { const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id)); if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? String(prev.draft_min ?? '') : (prev.is_dead_stock || prev.is_catalog_only || prev.effective_min === null ? '' : String(prev.effective_min ?? '')) }); else setInlineDraftEdit(null); return; }
+                                                                    if (inlineDraftEdit.value === '') { const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id)); if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? (!prev.draft_min ? '' : String(prev.draft_min)) : (prev.is_dead_stock || prev.is_catalog_only || !prev.effective_min ? '' : String(prev.effective_min)) }); else setInlineDraftEdit(null); return; }
                                                                     const err = validateEditForRow(inlineDraftEdit, row); if (err) { skipBlurSave.current = true; useToastStore.getState().showToast(row.product_name, err, 'error'); setInlineDraftEdit(null); return; }
                                                                     skipBlurSave.current = true;
                                                                     const prev = [...pageRows.slice(0, rowIdx)].reverse().find(r => !hiddenIds.has(r.erp_product_id));
-                                                                    if (inlineDraftEdit.pendingMin !== undefined) { const { productId, sucursalId, pendingMin, value } = inlineDraftEdit; if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? String(prev.draft_min ?? '') : (prev.is_dead_stock || prev.is_catalog_only || prev.effective_min === null ? '' : String(prev.effective_min ?? '')) }); else setInlineDraftEdit(null); saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name); }
-                                                                    else { saveDraftCell(inlineDraftEdit); if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? String(prev.draft_min ?? '') : (prev.is_dead_stock || prev.is_catalog_only || prev.effective_min === null ? '' : String(prev.effective_min ?? '')) }); else setInlineDraftEdit(null); }
+                                                                    if (inlineDraftEdit.pendingMin !== undefined) { const { productId, sucursalId, pendingMin, value } = inlineDraftEdit; if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? (!prev.draft_min ? '' : String(prev.draft_min)) : (prev.is_dead_stock || prev.is_catalog_only || !prev.effective_min ? '' : String(prev.effective_min)) }); else setInlineDraftEdit(null); saveDraftPair(productId, sucursalId, pendingMin, value, row.product_name); }
+                                                                    else { saveDraftCell(inlineDraftEdit); if (prev) setInlineDraftEdit({ productId: prev.erp_product_id, sucursalId: prev._erp_sucursal_id, field: 'min', value: prev.draft_status === 'pending' ? (!prev.draft_min ? '' : String(prev.draft_min)) : (prev.is_dead_stock || prev.is_catalog_only || !prev.effective_min ? '' : String(prev.effective_min)) }); else setInlineDraftEdit(null); }
                                                                     return;
                                                                 }
                                                             }}
@@ -3353,8 +3366,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     bodegaPubMax: freshFloorMax,
                                                 });
                                             };
-                                            const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) { _openBodegaEdit('min'); return; } setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: hasDraft ? String(row.draft_min ?? '') : ((dead || noHistory) ? '' : String(row.effective_min ?? '')) }); } : undefined;
-                                            const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) { _openBodegaEdit('max'); return; } setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: hasDraft ? String(row.draft_max ?? '') : ((dead || noHistory) ? '' : String(row.effective_max ?? '')) }); } : undefined;
+                                            const openMinEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) { _openBodegaEdit('min'); return; } setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'min', value: hasDraft ? (!row.draft_min ? '' : String(row.draft_min)) : ((dead || noHistory) ? '' : (!row.effective_min ? '' : String(row.effective_min))) }); } : undefined;
+                                            const openMaxEdit = canManage ? e => { e.stopPropagation(); setExpandedId(null); if (isBodega) { _openBodegaEdit('max'); return; } setInlineDraftEdit({ productId: row.erp_product_id, sucursalId: row._erp_sucursal_id, field: 'max', value: hasDraft ? (!row.draft_max ? '' : String(row.draft_max)) : ((dead || noHistory) ? '' : (!row.effective_max ? '' : String(row.effective_max))) }); } : undefined;
 
                                             const box = (val, colorCls, borderCls, clickFn) => (
                                                 <div onClick={clickFn}
@@ -3392,9 +3405,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             ) : (
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="flex items-center gap-1">
-                                                        {box((row.draft_min ?? 0).toLocaleString(), 'text-amber-700 bg-amber-50', 'border-amber-200', openMinEdit)}
+                                                        {box(row.draft_min > 0 ? row.draft_min.toLocaleString() : '—', 'text-amber-700 bg-amber-50', 'border-amber-200', openMinEdit)}
                                                         {sep}
-                                                        {box((row.draft_max ?? 0).toLocaleString(), 'text-blue-700 bg-blue-50', 'border-blue-200', openMaxEdit)}
+                                                        {box(row.draft_max > 0 ? row.draft_max.toLocaleString() : '—', 'text-blue-700 bg-blue-50', 'border-blue-200', openMaxEdit)}
                                                     </div>
                                                     {(minN > 0 || maxN > 0) && <div className="text-[9px] text-slate-400 tabular-nums">{minN.toLocaleString()} · {maxN.toLocaleString()} act.</div>}
                                                 </div>

@@ -243,6 +243,18 @@ export default function TabGenerar({ searchTerm = '' }) {
         }).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
     }, []);
 
+    const refreshStats = useCallback(() => {
+        setDashLoading(true);
+        supabase.rpc('get_pedido_sucursal_stats', { p_sucursal_ids: SUCURSALES })
+            .then(({ data }) => { setDashStats(data || []); setDashLoading(false); });
+        setSinBodegaLoad(true);
+        supabase.rpc('get_pedido_sin_bodega', {
+            p_sucursal_ids: SUCURSALES,
+            p_limit:        9999,
+            p_offset:       0,
+        }).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
+    }, []);
+
     useEffect(() => {
         if (Object.keys(adjustments).length === 0) return;
         const handler = (e) => { e.preventDefault(); e.returnValue = ''; };
@@ -388,12 +400,13 @@ export default function TabGenerar({ searchTerm = '' }) {
                 frozenGrouped: map, frozenSucIds: sucIds, codigosMap, printMeta: meta,
             });
             setSelected(new Set());
+            refreshStats();
         } catch (e) {
             setError(e.message);
         } finally {
             setConfirming(false);
         }
-    }, [selected, globalMode, employees, user]);
+    }, [selected, globalMode, employees, user, refreshStats]);
 
     // ── Guardar borrador ───────────────────────────────────────
     const handleGuardarBorrador = useCallback(async () => {
@@ -532,12 +545,13 @@ export default function TabGenerar({ searchTerm = '' }) {
 
             // Auto-print one PDF per sucursal
             printPerSucursal(frozenGrouped, frozenSucIds, r => r.cantidad_asignada, codigoFn, printMeta);
+            refreshStats();
         } catch (e) {
             setError(e.message);
         } finally {
             setConfirming(false);
         }
-    }, [preview, notes, selected, getAdjusted, grouped, sortedSucIds, user, responsable, revisado, employees]);
+    }, [preview, notes, selected, getAdjusted, grouped, sortedSucIds, user, responsable, revisado, employees, refreshStats]);
 
     const statMap = useMemo(() => {
         const m = {};

@@ -114,8 +114,8 @@ export default function TabDiferencias({ searchTerm = '' }) {
         setLoading(true);
         setData(null);
         const { data: result } = await supabase.rpc('get_pedido_diferencias_stats', {
-            p_desde: d ? `${d}T00:00:00Z` : null,
-            p_hasta: h ? `${h}T23:59:59Z` : null,
+            p_desde: d ? `${d}T00:00:00-06:00` : null,
+            p_hasta: h ? `${h}T23:59:59-06:00` : null,
         });
         setData(result ?? null);
         setLoading(false);

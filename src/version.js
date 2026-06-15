@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.106';
+export const APP_VERSION = '2.2.107';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.107 — fix(pedidos): 6 correcciones — (1) TabRecepcion paginación aumentada a 500 pedidos (era 100); (2) TabDiferencias timezone El Salvador UTC-6 en filtros de fecha (era UTC 0); (3) RecepcionModal quita cap max en cantidad recibida (permite registrar más de lo asignado); (4) TabGenerar re-fetcha dashStats+sinBodega tras confirmar pedido (datos ya no quedan stale); (5) PedidosView lazy mount tabs (no montados hasta navegar) + recepcionKey separado de historialKey; (6) src/constants/erp.js centraliza ERP_NAMES, SUCURSALES y ERP_BODEGA_ID
 // v2.2.106 — fix(minmax): (1) DraftCostCard en Bodega cambia etiqueta a "Σ red efectiva" + icono ámbar (vs violeta en sucursales) — deja claro que es la suma auto-calculada, no un borrador manual; (2) badge "N·N" ámbar con dot pulsante reemplaza "→ N·N prev." en DataCell Bodega — más reconocible como estado accionable; title="Hover para ver sucursales pendientes" para discoverability
 // v2.2.105 — fix(minmax): (1) CSV semicolons + BOM para Excel — sep=; + ﻿ elimina el problema de columnas unidas en Excel español; (2) Bodega: oculta "Todas las sucursales" (ya estaba oculto Calcular); (3) aviso Bodega movido inline al filter bar (chip compacto con estado pendientes/al-día), elimina la fila extra; (4) canExpand incluye effective_min>0 || effective_max>0 — productos con params pero sin inventario (p.ej. Bodega) ya se pueden desplegar
 // v2.2.104 — fix(minmax): pill de filtros rediseñada — glassmorphism real (rgba bg + blur(20px) saturate(180%) + border blanco) en el outer; siempre rounded-2xl completo (sin border-r-0 que dejaba el lado derecho cortado en Bodega); separador vertical antes de Calcular en lugar de border-r-0 en el inner; animaciones chipAnim/iconAnim/ctaAnim más rápidas (100ms easeOutExpo) y sin spring underdamped (ζ≈0.53→easeOut); transition-colors en todos los botones de la pill

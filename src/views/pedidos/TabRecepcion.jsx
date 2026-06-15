@@ -125,7 +125,7 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
             .contains('sucursal_ids', [sucId])
             .in('status', ['enviado', 'parcial', 'completado'])
             .order('created_at', { ascending: false })
-            .range(0, 99);
+            .range(0, 499);
         setPedidos(data || []);
         setLoading(false);
     }, []);

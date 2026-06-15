@@ -44,6 +44,7 @@ export default function PedidosView() {
     const [rawSearch,       setRawSearch]       = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [historialKey,    setHistorialKey]    = useState(0);
+    const [recepcionKey,    setRecepcionKey]    = useState(0);
 
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
@@ -54,6 +55,7 @@ export default function PedidosView() {
         setSearchParams(p => { p.set('tab', tab); return p; });
         setRawSearch('');
         if (tab === 'historial') setHistorialKey(k => k + 1);
+        if (tab === 'recepcion') setRecepcionKey(k => k + 1);
     };
 
     const filtersContent = (
@@ -69,11 +71,11 @@ export default function PedidosView() {
 
     return (
         <GlassViewLayout icon={ClipboardList} title="Pedidos a Sucursales" filtersContent={filtersContent}>
-            <div className={activeTab === 'generar'   ? '' : 'hidden'}><TabGenerar    searchTerm={debouncedSearch} /></div>
-            <div className={activeTab === 'historial' ? '' : 'hidden'}><TabHistorial  searchTerm={debouncedSearch} refreshKey={historialKey} /></div>
-            <div className={activeTab === 'reglas'    ? '' : 'hidden'}><TabReglas     searchTerm={debouncedSearch} /></div>
-            <div className={activeTab === 'recepcion'   ? '' : 'hidden'}><TabRecepcion   searchTerm={debouncedSearch} refreshKey={historialKey} /></div>
-            <div className={activeTab === 'diferencias' ? '' : 'hidden'}><TabDiferencias searchTerm={debouncedSearch} /></div>
+            {activeTab === 'generar'      && <TabGenerar    searchTerm={debouncedSearch} />}
+            {activeTab === 'historial'   && <TabHistorial  searchTerm={debouncedSearch} refreshKey={historialKey} />}
+            {activeTab === 'reglas'      && <TabReglas     searchTerm={debouncedSearch} />}
+            {activeTab === 'recepcion'   && <TabRecepcion   searchTerm={debouncedSearch} refreshKey={recepcionKey} />}
+            {activeTab === 'diferencias' && <TabDiferencias searchTerm={debouncedSearch} />}
         </GlassViewLayout>
     );
 }

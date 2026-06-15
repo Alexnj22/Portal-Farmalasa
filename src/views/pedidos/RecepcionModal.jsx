@@ -234,9 +234,9 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                             </span>
                                         )}
                                         <input
-                                            type="number" min={0} max={r.cantidad_asignada} value={recibida}
+                                            type="number" min={0} value={recibida}
                                             onChange={e => {
-                                                const v = Math.min(r.cantidad_asignada, Math.max(0, parseInt(e.target.value) || 0));
+                                                const v = Math.max(0, parseInt(e.target.value) || 0);
                                                 setRecepVals(prev => ({ ...prev, [r.id]: v }));
                                             }}
                                             className={`w-16 text-center border rounded-lg px-1 py-1 text-[13px] font-semibold focus:outline-none tabular-nums ${

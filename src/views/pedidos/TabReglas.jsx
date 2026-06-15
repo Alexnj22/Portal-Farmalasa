@@ -62,11 +62,17 @@ function StatCard({ label, sub, value, Icon, iconBg, iconCls, countCls, active, 
 }
 
 // ── Panel edición — basado en presentaciones reales del producto ──────────────
-function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError, onApply, onCancel }) {
-    const [presentations, setPresentations] = useState([]);
-    const [loadingPres,   setLoadingPres]   = useState(true);
+function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError, onApply, onCancel, presCache }) {
+    const [presentations, setPresentations] = useState(() => presCache.current[product.id] ?? []);
+    const [loadingPres,   setLoadingPres]   = useState(!presCache.current[product.id]);
 
     useEffect(() => {
+        // Si ya está en caché, no vuelve a hacer fetch
+        if (presCache.current[product.id]) {
+            setPresentations(presCache.current[product.id]);
+            setLoadingPres(false);
+            return;
+        }
         setLoadingPres(true);
         supabase
             .from('product_precios')
@@ -81,10 +87,11 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     seen.add(row.id_presentacion);
                     return true;
                 });
+                presCache.current[product.id] = uniq;
                 setPresentations(uniq);
                 setLoadingPres(false);
             });
-    }, [product.id]);
+    }, [product.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const multiplo      = Number(vals.dispatch_multiplo) || 1;
     const selectedPres  = presentations.find(p => p.id_presentacion === vals.dispatch_id_presentacion);
@@ -296,6 +303,8 @@ export default function TabReglas({ searchTerm = '' }) {
     // sin que cada autoguardado dispare un re-fetch de la tabla de productos.
     const rulesMapRef    = useRef({});
     const justSavedTimer = useRef(null);
+    // Cache de presentaciones por product_id: evita re-fetch al reabrir el panel
+    const presCache      = useRef({});
     useEffect(() => { rulesMapRef.current = rulesMap; }, [rulesMap]);
     useEffect(() => () => clearTimeout(justSavedTimer.current), []);
 
@@ -434,8 +443,7 @@ export default function TabReglas({ searchTerm = '' }) {
                     erp_product_id:           productId,
                     dispatch_id_presentacion: v.dispatch_id_presentacion,
                     dispatch_multiplo:        Number(v.dispatch_multiplo) || 1,
-                    // Limpia columnas legacy al guardar con el nuevo sistema
-                    solo_cajas:               null,
+                    solo_cajas:               false,   // NOT NULL en DB
                     multiplo:                 null,
                     blister:                  null,
                     multiplo_unidades:        null,
@@ -667,6 +675,7 @@ export default function TabReglas({ searchTerm = '' }) {
                                                         saving={saving} justSaved={justSaved} saveError={saveError}
                                                         onApply={(v) => applyVals(prod.id, v)}
                                                         onCancel={cancelEdit}
+                                                        presCache={presCache}
                                                     />
                                                 </div>
                                             </motion.div>

@@ -249,19 +249,34 @@ export function buildPedidoCodigo(numero, date, nSelected) {
     return (sucId) => `${nn}-${aabbcc}-${dist}-${SUCURSAL_CODES[sucId] ?? `S${sucId}`}`;
 }
 
+// Convierte qty y lotes de packs ERP a packs de despacho cuando la regla usa otra presentación.
+function toDispatch(qty, erpFactor, dispFactor) {
+    if (!dispFactor || dispFactor === erpFactor) return qty;
+    return Math.round(qty * erpFactor / dispFactor);
+}
+function lotesToDispatch(lotes, erpFactor, dispFactor) {
+    if (!dispFactor || dispFactor === erpFactor) return lotes ?? [];
+    return (lotes ?? [])
+        .map(l => ({ ...l, packs: Math.floor((l.packs ?? 0) * erpFactor / dispFactor) }))
+        .filter(l => l.packs > 0);
+}
+
 export function printPerSucursal(grouped, sortedSucIds, getAdjusted, codigoFn, meta = {}) {
     sortedSucIds.forEach((sucId, idx) => {
         setTimeout(() => {
             const g    = grouped[sucId] || { normal: [], revision: [], sinStock: [] };
             const rows = [...g.normal, ...g.revision].map(row => {
-                const qty = getAdjusted(row);
+                const erpFactor  = row.factor ?? 1;
+                const dispFactor = row.dispatch_factor ?? erpFactor;
+                const dispTipo   = row.dispatch_tipo ?? row.presentacion_tipo;
+                const qty        = toDispatch(getAdjusted(row), erpFactor, dispFactor);
                 return {
                     product_name:      row.product_name,
                     laboratorio:       row.laboratorio ?? '',
-                    presentacion_tipo: row.presentacion_tipo,
+                    presentacion_tipo: dispTipo,
                     es_antibiotico:    row.es_antibiotico,
                     qty,
-                    lotes: fefoProject(row.lotes_bodega, qty),
+                    lotes: fefoProject(lotesToDispatch(row.lotes_bodega, erpFactor, dispFactor), qty),
                 };
             }).filter(r => r.qty > 0);
             const section = {
@@ -283,14 +298,17 @@ export function printFromPreview(grouped, sortedSucIds, getAdjusted, title, meta
     const sections = sortedSucIds.map(sucId => {
         const g = grouped[sucId] || { normal: [], revision: [], sinStock: [] };
         const mapped = [...g.normal, ...g.revision].map(row => {
-            const qty = getAdjusted(row);
+            const erpFactor  = row.factor ?? 1;
+            const dispFactor = row.dispatch_factor ?? erpFactor;
+            const dispTipo   = row.dispatch_tipo ?? row.presentacion_tipo;
+            const qty        = toDispatch(getAdjusted(row), erpFactor, dispFactor);
             return {
                 product_name:      row.product_name,
                 laboratorio:       row.laboratorio ?? '',
-                presentacion_tipo: row.presentacion_tipo,
+                presentacion_tipo: dispTipo,
                 es_antibiotico:    row.es_antibiotico,
                 qty,
-                lotes: fefoProject(row.lotes_bodega, qty),
+                lotes: fefoProject(lotesToDispatch(row.lotes_bodega, erpFactor, dispFactor), qty),
             };
         });
         return {

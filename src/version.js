@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.116';
+export const APP_VERSION = '2.2.117';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.117 — fix(pedidos): selección = glow ring solo, sin cambio de color — card mantiene fondo/texto original; selección agrega ring-blue-400 + shadow glow + shimmer line más brillante + checkmark azul sólido; se eliminan todos los overrides isOn de colores internos
 // v2.2.116 — feat(pedidos): urgencia ponderada por reponer + indicador último pedido — avg_urgencia_pct ahora es media ponderada por unidades a reponer (productos A con más necesidad pesan más); stats v4 agrega last_pedido_at; cards muestran "hoy/ayer/hace Xd" con color verde<7d ámbar<14d rojo≥14d
 // v2.2.115 — fix(pedidos): card seleccionada liquid glass encendida — glass azul translúcido (no sólido), sombra 45% difusa, highlight top más brillante (via-white/90), doble capa de luz difusa con blur interno
 // v2.2.114 — fix(pedidos): urgencia absoluta + cards seleccionadas azul encendido — get_pedido_sucursal_stats v3 agrega avg_urgencia_pct (AVG reponer/max×100 por sucursal); thresholds absolutos ≥65%=rojo ≥40%=ámbar <40%=verde; badge muestra % real; selected = gradiente azul sólido #1565D8→#003590 con glow 60% y ring

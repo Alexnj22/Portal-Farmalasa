@@ -389,18 +389,25 @@ export default function TabGenerar({ searchTerm = '' }) {
                         const urgLevel = getUrgLevel(stat);
                         const urgPct   = stat?.avg_urgencia_pct ?? null;
 
-                        // Card background + border by urgency (only when not selected)
-                        const cardCls = isOn
-                            ? 'suc-pop border-blue-300/80 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,82,204,0.45),0_8px_24px_rgba(0,82,204,0.30),inset_0_1px_0_rgba(255,255,255,0.50),inset_0_-1px_0_rgba(0,82,204,0.20)] ring-2 ring-blue-400/30 ring-offset-1'
-                            : urgLevel === 'high'
-                                ? 'bg-gradient-to-b from-red-50/90 to-white/50 border-red-200/80 backdrop-blur-sm hover:border-red-300 hover:shadow-[0_8px_24px_rgba(239,68,68,0.18)] transition-all duration-200'
-                                : urgLevel === 'mid'
-                                    ? 'bg-gradient-to-b from-amber-50/90 to-white/50 border-amber-200/80 backdrop-blur-sm hover:border-amber-300 hover:shadow-[0_8px_24px_rgba(245,158,11,0.18)] transition-all duration-200'
-                                    : urgLevel === 'low'
-                                        ? 'bg-gradient-to-b from-emerald-50/60 to-white/40 border-emerald-200/60 backdrop-blur-sm hover:border-emerald-300 hover:shadow-[0_8px_24px_rgba(16,185,129,0.12)] transition-all duration-200'
-                                        : 'bg-gradient-to-b from-slate-50/60 to-white/40 border-slate-200/60 backdrop-blur-sm hover:border-slate-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-200';
+                        // Base: always urgency-based, never changes on selection
+                        const baseCls = urgLevel === 'high'
+                            ? 'bg-gradient-to-b from-red-50/90 to-white/60 border-red-200/80 backdrop-blur-sm'
+                            : urgLevel === 'mid'
+                                ? 'bg-gradient-to-b from-amber-50/90 to-white/60 border-amber-200/80 backdrop-blur-sm'
+                                : urgLevel === 'low'
+                                    ? 'bg-gradient-to-b from-emerald-50/60 to-white/50 border-emerald-200/60 backdrop-blur-sm'
+                                    : 'bg-gradient-to-b from-white/80 to-white/50 border-slate-200/60 backdrop-blur-sm';
 
-                        // Urgency % badge colors
+                        // Selection adds a glow ring; no-selection adds hover effects
+                        const stateCls = isOn
+                            ? 'suc-pop border-blue-400/80 shadow-[0_0_0_4px_rgba(59,130,246,0.15),0_8px_32px_rgba(0,82,204,0.28),0_2px_8px_rgba(0,82,204,0.14),inset_0_1px_0_rgba(255,255,255,0.85)] ring-2 ring-blue-400/25 ring-offset-0'
+                            : urgLevel === 'high'
+                                ? 'hover:border-red-300 hover:shadow-[0_6px_20px_rgba(239,68,68,0.15)] transition-all duration-200'
+                                : urgLevel === 'mid'
+                                    ? 'hover:border-amber-300 hover:shadow-[0_6px_20px_rgba(245,158,11,0.15)] transition-all duration-200'
+                                    : 'hover:border-slate-300 hover:shadow-[0_6px_20px_rgba(0,0,0,0.07)] transition-all duration-200';
+
+                        // Urgency badge color
                         const urgBadgeCls = urgLevel === 'high'
                             ? 'bg-red-100 text-red-600 border-red-200/80'
                             : urgLevel === 'mid'
@@ -411,55 +418,41 @@ export default function TabGenerar({ searchTerm = '' }) {
                             <button
                                 key={id}
                                 onClick={() => toggleSuc(id)}
-                                style={isOn ? {
-                                    background: 'linear-gradient(160deg, rgba(0,102,255,0.22) 0%, rgba(0,82,204,0.14) 50%, rgba(0,60,160,0.18) 100%)',
-                                } : {}}
-                                className={`relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center group overflow-hidden ${cardCls}`}
+                                className={`relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center group overflow-hidden ${baseCls} ${stateCls}`}
                             >
-                                {/* Top highlight — glass shimmer, más brillante al seleccionar */}
-                                <span className={`absolute inset-x-2 top-0 h-px bg-gradient-to-r from-transparent ${isOn ? 'via-white/90' : 'via-white/70'} to-transparent pointer-events-none`} />
-                                {/* Selected: capa de luz difusa en la parte superior */}
-                                {isOn && (
-                                    <>
-                                        <span className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-white/30 to-transparent pointer-events-none rounded-t-2xl" />
-                                        <span className="absolute inset-x-3 top-px h-6 bg-gradient-to-b from-white/20 to-transparent pointer-events-none blur-[2px]" />
-                                    </>
-                                )}
+                                {/* Shimmer line — siempre visible, más brillante al seleccionar */}
+                                <span className={`absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent ${isOn ? 'via-white' : 'via-white/70'} to-transparent pointer-events-none`} />
 
-                                {/* Urgency % badge — top-left */}
-                                {!isOn && stat && !dashLoading && urgPct != null && urgPct > 0 && (
+                                {/* Urgency % badge — top-left, siempre visible */}
+                                {stat && !dashLoading && urgPct != null && urgPct > 0 && (
                                     <span className={`absolute top-2 left-2 min-w-[28px] h-4 px-1 rounded-full flex items-center justify-center text-[8px] font-black leading-none border ${urgBadgeCls}`}>
                                         {urgPct}%
                                     </span>
                                 )}
 
-                                {/* Checkmark — top-right when selected */}
+                                {/* Checkmark — top-right cuando está seleccionado */}
                                 {isOn && (
-                                    <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-white/25 border border-white/40 flex items-center justify-center">
+                                    <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center shadow-[0_2px_6px_rgba(0,82,204,0.40)]">
                                         <CheckCircle2 size={10} className="text-white" />
                                     </span>
                                 )}
 
                                 <Building2
                                     size={20}
-                                    className={isOn ? 'text-white/80 relative z-10 mt-1' : 'text-slate-400 group-hover:text-slate-600 transition-colors relative z-10 mt-1'}
+                                    className="text-slate-400 group-hover:text-slate-600 transition-colors relative z-10 mt-1"
                                 />
-                                <span className={`text-[12px] font-bold leading-tight relative z-10 ${isOn ? 'text-white drop-shadow-sm' : 'text-slate-800'}`}>
+                                <span className="text-[12px] font-bold leading-tight relative z-10 text-slate-800">
                                     {ERP_NAMES[id]}
                                 </span>
 
                                 {stat && !dashLoading ? (
                                     <>
                                         <div className="flex items-center gap-1.5 mt-0.5 relative z-10">
-                                            <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                                isOn ? 'bg-white/15 text-emerald-200 border border-white/20' : 'bg-emerald-100 text-emerald-700'
-                                            }`}>
+                                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
                                                 <span className="text-[8px]">✓</span>
                                                 {(stat.con_bodega_productos ?? 0)}
                                             </span>
-                                            <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                                isOn ? 'bg-white/15 text-red-200 border border-white/20' : 'bg-red-100 text-red-600'
-                                            }`}>
+                                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">
                                                 <span className="text-[8px]">✗</span>
                                                 {(stat.sin_bodega_productos ?? 0)}
                                             </span>
@@ -468,16 +461,14 @@ export default function TabGenerar({ searchTerm = '' }) {
                                         {(() => {
                                             const label = fmtTimeSince(stat.last_pedido_at);
                                             if (!label) return (
-                                                <span className={`text-[9px] relative z-10 ${isOn ? 'text-white/40' : 'text-slate-300'}`}>sin pedidos</span>
+                                                <span className="text-[9px] relative z-10 text-slate-300">sin pedidos</span>
                                             );
                                             const days = stat.last_pedido_at
                                                 ? Math.floor((Date.now() - new Date(stat.last_pedido_at)) / 86_400_000)
                                                 : 999;
-                                            const timeCls = isOn
-                                                ? 'text-white/60'
-                                                : days <= 7  ? 'text-emerald-500'
-                                                : days <= 14 ? 'text-amber-500'
-                                                : 'text-red-400';
+                                            const timeCls = days <= 7  ? 'text-emerald-500'
+                                                          : days <= 14 ? 'text-amber-500'
+                                                          : 'text-red-400';
                                             return (
                                                 <span className={`text-[9px] font-medium relative z-10 ${timeCls}`}>
                                                     {label}

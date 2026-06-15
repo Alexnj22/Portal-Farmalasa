@@ -1,7 +1,7 @@
 // ─── Pedido print utility ─────────────────────────────────────────────────────
-// B&W optimized — no color-dependent design.
-// Blob URL approach: avoids "about:srcdoc" in browser print header/footer.
-// qty in all paths is in PACKS (cajas/frascos/blisters), not units.
+// B&W optimized. Blob URL + @page margin:0 eliminates browser header/footer.
+// tbody-per-row: Chrome ignores break-inside:avoid on <tr> but respects it on <tbody>.
+// qty is always in PACKS (cajas/frascos/blisters), not units.
 
 const ERP_NAMES_DEFAULT = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
@@ -41,36 +41,18 @@ function fmtFechaLarga(date) {
     return date.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
-// Extracts the main type word from presentacion_tipo ("CAJA 1X100" → "CAJA", "FRASCO" → "FRASCO")
-function parseTipo(str) {
-    if (!str) return null;
-    const first = str.trim().split(/[\s×xX]/)[0].toUpperCase();
-    return first || null;
-}
-
-// Returns "N CAJA" / "N FRASCO" etc. For UNIDAD/UND returns just "N".
-function fmtCant(qty, presentacion_tipo) {
-    const tipo = parseTipo(presentacion_tipo);
-    if (!tipo || /^(UND|UNIDAD|UNIDADES?)$/.test(tipo)) return String(qty ?? 0);
-    return `${qty} ${tipo}`;
-}
-
-// B&W lote display: [L001 · ene/25 · 2 CAJA] separated by │
-// Defensive: reads l.take (fefoProject output) or l.cantidad / l.packs (lotes_asignados from DB)
-function lotesText(lotes, presentacion_tipo) {
+// Each lote on its own line — avoids overflow:hidden cutting extra lotes.
+// Defensive: reads l.take (fefoProject) or l.cantidad / l.packs (lotes_asignados from DB).
+function lotesText(lotes) {
     if (!lotes || !lotes.length) return '<span style="font-size:9px;">—</span>';
-    const tipo = parseTipo(presentacion_tipo);
-    const isUnit = !tipo || /^(UND|UNIDAD|UNIDADES?)$/.test(tipo);
-    return lotes.map((l, idx) => {
+    return lotes.map(l => {
         const count = l.take ?? l.cantidad ?? l.packs ?? '?';
         const vence = fmtVence(l.fecha_vencimiento);
-        const cantStr = isUnit ? `${count}` : `${count} ${tipo}`;
         const parts = [];
         if (l.lote) parts.push(`<b>${esc(l.lote)}</b>`);
         if (vence)  parts.push(`<i>${esc(vence)}</i>`);
-        parts.push(`<b>${cantStr}</b>`);
-        const bar = idx > 0 ? '<span style="margin:0 5px;font-weight:400;">&nbsp;│&nbsp;</span>' : '';
-        return `${bar}<span style="font-size:8px;white-space:nowrap;">${parts.join('&nbsp;·&nbsp;')}</span>`;
+        parts.push(`<b>${count}pk</b>`);
+        return `<span style="display:block;font-size:8px;white-space:nowrap;line-height:1.5;">${parts.join('&nbsp;·&nbsp;')}</span>`;
     }).join('');
 }
 
@@ -81,27 +63,28 @@ function sortRows(rows) {
     );
 }
 
+// Returns <tbody> elements — one per row so Chrome respects break-inside:avoid on tbody.
 function rowsToHtml(rows) {
     if (!rows.length) {
-        return '<tr><td colspan="5" style="text-align:center;font-size:10px;padding:10px 6px;color:#555;">Sin productos para esta sucursal</td></tr>';
+        return '<tbody><tr><td colspan="6" style="text-align:center;font-size:10px;padding:10px 6px;color:#555;">Sin productos para esta sucursal</td></tr></tbody>';
     }
+    const bb = 'border-bottom:1px solid #ccc;';
+    const br = 'border-right:1px solid #ddd;';
     return sortRows(rows).map((r, i) => {
-        const bg  = i % 2 === 1 ? 'background:#f2f2f2;' : '';
-        const bb  = 'border-bottom:1px solid #ccc;';
-        const br  = 'border-right:1px solid #ddd;';
-        // AB badge: outline only — visible in B&W
+        const bg = i % 2 === 1 ? 'background:#f2f2f2;' : '';
         const abBadge = r.es_antibiotico
             ? `<span style="display:inline-block;margin-left:4px;padding:0 3px;border:1.5px solid #000;font-size:7px;font-weight:700;color:#000;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;line-height:13px;">AB</span>`
             : '';
-        // Merged cant + tipo: "1 CAJA", "3 FRASCO", "100" (for UND)
-        const cantDisplay = fmtCant(r.qty, r.presentacion_tipo);
-        return `<tr style="${bg}">
-            <td style="${bb}${br}padding:3px 6px;font-size:9.5px;color:#000;white-space:normal;word-break:break-word;">${esc(r.product_name)}${abBadge}</td>
-            <td style="${bb}${br}padding:3px 5px;font-size:8px;color:#333;">${esc(r.laboratorio) || '—'}</td>
-            <td style="${bb}${br}padding:3px 5px;font-size:13px;font-weight:800;color:#000;text-align:center;white-space:nowrap;">${cantDisplay}</td>
-            <td style="${bb}${br}padding:3px 5px;">${lotesText(r.lotes, r.presentacion_tipo)}</td>
-            <td style="${bb}padding:3px 4px;text-align:center;"><span style="display:inline-block;width:13px;height:13px;border:1.5px solid #555;border-radius:2px;"></span></td>
-        </tr>`;
+        return `<tbody style="page-break-inside:avoid;break-inside:avoid;">
+<tr style="${bg}">
+  <td style="${bb}${br}padding:3px 6px;font-size:9.5px;color:#000;white-space:normal;word-break:break-word;">${esc(r.product_name)}${abBadge}</td>
+  <td style="${bb}${br}padding:3px 5px;font-size:8px;color:#333;white-space:nowrap;">${esc(r.laboratorio) || '—'}</td>
+  <td style="${bb}${br}padding:3px 5px;font-size:13px;font-weight:800;color:#000;text-align:center;white-space:nowrap;">${r.qty}</td>
+  <td style="${bb}${br}padding:3px 5px;font-size:8px;color:#333;white-space:nowrap;">${esc(r.presentacion_tipo) || '—'}</td>
+  <td style="${bb}${br}padding:3px 5px;">${lotesText(r.lotes)}</td>
+  <td style="${bb}padding:3px 4px;text-align:center;"><span style="display:inline-block;width:13px;height:13px;border:1.5px solid #555;border-radius:2px;"></span></td>
+</tr>
+</tbody>`;
     }).join('');
 }
 
@@ -111,13 +94,12 @@ function buildSection(sec, fecha, isLast) {
     const footerParts = [];
     if (sec.sinCount > 0) footerParts.push(`Sin stock en Bodega: <b>${sec.sinCount} producto(s)</b>`);
     if (sec.revCount  > 0) footerParts.push(`Sin asignación (revisar): <b>${sec.revCount}</b>`);
-    const footerRow = footerParts.length
-        ? `<tr style="background:#ebebeb;"><td colspan="5" style="padding:4px 8px;font-size:9px;color:#000;border-top:2px dashed #888;">${footerParts.join('&nbsp; · &nbsp;')}</td></tr>`
+    const footerBody = footerParts.length
+        ? `<tbody><tr style="background:#ebebeb;"><td colspan="6" style="padding:4px 8px;font-size:9px;color:#000;border-top:2px dashed #888;">${footerParts.join('&nbsp; · &nbsp;')}</td></tr></tbody>`
         : '';
 
     const pageBreak = isLast ? '' : 'break-after:page;page-break-after:always;';
 
-    // Columns: Producto | Laboratorio | Cantidad | Lote(s) | ✓
     const TH = 'padding:4px 5px;font-size:7.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.06em;background:#e0e0e0;border-bottom:2px solid #999;';
 
     return `
@@ -125,7 +107,7 @@ function buildSection(sec, fecha, isLast) {
   <table>
     <thead>
       <tr style="background:#000;color:#fff;">
-        <th colspan="3" style="padding:6px 10px;font-size:11.5px;font-weight:700;text-align:left;letter-spacing:.01em;">
+        <th colspan="4" style="padding:6px 10px;font-size:11.5px;font-weight:700;text-align:left;letter-spacing:.01em;">
           Farmacia Farmalasa &mdash; ${esc(sec.nombre)}
         </th>
         <th colspan="2" style="padding:6px 10px;font-size:9px;font-weight:400;text-align:right;white-space:nowrap;">
@@ -133,17 +115,16 @@ function buildSection(sec, fecha, isLast) {
         </th>
       </tr>
       <tr>
-        <th style="${TH}text-align:left;width:38%;">Producto</th>
+        <th style="${TH}text-align:left;width:34%;">Producto</th>
         <th style="${TH}text-align:left;width:14%;">Laboratorio</th>
-        <th style="${TH}text-align:center;width:80px;">Cantidad</th>
+        <th style="${TH}text-align:center;width:40px;">Cant.</th>
+        <th style="${TH}text-align:left;width:9%;">Presentación</th>
         <th style="${TH}text-align:left;">Lote(s)</th>
         <th style="${TH}text-align:center;width:26px;">✓</th>
       </tr>
     </thead>
-    <tbody>
-      ${rowsToHtml(sec.rows)}
-      ${footerRow}
-    </tbody>
+    ${rowsToHtml(sec.rows)}
+    ${footerBody}
   </table>
 </div>`;
 }
@@ -162,6 +143,7 @@ function buildSignatures(meta = {}) {
 <div class="sig-block">
   ${generadoLine}
   <table style="width:100%;border-collapse:separate;border-spacing:10px 0;">
+    <tbody>
     <tr>
       <td style="width:28%;text-align:center;vertical-align:bottom;padding:0 4px;">
         ${nameLine(responsable)}
@@ -179,11 +161,13 @@ function buildSignatures(meta = {}) {
         <div style="border:1.5px solid #000;border-radius:5px;height:52px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#555;letter-spacing:.08em;text-transform:uppercase;">Sello</div>
       </td>
     </tr>
+    </tbody>
   </table>
 </div>`;
 }
 
-// Blob URL approach: browser shows <title> (order code) in print header, not "about:srcdoc"
+// Blob URL: browser shows <title> instead of "about:srcdoc".
+// @page margin:0: removes ALL browser header/footer (URL, page numbers, date).
 function printHtml(html) {
     const blob    = new Blob([html], { type: 'text/html;charset=utf-8' });
     const blobUrl = URL.createObjectURL(blob);
@@ -223,13 +207,11 @@ function openPrintWindow(sections, title, meta = {}) {
 <title>${esc(title)}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
-  @page{size:letter portrait;margin:10mm 9mm 12mm;}
-  body{font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;font-size:10px;}
+  @page{size:letter portrait;margin:0;}
+  body{font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;font-size:10px;padding:10mm 9mm 12mm;}
   table{width:100%;border-collapse:collapse;border:1px solid #999;table-layout:fixed;}
   thead{display:table-header-group;}
-  tbody{display:table-row-group;}
-  tr{page-break-inside:avoid;break-inside:avoid;}
-  td,th{overflow:hidden;}
+  td,th{vertical-align:top;}
   .sig-block{
     margin-top:20px;
     padding-top:10px;
@@ -366,8 +348,7 @@ export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, titleOv
             presentacion_tipo: r.presentaciones?.tipo ?? '',
             es_antibiotico:    r.products?.es_antibiotico ?? false,
             qty:               r.cantidad_asignada ?? 0,
-            // lotes_asignados stored in DB may have {cantidad} or {packs} instead of {take};
-            // lotesText is defensive and reads l.take ?? l.cantidad ?? l.packs
+            // lotes_asignados from DB may have {cantidad} or {packs} instead of {take}
             lotes:             Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
         }));
         return {

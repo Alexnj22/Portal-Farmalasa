@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.120';
+export const APP_VERSION = '2.2.121';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.121 — fix(pdf+rpc): @page margin:0 elimina URL del footer, tbody-por-fila corrige corte entre páginas, lotes en stack vertical (display:block), restaura col Presentación separada; get_pedido_preview v14 cambia FLOOR→CEIL en rama solo_cajas (redondea a cajas completas hacia arriba) y agrega guard caja_factor IS NULL (no aplica conversión si el producto no tiene presentación CAJA en product_precios)
 // v2.2.120 — fix(pdf): B&W optimizado + about:srcdoc + nombre completo + cantidad con tipo + bug lotes_asignados — (1) printHtml usa Blob URL (blob:// en header, no about:srcdoc); (2) product name: white-space:normal word-break:break-word (antes cortaba con ellipsis); (3) diseño B&W: header negro sólido, badges AB en outline, filas impares #f2f2f2, bordes grises, sin colores RGB; lotes distinguibles por tipografía [bold·italic·bold] con │ separador; (4) fmtCant+parseTipo: cantidad muestra "1 CAJA"/"3 FRASCO" en lugar de "1" solo; UND/UNIDAD permanece sin etiqueta; (5) BUG fix: lotesText en printFromPedidoItems lee l.take??l.cantidad??l.packs (lotes_asignados del DB no tiene l.take); (6) columna Presentación eliminada y fusionada en Cantidad — 5 columnas totales
 // v2.2.119 — fix(pedidos/pdf): build error + rediseño PDF completo — (1) buildSignatures faltaba } de cierre → printHtml/openPrintWindow/exports quedaban dentro de la función, rollup rechazaba export fuera de módulo; (2) position:fixed en sig-block eliminado — firmas en flujo normal del documento (no se repiten en cada página); (3) @page margins en lugar de padding en body — page-break-inside+break-inside en tr para cortes correctos; (4) diseño compacto: TH 7.5px uppercase tracking, filas 3px vertical, cantidad 14px bold, lote 8px; tabla table-layout:fixed
 // v2.2.118 — fix(pedidos/pdf): excluye productos qty=0 del PDF + orden columnas + firmas al fondo — filter qty>0 en printPerSucursal/printFromPreview; columnas: Producto|Lab|Cant|Present|Lote|✓; firmas fixed bottom:10mm con padding-bottom:52mm en body; estructura firmas mejorada con border-spacing

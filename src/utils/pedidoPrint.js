@@ -1,7 +1,7 @@
 // ─── Pedido print utility ─────────────────────────────────────────────────────
-// Columns: Producto | Laboratorio | Cant. | Presentación | Lote(s) | ✓
-// Prints via hidden iframe — no new tab, no browser header/footer with @page margin:0.
-// Signatures appear once at document end (NOT position:fixed — avoids repeat on every page).
+// B&W optimized — no color-dependent design.
+// Blob URL approach: avoids "about:srcdoc" in browser print header/footer.
+// qty in all paths is in PACKS (cajas/frascos/blisters), not units.
 
 const ERP_NAMES_DEFAULT = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
@@ -41,29 +41,36 @@ function fmtFechaLarga(date) {
     return date.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
-function daysLeft(iso) {
-    if (!iso) return null;
-    return Math.floor((new Date(iso) - new Date()) / 86_400_000);
+// Extracts the main type word from presentacion_tipo ("CAJA 1X100" → "CAJA", "FRASCO" → "FRASCO")
+function parseTipo(str) {
+    if (!str) return null;
+    const first = str.trim().split(/[\s×xX]/)[0].toUpperCase();
+    return first || null;
 }
 
-function venceColor(iso) {
-    const d = daysLeft(iso);
-    if (d === null) return '#94a3b8';
-    if (d < 30) return '#ef4444';
-    if (d < 90) return '#f97316';
-    return '#16a34a';
+// Returns "N CAJA" / "N FRASCO" etc. For UNIDAD/UND returns just "N".
+function fmtCant(qty, presentacion_tipo) {
+    const tipo = parseTipo(presentacion_tipo);
+    if (!tipo || /^(UND|UNIDAD|UNIDADES?)$/.test(tipo)) return String(qty ?? 0);
+    return `${qty} ${tipo}`;
 }
 
-function lotesText(lotes) {
-    if (!lotes || !lotes.length) return '<span style="color:#cbd5e1;font-size:9px;">—</span>';
-    return lotes.map(l => {
+// B&W lote display: [L001 · ene/25 · 2 CAJA] separated by │
+// Defensive: reads l.take (fefoProject output) or l.cantidad / l.packs (lotes_asignados from DB)
+function lotesText(lotes, presentacion_tipo) {
+    if (!lotes || !lotes.length) return '<span style="font-size:9px;">—</span>';
+    const tipo = parseTipo(presentacion_tipo);
+    const isUnit = !tipo || /^(UND|UNIDAD|UNIDADES?)$/.test(tipo);
+    return lotes.map((l, idx) => {
+        const count = l.take ?? l.cantidad ?? l.packs ?? '?';
         const vence = fmtVence(l.fecha_vencimiento);
-        const color = venceColor(l.fecha_vencimiento);
+        const cantStr = isUnit ? `${count}` : `${count} ${tipo}`;
         const parts = [];
-        if (l.lote) parts.push(`<b style="color:#475569;">${esc(l.lote)}</b>`);
-        if (vence)  parts.push(`<span style="color:${color};">${esc(vence)}</span>`);
-        parts.push(`<b style="color:#3b82f6;">${l.take}pk</b>`);
-        return `<span style="display:inline-block;margin-right:6px;font-size:8px;white-space:nowrap;">${parts.join(' ')}</span>`;
+        if (l.lote) parts.push(`<b>${esc(l.lote)}</b>`);
+        if (vence)  parts.push(`<i>${esc(vence)}</i>`);
+        parts.push(`<b>${cantStr}</b>`);
+        const bar = idx > 0 ? '<span style="margin:0 5px;font-weight:400;">&nbsp;│&nbsp;</span>' : '';
+        return `${bar}<span style="font-size:8px;white-space:nowrap;">${parts.join('&nbsp;·&nbsp;')}</span>`;
     }).join('');
 }
 
@@ -76,21 +83,24 @@ function sortRows(rows) {
 
 function rowsToHtml(rows) {
     if (!rows.length) {
-        return '<tr><td colspan="6" style="text-align:center;color:#94a3b8;font-size:10px;padding:10px 6px;">Sin productos para esta sucursal</td></tr>';
+        return '<tr><td colspan="5" style="text-align:center;font-size:10px;padding:10px 6px;color:#555;">Sin productos para esta sucursal</td></tr>';
     }
     return sortRows(rows).map((r, i) => {
-        const bg = i % 2 === 1 ? 'background:#f8fafc;' : '';
+        const bg  = i % 2 === 1 ? 'background:#f2f2f2;' : '';
+        const bb  = 'border-bottom:1px solid #ccc;';
+        const br  = 'border-right:1px solid #ddd;';
+        // AB badge: outline only — visible in B&W
         const abBadge = r.es_antibiotico
-            ? `<span style="display:inline-block;margin-left:4px;padding:0 3px;border-radius:2px;background:#ede9fe;border:1px solid #c4b5fd;font-size:7px;font-weight:700;color:#6d28d9;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;line-height:13px;">AB</span>`
+            ? `<span style="display:inline-block;margin-left:4px;padding:0 3px;border:1.5px solid #000;font-size:7px;font-weight:700;color:#000;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;line-height:13px;">AB</span>`
             : '';
-        const bb = 'border-bottom:1px solid #e2e8f0;';
+        // Merged cant + tipo: "1 CAJA", "3 FRASCO", "100" (for UND)
+        const cantDisplay = fmtCant(r.qty, r.presentacion_tipo);
         return `<tr style="${bg}">
-            <td style="${bb}padding:3px 6px;font-size:9.5px;color:#1e293b;border-right:1px solid #eef2f7;max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.product_name)}${abBadge}</td>
-            <td style="${bb}padding:3px 5px;font-size:8px;color:#64748b;border-right:1px solid #eef2f7;white-space:nowrap;">${esc(r.laboratorio) || '—'}</td>
-            <td style="${bb}padding:3px 5px;font-size:14px;font-weight:800;color:#0f172a;text-align:center;border-right:1px solid #eef2f7;">${r.qty}</td>
-            <td style="${bb}padding:3px 5px;font-size:8px;color:#64748b;border-right:1px solid #eef2f7;white-space:nowrap;">${esc(r.presentacion_tipo) || '—'}</td>
-            <td style="${bb}padding:3px 5px;border-right:1px solid #eef2f7;">${lotesText(r.lotes)}</td>
-            <td style="${bb}padding:3px 4px;text-align:center;"><span style="display:inline-block;width:13px;height:13px;border:1.5px solid #94a3b8;border-radius:2px;"></span></td>
+            <td style="${bb}${br}padding:3px 6px;font-size:9.5px;color:#000;white-space:normal;word-break:break-word;">${esc(r.product_name)}${abBadge}</td>
+            <td style="${bb}${br}padding:3px 5px;font-size:8px;color:#333;">${esc(r.laboratorio) || '—'}</td>
+            <td style="${bb}${br}padding:3px 5px;font-size:13px;font-weight:800;color:#000;text-align:center;white-space:nowrap;">${cantDisplay}</td>
+            <td style="${bb}${br}padding:3px 5px;">${lotesText(r.lotes, r.presentacion_tipo)}</td>
+            <td style="${bb}padding:3px 4px;text-align:center;"><span style="display:inline-block;width:13px;height:13px;border:1.5px solid #555;border-radius:2px;"></span></td>
         </tr>`;
     }).join('');
 }
@@ -102,30 +112,30 @@ function buildSection(sec, fecha, isLast) {
     if (sec.sinCount > 0) footerParts.push(`Sin stock en Bodega: <b>${sec.sinCount} producto(s)</b>`);
     if (sec.revCount  > 0) footerParts.push(`Sin asignación (revisar): <b>${sec.revCount}</b>`);
     const footerRow = footerParts.length
-        ? `<tr style="background:#fffbeb;"><td colspan="6" style="padding:4px 8px;font-size:9px;color:#92400e;border-top:1.5px solid #fde68a;">${footerParts.join('&nbsp; · &nbsp;')}</td></tr>`
+        ? `<tr style="background:#ebebeb;"><td colspan="5" style="padding:4px 8px;font-size:9px;color:#000;border-top:2px dashed #888;">${footerParts.join('&nbsp; · &nbsp;')}</td></tr>`
         : '';
 
     const pageBreak = isLast ? '' : 'break-after:page;page-break-after:always;';
 
-    const TH  = 'padding:4px 5px;font-size:7.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;background:#f8fafc;border-bottom:2px solid #cbd5e1;';
+    // Columns: Producto | Laboratorio | Cantidad | Lote(s) | ✓
+    const TH = 'padding:4px 5px;font-size:7.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.06em;background:#e0e0e0;border-bottom:2px solid #999;';
 
     return `
 <div style="${pageBreak}margin-bottom:10px;">
   <table>
     <thead>
-      <tr style="background:#0052CC;">
-        <th colspan="4" style="padding:6px 10px;font-size:11.5px;font-weight:700;color:#fff;text-align:left;letter-spacing:.01em;">
+      <tr style="background:#000;color:#fff;">
+        <th colspan="3" style="padding:6px 10px;font-size:11.5px;font-weight:700;text-align:left;letter-spacing:.01em;">
           Farmacia Farmalasa &mdash; ${esc(sec.nombre)}
         </th>
-        <th colspan="2" style="padding:6px 10px;font-size:9px;font-weight:400;color:#bfdbfe;text-align:right;white-space:nowrap;">
+        <th colspan="2" style="padding:6px 10px;font-size:9px;font-weight:400;text-align:right;white-space:nowrap;">
           ${sec.rows.length} productos &nbsp;·&nbsp; ${totalPacks} packs &nbsp;·&nbsp; ${esc(fecha)}
         </th>
       </tr>
       <tr>
-        <th style="${TH}text-align:left;width:36%;">Producto</th>
+        <th style="${TH}text-align:left;width:38%;">Producto</th>
         <th style="${TH}text-align:left;width:14%;">Laboratorio</th>
-        <th style="${TH}text-align:center;width:40px;">Cant.</th>
-        <th style="${TH}text-align:left;width:9%;">Presentación</th>
+        <th style="${TH}text-align:center;width:80px;">Cantidad</th>
         <th style="${TH}text-align:left;">Lote(s)</th>
         <th style="${TH}text-align:center;width:26px;">✓</th>
       </tr>
@@ -141,11 +151,11 @@ function buildSection(sec, fecha, isLast) {
 function buildSignatures(meta = {}) {
     const responsable  = meta.responsable || meta.generadoPor || null;
     const generadoLine = meta.generadoPor
-        ? `<p style="font-size:8.5px;color:#94a3b8;margin:0 0 8px;">Generado por: <b style="color:#475569;">${esc(meta.generadoPor)}</b>&nbsp; · &nbsp;${esc(fmtFechaLarga(new Date()))}</p>`
-        : `<p style="font-size:8.5px;color:#94a3b8;margin:0 0 8px;">${esc(fmtFechaLarga(new Date()))}</p>`;
+        ? `<p style="font-size:8.5px;color:#333;margin:0 0 8px;">Generado por: <b style="color:#000;">${esc(meta.generadoPor)}</b>&nbsp; · &nbsp;${esc(fmtFechaLarga(new Date()))}</p>`
+        : `<p style="font-size:8.5px;color:#333;margin:0 0 8px;">${esc(fmtFechaLarga(new Date()))}</p>`;
 
     const nameLine = (nombre) => nombre
-        ? `<div style="font-size:10px;font-weight:700;color:#1e293b;margin-bottom:4px;">${esc(nombre)}</div>`
+        ? `<div style="font-size:10px;font-weight:700;color:#000;margin-bottom:4px;">${esc(nombre)}</div>`
         : `<div style="height:28px;"></div>`;
 
     return `
@@ -155,42 +165,52 @@ function buildSignatures(meta = {}) {
     <tr>
       <td style="width:28%;text-align:center;vertical-align:bottom;padding:0 4px;">
         ${nameLine(responsable)}
-        <div style="border-top:1.5px solid #475569;padding-top:5px;font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">Responsable</div>
+        <div style="border-top:1.5px solid #000;padding-top:5px;font-size:9px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.05em;">Responsable</div>
       </td>
       <td style="width:28%;text-align:center;vertical-align:bottom;padding:0 4px;">
         ${nameLine(meta.revisor ?? null)}
-        <div style="border-top:1.5px solid #475569;padding-top:5px;font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">Revisado por</div>
+        <div style="border-top:1.5px solid #000;padding-top:5px;font-size:9px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.05em;">Revisado por</div>
       </td>
       <td style="width:22%;text-align:center;vertical-align:bottom;padding:0 4px;">
         <div style="height:28px;"></div>
-        <div style="border-top:1.5px solid #475569;padding-top:5px;font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">Autoriza</div>
+        <div style="border-top:1.5px solid #000;padding-top:5px;font-size:9px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.05em;">Autoriza</div>
       </td>
       <td style="width:22%;vertical-align:bottom;padding:0 4px;">
-        <div style="border:1.5px solid #cbd5e1;border-radius:5px;height:52px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#cbd5e1;letter-spacing:.08em;text-transform:uppercase;">Sello</div>
+        <div style="border:1.5px solid #000;border-radius:5px;height:52px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#555;letter-spacing:.08em;text-transform:uppercase;">Sello</div>
       </td>
     </tr>
   </table>
 </div>`;
 }
 
+// Blob URL approach: browser shows <title> (order code) in print header, not "about:srcdoc"
 function printHtml(html) {
+    const blob    = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const blobUrl = URL.createObjectURL(blob);
+
     const iframe = document.createElement('iframe');
     iframe.setAttribute('aria-hidden', 'true');
     iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
     document.body.appendChild(iframe);
+
+    const cleanup = () => {
+        iframe.remove();
+        URL.revokeObjectURL(blobUrl);
+    };
+
     iframe.onload = () => {
         try {
             iframe.contentWindow.focus();
             iframe.contentWindow.print();
-        } catch (err) {
-            iframe.remove();
+        } catch (_) {
+            cleanup();
             return;
         }
-        const cleanup = () => iframe.remove();
         try { iframe.contentWindow.addEventListener('afterprint', cleanup, { once: true }); } catch (_) { /* noop */ }
         setTimeout(cleanup, 120_000);
     };
-    iframe.srcdoc = html;
+
+    iframe.src = blobUrl;
 }
 
 function openPrintWindow(sections, title, meta = {}) {
@@ -204,8 +224,8 @@ function openPrintWindow(sections, title, meta = {}) {
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   @page{size:letter portrait;margin:10mm 9mm 12mm;}
-  body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;background:#fff;font-size:10px;}
-  table{width:100%;border-collapse:collapse;border:1px solid #cbd5e1;table-layout:fixed;}
+  body{font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;font-size:10px;}
+  table{width:100%;border-collapse:collapse;border:1px solid #999;table-layout:fixed;}
   thead{display:table-header-group;}
   tbody{display:table-row-group;}
   tr{page-break-inside:avoid;break-inside:avoid;}
@@ -213,7 +233,7 @@ function openPrintWindow(sections, title, meta = {}) {
   .sig-block{
     margin-top:20px;
     padding-top:10px;
-    border-top:2px solid #0f172a;
+    border-top:2px solid #000;
     page-break-inside:avoid;
     break-inside:avoid;
     break-before:avoid;
@@ -346,6 +366,8 @@ export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, titleOv
             presentacion_tipo: r.presentaciones?.tipo ?? '',
             es_antibiotico:    r.products?.es_antibiotico ?? false,
             qty:               r.cantidad_asignada ?? 0,
+            // lotes_asignados stored in DB may have {cantidad} or {packs} instead of {take};
+            // lotesText is defensive and reads l.take ?? l.cantidad ?? l.packs
             lotes:             Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
         }));
         return {

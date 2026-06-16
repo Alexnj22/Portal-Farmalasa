@@ -228,6 +228,18 @@ export default function TabGenerar({ searchTerm = '' }) {
         return m;
     }, [dashStats]);
 
+    // Ranking de urgencia — mayor avg_urgencia_pct primero
+    const urgRankMap = useMemo(() => {
+        const sorted = [...SUCURSALES].sort((a, b) => {
+            const pa = statMap[a]?.avg_urgencia_pct ?? -1;
+            const pb = statMap[b]?.avg_urgencia_pct ?? -1;
+            return pb - pa;
+        });
+        const m = {};
+        sorted.forEach((id, i) => { m[id] = i + 1; });
+        return m;
+    }, [statMap]);
+
     // urgLevel: 'high' ≥65% depleción · 'mid' ≥40% · 'low' <40% · 'none' sin datos
     const getUrgLevel = (stat) => {
         const pct = stat?.avg_urgencia_pct;
@@ -423,10 +435,15 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 {/* Shimmer line — siempre visible, más brillante al seleccionar */}
                                 <span className={`absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent ${isOn ? 'via-white' : 'via-white/70'} to-transparent pointer-events-none`} />
 
-                                {/* Urgency % badge — top-left, siempre visible */}
+                                {/* Ranking + urgency % badge — top-left, siempre visible */}
                                 {stat && !dashLoading && urgPct != null && urgPct > 0 && (
-                                    <span className={`absolute top-2 left-2 min-w-[28px] h-4 px-1 rounded-full flex items-center justify-center text-[8px] font-black leading-none border ${urgBadgeCls}`}>
-                                        {urgPct}%
+                                    <span className="absolute top-2 left-2 flex items-center gap-1 z-10">
+                                        <span className="min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[8px] font-black leading-none bg-slate-700 text-white">
+                                            {urgRankMap[id]}
+                                        </span>
+                                        <span className={`min-w-[28px] h-4 px-1 rounded-full flex items-center justify-center text-[8px] font-black leading-none border ${urgBadgeCls}`}>
+                                            {urgPct}%
+                                        </span>
                                     </span>
                                 )}
 

@@ -67,8 +67,8 @@ function sortRows(rows) {
 const COLGROUP = `<colgroup>
   <col style="width:16%"><col style="width:31%"><col style="width:13%"><col style="width:9%"><col style="width:25%"><col style="width:6%">
 </colgroup>`;
-const TH_S = 'display:flex;align-items:center;padding:3px 5px;font-size:7.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.06em;border-right:1px solid #bbb;overflow:hidden;';
-const TD_S = 'display:flex;align-items:center;padding:2px 5px;border-right:1px solid #ddd;font-size:9px;word-break:break-word;overflow:hidden;min-height:16px;';
+const TH_S = 'padding:3px 5px;font-size:7.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.06em;border-right:1px solid #bbb;overflow:hidden;text-align:left;vertical-align:middle;';
+const TD_S = 'padding:2px 5px;border-right:1px solid #ddd;font-size:9px;word-break:break-word;overflow:hidden;min-height:16px;text-align:left;vertical-align:middle;';
 const BADGE_AB    = 'display:inline-block;margin-left:4px;padding:1px 4px;border:1.3px solid #000;border-radius:2px;font-size:6.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;vertical-align:middle;line-height:1.3;';
 const BADGE_REGLA = 'display:inline-block;margin-left:4px;width:11px;height:11px;border:1.3px solid #000;border-radius:50%;font-size:7px;font-weight:800;line-height:11px;text-align:center;vertical-align:middle;';
 
@@ -77,9 +77,9 @@ function colHeaderHtml() {
   <th style="${TH_S}">Laboratorio</th>
   <th style="${TH_S}">Producto</th>
   <th style="${TH_S}">Presentación</th>
-  <th style="${TH_S}justify-content:center;">Cant.</th>
+  <th style="${TH_S}text-align:center;">Cant.</th>
   <th style="${TH_S}">Lote</th>
-  <th style="${TH_S}border-right:none;justify-content:center;">✓</th>
+  <th style="${TH_S}border-right:none;text-align:center;">✓</th>
 </tr></thead>`;
 }
 
@@ -99,9 +99,9 @@ function productRowsHtml(r, idx) {
   <td style="${TD_S}font-size:8px;color:#333;">${first ? (esc(r.laboratorio) || '—') : ''}</td>
   <td style="${TD_S}font-size:9.5px;">${first ? `${esc(r.product_name)}${abBadge}${reglaBadge}` : ''}</td>
   <td style="${TD_S}font-size:8px;color:#333;">${first ? (esc(r.presentacion_tipo) || '—') : ''}</td>
-  <td style="${TD_S}justify-content:center;font-size:11px;font-weight:700;">${first ? r.qty : ''}</td>
+  <td style="${TD_S}text-align:center;font-size:11px;font-weight:700;">${first ? r.qty : ''}</td>
   <td style="${TD_S}">${loteCellHtml(lot)}</td>
-  <td style="${TD_S}border-right:none;justify-content:center;"><span style="display:inline-block;width:11px;height:11px;border:1.5px solid #555;border-radius:2px;flex-shrink:0;"></span></td>
+  <td style="${TD_S}border-right:none;text-align:center;"><span style="display:inline-block;width:11px;height:11px;border:1.5px solid #555;border-radius:2px;"></span></td>
 </tr>`;
     }).join('');
 }

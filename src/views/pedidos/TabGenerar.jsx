@@ -168,6 +168,9 @@ export default function TabGenerar({ searchTerm = '' }) {
                 min_qty_snapshot:      row.min_qty,
                 urgencia_pct_snapshot: row.urgencia_pct,
                 lotes_asignados:       fefoProject(row.lotes_bodega, row.cantidad_asignada),
+                factor:                row.factor,
+                dispatch_tipo:         row.dispatch_tipo,
+                dispatch_factor:       row.dispatch_factor,
             }));
             const esEmpleado = employees.some(e => e.id === user?.id);
             const { data: pedidoId, error: confErr } = await supabase.rpc('confirm_pedido', {

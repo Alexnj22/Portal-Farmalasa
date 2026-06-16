@@ -100,12 +100,12 @@ function buildProductRows(rows) {
             });
         }
 
-        const labCell  = { text: r.laboratorio || '—', fillColor: bg, fontSize: 7, color: '#333', margin: [0, 2, 0, 2] };
-        const prodCell = { stack: productStack, fillColor: bg, margin: [0, 2, 0, 2] };
-        const presCell = { text: r.presentacion_tipo || '—', fillColor: bg, fontSize: 7, color: '#333', margin: [0, 2, 0, 2] };
-        const qtyCell  = { text: String(r.qty), fillColor: bg, fontSize: 9.5, bold: true, alignment: 'center', margin: [0, 2, 0, 2] };
+        const labCell  = { text: r.laboratorio || '—', fillColor: bg, fontSize: 7, color: '#333', margin: [0, 2, 0, 2], verticalAlignment: 'middle' };
+        const prodCell = { stack: productStack, fillColor: bg, margin: [0, 2, 0, 2], verticalAlignment: 'middle' };
+        const presCell = { text: r.presentacion_tipo || '—', fillColor: bg, fontSize: 7, color: '#333', margin: [0, 2, 0, 2], verticalAlignment: 'middle' };
+        const qtyCell  = { text: String(r.qty), fillColor: bg, fontSize: 9.5, bold: true, alignment: 'center', margin: [0, 2, 0, 2], verticalAlignment: 'middle' };
         const chkCell  = {
-            fillColor: bg, alignment: 'center', margin: [0, 4, 0, 0],
+            fillColor: bg, alignment: 'center', margin: [0, 0, 0, 0], verticalAlignment: 'middle',
             canvas: [{ type: 'rect', x: 0, y: 0, w: 8, h: 8, lineWidth: 1, lineColor: '#555' }],
         };
         const loteCell = loteStackNode(lts, bg);
@@ -239,6 +239,17 @@ function buildDocDefinition(sections, title, meta) {
         info: { title },
         defaultStyle: { fontSize: 9 },
         content,
+        // Pie de página repetido en cada hoja, dentro del margen inferior
+        // (no compite por espacio con el contenido): paginación al centro,
+        // firmas de revisado/recibido a los lados.
+        footer: (currentPage, pageCount) => ({
+            margin: [PAGE_MARGINS[0], 6, PAGE_MARGINS[2], 0],
+            columns: [
+                { text: 'Revisado por: ________________________', fontSize: 6.5, color: '#555' },
+                { text: `${currentPage} / ${pageCount}`, fontSize: 6.5, color: '#555', alignment: 'center' },
+                { text: 'Recibido por: ________________________', fontSize: 6.5, color: '#555', alignment: 'right' },
+            ],
+        }),
     };
 }
 
@@ -308,6 +319,17 @@ function lotesToDispatch(lotes, erpFactor, dispFactor) {
     return (lotes ?? [])
         .map(l => ({ ...l, packs: Math.floor((l.packs ?? 0) * erpFactor / dispFactor) }))
         .filter(l => l.packs > 0);
+}
+
+// lotes_asignados (ya persistidos en pedido_items) traen la cantidad tomada de
+// cada lote en `take`, en unidades ERP — a diferencia de lotesToDispatch (que
+// convierte disponibilidad de bodega en `packs` antes del FEFO). Aquí solo hay
+// que reexpresar ese `take` ya asignado en la presentación de despacho.
+function lotesAsignadosToDispatch(lotes, erpFactor, dispFactor) {
+    if (!dispFactor || dispFactor === erpFactor) return lotes ?? [];
+    return (lotes ?? [])
+        .map(l => ({ ...l, take: toDispatch(l.take ?? l.cantidad ?? l.packs ?? 0, erpFactor, dispFactor) }))
+        .filter(l => l.take > 0);
 }
 
 export function printPerSucursal(grouped, sortedSucIds, getAdjusted, codigoFn, meta = {}) {
@@ -413,16 +435,23 @@ export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, titleOv
         .replace(/\//g, '-');
 
     const sections = sucGroups.map(([sucId, rows]) => {
-        const sent = rows.filter(r => !r.sin_stock);
-        const printRows = sent.map(r => ({
-            product_name:      r.products?.nombre ?? '?',
-            laboratorio:       r.products?.laboratorios?.nombre ?? '',
-            presentacion_tipo: r.presentaciones?.tipo ?? '',
-            es_antibiotico:    r.products?.es_antibiotico ?? false,
-            qty:               r.cantidad_asignada ?? 0,
-            // lotes_asignados from DB may have {cantidad} or {packs} instead of {take}
-            lotes:             Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
-        }));
+        const printRows = rows.filter(r => !r.sin_stock).map(r => {
+            const erpFactor  = r.factor ?? 1;
+            const dispFactor = r.dispatch_factor ?? erpFactor;
+            const dispTipo   = r.dispatch_tipo ?? r.presentaciones?.tipo ?? '';
+            const qty        = toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor);
+            return {
+                product_name:      r.products?.nombre ?? '?',
+                laboratorio:       r.products?.laboratorios?.nombre ?? '',
+                presentacion_tipo: dispTipo,
+                es_antibiotico:    r.products?.es_antibiotico ?? false,
+                qty,
+                lotes: lotesAsignadosToDispatch(
+                    Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
+                    erpFactor, dispFactor,
+                ),
+            };
+        }).filter(r => r.qty > 0);
         return {
             sucId,
             nombre:   ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,

@@ -311,6 +311,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                     max_qty_snapshot, stock_packs_snapshot,
                     status, nota_diferencia, error_tipo, received_at, received_by,
                     lotes_asignados,
+                    factor, dispatch_tipo, dispatch_factor,
                     products ( nombre, es_antibiotico, laboratorios ( nombre ) ),
                     presentaciones ( tipo )
                 `)

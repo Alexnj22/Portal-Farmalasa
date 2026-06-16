@@ -88,10 +88,10 @@ function loteStackNode(lotes, bg) {
     // Producto sin lote registrado (genérico / no se rastrea por lote): celda
     // en blanco, sin "—" — el guion daba la impresión de un dato faltante por
     // error cuando en realidad ese producto simplemente no maneja lotes.
-    if (!lotes.length) return { text: '', fillColor: bg };
+    if (!lotes.length) return { text: '', fillColor: bg, verticalAlignment: 'middle' };
     const lines = lotes.map((lot) => loteCellNode(lot, bg));
     lines.forEach((l, i) => { l.margin = [0, i === 0 ? 2 : 1, 0, i === lines.length - 1 ? 2 : 1]; });
-    return { stack: lines, fillColor: bg };
+    return { stack: lines, fillColor: bg, verticalAlignment: 'middle' };
 }
 
 function buildProductRows(rows) {
@@ -103,7 +103,12 @@ function buildProductRows(rows) {
         const productStack = [{ text: r.product_name || '', fontSize: 8.5 }];
         if (r.es_antibiotico) {
             productStack.push({
-                text: 'BAJO RECETA', fontSize: 5.5, bold: true, margin: [0, 2, 0, 0],
+                columns: [{
+                    width: 'auto',
+                    table: { body: [[{ text: 'BAJO RECETA', fontSize: 5.5, bold: true, color: '#92400e', margin: [3, 1.5, 3, 1.5] }]] },
+                    layout: { fillColor: () => '#fde68a', hLineWidth: () => 0, vLineWidth: () => 0, paddingLeft: () => 0, paddingRight: () => 0, paddingTop: () => 0, paddingBottom: () => 0 },
+                }],
+                margin: [0, 2, 0, 0],
             });
         }
 

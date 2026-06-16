@@ -1059,7 +1059,7 @@ function ExpandedPanel({ row, cycleDays }) {
                                         {!branchReady
                                             ? <Loader2 size={10} className="animate-spin text-slate-300" />
                                             : <div className="flex flex-col gap-1">
-                                                {ERP_ORDER.map(erpId => {
+                                                {ERP_ORDER.filter(id => id !== 6).map(erpId => {
                                                     const bd = branchData?.find(b => b.erp_sucursal_id === erpId);
                                                     if (!bd) return null;
                                                     const bMin = Number(bd.effective_min ?? 0);
@@ -1071,7 +1071,7 @@ function ExpandedPanel({ row, cycleDays }) {
                                                     return (
                                                         <div key={erpId} className="flex items-center gap-1.5 text-[10px]">
                                                             <span className="text-slate-400 shrink-0 w-9 text-[8px] truncate">
-                                                                {(ERP_NAMES[erpId] ?? `S${erpId}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.').replace('Bodega', 'Bod.')}
+                                                                {(ERP_NAMES[erpId] ?? `S${erpId}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
                                                             </span>
                                                             <span className="text-orange-500 font-black tabular-nums">{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
                                                             <span className="text-slate-300">·</span>
@@ -1084,6 +1084,13 @@ function ExpandedPanel({ row, cycleDays }) {
                                                         </div>
                                                     );
                                                 })}
+                                                {ERP_ORDER.filter(id => id !== 6).every(id => {
+                                                    const bd = branchData?.find(b => b.erp_sucursal_id === id);
+                                                    if (!bd) return true;
+                                                    return Number(bd.effective_min ?? 0) === 0 && Number(bd.effective_max ?? 0) === 0 && bd.draft_status !== 'pending';
+                                                }) && (
+                                                    <span className="text-[9px] text-rose-400 font-semibold italic">Sin MIN·MAX en ninguna sala</span>
+                                                )}
                                             </div>
                                         }
                                     </div>
@@ -3135,6 +3142,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
                                                     {hasDraft && !isBodega && <span className="shrink-0 text-[8px] font-black text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
                                                     {hasDraft && isBodega && <span className="shrink-0 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">SUC. PEND.</span>}
+                                                    {isBodega && (
+                                                        (hasDraft && Number(row.draft_min ?? 0) === 0 && Number(row.draft_max ?? 0) === 0) ||
+                                                        (!hasDraft && Number(row.min_units ?? 0) === 0 && Number(row.max_units ?? 0) === 0 && row.has_manual)
+                                                    ) && <span className="shrink-0 text-[8px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full" title="Retirado de MIN·MAX en todas las salas">SIN SALAS</span>}
                                                     {limitedData && (
                                                         <span title={`Solo ${row.draft_data_days} días de historial de compras (ventana: ${analysisConfig.analysis_days} días)`}
                                                             className="shrink-0 text-[8px] font-black text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-full cursor-help">

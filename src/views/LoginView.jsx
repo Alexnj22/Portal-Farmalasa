@@ -84,10 +84,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     stopCameraSafely(); setScannerActive(false);
                     setScanFeedback({ status: 'reading', code: scannedCode, message: 'Verificando...' });
                     setIsLoading(true);
-                    const success = await login(scannedCode);
-                    if (!success) {
+                    const loginResult = await login(scannedCode);
+                    if (!loginResult.ok) {
                         if (inputRef.current) inputRef.current.value = '';
-                        setScanFeedback({ status: 'error', code: scannedCode, message: 'Inválido. Reabriendo cámara...' });
+                        setScanFeedback({ status: 'error', code: scannedCode, message: loginResult.error || 'Inválido. Reabriendo cámara...' });
                         setIsLoading(false);
                         setTimeout(() => { if (loginModeRef.current === 'code') { setScanFeedback(null); setScannerActive(true); } }, 1000);
                     } else { setScanFeedback({ status: 'success', code: scannedCode, message: '¡Acceso concedido!' }); }
@@ -143,8 +143,8 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         if (!code.trim()) { setError('Por favor, ingresa tu código.'); return; }
         setIsLoading(true);
         try {
-            const success = await login(code);
-            if (!success) { if (inputRef.current) inputRef.current.value = ''; setError('Código inválido. Intenta de nuevo.'); setIsLoading(false); inputRef.current?.focus(); }
+            const result = await login(code);
+            if (!result.ok) { if (inputRef.current) inputRef.current.value = ''; setError(result.error || 'Código inválido. Intenta de nuevo.'); setIsLoading(false); inputRef.current?.focus(); }
         } catch { setError('Error de conexión. Intenta de nuevo.'); setIsLoading(false); if (inputRef.current) inputRef.current.value = ''; inputRef.current?.focus(); }
     };
 

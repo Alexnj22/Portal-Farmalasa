@@ -14,6 +14,26 @@ export const useAuth = () => {
 const withTimeout = (promise, ms, label = "timeout") =>
   Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error(label)), ms))]);
 
+// Transient DNS/network failures (ERR_NAME_NOT_RESOLVED, etc.) surface as "Failed to fetch"
+// from the browser's fetch API, regardless of which Supabase client (auth/postgrest/functions) made the call.
+const NETWORK_ERROR_MSG = 'No se pudo conectar a internet. Revisa tu WiFi/datos e intenta de nuevo.';
+const isNetworkError = (err) => {
+  if (!err) return false;
+  const text = String(err.message || err.name || '');
+  return err.name === 'AuthRetryableFetchError' || /Failed to fetch|NetworkError|Load failed/i.test(text);
+};
+// Retries a Supabase call ({data,error} shape) up to `attempts` times when the failure
+// looks like a transient network blip — most DNS/connectivity hiccups clear within a couple seconds.
+const withNetworkRetry = async (fn, attempts = 3, delayMs = 1200) => {
+  let result;
+  for (let i = 0; i < attempts; i++) {
+    result = await fn();
+    if (!isNetworkError(result?.error)) return result;
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, delayMs));
+  }
+  return result;
+};
+
 // -------------------------
 // ⏱️ Configuraciones de Sesión e Inactividad
 // -------------------------
@@ -345,25 +365,26 @@ export const AuthProvider = ({ children }) => {
   // -------------------------
   const login = async (identifier) => {
     const cleanId = String(identifier ?? '').trim().toUpperCase();
-    if (!cleanId) return false;
+    if (!cleanId) return { ok: false };
     try {
-      const { data: ensured, error: fnErr } = await supabase.functions.invoke('ensure_user_by_code', {
-        body: { code: cleanId },
-      });
-      if (fnErr || !ensured?.ok || !ensured?.user?.email) return false;
+      const { data: ensured, error: fnErr } = await withNetworkRetry(() =>
+        supabase.functions.invoke('ensure_user_by_code', { body: { code: cleanId } })
+      );
+      if (isNetworkError(fnErr)) return { ok: false, error: NETWORK_ERROR_MSG };
+      if (fnErr || !ensured?.ok || !ensured?.user?.email) return { ok: false };
 
-      const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
-        email: ensured.user.email,
-        password: cleanId,
-      });
-      if (authErr || !authData?.session) return false;
+      const { data: authData, error: authErr } = await withNetworkRetry(() =>
+        supabase.auth.signInWithPassword({ email: ensured.user.email, password: cleanId })
+      );
+      if (isNetworkError(authErr)) return { ok: false, error: NETWORK_ERROR_MSG };
+      if (authErr || !authData?.session) return { ok: false };
 
       clearErpCache();
       writeLastActivity(true);
-      return true;
+      return { ok: true };
       // El perfil llega vía onAuthStateChange
-    } catch {
-      return false;
+    } catch (err) {
+      return { ok: false, error: isNetworkError(err) ? NETWORK_ERROR_MSG : undefined };
     }
   };
 
@@ -373,7 +394,9 @@ export const AuthProvider = ({ children }) => {
   const loginWithEmail = async (email, password) => {
     skipAuthListener.current = true;
     try {
-      const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({ email, password });
+      const { data: authData, error: authErr } = await withNetworkRetry(() =>
+        supabase.auth.signInWithPassword({ email, password })
+      );
       if (authErr || !authData?.session) {
         skipAuthListener.current = false;
         return false;
@@ -385,9 +408,9 @@ export const AuthProvider = ({ children }) => {
       const cleanCode = String(code || '').trim().toUpperCase();
       if (!cleanCode) { skipAuthListener.current = false; return false; }
 
-      const { data: ensured, error: fnErr } = await supabase.functions.invoke('ensure_user_by_code', {
-        body: { code: cleanCode },
-      });
+      const { data: ensured, error: fnErr } = await withNetworkRetry(() =>
+        supabase.functions.invoke('ensure_user_by_code', { body: { code: cleanCode } })
+      );
       if (fnErr || !ensured?.ok || !ensured?.user) { skipAuthListener.current = false; return false; }
 
       const u = ensured.user;
@@ -414,10 +437,13 @@ export const AuthProvider = ({ children }) => {
       const cleanUsername = username.toLowerCase().trim();
       const emailToLogin  = `${cleanUsername}@farmalasa.app`;
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email: emailToLogin, password });
+      const { data, error } = await withNetworkRetry(() =>
+        supabase.auth.signInWithPassword({ email: emailToLogin, password })
+      );
 
       if (error) {
         skipAuthListener.current = false;
+        if (isNetworkError(error)) return { ok: false, error: NETWORK_ERROR_MSG };
         return error.message.includes('Invalid login credentials')
           ? { ok: false, error: 'Usuario no encontrado o contraseña incorrecta.' }
           : { ok: false, error: error.message };
@@ -428,14 +454,13 @@ export const AuthProvider = ({ children }) => {
         return { ok: false, error: 'Error de sesión. Intenta de nuevo.' };
       }
 
-      const { data: emp, error: empError } = await supabase
-        .from('employees_safe')
-        .select('*')
-        .eq('username', cleanUsername)
-        .single();
+      const { data: emp, error: empError } = await withNetworkRetry(() =>
+        supabase.from('employees_safe').select('*').eq('username', cleanUsername).single()
+      );
 
       if (empError && empError.code !== 'PGRST116') {
         skipAuthListener.current = false;
+        if (isNetworkError(empError)) return { ok: false, error: NETWORK_ERROR_MSG };
         return { ok: false, error: 'Error de conexión. Intenta de nuevo.' };
       }
       if (!emp) {
@@ -471,9 +496,9 @@ export const AuthProvider = ({ children }) => {
       setUser(u);
       startIdleWatcher(u);
       return { ok: true };
-    } catch {
+    } catch (err) {
       skipAuthListener.current = false;
-      return { ok: false, error: 'Error de conexión con el servidor.' };
+      return { ok: false, error: isNetworkError(err) ? NETWORK_ERROR_MSG : 'Error de conexión con el servidor.' };
     }
   };
 

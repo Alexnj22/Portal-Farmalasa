@@ -70,7 +70,6 @@ const COLGROUP = `<colgroup>
 const TH_S = 'padding:3px 5px;font-size:7.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.06em;border-right:1px solid #bbb;overflow:hidden;text-align:left;vertical-align:middle;';
 const TD_S = 'padding:2px 5px;border-right:1px solid #ddd;font-size:9px;word-break:break-word;overflow:hidden;min-height:16px;text-align:left;vertical-align:middle;';
 const BADGE_AB    = 'display:inline-block;margin-left:4px;padding:1px 4px;border:1.3px solid #000;border-radius:2px;font-size:6.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;vertical-align:middle;line-height:1.3;';
-const BADGE_REGLA = 'display:inline-block;margin-left:4px;width:11px;height:11px;border:1.3px solid #000;border-radius:50%;font-size:7px;font-weight:800;line-height:11px;text-align:center;vertical-align:middle;';
 
 function colHeaderHtml() {
     return `<thead><tr style="background:#e0e0e0;border-bottom:2px solid #999;">
@@ -83,26 +82,27 @@ function colHeaderHtml() {
 </tr></thead>`;
 }
 
-// Un producto con varios lotes genera varias filas (una por lote), por fila completa
-// en lugar de apilarlas dentro de una sola celda. Lab/Producto/Presentación/Cant solo
-// se imprimen en la primera fila; las filas de continuación quedan vacías ahí.
+// Un producto con varios lotes genera varias filas (una por lote). Lab/Producto/
+// Presentación/Cant/✓ usan rowspan para fusionarse en un solo bloque centrado
+// verticalmente sobre todas las filas de lote — no se repiten ni quedan vacías.
 function productRowsHtml(r, idx) {
-    const bg        = idx % 2 === 1 ? 'background:#f2f2f2;' : 'background:#fff;';
-    const abBadge   = r.es_antibiotico ? `<span style="${BADGE_AB}">Bajo Receta</span>` : '';
-    const reglaBadge = r.tiene_regla ? `<span style="${BADGE_REGLA}" title="Regla de despacho aplicada">R</span>` : '';
-    const lts = (r.lotes && r.lotes.length) ? r.lotes : [null];
+    const bg      = idx % 2 === 1 ? '#f2f2f2' : '#fff';
+    const abBadge = r.es_antibiotico ? `<span style="${BADGE_AB}">Bajo Receta</span>` : '';
+    const lts     = (r.lotes && r.lotes.length) ? r.lotes : [null];
+    const n       = lts.length;
+    const topB    = 'border-top:1px solid #ccc;';
+
+    const mergedCells = `
+  <td rowspan="${n}" style="${TD_S}background:${bg};${topB}font-size:8px;color:#333;">${esc(r.laboratorio) || '—'}</td>
+  <td rowspan="${n}" style="${TD_S}background:${bg};${topB}font-size:9.5px;">${esc(r.product_name)}${abBadge}</td>
+  <td rowspan="${n}" style="${TD_S}background:${bg};${topB}font-size:8px;color:#333;">${esc(r.presentacion_tipo) || '—'}</td>
+  <td rowspan="${n}" style="${TD_S}background:${bg};${topB}text-align:center;font-size:11px;font-weight:700;">${r.qty}</td>`;
+    const checkCell = `<td rowspan="${n}" style="${TD_S}background:${bg};${topB}border-right:none;text-align:center;"><span style="display:inline-block;width:11px;height:11px;border:1.5px solid #555;border-radius:2px;"></span></td>`;
 
     return lts.map((lot, li) => {
-        const first      = li === 0;
-        const rowBorder  = first ? 'border-top:1px solid #ccc;' : 'border-top:1px dashed #ddd;';
-        return `<tr style="${bg}${rowBorder}break-inside:avoid;page-break-inside:avoid;">
-  <td style="${TD_S}font-size:8px;color:#333;">${first ? (esc(r.laboratorio) || '—') : ''}</td>
-  <td style="${TD_S}font-size:9.5px;">${first ? `${esc(r.product_name)}${abBadge}${reglaBadge}` : ''}</td>
-  <td style="${TD_S}font-size:8px;color:#333;">${first ? (esc(r.presentacion_tipo) || '—') : ''}</td>
-  <td style="${TD_S}text-align:center;font-size:11px;font-weight:700;">${first ? r.qty : ''}</td>
-  <td style="${TD_S}">${loteCellHtml(lot)}</td>
-  <td style="${TD_S}border-right:none;text-align:center;"><span style="display:inline-block;width:11px;height:11px;border:1.5px solid #555;border-radius:2px;"></span></td>
-</tr>`;
+        const first    = li === 0;
+        const loteCell = `<td style="${TD_S}background:${bg};${first ? topB : ''}">${loteCellHtml(lot)}</td>`;
+        return `<tr style="break-inside:avoid;page-break-inside:avoid;">${first ? mergedCells : ''}${loteCell}${first ? checkCell : ''}</tr>`;
     }).join('');
 }
 
@@ -225,6 +225,7 @@ function openPrintWindow(sections, title, meta = {}) {
   @page{size:letter portrait;margin:0;}
   body{font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;font-size:10px;padding:10mm 9mm 12mm;}
   table{border-collapse:collapse;}
+  thead{display:table-header-group;}
   td,th{vertical-align:bottom;}
   .sig-block{
     margin-top:20px;
@@ -232,17 +233,13 @@ function openPrintWindow(sections, title, meta = {}) {
     border-top:2px solid #000;
     page-break-inside:avoid;
     break-inside:avoid;
-    break-before:avoid;
   }
 </style>
 </head>
 <body>
 ${head}
-<div style="display:flex;flex-direction:column;min-height:calc(100vh - 14mm);">
-  ${lastHtml}
-  <div style="flex:1 0 auto;"></div>
-  ${buildSignatures(meta)}
-</div>
+${lastHtml}
+${buildSignatures(meta)}
 </body>
 </html>`;
 
@@ -288,7 +285,6 @@ export function printPerSucursal(grouped, sortedSucIds, getAdjusted, codigoFn, m
                     laboratorio:       row.laboratorio ?? '',
                     presentacion_tipo: dispTipo,
                     es_antibiotico:    row.es_antibiotico,
-                    tiene_regla:       !!row.tiene_regla_despacho,
                     qty,
                     lotes: fefoProject(lotesToDispatch(row.lotes_bodega, erpFactor, dispFactor), qty),
                 };
@@ -321,7 +317,6 @@ export function printFromPreview(grouped, sortedSucIds, getAdjusted, title, meta
                 laboratorio:       row.laboratorio ?? '',
                 presentacion_tipo: dispTipo,
                 es_antibiotico:    row.es_antibiotico,
-                tiene_regla:       !!row.tiene_regla_despacho,
                 qty,
                 lotes: fefoProject(lotesToDispatch(row.lotes_bodega, erpFactor, dispFactor), qty),
             };
@@ -359,7 +354,6 @@ export function printFromSnapshot(snapshot, meta = {}) {
                 laboratorio:       row.laboratorio ?? '',
                 presentacion_tipo: row.presentacion_tipo,
                 es_antibiotico:    row.es_antibiotico,
-                tiene_regla:       !!row.tiene_regla_despacho,
                 qty,
                 lotes: fefoProject(row.lotes_bodega, qty),
             };
@@ -386,7 +380,6 @@ export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, titleOv
             laboratorio:       r.products?.laboratorios?.nombre ?? '',
             presentacion_tipo: r.presentaciones?.tipo ?? '',
             es_antibiotico:    r.products?.es_antibiotico ?? false,
-            tiene_regla:       false,
             qty:               r.cantidad_asignada ?? 0,
             // lotes_asignados from DB may have {cantidad} or {packs} instead of {take}
             lotes:             Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],

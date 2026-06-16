@@ -1,8 +1,16 @@
 // ─── Pedido print utility ─────────────────────────────────────────────────────
-// B&W optimized. Blob URL + @page margin:0 eliminates browser header/footer.
-// Real <table><thead> layout: thead repeats natively on every printed page (Chrome),
-// no manual row-counting needed. break-inside:avoid on <tr> keeps rows intact.
-// qty is always in PACKS (cajas/frascos/blisters), not units.
+// Genera un PDF real con pdfmake (no HTML+CSS print): el encabezado de cada
+// tabla (título de sucursal + columnas) repite en TODAS las hojas vía
+// headerRows, los márgenes de página son exactos (sin recorte por margen de
+// hardware de la impresora) y las filas con varios lotes usan rowSpan nativo
+// — todo calculado por el mismo motor que dibuja el PDF, sin depender de cómo
+// cada navegador/impresora fragmenta HTML al imprimir.
+// qty siempre está en PACKS (cajas/frascos/blisters), no en unidades.
+
+import pdfMake from 'pdfmake/build/pdfmake';
+import vfsFonts from 'pdfmake/build/vfs_fonts';
+
+pdfMake.addVirtualFileSystem(vfsFonts);
 
 const ERP_NAMES_DEFAULT = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3',
@@ -12,14 +20,11 @@ const SUCURSALES_ORDER   = [5, 1, 2, 3, 4, 7];
 const SUCURSAL_CODES     = { 1: 'S1', 2: 'S2', 3: 'S3', 4: 'S4', 5: 'PO', 6: 'BO', 7: 'S5' };
 const TOTAL_NON_BODEGA   = 6;
 
-function esc(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
+// Letter = 612pt de ancho. Márgenes generosos (24pt ≈ 8.5mm, 30pt abajo)
+// para quedar siempre dentro del área imprimible real de cualquier impresora
+// (el margen de hardware típico es 4-6mm) — el PDF nunca se recorta.
+const PAGE_MARGINS  = [24, 22, 24, 30];
+const CONTENT_WIDTH = 612 - PAGE_MARGINS[0] - PAGE_MARGINS[2];
 
 export function fefoProject(lotes, qty) {
     if (!lotes || !lotes.length || qty <= 0) return [];
@@ -42,18 +47,6 @@ function fmtFechaLarga(date) {
     return date.toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
-// Una sola línea por lote (sin stack vertical) — la fila completa de la tabla es el lote.
-function loteCellHtml(lot) {
-    if (!lot) return '<span style="font-size:9px;color:#999;">—</span>';
-    const count = lot.take ?? lot.cantidad ?? lot.packs ?? '?';
-    const vence = fmtVence(lot.fecha_vencimiento);
-    const parts = [];
-    if (lot.lote) parts.push(`<b>${esc(lot.lote)}</b>`);
-    if (vence)  parts.push(`<i>${esc(vence)}</i>`);
-    parts.push(`<b>${count}pk</b>`);
-    return `<span style="font-size:8.5px;word-break:break-word;">${parts.join('&nbsp;·&nbsp;')}</span>`;
-}
-
 function sortRows(rows) {
     return [...rows].sort((a, b) =>
         (a.laboratorio || '').localeCompare(b.laboratorio || '', 'es')
@@ -61,124 +54,200 @@ function sortRows(rows) {
     );
 }
 
-// Tabla real con <thead>: el navegador repite el encabezado en cada hoja impresa
-// automáticamente (sin contar filas a mano). Orden: Laboratorio, Producto,
-// Presentación, Cantidad, Lote, Check.
-const COLGROUP = `<colgroup>
-  <col style="width:16%"><col style="width:31%"><col style="width:13%"><col style="width:9%"><col style="width:25%"><col style="width:6%">
-</colgroup>`;
-const TH_S = 'padding:3px 5px;font-size:7.5px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.06em;border-right:1px solid #bbb;overflow:hidden;text-align:left;vertical-align:middle;';
-const TD_S = 'padding:2px 5px;border-right:1px solid #ddd;font-size:9px;word-break:break-word;overflow:hidden;min-height:16px;text-align:left;vertical-align:middle;';
-const BADGE_AB    = 'display:inline-block;margin-left:4px;padding:1px 4px;border:1.3px solid #000;border-radius:2px;font-size:6.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;vertical-align:middle;line-height:1.3;';
+// ── Tabla por sucursal ──────────────────────────────────────────────────────
+// headerRows:2 -> pdfmake repite SIEMPRE las 2 primeras filas (título negro +
+// encabezado de columnas) al inicio de cada hoja que ocupe esta tabla.
+const COL_WIDTHS    = ['16%', '31%', '13%', '9%', '25%', '6%'];
+const HEADER_LABELS = ['Laboratorio', 'Producto', 'Presentación', 'Cant.', 'Lote', 'OK'];
 
-function colHeaderHtml() {
-    return `<thead><tr style="background:#e0e0e0;border-bottom:2px solid #999;">
-  <th style="${TH_S}">Laboratorio</th>
-  <th style="${TH_S}">Producto</th>
-  <th style="${TH_S}">Presentación</th>
-  <th style="${TH_S}text-align:center;">Cant.</th>
-  <th style="${TH_S}">Lote</th>
-  <th style="${TH_S}border-right:none;text-align:center;">✓</th>
-</tr></thead>`;
+function loteCellNode(lot, bg) {
+    if (!lot) return { text: '—', fontSize: 8, color: '#999', fillColor: bg, margin: [0, 2, 0, 2] };
+    const count = lot.take ?? lot.cantidad ?? lot.packs ?? '?';
+    const vence = fmtVence(lot.fecha_vencimiento);
+    const parts = [];
+    if (lot.lote) parts.push({ text: lot.lote, bold: true });
+    if (vence)    parts.push({ text: vence, italics: true });
+    parts.push({ text: `${count}pk`, bold: true });
+    const joined = [];
+    parts.forEach((p, i) => { if (i > 0) joined.push({ text: '  ·  ', color: '#999' }); joined.push(p); });
+    return { text: joined, fontSize: 7.5, fillColor: bg, margin: [0, 2, 0, 2] };
 }
 
-// Un producto con varios lotes genera varias filas (una por lote). Lab/Producto/
-// Presentación/Cant/✓ usan rowspan para fusionarse en un solo bloque centrado
-// verticalmente sobre todas las filas de lote — no se repiten ni quedan vacías.
-function productRowsHtml(r, idx) {
-    const bg      = idx % 2 === 1 ? '#f2f2f2' : '#fff';
-    const abBadge = r.es_antibiotico ? `<span style="${BADGE_AB}">Bajo Receta</span>` : '';
-    const lts     = (r.lotes && r.lotes.length) ? r.lotes : [null];
-    const n       = lts.length;
-    const topB    = 'border-top:1px solid #ccc;';
-
-    const mergedCells = `
-  <td rowspan="${n}" style="${TD_S}background:${bg};${topB}font-size:8px;color:#333;">${esc(r.laboratorio) || '—'}</td>
-  <td rowspan="${n}" style="${TD_S}background:${bg};${topB}font-size:9.5px;">${esc(r.product_name)}${abBadge}</td>
-  <td rowspan="${n}" style="${TD_S}background:${bg};${topB}font-size:8px;color:#333;">${esc(r.presentacion_tipo) || '—'}</td>
-  <td rowspan="${n}" style="${TD_S}background:${bg};${topB}text-align:center;font-size:11px;font-weight:700;">${r.qty}</td>`;
-    const checkCell = `<td rowspan="${n}" style="${TD_S}background:${bg};${topB}border-right:none;text-align:center;"><span style="display:inline-block;width:11px;height:11px;border:1.5px solid #555;border-radius:2px;"></span></td>`;
-
-    return lts.map((lot, li) => {
-        const first    = li === 0;
-        const loteCell = `<td style="${TD_S}background:${bg};${first ? topB : ''}">${loteCellHtml(lot)}</td>`;
-        return `<tr style="break-inside:avoid;page-break-inside:avoid;">${first ? mergedCells : ''}${loteCell}${first ? checkCell : ''}</tr>`;
-    }).join('');
+// Cada producto es UNA sola fila de tabla; sus lotes se apilan como líneas
+// dentro de la celda "Lote" (en vez de varias filas + rowSpan). pdfmake NO
+// garantiza que un grupo rowSpan se mantenga junto al paginar — lo divide
+// entre hojas y deja Lab/Producto/Cant en blanco en la continuación (bug
+// confirmado en pruebas). Con una fila por producto + dontBreakRows en la
+// tabla, cada producto es la unidad atómica que pdfmake mueve completa a la
+// siguiente hoja si no cabe, sin nunca cortar sus lotes a la mitad.
+function loteStackNode(lotes, bg) {
+    if (!lotes.length) return { text: '—', fontSize: 8, color: '#999', fillColor: bg, margin: [0, 2, 0, 2] };
+    const lines = lotes.map((lot) => loteCellNode(lot, bg));
+    lines.forEach((l, i) => { l.margin = [0, i === 0 ? 2 : 1, 0, i === lines.length - 1 ? 2 : 1]; });
+    return { stack: lines, fillColor: bg };
 }
 
-function buildSection(sec, fecha, isLast) {
+function buildProductRows(rows) {
+    const body = [];
+    sortRows(rows).forEach((r, idx) => {
+        const bg  = idx % 2 === 1 ? '#f2f2f2' : '#ffffff';
+        const lts = (r.lotes && r.lotes.length) ? r.lotes : [];
+
+        const productStack = [{ text: r.product_name || '', fontSize: 8.5 }];
+        if (r.es_antibiotico) {
+            productStack.push({
+                text: 'BAJO RECETA', fontSize: 5.5, bold: true, margin: [0, 2, 0, 0],
+            });
+        }
+
+        const labCell  = { text: r.laboratorio || '—', fillColor: bg, fontSize: 7, color: '#333', margin: [0, 2, 0, 2] };
+        const prodCell = { stack: productStack, fillColor: bg, margin: [0, 2, 0, 2] };
+        const presCell = { text: r.presentacion_tipo || '—', fillColor: bg, fontSize: 7, color: '#333', margin: [0, 2, 0, 2] };
+        const qtyCell  = { text: String(r.qty), fillColor: bg, fontSize: 9.5, bold: true, alignment: 'center', margin: [0, 2, 0, 2] };
+        const chkCell  = {
+            fillColor: bg, alignment: 'center', margin: [0, 4, 0, 0],
+            canvas: [{ type: 'rect', x: 0, y: 0, w: 8, h: 8, lineWidth: 1, lineColor: '#555' }],
+        };
+        const loteCell = loteStackNode(lts, bg);
+
+        body.push([labCell, prodCell, presCell, qtyCell, loteCell, chkCell]);
+    });
+    return body;
+}
+
+function buildSectionTable(sec, fecha) {
     const totalPacks = sec.rows.reduce((t, r) => t + r.qty, 0);
-    const pageBreak  = isLast ? '' : 'break-after:page;page-break-after:always;';
 
-    const footerParts = [];
-    if (sec.sinCount > 0) footerParts.push(`Sin stock en Bodega: <b>${sec.sinCount} producto(s)</b>`);
-    if (sec.revCount  > 0) footerParts.push(`Sin asignación (revisar): <b>${sec.revCount}</b>`);
-    const footer = footerParts.length
-        ? `<div style="padding:4px 8px;font-size:9px;color:#000;background:#ebebeb;border-top:2px dashed #888;">${footerParts.join('&nbsp;·&nbsp;')}</div>`
-        : '';
+    const titleRow = [
+        {
+            colSpan: 6, fillColor: '#000', margin: [8, 5, 8, 5],
+            columns: [
+                { text: `Farmacia Farmalasa  —  ${sec.nombre}`, color: '#fff', bold: true, fontSize: 10.5 },
+                { text: `${sec.rows.length} productos   ·   ${totalPacks} packs   ·   ${fecha}`, color: '#fff', fontSize: 7.5, alignment: 'right' },
+            ],
+        },
+        {}, {}, {}, {}, {},
+    ];
+
+    const headerRow = HEADER_LABELS.map((label, i) => ({
+        text: label, fillColor: '#e0e0e0', bold: true, fontSize: 6.5, color: '#000',
+        alignment: (i === 3 || i === 5) ? 'center' : 'left',
+        margin: [0, 3, 0, 3],
+    }));
 
     const bodyRows = sec.rows.length
-        ? sortRows(sec.rows).map((r, i) => productRowsHtml(r, i)).join('')
-        : `<tr><td colspan="6" style="padding:10px;text-align:center;font-size:10px;color:#555;">Sin productos para esta sucursal</td></tr>`;
+        ? buildProductRows(sec.rows)
+        : [[
+            { text: 'Sin productos para esta sucursal', colSpan: 6, alignment: 'center', fontSize: 9, color: '#555', margin: [0, 10, 0, 10] },
+            {}, {}, {}, {}, {},
+        ]];
 
-    return `
-<div style="${pageBreak}margin-bottom:10px;">
-  <div style="width:100%;border:1px solid #999;border-bottom:none;">
-    <div style="background:#000;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:5px 10px;">
-      <span style="font-size:11.5px;font-weight:700;letter-spacing:.01em;">Farmacia Farmalasa &mdash; ${esc(sec.nombre)}</span>
-      <span style="font-size:9px;font-weight:400;white-space:nowrap;">${sec.rows.length} productos &nbsp;·&nbsp; ${totalPacks} packs &nbsp;·&nbsp; ${esc(fecha)}</span>
-    </div>
-    <table style="width:100%;table-layout:fixed;border-collapse:collapse;">
-      ${COLGROUP}
-      ${colHeaderHtml()}
-      <tbody>${bodyRows}</tbody>
-    </table>
-    ${footer}
-  </div>
-</div>`;
+    return {
+        table: { headerRows: 2, dontBreakRows: true, widths: COL_WIDTHS, body: [titleRow, headerRow, ...bodyRows] },
+        layout: {
+            hLineWidth:  (i, node) => (i === 0 ? 0 : i === 2 ? 1.2 : i === node.table.body.length ? 0.8 : 0.5),
+            vLineWidth:  (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),
+            hLineColor:  (i) => (i === 2 ? '#999' : '#ddd'),
+            vLineColor:  () => '#ccc',
+            paddingLeft:  () => 5,
+            paddingRight: () => 5,
+            paddingTop:   () => 0,
+            paddingBottom: () => 0,
+        },
+    };
 }
 
-function buildSignatures(meta = {}) {
-    const responsable  = meta.responsable || meta.generadoPor || null;
-    const generadoLine = meta.generadoPor
-        ? `<p style="font-size:8.5px;color:#333;margin:0 0 8px;">Generado por: <b style="color:#000;">${esc(meta.generadoPor)}</b>&nbsp; · &nbsp;${esc(fmtFechaLarga(new Date()))}</p>`
-        : `<p style="font-size:8.5px;color:#333;margin:0 0 8px;">${esc(fmtFechaLarga(new Date()))}</p>`;
-
-    const nameLine = (nombre) => nombre
-        ? `<div style="font-size:10px;font-weight:700;color:#000;margin-bottom:4px;">${esc(nombre)}</div>`
-        : `<div style="height:28px;"></div>`;
-
-    return `
-<div class="sig-block">
-  ${generadoLine}
-  <table style="width:100%;border-collapse:separate;border-spacing:10px 0;">
-    <tbody>
-    <tr>
-      <td style="width:28%;text-align:center;vertical-align:bottom;padding:0 4px;">
-        ${nameLine(responsable)}
-        <div style="border-top:1.5px solid #000;padding-top:5px;font-size:9px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.05em;">Responsable</div>
-      </td>
-      <td style="width:28%;text-align:center;vertical-align:bottom;padding:0 4px;">
-        ${nameLine(meta.revisor ?? null)}
-        <div style="border-top:1.5px solid #000;padding-top:5px;font-size:9px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.05em;">Revisado por</div>
-      </td>
-      <td style="width:22%;text-align:center;vertical-align:bottom;padding:0 4px;">
-        <div style="height:28px;"></div>
-        <div style="border-top:1.5px solid #000;padding-top:5px;font-size:9px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.05em;">Autoriza</div>
-      </td>
-      <td style="width:22%;vertical-align:bottom;padding:0 4px;">
-        <div style="border:1.5px solid #000;border-radius:5px;height:52px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#555;letter-spacing:.08em;text-transform:uppercase;">Sello</div>
-      </td>
-    </tr>
-    </tbody>
-  </table>
-</div>`;
+function buildSectionFooter(sec) {
+    const parts = [];
+    if (sec.sinCount > 0) parts.push(`Sin stock en Bodega: ${sec.sinCount} producto(s)`);
+    if (sec.revCount  > 0) parts.push(`Sin asignación (revisar): ${sec.revCount}`);
+    if (!parts.length) return null;
+    return {
+        margin: [0, 0, 0, 10],
+        table: { widths: ['*'], body: [[
+            { text: parts.join('     ·     '), fontSize: 7.5, color: '#000', fillColor: '#ebebeb', margin: [8, 4, 8, 4] },
+        ]] },
+        layout: 'noBorders',
+    };
 }
 
-// Blob URL: browser shows <title> instead of "about:srcdoc".
-// @page margin:0: removes ALL browser header/footer (URL, page numbers, date).
-function printHtml(html) {
-    const blob    = new Blob([html], { type: 'text/html;charset=utf-8' });
+function sigColumn(nombre, label, width) {
+    return {
+        width,
+        stack: [
+            { text: nombre || ' ', fontSize: 9, bold: true, alignment: 'center', margin: [0, 0, 0, 4] },
+            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 140, y2: 0, lineWidth: 1.2, lineColor: '#000' }], alignment: 'center' },
+            { text: label, fontSize: 7.5, bold: true, alignment: 'center', color: '#000', margin: [0, 4, 0, 0] },
+        ],
+    };
+}
+
+// Bloque atómico (unbreakable): nunca se divide entre hojas — si no cabe en
+// la hoja actual, pdfmake lo mueve completo a la siguiente. Nada de hacks de
+// altura mínima que puedan generar una página en blanco.
+function buildSignaturesContent(meta = {}) {
+    const responsable = meta.responsable || meta.generadoPor || null;
+    const fecha        = fmtFechaLarga(new Date());
+    const generadoText = meta.generadoPor
+        ? [
+            { text: 'Generado por: ', fontSize: 8, color: '#333' },
+            { text: meta.generadoPor, fontSize: 8, bold: true, color: '#000' },
+            { text: `   ·   ${fecha}`, fontSize: 8, color: '#333' },
+        ]
+        : [{ text: fecha, fontSize: 8, color: '#333' }];
+
+    return {
+        unbreakable: true,
+        margin: [0, 18, 0, 0],
+        stack: [
+            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: CONTENT_WIDTH, y2: 0, lineWidth: 1.4, lineColor: '#000' }] },
+            { text: generadoText, margin: [0, 7, 0, 12] },
+            {
+                columns: [
+                    sigColumn(responsable, 'RESPONSABLE', '28%'),
+                    sigColumn(meta.revisor ?? null, 'REVISADO POR', '28%'),
+                    sigColumn(null, 'AUTORIZA', '22%'),
+                    {
+                        width: '22%',
+                        table: { widths: ['*'], body: [[
+                            { text: 'SELLO', fontSize: 8, color: '#777', alignment: 'center', margin: [0, 16, 0, 16] },
+                        ]] },
+                        layout: { hLineWidth: () => 1.2, vLineWidth: () => 1.2, hLineColor: () => '#000', vLineColor: () => '#000' },
+                    },
+                ],
+            },
+        ],
+    };
+}
+
+function buildDocDefinition(sections, title, meta) {
+    const fecha   = fmtFechaLarga(new Date());
+    const content = [];
+
+    sections.forEach((sec, i) => {
+        const table = buildSectionTable(sec, fecha);
+        if (i > 0) table.pageBreak = 'before';
+        content.push(table);
+        const footer = buildSectionFooter(sec);
+        if (footer) content.push(footer);
+    });
+    content.push(buildSignaturesContent(meta));
+
+    return {
+        pageSize: 'LETTER',
+        pageMargins: PAGE_MARGINS,
+        info: { title },
+        defaultStyle: { fontSize: 9 },
+        content,
+    };
+}
+
+// Genera el PDF real y lo carga en un iframe oculto para disparar el diálogo
+// de impresión nativo del visor de PDF del navegador — esto imprime la
+// geometría EXACTA del PDF (márgenes, encabezados repetidos, sin cortes),
+// sin depender de cómo cada navegador fragmenta HTML al imprimir.
+async function printPdf(docDefinition) {
+    const blob    = await pdfMake.createPdf(docDefinition).getBlob();
     const blobUrl = URL.createObjectURL(blob);
 
     const iframe = document.createElement('iframe');
@@ -192,58 +261,28 @@ function printHtml(html) {
     };
 
     iframe.onload = () => {
-        try {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-        } catch (_) {
-            cleanup();
-            return;
-        }
-        try { iframe.contentWindow.addEventListener('afterprint', cleanup, { once: true }); } catch (_) { /* noop */ }
-        setTimeout(cleanup, 120_000);
+        // El visor de PDF embebido tarda un instante en inicializar tras el
+        // evento load del iframe; sin este margen el print() puede disparar
+        // antes de que el visor esté listo.
+        setTimeout(() => {
+            try {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            } catch (_) {
+                cleanup();
+                return;
+            }
+            try { iframe.contentWindow.addEventListener('afterprint', cleanup, { once: true }); } catch (_) { /* noop */ }
+            setTimeout(cleanup, 120_000);
+        }, 300);
     };
 
     iframe.src = blobUrl;
 }
 
 function openPrintWindow(sections, title, meta = {}) {
-    const fecha = fmtFechaLarga(new Date());
-
-    const last = sections.length ? sections[sections.length - 1] : null;
-    const head = sections.length > 1
-        ? sections.slice(0, -1).map(s => buildSection(s, fecha, false)).join('\n')
-        : '';
-    const lastHtml = last ? buildSection(last, fecha, true) : '';
-
-    const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>${esc(title)}</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0;}
-  @page{size:letter portrait;margin:0;}
-  body{font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;font-size:10px;padding:10mm 9mm 12mm;}
-  table{border-collapse:collapse;}
-  thead{display:table-header-group;}
-  td,th{vertical-align:bottom;}
-  .sig-block{
-    margin-top:20px;
-    padding-top:10px;
-    border-top:2px solid #000;
-    page-break-inside:avoid;
-    break-inside:avoid;
-  }
-</style>
-</head>
-<body>
-${head}
-${lastHtml}
-${buildSignatures(meta)}
-</body>
-</html>`;
-
-    printHtml(html);
+    const docDefinition = buildDocDefinition(sections, title, meta);
+    printPdf(docDefinition).catch((err) => console.error('Error generando PDF de pedido:', err));
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

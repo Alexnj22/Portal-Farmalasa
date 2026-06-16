@@ -20,10 +20,14 @@ const SUCURSALES_ORDER   = [5, 1, 2, 3, 4, 7];
 const SUCURSAL_CODES     = { 1: 'S1', 2: 'S2', 3: 'S3', 4: 'S4', 5: 'PO', 6: 'BO', 7: 'S5' };
 const TOTAL_NON_BODEGA   = 6;
 
-// Letter = 612pt de ancho. Márgenes generosos (24pt ≈ 8.5mm, 30pt abajo)
+// Letter = 612pt de ancho. Márgenes generosos (24pt ≈ 8.5mm, 44pt abajo)
 // para quedar siempre dentro del área imprimible real de cualquier impresora
-// (el margen de hardware típico es 4-6mm) — el PDF nunca se recorta.
-const PAGE_MARGINS  = [24, 22, 24, 30];
+// (el margen de hardware típico es 4-6mm) — el PDF nunca se recorta. El margen
+// inferior es más grande que el resto porque ahí vive también el footer de
+// paginación/firmas (ver buildDocDefinition): con 30pt el texto del footer
+// quedaba a ~5mm del borde físico, justo en el límite del margen de hardware
+// — invisible o cortado al imprimir en papel real aunque el PDF lo tuviera bien.
+const PAGE_MARGINS  = [24, 22, 24, 44];
 const CONTENT_WIDTH = 612 - PAGE_MARGINS[0] - PAGE_MARGINS[2];
 
 export function fefoProject(lotes, qty) {
@@ -67,7 +71,7 @@ function loteCellNode(lot, bg) {
     const parts = [];
     if (lot.lote) parts.push({ text: lot.lote, bold: true });
     if (vence)    parts.push({ text: vence, italics: true });
-    parts.push({ text: `${count}pk`, bold: true });
+    parts.push({ text: `${count}`, bold: true });
     const joined = [];
     parts.forEach((p, i) => { if (i > 0) joined.push({ text: '  ·  ', color: '#999' }); joined.push(p); });
     return { text: joined, fontSize: 7.5, fillColor: bg, margin: [0, 2, 0, 2] };
@@ -81,7 +85,10 @@ function loteCellNode(lot, bg) {
 // tabla, cada producto es la unidad atómica que pdfmake mueve completa a la
 // siguiente hoja si no cabe, sin nunca cortar sus lotes a la mitad.
 function loteStackNode(lotes, bg) {
-    if (!lotes.length) return { text: '—', fontSize: 8, color: '#999', fillColor: bg, margin: [0, 2, 0, 2] };
+    // Producto sin lote registrado (genérico / no se rastrea por lote): celda
+    // en blanco, sin "—" — el guion daba la impresión de un dato faltante por
+    // error cuando en realidad ese producto simplemente no maneja lotes.
+    if (!lotes.length) return { text: '', fillColor: bg };
     const lines = lotes.map((lot) => loteCellNode(lot, bg));
     lines.forEach((l, i) => { l.margin = [0, i === 0 ? 2 : 1, 0, i === lines.length - 1 ? 2 : 1]; });
     return { stack: lines, fillColor: bg };
@@ -266,9 +273,19 @@ async function printPdf(docDefinition) {
     iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
     document.body.appendChild(iframe);
 
+    // El diálogo "Guardar como PDF" del navegador toma el nombre sugerido del
+    // document.title de la pestaña en el momento de imprimir — NO del título
+    // interno del PDF (info.title), aunque el PDF esté embebido en un iframe.
+    // Por eso hay que poner el título del documento principal temporalmente
+    // antes de print() y restaurarlo después, o el archivo se guarda con el
+    // título genérico de la app.
+    const originalTitle = document.title;
+    const printTitle     = docDefinition.info?.title || originalTitle;
+
     const cleanup = () => {
         iframe.remove();
         URL.revokeObjectURL(blobUrl);
+        document.title = originalTitle;
     };
 
     iframe.onload = () => {
@@ -276,6 +293,7 @@ async function printPdf(docDefinition) {
         // evento load del iframe; sin este margen el print() puede disparar
         // antes de que el visor esté listo.
         setTimeout(() => {
+            document.title = printTitle;
             try {
                 iframe.contentWindow.focus();
                 iframe.contentWindow.print();

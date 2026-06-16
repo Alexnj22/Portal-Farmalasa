@@ -3177,6 +3177,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                             {v6m.toFixed(2)}/día
                                                             {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={9} className="text-emerald-500 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
                                                             {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={9} className="text-red-400 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
+                                                            <span className="text-slate-300 mx-0.5">·</span>
+                                                            {Math.round(v6m * 30)}/mes
                                                             {Number(row.units_sold_6m) > 0 && <><span className="text-slate-300 mx-0.5">·</span>{Number(row.units_sold_6m).toLocaleString()} vend.</>}
                                                             <span className="text-slate-300 mx-0.5">·</span>
                                                             {row.last_sale_date

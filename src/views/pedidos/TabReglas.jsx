@@ -15,7 +15,7 @@ const EASE           = [0.16, 1, 0.3, 1];
 const EXPAND_BG     = 'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/30';
 const EXPAND_BORDER = 'border-blue-100/60';
 
-const EMPTY_VALS = { dispatch_id_presentacion: null, dispatch_multiplo: '1', notes: '' };
+const EMPTY_VALS = { dispatch_id_presentacion: null, dispatch_multiplo: '1', notes: '', dispatch_label: '' };
 
 const COLS = [
     { key: 'laboratorio_nombre', label: 'Laboratorio',     align: 'left',   sortable: true },
@@ -29,9 +29,10 @@ const COLS = [
 function ruleTypeLabel(rule) {
     if (!rule) return null;
     if (rule.dispatch_id_presentacion) {
-        const tipo  = rule.dispatch_tipo ?? '–';
+        const label = rule.dispatch_label || null;
+        const tipo  = label ?? rule.dispatch_tipo ?? '–';
         const mult  = rule.dispatch_multiplo ?? 1;
-        const style = presStyle(tipo);
+        const style = presStyle(label ? 'CAJA' : tipo);
         return { text: mult > 1 ? `${tipo} ×${mult}` : tipo, bg: style.bg, txt: style.text };
     }
     if (rule.multiplo          != null) return { text: `×${rule.multiplo} cajas`,     bg: 'bg-blue-100',   txt: 'text-blue-700'   };
@@ -138,7 +139,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
 
     const clearRule = () => {
         if (saving) return;
-        const next = { ...vals, dispatch_id_presentacion: null, dispatch_multiplo: '1' };
+        const next = { ...vals, dispatch_id_presentacion: null, dispatch_multiplo: '1', dispatch_label: '' };
         setVals(next);
         onApply(next);
     };
@@ -264,9 +265,35 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                             <span className="font-medium">Ejemplo:</span> necesidad de 7 packs
                             {' → '}despacha{' '}
                             <strong>{Math.ceil(7 / multiplo) * multiplo} pack(s)</strong>
-                            {' '}de{' '}<strong>{selectedTipo}</strong>
+                            {' '}de{' '}<strong>{vals.dispatch_label || selectedTipo}</strong>
                             {multiplo > 1 ? ` (múltiplo de ${multiplo})` : ''}
                         </div>
+
+                        {/* Etiqueta PDF — opcional, solo cuando multiplo > 1 y sin presentación propia */}
+                        {multiplo > 1 && (
+                            <div>
+                                <p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1.5 font-bold">
+                                    Etiqueta en PDF
+                                    <span className="normal-case tracking-normal font-medium text-slate-300"> · opcional — reemplaza el nombre de presentación</span>
+                                </p>
+                                <input type="text"
+                                    placeholder={`Ej. CAJA, ESTUCHE… (dejar vacío = ${selectedTipo})`}
+                                    value={vals.dispatch_label}
+                                    onChange={e => setVals(p => ({ ...p, dispatch_label: e.target.value.toUpperCase() }))}
+                                    onBlur={e => {
+                                        if (!vals.dispatch_id_presentacion) return;
+                                        onApply({ ...vals, dispatch_label: e.target.value.toUpperCase() || '' });
+                                    }}
+                                    onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
+                                    className="w-full border border-slate-200/80 rounded-xl px-3 py-2 text-[12px] focus:outline-none focus:border-blue-400 bg-white/80 backdrop-blur-sm"
+                                />
+                                {vals.dispatch_label && (
+                                    <p className="text-[10px] text-blue-600 mt-1.5 font-medium">
+                                        PDF: <strong>{Math.ceil(7 / multiplo)} {vals.dispatch_label}</strong> en vez de <span className="line-through text-slate-400">{Math.ceil(7 / multiplo) * multiplo} {selectedTipo}</span>
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -353,7 +380,7 @@ export default function TabReglas({ searchTerm = '' }) {
         // JOIN presentaciones directamente — elimina la query serial extra
         const [rulesRes, totalRes, newRes] = await Promise.all([
             supabase.from('dispatch_rules')
-                .select('id, erp_product_id, solo_cajas, multiplo, blister, multiplo_unidades, notes, dispatch_id_presentacion, dispatch_multiplo, presentaciones(tipo)')
+                .select('id, erp_product_id, solo_cajas, multiplo, blister, multiplo_unidades, notes, dispatch_id_presentacion, dispatch_multiplo, dispatch_label, presentaciones(tipo)')
                 .range(0, 9999),
             supabase.from('products').select('id', { count: 'exact', head: true }).eq('activo', true),
             supabase.from('products').select('id', { count: 'exact' }).eq('activo', true).gte('created_at', startOfMonth),
@@ -434,6 +461,7 @@ export default function TabReglas({ searchTerm = '' }) {
             dispatch_id_presentacion: rule?.dispatch_id_presentacion ?? null,
             dispatch_multiplo:        String(rule?.dispatch_multiplo ?? 1),
             notes:                    rule?.notes ?? '',
+            dispatch_label:           rule?.dispatch_label ?? '',
         });
     }, []);
 
@@ -464,6 +492,7 @@ export default function TabReglas({ searchTerm = '' }) {
                     erp_product_id:           productId,
                     dispatch_id_presentacion: v.dispatch_id_presentacion,
                     dispatch_multiplo:        Number(v.dispatch_multiplo) || 1,
+                    dispatch_label:           v.dispatch_label || null,
                     solo_cajas:               false,   // NOT NULL en DB
                     multiplo:                 null,
                     blister:                  null,

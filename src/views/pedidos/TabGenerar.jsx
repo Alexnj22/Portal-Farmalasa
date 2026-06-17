@@ -2,9 +2,9 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, Building2, ClipboardList, CheckCircle2,
-    Package, AlertTriangle, Info, Clock,
+    Package, AlertTriangle, Info,
     TriangleAlert, TrendingUp,
-    Printer, Check, Globe, X,
+    Printer, Check, X,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow } from '../../components/common/DataTable';
@@ -14,13 +14,6 @@ import { printPerSucursal, buildPedidoCodigo, fefoProject } from '../../utils/pe
 import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function fmtSyncedAt(iso) {
-    if (!iso) return null;
-    return new Date(iso).toLocaleDateString('es-SV', {
-        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-    });
-}
 
 function fmtTimeSince(iso) {
     if (!iso) return null;
@@ -56,14 +49,12 @@ const SUC_ANIM_CSS = `
 export default function TabGenerar({ searchTerm = '' }) {
     const { user } = useAuth();
 
-    const [selected,     setSelected]     = useState(new Set());
-    const [globalMode,   setGlobalMode]   = useState(false);
-    const [minmaxSource, setMinmaxSource] = useState('erp');
+    const [selected,   setSelected]   = useState(new Set());
+    const [globalMode, setGlobalMode] = useState(false);
 
     const [confirming, setConfirming] = useState(false);
     const [confirmed,  setConfirmed]  = useState(null);
     const [error,      setError]      = useState(null);
-    const [syncedAt,   setSyncedAt]   = useState(null);
 
     const [dashStats,   setDashStats]   = useState([]);
     const [dashLoading, setDashLoading] = useState(true);
@@ -77,21 +68,14 @@ export default function TabGenerar({ searchTerm = '' }) {
 
     const [employees, setEmployees] = useState([]);
 
-    // ── Synced-at ──────────────────────────────────────────────
-    useEffect(() => {
-        supabase.from('erp_minmax').select('synced_at')
-            .order('synced_at', { ascending: false }).limit(1).single()
-            .then(({ data }) => setSyncedAt(data?.synced_at ?? null));
-    }, []);
-
-    // ── Dashboard stats — reactivo al selector MIN/MAX ─────────
+    // ── Dashboard stats ────────────────────────────────────────
     useEffect(() => {
         setDashLoading(true);
         supabase.rpc('get_pedido_sucursal_stats', {
             p_sucursal_ids:      SUCURSALES,
-            p_use_portal_minmax: minmaxSource === 'portal',
+            p_use_portal_minmax: true,
         }).then(({ data }) => { setDashStats(data || []); setDashLoading(false); });
-    }, [minmaxSource]);
+    }, []);
 
     // ── Empleados (para trazabilidad en handleGenerarDirecto) ──
     useEffect(() => {
@@ -116,7 +100,7 @@ export default function TabGenerar({ searchTerm = '' }) {
         setDashLoading(true);
         supabase.rpc('get_pedido_sucursal_stats', {
             p_sucursal_ids:      SUCURSALES,
-            p_use_portal_minmax: minmaxSource === 'portal',
+            p_use_portal_minmax: true,
         }).then(({ data }) => { setDashStats(data || []); setDashLoading(false); });
         setSinBodegaLoad(true);
         supabase.rpc('get_pedido_sin_bodega', {
@@ -124,7 +108,7 @@ export default function TabGenerar({ searchTerm = '' }) {
             p_limit:        9999,
             p_offset:       0,
         }).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
-    }, [minmaxSource]);
+    }, []);
 
     // ── Sucursal toggle ────────────────────────────────────────
     const toggleSuc = useCallback((id) => {
@@ -135,18 +119,14 @@ export default function TabGenerar({ searchTerm = '' }) {
         });
     }, []);
 
-    const toggleAll = useCallback(() => {
-        setSelected(prev => prev.size === SUCURSALES.length ? new Set() : new Set(SUCURSALES));
-    }, []);
-
     // ── Generar directo: calcula + confirma final + imprime ────
     const handleGenerarDirecto = useCallback(async () => {
         if (selected.size === 0) return;
         setConfirming(true); setError(null); setConfirmed(null);
         try {
             const rpcParams = globalMode
-                ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected], p_use_portal_minmax: minmaxSource === 'portal' }
-                : { p_sucursal_ids: [...selected], p_use_portal_minmax: minmaxSource === 'portal' };
+                ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected], p_use_portal_minmax: true }
+                : { p_sucursal_ids: [...selected], p_use_portal_minmax: true };
             const { data, error: rpcErr } = await supabase
                 .rpc('get_pedido_preview', rpcParams)
                 .range(0, 49999);
@@ -200,7 +180,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 else                          map[s].normal.push(row);
             }
             const sucIds     = SUCURSALES.filter(id => map[id]);
-            const meta       = { responsable: user?.name ?? null, revisor: null, generadoPor: user?.name ?? null };
+            const meta       = { responsable: user?.name ?? null, revisor: null, generadoPor: user?.name ?? null, pedidoNumero: ped?.numero };
             const codigoFn   = buildPedidoCodigo(ped?.numero, new Date(), sucIds.length);
             const codigosMap = {};
             for (const id of sucIds) codigosMap[id] = codigoFn(id);
@@ -222,7 +202,7 @@ export default function TabGenerar({ searchTerm = '' }) {
         } finally {
             setConfirming(false);
         }
-    }, [selected, globalMode, minmaxSource, employees, user, refreshStats]);
+    }, [selected, globalMode, employees, user, refreshStats]);
 
     // ── Derived maps ───────────────────────────────────────────
     const statMap = useMemo(() => {
@@ -230,6 +210,21 @@ export default function TabGenerar({ searchTerm = '' }) {
         for (const s of dashStats) m[s.erp_sucursal_id] = s;
         return m;
     }, [dashStats]);
+
+    // Sucursales con MIN/MAX Portal publicado (>0 productos). Durante la carga
+    // muestra todas para no esconder skeletons; después del load oculta las que
+    // no tienen ningún producto con parámetros publicados.
+    const visibleSucursales = dashLoading
+        ? SUCURSALES
+        : SUCURSALES.filter(id => {
+            const s = statMap[id];
+            return s && ((s.con_bodega_productos ?? 0) + (s.sin_bodega_productos ?? 0)) > 0;
+        });
+
+    const toggleAll = () => {
+        const allSel = visibleSucursales.every(id => selected.has(id));
+        setSelected(allSel ? new Set() : new Set(visibleSucursales));
+    };
 
     // Ranking de urgencia — mayor avg_urgencia_pct primero
     const urgRankMap = useMemo(() => {
@@ -320,25 +315,17 @@ export default function TabGenerar({ searchTerm = '' }) {
             <div className={GLASS + ' p-4'}>
                 <div className="flex items-center justify-between mb-1">
                     <h3 className="font-semibold text-slate-700 text-[15px]">Selecciona las sucursales a reponer</h3>
-                    <div className="flex items-center gap-3">
-                        {syncedAt && (
-                            <span className="flex items-center gap-1 text-[11px] text-slate-400">
-                                <Clock size={11} />
-                                Min/Max: {fmtSyncedAt(syncedAt)}
-                            </span>
-                        )}
-                        <button onClick={toggleAll}
-                            className="text-[12px] text-blue-600 hover:text-blue-700 font-medium transition-colors">
-                            {selected.size === SUCURSALES.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
-                        </button>
-                    </div>
+                    <button onClick={toggleAll}
+                        className="text-[12px] text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                        {visibleSucursales.every(id => selected.has(id)) && visibleSucursales.length > 0 ? 'Deseleccionar todas' : 'Seleccionar todas'}
+                    </button>
                 </div>
                 <p className="text-[11px] text-slate-400 mb-2 flex items-center gap-1">
                     <Info size={11} />
                     Elige las sucursales a reponer y genera el pedido directamente.
                 </p>
 
-                {/* Modos: globalMode + fuente MIN/MAX */}
+                {/* Modos */}
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <button
                         onClick={() => setGlobalMode(v => !v)}
@@ -348,46 +335,11 @@ export default function TabGenerar({ searchTerm = '' }) {
                                 : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'
                         }`}
                     >
-                        <Globe size={12} />
                         Distribución global de bodega
                         {globalMode && <Check size={11} />}
                     </button>
-
-                    {/* Selector fuente MIN/MAX — liquid glass */}
-                    <div className="relative inline-flex items-stretch rounded-xl p-[3px] bg-white/60 border border-white/80 backdrop-blur-md shadow-[0_2px_12px_rgba(0,82,204,0.10),inset_0_1px_0_rgba(255,255,255,0.7)]">
-                        <span
-                            aria-hidden
-                            className={`absolute top-[3px] bottom-[3px] rounded-[9px] transition-all duration-200 ease-out pointer-events-none ${
-                                minmaxSource === 'erp'
-                                    ? 'left-[3px] right-[calc(50%+1.5px)] bg-white/90 shadow-[0_1px_4px_rgba(0,0,0,0.10)] border border-white/60'
-                                    : 'left-[calc(50%+1.5px)] right-[3px] bg-[#0052CC]/90 shadow-[0_1px_6px_rgba(0,82,204,0.30)] border border-blue-400/40'
-                            }`}
-                        />
-                        <button
-                            onClick={() => setMinmaxSource('erp')}
-                            className={`relative z-10 px-3 py-1.5 text-[11px] font-semibold rounded-[9px] transition-colors duration-150 select-none ${
-                                minmaxSource === 'erp' ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'
-                            }`}
-                        >
-                            MIN/MAX ERP
-                        </button>
-                        <button
-                            onClick={() => setMinmaxSource('portal')}
-                            className={`relative z-10 px-3 py-1.5 text-[11px] font-semibold rounded-[9px] transition-colors duration-150 select-none ${
-                                minmaxSource === 'portal' ? 'text-white' : 'text-slate-400 hover:text-slate-600'
-                            }`}
-                        >
-                            MIN/MAX Portal
-                        </button>
-                    </div>
                 </div>
 
-                {minmaxSource === 'portal' && (
-                    <p className="text-[10px] text-blue-600 mb-2 flex items-center gap-1">
-                        <Info size={10} />
-                        Usando los MIN/MAX definidos en el Portal. Productos sin valores publicados no aparecerán en el pedido.
-                    </p>
-                )}
                 {globalMode && (
                     <p className="text-[10px] text-indigo-600 mb-2 flex items-center gap-1">
                         <Info size={10} />
@@ -398,7 +350,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 {/* ── Sucursal cards — liquid glass ──────────── */}
                 <style>{SUC_ANIM_CSS}</style>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-                    {SUCURSALES.map((id) => {
+                    {visibleSucursales.map((id) => {
                         const stat     = statMap[id];
                         const isOn     = selected.has(id);
                         const urgLevel = getUrgLevel(stat);

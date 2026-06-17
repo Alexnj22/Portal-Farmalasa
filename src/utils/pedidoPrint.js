@@ -20,15 +20,30 @@ const SUCURSALES_ORDER   = [5, 1, 2, 3, 4, 7];
 const SUCURSAL_CODES     = { 1: 'S1', 2: 'S2', 3: 'S3', 4: 'S4', 5: 'PO', 6: 'BO', 7: 'S5' };
 const TOTAL_NON_BODEGA   = 6;
 
-// Letter = 612pt de ancho. Márgenes generosos (24pt ≈ 8.5mm, 44pt abajo)
-// para quedar siempre dentro del área imprimible real de cualquier impresora
-// (el margen de hardware típico es 4-6mm) — el PDF nunca se recorta. El margen
-// inferior es más grande que el resto porque ahí vive también el footer de
-// paginación/firmas (ver buildDocDefinition): con 30pt el texto del footer
-// quedaba a ~5mm del borde físico, justo en el límite del margen de hardware
-// — invisible o cortado al imprimir en papel real aunque el PDF lo tuviera bien.
-const PAGE_MARGINS  = [24, 22, 24, 44];
+// Letter: 612pt ancho. Margen inferior 110pt para el bloque de firmas en el
+// footer de la última página (el footer vive fuera del área de contenido — no
+// reduce el espacio disponible por página). En páginas intermedias solo aparece
+// el número de página en ese espacio.
+const PAGE_MARGINS  = [24, 22, 24, 110];
 const CONTENT_WIDTH = 612 - PAGE_MARGINS[0] - PAGE_MARGINS[2];
+
+// ── Logo cache ────────────────────────────────────────────────────────────────
+let _logoCache = null;
+async function getLogoBase64() {
+    if (_logoCache) return _logoCache;
+    try {
+        const res  = await fetch('/Logo512.png');
+        const blob = await res.blob();
+        return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = () => { _logoCache = reader.result; resolve(reader.result); };
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+        });
+    } catch {
+        return null;
+    }
+}
 
 export function fefoProject(lotes, qty) {
     if (!lotes || !lotes.length || qty <= 0) return [];
@@ -59,8 +74,6 @@ function sortRows(rows) {
 }
 
 // ── Tabla por sucursal ──────────────────────────────────────────────────────
-// headerRows:2 -> pdfmake repite SIEMPRE las 2 primeras filas (título negro +
-// encabezado de columnas) al inicio de cada hoja que ocupe esta tabla.
 const COL_WIDTHS    = ['16%', '31%', '13%', '9%', '25%', '6%'];
 const HEADER_LABELS = ['Laboratorio', 'Producto', 'Presentación', 'Cant.', 'Lote', 'OK'];
 
@@ -77,17 +90,7 @@ function loteCellNode(lot, bg) {
     return { text: joined, fontSize: 7.5, fillColor: bg, margin: [0, 2, 0, 2] };
 }
 
-// Cada producto es UNA sola fila de tabla; sus lotes se apilan como líneas
-// dentro de la celda "Lote" (en vez de varias filas + rowSpan). pdfmake NO
-// garantiza que un grupo rowSpan se mantenga junto al paginar — lo divide
-// entre hojas y deja Lab/Producto/Cant en blanco en la continuación (bug
-// confirmado en pruebas). Con una fila por producto + dontBreakRows en la
-// tabla, cada producto es la unidad atómica que pdfmake mueve completa a la
-// siguiente hoja si no cabe, sin nunca cortar sus lotes a la mitad.
 function loteStackNode(lotes, bg) {
-    // Producto sin lote registrado (genérico / no se rastrea por lote): celda
-    // en blanco, sin "—" — el guion daba la impresión de un dato faltante por
-    // error cuando en realidad ese producto simplemente no maneja lotes.
     if (!lotes.length) return { text: '', fillColor: bg, verticalAlignment: 'middle' };
     const lines = lotes.map((lot) => loteCellNode(lot, bg));
     lines.forEach((l, i) => { l.margin = [0, i === 0 ? 2 : 1, 0, i === lines.length - 1 ? 2 : 1]; });
@@ -127,15 +130,49 @@ function buildProductRows(rows) {
     return body;
 }
 
-function buildSectionTable(sec, fecha) {
+// Encabezado rediseñado: 3 filas (→ headerRows: 3) que repiten en cada página.
+// Fila 1 (negro): logo + FARMACIA FARMALASA / ORDEN DE DESPACHO / fecha.
+// Fila 2 (gris oscuro): Bodega → Sucursal / código / N prods · N packs.
+// Fila 3: etiquetas de columnas (igual que antes).
+function buildSectionTable(sec, fecha, logo) {
     const totalPacks = sec.rows.reduce((t, r) => t + r.qty, 0);
+
+    // Fila 1 — negro, logo + nombre farmacia + título + fecha
+    const logoBlock = logo
+        ? { image: logo, width: 26, height: 26, margin: [0, 0, 8, 0] }
+        : { text: '', width: 0 };
 
     const titleRow = [
         {
-            colSpan: 6, fillColor: '#000', margin: [8, 5, 8, 5],
+            colSpan: 6, fillColor: '#111', margin: [8, 5, 8, 5],
             columns: [
-                { text: `Farmacia Farmalasa  —  ${sec.nombre}`, color: '#fff', bold: true, fontSize: 10.5 },
-                { text: `${sec.rows.length} productos   ·   ${totalPacks} packs   ·   ${fecha}`, color: '#fff', fontSize: 7.5, alignment: 'right' },
+                {
+                    columns: [
+                        logoBlock,
+                        {
+                            stack: [
+                                { text: 'FARMACIA FARMALASA', fontSize: 10, bold: true, color: '#fff', lineHeight: 1.1 },
+                                { text: 'Farmalasa S.A. de C.V.', fontSize: 6, color: '#888' },
+                            ],
+                        },
+                    ],
+                    width: '48%',
+                },
+                { text: 'ORDEN DE DESPACHO', fontSize: 10, bold: true, color: '#fff', alignment: 'center', width: '30%', margin: [0, 4, 0, 0] },
+                { text: fecha, fontSize: 7, color: '#999', alignment: 'right', width: '22%', margin: [0, 5, 0, 0] },
+            ],
+        },
+        {}, {}, {}, {}, {},
+    ];
+
+    // Fila 2 — gris oscuro, ruta Bodega → Sucursal + código + conteos
+    const subtitleRow = [
+        {
+            colSpan: 6, fillColor: '#2c2c2c', margin: [8, 3, 8, 3],
+            columns: [
+                { text: `Bodega  →  ${sec.nombre}`, fontSize: 8, bold: true, color: '#e0e0e0', width: '44%' },
+                { text: sec.codigo ? `Código: ${sec.codigo}` : '', fontSize: 7.5, color: '#aaa', alignment: 'center', width: '30%' },
+                { text: `${sec.rows.length} prod  ·  ${totalPacks} packs`, fontSize: 7.5, color: '#aaa', alignment: 'right', width: '26%' },
             ],
         },
         {}, {}, {}, {}, {},
@@ -155,11 +192,11 @@ function buildSectionTable(sec, fecha) {
         ]];
 
     return {
-        table: { headerRows: 2, dontBreakRows: true, widths: COL_WIDTHS, body: [titleRow, headerRow, ...bodyRows] },
+        table: { headerRows: 3, dontBreakRows: true, widths: COL_WIDTHS, body: [titleRow, subtitleRow, headerRow, ...bodyRows] },
         layout: {
-            hLineWidth:  (i, node) => (i === 0 ? 0 : i === 2 ? 1.2 : i === node.table.body.length ? 0.8 : 0.5),
+            hLineWidth:  (i, node) => (i === 0 ? 0 : i === 3 ? 1.2 : i === node.table.body.length ? 0.8 : 0.5),
             vLineWidth:  (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),
-            hLineColor:  (i) => (i === 2 ? '#999' : '#ddd'),
+            hLineColor:  (i) => (i === 3 ? '#999' : '#ddd'),
             vLineColor:  () => '#ccc',
             paddingLeft:  () => 5,
             paddingRight: () => 5,
@@ -194,56 +231,74 @@ function sigColumn(nombre, label, width) {
     };
 }
 
-// Bloque atómico (unbreakable): nunca se divide entre hojas — si no cabe en
-// la hoja actual, pdfmake lo mueve completo a la siguiente. Nada de hacks de
-// altura mínima que puedan generar una página en blanco.
-function buildSignaturesContent(meta = {}) {
+// Firmas en el footer de la ÚLTIMA página; número de página en todas.
+// Con PAGE_MARGINS[3]=110pt, el área de footer es 110pt. Las firmas ocupan
+// ~80pt empezando desde el borde del contenido; en páginas intermedias solo
+// aparece el número centrado a 88pt del borde del contenido (≈22pt del físico).
+function buildFooterCallback(meta) {
     const responsable = meta.responsable || meta.generadoPor || null;
-    const fecha        = fmtFechaLarga(new Date());
-    const generadoText = meta.generadoPor
-        ? [
-            { text: 'Generado por: ', fontSize: 8, color: '#333' },
-            { text: meta.generadoPor, fontSize: 8, bold: true, color: '#000' },
-            { text: `   ·   ${fecha}`, fontSize: 8, color: '#333' },
-        ]
-        : [{ text: fecha, fontSize: 8, color: '#333' }];
+    const generadoPor = meta.generadoPor || null;
 
-    return {
-        unbreakable: true,
-        margin: [0, 18, 0, 0],
-        stack: [
-            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: CONTENT_WIDTH, y2: 0, lineWidth: 1.4, lineColor: '#000' }] },
-            { text: generadoText, margin: [0, 7, 0, 12] },
-            {
-                columns: [
-                    sigColumn(responsable, 'RESPONSABLE', '28%'),
-                    sigColumn(meta.revisor ?? null, 'REVISADO POR', '28%'),
-                    sigColumn(null, 'AUTORIZA', '22%'),
-                    {
-                        width: '22%',
-                        table: { widths: ['*'], body: [[
-                            { text: 'SELLO', fontSize: 8, color: '#777', alignment: 'center', margin: [0, 16, 0, 16] },
-                        ]] },
-                        layout: { hLineWidth: () => 1.2, vLineWidth: () => 1.2, hLineColor: () => '#000', vLineColor: () => '#000' },
-                    },
-                ],
-            },
-        ],
+    return (currentPage, pageCount) => {
+        const isLast = currentPage === pageCount;
+
+        if (!isLast) {
+            return {
+                margin: [PAGE_MARGINS[0], 88, PAGE_MARGINS[2], 0],
+                text: `${currentPage} / ${pageCount}`,
+                fontSize: 6.5, color: '#bbb', alignment: 'center',
+            };
+        }
+
+        // Última página: bloque de firmas completo
+        const generadoLine = generadoPor
+            ? [
+                { text: 'Generado por: ', fontSize: 8, color: '#555' },
+                { text: generadoPor, fontSize: 8, bold: true, color: '#000' },
+              ]
+            : [];
+
+        return {
+            margin: [PAGE_MARGINS[0], 8, PAGE_MARGINS[2], 0],
+            stack: [
+                { canvas: [{ type: 'line', x1: 0, y1: 0, x2: CONTENT_WIDTH, y2: 0, lineWidth: 1.2, lineColor: '#000' }] },
+                {
+                    margin: [0, 5, 0, 10],
+                    columns: [
+                        { text: generadoLine, width: '*' },
+                        { text: `${currentPage} / ${pageCount}`, fontSize: 6.5, color: '#bbb', alignment: 'right', width: 'auto' },
+                    ],
+                },
+                {
+                    columns: [
+                        sigColumn(responsable, 'RESPONSABLE', '28%'),
+                        sigColumn(meta.revisor ?? null, 'REVISADO POR', '28%'),
+                        sigColumn(null, 'AUTORIZA', '22%'),
+                        {
+                            width: '22%',
+                            table: { widths: ['*'], body: [[
+                                { text: 'SELLO', fontSize: 8, color: '#777', alignment: 'center', margin: [0, 14, 0, 14] },
+                            ]] },
+                            layout: { hLineWidth: () => 1.2, vLineWidth: () => 1.2, hLineColor: () => '#000', vLineColor: () => '#000' },
+                        },
+                    ],
+                },
+            ],
+        };
     };
 }
 
-function buildDocDefinition(sections, title, meta) {
+function buildDocDefinition(sections, title, meta, logo = null) {
     const fecha   = fmtFechaLarga(new Date());
     const content = [];
 
     sections.forEach((sec, i) => {
-        const table = buildSectionTable(sec, fecha);
+        const table = buildSectionTable(sec, fecha, logo);
         if (i > 0) table.pageBreak = 'before';
         content.push(table);
-        const footer = buildSectionFooter(sec);
-        if (footer) content.push(footer);
+        const secFooter = buildSectionFooter(sec);
+        if (secFooter) content.push(secFooter);
     });
-    content.push(buildSignaturesContent(meta));
 
     return {
         pageSize: 'LETTER',
@@ -251,72 +306,18 @@ function buildDocDefinition(sections, title, meta) {
         info: { title },
         defaultStyle: { fontSize: 9 },
         content,
-        // Pie de página repetido en cada hoja, dentro del margen inferior
-        // (no compite por espacio con el contenido): paginación al centro,
-        // firmas de revisado/recibido a los lados.
-        footer: (currentPage, pageCount) => ({
-            margin: [PAGE_MARGINS[0], 6, PAGE_MARGINS[2], 0],
-            columns: [
-                { text: 'Revisado por: ________________________', fontSize: 6.5, color: '#555' },
-                { text: `${currentPage} / ${pageCount}`, fontSize: 6.5, color: '#555', alignment: 'center' },
-                { text: 'Recibido por: ________________________', fontSize: 6.5, color: '#555', alignment: 'right' },
-            ],
-        }),
+        footer: buildFooterCallback(meta),
     };
 }
 
-// Genera el PDF real y lo carga en un iframe oculto para disparar el diálogo
-// de impresión nativo del visor de PDF del navegador — esto imprime la
-// geometría EXACTA del PDF (márgenes, encabezados repetidos, sin cortes),
-// sin depender de cómo cada navegador fragmenta HTML al imprimir.
-async function printPdf(docDefinition) {
-    const blob    = await pdfMake.createPdf(docDefinition).getBlob();
-    const blobUrl = URL.createObjectURL(blob);
-
-    const iframe = document.createElement('iframe');
-    iframe.setAttribute('aria-hidden', 'true');
-    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
-    document.body.appendChild(iframe);
-
-    // El diálogo "Guardar como PDF" del navegador toma el nombre sugerido del
-    // document.title de la pestaña en el momento de imprimir — NO del título
-    // interno del PDF (info.title), aunque el PDF esté embebido en un iframe.
-    // Por eso hay que poner el título del documento principal temporalmente
-    // antes de print() y restaurarlo después, o el archivo se guarda con el
-    // título genérico de la app.
-    const originalTitle = document.title;
-    const printTitle     = docDefinition.info?.title || originalTitle;
-
-    const cleanup = () => {
-        iframe.remove();
-        URL.revokeObjectURL(blobUrl);
-        document.title = originalTitle;
-    };
-
-    iframe.onload = () => {
-        // El visor de PDF embebido tarda un instante en inicializar tras el
-        // evento load del iframe; sin este margen el print() puede disparar
-        // antes de que el visor esté listo.
-        setTimeout(() => {
-            document.title = printTitle;
-            try {
-                iframe.contentWindow.focus();
-                iframe.contentWindow.print();
-            } catch (_) {
-                cleanup();
-                return;
-            }
-            try { iframe.contentWindow.addEventListener('afterprint', cleanup, { once: true }); } catch (_) { /* noop */ }
-            setTimeout(cleanup, 120_000);
-        }, 300);
-    };
-
-    iframe.src = blobUrl;
+// Descarga el PDF directamente con el nombre de archivo correcto.
+function downloadPdf(docDefinition, filename) {
+    pdfMake.createPdf(docDefinition).download(filename);
 }
 
-function openPrintWindow(sections, title, meta = {}) {
-    const docDefinition = buildDocDefinition(sections, title, meta);
-    printPdf(docDefinition).catch((err) => console.error('Error generando PDF de pedido:', err));
+function dateSuffix() {
+    const d = new Date();
+    return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getFullYear()).slice(-2)}`;
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -344,10 +345,6 @@ function lotesToDispatch(lotes, erpFactor, dispFactor) {
         .filter(l => l.packs > 0);
 }
 
-// lotes_asignados (ya persistidos en pedido_items) traen la cantidad tomada de
-// cada lote en `take`, en unidades ERP — a diferencia de lotesToDispatch (que
-// convierte disponibilidad de bodega en `packs` antes del FEFO). Aquí solo hay
-// que reexpresar ese `take` ya asignado en la presentación de despacho.
 function lotesAsignadosToDispatch(lotes, erpFactor, dispFactor) {
     if (!dispFactor || dispFactor === erpFactor) return lotes ?? [];
     return (lotes ?? [])
@@ -355,42 +352,51 @@ function lotesAsignadosToDispatch(lotes, erpFactor, dispFactor) {
         .filter(l => l.take > 0);
 }
 
-export function printPerSucursal(grouped, sortedSucIds, getAdjusted, codigoFn, meta = {}) {
-    sortedSucIds.forEach((sucId, idx) => {
-        setTimeout(() => {
-            const g    = grouped[sucId] || { normal: [], revision: [], sinStock: [] };
-            const rows = [...g.normal, ...g.revision].map(row => {
-                const erpFactor  = row.factor ?? 1;
-                const dispFactor = row.dispatch_factor ?? erpFactor;
-                const dispTipo   = row.dispatch_tipo ?? row.presentacion_tipo;
-                const qty        = toDispatch(getAdjusted(row), erpFactor, dispFactor);
-                return {
-                    product_name:      row.product_name,
-                    laboratorio:       row.laboratorio ?? '',
-                    presentacion_tipo: dispTipo,
-                    es_antibiotico:    row.es_antibiotico,
-                    qty,
-                    lotes: fefoProject(lotesToDispatch(row.lotes_bodega, erpFactor, dispFactor), qty),
-                };
-            }).filter(r => r.qty > 0);
-            const section = {
-                sucId,
-                nombre:   ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
-                rows,
-                sinCount: g.sinStock.length,
-                revCount: g.revision.length,
+// Genera UN solo PDF combinado con todas las sucursales (una por página) y lo descarga.
+// Elimina los N diálogos de impresión separados y el 1-segundo de delay entre ellos.
+export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codigoFn, meta = {}) {
+    const logo = await getLogoBase64();
+
+    const sections = sortedSucIds.map(sucId => {
+        const g    = grouped[sucId] || { normal: [], revision: [], sinStock: [] };
+        const rows = [...g.normal, ...g.revision].map(row => {
+            const erpFactor  = row.factor ?? 1;
+            const dispFactor = row.dispatch_factor ?? erpFactor;
+            const dispTipo   = row.dispatch_tipo ?? row.presentacion_tipo;
+            const qty        = toDispatch(getAdjusted(row), erpFactor, dispFactor);
+            return {
+                product_name:      row.product_name,
+                laboratorio:       row.laboratorio ?? '',
+                presentacion_tipo: dispTipo,
+                es_antibiotico:    row.es_antibiotico,
+                qty,
+                lotes: fefoProject(lotesToDispatch(row.lotes_bodega, erpFactor, dispFactor), qty),
             };
-            const titulo = codigoFn
-                ? codigoFn(sucId)
-                : `Pedido_${(ERP_NAMES_DEFAULT[sucId] ?? `Sucursal_${sucId}`).replace(/ /g, '_')}`;
-            openPrintWindow([section], titulo, meta);
-        }, idx * 1000);
+        }).filter(r => r.qty > 0);
+
+        return {
+            sucId,
+            nombre:   ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
+            codigo:   codigoFn ? codigoFn(sucId) : null,
+            rows,
+            sinCount: g.sinStock.length,
+            revCount: g.revision.length,
+        };
     });
+
+    const numero   = meta.pedidoNumero;
+    const filename = numero
+        ? `Pedido_${String(numero).padStart(3, '0')}_${dateSuffix()}.pdf`
+        : `Pedido_${dateSuffix()}.pdf`;
+
+    const docDef = buildDocDefinition(sections, filename.replace('.pdf', ''), meta, logo);
+    downloadPdf(docDef, filename);
 }
 
-export function printFromPreview(grouped, sortedSucIds, getAdjusted, title, meta = {}) {
+export async function printFromPreview(grouped, sortedSucIds, getAdjusted, title, meta = {}) {
+    const logo = await getLogoBase64();
     const sections = sortedSucIds.map(sucId => {
-        const g = grouped[sucId] || { normal: [], revision: [], sinStock: [] };
+        const g      = grouped[sucId] || { normal: [], revision: [], sinStock: [] };
         const mapped = [...g.normal, ...g.revision].map(row => {
             const erpFactor  = row.factor ?? 1;
             const dispFactor = row.dispatch_factor ?? erpFactor;
@@ -408,15 +414,19 @@ export function printFromPreview(grouped, sortedSucIds, getAdjusted, title, meta
         return {
             sucId,
             nombre:   ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
+            codigo:   null,
             rows:     mapped.filter(r => r.qty > 0),
             sinCount: g.sinStock.length,
             revCount: mapped.filter(r => r.qty === 0).length,
         };
     });
-    openPrintWindow(sections, title ?? 'Vista previa del pedido', meta);
+    const filename = `${(title ?? 'Vista_previa_pedido').replace(/[^a-zA-Z0-9_\-]/g,'_')}.pdf`;
+    const docDef   = buildDocDefinition(sections, title ?? 'Vista previa del pedido', meta, logo);
+    downloadPdf(docDef, filename);
 }
 
-export function printFromSnapshot(snapshot, meta = {}) {
+export async function printFromSnapshot(snapshot, meta = {}) {
+    const logo  = await getLogoBase64();
     const datos = Array.isArray(snapshot.datos) ? snapshot.datos : [];
     const byS   = {};
     for (const row of datos) {
@@ -445,17 +455,21 @@ export function printFromSnapshot(snapshot, meta = {}) {
         return {
             sucId,
             nombre:   ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
+            codigo:   null,
             rows,
             sinCount: g.sinStock.length,
             revCount: 0,
         };
     });
-    openPrintWindow(sections, snapshot.nombre ?? 'Borrador guardado', meta);
+    const nombre   = snapshot.nombre ?? 'Borrador_guardado';
+    const filename = `${nombre.replace(/[^a-zA-Z0-9_\-]/g,'_')}.pdf`;
+    const docDef   = buildDocDefinition(sections, nombre, meta, logo);
+    downloadPdf(docDef, filename);
 }
 
-export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, titleOverride = null) {
-    const fecha = new Date().toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' })
-        .replace(/\//g, '-');
+export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, titleOverride = null) {
+    const logo  = await getLogoBase64();
+    const ds    = dateSuffix();
 
     const sections = sucGroups.map(([sucId, rows]) => {
         const printRows = rows.filter(r => !r.sin_stock).map(r => {
@@ -478,6 +492,7 @@ export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, titleOv
         return {
             sucId,
             nombre:   ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
+            codigo:   sucGroups.length === 1 ? (titleOverride ?? null) : null,
             rows:     printRows,
             sinCount: rows.filter(r => r.sin_stock).length,
             revCount: rows.filter(r => r.revision_minmax && !r.sin_stock).length,
@@ -486,8 +501,10 @@ export function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, titleOv
 
     const title = titleOverride
         ?? (sucGroups.length === 1
-            ? `Pedido_${(ERP_NAMES_DEFAULT[sucGroups[0][0]] ?? `Sucursal_${sucGroups[0][0]}`).replace(/ /g, '_')}_${fecha}`
-            : `Pedido_#${pedidoNumero}_${fecha}`);
+            ? `Pedido_${(ERP_NAMES_DEFAULT[sucGroups[0][0]] ?? `Sucursal_${sucGroups[0][0]}`).replace(/ /g, '_')}_${ds}`
+            : `Pedido_${String(pedidoNumero).padStart(3,'0')}_${ds}`);
+    const filename = `${title.replace(/[^a-zA-Z0-9_\-]/g,'_')}.pdf`;
 
-    openPrintWindow(sections, title, meta);
+    const docDef = buildDocDefinition(sections, title, meta, logo);
+    downloadPdf(docDef, filename);
 }

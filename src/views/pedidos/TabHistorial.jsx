@@ -354,7 +354,8 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 .eq('erp_sucursal_id', 6)
                 .eq('is_vencidos', false)
                 .gt('cantidad', 0)
-                .in('erp_product_id', productIds);
+                .in('erp_product_id', productIds)
+                .range(0, 4999);
 
             const loteMap = {};
             for (const lot of (loteData || [])) {

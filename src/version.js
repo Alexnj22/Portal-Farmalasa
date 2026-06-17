@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.153';
+export const APP_VERSION = '2.2.154';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.154 — fix(pedidos): 4 correcciones — (1) PDF header más compacto (márgenes 8→6px, fonts reducidos); footer restaurado "Revisado por / N/M / Recibido por" en TODAS las páginas; última página agrega firma compacta ARRIBA del footer sin espacio vacío; PAGE_MARGINS[3]=44pt; (2) sin_bodega devuelve JSONB — bypasea cap max-rows=1000 de PostgREST; (3) pedidos de prueba borrados del DB (30 pedidos 18856 items); (4) logo del PDF se mantiene.
 // v2.2.153 — fix(pedidos): 6 correcciones — (1) PDF por sucursal nombrado con código del pedido (01-170617-3-PO.pdf); (2) descargas simultáneas con 150ms de intervalo en vez de 1s; (3) sin_bodega usa .range(0,9998) — elimina cap PostgREST 1000 filas; (4) encabezado B&W: gris claro #eee sin relleno negro, FARMACIA LA SALUD/LA POPULAR según destino, sin "Farmalasa S.A. de C.V.", direcciones origen y destino desde DB, más compacto; (5) "Generado por + fecha/hora" en contenido del PDF, no en footer; (6) firmas: línea arriba para firmar → nombre impreso bajo la línea → etiqueta; eliminado AUTORIZA; PAGE_MARGINS[3]=60pt para reducir espacio vacío inferior.
 // v2.2.152 — fix(pedidos): 8 mejoras — (1) selector ERP/Portal eliminado, siempre usa MIN/MAX Portal; (2) sucursales sin MIN/MAX Portal publicado se ocultan de las cards; (3) PDF descarga directamente (download) con nombre correcto — elimina iframe+print que nombraba el archivo con el título de la pestaña; (4) auto-detección de presentación de despacho v20: ORDER BY factor DESC → elige la mayor disponible (CAJA antes que BLISTER, ej. AMITRAL GX → "1 CAJA" en vez de "10 BLISTER"); (5) firmas en el footer de la ÚLTIMA página vía callback pdfmake, margen inferior 110pt; páginas intermedias solo muestran número de página; (6) .range(0,4999) en query bodega lotes de TabHistorial — elimina cap silencioso PostgREST 1000 filas; (7) PDF combinado (todas las sucursales en un solo archivo, no N descargas); (8) encabezado rediseñado con logo, FARMACIA FARMALASA, ORDEN DE DESPACHO, Bodega→Sucursal, código, fecha.
 // v2.2.151 — fix(minmax/csv): ventas período en bodega convertidas a presentación mayor con decimal — si factor>1, units_sold_6m÷factor con 1 decimal y coma como separador (ej. 1,4 cajas); si factor=1 queda en unidades enteras; sin redondeo 40% (es un dato informativo, no un objetivo).

@@ -87,13 +87,12 @@ export default function TabGenerar({ searchTerm = '' }) {
     }, []);
 
     // ── Sin-bodega — load all once for client-side sort/filter ─
+    // La función devuelve JSONB (un solo valor escalar), sin el cap max-rows=1000 de PostgREST.
     useEffect(() => {
         setSinBodegaLoad(true);
         supabase.rpc('get_pedido_sin_bodega', {
             p_sucursal_ids: SUCURSALES,
-            p_limit:        9999,
-            p_offset:       0,
-        }).range(0, 9998).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
+        }).then(({ data }) => { setSinBodega(Array.isArray(data) ? data : []); setSinBodegaLoad(false); });
     }, []);
 
     const refreshStats = useCallback(() => {
@@ -105,9 +104,7 @@ export default function TabGenerar({ searchTerm = '' }) {
         setSinBodegaLoad(true);
         supabase.rpc('get_pedido_sin_bodega', {
             p_sucursal_ids: SUCURSALES,
-            p_limit:        9999,
-            p_offset:       0,
-        }).range(0, 9998).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
+        }).then(({ data }) => { setSinBodega(Array.isArray(data) ? data : []); setSinBodegaLoad(false); });
     }, []);
 
     // ── Sucursal toggle ────────────────────────────────────────

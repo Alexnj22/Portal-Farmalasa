@@ -93,7 +93,7 @@ export default function TabGenerar({ searchTerm = '' }) {
             p_sucursal_ids: SUCURSALES,
             p_limit:        9999,
             p_offset:       0,
-        }).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
+        }).range(0, 9998).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
     }, []);
 
     const refreshStats = useCallback(() => {
@@ -107,7 +107,7 @@ export default function TabGenerar({ searchTerm = '' }) {
             p_sucursal_ids: SUCURSALES,
             p_limit:        9999,
             p_offset:       0,
-        }).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
+        }).range(0, 9998).then(({ data }) => { setSinBodega(data || []); setSinBodegaLoad(false); });
     }, []);
 
     // ── Sucursal toggle ────────────────────────────────────────

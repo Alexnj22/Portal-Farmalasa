@@ -209,7 +209,8 @@ function applyPresRule(units, factor) {
     return floor + (rem / factor >= 0.4 ? 1 : 0);
 }
 
-function exportCsv(rows, name, sucursalName, isBodega = false) {
+// netStockMap: { erp_product_id → net_sucursal_stock } fetched before calling
+function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {}) {
     const SEP = ';';
 
     // Bodega: ordenar por laboratorio → producto
@@ -247,13 +248,20 @@ function exportCsv(rows, name, sucursalName, isBodega = false) {
 
             const hasVal = maxU > 0 || minU > 0;
 
-            // Alerta: prioridad SIN STOCK > CRÍTICO (A/B bajo mínimo) > BAJO MÍNIMO
-            const alert = r.alert_status;
+            // Alerta basada en días de cobertura de la RED COMPLETA (bodega + sucursales).
+            // Un producto no es crítico si las sucursales tienen suficiente stock.
+            const bodegaStock  = Number(r.current_stock ?? 0);
+            const sucursalStock = Number(netStockMap[r.erp_product_id] ?? 0);
+            const totalStock   = bodegaStock + sucursalStock;
+            const vel          = Number(r.daily_velocity ?? 0);
+            // días de cobertura de la red; Infinity si sin velocidad (sin ventas recientes)
+            const daysCoverage = vel > 0 ? totalStock / vel : Infinity;
+
             const isHighRot = abc === 'A' || abc === 'B';
-            const alertLabel = alert === 'out_of_stock'                         ? 'SIN STOCK'
-                             : (isHighRot && alert === 'below_min')             ? 'CRÍTICO'
-                             : alert === 'below_min'                            ? 'BAJO MÍNIMO'
-                             : (isHighRot && alert === 'approaching')           ? 'ATENCIÓN'
+            const alertLabel = bodegaStock === 0                             ? 'SIN STOCK'
+                             : (isHighRot && daysCoverage < 14)             ? 'CRÍTICO'
+                             : (isHighRot && daysCoverage < 30)             ? 'ATENCIÓN'
+                             : (!isHighRot && daysCoverage < 14)            ? 'BAJO MÍNIMO'
                              : '';
 
             return [
@@ -2748,7 +2756,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         <div className="h-5 w-px bg-slate-200/60 shrink-0" />
 
                         {/* CSV */}
-                        <motion.button onClick={() => exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp], isBodega)}
+                        <motion.button onClick={async () => {
+                            let netStockMap = {};
+                            if (isBodega && filtered.length > 0) {
+                                const ids = filtered.map(r => r.erp_product_id);
+                                const { data: ns } = await supabase.rpc('get_sucursal_net_stock', { p_product_ids: ids });
+                                if (ns) ns.forEach(r => { netStockMap[r.erp_product_id] = r.net_stock; });
+                            }
+                            exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp], isBodega, netStockMap);
+                        }}
                             disabled={data.length === 0 || loading}
                             title="Exportar CSV"
                             {...chipAnim}

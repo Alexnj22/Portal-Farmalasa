@@ -273,7 +273,7 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {})
                 hasVal ? maxPres : '',
                 `"${tipo}"`,
                 invPres,
-                r.units_sold_6m ?? 0,
+                factor > 1 ? ((Number(r.units_sold_6m ?? 0) / factor).toFixed(1)).replace('.', ',') : (r.units_sold_6m ?? 0),
                 alertLabel,
             ].join(SEP);
         }

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.150';
+export const APP_VERSION = '2.2.151';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.151 — fix(minmax/csv): ventas período en bodega convertidas a presentación mayor con decimal — si factor>1, units_sold_6m÷factor con 1 decimal y coma como separador (ej. 1,4 cajas); si factor=1 queda en unidades enteras; sin redondeo 40% (es un dato informativo, no un objetivo).
 // v2.2.150 — fix(minmax/csv): alerta bodega usa cobertura de red completa (bodega + sucursales) — nueva RPC get_sucursal_net_stock agrega stock real de las 6 sucursales (excl. bodega) por producto; CSV bodega calcula días_cobertura=(stock_bodega+stock_sucursales)/velocidad_diaria; umbrales: <14d→CRÍTICO (A/B) / BAJO MÍNIMO (C), 14–30d A/B→ATENCIÓN, ≥30d→sin alerta; elimina dependencia de alert_status que ignoraba el inventario real de las sucursales.
 // v2.2.149 — feat(minmax/csv): bodega CSV — orden lab, alerta críticos, MIN<MAX — (1) filas ordenadas por laboratorio→producto; (2) columna "Alerta": SIN STOCK (out_of_stock), CRÍTICO (A/B + below_min), BAJO MÍNIMO (C + below_min), ATENCIÓN (A/B + approaching); (3) tras conversión 40%, si minPres===maxPres>0 entonces minPres=maxPres-1 para garantizar MIN<MAX.
 // v2.2.148 — feat(minmax/csv): exportación bodega con conversión a presentación y nuevas columnas — CSV de bodega usa sortedPres[0] (presentación mayor disponible del producto) para convertir MIN, MAX e Inventario actual con la regla del 40% (floor + ceiling si residuo/factor >= 0.4); agrega columnas "Presentación" (tipo de la presentación) e "Inventario actual" (cantidad convertida); sucursales normales mantienen el CSV original en unidades base.

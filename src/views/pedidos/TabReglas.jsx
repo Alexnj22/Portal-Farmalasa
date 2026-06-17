@@ -137,6 +137,13 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
         onApply(next);
     };
 
+    const selectLabel = (label) => {
+        if (saving) return;
+        const next = { ...vals, dispatch_label: vals.dispatch_label === label ? '' : label };
+        setVals(next);
+        onApply(next);
+    };
+
     const clearRule = () => {
         if (saving) return;
         const next = { ...vals, dispatch_id_presentacion: null, dispatch_multiplo: '1', dispatch_label: '' };
@@ -229,79 +236,87 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                 )}
             </div>
 
-            {/* Cantidad por lote — solo si hay presentación seleccionada */}
+            {/* Opciones adicionales — solo si hay presentación seleccionada */}
             <AnimatePresence>
                 {vals.dispatch_id_presentacion && (
                     <motion.div
                         key="multiplo-block"
                         initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.18, ease: EASE }}
-                        className="space-y-2"
+                        className="space-y-3"
                     >
-                        <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Por lote</p>
-                        <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
-                            {MULTIPLO_PILLS.map(n => (
-                                <button key={n} type="button"
-                                    onClick={() => selectMultiplo(n)}
-                                    className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
-                                        multiplo === n
-                                            ? 'bg-blue-600 border-blue-500 text-white shadow-md'
-                                            : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
-                                    }`}
-                                >×{n}</button>
-                            ))}
-                            <input type="number" min={1} placeholder="Otro…"
-                                value={MULTIPLO_PILLS.includes(multiplo) ? '' : multiplo}
-                                onChange={e => {
-                                    const n = parseInt(e.target.value);
-                                    if (n > 0) selectMultiplo(n);
-                                }}
-                                className="w-20 border border-slate-200 rounded-xl px-2 py-1.5 text-[12px] focus:outline-none focus:border-blue-400 bg-white/80"
-                            />
-                        </div>
-
-                        {/* Ejemplo de redondeo */}
-                        <div className="px-3 py-2 rounded-xl bg-blue-50/60 border border-blue-200/60 text-[11px] text-blue-700">
-                            <span className="font-medium">Ejemplo:</span> necesidad de 7 packs
-                            {' → '}despacha{' '}
-                            <strong>{Math.ceil(7 / multiplo) * multiplo} pack(s)</strong>
-                            {' '}de{' '}<strong>{vals.dispatch_label || selectedTipo}</strong>
-                            {multiplo > 1 ? ` (múltiplo de ${multiplo})` : ''}
-                        </div>
-
-                        {/* Etiqueta PDF — opcional, solo cuando multiplo > 1 y sin presentación propia */}
-                        {multiplo > 1 && (
-                            <div>
-                                <p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1.5 font-bold">
-                                    Etiqueta en PDF
-                                    <span className="normal-case tracking-normal font-medium text-slate-300"> · opcional — reemplaza el nombre de presentación</span>
-                                </p>
-                                <input type="text"
-                                    placeholder={`Ej. CAJA, ESTUCHE… (dejar vacío = ${selectedTipo})`}
-                                    value={vals.dispatch_label}
-                                    onChange={e => setVals(p => ({ ...p, dispatch_label: e.target.value.toUpperCase() }))}
-                                    onBlur={e => {
-                                        if (!vals.dispatch_id_presentacion) return;
-                                        onApply({ ...vals, dispatch_label: e.target.value.toUpperCase() || '' });
-                                    }}
-                                    onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
-                                    className="w-full border border-slate-200/80 rounded-xl px-3 py-2 text-[12px] focus:outline-none focus:border-blue-400 bg-white/80 backdrop-blur-sm"
-                                />
+                        {/* Etiqueta en PDF — pills preset, junto a la presentación */}
+                        <div>
+                            <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-2 font-bold">
+                                Mostrar en PDF como
+                                <span className="normal-case tracking-normal font-medium text-slate-300"> · opcional</span>
+                            </p>
+                            <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
+                                {['CAJA', 'ESTUCHE', 'BOLSA'].map(label => (
+                                    <button key={label} type="button"
+                                        onClick={() => selectLabel(label)}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
+                                            vals.dispatch_label === label
+                                                ? 'bg-slate-800 border-slate-700 text-white shadow-md'
+                                                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700'
+                                        }`}
+                                    >
+                                        <Box size={11} className={vals.dispatch_label === label ? 'text-white' : 'text-slate-400'} />
+                                        {label}
+                                    </button>
+                                ))}
                                 {vals.dispatch_label && (
-                                    <p className="text-[10px] text-blue-600 mt-1.5 font-medium">
-                                        PDF: <strong>{Math.ceil(7 / multiplo)} {vals.dispatch_label}</strong> en vez de <span className="line-through text-slate-400">{Math.ceil(7 / multiplo) * multiplo} {selectedTipo}</span>
-                                    </p>
+                                    <button type="button" onClick={() => selectLabel(vals.dispatch_label)}
+                                        className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-200 transition-all bg-white">
+                                        <X size={10} /> quitar
+                                    </button>
                                 )}
                             </div>
-                        )}
+                        </div>
+
+                        {/* Por lote */}
+                        <div className="space-y-2">
+                            <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Por lote</p>
+                            <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
+                                {MULTIPLO_PILLS.map(n => (
+                                    <button key={n} type="button"
+                                        onClick={() => selectMultiplo(n)}
+                                        className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold border-2 transition-all ${
+                                            multiplo === n
+                                                ? 'bg-blue-600 border-blue-500 text-white shadow-md'
+                                                : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'
+                                        }`}
+                                    >×{n}</button>
+                                ))}
+                                <input type="number" min={1} placeholder="Otro…"
+                                    value={MULTIPLO_PILLS.includes(multiplo) ? '' : multiplo}
+                                    onChange={e => {
+                                        const n = parseInt(e.target.value);
+                                        if (n > 0) selectMultiplo(n);
+                                    }}
+                                    className="w-20 border border-slate-200 rounded-xl px-2 py-1.5 text-[12px] focus:outline-none focus:border-blue-400 bg-white/80"
+                                />
+                            </div>
+
+                            {/* Ejemplo de redondeo — corregido según etiqueta */}
+                            <div className="px-3 py-2 rounded-xl bg-blue-50/60 border border-blue-200/60 text-[11px] text-blue-700">
+                                <span className="font-medium">Ejemplo:</span> necesidad de 7 und.
+                                {' → '}despacha{' '}
+                                {vals.dispatch_label && multiplo > 1 ? (
+                                    <strong>{Math.ceil(7 / multiplo)} {vals.dispatch_label}</strong>
+                                ) : (
+                                    <><strong>{Math.ceil(7 / multiplo) * multiplo} pack(s)</strong>{' '}de{' '}<strong>{selectedTipo}</strong>{multiplo > 1 ? ` (múltiplo de ${multiplo})` : ''}</>
+                                )}
+                            </div>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Botón quitar regla */}
+            {/* Botón quitar regla — rojo por defecto */}
             {vals.dispatch_id_presentacion && (
                 <button onClick={clearRule} disabled={saving}
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 bg-white/80 border-slate-200 text-slate-400 hover:border-rose-300 hover:bg-rose-50/40 hover:text-rose-500 transition-all text-[12px]">
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 bg-rose-50/50 border-rose-200 text-rose-500 hover:border-rose-400 hover:bg-rose-50 hover:text-rose-600 transition-all text-[12px]">
                     <Ban size={13} /> Quitar regla de despacho
                 </button>
             )}

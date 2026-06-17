@@ -1827,7 +1827,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [zeroAllConfirm,  setZeroAllConfirm]  = useState({ open: false, row: null });
     const [calcularConfirm, setCalcularConfirm] = useState({ open: false, mode: null });
     const [discardRowConfirm, setDiscardRowConfirm] = useState({ open: false, row: null });
-    const [zeroOutConfirm,  setZeroOutConfirm]  = useState({ open: false, row: null, pendingCell: null, pendingPair: null });
+    const [zeroOutConfirm,  setZeroOutConfirm]  = useState({ open: false, row: null, pendingCell: null, pendingPair: null, pendingZeroAll: false });
     const [discardingAll,  setDiscardingAll]  = useState(false);
     const [analysisConfig, setAnalysisConfig] = useState({ analysis_days: 180, approaching_pct: 20 });
     const analysisConfigRef = useRef({ analysis_days: 180, approaching_pct: 20 });
@@ -2051,9 +2051,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         }
     }, [hasPublishedData]);
 
-    const handleZeroAllBranches = useCallback(async () => {
-        const row = zeroAllConfirm.row;
-        setZeroAllConfirm({ open: false, row: null });
+    const handleZeroAllBranches = useCallback(async (row) => {
         const { data: { user } } = await supabase.auth.getUser();
         const { error } = await supabase.rpc('zero_out_product_all_branches', {
             p_erp_product_id: row.erp_product_id,
@@ -2072,7 +2070,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         useStaff.getState().appendAuditLog('MINMAX_ZERO_ALL_BRANCHES', String(row.erp_product_id), {
             product: row.product_name,
         });
-    }, [zeroAllConfirm]);
+    }, []);
 
     const saveDraftCell = useCallback(async (edit, opts = {}) => {
         if (!edit) return;
@@ -3625,7 +3623,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             onOpenHistory={() => openHistory(row)}
                                             onDiscardDraft={() => setDiscardRowConfirm({ open: true, row })}
                                             onPublish={(ids) => requestPublish(ids)}
-                                            onZeroAllBranches={() => setZeroAllConfirm({ open: true, row })}
+                                            onZeroAllBranches={() => {
+                                                const cls = row.draft_abc_class || row.abc_class;
+                                                if (cls === 'A' || cls === 'B')
+                                                    setZeroOutConfirm({ open: true, row, pendingCell: null, pendingPair: null, pendingZeroAll: true });
+                                                else
+                                                    setZeroAllConfirm({ open: true, row });
+                                            }}
                                         />
                                     </DataCell>
                                 </DataRow>
@@ -3866,26 +3870,29 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             {/* ── Confirm poner 0 en producto de alta rotación ── */}
             <ConfirmModal
                 isOpen={zeroOutConfirm.open}
-                onClose={() => setZeroOutConfirm({ open: false, row: null, pendingCell: null, pendingPair: null })}
+                onClose={() => setZeroOutConfirm({ open: false, row: null, pendingCell: null, pendingPair: null, pendingZeroAll: false })}
                 onConfirm={() => {
-                    const { row, pendingCell, pendingPair } = zeroOutConfirm;
-                    setZeroOutConfirm({ open: false, row: null, pendingCell: null, pendingPair: null });
-                    if (pendingCell) saveDraftCell(pendingCell, { confirmed: true });
+                    const { row, pendingCell, pendingPair, pendingZeroAll } = zeroOutConfirm;
+                    setZeroOutConfirm({ open: false, row: null, pendingCell: null, pendingPair: null, pendingZeroAll: false });
+                    if (pendingZeroAll) handleZeroAllBranches(row);
+                    else if (pendingCell) saveDraftCell(pendingCell, { confirmed: true });
                     else if (pendingPair) saveDraftPair(...pendingPair, { confirmed: true });
                     else zeroOutRow(row);
                 }}
-                title="¿Poner 0 en producto de alta rotación?"
-                message={`"${zeroOutConfirm.row?.product_name ?? ''}" es clase ${zeroOutConfirm.row?.draft_abc_class || zeroOutConfirm.row?.abc_class || '?'} con ${Number(zeroOutConfirm.row?.daily_velocity ?? 0).toFixed(1)} und/día. ¿Confirmar MIN·MAX en 0?`}
-                confirmText="Poner 0"
+                title={zeroOutConfirm.pendingZeroAll ? '¿Poner 0 en red — producto de alta rotación?' : '¿Poner 0 en producto de alta rotación?'}
+                message={zeroOutConfirm.pendingZeroAll
+                    ? `"${zeroOutConfirm.row?.product_name ?? ''}" es clase ${zeroOutConfirm.row?.draft_abc_class || zeroOutConfirm.row?.abc_class || '?'} con ${Number(zeroOutConfirm.row?.daily_velocity ?? 0).toFixed(1)} und/día. Quedará en 0/0 en todas las sucursales y bodega. Esta acción no se puede deshacer.`
+                    : `"${zeroOutConfirm.row?.product_name ?? ''}" es clase ${zeroOutConfirm.row?.draft_abc_class || zeroOutConfirm.row?.abc_class || '?'} con ${Number(zeroOutConfirm.row?.daily_velocity ?? 0).toFixed(1)} und/día. ¿Confirmar MIN·MAX en 0?`}
+                confirmText={zeroOutConfirm.pendingZeroAll ? '0 en red' : 'Poner 0'}
                 cancelText="Cancelar"
                 isDestructive={true}
             />
 
-            {/* ── Confirm zero all branches modal ── */}
+            {/* ── Confirm zero all branches modal (solo clase C / sin clase) ── */}
             <ConfirmModal
                 isOpen={zeroAllConfirm.open}
                 onClose={() => setZeroAllConfirm({ open: false, row: null })}
-                onConfirm={handleZeroAllBranches}
+                onConfirm={() => { const r = zeroAllConfirm.row; setZeroAllConfirm({ open: false, row: null }); handleZeroAllBranches(r); }}
                 title="¿Poner — / — en todas las salas?"
                 message={`"${zeroAllConfirm.row?.product_name ?? ''}" quedará en 0/0 en todas las sucursales y bodega. Se publicará inmediatamente. Esta acción no se puede deshacer.`}
                 confirmText="0 en red"

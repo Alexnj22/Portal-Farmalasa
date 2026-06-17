@@ -208,19 +208,20 @@ export default function TabGenerar({ searchTerm = '' }) {
         return m;
     }, [dashStats]);
 
-    // Sucursales con MIN/MAX Portal publicado (>0 productos). Durante la carga
-    // muestra todas para no esconder skeletons; después del load oculta las que
-    // no tienen ningún producto con parámetros publicados.
-    const visibleSucursales = dashLoading
-        ? SUCURSALES
-        : SUCURSALES.filter(id => {
-            const s = statMap[id];
-            return s && ((s.con_bodega_productos ?? 0) + (s.sin_bodega_productos ?? 0)) > 0;
-        });
+    // Todas las sucursales siempre visibles; las que no tienen MIN/MAX publicado
+    // se muestran como "pendiente" — inactivas, no seleccionables.
+    const visibleSucursales = SUCURSALES;
+
+    const isSucPending = (id) => {
+        if (dashLoading) return false;
+        const s = statMap[id];
+        return !s || ((s.con_bodega_productos ?? 0) + (s.sin_bodega_productos ?? 0)) === 0;
+    };
 
     const toggleAll = () => {
-        const allSel = visibleSucursales.every(id => selected.has(id));
-        setSelected(allSel ? new Set() : new Set(visibleSucursales));
+        const activeSucs = visibleSucursales.filter(id => !isSucPending(id));
+        const allSel = activeSucs.length > 0 && activeSucs.every(id => selected.has(id));
+        setSelected(allSel ? new Set() : new Set(activeSucs));
     };
 
     // Ranking de urgencia — mayor avg_urgencia_pct primero
@@ -348,10 +349,31 @@ export default function TabGenerar({ searchTerm = '' }) {
                 <style>{SUC_ANIM_CSS}</style>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                     {visibleSucursales.map((id) => {
-                        const stat     = statMap[id];
-                        const isOn     = selected.has(id);
-                        const urgLevel = getUrgLevel(stat);
-                        const urgPct   = stat?.avg_urgencia_pct ?? null;
+                        const stat      = statMap[id];
+                        const isOn      = selected.has(id);
+                        const pending   = isSucPending(id);
+                        const urgLevel  = getUrgLevel(stat);
+                        const urgPct    = stat?.avg_urgencia_pct ?? null;
+
+                        if (pending) {
+                            return (
+                                <div
+                                    key={id}
+                                    className="relative flex flex-col items-center gap-1 rounded-2xl px-3 py-4 border text-center overflow-hidden bg-slate-50/60 border-slate-200/40 opacity-60 cursor-not-allowed"
+                                >
+                                    <span className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent pointer-events-none" />
+                                    <Building2 size={20} className="text-slate-300 mt-1" />
+                                    <span className="text-[12px] font-bold leading-tight text-slate-500">{ERP_NAMES[id]}</span>
+                                    {dashLoading ? (
+                                        <div className="h-6 w-14 rounded-lg bg-slate-100 animate-pulse mt-0.5" />
+                                    ) : (
+                                        <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600 border border-amber-200/60 mt-0.5 text-center leading-tight">
+                                            Pendiente MIN/MAX
+                                        </span>
+                                    )}
+                                </div>
+                            );
+                        }
 
                         // Base: always urgency-based, never changes on selection
                         const baseCls = urgLevel === 'high'

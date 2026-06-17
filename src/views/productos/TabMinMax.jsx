@@ -1822,9 +1822,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const saveHiddenTimer  = useRef(null); // unused, kept for cleanup safety
     const publishTimer     = useRef(null);
     const skipBlurSave     = useRef(false);
-    const [publishConfirm, setPublishConfirm] = useState({ open: false, ids: null, count: 0 });
-    const [discardConfirm, setDiscardConfirm] = useState(false);
-    const [zeroAllConfirm, setZeroAllConfirm] = useState({ open: false, row: null });
+    const [publishConfirm,  setPublishConfirm]  = useState({ open: false, ids: null, count: 0 });
+    const [discardConfirm,  setDiscardConfirm]  = useState(false);
+    const [zeroAllConfirm,  setZeroAllConfirm]  = useState({ open: false, row: null });
+    const [calcularConfirm, setCalcularConfirm] = useState({ open: false, mode: null });
+    const [discardRowConfirm, setDiscardRowConfirm] = useState({ open: false, row: null });
+    const [zeroOutConfirm,  setZeroOutConfirm]  = useState({ open: false, row: null });
     const [discardingAll,  setDiscardingAll]  = useState(false);
     const [analysisConfig, setAnalysisConfig] = useState({ analysis_days: 180, approaching_pct: 20 });
     const analysisConfigRef = useRef({ analysis_days: 180, approaching_pct: 20 });
@@ -2691,7 +2694,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                 <div className="h-5 w-px bg-slate-200/60 shrink-0" />
 
                                 {/* Todas las sucursales — oculto en Bodega (se actualiza sola vía trigger) */}
-                                <motion.button onClick={handleRecalcularAll} disabled={!canManage || calculating || loading}
+                                <motion.button onClick={() => setCalcularConfirm({ open: true, mode: 'all' })} disabled={!canManage || calculating || loading}
                                     title="Recalcular todas las sucursales (Bodega se actualiza sola)"
                                     {...chipAnim}
                                     className="inline-flex items-center justify-center gap-1.5 min-w-[100px] px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-700 transition-colors disabled:opacity-40 disabled:pointer-events-none">
@@ -2707,7 +2710,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     {!isBodega && (
                         <>
                             <div className="self-stretch w-px bg-slate-200/60 shrink-0" />
-                            <motion.button onClick={handleRecalcular} disabled={!canManage || calculating || loading}
+                            <motion.button onClick={() => setCalcularConfirm({ open: true, mode: 'single' })} disabled={!canManage || calculating || loading}
                                 {...ctaAnim}
                                 className="self-stretch inline-flex items-center justify-center gap-1.5 min-w-[110px] px-4 text-[12px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 transition-colors rounded-r-2xl disabled:opacity-60 disabled:pointer-events-none">
                                 {calculating && calcMode === 'single'
@@ -2766,7 +2769,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[12px] text-blue-700 font-medium">
                     <Settings2 size={13} className="shrink-0 text-blue-500" />
                     <span className="flex-1">Configuración actualizada — recalculá para que los nuevos parámetros surtan efecto.</span>
-                    <button onClick={() => { handleRecalcular(); }}
+                    <button onClick={() => setCalcularConfirm({ open: true, mode: 'single' })}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-white bg-[#0052CC] hover:bg-blue-700 rounded-lg transition-colors">
                         <RefreshCw size={10} /> Recalcular ahora
                     </button>
@@ -3589,10 +3592,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                                     ? { ...r, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r));
                                                 useStaff.getState().appendAuditLog('MINMAX_HIDE', String(row.erp_product_id), { product: row.product_name, sucursal_id: row._erp_sucursal_id });
                                             }}
-                                            onZeroOut={() => zeroOutRow(row)}
+                                            onZeroOut={() => {
+                                                const cls = row.draft_abc_class || row.abc_class;
+                                                if (cls === 'A' || cls === 'B') setZeroOutConfirm({ open: true, row });
+                                                else zeroOutRow(row);
+                                            }}
                                             onResetToCalc={() => resetToCalc(row)}
                                             onOpenHistory={() => openHistory(row)}
-                                            onDiscardDraft={() => discardDraft(row)}
+                                            onDiscardDraft={() => setDiscardRowConfirm({ open: true, row })}
                                             onPublish={(ids) => requestPublish(ids)}
                                             onZeroAllBranches={() => setZeroAllConfirm({ open: true, row })}
                                         />
@@ -3804,6 +3811,44 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 confirmText="Publicar"
                 cancelText="Cancelar"
                 isDestructive={false}
+            />
+
+            {/* ── Confirm calcular modal ── */}
+            <ConfirmModal
+                isOpen={calcularConfirm.open}
+                onClose={() => setCalcularConfirm({ open: false, mode: null })}
+                onConfirm={() => { const m = calcularConfirm.mode; setCalcularConfirm({ open: false, mode: null }); m === 'all' ? handleRecalcularAll() : handleRecalcular(); }}
+                title={calcularConfirm.mode === 'all' ? '¿Recalcular todas las sucursales?' : `¿Recalcular ${ERP_NAMES[selectedErp]}?`}
+                message={calcularConfirm.mode === 'all'
+                    ? 'Se generarán nuevos borradores para todas las sucursales. Los borradores existentes no publicados serán reemplazados.'
+                    : `Se generarán nuevos borradores para ${ERP_NAMES[selectedErp]}. Los borradores actuales no publicados serán reemplazados.`}
+                confirmText="Calcular"
+                cancelText="Cancelar"
+                isDestructive={false}
+            />
+
+            {/* ── Confirm discard individual draft modal ── */}
+            <ConfirmModal
+                isOpen={discardRowConfirm.open}
+                onClose={() => setDiscardRowConfirm({ open: false, row: null })}
+                onConfirm={() => { const r = discardRowConfirm.row; setDiscardRowConfirm({ open: false, row: null }); discardDraft(r); }}
+                title="¿Descartar borrador?"
+                message={`"${discardRowConfirm.row?.product_name ?? ''}" volverá al MIN·MAX publicado actual. Esta acción no se puede deshacer.`}
+                confirmText="Descartar"
+                cancelText="Cancelar"
+                isDestructive={true}
+            />
+
+            {/* ── Confirm poner 0 en producto de alta rotación ── */}
+            <ConfirmModal
+                isOpen={zeroOutConfirm.open}
+                onClose={() => setZeroOutConfirm({ open: false, row: null })}
+                onConfirm={() => { const r = zeroOutConfirm.row; setZeroOutConfirm({ open: false, row: null }); zeroOutRow(r); }}
+                title="¿Poner 0 en producto de alta rotación?"
+                message={`"${zeroOutConfirm.row?.product_name ?? ''}" es clase ${zeroOutConfirm.row?.draft_abc_class || zeroOutConfirm.row?.abc_class || '?'} con ${Number(zeroOutConfirm.row?.daily_velocity ?? 0).toFixed(1)} und/día. ¿Confirmar MIN·MAX en 0?`}
+                confirmText="Poner 0"
+                cancelText="Cancelar"
+                isDestructive={true}
             />
 
             {/* ── Confirm zero all branches modal ── */}

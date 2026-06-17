@@ -373,7 +373,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
 // ─── RowActions — máx 3 elementos visibles + dropdown "Más" ──────────────────
 function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, publishing, hidingIds,
     isBodegaRow,
-    onUnhide, onHide, onZeroOut, onResetToCalc, onOpenHistory, onDiscardDraft, onPublish }) {
+    onUnhide, onHide, onZeroOut, onResetToCalc, onOpenHistory, onDiscardDraft, onPublish, onZeroAllBranches }) {
 
     const [open, setOpen]   = useState(false);
     const [menuPos, setMenuPos] = useState(null);
@@ -429,6 +429,10 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
                 cls: `${B} text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none`,
                 dropCls: 'text-slate-500 hover:text-slate-700 hover:bg-slate-100',
                 onClick: () => onHide(), disabled: hidingIds.has(row.erp_product_id) },
+        isBodegaRow && canManage && { key: 'zero_all', icon: <XCircle size={13}/>, label: '0 en red',
+            cls: `${B} text-rose-500 hover:text-rose-700 hover:bg-rose-50`,
+            dropCls: 'text-rose-600 hover:text-rose-700 hover:bg-rose-50',
+            onClick: () => onZeroAllBranches() },
     ].filter(Boolean);
 
     const extraBtns = [
@@ -1820,6 +1824,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const skipBlurSave     = useRef(false);
     const [publishConfirm, setPublishConfirm] = useState({ open: false, ids: null, count: 0 });
     const [discardConfirm, setDiscardConfirm] = useState(false);
+    const [zeroAllConfirm, setZeroAllConfirm] = useState({ open: false, row: null });
     const [discardingAll,  setDiscardingAll]  = useState(false);
     const [analysisConfig, setAnalysisConfig] = useState({ analysis_days: 180, approaching_pct: 20 });
     const analysisConfigRef = useRef({ analysis_days: 180, approaching_pct: 20 });
@@ -2042,6 +2047,29 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             });
         }
     }, [hasPublishedData]);
+
+    const handleZeroAllBranches = useCallback(async () => {
+        const row = zeroAllConfirm.row;
+        setZeroAllConfirm({ open: false, row: null });
+        const { data: { user } } = await supabase.auth.getUser();
+        const { error } = await supabase.rpc('zero_out_product_all_branches', {
+            p_erp_product_id: row.erp_product_id,
+            p_published_by: user?.email ?? null,
+        });
+        if (error) {
+            useToastStore.getState().showToast(row.product_name, error.message || 'Error al ejecutar', 'error');
+            return;
+        }
+        setData(prev => prev.map(r =>
+            r.erp_product_id === row.erp_product_id
+                ? { ...r, min_units: 0, max_units: 0, draft_min: null, draft_max: null, draft_status: 'none', has_manual: false, effective_min: 0, effective_max: 0 }
+                : r
+        ));
+        useToastStore.getState().showToast(row.product_name, 'Retirado de MIN·MAX en todas las salas', 'success');
+        useStaff.getState().appendAuditLog('MINMAX_ZERO_ALL_BRANCHES', String(row.erp_product_id), {
+            product: row.product_name,
+        });
+    }, [zeroAllConfirm]);
 
     const saveDraftCell = useCallback(async (edit) => {
         if (!edit) return;
@@ -3566,6 +3594,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             onOpenHistory={() => openHistory(row)}
                                             onDiscardDraft={() => discardDraft(row)}
                                             onPublish={(ids) => requestPublish(ids)}
+                                            onZeroAllBranches={() => setZeroAllConfirm({ open: true, row })}
                                         />
                                     </DataCell>
                                 </DataRow>
@@ -3775,6 +3804,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                 confirmText="Publicar"
                 cancelText="Cancelar"
                 isDestructive={false}
+            />
+
+            {/* ── Confirm zero all branches modal ── */}
+            <ConfirmModal
+                isOpen={zeroAllConfirm.open}
+                onClose={() => setZeroAllConfirm({ open: false, row: null })}
+                onConfirm={handleZeroAllBranches}
+                title="¿Poner — / — en todas las salas?"
+                message={`"${zeroAllConfirm.row?.product_name ?? ''}" quedará en 0/0 en todas las sucursales y bodega. Se publicará inmediatamente. Esta acción no se puede deshacer.`}
+                confirmText="0 en red"
+                cancelText="Cancelar"
+                isDestructive={true}
             />
 
             {/* ── Confirm discard all modal ── */}

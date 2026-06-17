@@ -211,28 +211,51 @@ function applyPresRule(units, factor) {
 
 function exportCsv(rows, name, sucursalName, isBodega = false) {
     const SEP = ';';
+
+    // Bodega: ordenar por laboratorio → producto
+    const sorted = isBodega
+        ? [...rows].sort((a, b) => {
+            const la = (a.laboratorio_nombre || '').toLowerCase();
+            const lb = (b.laboratorio_nombre || '').toLowerCase();
+            return la < lb ? -1 : la > lb ? 1 : (a.product_name || '').localeCompare(b.product_name || '', 'es');
+          })
+        : rows;
+
     const h = isBodega
-        ? ['Sucursal','Laboratorio','Producto','Clase','MIN','MAX','Presentación','Inventario actual','Ventas período']
+        ? ['Sucursal','Laboratorio','Producto','Clase','MIN','MAX','Presentación','Inventario actual','Ventas período','Alerta']
         : ['Sucursal','Laboratorio','Producto','Clase','MIN (und)','MAX (und)','Ventas período'];
 
-    const lines = rows.map(r => {
+    const lines = sorted.map(r => {
         const abc  = (r.draft_abc_class || r.abc_class || '');
         const xyz  = normXyz(r.draft_demand_variability || r.demand_variability);
         const minU = r.effective_min ?? 0;
         const maxU = r.effective_max ?? 0;
 
         if (isBodega) {
-            // Determinar la presentación más grande disponible para este producto
-            const pres     = sortedPres(r.presentations || []); // mayor factor primero
-            const best     = pres[0];                            // la mayor presentación
-            const factor   = best?.factor ?? 1;
-            const tipo     = best ? best.tipo.trim() : 'und';
+            // Presentación mayor disponible del producto
+            const pres   = sortedPres(r.presentations || []);
+            const best   = pres[0];
+            const factor = best?.factor ?? 1;
+            const tipo   = best ? best.tipo.trim() : 'und';
 
-            const minPres  = applyPresRule(minU, factor);
-            const maxPres  = applyPresRule(maxU, factor);
-            const invPres  = applyPresRule(Number(r.current_stock ?? 0), factor);
+            let minPres = applyPresRule(minU, factor);
+            let maxPres = applyPresRule(maxU, factor);
+            const invPres = applyPresRule(Number(r.current_stock ?? 0), factor);
 
-            const hasVal   = maxU > 0 || minU > 0;
+            // MIN y MAX no pueden quedar iguales tras conversión: MIN = MAX - 1
+            if (maxPres > 0 && minPres === maxPres) minPres = maxPres - 1;
+
+            const hasVal = maxU > 0 || minU > 0;
+
+            // Alerta: prioridad SIN STOCK > CRÍTICO (A/B bajo mínimo) > BAJO MÍNIMO
+            const alert = r.alert_status;
+            const isHighRot = abc === 'A' || abc === 'B';
+            const alertLabel = alert === 'out_of_stock'                         ? 'SIN STOCK'
+                             : (isHighRot && alert === 'below_min')             ? 'CRÍTICO'
+                             : alert === 'below_min'                            ? 'BAJO MÍNIMO'
+                             : (isHighRot && alert === 'approaching')           ? 'ATENCIÓN'
+                             : '';
+
             return [
                 `"${(sucursalName||'').replace(/"/g,'""')}"`,
                 `"${(r.laboratorio_nombre||'').replace(/"/g,'""')}"`,
@@ -243,6 +266,7 @@ function exportCsv(rows, name, sucursalName, isBodega = false) {
                 `"${tipo}"`,
                 invPres,
                 r.units_sold_6m ?? 0,
+                alertLabel,
             ].join(SEP);
         }
 

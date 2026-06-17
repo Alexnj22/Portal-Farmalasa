@@ -200,22 +200,63 @@ function relativeTime(iso) {
     return new Date(iso).toLocaleDateString('es-SV', { day: 'numeric', month: 'short' });
 }
 
-function exportCsv(rows, name, sucursalName) {
+// Convierte unidades a presentación usando la regla del 40%:
+// floor(units/factor) + (residuo/factor >= 0.4 ? 1 : 0)
+function applyPresRule(units, factor) {
+    if (!units || units <= 0 || !factor || factor <= 1) return units ?? 0;
+    const floor = Math.floor(units / factor);
+    const rem   = units % factor;
+    return floor + (rem / factor >= 0.4 ? 1 : 0);
+}
+
+function exportCsv(rows, name, sucursalName, isBodega = false) {
     const SEP = ';';
-    const h = ['Sucursal','Laboratorio','Producto','Clase','MIN (und)','MAX (und)','Ventas período'];
+    const h = isBodega
+        ? ['Sucursal','Laboratorio','Producto','Clase','MIN','MAX','Presentación','Inventario actual','Ventas período']
+        : ['Sucursal','Laboratorio','Producto','Clase','MIN (und)','MAX (und)','Ventas período'];
+
     const lines = rows.map(r => {
-        const abc = (r.draft_abc_class || r.abc_class || '');
-        const xyz = normXyz(r.draft_demand_variability || r.demand_variability);
+        const abc  = (r.draft_abc_class || r.abc_class || '');
+        const xyz  = normXyz(r.draft_demand_variability || r.demand_variability);
+        const minU = r.effective_min ?? 0;
+        const maxU = r.effective_max ?? 0;
+
+        if (isBodega) {
+            // Determinar la presentación más grande disponible para este producto
+            const pres     = sortedPres(r.presentations || []); // mayor factor primero
+            const best     = pres[0];                            // la mayor presentación
+            const factor   = best?.factor ?? 1;
+            const tipo     = best ? best.tipo.trim() : 'und';
+
+            const minPres  = applyPresRule(minU, factor);
+            const maxPres  = applyPresRule(maxU, factor);
+            const invPres  = applyPresRule(Number(r.current_stock ?? 0), factor);
+
+            const hasVal   = maxU > 0 || minU > 0;
+            return [
+                `"${(sucursalName||'').replace(/"/g,'""')}"`,
+                `"${(r.laboratorio_nombre||'').replace(/"/g,'""')}"`,
+                `"${(r.product_name||'').replace(/"/g,'""')}"`,
+                `${abc}${xyz}`,
+                hasVal ? minPres : '',
+                hasVal ? maxPres : '',
+                `"${tipo}"`,
+                invPres,
+                r.units_sold_6m ?? 0,
+            ].join(SEP);
+        }
+
         return [
             `"${(sucursalName||'').replace(/"/g,'""')}"`,
             `"${(r.laboratorio_nombre||'').replace(/"/g,'""')}"`,
             `"${(r.product_name||'').replace(/"/g,'""')}"`,
             `${abc}${xyz}`,
-            (r.effective_max > 0 || r.effective_min > 0) ? (r.effective_min ?? 0) : '',
-            r.effective_max > 0 ? r.effective_max : '',
+            (maxU > 0 || minU > 0) ? minU : '',
+            maxU > 0 ? maxU : '',
             r.units_sold_6m ?? 0,
         ].join(SEP);
     });
+
     // BOM + semicolon-separated + CRLF for Excel compatibility (Spanish locale)
     const blob = new Blob(['﻿' + [h.join(SEP), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8;' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `minmax_${name}_${new Date().toISOString().slice(0,10)}.csv` });
@@ -2683,7 +2724,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                         <div className="h-5 w-px bg-slate-200/60 shrink-0" />
 
                         {/* CSV */}
-                        <motion.button onClick={() => exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp])}
+                        <motion.button onClick={() => exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp], isBodega)}
                             disabled={data.length === 0 || loading}
                             title="Exportar CSV"
                             {...chipAnim}

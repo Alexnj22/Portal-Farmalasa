@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.147';
+export const APP_VERSION = '2.2.148';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.148 — feat(minmax/csv): exportación bodega con conversión a presentación y nuevas columnas — CSV de bodega usa sortedPres[0] (presentación mayor disponible del producto) para convertir MIN, MAX e Inventario actual con la regla del 40% (floor + ceiling si residuo/factor >= 0.4); agrega columnas "Presentación" (tipo de la presentación) e "Inventario actual" (cantidad convertida); sucursales normales mantienen el CSV original en unidades base.
 // v2.2.147 — fix(minmax): confirmación clase A/B también cubre "0 en red" desde bodega — handleZeroAllBranches refactorizado para aceptar row como parámetro; onZeroAllBranches en RowActions desvía A/B al modal de alta rotación (pendingZeroAll:true) en vez del genérico; zeroAllConfirm genérico queda solo para clase C/sin clase; el modal de alta rotación adapta título, mensaje y botón según sea poner-0-local o 0-en-red.
 // v2.2.146 — fix(minmax): confirmación "poner 0 en clase A/B" ahora cubre el editor inline y navegación con flechas — saveDraftCell y saveDraftPair interceptan antes del write cuando numVal=0 y el valor anterior era >0 en producto A/B; guardan el edit pendiente (pendingCell/pendingPair) en el estado del ConfirmModal; al confirmar se reanuda el save con {confirmed:true} que bypass el check; al cancelar el edit se descarta; el botón "Poner 0" de RowActions usa el mismo modal con pendingCell/pendingPair=null para mantener la ruta de zeroOutRow.
 // v2.2.145 — feat(minmax): confirmaciones en acciones críticas — (1) Calcular individual y Calcular todas: ConfirmModal antes de ejecutar (no destructivo, informa que sobrescribe borradores); (2) Descartar borrador individual (per-fila): ConfirmModal destructivo antes de revertir; (3) Poner 0 en producto de clase A o B: ConfirmModal destructivo adicional con clase y velocidad del producto (para clase C o sin clase sigue directo sin confirmar); las confirmaciones de Publicar, Descartar todo y 0 en red ya existían.

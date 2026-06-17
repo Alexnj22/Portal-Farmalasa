@@ -198,7 +198,7 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
             colSpan: 6, fillColor: '#ffffff', margin: [6, 2, 6, 2],
             columns: [
                 { text: originText, fontSize: 6, color: '#555', width: '48%' },
-                { text: '→', fontSize: 7.5, bold: true, color: '#333', alignment: 'center', width: '6%', margin: [0, 0.5, 0, 0] },
+                { text: '>>', fontSize: 7, bold: true, color: '#777', alignment: 'center', width: '6%', margin: [0, 0.5, 0, 0] },
                 {
                     stack: [
                         { text: destText, fontSize: 6, color: '#555' },
@@ -279,16 +279,31 @@ function buildFooterCallback(meta) {
         return {
             margin: [PAGE_MARGINS[0], 3, PAGE_MARGINS[2], 0],
             stack: [
-                // Bloque de firmas compacto
+                // Bloque de firmas compacto — nombre y etiqueta centrados bajo la línea
                 {
                     columns: [
                         {
-                            width: '62%',
-                            stack: [
-                                { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 130, y2: 0, lineWidth: 0.8, lineColor: '#333' }] },
-                                { text: responsable || ' ', fontSize: 7.5, margin: [0, 2, 0, 0] },
-                                { text: 'RESPONSABLE', fontSize: 6.5, bold: true, color: '#555', margin: [0, 1, 0, 0] },
-                            ],
+                            width: '60%',
+                            table: {
+                                widths: ['*'],
+                                body: [
+                                    [{ text: responsable || ' ', fontSize: 7.5, alignment: 'center',
+                                       border: [false, false, false, true],
+                                       margin: [0, 2, 0, 1] }],
+                                    [{ text: 'RESPONSABLE', fontSize: 6.5, bold: true, color: '#555',
+                                       alignment: 'center', border: [false, false, false, false],
+                                       margin: [0, 1, 0, 0] }],
+                                ],
+                            },
+                            layout: {
+                                hLineWidth: (i) => (i === 1 ? 0.8 : 0),
+                                vLineWidth: () => 0,
+                                hLineColor: () => '#333',
+                                paddingLeft:   () => 0,
+                                paddingRight:  () => 0,
+                                paddingTop:    (i) => (i === 0 ? 2 : 1),
+                                paddingBottom: () => 0,
+                            },
                         },
                         {
                             width: '25%',
@@ -303,8 +318,8 @@ function buildFooterCallback(meta) {
                         { width: '*', text: '' },
                     ],
                 },
-                // Línea separadora fina
-                { margin: [0, 3, 0, 3], canvas: [{ type: 'line', x1: 0, y1: 0, x2: CONTENT_WIDTH, y2: 0, lineWidth: 0.5, lineColor: '#ccc' }] },
+                // Línea separadora con más espacio arriba
+                { margin: [0, 5, 0, 3], canvas: [{ type: 'line', x1: 0, y1: 0, x2: CONTENT_WIDTH, y2: 0, lineWidth: 0.5, lineColor: '#ccc' }] },
                 // Footer original
                 originalFooterColumns(currentPage, pageCount),
             ],

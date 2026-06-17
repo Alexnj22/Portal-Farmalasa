@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.145';
+export const APP_VERSION = '2.2.146';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.146 — fix(minmax): confirmación "poner 0 en clase A/B" ahora cubre el editor inline y navegación con flechas — saveDraftCell y saveDraftPair interceptan antes del write cuando numVal=0 y el valor anterior era >0 en producto A/B; guardan el edit pendiente (pendingCell/pendingPair) en el estado del ConfirmModal; al confirmar se reanuda el save con {confirmed:true} que bypass el check; al cancelar el edit se descarta; el botón "Poner 0" de RowActions usa el mismo modal con pendingCell/pendingPair=null para mantener la ruta de zeroOutRow.
 // v2.2.145 — feat(minmax): confirmaciones en acciones críticas — (1) Calcular individual y Calcular todas: ConfirmModal antes de ejecutar (no destructivo, informa que sobrescribe borradores); (2) Descartar borrador individual (per-fila): ConfirmModal destructivo antes de revertir; (3) Poner 0 en producto de clase A o B: ConfirmModal destructivo adicional con clase y velocidad del producto (para clase C o sin clase sigue directo sin confirmar); las confirmaciones de Publicar, Descartar todo y 0 en red ya existían.
 // v2.2.144 — feat(minmax/bodega): botón "0 en red" + fix publish_stock_params v7 — (1) nuevo botón de acción en bodega "0 en red": abre ConfirmModal y llama RPC zero_out_product_all_branches que publica 0/0 en todas las sucursales y bodega en un solo paso (limpia drafts y overrides manuales); el botón aparece en el dropdown "Más" de RowActions solo cuando selectedErp=6 y canManage; (2) migración publish_stock_params v7: corrige HAVING que excluía productos cuando la Σ pub=0/0, causando que bodega conservara un draft stale "pending" aunque ninguna sucursal tuviera draft activo; el OR EXISTS en el HAVING garantiza que bodega recibe draft_status='none' cuando todas las salas publican 0/0; (3) fix inmediato: limpieza de 180 registros stale en bodega.
 // v2.2.143 — fix(minmax/bodega): 3 correcciones en ExpandedPanel y tabla bodega — (1) "MIN·MAX red" ya no incluye bodega en su propia lista (filtro id!==6 en ERP_ORDER.map); (2) mensaje "Sin MIN·MAX en ninguna sala" cuando todas las sucursales tienen 0/0 y sin borradores pendientes; (3) badge "SIN SALAS" en filas de bodega cuando el producto fue retirado de todas las salas (draft_min+draft_max=0 pendiente, o min_units+max_units=0 con override manual).

@@ -1827,7 +1827,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     const [zeroAllConfirm,  setZeroAllConfirm]  = useState({ open: false, row: null });
     const [calcularConfirm, setCalcularConfirm] = useState({ open: false, mode: null });
     const [discardRowConfirm, setDiscardRowConfirm] = useState({ open: false, row: null });
-    const [zeroOutConfirm,  setZeroOutConfirm]  = useState({ open: false, row: null });
+    const [zeroOutConfirm,  setZeroOutConfirm]  = useState({ open: false, row: null, pendingCell: null, pendingPair: null });
     const [discardingAll,  setDiscardingAll]  = useState(false);
     const [analysisConfig, setAnalysisConfig] = useState({ analysis_days: 180, approaching_pct: 20 });
     const analysisConfigRef = useRef({ analysis_days: 180, approaching_pct: 20 });
@@ -2074,11 +2074,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
         });
     }, [zeroAllConfirm]);
 
-    const saveDraftCell = useCallback(async (edit) => {
+    const saveDraftCell = useCallback(async (edit, opts = {}) => {
         if (!edit) return;
         const numVal = edit.value === '' ? null : parseInt(edit.value, 10);
         if (Number.isNaN(numVal) && edit.value !== '') { setInlineDraftEdit(null); return; }
         const targetRow = data.find(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId);
+
+        // Confirmar si el valor pasa de >0 a 0 en producto clase A/B (salvo que ya fue confirmado)
+        if (!opts.confirmed && numVal === 0) {
+            const cls = targetRow?.draft_abc_class || targetRow?.abc_class;
+            const curVal = edit.field === 'min'
+                ? (targetRow?.draft_min ?? targetRow?.effective_min ?? 0)
+                : (targetRow?.draft_max ?? targetRow?.effective_max ?? 0);
+            if ((cls === 'A' || cls === 'B') && curVal > 0) {
+                setInlineDraftEdit(null);
+                setZeroOutConfirm({ open: true, row: targetRow, pendingCell: edit, pendingPair: null });
+                return;
+            }
+        }
         const rowHasDraft  = targetRow?.draft_status === 'pending';
         const rowIsSparse  = targetRow?.draft_status === 'sparse_data';
         const saveLive = hasPublishedData && !rowHasDraft && !rowIsSparse;
@@ -2193,11 +2206,22 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
     }, [data, hasPublishedData]);
 
     // Guarda MIN y MAX en una sola llamada a la BD (par atómico).
-    const saveDraftPair = useCallback(async (productId, sucursalId, minValue, maxValue, productName) => {
+    const saveDraftPair = useCallback(async (productId, sucursalId, minValue, maxValue, productName, opts = {}) => {
         const minNum = minValue === '' ? null : parseInt(minValue, 10);
         const maxNum = maxValue === '' ? null : parseInt(maxValue, 10);
         if ((Number.isNaN(minNum) && minValue !== '') || (Number.isNaN(maxNum) && maxValue !== '')) return;
         const targetRow = data.find(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId);
+
+        // Confirmar si ambos quedan en 0 y el producto es clase A/B y antes tenía valores
+        if (!opts.confirmed && (minNum === 0 || minNum === null) && (maxNum === 0 || maxNum === null)) {
+            const cls = targetRow?.draft_abc_class || targetRow?.abc_class;
+            const hadMin = (targetRow?.draft_min ?? targetRow?.effective_min ?? 0) > 0;
+            const hadMax = (targetRow?.draft_max ?? targetRow?.effective_max ?? 0) > 0;
+            if ((cls === 'A' || cls === 'B') && (hadMin || hadMax)) {
+                setZeroOutConfirm({ open: true, row: targetRow, pendingCell: null, pendingPair: [productId, sucursalId, minValue, maxValue, productName] });
+                return;
+            }
+        }
 
         // Bodega: par MIN+MAX siempre a manual_min/manual_max
         if (targetRow?._erp_sucursal_id === 6) {
@@ -3594,7 +3618,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                                             }}
                                             onZeroOut={() => {
                                                 const cls = row.draft_abc_class || row.abc_class;
-                                                if (cls === 'A' || cls === 'B') setZeroOutConfirm({ open: true, row });
+                                                if (cls === 'A' || cls === 'B') setZeroOutConfirm({ open: true, row, pendingCell: null, pendingPair: null });
                                                 else zeroOutRow(row);
                                             }}
                                             onResetToCalc={() => resetToCalc(row)}
@@ -3842,8 +3866,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
             {/* ── Confirm poner 0 en producto de alta rotación ── */}
             <ConfirmModal
                 isOpen={zeroOutConfirm.open}
-                onClose={() => setZeroOutConfirm({ open: false, row: null })}
-                onConfirm={() => { const r = zeroOutConfirm.row; setZeroOutConfirm({ open: false, row: null }); zeroOutRow(r); }}
+                onClose={() => setZeroOutConfirm({ open: false, row: null, pendingCell: null, pendingPair: null })}
+                onConfirm={() => {
+                    const { row, pendingCell, pendingPair } = zeroOutConfirm;
+                    setZeroOutConfirm({ open: false, row: null, pendingCell: null, pendingPair: null });
+                    if (pendingCell) saveDraftCell(pendingCell, { confirmed: true });
+                    else if (pendingPair) saveDraftPair(...pendingPair, { confirmed: true });
+                    else zeroOutRow(row);
+                }}
                 title="¿Poner 0 en producto de alta rotación?"
                 message={`"${zeroOutConfirm.row?.product_name ?? ''}" es clase ${zeroOutConfirm.row?.draft_abc_class || zeroOutConfirm.row?.abc_class || '?'} con ${Number(zeroOutConfirm.row?.daily_velocity ?? 0).toFixed(1)} und/día. ¿Confirmar MIN·MAX en 0?`}
                 confirmText="Poner 0"

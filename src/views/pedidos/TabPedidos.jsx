@@ -245,8 +245,8 @@ function SucPill({ sucId }) {
 
 // ─── Pause Modal ──────────────────────────────────────────────────────────────
 
-function PauseModal({ modal, history, razonSel, setRazonSel, comment, setComment, onCancel, onConfirm, busy }) {
-    const alreadyHadAlmuerzo = history.some(h => h.pausa_razon?.toLowerCase().includes('almuerzo'));
+function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment, setComment, onCancel, onConfirm, busy }) {
+    const alreadyHadAlmuerzo = history.some(h => h.razon?.toLowerCase().includes('almuerzo'));
     const reason = PAUSE_REASONS.find(r => r.key === razonSel);
     const canConfirm = !(reason?.requiresComment && !comment.trim());
 
@@ -257,6 +257,17 @@ function PauseModal({ modal, history, razonSel, setRazonSel, comment, setComment
                     <h3 className="font-bold text-slate-800 text-[16px]">¿Por qué pausas este despacho?</h3>
                     <p className="text-[12px] text-slate-400 mt-0.5">{ERP_NAMES[modal.sucId] ?? `Sucursal ${modal.sucId}`}</p>
                 </div>
+
+                {/* Kiosk lunch detection banner */}
+                {kioskLunch && (
+                    <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-700">
+                        <Coffee size={15} className="text-teal-500 shrink-0" />
+                        <div>
+                            <p className="text-[12px] font-semibold">Almuerzo detectado en el kiosko</p>
+                            <p className="text-[10px] text-teal-600">Tu marcaje de salida a almuerzo se registró hoy.</p>
+                        </div>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-2">
                     {PAUSE_REASONS.map(opt => {
@@ -585,6 +596,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [pauseHistory, setPauseHistory] = useState([]);
     const [pauseRazon,   setPauseRazon]   = useState('almuerzo');
     const [pauseComment, setPauseComment] = useState('');
+    const [kioskLunch,   setKioskLunch]   = useState(false);
 
     // ── Branch ERP ────────────────────────────────────────────────────────────
 
@@ -712,12 +724,40 @@ export default function TabPedidos({ searchTerm = '' }) {
     }, [user, loadActive]);
 
     const openPauseModal = useCallback(async (pedidoId, sucId) => {
-        const { data } = await supabase.from('pedido_pausa_historial').select('pausa_razon').eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
-        setPauseHistory(data ?? []);
-        setPauseRazon('almuerzo');
+        // Fetch pause history + today's kiosk attendance in parallel
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        const [{ data: histData }, { data: punchData }] = await Promise.all([
+            supabase.from('pedido_pausa_historial')
+                .select('razon')
+                .eq('pedido_id', pedidoId)
+                .eq('erp_sucursal_id', sucId),
+            user?.id
+                ? supabase.from('attendance')
+                    .select('type, timestamp')
+                    .eq('employee_id', user.id)
+                    .in('type', ['OUT_LUNCH', 'IN_LUNCH'])
+                    .gte('timestamp', todayStart.toISOString())
+                    .order('timestamp', { ascending: false })
+                    .limit(10)
+                : Promise.resolve({ data: [] }),
+        ]);
+
+        const history = histData ?? [];
+        const punches = punchData ?? [];
+
+        // Currently on kiosk lunch = last relevant punch today is OUT_LUNCH
+        const onKioskLunch = punches.length > 0 && punches[0].type === 'OUT_LUNCH';
+        const alreadyUsedAlmuerzo = history.some(h => h.razon?.toLowerCase().includes('almuerzo'));
+
+        setKioskLunch(onKioskLunch);
+        setPauseHistory(history);
+        // Auto-select Almuerzo when kiosk detects lunch and it hasn't been used yet
+        setPauseRazon(onKioskLunch && !alreadyUsedAlmuerzo ? 'almuerzo' : 'personal');
         setPauseComment('');
         setPauseModal({ pedidoId, sucId });
-    }, []);
+    }, [user?.id]);
 
     const confirmPause = useCallback(async () => {
         if (!pauseModal) return;
@@ -962,6 +1002,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 <PauseModal
                     modal={pauseModal}
                     history={pauseHistory}
+                    kioskLunch={kioskLunch}
                     razonSel={pauseRazon}    setRazonSel={setPauseRazon}
                     comment={pauseComment}   setComment={setPauseComment}
                     onCancel={() => setPauseModal(null)}

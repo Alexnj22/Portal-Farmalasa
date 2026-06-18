@@ -371,7 +371,6 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                 </div>
 
                 {/* Scope selector */}
-                {module.hasScope && console.log('[scope]', module.key, 'hasScope:', module.hasScope, 'can_view:', perms.can_view)}
                 {module.hasScope && perms.can_view && (
                     <div className="mt-3 pt-3 border-t border-white/40">
                         <div className="flex items-center gap-1.5 mb-2">

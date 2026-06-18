@@ -249,24 +249,26 @@ export default function TabDiferencias({ searchTerm = '' }) {
             {!loading && totales && totales.items_afectados > 0 && (
                 <>
                     {/* Toggle de vista */}
-                    <div className="flex items-center gap-1.5">
+                    <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200/70 bg-white/80 px-1.5 py-1">
                         {[
                             { key: 'sucursal', label: 'Por sucursal', icon: Building2    },
                             { key: 'producto', label: 'Por producto', icon: Package      },
                             { key: 'detalle',  label: 'Detalle',      icon: AlertTriangle },
-                        ].map(v => (
-                            <button
-                                key={v.key}
-                                onClick={() => setViewMode(v.key)}
-                                className={`flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-full border font-medium transition-colors ${
-                                    viewMode === v.key
-                                        ? 'bg-blue-600 text-white border-blue-600'
-                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                                }`}
-                            >
-                                <v.icon size={11} />
-                                {v.label}
-                            </button>
+                        ].map((v, i, arr) => (
+                            <React.Fragment key={v.key}>
+                                <button
+                                    onClick={() => setViewMode(v.key)}
+                                    className={`flex items-center gap-1.5 text-[11px] px-3 py-1 rounded-xl font-medium transition-colors ${
+                                        viewMode === v.key
+                                            ? 'bg-blue-600 text-white'
+                                            : 'text-slate-500 hover:bg-slate-100/60'
+                                    }`}
+                                >
+                                    <v.icon size={11} />
+                                    {v.label}
+                                </button>
+                                {i < arr.length - 1 && <div className="h-5 w-px bg-slate-100" />}
+                            </React.Fragment>
                         ))}
                     </div>
 

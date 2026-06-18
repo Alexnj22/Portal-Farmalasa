@@ -162,6 +162,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     const [deletingSnap,     setDeletingSnap]     = useState(false);
     const [totalCounts,      setTotalCounts]      = useState(null);
     const [lifecycleMap,     setLifecycleMap]     = useState({}); // { pedidoId: { sucId: {...} } }
+    const [pausaHistMap,     setPausaHistMap]     = useState({}); // { pedidoId: { sucId: [pause rows] } }
     const [updatingLifecycle, setUpdatingLifecycle] = useState({}); // { 'pedidoId_sucId': bool }
     const [pauseModal,       setPauseModal]       = useState(null); // { pedidoId, sucId } | null
     const [pauseRazonSel,    setPauseRazonSel]    = useState('almuerzo');
@@ -301,7 +302,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     // ── Fetch items + lotes + firmas + extras for expanded pedido ─────────────
     const fetchPedidoItems = useCallback(async (pedidoId) => {
         setLoadingItems(true);
-        const [{ data }, { data: firmaRows }, { data: extraRows }, { data: lifecycleRows }] = await Promise.all([
+        const [{ data }, { data: firmaRows }, { data: extraRows }, { data: lifecycleRows }, { data: pausaHistRows }] = await Promise.all([
             supabase
                 .from('pedido_items')
                 .select(`
@@ -329,6 +330,11 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 .from('pedido_sucursal_status')
                 .select('erp_sucursal_id, codigo, iniciado_at, iniciado_por, pausado_at, pausa_razon, reanudado_at, finalizado_at, finalizado_por, recibido_erp_at, recibido_erp_por')
                 .eq('pedido_id', pedidoId),
+            supabase
+                .from('pedido_pausa_historial')
+                .select('erp_sucursal_id, pausado_at, reanudado_at, pausa_razon')
+                .eq('pedido_id', pedidoId)
+                .order('pausado_at', { ascending: true }),
         ]);
 
         const rows = data || [];
@@ -340,6 +346,15 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         const lcByS = {};
         for (const row of (lifecycleRows || [])) lcByS[row.erp_sucursal_id] = row;
         setLifecycleMap(prev => ({ ...prev, [pedidoId]: lcByS }));
+
+        // Index pause history by sucursal
+        const phByS = {};
+        for (const ph of (pausaHistRows || [])) {
+            if (!phByS[ph.erp_sucursal_id]) phByS[ph.erp_sucursal_id] = [];
+            phByS[ph.erp_sucursal_id].push(ph);
+        }
+        setPausaHistMap(prev => ({ ...prev, [pedidoId]: phByS }));
+
         loadEmployees([
             ...rows.map(r => r.received_by),
             ...(lifecycleRows || []).flatMap(r => [r.iniciado_por, r.finalizado_por, r.recibido_erp_por]),
@@ -523,14 +538,27 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 `PEDIDO_LIFECYCLE_${stage.toUpperCase()}`, pedidoId,
                 { sucursal_id: sucursalId, razon },
             );
-            // Reload lifecycle for this pedido
-            const { data: lcRows } = await supabase
-                .from('pedido_sucursal_status')
-                .select('erp_sucursal_id, codigo, iniciado_at, iniciado_por, pausado_at, pausa_razon, reanudado_at, finalizado_at, finalizado_por, recibido_erp_at, recibido_erp_por')
-                .eq('pedido_id', pedidoId);
+            // Reload lifecycle + pause history for this pedido
+            const [{ data: lcRows }, { data: phRows }] = await Promise.all([
+                supabase
+                    .from('pedido_sucursal_status')
+                    .select('erp_sucursal_id, codigo, iniciado_at, iniciado_por, pausado_at, pausa_razon, reanudado_at, finalizado_at, finalizado_por, recibido_erp_at, recibido_erp_por')
+                    .eq('pedido_id', pedidoId),
+                supabase
+                    .from('pedido_pausa_historial')
+                    .select('erp_sucursal_id, pausado_at, reanudado_at, pausa_razon')
+                    .eq('pedido_id', pedidoId)
+                    .order('pausado_at', { ascending: true }),
+            ]);
             const lcByS = {};
             for (const row of (lcRows || [])) lcByS[row.erp_sucursal_id] = row;
             setLifecycleMap(prev => ({ ...prev, [pedidoId]: lcByS }));
+            const phByS = {};
+            for (const ph of (phRows || [])) {
+                if (!phByS[ph.erp_sucursal_id]) phByS[ph.erp_sucursal_id] = [];
+                phByS[ph.erp_sucursal_id].push(ph);
+            }
+            setPausaHistMap(prev => ({ ...prev, [pedidoId]: phByS }));
             loadEmployees((lcRows || []).flatMap(r => [r.iniciado_por, r.finalizado_por, r.recibido_erp_por]));
         } catch (e) {
             setAnulError(`Error: ${e.message}`);
@@ -861,11 +889,24 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                         const canFinalizar  = p.status === 'confirmado' && !!lifecycle.iniciado_at && !lifecycle.finalizado_at && !isPausado;
                                         const erpRecibido   = !!lifecycle.recibido_erp_at;
 
+                                        // Pause history + net prep time
+                                        const pausaHist = pausaHistMap[p.id]?.[suc] ?? [];
+                                        const totalPausaMs = pausaHist
+                                            .filter(ph => ph.reanudado_at)
+                                            .reduce((s, ph) => s + (new Date(ph.reanudado_at) - new Date(ph.pausado_at)), 0);
+
                                         // Tiempos entre etapas
                                         const dtGenToIni   = fmtElapsed(p.created_at,           lifecycle.iniciado_at);
-                                        const dtIniToPause = fmtElapsed(lifecycle.iniciado_at,   lifecycle.pausado_at);
-                                        const dtPauseToRes = fmtElapsed(lifecycle.pausado_at,    lifecycle.reanudado_at);
-                                        const dtIniToFin   = fmtElapsed(lifecycle.reanudado_at ?? lifecycle.iniciado_at, lifecycle.finalizado_at);
+                                        // Net prep time = bruto elapsed − total pause time
+                                        let dtIniToFin = null;
+                                        if (lifecycle.iniciado_at && lifecycle.finalizado_at) {
+                                            const brutoMs = new Date(lifecycle.finalizado_at) - new Date(lifecycle.iniciado_at);
+                                            const netoMs  = Math.max(0, brutoMs - totalPausaMs);
+                                            const netoMin = Math.floor(netoMs / 60_000);
+                                            if (netoMin === 0)       dtIniToFin = '<1m';
+                                            else if (netoMin < 60)   dtIniToFin = `${netoMin}m`;
+                                            else { const h = Math.floor(netoMin / 60); const m = netoMin % 60; dtIniToFin = m > 0 ? `${h}h ${m}m` : `${h}h`; }
+                                        }
                                         const dtFinToEnv   = fmtElapsed(lifecycle.finalizado_at, p.enviado_at);
                                         const dtEnvToRec   = sucFirmas[0]
                                             ? fmtElapsed(p.enviado_at, sucFirmas[0]?.created_at)
@@ -1009,24 +1050,30 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                         {empMap[lifecycle.iniciado_por]?.name?.split(' ')[0] ?? fmtTime(lifecycle.iniciado_at)}
                                                                     </span>
                                                                 </>)}
-                                                                {/* → Pausado */}
-                                                                {lifecycle.pausado_at && (<>
-                                                                    {dtIniToPause && <span className="text-[9px] text-slate-300">→{dtIniToPause}→</span>}
-                                                                    <span className="inline-flex items-center gap-0.5 text-[9px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                                                                        <Pause size={8} />
-                                                                        {lifecycle.pausa_razon ?? fmtTime(lifecycle.pausado_at)}
-                                                                    </span>
-                                                                    {lifecycle.reanudado_at && (<>
-                                                                        {dtPauseToRes && <span className="text-[9px] text-slate-300">→{dtPauseToRes}→</span>}
-                                                                        <span className="inline-flex items-center gap-0.5 text-[9px] bg-teal-50 text-teal-700 border border-teal-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                                                                            <Play size={8} />
-                                                                            {fmtTime(lifecycle.reanudado_at)}
-                                                                        </span>
-                                                                    </>)}
-                                                                </>)}
+                                                                {/* → Pausas (historial completo) */}
+                                                                {pausaHist.map((ph, phIdx) => {
+                                                                    const dur = ph.reanudado_at ? fmtElapsed(ph.pausado_at, ph.reanudado_at) : null;
+                                                                    return (
+                                                                        <React.Fragment key={phIdx}>
+                                                                            <span className="text-[9px] text-slate-300">→</span>
+                                                                            <span className="inline-flex items-center gap-0.5 text-[9px] bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                                                <Pause size={8} />
+                                                                                {ph.pausa_razon ?? fmtTime(ph.pausado_at)}
+                                                                                {dur && <span className="opacity-60 ml-0.5">· {dur}</span>}
+                                                                            </span>
+                                                                            {ph.reanudado_at && (<>
+                                                                                <span className="text-[9px] text-slate-300">→</span>
+                                                                                <span className="inline-flex items-center gap-0.5 text-[9px] bg-teal-50 text-teal-700 border border-teal-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                                                    <Play size={8} />
+                                                                                    {fmtTime(ph.reanudado_at)}
+                                                                                </span>
+                                                                            </>)}
+                                                                        </React.Fragment>
+                                                                    );
+                                                                })}
                                                                 {/* → Finalizado */}
                                                                 {lifecycle.finalizado_at && (<>
-                                                                    {dtIniToFin && <span className="text-[9px] text-slate-300">→{dtIniToFin}→</span>}
+                                                                    {dtIniToFin && <span className="text-[9px] text-slate-300">→{dtIniToFin} neto→</span>}
                                                                     <span className="inline-flex items-center gap-0.5 text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-100 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                                                         <Flag size={8} />
                                                                         {empMap[lifecycle.finalizado_por]?.name?.split(' ')[0] ?? fmtTime(lifecycle.finalizado_at)}

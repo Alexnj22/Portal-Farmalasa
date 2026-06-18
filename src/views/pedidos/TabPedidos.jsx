@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import {
@@ -6,7 +6,7 @@ import {
     Package, Building2, AlertTriangle,
     Truck, Pause, PackageCheck, Play,
     Database, Activity, TrendingDown,
-    X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert,
+    X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -106,6 +106,15 @@ function getBranchStage(row, pedidoStatus) {
     if (row.iniciado_at)                                 return 'preparando';
     return 'sin_iniciar';
 }
+
+// solicitado = need in presentation units before dispatch rounding
+function calcSolicitado(row) {
+    if (row.max_qty_snapshot == null || row.stock_packs_snapshot == null) return null;
+    const factor = row.factor || 1;
+    const needUnits = row.max_qty_snapshot - row.stock_packs_snapshot * factor;
+    return Math.max(0, Math.ceil(needUnits / factor));
+}
+
 function fmtRegla(row) {
     if (!row.dispatch_tipo) return <span className="text-slate-400">—</span>;
     const tipos = { caja: 'CAJA', blister: 'BLISTER', multiplo: 'UND ×', multiplo_unidades: 'UND ×', solo_cajas: 'SOLO CAJAS' };
@@ -138,40 +147,13 @@ function MotorcycleAnim() {
     );
 }
 
-// Cinta transportadora — boxes sliding left → right on a moving belt
-function ConveyorAnim() {
-    const DUR = 1.75;
+function BoxStackAnim() {
     return (
-        <div className="relative shrink-0 overflow-hidden rounded" style={{ width: 90, height: 44 }}>
-            {/* Belt base */}
-            <div className="absolute bottom-0 left-0 right-0 bg-slate-300 border-t-2 border-slate-400" style={{ height: 14 }} />
-            {/* Moving belt links */}
-            <motion.div
-                className="absolute bottom-0 flex items-center"
-                style={{ height: 14, width: 130, left: -5 }}
-                animate={{ x: [0, -20] }}
-                transition={{ duration: 0.38, repeat: Infinity, ease: 'linear' }}
-            >
-                {Array.from({ length: 16 }).map((_, i) => (
-                    <React.Fragment key={i}>
-                        <div style={{ width: 8, height: 10, background: '#94a3b8', borderRadius: 1, flexShrink: 0 }} />
-                        <div style={{ width: 4, height: 14, background: '#cbd5e1', flexShrink: 0 }} />
-                    </React.Fragment>
-                ))}
-            </motion.div>
-            {/* Boxes */}
-            {[0, 1, 2].map(i => (
-                <motion.div
-                    key={i}
-                    style={{ position: 'absolute', bottom: 14, left: 0, width: 20, height: 18, borderRadius: 3, border: '1.5px solid', flexShrink: 0 }}
-                    className={i === 0 ? 'bg-blue-500 border-blue-600' : i === 1 ? 'bg-blue-400 border-blue-500' : 'bg-blue-300 border-blue-400'}
-                    animate={{ x: [-22, 96] }}
-                    transition={{ duration: DUR, repeat: Infinity, delay: -(i * (DUR / 3)), ease: 'linear' }}
-                >
-                    {/* Box cross line */}
-                    <div style={{ position: 'absolute', top: '45%', left: 3, right: 3, height: 1, background: 'rgba(255,255,255,0.4)' }} />
-                </motion.div>
-            ))}
+        <div className="relative w-10 h-9 shrink-0">
+            <motion.div className="absolute bottom-0 left-0 w-9 h-4 rounded-md bg-blue-200 border border-blue-300 shadow-sm" animate={{ y: [0, -1, 0] }} transition={{ duration: 0.85, repeat: Infinity, delay: 0.3, ease: 'easeInOut' }} />
+            <motion.div className="absolute bottom-[14px] left-1 w-7 h-3.5 rounded bg-blue-300 border border-blue-400" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.85, repeat: Infinity, delay: 0.1, ease: 'easeInOut' }} />
+            <motion.div className="absolute bottom-[25px] left-2 w-5 h-3 rounded bg-blue-400 border border-blue-500" animate={{ y: [0, -2, 0] }} transition={{ duration: 0.85, repeat: Infinity, delay: 0.0, ease: 'easeInOut' }} />
+            <motion.div className="absolute bottom-[34px] left-3 w-3 h-2.5 rounded bg-blue-500 border border-blue-600" animate={{ y: [0, -3, 0] }} transition={{ duration: 0.85, repeat: Infinity, delay: -0.1, ease: 'easeInOut' }} />
         </div>
     );
 }
@@ -215,12 +197,28 @@ function PingDot({ color = 'blue', size = 'sm' }) {
 
 function StageAnim({ stage }) {
     if (stage === 'transito')   return <MotorcycleAnim />;
-    if (stage === 'preparando') return <ConveyorAnim />;
+    if (stage === 'preparando') return <BoxStackAnim />;
     if (stage === 'pausado')    return <PausedAnim />;
     if (stage === 'preparado')  return <VioletGlow />;
     if (stage === 'contando')   return <ScanAnim />;
     if (stage === 'erp')        return <PingDot color="emerald" size="lg" />;
     return null;
+}
+
+// ─── Employee chip ────────────────────────────────────────────────────────────
+
+function EmpChip({ emp, label }) {
+    if (!emp) return null;
+    return (
+        <span className="inline-flex items-center gap-1.5 text-[10px] text-slate-500 font-medium shrink-0">
+            <span className="text-slate-400 text-[9px] uppercase tracking-wide">{label}</span>
+            {emp.photo
+                ? <img src={emp.photo} alt={emp.name} className="w-5 h-5 rounded-full object-cover border border-white shadow-sm" />
+                : <span className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center"><UserCircle2 size={12} className="text-slate-400" /></span>
+            }
+            <span className="text-slate-600">{emp.name?.split(' ')[0] ?? '—'}</span>
+        </span>
+    );
 }
 
 // ─── Pills ────────────────────────────────────────────────────────────────────
@@ -258,7 +256,6 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
                     <p className="text-[12px] text-slate-400 mt-0.5">{ERP_NAMES[modal.sucId] ?? `Sucursal ${modal.sucId}`}</p>
                 </div>
 
-                {/* Kiosk lunch detection banner */}
                 {kioskLunch && (
                     <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-700">
                         <Coffee size={15} className="text-teal-500 shrink-0" />
@@ -295,7 +292,6 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
                     })}
                 </div>
 
-                {/* Comment field — required for "Otro", optional otherwise */}
                 <div>
                     <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
                         {reason?.requiresComment ? 'Describe la razón *' : 'Comentario (opcional)'}
@@ -342,10 +338,16 @@ function renderProd(row) {
 }
 
 const COLS_ENVIADOS = [
-    { key: 'lab',   label: 'Laboratorio', render: renderLab },
-    { key: 'prod',  label: 'Producto',    render: renderProd },
-    { key: 'asig',  label: 'Enviado',  align: 'center', render: r => <span className="font-bold tabular-nums">{r.cantidad_asignada}</span> },
-    { key: 'rec',   label: 'Recibido', align: 'center', render: r => {
+    { key: 'lab',        label: 'Laboratorio',  render: renderLab },
+    { key: 'prod',       label: 'Producto',     render: renderProd },
+    { key: 'solicitado', label: 'Solicitado', align: 'center', render: r => {
+        const sol = calcSolicitado(r);
+        return sol != null
+            ? <span className="tabular-nums text-slate-500">{sol}</span>
+            : <span className="text-slate-300">—</span>;
+    }},
+    { key: 'asig',       label: 'Enviado',   align: 'center', render: r => <span className="font-bold tabular-nums">{r.cantidad_asignada}</span> },
+    { key: 'rec',        label: 'Recibido',  align: 'center', render: r => {
         if (r.cantidad_recibida == null) return <span className="text-slate-400">—</span>;
         const diff = r.cantidad_recibida - r.cantidad_asignada;
         return (
@@ -366,15 +368,15 @@ const COLS_ENVIADOS = [
 ];
 
 const COLS_SIN_STOCK = [
-    { key: 'lab',   label: 'Laboratorio', render: renderLab },
-    { key: 'prod',  label: 'Producto',    render: renderProd },
+    { key: 'lab',    label: 'Laboratorio', render: renderLab },
+    { key: 'prod',   label: 'Producto',    render: renderProd },
     { key: 'motivo', label: 'Motivo', render: () => <span className="text-amber-600 text-[11px]">Sin stock en bodega</span> },
 ];
 
 const COLS_REGLA = [
-    { key: 'lab',    label: 'Laboratorio', render: renderLab },
-    { key: 'prod',   label: 'Producto',    render: renderProd },
-    { key: 'regla',  label: 'Regla aplicada',  render: fmtRegla },
+    { key: 'lab',    label: 'Laboratorio',   render: renderLab },
+    { key: 'prod',   label: 'Producto',      render: renderProd },
+    { key: 'regla',  label: 'Regla aplicada', render: fmtRegla },
     { key: 'motivo', label: 'Motivo', render: () => <span className="text-rose-600 text-[11px]">Necesidad &lt; 40% de la unidad mínima de despacho</span> },
 ];
 
@@ -400,7 +402,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
                             {noteEl}
                             <DataTable
                                 columns={columns}
-                                minWidth="320px"
+                                minWidth="400px"
                                 footer={totalPages > 1 ? (
                                     <div className="flex items-center justify-between w-full">
                                         <span className="text-[10px] text-slate-400">{rows.length} registros · p. {page + 1}/{totalPages}</span>
@@ -432,44 +434,26 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
 function ItemSections({ allItems, loading }) {
     if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-slate-300" /></div>;
 
-    const enviados     = allItems.filter(i => i.cantidad_asignada > 0);
-    const sinStock     = allItems.filter(i => i.sin_stock);
-    const porRegla     = allItems.filter(i => i.revision_minmax);
-    const total        = enviados.length + sinStock.length + porRegla.length;
+    const enviados = allItems.filter(i => i.cantidad_asignada > 0);
+    const sinStock = allItems.filter(i => i.sin_stock);
+    const porRegla = allItems.filter(i => i.revision_minmax);
+    const total    = enviados.length + sinStock.length + porRegla.length;
 
     if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-slate-400">Sin ítems.</div>;
 
     return (
         <>
-            {/* Summary strip */}
             <div className="border-t border-slate-100 px-4 py-2.5 bg-slate-50/60 flex items-center gap-5 flex-wrap">
                 <span className="text-[11px] text-slate-500">Solicitados <strong className="text-slate-700">{total}</strong></span>
                 <span className="text-[11px] text-slate-500">Enviados <strong className="text-emerald-600">{enviados.length}</strong></span>
-                {sinStock.length > 0  && <span className="text-[11px] text-slate-500">Sin inventario <strong className="text-amber-600">{sinStock.length}</strong></span>}
-                {porRegla.length > 0  && <span className="text-[11px] text-slate-500">Revisar regla <strong className="text-rose-600">{porRegla.length}</strong></span>}
+                {sinStock.length > 0 && <span className="text-[11px] text-slate-500">Sin inventario <strong className="text-amber-600">{sinStock.length}</strong></span>}
+                {porRegla.length > 0 && <span className="text-[11px] text-slate-500">Revisar regla <strong className="text-rose-600">{porRegla.length}</strong></span>}
             </div>
-
+            <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-emerald-50 text-emerald-700 border-emerald-200" rows={enviados} columns={COLS_ENVIADOS} />
+            <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-amber-50 text-amber-700 border-amber-200" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-[10px] text-amber-600/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
             <ItemSection
-                label="Productos enviados" count={enviados.length}
-                badgeCls="bg-emerald-50 text-emerald-700 border-emerald-200"
-                rows={enviados} columns={COLS_ENVIADOS}
-            />
-            <ItemSection
-                label="Sin inventario en bodega" count={sinStock.length}
-                badgeCls="bg-amber-50 text-amber-700 border-amber-200"
-                rows={sinStock} columns={COLS_SIN_STOCK}
-                noteEl={<p className="text-[10px] text-amber-600/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>}
-            />
-            <ItemSection
-                label="Revisar regla de despacho" count={porRegla.length}
-                badgeCls="bg-rose-50 text-rose-700 border-rose-200"
-                rows={porRegla} columns={COLS_REGLA}
-                noteEl={
-                    <div className="flex items-start gap-2 text-[10px] text-rose-600/80 bg-rose-50/60 border border-rose-100 rounded-xl px-3 py-2">
-                        <ShieldAlert size={12} className="mt-0.5 shrink-0 text-rose-500" />
-                        La cantidad requerida no alcanzó el 40% de la unidad mínima de despacho. Ajusta la regla o los MIN/MAX del producto para que se incluya en el próximo pedido.
-                    </div>
-                }
+                label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-rose-50 text-rose-700 border-rose-200" rows={porRegla} columns={COLS_REGLA}
+                noteEl={<div className="flex items-start gap-2 text-[10px] text-rose-600/80 bg-rose-50/60 border border-rose-100 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-rose-500" />La cantidad requerida no alcanzó el 40% de la unidad mínima de despacho. Ajusta la regla o los MIN/MAX del producto para que se incluya en el próximo pedido.</div>}
             />
         </>
     );
@@ -517,8 +501,7 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
             className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 whitespace-nowrap shrink-0 ${
                 filterStatus === key
                     ? (key === 'confirmado' ? 'bg-blue-100 border-blue-200 text-blue-700 shadow-sm'
-                      : key === 'enviado'   ? 'bg-indigo-100 border-indigo-200 text-indigo-700 shadow-sm'
-                      : 'bg-slate-100 border-slate-200 text-slate-700 shadow-sm')
+                      : 'bg-indigo-100 border-indigo-200 text-indigo-700 shadow-sm')
                     : 'bg-transparent text-slate-400 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
             }`}
         >
@@ -527,7 +510,7 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
     );
 
     return (
-        <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 overflow-visible shrink-0">
+        <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 hover:border-slate-200 overflow-visible shrink-0">
             {!isBranch && (
                 <>
                     <div className="flex items-center">
@@ -562,8 +545,17 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function TabPedidos({ searchTerm = '' }) {
-    const { user, getScope } = useAuth();
+    const { user, getScope, hasPermission } = useAuth();
     const isBranch = getScope('pedidos') === 'BRANCH';
+    const canEdit  = hasPermission('pedidos_en_curso', 'can_edit');
+
+    // Employee store for name/photo lookups
+    const storeEmployees = useStaff(s => s.employees);
+    const empMap = useMemo(() => {
+        const m = new Map();
+        (storeEmployees || []).forEach(e => m.set(e.id, e));
+        return m;
+    }, [storeEmployees]);
 
     const [erpSucursalId, setErpSucursalId] = useState(null);
     const [branchName,    setBranchName]    = useState('');
@@ -588,6 +580,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [erpStatus,     setErpStatus]     = useState({});
     const [busyAction,    setBusyAction]    = useState(null);
     const [busyLifecycle, setBusyLifecycle] = useState(null);
+    const [busyEnvio,     setBusyEnvio]     = useState(null);
     const [modal,         setModal]         = useState(null);
     const [newAlert,      setNewAlert]      = useState(null);
 
@@ -622,7 +615,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     const loadHistory = useCallback(async (page = 0, suc = 'all') => {
         if (page === 0) setLoadingHist(true);
-        let q = supabase.from('pedidos').select('id, numero, created_at, status, notes, enviado_at, sucursal_ids').in('status', DONE_STATUSES).order('created_at', { ascending: false }).range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+        let q = supabase.from('pedidos').select('id, numero, created_at, status, notes, enviado_at, sucursal_ids, created_by').in('status', DONE_STATUSES).order('created_at', { ascending: false }).range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
         if (suc !== 'all' && suc) q = q.contains('sucursal_ids', [suc]);
         const { data } = await q;
         const rows = data || [];
@@ -723,40 +716,48 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error('Lifecycle error:', e); } finally { setBusyLifecycle(null); }
     }, [user, loadActive]);
 
+    const handleMarcarEnRuta = useCallback(async (pedidoId) => {
+        setBusyEnvio(pedidoId);
+        try {
+            const { error } = await supabase.rpc('marcar_pedido_enviado', { p_pedido_id: pedidoId, p_enviado_por: user?.id ?? null });
+            if (error) throw error;
+            useStaff.getState().appendAuditLog('PEDIDO_MARCAR_EN_RUTA', pedidoId, {});
+            loadActive();
+            loadHistory(0, filterSuc);
+        } catch (e) { console.error('Envío error:', e); } finally { setBusyEnvio(null); }
+    }, [user, loadActive, loadHistory, filterSuc]);
+
     const openPauseModal = useCallback(async (pedidoId, sucId) => {
-        // Fetch pause history + today's kiosk attendance in parallel
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
+        try {
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
 
-        const [{ data: histData }, { data: punchData }] = await Promise.all([
-            supabase.from('pedido_pausa_historial')
-                .select('razon')
-                .eq('pedido_id', pedidoId)
-                .eq('erp_sucursal_id', sucId),
-            user?.id
-                ? supabase.from('attendance')
-                    .select('type, timestamp')
-                    .eq('employee_id', user.id)
-                    .in('type', ['OUT_LUNCH', 'IN_LUNCH'])
-                    .gte('timestamp', todayStart.toISOString())
-                    .order('timestamp', { ascending: false })
-                    .limit(10)
-                : Promise.resolve({ data: [] }),
-        ]);
+            const [{ data: histData }, { data: punchData }] = await Promise.all([
+                supabase.from('pedido_pausa_historial').select('razon').eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId),
+                user?.id
+                    ? supabase.from('attendance').select('type, timestamp').eq('employee_id', user.id).in('type', ['OUT_LUNCH', 'IN_LUNCH']).gte('timestamp', todayStart.toISOString()).order('timestamp', { ascending: false }).limit(10)
+                    : Promise.resolve({ data: [] }),
+            ]);
 
-        const history = histData ?? [];
-        const punches = punchData ?? [];
+            const history = histData ?? [];
+            const punches = punchData ?? [];
+            const onKioskLunch = punches.length > 0 && punches[0].type === 'OUT_LUNCH';
+            const alreadyUsedAlmuerzo = history.some(h => h.razon?.toLowerCase().includes('almuerzo'));
 
-        // Currently on kiosk lunch = last relevant punch today is OUT_LUNCH
-        const onKioskLunch = punches.length > 0 && punches[0].type === 'OUT_LUNCH';
-        const alreadyUsedAlmuerzo = history.some(h => h.razon?.toLowerCase().includes('almuerzo'));
-
-        setKioskLunch(onKioskLunch);
-        setPauseHistory(history);
-        // Auto-select Almuerzo when kiosk detects lunch and it hasn't been used yet
-        setPauseRazon(onKioskLunch && !alreadyUsedAlmuerzo ? 'almuerzo' : 'personal');
-        setPauseComment('');
-        setPauseModal({ pedidoId, sucId });
+            setKioskLunch(onKioskLunch);
+            setPauseHistory(history);
+            setPauseRazon(onKioskLunch && !alreadyUsedAlmuerzo ? 'almuerzo' : 'personal');
+            setPauseComment('');
+            setPauseModal({ pedidoId, sucId });
+        } catch (e) {
+            console.error('openPauseModal error:', e);
+            // Abre el modal aunque falle la detección de kiosko
+            setPauseHistory([]);
+            setKioskLunch(false);
+            setPauseRazon('personal');
+            setPauseComment('');
+            setPauseModal({ pedidoId, sucId });
+        }
     }, [user?.id]);
 
     const confirmPause = useCallback(async () => {
@@ -801,6 +802,20 @@ export default function TabPedidos({ searchTerm = '' }) {
     const searchLower   = searchTerm.toLowerCase();
     const filterOptions = [{ value: 'all', label: 'Todas' }, ...ERP_ORDER.map(id => ({ value: id, label: ERP_NAMES[id] ?? `Suc. ${id}` }))];
 
+    // Group activeRows by pedido to detect if ALL sucursales for a pedido are preparado
+    const pedidoStageMap = useMemo(() => {
+        const map = new Map(); // pedidoId → { allPreparado, anyPreparando }
+        activeRows.forEach(row => {
+            const stage = getBranchStage(row, row.pedido_status);
+            const prev  = map.get(row.pedido_id) ?? { allFinalized: true, anyActive: false };
+            map.set(row.pedido_id, {
+                allFinalized: prev.allFinalized && !!row.finalizado_at,
+                anyActive:    prev.anyActive || (!!row.iniciado_at && !row.finalizado_at),
+            });
+        });
+        return map;
+    }, [activeRows]);
+
     let filteredRows = activeRows;
     if (filterSuc !== 'all' && filterSuc) filteredRows = filteredRows.filter(r => r.erp_sucursal_id === Number(filterSuc));
     if (filterStatus !== 'all')            filteredRows = filteredRows.filter(r => r.pedido_status === filterStatus);
@@ -813,10 +828,9 @@ export default function TabPedidos({ searchTerm = '' }) {
         return sa !== sb ? sa - sb : new Date(b.created_at) - new Date(a.created_at);
     });
 
-    const filteredHistory = history.filter(p => {
-        if (searchLower && !String(p.numero).includes(searchLower) && !(p.notes ?? '').toLowerCase().includes(searchLower)) return false;
-        return true;
-    });
+    const filteredHistory = history.filter(p =>
+        !searchLower || String(p.numero).includes(searchLower) || (p.notes ?? '').toLowerCase().includes(searchLower)
+    );
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -863,16 +877,24 @@ export default function TabPedidos({ searchTerm = '' }) {
                 ) : (
                     <div className="space-y-2.5">
                         {filteredRows.map(row => {
-                            const stage    = getBranchStage(row, row.pedido_status);
-                            const cardKey  = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
-                            const isExp    = expanded === cardKey;
-                            const lcKey    = `lc_${row.pedido_id}_${row.erp_sucursal_id}`;
-                            const isLCBusy = busyLifecycle === lcKey;
+                            const stage      = getBranchStage(row, row.pedido_status);
+                            const cardKey    = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
+                            const isExp      = expanded === cardKey;
+                            const lcKey      = `lc_${row.pedido_id}_${row.erp_sucursal_id}`;
+                            const isLCBusy   = busyLifecycle === lcKey;
+                            const isEnvioBusy = busyEnvio === row.pedido_id;
 
-                            const canIniciar   = !isBranch && stage === 'sin_iniciar' && row.pedido_status === 'confirmado';
-                            const canPausar    = !isBranch && stage === 'preparando'  && row.pedido_status === 'confirmado';
-                            const canReanudar  = !isBranch && stage === 'pausado';
-                            const canFinalizar = !isBranch && stage === 'preparando'  && row.pedido_status === 'confirmado';
+                            const pedidoStages = pedidoStageMap.get(row.pedido_id) ?? {};
+                            const canActuar = canEdit || !isBranch; // admin/bodega
+
+                            const canIniciar       = canActuar && !isBranch && stage === 'sin_iniciar' && row.pedido_status === 'confirmado';
+                            const canPausar        = canActuar && !isBranch && stage === 'preparando';
+                            const canReanudar      = canActuar && !isBranch && stage === 'pausado';
+                            const canFinalizar     = canActuar && !isBranch && stage === 'preparando';
+                            const canMarcarEnRuta  = canActuar && !isBranch && row.pedido_status === 'confirmado' && pedidoStages.allFinalized && !pedidoStages.anyActive;
+
+                            const creator  = row.created_by  ? empMap.get(row.created_by)  : null;
+                            const iniciador = row.iniciado_por ? empMap.get(row.iniciado_por) : null;
 
                             const elapsedPrep  = stage === 'preparando' ? fmtMin(Math.max(0, (elapsed(row.iniciado_at) ?? 0) - (row.min_pausado_total ?? 0))) : null;
                             const elapsedPause = stage === 'pausado'    ? fmtMin(elapsed(row.pausado_at)) : null;
@@ -881,6 +903,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                             return (
                                 <motion.div key={cardKey} layout className={`${GLASS} overflow-hidden ${stage === 'pausado' ? 'ring-1 ring-amber-300' : ''}`}>
 
+                                    {/* Header — clickable to expand */}
                                     <button onClick={() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id)} className="w-full text-left">
                                         <div className="flex items-center gap-2.5 px-4 py-3 flex-wrap">
                                             <span className="text-[13px] font-black text-slate-700 tabular-nums shrink-0">#{row.numero}</span>
@@ -892,7 +915,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {row.notes && <p className="px-4 pb-2 text-[11px] text-slate-400 italic text-left">{row.notes}</p>}
                                     </button>
 
-                                    {/* Stage + animation + actions */}
+                                    {/* Employee chips — creator + initiator */}
+                                    {(creator || iniciador) && (
+                                        <div className="flex items-center gap-4 px-4 pb-2.5 flex-wrap">
+                                            {creator   && <EmpChip emp={creator}   label="Generó" />}
+                                            {iniciador && <EmpChip emp={iniciador} label="Inició" />}
+                                        </div>
+                                    )}
+
+                                    {/* Stage strip */}
                                     <div className="border-t border-slate-100 px-4 py-3 flex items-center gap-3 flex-wrap">
                                         <StagePill stage={stage} />
                                         <StageAnim stage={stage} />
@@ -900,14 +931,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {elapsedPause && <span className="text-[10px] text-amber-600 font-medium">{elapsedPause} pausado</span>}
                                         {elapsedTrans && <span className="text-[10px] text-indigo-500 tabular-nums">{elapsedTrans} en ruta</span>}
 
-                                        {(canIniciar || canPausar || canReanudar || canFinalizar) && (
-                                            <div className="ml-auto flex items-center gap-2 flex-wrap">
-                                                {canIniciar   && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar')}       disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm shadow-blue-200">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Play     size={11} fill="currentColor" />Iniciar</>}</button>}
-                                                {canPausar    && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}                  disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm shadow-amber-200">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Pause    size={11} fill="currentColor" />Pausar</>}</button>}
-                                                {canFinalizar && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'finalizar')}     disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm shadow-violet-200">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Flag     size={11} />Finalizar</>}</button>}
-                                                {canReanudar  && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}     disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm shadow-emerald-200">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><RotateCcw size={11} />Reanudar</>}</button>}
-                                            </div>
-                                        )}
+                                        <div className="ml-auto flex items-center gap-2 flex-wrap">
+                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar')}       disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Play     size={11} fill="currentColor" />Iniciar</>}</button>}
+                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}                  disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Pause    size={11} fill="currentColor" />Pausar</>}</button>}
+                                            {canFinalizar    && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'finalizar')}     disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Flag     size={11} />Finalizar</>}</button>}
+                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}     disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><RotateCcw size={11} />Reanudar</>}</button>}
+                                            {canMarcarEnRuta && <button onClick={() => handleMarcarEnRuta(row.pedido_id)}                                   disabled={isEnvioBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={12} className="animate-spin" /> : <><Truck size={11} />Marcar en Ruta</>}</button>}
+                                        </div>
                                     </div>
 
                                     <AnimatePresence>
@@ -954,20 +984,18 @@ export default function TabPedidos({ searchTerm = '' }) {
                         {filteredHistory.map(pedido => {
                             const histKey = `hist_${pedido.id}`;
                             const isExp   = expanded === histKey;
-                            const isAnu   = pedido.status === 'anulado';
-                            const isDiff  = pedido.status === 'parcial';
+                            const creator = pedido.created_by ? empMap.get(pedido.created_by) : null;
 
                             return (
-                                <motion.div key={pedido.id} layout className={`${GLASS} overflow-hidden ${isAnu ? 'opacity-70' : ''}`}>
+                                <motion.div key={pedido.id} layout className={`${GLASS} overflow-hidden ${pedido.status === 'anulado' ? 'opacity-70' : ''}`}>
                                     <button onClick={() => toggleExpand(histKey, pedido.id, null)} className="w-full text-left">
                                         <div className="flex items-center gap-2.5 px-4 py-3 flex-wrap">
-                                            <span className={`text-[13px] font-black tabular-nums shrink-0 ${isAnu ? 'line-through text-slate-400' : 'text-slate-700'}`}>#{pedido.numero}</span>
+                                            <span className={`text-[13px] font-black tabular-nums shrink-0 ${pedido.status === 'anulado' ? 'line-through text-slate-400' : 'text-slate-700'}`}>#{pedido.numero}</span>
                                             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${PEDIDO_PILL[pedido.status] ?? 'bg-slate-100 text-slate-500 border-slate-200'}`}>{PEDIDO_LABEL[pedido.status] ?? pedido.status}</span>
-                                            {isDiff && <PingDot color="amber" />}
+                                            {creator && <EmpChip emp={creator} label="Por" />}
                                             <span className="ml-auto text-[10px] text-slate-500 shrink-0">{fmtDate(pedido.created_at)}</span>
                                             {isExp ? <ChevronDown size={13} className="text-slate-400 shrink-0" /> : <ChevronRight size={13} className="text-slate-400 shrink-0" />}
                                         </div>
-                                        {pedido.notes && <p className="px-4 pb-1.5 text-[11px] text-slate-400 italic text-left">{pedido.notes}</p>}
                                     </button>
 
                                     {(pedido.sucursal_ids?.length ?? 0) > 0 && (

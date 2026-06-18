@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.172';
+export const APP_VERSION = '2.2.173';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.173 — feat(pedidos/TabPedidos): 5 fixes — (1) BoxStackAnim reemplaza ConveyorAnim (vuelve a v2.2.168); (2) openPauseModal con try/catch — modal siempre abre aunque falle detección kiosko; (3) EmpChip muestra creador+iniciador con foto; botón "Marcar en Ruta" → marcar_pedido_enviado; gate canEdit=hasPermission(pedidos_en_curso,can_edit) en todos los botones de ciclo de vida; (4) DataTable estándar en ItemSections con DataRow/DataCell; (5) columna Solicitado en COLS_ENVIADOS = Math.max(0,ceil((max_qty_snapshot − stock_packs_snapshot×factor)/factor))
 // v2.2.172 — fix: commit archivos omitidos en sesiones anteriores — PromocionesView filtrado de tabs por permisos (promociones_tab_*); SchedulesView filtrado de tabs por permisos (schedules_tab_*) con fallback; migracion get_product_last_sales agrega campo cliente e individual transactions
 // v2.2.171 — feat(pedidos/kiosko): trigger DB attendance_kiosko_pedido_lifecycle — OUT_LUNCH auto-pausa pedidos activos iniciados por el empleado, IN_LUNCH auto-reanuda; modal pausa detecta estado kiosko (attendance OUT_LUNCH sin IN_LUNCH hoy) — banner teal + auto-selecciona Almuerzo; corrige columna razon en pedido_pausa_historial (era pausa_razon)
 // v2.2.170 — feat(pedidos/TabPedidos): ConveyorAnim cinta transportadora reemplaza sonar ping; modal pausa con 6 razones y validacion Almuerzo via pedido_pausa_historial; 3 secciones de items con DataTable/DataRow/DataCell estandar y paginacion; fetchItems ampliado con dispatch/laboratorios; columnas detalladas por seccion

@@ -8,6 +8,7 @@ import {
     Database, Activity, TrendingDown,
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
+    UserPlus, ScanLine,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -212,13 +213,13 @@ function StageAnim({ stage }) {
 function EmpChip({ emp, label }) {
     if (!emp) return null;
     return (
-        <span className="inline-flex items-center gap-1.5 text-[10px] text-slate-500 font-medium shrink-0">
-            <span className="text-slate-400 text-[9px] uppercase tracking-wide">{label}</span>
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-700 font-medium shrink-0">
+            <span className="text-slate-500 text-[10px] uppercase tracking-wide">{label}</span>
             {emp.photo
                 ? <img src={emp.photo} alt={emp.name} className="w-5 h-5 rounded-full object-cover border border-white shadow-sm" />
-                : <span className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center"><UserCircle2 size={12} className="text-slate-400" /></span>
+                : <span className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center"><UserCircle2 size={12} className="text-slate-500" /></span>
             }
-            <span className="text-slate-600">{emp.name?.split(' ')[0] ?? '—'}</span>
+            <span className="text-slate-800 font-semibold">{emp.name?.split(' ')[0] ?? '—'}</span>
         </span>
     );
 }
@@ -247,78 +248,304 @@ function SucPill({ sucId }) {
 
 function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment, setComment, onCancel, onConfirm, busy }) {
     const alreadyHadAlmuerzo = history.some(h => h.razon?.toLowerCase().includes('almuerzo'));
-    const reason = PAUSE_REASONS.find(r => r.key === razonSel);
+    const reason     = PAUSE_REASONS.find(r => r.key === razonSel);
     const canConfirm = !(reason?.requiresComment && !comment.trim());
 
     return (
-        <ModalShell open={true} onClose={onCancel}>
-            <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 space-y-4">
-                <div>
-                    <h3 className="font-bold text-slate-800 text-[16px]">¿Por qué pausas este despacho?</h3>
-                    <p className="text-[12px] text-slate-400 mt-0.5">{ERP_NAMES[modal.sucId] ?? `Sucursal ${modal.sucId}`}</p>
-                </div>
+        <ModalShell open={true} onClose={onCancel} maxWidthClass="max-w-sm">
+            <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden">
 
-                {kioskLunch && (
-                    <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-700">
-                        <Coffee size={15} className="text-teal-500 shrink-0" />
+                {/* Header */}
+                <div className="px-6 py-5 bg-gradient-to-br from-amber-50 to-orange-50 border-b border-amber-100">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center shadow-sm shrink-0">
+                            <Pause size={20} className="text-white" />
+                        </div>
                         <div>
-                            <p className="text-[12px] font-semibold">Almuerzo detectado en el kiosko</p>
-                            <p className="text-[10px] text-teal-600">Tu marcaje de salida a almuerzo se registró hoy.</p>
+                            <h3 className="font-bold text-slate-800 text-[15px]">Pausar despacho</h3>
+                            <p className="text-[12px] text-slate-600 mt-0.5">{ERP_NAMES[modal.sucId] ?? `Sucursal ${modal.sucId}`}</p>
                         </div>
                     </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-2">
-                    {PAUSE_REASONS.map(opt => {
-                        const Icon = opt.icon;
-                        const isUsed = opt.maxUses === 1 && alreadyHadAlmuerzo;
-                        const isSelected = razonSel === opt.key;
-                        return (
-                            <button
-                                key={opt.key}
-                                disabled={isUsed}
-                                onClick={() => !isUsed && setRazonSel(opt.key)}
-                                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[12px] font-medium transition-all text-left ${
-                                    isUsed    ? 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed' :
-                                    isSelected ? 'border-amber-400 bg-amber-50 text-amber-800 shadow-sm' :
-                                                 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                                }`}
-                            >
-                                <Icon size={15} className={isUsed ? 'text-slate-300' : isSelected ? 'text-amber-600' : 'text-slate-400'} />
-                                <div>
-                                    <div>{opt.label}</div>
-                                    {isUsed && <div className="text-[10px] text-slate-400">Ya registrado</div>}
-                                </div>
-                            </button>
-                        );
-                    })}
                 </div>
 
-                <div>
-                    <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
-                        {reason?.requiresComment ? 'Describe la razón *' : 'Comentario (opcional)'}
-                    </label>
-                    <textarea
-                        value={comment}
-                        onChange={e => setComment(e.target.value)}
-                        placeholder={reason?.requiresComment ? 'Describe la razón…' : 'Añade un comentario…'}
-                        rows={2}
-                        className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400 bg-white resize-none transition-colors"
-                    />
+                {/* Body */}
+                <div className="px-6 py-5 space-y-4">
+                    {kioskLunch && (
+                        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-teal-50 border border-teal-200">
+                            <Coffee size={15} className="text-teal-500 shrink-0" />
+                            <div>
+                                <p className="text-[12px] font-semibold text-teal-800">Almuerzo detectado en el kiosko</p>
+                                <p className="text-[11px] text-teal-600">Tu marcaje de salida a almuerzo se registró hoy.</p>
+                            </div>
+                        </div>
+                    )}
+
+                    <div>
+                        <p className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide mb-2">¿Por qué pausas?</p>
+                        <div className="grid grid-cols-2 gap-2">
+                            {PAUSE_REASONS.map(opt => {
+                                const Icon     = opt.icon;
+                                const isUsed   = opt.maxUses === 1 && alreadyHadAlmuerzo;
+                                const isSel    = razonSel === opt.key;
+                                return (
+                                    <button
+                                        key={opt.key}
+                                        disabled={isUsed}
+                                        onClick={() => !isUsed && setRazonSel(opt.key)}
+                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[12px] font-medium transition-all text-left ${
+                                            isUsed ? 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed' :
+                                            isSel  ? 'border-amber-400 bg-amber-50 text-amber-800 shadow-sm' :
+                                                     'border-slate-200 text-slate-700 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        <Icon size={15} className={isUsed ? 'text-slate-300' : isSel ? 'text-amber-600' : 'text-slate-500'} />
+                                        <div>
+                                            <div>{opt.label}</div>
+                                            {isUsed && <div className="text-[10px] text-slate-400">Ya registrado</div>}
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide mb-1.5 block">
+                            {reason?.requiresComment ? 'Describe la razón *' : 'Comentario (opcional)'}
+                        </label>
+                        <textarea
+                            value={comment}
+                            onChange={e => setComment(e.target.value)}
+                            placeholder={reason?.requiresComment ? 'Describe la razón…' : 'Añade un comentario…'}
+                            rows={2}
+                            className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400 bg-white resize-none transition-colors text-slate-700"
+                        />
+                    </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-1">
-                    <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors">
+                {/* Footer */}
+                <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/60">
+                    <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[13px] font-medium transition-colors">
                         Cancelar
                     </button>
                     <button
                         disabled={!canConfirm || busy}
                         onClick={onConfirm}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 text-[13px] transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 text-[13px] transition-colors disabled:opacity-50 shadow-sm"
                     >
                         {busy ? <Loader2 size={13} className="animate-spin" /> : <Pause size={13} />}
                         Confirmar pausa
                     </button>
+                </div>
+            </div>
+        </ModalShell>
+    );
+}
+
+// ─── Apoyo scanner modal ──────────────────────────────────────────────────────
+
+function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, onSuccess }) {
+    const [displayDots, setDisplayDots] = useState(0);
+    const [employee,    setEmployee]    = useState(null);
+    const [error,       setError]       = useState('');
+    const [loading,     setLoading]     = useState(false);
+    const [manualWarn,  setManualWarn]  = useState(false);
+
+    const bufferRef   = useRef('');
+    const lastTimeRef = useRef(0);
+    const timerRef    = useRef(null);
+    const isManRef    = useRef(false);
+
+    useEffect(() => {
+        if (!open) {
+            bufferRef.current  = '';
+            lastTimeRef.current = 0;
+            isManRef.current   = false;
+            setDisplayDots(0);
+            setEmployee(null);
+            setError('');
+            setManualWarn(false);
+        }
+    }, [open]);
+
+    const lookupPin = useCallback(async (code) => {
+        setLoading(true);
+        setError('');
+        try {
+            const { data } = await supabase
+                .from('employees')
+                .select('id, name, photo_url')
+                .eq('kiosk_pin', code.toUpperCase().trim())
+                .maybeSingle();
+            if (data) { setEmployee(data); setManualWarn(false); }
+            else       setError('No se encontró ningún empleado con ese carnet.');
+        } catch { setError('Error al buscar empleado.'); }
+        finally   { setLoading(false); }
+    }, []);
+
+    useEffect(() => {
+        if (!open) return;
+        const handleKey = (e) => {
+            if (e.key === 'Escape') return;
+            const now = Date.now();
+            const gap = now - lastTimeRef.current;
+            lastTimeRef.current = now;
+
+            if (e.key === 'Enter') {
+                const buf = bufferRef.current;
+                bufferRef.current = '';
+                setDisplayDots(0);
+                clearTimeout(timerRef.current);
+                if (buf.length >= 3 && !isManRef.current) lookupPin(buf);
+                isManRef.current = false;
+                return;
+            }
+            if (e.key.length !== 1) return;
+
+            if (bufferRef.current.length > 0 && gap > 80) {
+                // Manual typing detected
+                isManRef.current = true;
+                setManualWarn(true);
+                setEmployee(null);
+                bufferRef.current = e.key;
+                setDisplayDots(1);
+            } else {
+                if (bufferRef.current.length === 0) isManRef.current = false;
+                bufferRef.current += e.key;
+                setDisplayDots(bufferRef.current.length);
+            }
+
+            clearTimeout(timerRef.current);
+            timerRef.current = setTimeout(() => {
+                bufferRef.current = '';
+                isManRef.current  = false;
+                setDisplayDots(0);
+            }, 500);
+        };
+        document.addEventListener('keydown', handleKey, { capture: true });
+        return () => { document.removeEventListener('keydown', handleKey, { capture: true }); clearTimeout(timerRef.current); };
+    }, [open, lookupPin]);
+
+    const confirmApoyo = useCallback(async () => {
+        if (!employee) return;
+        setLoading(true);
+        try {
+            const { error: e } = await supabase.from('pedido_apoyo').upsert(
+                { pedido_id: pedidoId, erp_sucursal_id: sucId, employee_id: employee.id, registered_by: currentUserId },
+                { onConflict: 'pedido_id,erp_sucursal_id,employee_id' }
+            );
+            if (e) throw e;
+            useStaff.getState().appendAuditLog('PEDIDO_APOYO_REGISTRADO', pedidoId, { sucursal_id: sucId, employee_id: employee.id });
+            onSuccess(employee);
+            onClose();
+        } catch { setError('Error al registrar apoyo.'); }
+        finally  { setLoading(false); }
+    }, [employee, pedidoId, sucId, currentUserId, onSuccess, onClose]);
+
+    return (
+        <ModalShell open={open} onClose={onClose} maxWidthClass="max-w-sm">
+            <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden">
+
+                {/* Header */}
+                <div className="px-6 py-5 bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-blue-100">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center shadow-sm shrink-0">
+                            <Users size={20} className="text-white" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-800 text-[15px]">Registrar apoyo</h3>
+                            <p className="text-[12px] text-slate-600 mt-0.5">Escanea el carnet del empleado</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Body */}
+                <div className="px-6 py-5 space-y-4">
+                    {!employee && (
+                        <div className="flex flex-col items-center gap-3 py-3">
+                            <div className="relative w-16 h-16 rounded-2xl bg-blue-50 border-2 border-blue-200 flex items-center justify-center">
+                                <motion.div
+                                    className="absolute inset-0 rounded-2xl border-2 border-blue-400 pointer-events-none"
+                                    animate={{ opacity: [0.3, 1, 0.3] }}
+                                    transition={{ duration: 1.6, repeat: Infinity }}
+                                />
+                                <ScanLine size={28} className="text-blue-500" />
+                                {loading && (
+                                    <div className="absolute inset-0 rounded-2xl bg-white/80 flex items-center justify-center">
+                                        <Loader2 size={18} className="animate-spin text-blue-500" />
+                                    </div>
+                                )}
+                            </div>
+
+                            {displayDots > 0 && (
+                                <div className="flex gap-1.5 h-3 items-center">
+                                    {Array.from({ length: Math.min(displayDots, 10) }).map((_, i) => (
+                                        <motion.div key={i}
+                                            className="w-2 h-2 rounded-full bg-blue-400"
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{ type: 'spring', stiffness: 600, delay: i * 0.02 }}
+                                        />
+                                    ))}
+                                    {displayDots > 10 && <span className="text-[10px] text-blue-400">+{displayDots - 10}</span>}
+                                </div>
+                            )}
+
+                            <p className="text-[12px] text-slate-600 text-center">
+                                Apunta el escáner al código de barras<br />del carnet del empleado
+                            </p>
+                        </div>
+                    )}
+
+                    {employee && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                            className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200"
+                        >
+                            {employee.photo_url
+                                ? <img src={employee.photo_url} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow" alt="" />
+                                : <div className="w-12 h-12 rounded-full bg-emerald-200 flex items-center justify-center shrink-0"><UserCircle2 size={24} className="text-emerald-600" /></div>
+                            }
+                            <div>
+                                <p className="font-bold text-emerald-800 text-[14px]">{employee.name}</p>
+                                <p className="text-[11px] text-emerald-600 mt-0.5">Confirma para registrar como apoyo</p>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {manualWarn && (
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-700">
+                            <ShieldAlert size={14} className="shrink-0 text-red-500" />
+                            Solo se acepta escaneo. No se permite ingreso manual del teclado.
+                        </div>
+                    )}
+                    {error && (
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-50 border border-red-200 text-[12px] text-red-700">
+                            <AlertTriangle size={14} className="shrink-0 text-red-500" />
+                            {error}
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex justify-between gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/60">
+                    <button onClick={() => { setEmployee(null); setDisplayDots(0); setError(''); setManualWarn(false); bufferRef.current = ''; }}
+                        className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[12px] transition-colors">
+                        Limpiar
+                    </button>
+                    <div className="flex gap-2">
+                        <button onClick={onClose} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[13px] font-medium transition-colors">
+                            Cancelar
+                        </button>
+                        {employee && (
+                            <button onClick={confirmApoyo} disabled={loading}
+                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-500 text-white font-semibold hover:bg-blue-600 text-[13px] transition-colors disabled:opacity-50 shadow-sm"
+                            >
+                                {loading ? <Loader2 size={13} className="animate-spin" /> : <CheckCheck size={13} />}
+                                Confirmar
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         </ModalShell>
@@ -467,58 +694,81 @@ function fmtHM(iso) {
     return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
-const TL_DOT  = ['bg-blue-500','bg-blue-500','bg-violet-500','bg-indigo-500','bg-teal-500','bg-emerald-500'];
-const TL_PING = ['bg-blue-400/40','bg-blue-400/40','bg-violet-400/40','bg-indigo-400/40','bg-teal-400/40','bg-emerald-400/40'];
-const TL_LINE = ['bg-blue-300','bg-blue-300','bg-violet-300','bg-indigo-300','bg-teal-300','bg-emerald-300'];
+const TL_DOT    = ['bg-blue-500','bg-blue-500','bg-violet-500','bg-indigo-500','bg-teal-500','bg-emerald-500'];
+const TL_LINE   = ['bg-blue-300','bg-blue-300','bg-violet-300','bg-indigo-300','bg-teal-300','bg-emerald-300'];
 const TL_BORDER = ['border-blue-400','border-blue-400','border-violet-400','border-indigo-400','border-teal-400','border-emerald-400'];
+// box-shadow glow colors for active node — stays within dot bounds, no overflow
+const TL_GLOW   = [
+    'rgba(59,130,246',   // blue
+    'rgba(59,130,246',
+    'rgba(139,92,246',   // violet
+    'rgba(99,102,241',   // indigo
+    'rgba(20,184,166',   // teal
+    'rgba(16,185,129',   // emerald
+];
 
 const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 4, erp: 5 };
 
-function LifecycleTimeline({ row, stage }) {
-    const hasPause = (row.min_pausado_total ?? 0) > 0;
-    const isPaused = stage === 'pausado';
+function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp }) {
+    const hasPause  = (row.min_pausado_total ?? 0) > 0;
+    const isPaused  = stage === 'pausado';
     const activeIdx = TL_STAGE_IDX[stage] ?? 0;
 
     const nodes = [
-        { key: 'confirmado', label: 'Confirmado', time: row.created_at        },
-        { key: 'iniciado',   label: 'Inicio',     time: row.iniciado_at       },
-        { key: 'preparado',  label: 'Listo',      time: row.finalizado_at     },
-        { key: 'enviado',    label: 'En Ruta',    time: row.enviado_at        },
-        { key: 'llegada',    label: 'Llegada',    time: row.llegada_fisica_at },
-        { key: 'erp',        label: 'ERP',        time: row.recibido_erp_at   },
+        { key: 'confirmado', label: 'Confirmado', time: row.created_at,        emp: creatorEmp   },
+        { key: 'iniciado',   label: 'Inicio',     time: row.iniciado_at,       emp: iniciadorEmp },
+        { key: 'preparado',  label: 'Listo',      time: row.finalizado_at,     emp: null         },
+        { key: 'enviado',    label: 'En Ruta',    time: row.enviado_at,        emp: null         },
+        { key: 'llegada',    label: 'Llegada',    time: row.llegada_fisica_at, emp: null         },
+        { key: 'erp',        label: 'Finalizado', time: row.recibido_erp_at,   emp: null         },
     ];
 
     return (
-        <div className="flex items-start w-full overflow-x-auto pb-1 pt-0.5">
+        /* overflow-visible so box-shadow glow never gets clipped */
+        <div className="flex items-start w-full pb-1 pt-0.5" style={{ overflow: 'visible' }}>
             {nodes.map((node, idx) => {
-                const isDone     = node.time != null && idx < activeIdx;
-                const isActive   = idx === activeIdx;
+                const isDone      = node.time != null && idx < activeIdx;
+                const isActive    = idx === activeIdx;
                 const isPausedDot = isActive && isPaused;
-                const isFuture   = !isDone && !isActive;
+                const isFuture    = !isDone && !isActive;
+                const nextNode    = nodes[idx + 1];
+
+                // Elapsed time between this node and the next (completed segment)
+                const segElapsed = isDone && nextNode?.time
+                    ? fmtMin(elapsed(node.time, nextNode.time))
+                    : null;
+
+                // Glow animation for active dot — uses box-shadow (no overflow)
+                const glowColor = TL_GLOW[idx];
+                const activeAnimate = isActive && !isPausedDot ? {
+                    scale: 1, opacity: 1,
+                    boxShadow: [
+                        `0 0 0 0px ${glowColor},0.5)`,
+                        `0 0 0 7px ${glowColor},0)`,
+                        `0 0 0 0px ${glowColor},0.5)`,
+                    ],
+                } : { scale: 1, opacity: 1, boxShadow: '0 0 0 0px rgba(0,0,0,0)' };
 
                 return (
                     <React.Fragment key={node.key}>
                         {/* Node */}
-                        <div className="flex flex-col items-center shrink-0" style={{ width: 58 }}>
-                            {/* Dot with ping */}
-                            <div className="relative flex items-center justify-center w-7 h-7">
-                                {isActive && !isPausedDot && (
-                                    <motion.div
-                                        className={`absolute w-7 h-7 rounded-full ${TL_PING[idx]}`}
-                                        animate={{ scale: [0.8, 2, 0.8], opacity: [0.6, 0, 0.6] }}
-                                        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut' }}
-                                    />
-                                )}
+                        <div className="flex flex-col items-center shrink-0" style={{ width: 60 }}>
+                            {/* Dot */}
+                            <div className="flex items-center justify-center w-8 h-8">
                                 <motion.div
                                     className={`w-5 h-5 rounded-full flex items-center justify-center z-10 ${
                                         isDone      ? `${TL_DOT[idx]} shadow-sm` :
-                                        isPausedDot ? 'bg-amber-400 shadow-sm' :
+                                        isPausedDot ? 'bg-amber-400 shadow-md' :
                                         isActive    ? `bg-white border-2 ${TL_BORDER[idx]}` :
                                                       'bg-slate-100 border border-slate-200'
                                     }`}
                                     initial={{ scale: 0.5, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    transition={{ type: 'spring', stiffness: 350, damping: 24, delay: idx * 0.06 }}
+                                    animate={activeAnimate}
+                                    transition={isActive && !isPausedDot ? {
+                                        scale:      { type: 'spring', stiffness: 350, damping: 24, delay: idx * 0.06 },
+                                        opacity:    { delay: idx * 0.06, duration: 0.3 },
+                                        boxShadow:  { duration: 2, repeat: Infinity, ease: 'easeOut' },
+                                    } : { type: 'spring', stiffness: 350, damping: 24, delay: idx * 0.06 }}
                                 >
                                     {isDone && (
                                         <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
@@ -528,8 +778,8 @@ function LifecycleTimeline({ row, stage }) {
                                     {isActive && !isPausedDot && (
                                         <motion.div
                                             className={`w-2 h-2 rounded-full ${TL_DOT[idx]}`}
-                                            animate={{ scale: [1, 1.4, 1] }}
-                                            transition={{ duration: 1.1, repeat: Infinity }}
+                                            animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
+                                            transition={{ duration: 1.4, repeat: Infinity }}
                                         />
                                     )}
                                     {isPausedDot && (
@@ -542,19 +792,30 @@ function LifecycleTimeline({ row, stage }) {
                             </div>
 
                             {/* Label */}
-                            <span className={`text-[8px] font-semibold text-center leading-tight mt-0.5 ${isFuture ? 'text-slate-400' : 'text-slate-700'}`}>
+                            <span className={`text-[9px] font-semibold text-center leading-tight ${isFuture ? 'text-slate-400' : 'text-slate-700'}`}>
                                 {isPausedDot ? 'Pausado' : node.label}
                             </span>
 
                             {/* Time */}
-                            <span className="text-[7px] text-slate-400 tabular-nums h-3 leading-tight">
-                                {fmtHM(node.time)}
+                            <span className="text-[8px] text-slate-500 tabular-nums leading-tight text-center mt-px">
+                                {fmtHM(node.time) || <span className="text-slate-200">——</span>}
                             </span>
+
+                            {/* Responsible person mini-avatar */}
+                            {node.emp && (
+                                <div className="flex items-center gap-0.5 mt-1">
+                                    {node.emp.photo
+                                        ? <img src={node.emp.photo} className="w-4 h-4 rounded-full object-cover border border-white shadow-sm shrink-0" alt="" />
+                                        : <span className="w-4 h-4 rounded-full bg-slate-200 flex items-center justify-center shrink-0"><UserCircle2 size={9} className="text-slate-500" /></span>
+                                    }
+                                    <span className="text-[8px] text-slate-600 leading-tight">{node.emp.name?.split(' ')[0]}</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Connector */}
                         {idx < nodes.length - 1 && (
-                            <div className="relative flex-1 min-w-[10px] self-start mt-[11px]">
+                            <div className="relative flex-1 min-w-[8px] self-start" style={{ marginTop: 15 }}>
                                 {/* Track */}
                                 <div className="h-0.5 w-full bg-slate-200 rounded-full" />
                                 {/* Fill */}
@@ -562,24 +823,28 @@ function LifecycleTimeline({ row, stage }) {
                                     <motion.div
                                         className={`absolute top-0 left-0 h-0.5 rounded-full ${TL_LINE[idx]}`}
                                         initial={{ width: '0%' }}
-                                        animate={{ width: (isDone && nodes[idx + 1]?.time) ? '100%' : isDone ? '100%' : '50%' }}
+                                        animate={{ width: isDone && nextNode?.time ? '100%' : isDone ? '100%' : '50%' }}
                                         transition={{ duration: 0.6, ease: 'easeOut', delay: idx * 0.08 }}
                                     />
                                 )}
-                                {/* Pause badge between iniciado and preparado */}
+                                {/* Pause badge — above the line */}
                                 {node.key === 'iniciado' && hasPause && (
-                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 -mt-px">
+                                    <div className="absolute left-1/2 -translate-x-1/2 z-10" style={{ top: -14 }}>
                                         <motion.span
-                                            className={`inline-flex items-center gap-0.5 text-[7px] font-bold px-1.5 py-px rounded whitespace-nowrap shadow-sm leading-tight ${
-                                                isPaused
-                                                    ? 'bg-amber-400 text-white'
-                                                    : 'bg-white text-amber-600 border border-amber-200'
+                                            className={`inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-px rounded whitespace-nowrap shadow-sm leading-tight ${
+                                                isPaused ? 'bg-amber-400 text-white' : 'bg-white text-amber-600 border border-amber-300'
                                             }`}
-                                            animate={isPaused ? { opacity: [1, 0.4, 1] } : { opacity: 1 }}
+                                            animate={isPaused ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
                                             transition={isPaused ? { duration: 1.2, repeat: Infinity } : undefined}
                                         >
                                             ⏸ {fmtMin(row.min_pausado_total)}
                                         </motion.span>
+                                    </div>
+                                )}
+                                {/* Elapsed time — below the line */}
+                                {segElapsed && (
+                                    <div className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap" style={{ top: 4 }}>
+                                        <span className="text-[7px] text-slate-400 tabular-nums">{segElapsed}</span>
                                     </div>
                                 )}
                             </div>
@@ -785,6 +1050,10 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [pauseComment, setPauseComment] = useState('');
     const [kioskLunch,   setKioskLunch]   = useState(false);
 
+    // Apoyo
+    const [apoyoMap,   setApoyoMap]   = useState({}); // cardKey → [{id, name, photo_url}]
+    const [apoyoModal, setApoyoModal] = useState(null); // { pedidoId, sucId, cardKey }
+
     // ── Branch ERP ────────────────────────────────────────────────────────────
 
     useEffect(() => {
@@ -887,8 +1156,14 @@ export default function TabPedidos({ searchTerm = '' }) {
             ? supabase.from('pedido_sucursal_status').select('recibido_erp_at, llegada_fisica_at').eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucFilter).maybeSingle()
             : Promise.resolve({ data: null });
 
-        const [{ data: itemRows }, { data: lcRow }] = await Promise.all([itemsQ, lcPromise]);
+        let apoyoQ = supabase.from('pedido_apoyo')
+            .select('id, employee_id, employees(name, photo_url)')
+            .eq('pedido_id', pedidoId);
+        if (sucFilter) apoyoQ = apoyoQ.eq('erp_sucursal_id', sucFilter);
+
+        const [{ data: itemRows }, { data: lcRow }, { data: apoyoRows }] = await Promise.all([itemsQ, lcPromise, apoyoQ]);
         setItems(prev => ({ ...prev, [key]: itemRows || [] }));
+        setApoyoMap(prev => ({ ...prev, [key]: (apoyoRows || []).map(r => ({ id: r.employee_id, ...r.employees })) }));
         if (lcRow) {
             setErpStatus(prev => ({ ...prev, [key]: !!lcRow.recibido_erp_at }));
             setLlegadaStatus(prev => ({ ...prev, [key]: !!lcRow.llegada_fisica_at }));
@@ -968,6 +1243,14 @@ export default function TabPedidos({ searchTerm = '' }) {
         await handleLifecycle(pauseModal.pedidoId, pauseModal.sucId, 'pausar', razon);
         setPauseModal(null);
     }, [pauseModal, pauseRazon, pauseComment, handleLifecycle]);
+
+    const handleApoyoSuccess = useCallback((emp, cardKey) => {
+        setApoyoMap(prev => {
+            const existing = prev[cardKey] ?? [];
+            if (existing.find(e => e.id === emp.id)) return prev;
+            return { ...prev, [cardKey]: [...existing, { id: emp.id, name: emp.name, photo_url: emp.photo_url }] };
+        });
+    }, []);
 
     // ── Reception ─────────────────────────────────────────────────────────────
 
@@ -1107,41 +1390,83 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const elapsedPause = stage === 'pausado'    ? fmtMin(elapsed(row.pausado_at)) : null;
                             const elapsedTrans = stage === 'transito'   ? fmtMin(elapsed(row.finalizado_at)) : null;
 
+                            const cardApoyo = apoyoMap[cardKey] ?? [];
+
                             return (
-                                <motion.div key={cardKey} layout className={`${GLASS} overflow-hidden ${stage === 'pausado' ? 'ring-1 ring-amber-300' : ''}`}>
+                                <motion.div
+                                    key={cardKey} layout
+                                    className={`${GLASS} cursor-pointer select-none ${
+                                        stage === 'pausado'
+                                            ? 'ring-2 ring-amber-400 shadow-[0_4px_20px_rgba(251,191,36,0.25)]'
+                                            : ''
+                                    }`}
+                                    style={{ overflow: 'visible' }}
+                                    onClick={() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id)}
+                                >
+                                    {/* Header */}
+                                    <div className="flex items-center gap-2.5 px-4 py-3 flex-wrap">
+                                        {stage === 'pausado' && (
+                                            <motion.span
+                                                className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-white shrink-0 shadow-sm"
+                                                animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.4, repeat: Infinity }}
+                                            >
+                                                ⏸ Pausado
+                                            </motion.span>
+                                        )}
+                                        <span className="text-[14px] font-black text-slate-800 tabular-nums shrink-0">#{row.numero}</span>
+                                        <SucPill sucId={row.erp_sucursal_id} />
+                                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${PEDIDO_PILL[row.pedido_status] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                            {PEDIDO_LABEL[row.pedido_status] ?? row.pedido_status}
+                                        </span>
+                                        <span className="ml-auto text-[11px] text-slate-600 tabular-nums shrink-0">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
+                                        {isExp ? <ChevronDown size={14} className="text-slate-500 shrink-0" /> : <ChevronRight size={14} className="text-slate-500 shrink-0" />}
+                                    </div>
+                                    {row.notes && <p className="px-4 pb-2 text-[12px] text-slate-600 italic">{row.notes}</p>}
 
-                                    {/* Header — clickable to expand */}
-                                    <button onClick={() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id)} className="w-full text-left">
-                                        <div className="flex items-center gap-2.5 px-4 py-3 flex-wrap">
-                                            <span className="text-[13px] font-black text-slate-700 tabular-nums shrink-0">#{row.numero}</span>
-                                            <SucPill sucId={row.erp_sucursal_id} />
-                                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${PEDIDO_PILL[row.pedido_status] ?? 'bg-slate-100 text-slate-500 border-slate-200'}`}>{PEDIDO_LABEL[row.pedido_status] ?? row.pedido_status}</span>
-                                            <span className="ml-auto text-[10px] text-slate-500 tabular-nums shrink-0">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
-                                            {isExp ? <ChevronDown size={14} className="text-slate-400 shrink-0" /> : <ChevronRight size={14} className="text-slate-400 shrink-0" />}
-                                        </div>
-                                        {row.notes && <p className="px-4 pb-2 text-[11px] text-slate-400 italic text-left">{row.notes}</p>}
-                                    </button>
-
-                                    {/* Employee chips — creator + initiator */}
-                                    {(creator || iniciador) && (
+                                    {/* Employee chips — creator + initiator + apoyo */}
+                                    {(creator || iniciador || cardApoyo.length > 0) && (
                                         <div className="flex items-center gap-4 px-4 pb-2.5 flex-wrap">
                                             {creator   && <EmpChip emp={creator}   label="Generó" />}
                                             {iniciador && <EmpChip emp={iniciador} label="Inició" />}
+                                            {cardApoyo.length > 0 && (
+                                                <span className="inline-flex items-center gap-1.5 shrink-0">
+                                                    <span className="text-[10px] text-slate-500 uppercase tracking-wide">Apoyo</span>
+                                                    {cardApoyo.map(a => (
+                                                        a.photo_url
+                                                            ? <img key={a.id} src={a.photo_url} title={a.name} className="w-5 h-5 rounded-full object-cover border border-white shadow-sm" alt="" />
+                                                            : <span key={a.id} title={a.name} className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center"><UserCircle2 size={11} className="text-slate-500" /></span>
+                                                    ))}
+                                                </span>
+                                            )}
                                         </div>
                                     )}
 
                                     {/* Lifecycle Timeline */}
-                                    <div className="border-t border-slate-100 px-4 pt-3 pb-1">
-                                        <LifecycleTimeline row={row} stage={stage} />
+                                    <div className="border-t border-slate-100 px-4 pt-3 pb-2">
+                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} />
                                     </div>
 
                                     {/* Actions + status strip */}
-                                    <div className="flex items-center gap-3 px-4 pb-3 flex-wrap">
+                                    <div className="flex items-center gap-3 px-4 pb-3 flex-wrap" onClick={e => e.stopPropagation()}>
                                         <StagePill stage={stage} />
-                                        {elapsedPrep  && <span className="text-[10px] text-slate-500 tabular-nums">{elapsedPrep}</span>}
-                                        {elapsedPause && <span className="text-[10px] text-amber-600 font-medium">{elapsedPause} pausado</span>}
-                                        {elapsedTrans && <span className="text-[10px] text-indigo-500 tabular-nums">{elapsedTrans} en ruta</span>}
+                                        {elapsedPrep  && <span className="text-[11px] text-slate-600 tabular-nums">{elapsedPrep}</span>}
+                                        {elapsedPause && (
+                                            <motion.span className="text-[11px] text-amber-700 font-semibold tabular-nums"
+                                                animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.4, repeat: Infinity }}>
+                                                {elapsedPause} en pausa
+                                            </motion.span>
+                                        )}
+                                        {elapsedTrans && <span className="text-[11px] text-indigo-600 tabular-nums">{elapsedTrans} en ruta</span>}
                                         <div className="ml-auto flex items-center gap-2 flex-wrap">
+                                            {canEdit && !isBranch && (
+                                                <button
+                                                    onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey })}
+                                                    disabled={isLCBusy}
+                                                    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all disabled:opacity-50"
+                                                >
+                                                    <UserPlus size={11} />Apoyo
+                                                </button>
+                                            )}
                                             {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar')}   disabled={isLCBusy}    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Play     size={11} fill="currentColor" />Iniciar</>}</button>}
                                             {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Pause    size={11} fill="currentColor" />Pausar</>}</button>}
                                             {canFinalizar    && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'finalizar')} disabled={isLCBusy}    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Flag     size={11} />Finalizar</>}</button>}
@@ -1152,7 +1477,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     <AnimatePresence>
                                         {isExp && (
-                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden">
+                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden" onClick={e => e.stopPropagation()}>
                                                 <ItemSections allItems={items[cardKey] ?? []} loading={loadingItems && !items[cardKey]} />
                                                 {isBranch && erpSucursalId && row.pedido_status === 'enviado' && (
                                                     <ReceptionActions
@@ -1197,16 +1522,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const creator = pedido.created_by ? empMap.get(pedido.created_by) : null;
 
                             return (
-                                <motion.div key={pedido.id} layout className={`${GLASS} overflow-hidden ${pedido.status === 'anulado' ? 'opacity-70' : ''}`}>
-                                    <button onClick={() => toggleExpand(histKey, pedido.id, null)} className="w-full text-left">
-                                        <div className="flex items-center gap-2.5 px-4 py-3 flex-wrap">
-                                            <span className={`text-[13px] font-black tabular-nums shrink-0 ${pedido.status === 'anulado' ? 'line-through text-slate-400' : 'text-slate-700'}`}>#{pedido.numero}</span>
-                                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${PEDIDO_PILL[pedido.status] ?? 'bg-slate-100 text-slate-500 border-slate-200'}`}>{PEDIDO_LABEL[pedido.status] ?? pedido.status}</span>
-                                            {creator && <EmpChip emp={creator} label="Por" />}
-                                            <span className="ml-auto text-[10px] text-slate-500 shrink-0">{fmtDate(pedido.created_at)}</span>
-                                            {isExp ? <ChevronDown size={13} className="text-slate-400 shrink-0" /> : <ChevronRight size={13} className="text-slate-400 shrink-0" />}
-                                        </div>
-                                    </button>
+                                <motion.div key={pedido.id} layout className={`${GLASS} overflow-hidden cursor-pointer select-none ${pedido.status === 'anulado' ? 'opacity-70' : ''}`} onClick={() => toggleExpand(histKey, pedido.id, null)}>
+                                    <div className="flex items-center gap-2.5 px-4 py-3 flex-wrap">
+                                        <span className={`text-[14px] font-black tabular-nums shrink-0 ${pedido.status === 'anulado' ? 'line-through text-slate-400' : 'text-slate-800'}`}>#{pedido.numero}</span>
+                                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${PEDIDO_PILL[pedido.status] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>{PEDIDO_LABEL[pedido.status] ?? pedido.status}</span>
+                                        {creator && <EmpChip emp={creator} label="Por" />}
+                                        <span className="ml-auto text-[11px] text-slate-600 shrink-0">{fmtDate(pedido.created_at)}</span>
+                                        {isExp ? <ChevronDown size={13} className="text-slate-500 shrink-0" /> : <ChevronRight size={13} className="text-slate-500 shrink-0" />}
+                                    </div>
 
                                     {(pedido.sucursal_ids?.length ?? 0) > 0 && (
                                         <div className="flex flex-wrap gap-1.5 border-t border-slate-100 px-4 py-2">
@@ -1248,6 +1571,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                     busy={busyLifecycle === `lc_${pauseModal.pedidoId}_${pauseModal.sucId}`}
                 />
             )}
+
+            <ApoioScanModal
+                open={!!apoyoModal}
+                onClose={() => setApoyoModal(null)}
+                pedidoId={apoyoModal?.pedidoId}
+                sucId={apoyoModal?.sucId}
+                currentUserId={user?.id}
+                onSuccess={(emp) => handleApoyoSuccess(emp, apoyoModal?.cardKey)}
+            />
 
             {modal && (
                 <RecepcionModal open={!!modal} onClose={() => setModal(null)} pedido={modal.pedido} sucursalId={modal.sucId} sucursalNombre={branchName} rows={modal.rows} onConfirmed={() => { setModal(null); fetchItems(modal.key, modal.pedido.id, modal.sucId); }} />

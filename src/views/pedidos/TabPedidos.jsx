@@ -249,7 +249,7 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
     const canConfirm = !(reason?.requiresComment && !comment.trim());
 
     return (
-        <ModalShell onClose={onCancel}>
+        <ModalShell open={true} onClose={onCancel}>
             <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 space-y-4">
                 <div>
                     <h3 className="font-bold text-slate-800 text-[16px]">¿Por qué pausas este despacho?</h3>
@@ -380,8 +380,8 @@ const COLS_REGLA = [
     { key: 'motivo', label: 'Motivo', render: () => <span className="text-rose-600 text-[11px]">Necesidad &lt; 40% de la unidad mínima de despacho</span> },
 ];
 
-function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
-    const [open,  setOpen]  = useState(false);
+function ItemSection({ label, count, badgeCls, rows, columns, noteEl, defaultOpen = false }) {
+    const [open,  setOpen]  = useState(defaultOpen);
     const [page,  setPage]  = useState(0);
     const totalPages = Math.ceil(rows.length / MINI_PAGE);
     const pageRows   = rows.slice(page * MINI_PAGE, (page + 1) * MINI_PAGE);
@@ -449,7 +449,7 @@ function ItemSections({ allItems, loading }) {
                 {sinStock.length > 0 && <span className="text-[11px] text-slate-500">Sin inventario <strong className="text-amber-600">{sinStock.length}</strong></span>}
                 {porRegla.length > 0 && <span className="text-[11px] text-slate-500">Revisar regla <strong className="text-rose-600">{porRegla.length}</strong></span>}
             </div>
-            <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-emerald-50 text-emerald-700 border-emerald-200" rows={enviados} columns={COLS_ENVIADOS} />
+            <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-emerald-50 text-emerald-700 border-emerald-200" rows={enviados} columns={COLS_ENVIADOS} defaultOpen={true} />
             <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-amber-50 text-amber-700 border-amber-200" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-[10px] text-amber-600/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
             <ItemSection
                 label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-rose-50 text-rose-700 border-rose-200" rows={porRegla} columns={COLS_REGLA}
@@ -891,7 +891,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const canPausar        = canActuar && !isBranch && stage === 'preparando';
                             const canReanudar      = canActuar && !isBranch && stage === 'pausado';
                             const canFinalizar     = canActuar && !isBranch && stage === 'preparando';
-                            const canMarcarEnRuta  = canActuar && !isBranch && row.pedido_status === 'confirmado' && pedidoStages.allFinalized && !pedidoStages.anyActive;
+                            // Botón aparece por sucursal cuando esa ya está lista (preparado), sin esperar a las demás
+                            const canMarcarEnRuta  = canActuar && !isBranch && stage === 'preparado' && row.pedido_status === 'confirmado';
 
                             const creator  = row.created_by  ? empMap.get(row.created_by)  : null;
                             const iniciador = row.iniciado_por ? empMap.get(row.iniciado_por) : null;

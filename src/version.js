@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.160';
+export const APP_VERSION = '2.2.161';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.161 — feat(pedidos): mejoras integrales — (1) pedido_pausa_historial: historial completo de pausas múltiples (ya no se sobreescribe la última); (2) Recepción 1 "Confirmar llegada de cajas" (llegada_fisica_at) gatea el conteo de ítems — no se puede contar sin confirmar llegada física; (3) anular_pedido bloquea estado "parcial" (ítems ya recibidos); (4) realtime en TabRecepcion refresca ítems del pedido expandido; (5) auto-notificación a bodega cuando pedido se completa sin diferencias; (6) sección "No enviados esta vez" (sin_stock/revision_minmax) visible en recepción; (7) TabEnCurso: semáforo en tiempo real de todos los pedidos activos con lifecycle por sucursal y progreso de recepción; (8) TabMetricas: tiempos promedio de prep/pausa/tránsito/recuento por sucursal + top razones de pausa; (9) RPCs get_pedidos_en_curso, get_pedido_kpis, get_pausa_razones_stats
 // v2.2.160 — fix(reglas): contraste texto panel dispatch — labels sección text-slate-400→slate-600, sub-texto text-slate-300→slate-500 para legibilidad sobre glassmorphism
 // v2.2.159 — fix(reglas): dispatch_label UI — pills preset CAJA/ESTUCHE/BOLSA en lugar de texto libre; movidas al tope del panel (junto a presentaciones); Ejemplo corregido (1 CAJA en vez de 12 UNIDAD cuando hay etiqueta); "Quitar regla" rojo por defecto; autoguarda al seleccionar pill.
 // v2.2.158 — feat(reglas/pdf): dispatch_label — etiqueta personalizada por producto en el PDF; Electrolit ×12 → "1 CAJA" en vez de "12 UNIDADES"; get_pedido_preview v21 plega dp_multiplo en dp_factor cuando dispatch_label IS NOT NULL para que toDispatch() convierta correctamente.

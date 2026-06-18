@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ClipboardList, History, Settings2, PackageCheck, TrendingDown } from 'lucide-react';
+import { ClipboardList, History, Settings2, PackageCheck, TrendingDown, Activity, BarChart2 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import TabGenerar      from './pedidos/TabGenerar';
@@ -8,19 +8,29 @@ import TabHistorial    from './pedidos/TabHistorial';
 import TabReglas       from './pedidos/TabReglas';
 import TabRecepcion    from './pedidos/TabRecepcion';
 import TabDiferencias  from './pedidos/TabDiferencias';
+import TabEnCurso      from './pedidos/TabEnCurso';
+import TabMetricas     from './pedidos/TabMetricas';
 import { useAuth }     from '../context/AuthContext';
 
+// permKey define qué permiso gatea la visibilidad del tab.
+// En curso y Métricas usan el mismo permiso que Historial (acceso de bodega).
 const TABS = [
-    { key: 'generar',      label: 'Generar',            icon: ClipboardList },
-    { key: 'historial',    label: 'Historial',           icon: History       },
-    { key: 'reglas',       label: 'Reglas de despacho',  icon: Settings2     },
-    { key: 'recepcion',    label: 'Recepción',           icon: PackageCheck  },
-    { key: 'diferencias',  label: 'Diferencias',         icon: TrendingDown  },
+    { key: 'generar',     label: 'Generar',            icon: ClipboardList, permKey: 'pedidos_tab_generar'     },
+    { key: 'historial',   label: 'Historial',           icon: History,       permKey: 'pedidos_tab_historial'   },
+    { key: 'en_curso',    label: 'En curso',            icon: Activity,      permKey: 'pedidos_tab_historial'   },
+    { key: 'metricas',    label: 'Métricas',            icon: BarChart2,     permKey: 'pedidos_tab_historial'   },
+    { key: 'reglas',      label: 'Reglas de despacho',  icon: Settings2,     permKey: 'pedidos_tab_reglas'      },
+    { key: 'recepcion',   label: 'Recepción',           icon: PackageCheck,  permKey: 'pedidos_tab_recepcion'   },
+    { key: 'diferencias', label: 'Diferencias',         icon: TrendingDown,  permKey: 'pedidos_tab_diferencias' },
 ];
+
+const VALID = new Set(TABS.map(t => t.key));
 
 const SEARCH_PLACEHOLDER = {
     generar:     'Buscar producto en el pedido…',
     historial:   'Buscar pedido…',
+    en_curso:    'Buscar pedido…',
+    metricas:    'Buscar sucursal…',
     reglas:      'Buscar producto en reglas…',
     recepcion:   'Buscar pedido…',
     diferencias: 'Buscar producto…',
@@ -30,16 +40,10 @@ export default function PedidosView() {
     const { hasPermission } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const VALID       = new Set(['generar', 'historial', 'reglas', 'recepcion', 'diferencias']);
-    const allowedTabs = TABS.filter(t => hasPermission(`pedidos_tab_${t.key}`));
+    const allowedTabs = TABS.filter(t => hasPermission(t.permKey));
     const defaultTab  = allowedTabs[0]?.key ?? 'generar';
     const rawTab      = searchParams.get('tab');
     const activeTab   = VALID.has(rawTab) && allowedTabs.some(t => t.key === rawTab) ? rawTab : defaultTab;
-
-    const setActiveTab = (tab) => {
-        setSearchParams(p => { p.set('tab', tab); return p; });
-        setRawSearch('');
-    };
 
     const [rawSearch,       setRawSearch]       = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -71,9 +75,11 @@ export default function PedidosView() {
 
     return (
         <GlassViewLayout icon={ClipboardList} title="Pedidos a Sucursales" filtersContent={filtersContent}>
-            {activeTab === 'generar'      && <TabGenerar    searchTerm={debouncedSearch} />}
-            {activeTab === 'historial'   && <TabHistorial  searchTerm={debouncedSearch} refreshKey={historialKey} />}
-            {activeTab === 'reglas'      && <TabReglas     searchTerm={debouncedSearch} />}
+            {activeTab === 'generar'     && <TabGenerar     searchTerm={debouncedSearch} />}
+            {activeTab === 'historial'   && <TabHistorial   searchTerm={debouncedSearch} refreshKey={historialKey} />}
+            {activeTab === 'en_curso'    && <TabEnCurso     searchTerm={debouncedSearch} />}
+            {activeTab === 'metricas'    && <TabMetricas    searchTerm={debouncedSearch} />}
+            {activeTab === 'reglas'      && <TabReglas      searchTerm={debouncedSearch} />}
             {activeTab === 'recepcion'   && <TabRecepcion   searchTerm={debouncedSearch} refreshKey={recepcionKey} />}
             {activeTab === 'diferencias' && <TabDiferencias searchTerm={debouncedSearch} />}
         </GlassViewLayout>

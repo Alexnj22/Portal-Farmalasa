@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, ChevronRight, ChevronDown, CheckCircle2, PackageCheck,
     AlertTriangle, X, Package, Building2, TrendingDown, CheckCheck,
-    Search, PackagePlus, Database,
+    Search, PackagePlus, Database, Truck, Info,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -27,9 +27,9 @@ const STATUS_LABEL = {
 };
 
 const FILTER_TABS = [
-    { key: 'enviado',    label: 'Pendientes de recepción', icon: Package   },
+    { key: 'enviado',    label: 'Pendientes de recepción', icon: Package      },
     { key: 'parcial',    label: 'Con diferencias',          icon: TrendingDown },
-    { key: 'completado', label: 'Completados',              icon: CheckCheck },
+    { key: 'completado', label: 'Completados',              icon: CheckCheck   },
 ];
 
 function fmtDate(iso) {
@@ -71,25 +71,30 @@ function LotePills({ lotes }) {
 export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
     const { user } = useAuth();
 
-    const [erpSucursalId, setErpSucursalId] = useState(null);
-    const [branchName,    setBranchName]    = useState('');
-    const [pedidos,       setPedidos]       = useState([]);
-    const [loading,       setLoading]       = useState(true);
-    const [expanded,      setExpanded]      = useState(null);
-    const [items,         setItems]         = useState({});
-    const [loadingItems,  setLoadingItems]  = useState(false);
-    const [filterTab,     setFilterTab]     = useState('enviado');
-    const [modal,         setModal]         = useState(null);
-    const [itemSearch,    setItemSearch]    = useState('');
-    const [searchOpen,    setSearchOpen]    = useState(false);
-    const [firmas,        setFirmas]        = useState({});   // { pedidoId: [emp,…] }
-    const [extras,        setExtras]        = useState({});   // { pedidoId: [extra,…] }
-    const [erpStatus,     setErpStatus]     = useState({});   // { pedidoId: bool } — recibido_erp_at
-    const [markingErp,    setMarkingErp]    = useState(null); // pedidoId en proceso
-    const [newAlert,      setNewAlert]      = useState(null); // { numero } — banner pedido nuevo
+    const [erpSucursalId,    setErpSucursalId]    = useState(null);
+    const [branchName,       setBranchName]       = useState('');
+    const [pedidos,          setPedidos]          = useState([]);
+    const [loading,          setLoading]          = useState(true);
+    const [expanded,         setExpanded]         = useState(null);
+    const [items,            setItems]            = useState({});
+    const [loadingItems,     setLoadingItems]     = useState(false);
+    const [filterTab,        setFilterTab]        = useState('enviado');
+    const [modal,            setModal]            = useState(null);
+    const [itemSearch,       setItemSearch]       = useState('');
+    const [searchOpen,       setSearchOpen]       = useState(false);
+    const [firmas,           setFirmas]           = useState({});
+    const [extras,           setExtras]           = useState({});
+    const [erpStatus,        setErpStatus]        = useState({});
+    const [llegadaStatus,    setLlegadaStatus]    = useState({});
+    const [markingErp,       setMarkingErp]       = useState(null);
+    const [confirmingLlegada,setConfirmingLlegada]= useState(null);
+    const [newAlert,         setNewAlert]         = useState(null);
 
-    // Resolve employee → branch → erp_sucursal_id on mount.
-    // employees.id == uid de auth (no existe columna user_id).
+    // Ref para que el handler de realtime acceda al expanded actual
+    const expandedRef = useRef(null);
+    useEffect(() => { expandedRef.current = expanded; }, [expanded]);
+
+    // Resolver sucursal del empleado logueado
     useEffect(() => {
         if (!user?.id) return;
         (async () => {
@@ -130,7 +135,7 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
     useEffect(() => { if (erpSucursalId) loadPedidos(erpSucursalId); }, [erpSucursalId, loadPedidos]);
     useEffect(() => { if (refreshKey > 0 && erpSucursalId) loadPedidos(erpSucursalId); }, [refreshKey]); // eslint-disable-line
 
-    // Realtime: escucha cambios en pedidos y refresca si corresponde a esta sucursal
+    // Realtime: refresca lista + si el pedido expandido fue afectado, recarga sus ítems
     useEffect(() => {
         if (!erpSucursalId) return;
         const channel = supabase
@@ -139,7 +144,6 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                 const ids = payload.new?.sucursal_ids ?? [];
                 if (!ids.includes(erpSucursalId)) return;
                 if (!['enviado', 'parcial', 'completado'].includes(payload.new?.status)) return;
-                // Notifica si llega un pedido nuevo (INSERT) o si cambia a 'enviado' (UPDATE)
                 const isNuevo = payload.eventType === 'INSERT' ||
                     (payload.eventType === 'UPDATE' &&
                      payload.old?.status !== 'enviado' &&
@@ -149,12 +153,18 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                     setTimeout(() => setNewAlert(null), 8000);
                 }
                 loadPedidos(erpSucursalId);
+                // Si el pedido afectado está expandido, recarga sus ítems
+                const cur = expandedRef.current;
+                const affectedId = payload.new?.id ?? payload.old?.id;
+                if (cur && cur === affectedId) fetchItemsRef.current?.(cur);
             })
             .subscribe();
         return () => { supabase.removeChannel(channel); };
-    }, [erpSucursalId, loadPedidos]);
+    }, [erpSucursalId, loadPedidos]); // eslint-disable-line
 
-    // Load items + firmas + extras for a specific pedido, filtered to this branch's sucursal
+    // Ref para fetchItems (evitar dependencia circular en el realtime handler)
+    const fetchItemsRef = useRef(null);
+
     const fetchItems = useCallback(async (pedidoId) => {
         if (!erpSucursalId) return;
         setLoadingItems(true);
@@ -184,7 +194,7 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                 .eq('erp_sucursal_id', erpSucursalId),
             supabase
                 .from('pedido_sucursal_status')
-                .select('recibido_erp_at')
+                .select('recibido_erp_at, llegada_fisica_at')
                 .eq('pedido_id', pedidoId)
                 .eq('erp_sucursal_id', erpSucursalId)
                 .maybeSingle(),
@@ -193,8 +203,12 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
         setFirmas(prev => ({ ...prev, [pedidoId]: (firmaRows || []).map(f => f.employees).filter(Boolean) }));
         setExtras(prev => ({ ...prev, [pedidoId]: extraRows || [] }));
         setErpStatus(prev => ({ ...prev, [pedidoId]: !!lcRow?.recibido_erp_at }));
+        setLlegadaStatus(prev => ({ ...prev, [pedidoId]: !!lcRow?.llegada_fisica_at }));
         setLoadingItems(false);
     }, [erpSucursalId]);
+
+    // Mantener ref actualizada para el realtime handler
+    useEffect(() => { fetchItemsRef.current = fetchItems; }, [fetchItems]);
 
     const toggleExpand = useCallback(async (pedidoId) => {
         if (expanded === pedidoId) { setExpanded(null); return; }
@@ -203,17 +217,41 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
         if (!items[pedidoId]) await fetchItems(pedidoId);
     }, [expanded, items, fetchItems]);
 
-    // Open reception modal for a pending pedido
+    // Recepción 1: confirmar llegada física de cajas
+    const handleConfirmLlegada = useCallback(async (pedidoId) => {
+        if (confirmingLlegada) return;
+        setConfirmingLlegada(pedidoId);
+        try {
+            const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', {
+                p_pedido_id:   pedidoId,
+                p_sucursal_id: erpSucursalId,
+                p_stage:       'confirmar_llegada',
+                p_user_id:     user?.id ?? null,
+            });
+            if (error) throw error;
+            useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, {
+                sucursal_id: erpSucursalId,
+            });
+            setLlegadaStatus(prev => ({ ...prev, [pedidoId]: true }));
+        } catch (e) {
+            console.error('Error confirmando llegada:', e);
+        } finally {
+            setConfirmingLlegada(null);
+        }
+    }, [confirmingLlegada, erpSucursalId, user]);
+
+    // Recepción 2: abre el modal de conteo de ítems (solo si llegada confirmada)
     const openModal = useCallback((pedidoId) => {
+        if (!llegadaStatus[pedidoId]) return; // bloqueado: Recepción 1 pendiente
         const rows = (items[pedidoId] || []).filter(
             r => r.status === 'pendiente' && r.cantidad_asignada > 0
         );
         if (!rows.length) return;
         const pedido = pedidos.find(p => p.id === pedidoId);
         setModal({ pedido: { id: pedidoId, numero: pedido?.numero ?? '?' }, rows });
-    }, [items, pedidos]);
+    }, [items, pedidos, llegadaStatus]);
 
-    // Marcar pedido como recibido en ERP para esta sucursal
+    // Marcar ingresado al ERP
     const handleMarkErp = useCallback(async (pedidoId) => {
         if (markingErp) return;
         setMarkingErp(pedidoId);
@@ -225,7 +263,9 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                 p_user_id:     user?.id ?? null,
             });
             if (error) throw error;
-            useStaff.getState().appendAuditLog('PEDIDO_LIFECYCLE_RECIBIR_ERP', pedidoId, { sucursal_id: erpSucursalId });
+            useStaff.getState().appendAuditLog('PEDIDO_LIFECYCLE_RECIBIR_ERP', pedidoId, {
+                sucursal_id: erpSucursalId,
+            });
             setErpStatus(prev => ({ ...prev, [pedidoId]: true }));
         } catch (e) {
             console.error('Error marcando ERP:', e);
@@ -234,10 +274,12 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
         }
     }, [markingErp, erpSucursalId, user]);
 
-    // Post-confirmación: refresca + notifica bodega si hay diferencias o extras
+    // Post-confirmación de ítems: notifica y refresca
     const handleConfirmed = useCallback(async ({ hasDiff, extras: extrasReported }) => {
         const pedidoId = modal?.pedido?.id;
         if (!pedidoId) return;
+
+        // Notificar a bodega si hay diferencias o productos no esperados
         if (hasDiff || extrasReported.length > 0) {
             try {
                 const { data: bodegaMap } = await supabase
@@ -250,31 +292,64 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                     const partes = [];
                     if (hasDiff) partes.push('diferencias de cantidad');
                     if (extrasReported.length > 0) partes.push(`${extrasReported.length} producto(s) no esperado(s)`);
-                    const title = `Recepción con novedades — Pedido #${num} (${branchName})`;
-                    const msg   = `La recepción del pedido #${num} en ${branchName} reporta ${partes.join(' y ')}. Revisá el historial para ver los detalles.`;
                     await supabase.from('announcements').insert({
-                        title, message: msg,
-                        target_type: 'BRANCH', target_value: [bodegaMap.branch_id],
-                        read_by: [], is_archived: false, created_by: user?.id ?? null,
-                        priority: 'NORMAL',
-                        metadata: { pedido_id: pedidoId, numero: num, sucursal_id: erpSucursalId },
+                        title:        `Recepción con novedades — Pedido #${num} (${branchName})`,
+                        message:      `La recepción del pedido #${num} en ${branchName} reporta ${partes.join(' y ')}. Revisá el historial para ver los detalles.`,
+                        target_type:  'BRANCH',
+                        target_value: [bodegaMap.branch_id],
+                        read_by:      [],
+                        is_archived:  false,
+                        created_by:   user?.id ?? null,
+                        priority:     'NORMAL',
                     });
                     supabase.functions.invoke('send-push-notification', {
-                        body: { title, message: msg, url: '/pedidos?tab=historial', target_type: 'BRANCH', target_value: [bodegaMap.branch_id] },
+                        body: {
+                            title:        `Novedades en pedido #${num} — ${branchName}`,
+                            message:      `Diferencias reportadas: ${partes.join(', ')}.`,
+                            url:          '/pedidos?tab=diferencias',
+                            target_type:  'BRANCH',
+                            target_value: [bodegaMap.branch_id],
+                        },
                     }).catch(() => {});
                 }
             } catch { /* non-fatal */ }
         }
+
         setModal(null);
         await fetchItems(pedidoId);
+
         const { data: updated } = await supabase
             .from('pedidos')
             .select('id, numero, created_at, status, notes, enviado_at')
             .eq('id', pedidoId).single();
         if (updated) setPedidos(prev => prev.map(p => p.id === pedidoId ? updated : p));
+
+        // Notificar a bodega que el ciclo cerró limpiamente (todas las sucursales recibieron)
+        if (updated?.status === 'completado' && !hasDiff && extrasReported.length === 0) {
+            try {
+                const { data: bodegaMap } = await supabase
+                    .from('erp_sucursal_map')
+                    .select('branch_id')
+                    .eq('es_bodega', true)
+                    .maybeSingle();
+                if (bodegaMap?.branch_id) {
+                    const num = updated.numero;
+                    await supabase.from('announcements').insert({
+                        title:        `Pedido #${num} completado — ciclo cerrado`,
+                        message:      `Todas las sucursales confirmaron la recepción del pedido #${num} sin diferencias.`,
+                        target_type:  'BRANCH',
+                        target_value: [bodegaMap.branch_id],
+                        read_by:      [],
+                        is_archived:  false,
+                        created_by:   user?.id ?? null,
+                        priority:     'NORMAL',
+                    });
+                }
+            } catch { /* non-fatal */ }
+        }
     }, [modal, erpSucursalId, user, branchName, fetchItems]);
 
-    // Filter & search
+    // Filtro y búsqueda
     const filtered = pedidos
         .filter(p => p.status === filterTab)
         .filter(p => {
@@ -283,7 +358,10 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
             return String(p.numero).includes(q) || (p.notes || '').toLowerCase().includes(q);
         });
 
-    const counts = pedidos.reduce((acc, p) => { acc[p.status] = (acc[p.status] || 0) + 1; return acc; }, {});
+    const counts = pedidos.reduce((acc, p) => {
+        acc[p.status] = (acc[p.status] || 0) + 1;
+        return acc;
+    }, {});
 
     if (loading) {
         return (
@@ -314,17 +392,14 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                 <span className="text-[11px] text-slate-400">— Pedidos asignados a esta sucursal</span>
             </div>
 
-            {/* Realtime: banner pedido nuevo */}
+            {/* Banner pedido nuevo (realtime) */}
             {newAlert && (
                 <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 shadow-sm">
                     <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
                     <span className="text-[13px] font-semibold text-blue-700">
                         Nuevo pedido #{newAlert.numero} asignado a {branchName}
                     </span>
-                    <button
-                        onClick={() => setNewAlert(null)}
-                        className="ml-auto text-blue-300 hover:text-blue-500 transition-colors"
-                    >
+                    <button onClick={() => setNewAlert(null)} className="ml-auto text-blue-300 hover:text-blue-500 transition-colors">
                         <X size={14} />
                     </button>
                 </div>
@@ -367,21 +442,30 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
 
             {/* Pedido cards */}
             {filtered.map(pedido => {
-                const isExp    = expanded === pedido.id;
-                const rowItems = items[pedido.id] || [];
-                const q        = isExp ? itemSearch.trim().toLowerCase() : '';
-                const visibles = q
+                const isExp     = expanded === pedido.id;
+                const rowItems  = items[pedido.id] || [];
+                const q         = isExp ? itemSearch.trim().toLowerCase() : '';
+                const visibles  = q
                     ? rowItems.filter(r => (r.products?.nombre || '').toLowerCase().includes(q))
                     : rowItems;
-                const pending  = visibles.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0);
-                const received = visibles.filter(r => r.status !== 'pendiente');
-                const allPending = rowItems.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0);
-                const pedFirmas  = firmas[pedido.id] || [];
-                const pedExtras  = extras[pedido.id] || [];
+
+                // Ítems pendientes de recibir (excluye qty=0)
+                const pending   = visibles.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0);
+                // Ítems ya procesados con qty real
+                const received  = visibles.filter(r => r.status !== 'pendiente' && r.cantidad_asignada > 0);
+                // Productos no incluidos en este envío (sin stock o revisión MIN/MAX)
+                const sinStock  = rowItems.filter(r => r.sin_stock || r.revision_minmax);
+
+                const allPending  = rowItems.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0);
+                const pedFirmas   = firmas[pedido.id] || [];
+                const pedExtras   = extras[pedido.id] || [];
+                const yaLlego     = !!llegadaStatus[pedido.id];
+                const yaEnErp     = !!erpStatus[pedido.id];
+                const puedeRecibir = (pedido.status === 'enviado' || pedido.status === 'parcial') && allPending.length > 0;
 
                 return (
                     <div key={pedido.id} className={GLASS}>
-                        {/* Header row */}
+                        {/* Header */}
                         <button
                             onClick={() => toggleExpand(pedido.id)}
                             className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50/60 transition-colors rounded-2xl"
@@ -409,7 +493,7 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                                     </div>
                                 ) : (
                                     <>
-                                        {/* Lupa expansible — busca dentro del pedido */}
+                                        {/* Lupa interna */}
                                         <div className="flex items-center justify-end pt-3 gap-2">
                                             {searchOpen ? (
                                                 <div className="relative flex-1 max-w-[260px]">
@@ -440,11 +524,11 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                                             <p className="text-[12px] text-slate-400 text-center py-2">Sin resultados para "{itemSearch}"</p>
                                         )}
 
-                                        {/* Pending items */}
+                                        {/* Ítems pendientes de recibir */}
                                         {pending.length > 0 && (
                                             <div className="space-y-1">
-                                                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">
-                                                    Productos por recibir ({pending.length})
+                                                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                                                    Por recibir ({pending.length})
                                                 </p>
                                                 {pending.map(r => (
                                                     <div key={r.id} className="flex items-center gap-2 py-1.5 px-3 rounded-xl bg-slate-50 border border-slate-100">
@@ -466,10 +550,10 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                                             </div>
                                         )}
 
-                                        {/* Already received items */}
+                                        {/* Ítems ya recibidos */}
                                         {received.length > 0 && (
                                             <div className="space-y-1">
-                                                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                                                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">
                                                     Recibidos ({received.length})
                                                 </p>
                                                 {received.map(r => {
@@ -482,9 +566,7 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                                                                 </p>
                                                                 {(r.error_tipo || r.nota_diferencia) && (
                                                                     <p className="text-[10px] text-amber-600 mt-0.5">
-                                                                        {r.error_tipo && (
-                                                                            <span className="font-bold uppercase mr-1">[{r.error_tipo}]</span>
-                                                                        )}
+                                                                        {r.error_tipo && <span className="font-bold uppercase mr-1">[{r.error_tipo}]</span>}
                                                                         {r.nota_diferencia}
                                                                     </p>
                                                                 )}
@@ -502,7 +584,29 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                                             </div>
                                         )}
 
-                                        {/* Productos no esperados reportados */}
+                                        {/* Productos no incluidos en este envío */}
+                                        {sinStock.length > 0 && (
+                                            <div className="space-y-1">
+                                                <p className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                                                    <Info size={11} />
+                                                    No enviados esta vez ({sinStock.length})
+                                                </p>
+                                                {sinStock.map(r => (
+                                                    <div key={r.id} className="flex items-center gap-2 py-1 px-3 rounded-xl bg-slate-50/80 border border-slate-100">
+                                                        <span className="flex-1 text-[11px] text-slate-500 truncate">{r.products?.nombre ?? '?'}</span>
+                                                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border ${
+                                                            r.sin_stock
+                                                                ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                                                : 'bg-slate-100 text-slate-500 border-slate-200'
+                                                        }`}>
+                                                            {r.sin_stock ? 'Sin stock' : 'Revisar MIN/MAX'}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Productos no esperados que llegaron */}
                                         {pedExtras.length > 0 && (
                                             <div className="space-y-1">
                                                 <p className="flex items-center gap-1 text-[10px] font-semibold text-violet-500 uppercase tracking-wide mb-2">
@@ -521,7 +625,7 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                                         {/* Responsables de la recepción */}
                                         {pedFirmas.length > 0 && (
                                             <div className="space-y-1.5">
-                                                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
+                                                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
                                                     Recepción confirmada por
                                                 </p>
                                                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -530,24 +634,62 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                                             </div>
                                         )}
 
-                                        {/* Action button */}
-                                        {pedido.status === 'enviado' && allPending.length > 0 && (
-                                            <button
-                                                onClick={() => openModal(pedido.id)}
-                                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-semibold transition-colors"
-                                            >
-                                                <PackageCheck size={14} />
-                                                Confirmar recepción ({allPending.length} productos)
-                                            </button>
+                                        {/* ── Área de acciones: pedidos enviado / parcial con ítems pendientes ── */}
+                                        {puedeRecibir && (
+                                            <div className="pt-1 space-y-2">
+                                                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
+                                                    Pasos para recibir este pedido
+                                                </p>
+                                                <div className="flex gap-2">
+                                                    {/* Paso 1: Confirmar llegada física */}
+                                                    {yaLlego ? (
+                                                        <div className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] font-semibold text-emerald-700 flex-1">
+                                                            <CheckCircle2 size={13} />
+                                                            Llegada confirmada
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleConfirmLlegada(pedido.id)}
+                                                            disabled={confirmingLlegada === pedido.id}
+                                                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold transition-colors flex-1 disabled:opacity-60"
+                                                        >
+                                                            {confirmingLlegada === pedido.id
+                                                                ? <Loader2 size={12} className="animate-spin" />
+                                                                : <Truck size={13} />
+                                                            }
+                                                            1. Confirmar llegada
+                                                        </button>
+                                                    )}
+                                                    {/* Paso 2: Contar ítems */}
+                                                    <button
+                                                        onClick={() => openModal(pedido.id)}
+                                                        disabled={!yaLlego}
+                                                        className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-semibold transition-colors flex-1 ${
+                                                            yaLlego
+                                                                ? 'bg-teal-600 hover:bg-teal-700 text-white'
+                                                                : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                                                        }`}
+                                                    >
+                                                        <PackageCheck size={13} />
+                                                        2. Contar ítems ({allPending.length})
+                                                    </button>
+                                                </div>
+                                                {!yaLlego && (
+                                                    <p className="text-[10px] text-slate-400 text-center">
+                                                        Confirmá primero que las cajas llegaron físicamente antes de contar.
+                                                    </p>
+                                                )}
+                                            </div>
                                         )}
 
-                                        {(pedido.status === 'completado' || pedido.status === 'parcial') && (
+                                        {/* Estado final: completado o parcial sin pendientes */}
+                                        {(pedido.status === 'completado' || (pedido.status === 'parcial' && allPending.length === 0)) && (
                                             <div className="flex items-center gap-2 pt-1">
                                                 <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
                                                 <span className="text-[12px] font-semibold text-emerald-600 flex-1">
                                                     {pedido.status === 'completado' ? 'Recibido correctamente' : 'Recibido con diferencias'}
                                                 </span>
-                                                {erpStatus[pedido.id] ? (
+                                                {yaEnErp ? (
                                                     <span className="flex items-center gap-1 text-[11px] font-semibold text-teal-600 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-full">
                                                         <Database size={11} />
                                                         Ingresado al ERP
@@ -575,7 +717,7 @@ export default function TabRecepcion({ searchTerm = '', refreshKey = 0 }) {
                 );
             })}
 
-            {/* Reception modal — unificado (ModalShell via portal, centrado) */}
+            {/* Modal de conteo de ítems (Recepción 2) */}
             {modal && (
                 <RecepcionModal
                     open={!!modal}

@@ -24,7 +24,7 @@ import ConfirmModal from '../components/common/ConfirmModal';
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-const SCHED_TABS = [
+const ALL_SCHED_TABS = [
     { key: 'calendar', label: 'Horarios', icon: CalendarDays },
     { key: 'shifts',   label: 'Catálogo', icon: BookOpen     },
     { key: 'holidays', label: 'Feriados', icon: Star         },
@@ -216,7 +216,8 @@ const HolidaysPanel = ({
 const SchedulesView = ({ openModal, setView }) => {
     const { employees, shifts, branches, holidays, fetchWeekRosters, publishWeekRosters, fetchBoot, addHoliday, deleteHoliday } = useStaff();
     const { hasPermission, getScope } = useAuth();
-    const canEdit = hasPermission('schedules', 'can_edit');
+    const canEdit  = hasPermission('schedules', 'can_edit');
+    const SCHED_TABS = ALL_SCHED_TABS.filter(t => hasPermission(`schedules_tab_${t.key}`));
     const showToast = useToastStore(s => s.showToast);
     const [isPublishing, setIsPublishing] = useState(false);
 
@@ -691,7 +692,7 @@ const SchedulesView = ({ openModal, setView }) => {
 
     const filtersContent = (
         <ViewTabBar
-            tabs={SCHED_TABS}
+            tabs={SCHED_TABS.length ? SCHED_TABS : ALL_SCHED_TABS}
             activeTab={viewMode}
             onTabChange={goToView}
             searchValue={rawSearch}

@@ -8,19 +8,21 @@ import TabBonificaciones from './promociones/TabBonificaciones';
 import TabHistorial    from './promociones/TabHistorial';
 import { useAuth }     from '../context/AuthContext';
 
-const TABS = [
-    { key: 'activas',        label: 'Promociones', icon: Tag     },
-    { key: 'bonificaciones', label: 'Bonificaciones', icon: Gift  },
-    { key: 'historial',      label: 'Historial',   icon: History  },
+const ALL_TABS = [
+    { key: 'activas',        label: 'Promociones',   icon: Tag     },
+    { key: 'bonificaciones', label: 'Bonificaciones', icon: Gift    },
+    { key: 'historial',      label: 'Historial',      icon: History },
 ];
 
 export default function PromocionesView() {
     const { hasPermission } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const VALID       = new Set(TABS.map(t => t.key));
+    const TABS = ALL_TABS.filter(t => hasPermission(`promociones_tab_${t.key}`));
+    const VALID       = new Set(ALL_TABS.map(t => t.key));
     const rawTab      = searchParams.get('tab');
-    const activeTab   = VALID.has(rawTab) ? rawTab : 'activas';
+    const defaultTab  = TABS[0]?.key ?? 'activas';
+    const activeTab   = VALID.has(rawTab) && TABS.some(t => t.key === rawTab) ? rawTab : defaultTab;
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
 
     const [rawSearch,       setRawSearch]       = useState('');

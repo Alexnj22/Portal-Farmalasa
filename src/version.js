@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.171';
+export const APP_VERSION = '2.2.172';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.172 — fix: commit archivos omitidos en sesiones anteriores — PromocionesView filtrado de tabs por permisos (promociones_tab_*); SchedulesView filtrado de tabs por permisos (schedules_tab_*) con fallback; migracion get_product_last_sales agrega campo cliente e individual transactions
 // v2.2.171 — feat(pedidos/kiosko): trigger DB attendance_kiosko_pedido_lifecycle — OUT_LUNCH auto-pausa pedidos activos iniciados por el empleado, IN_LUNCH auto-reanuda; modal pausa detecta estado kiosko (attendance OUT_LUNCH sin IN_LUNCH hoy) — banner teal + auto-selecciona Almuerzo; corrige columna razon en pedido_pausa_historial (era pausa_razon)
 // v2.2.170 — feat(pedidos/TabPedidos): ConveyorAnim cinta transportadora reemplaza sonar ping; modal pausa con 6 razones y validacion Almuerzo via pedido_pausa_historial; 3 secciones de items con DataTable/DataRow/DataCell estandar y paginacion; fetchItems ampliado con dispatch/laboratorios; columnas detalladas por seccion
 // v2.2.169 — fix+feat(pedidos/TabPedidos): fix NaN en tiempos (elapsed usaba new Date(undefined)→Invalid Date; ahora new Date()); 3 secciones colapsables por card (Productos enviados/Sin inventario/Revisar regla) con MiniTable paginada (15/p) y estándar DataTable; resumen Solicitados·Enviados·Sin inventario·Revisar en strip al abrir card; nueva animación PreparandoAnim (sonar ping rings + package flotante + mini-boxes laterales); CollapsibleSection con AnimatePresence; columnas: Producto, Cant., Estado / Sin stock / Ajustar regla

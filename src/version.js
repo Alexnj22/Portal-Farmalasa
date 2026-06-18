@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.180';
+export const APP_VERSION = '2.2.181';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.181 — fix(distribucion): get_pedido_preview v5 — regla de despacho siempre se respeta; parcial solo cuando bodega tiene menos de 1 dispatch_unit (huérfanos); revision_minmax usa asignado_raw=0 en vez de asignado_final=0 para no confundir regla correctamente bloqueada con escasez real
 // v2.2.180 — fix(distribucion): get_pedido_preview — segundo WHEN en con_reglas requería asignado_uncapped > 0; sin esa guarda, productos con fracción < 40% (uncapped=0) y max_asignable grande enviaban FLOOR(max_asignable/unit_base)*unit_base en vez del parcial correcto (ej. VIROGRIP enviaba 96 cuando solo necesitaba 7)
 // v2.2.179 — fix(distribucion): get_pedido_preview — si bodega asignó packs pero la fracción no llega al 40% del dispatch_unit, ahora se envía asignado_raw como despacho parcial en vez de bloquear con cero. revision_minmax queda solo para sucursales donde asignado_raw=0 (bodega genuinamente sin stock para esa sucursal)
 // v2.2.178 — feat(pedidos/TabPedidos): 8 mejoras — (1) timeline con elapsed time + avatares del creador/iniciador por nodo; (2) último nodo renombrado a "Finalizado"; (3) botón Apoyo con scanner-only modal (kiosk_pin), tabla pedido_apoyo; (4) pausa con ring ámbar + shadow; (5) card completa clickeable; (6) texto más oscuro/grande (glassmorphism contrast); (7) PauseModal estilo UnifiedModal; (8) animación timeline con box-shadow glow (evita clipping)

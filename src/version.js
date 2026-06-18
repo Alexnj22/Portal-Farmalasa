@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.159';
+export const APP_VERSION = '2.2.160';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.160 — fix(reglas): contraste texto panel dispatch — labels sección text-slate-400→slate-600, sub-texto text-slate-300→slate-500 para legibilidad sobre glassmorphism
 // v2.2.159 — fix(reglas): dispatch_label UI — pills preset CAJA/ESTUCHE/BOLSA en lugar de texto libre; movidas al tope del panel (junto a presentaciones); Ejemplo corregido (1 CAJA en vez de 12 UNIDAD cuando hay etiqueta); "Quitar regla" rojo por defecto; autoguarda al seleccionar pill.
 // v2.2.158 — feat(reglas/pdf): dispatch_label — etiqueta personalizada por producto en el PDF; Electrolit ×12 → "1 CAJA" en vez de "12 UNIDADES"; get_pedido_preview v21 plega dp_multiplo en dp_factor cuando dispatch_label IS NOT NULL para que toDispatch() convierta correctamente.
 // v2.2.157 — fix(pedidos): 4 correcciones — (1) PDF header más compacto (márgenes 8→6px, fonts reducidos); footer restaurado "Revisado por / N/M / Recibido por" en TODAS las páginas; última página agrega firma compacta ARRIBA del footer sin espacio vacío; PAGE_MARGINS[3]=44pt; (2) sin_bodega devuelve JSONB — bypasea cap max-rows=1000 de PostgREST; (3) pedidos de prueba borrados del DB (30 pedidos 18856 items); (4) logo del PDF se mantiene.

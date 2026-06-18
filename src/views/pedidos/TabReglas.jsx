@@ -193,9 +193,9 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
 
             {/* Presentaciones del producto */}
             <div>
-                <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-2 font-bold">
+                <p className="text-[9px] text-slate-600 uppercase tracking-widest mb-2 font-bold">
                     Presentación de despacho
-                    <span className="normal-case tracking-normal font-medium text-slate-300"> · se aplica automáticamente</span>
+                    <span className="normal-case tracking-normal font-medium text-slate-500"> · se aplica automáticamente</span>
                 </p>
                 {loadingPres ? (
                     <div className="flex items-center gap-2 text-[11px] text-slate-400">
@@ -247,9 +247,9 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     >
                         {/* Etiqueta en PDF — pills preset, junto a la presentación */}
                         <div>
-                            <p className="text-[9px] text-slate-400 uppercase tracking-widest mb-2 font-bold">
+                            <p className="text-[9px] text-slate-600 uppercase tracking-widest mb-2 font-bold">
                                 Mostrar en PDF como
-                                <span className="normal-case tracking-normal font-medium text-slate-300"> · opcional</span>
+                                <span className="normal-case tracking-normal font-medium text-slate-500"> · opcional</span>
                             </p>
                             <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                                 {['CAJA', 'ESTUCHE', 'BOLSA'].map(label => (

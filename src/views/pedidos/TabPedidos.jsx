@@ -336,18 +336,36 @@ function renderProd(row) {
         </div>
     );
 }
+function renderPresentacion(row) {
+    const tipo   = row.dispatch_tipo;
+    const factor = row.dispatch_factor || row.factor || 1;
+    const TIPO_LABELS = { caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja' };
+    if (!tipo) {
+        if (factor > 1) return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">×{factor} unid</span>;
+        return <span className="text-slate-400 text-[11px]">Unidad</span>;
+    }
+    const label      = TIPO_LABELS[tipo] ?? tipo;
+    const showFactor = factor > 1 && ['caja','blister','solo_cajas'].includes(tipo);
+    return (
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
+            {label}{showFactor ? ` ×${factor}` : ''}{['multiplo','multiplo_unidades'].includes(tipo) ? ` ×${factor}` : ''}
+        </span>
+    );
+}
+const renderSolicitado = r => {
+    const sol = calcSolicitado(r);
+    return sol != null
+        ? <span className="tabular-nums text-slate-500">{sol}</span>
+        : <span className="text-slate-300">—</span>;
+};
 
 const COLS_ENVIADOS = [
-    { key: 'lab',        label: 'Laboratorio',  render: renderLab },
-    { key: 'prod',       label: 'Producto',     render: renderProd },
-    { key: 'solicitado', label: 'Solicitado', align: 'center', render: r => {
-        const sol = calcSolicitado(r);
-        return sol != null
-            ? <span className="tabular-nums text-slate-500">{sol}</span>
-            : <span className="text-slate-300">—</span>;
-    }},
-    { key: 'asig',       label: 'Enviado',   align: 'center', render: r => <span className="font-bold tabular-nums">{r.cantidad_asignada}</span> },
-    { key: 'rec',        label: 'Recibido',  align: 'center', render: r => {
+    { key: 'lab',        label: 'Laboratorio',   render: renderLab },
+    { key: 'prod',       label: 'Producto',      render: renderProd },
+    { key: 'pres',       label: 'Presentación',  render: renderPresentacion },
+    { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
+    { key: 'asig',       label: 'Enviado',    align: 'center', render: r => <span className="font-bold tabular-nums">{r.cantidad_asignada}</span> },
+    { key: 'rec',        label: 'Recibido',   align: 'center', render: r => {
         if (r.cantidad_recibida == null) return <span className="text-slate-400">—</span>;
         const diff = r.cantidad_recibida - r.cantidad_asignada;
         return (
@@ -368,16 +386,20 @@ const COLS_ENVIADOS = [
 ];
 
 const COLS_SIN_STOCK = [
-    { key: 'lab',    label: 'Laboratorio', render: renderLab },
-    { key: 'prod',   label: 'Producto',    render: renderProd },
-    { key: 'motivo', label: 'Motivo', render: () => <span className="text-amber-600 text-[11px]">Sin stock en bodega</span> },
+    { key: 'lab',        label: 'Laboratorio',  render: renderLab },
+    { key: 'prod',       label: 'Producto',     render: renderProd },
+    { key: 'pres',       label: 'Presentación', render: renderPresentacion },
+    { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
+    { key: 'motivo',     label: 'Motivo', render: () => <span className="text-amber-600 text-[11px]">Sin stock en bodega</span> },
 ];
 
 const COLS_REGLA = [
-    { key: 'lab',    label: 'Laboratorio',   render: renderLab },
-    { key: 'prod',   label: 'Producto',      render: renderProd },
-    { key: 'regla',  label: 'Regla aplicada', render: fmtRegla },
-    { key: 'motivo', label: 'Motivo', render: () => <span className="text-rose-600 text-[11px]">Necesidad &lt; 40% de la unidad mínima de despacho</span> },
+    { key: 'lab',        label: 'Laboratorio',   render: renderLab },
+    { key: 'prod',       label: 'Producto',      render: renderProd },
+    { key: 'pres',       label: 'Presentación',  render: renderPresentacion },
+    { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
+    { key: 'regla',      label: 'Regla',         render: fmtRegla },
+    { key: 'motivo',     label: 'Motivo', render: () => <span className="text-rose-600 text-[11px]">Necesidad &lt; 40% de la unidad mínima de despacho</span> },
 ];
 
 function ItemSection({ label, count, badgeCls, rows, columns, noteEl, defaultOpen = false }) {

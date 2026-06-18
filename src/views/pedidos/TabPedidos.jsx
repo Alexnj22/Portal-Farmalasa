@@ -7,9 +7,12 @@ import {
     Truck, Pause, PackageCheck, Play,
     Database, Activity, TrendingDown,
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert,
+    Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import ModalShell from '../../components/common/ModalShell';
 import RecepcionModal from './RecepcionModal';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -55,6 +58,15 @@ const COLOR_CLS = {
 const PEDIDO_PILL  = { confirmado: 'bg-blue-100 text-blue-700 border-blue-200', enviado: 'bg-indigo-100 text-indigo-700 border-indigo-200', parcial: 'bg-amber-100 text-amber-700 border-amber-200', completado: 'bg-emerald-100 text-emerald-700 border-emerald-200', anulado: 'bg-red-100 text-red-600 border-red-200' };
 const PEDIDO_LABEL = { confirmado: 'Por despachar', enviado: 'En camino', parcial: 'Con diferencias', completado: 'Completado', anulado: 'Anulado' };
 
+const PAUSE_REASONS = [
+    { key: 'almuerzo',     label: 'Almuerzo',             icon: Coffee,        maxUses: 1    },
+    { key: 'personal',     label: 'Falta de personal',    icon: Users,         maxUses: null },
+    { key: 'insumos',      label: 'Espera de insumos',    icon: Clock,         maxUses: null },
+    { key: 'reunion',      label: 'Reunión de turno',     icon: ClipboardList, maxUses: null },
+    { key: 'interrupcion', label: 'Interrupción externa', icon: Bell,          maxUses: null },
+    { key: 'otro',         label: 'Otro…',                icon: MessageSquare, maxUses: null, requiresComment: true },
+];
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmtDate(iso) {
@@ -67,7 +79,6 @@ function fmtMin(min) {
     const h = Math.floor(min / 60), m = min % 60;
     return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
-// isoTo=null → use now
 function elapsed(isoFrom, isoTo = null) {
     if (!isoFrom) return null;
     const from = new Date(isoFrom);
@@ -95,6 +106,17 @@ function getBranchStage(row, pedidoStatus) {
     if (row.iniciado_at)                                 return 'preparando';
     return 'sin_iniciar';
 }
+function fmtRegla(row) {
+    if (!row.dispatch_tipo) return <span className="text-slate-400">—</span>;
+    const tipos = { caja: 'CAJA', blister: 'BLISTER', multiplo: 'UND ×', multiplo_unidades: 'UND ×', solo_cajas: 'SOLO CAJAS' };
+    const base  = tipos[row.dispatch_tipo] ?? row.dispatch_tipo.toUpperCase();
+    const showFactor = row.dispatch_factor > 1 && !['solo_cajas'].includes(row.dispatch_tipo);
+    return (
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+            {base}{showFactor ? ` ${row.dispatch_factor}` : ''}
+        </span>
+    );
+}
 
 // ─── Animations ──────────────────────────────────────────────────────────────
 
@@ -116,32 +138,40 @@ function MotorcycleAnim() {
     );
 }
 
-// Sonar ping + floating package — "En preparación"
-function PreparandoAnim() {
+// Cinta transportadora — boxes sliding left → right on a moving belt
+function ConveyorAnim() {
+    const DUR = 1.75;
     return (
-        <div className="relative w-14 h-12 shrink-0 flex items-center justify-center">
-            {/* Sonar rings */}
-            <motion.div className="absolute w-10 h-10 rounded-full border-2 border-blue-300"
-                animate={{ scale: [0.6, 1.6], opacity: [0.7, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }} />
-            <motion.div className="absolute w-10 h-10 rounded-full border-2 border-blue-400"
-                animate={{ scale: [0.6, 1.6], opacity: [0.6, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut', delay: 0.55 }} />
-            {/* Floating mini boxes */}
-            {[-14, 14].map((x, i) => (
-                <motion.div key={i} className="absolute w-2.5 h-2.5 rounded-[3px] bg-blue-300 border border-blue-400"
-                    style={{ left: `calc(50% + ${x}px - 5px)`, top: 2 }}
-                    animate={{ y: [0, 6, 0], opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }} />
-            ))}
-            {/* Center icon */}
+        <div className="relative shrink-0 overflow-hidden rounded" style={{ width: 90, height: 44 }}>
+            {/* Belt base */}
+            <div className="absolute bottom-0 left-0 right-0 bg-slate-300 border-t-2 border-slate-400" style={{ height: 14 }} />
+            {/* Moving belt links */}
             <motion.div
-                className="relative z-10 w-9 h-9 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 border border-blue-300 flex items-center justify-center shadow-[0_4px_14px_rgba(59,130,246,0.35)]"
-                animate={{ y: [0, -3, 0], scale: [1, 1.05, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute bottom-0 flex items-center"
+                style={{ height: 14, width: 130, left: -5 }}
+                animate={{ x: [0, -20] }}
+                transition={{ duration: 0.38, repeat: Infinity, ease: 'linear' }}
             >
-                <Package size={16} className="text-blue-600" />
+                {Array.from({ length: 16 }).map((_, i) => (
+                    <React.Fragment key={i}>
+                        <div style={{ width: 8, height: 10, background: '#94a3b8', borderRadius: 1, flexShrink: 0 }} />
+                        <div style={{ width: 4, height: 14, background: '#cbd5e1', flexShrink: 0 }} />
+                    </React.Fragment>
+                ))}
             </motion.div>
+            {/* Boxes */}
+            {[0, 1, 2].map(i => (
+                <motion.div
+                    key={i}
+                    style={{ position: 'absolute', bottom: 14, left: 0, width: 20, height: 18, borderRadius: 3, border: '1.5px solid', flexShrink: 0 }}
+                    className={i === 0 ? 'bg-blue-500 border-blue-600' : i === 1 ? 'bg-blue-400 border-blue-500' : 'bg-blue-300 border-blue-400'}
+                    animate={{ x: [-22, 96] }}
+                    transition={{ duration: DUR, repeat: Infinity, delay: -(i * (DUR / 3)), ease: 'linear' }}
+                >
+                    {/* Box cross line */}
+                    <div style={{ position: 'absolute', top: '45%', left: 3, right: 3, height: 1, background: 'rgba(255,255,255,0.4)' }} />
+                </motion.div>
+            ))}
         </div>
     );
 }
@@ -185,7 +215,7 @@ function PingDot({ color = 'blue', size = 'sm' }) {
 
 function StageAnim({ stage }) {
     if (stage === 'transito')   return <MotorcycleAnim />;
-    if (stage === 'preparando') return <PreparandoAnim />;
+    if (stage === 'preparando') return <ConveyorAnim />;
     if (stage === 'pausado')    return <PausedAnim />;
     if (stage === 'preparado')  return <VioletGlow />;
     if (stage === 'contando')   return <ScanAnim />;
@@ -193,7 +223,7 @@ function StageAnim({ stage }) {
     return null;
 }
 
-// ─── Stage + Sucursal pills ───────────────────────────────────────────────────
+// ─── Pills ────────────────────────────────────────────────────────────────────
 
 function StagePill({ stage }) {
     const cfg = STAGE_CONFIG[stage], colors = COLOR_CLS[cfg.color], Icon = cfg.icon;
@@ -208,65 +238,143 @@ function SucPill({ sucId }) {
     const cls = SUC_COLORS[sucId] ?? 'bg-slate-100 text-slate-600 border-slate-200';
     return (
         <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full border shrink-0 ${cls}`}>
-            <Building2 size={11} />
-            {ERP_NAMES[sucId] ?? `Suc. ${sucId}`}
+            <Building2 size={11} /> {ERP_NAMES[sucId] ?? `Suc. ${sucId}`}
         </span>
     );
 }
 
-// ─── MiniTable (DataTable standard, client-side pagination) ──────────────────
+// ─── Pause Modal ──────────────────────────────────────────────────────────────
 
-function MiniTable({ columns, rows, emptyText = 'Sin datos.' }) {
-    const [page, setPage] = useState(0);
-    const totalPages = Math.ceil(rows.length / MINI_PAGE);
-    const pageRows   = rows.slice(page * MINI_PAGE, (page + 1) * MINI_PAGE);
+function PauseModal({ modal, history, razonSel, setRazonSel, comment, setComment, onCancel, onConfirm, busy }) {
+    const alreadyHadAlmuerzo = history.some(h => h.pausa_razon?.toLowerCase().includes('almuerzo'));
+    const reason = PAUSE_REASONS.find(r => r.key === razonSel);
+    const canConfirm = !(reason?.requiresComment && !comment.trim());
 
     return (
-        <div>
-            <div className="overflow-x-auto">
-                <table className="w-full min-w-[300px] text-left">
-                    <thead>
-                        <tr>
-                            {columns.map(col => (
-                                <th key={col.key} className={`pb-2 pr-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100 ${col.thClass ?? ''}`}>
-                                    {col.label}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {pageRows.length === 0 ? (
-                            <tr><td colSpan={columns.length} className="py-3 text-[11px] text-slate-400 text-center">{emptyText}</td></tr>
-                        ) : pageRows.map((row, idx) => (
-                            <tr key={row.id ?? idx} className="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
-                                {columns.map(col => (
-                                    <td key={col.key} className={`py-2 pr-3 text-[11px] text-slate-600 align-middle ${col.tdClass ?? ''}`}>
-                                        {col.render ? col.render(row) : row[col.key]}
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-2 mt-1 border-t border-slate-100">
-                    <span className="text-[10px] text-slate-400">{rows.length} registros · p. {page + 1}/{totalPages}</span>
-                    <div className="flex gap-1">
-                        <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="w-6 h-6 text-[12px] flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30">‹</button>
-                        <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} className="w-6 h-6 text-[12px] flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30">›</button>
-                    </div>
+        <ModalShell onClose={onCancel}>
+            <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 space-y-4">
+                <div>
+                    <h3 className="font-bold text-slate-800 text-[16px]">¿Por qué pausas este despacho?</h3>
+                    <p className="text-[12px] text-slate-400 mt-0.5">{ERP_NAMES[modal.sucId] ?? `Sucursal ${modal.sucId}`}</p>
                 </div>
-            )}
+
+                <div className="grid grid-cols-2 gap-2">
+                    {PAUSE_REASONS.map(opt => {
+                        const Icon = opt.icon;
+                        const isUsed = opt.maxUses === 1 && alreadyHadAlmuerzo;
+                        const isSelected = razonSel === opt.key;
+                        return (
+                            <button
+                                key={opt.key}
+                                disabled={isUsed}
+                                onClick={() => !isUsed && setRazonSel(opt.key)}
+                                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[12px] font-medium transition-all text-left ${
+                                    isUsed    ? 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed' :
+                                    isSelected ? 'border-amber-400 bg-amber-50 text-amber-800 shadow-sm' :
+                                                 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                                }`}
+                            >
+                                <Icon size={15} className={isUsed ? 'text-slate-300' : isSelected ? 'text-amber-600' : 'text-slate-400'} />
+                                <div>
+                                    <div>{opt.label}</div>
+                                    {isUsed && <div className="text-[10px] text-slate-400">Ya registrado</div>}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Comment field — required for "Otro", optional otherwise */}
+                <div>
+                    <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1 block">
+                        {reason?.requiresComment ? 'Describe la razón *' : 'Comentario (opcional)'}
+                    </label>
+                    <textarea
+                        value={comment}
+                        onChange={e => setComment(e.target.value)}
+                        placeholder={reason?.requiresComment ? 'Describe la razón…' : 'Añade un comentario…'}
+                        rows={2}
+                        className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400 bg-white resize-none transition-colors"
+                    />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-1">
+                    <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors">
+                        Cancelar
+                    </button>
+                    <button
+                        disabled={!canConfirm || busy}
+                        onClick={onConfirm}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 text-[13px] transition-colors disabled:opacity-50"
+                    >
+                        {busy ? <Loader2 size={13} className="animate-spin" /> : <Pause size={13} />}
+                        Confirmar pausa
+                    </button>
+                </div>
+            </div>
+        </ModalShell>
+    );
+}
+
+// ─── Item sections inside expanded card ──────────────────────────────────────
+
+function renderLab(row) {
+    return <span className="text-slate-400 text-[11px] whitespace-nowrap">{row.products?.laboratorios?.nombre ?? '—'}</span>;
+}
+function renderProd(row) {
+    return (
+        <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-medium text-slate-700">{row.products?.nombre ?? `Prod. ${row.erp_product_id}`}</span>
+            {row.products?.es_antibiotico && <span className="text-[9px] px-1.5 rounded-full bg-red-50 border border-red-200 text-red-500 font-semibold shrink-0">Abx</span>}
         </div>
     );
 }
 
-// ─── CollapsibleSection ───────────────────────────────────────────────────────
+const COLS_ENVIADOS = [
+    { key: 'lab',   label: 'Laboratorio', render: renderLab },
+    { key: 'prod',  label: 'Producto',    render: renderProd },
+    { key: 'asig',  label: 'Enviado',  align: 'center', render: r => <span className="font-bold tabular-nums">{r.cantidad_asignada}</span> },
+    { key: 'rec',   label: 'Recibido', align: 'center', render: r => {
+        if (r.cantidad_recibida == null) return <span className="text-slate-400">—</span>;
+        const diff = r.cantidad_recibida - r.cantidad_asignada;
+        return (
+            <span className={`font-bold tabular-nums ${diff < 0 ? 'text-amber-600' : diff > 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
+                {r.cantidad_recibida}{diff !== 0 && <span className="text-[10px] ml-0.5">({diff > 0 ? '+' : ''}{diff})</span>}
+            </span>
+        );
+    }},
+    { key: 'status', label: 'Estado', render: r => (
+        <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${
+            r.status === 'recibido'       ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+            r.status === 'con_diferencia' ? 'bg-amber-50   text-amber-700   border-amber-200'   :
+                                            'bg-slate-50   text-slate-500   border-slate-200'
+        }`}>
+            {r.status === 'recibido' ? 'Recibido' : r.status === 'con_diferencia' ? 'Diferencia' : 'Pendiente'}
+        </span>
+    )},
+];
 
-function CollapsibleSection({ label, count, badgeCls, children }) {
-    const [open, setOpen] = useState(false);
+const COLS_SIN_STOCK = [
+    { key: 'lab',   label: 'Laboratorio', render: renderLab },
+    { key: 'prod',  label: 'Producto',    render: renderProd },
+    { key: 'motivo', label: 'Motivo', render: () => <span className="text-amber-600 text-[11px]">Sin stock en bodega</span> },
+];
+
+const COLS_REGLA = [
+    { key: 'lab',    label: 'Laboratorio', render: renderLab },
+    { key: 'prod',   label: 'Producto',    render: renderProd },
+    { key: 'regla',  label: 'Regla aplicada',  render: fmtRegla },
+    { key: 'motivo', label: 'Motivo', render: () => <span className="text-rose-600 text-[11px]">Necesidad &lt; 40% de la unidad mínima de despacho</span> },
+];
+
+function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
+    const [open,  setOpen]  = useState(false);
+    const [page,  setPage]  = useState(0);
+    const totalPages = Math.ceil(rows.length / MINI_PAGE);
+    const pageRows   = rows.slice(page * MINI_PAGE, (page + 1) * MINI_PAGE);
+
     if (!count) return null;
+
     return (
         <div className="border-t border-slate-100">
             <button onClick={() => setOpen(v => !v)} className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-slate-50/50 transition-colors">
@@ -277,7 +385,32 @@ function CollapsibleSection({ label, count, badgeCls, children }) {
             <AnimatePresence>
                 {open && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
-                        <div className="px-4 pb-4">{children}</div>
+                        <div className="px-4 pb-4 space-y-3">
+                            {noteEl}
+                            <DataTable
+                                columns={columns}
+                                minWidth="320px"
+                                footer={totalPages > 1 ? (
+                                    <div className="flex items-center justify-between w-full">
+                                        <span className="text-[10px] text-slate-400">{rows.length} registros · p. {page + 1}/{totalPages}</span>
+                                        <div className="flex gap-1">
+                                            <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="w-6 h-6 text-[12px] flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30">‹</button>
+                                            <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} className="w-6 h-6 text-[12px] flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30">›</button>
+                                        </div>
+                                    </div>
+                                ) : undefined}
+                            >
+                                {pageRows.map((row, idx) => (
+                                    <DataRow key={row.id ?? idx} index={idx}>
+                                        {columns.map(col => (
+                                            <DataCell key={col.key} align={col.align ?? 'left'}>
+                                                {col.render ? col.render(row) : row[col.key]}
+                                            </DataCell>
+                                        ))}
+                                    </DataRow>
+                                ))}
+                            </DataTable>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -285,42 +418,13 @@ function CollapsibleSection({ label, count, badgeCls, children }) {
     );
 }
 
-// ─── Item tables inside expanded card ─────────────────────────────────────────
-
-const COL_NOMBRE = {
-    key: 'nombre', label: 'Producto',
-    render: row => (
-        <span className="font-medium text-slate-700 flex items-center gap-1.5 flex-wrap">
-            {row.products?.nombre ?? `Prod. ${row.erp_product_id}`}
-            {row.products?.es_antibiotico && <span className="text-[9px] px-1.5 rounded-full bg-red-50 border border-red-200 text-red-500 font-semibold">Abx</span>}
-        </span>
-    ),
-};
-
-const COL_CANT = {
-    key: 'cant', label: 'Cant.', thClass: 'text-right', tdClass: 'text-right font-bold tabular-nums',
-    render: row => row.cantidad_asignada,
-};
-
-const COL_STATUS = {
-    key: 'status', label: 'Estado',
-    render: row => (
-        <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-semibold ${row.status === 'recibido' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-            {row.status === 'recibido' ? 'Recibido' : 'Pendiente'}
-        </span>
-    ),
-};
-
-const COL_NO_STOCK = { key: 'razon', label: 'Razón', render: () => <span className="text-amber-600">Sin inventario en bodega</span> };
-const COL_REGLA    = { key: 'accion', label: 'Acción sugerida', render: () => <span className="text-rose-600">Ajustar regla de despacho o MIN/MAX</span> };
-
 function ItemSections({ allItems, loading }) {
-    if (loading) return <div className="flex justify-center py-4 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-slate-300" /></div>;
+    if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-slate-300" /></div>;
 
-    const enviados    = allItems.filter(i => i.cantidad_asignada > 0);
-    const sinStock    = allItems.filter(i => i.sin_stock);
-    const porRegla    = allItems.filter(i => i.revision_minmax);
-    const total       = enviados.length + sinStock.length + porRegla.length;
+    const enviados     = allItems.filter(i => i.cantidad_asignada > 0);
+    const sinStock     = allItems.filter(i => i.sin_stock);
+    const porRegla     = allItems.filter(i => i.revision_minmax);
+    const total        = enviados.length + sinStock.length + porRegla.length;
 
     if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-slate-400">Sin ítems.</div>;
 
@@ -330,29 +434,32 @@ function ItemSections({ allItems, loading }) {
             <div className="border-t border-slate-100 px-4 py-2.5 bg-slate-50/60 flex items-center gap-5 flex-wrap">
                 <span className="text-[11px] text-slate-500">Solicitados <strong className="text-slate-700">{total}</strong></span>
                 <span className="text-[11px] text-slate-500">Enviados <strong className="text-emerald-600">{enviados.length}</strong></span>
-                {sinStock.length > 0 && <span className="text-[11px] text-slate-500">Sin inventario <strong className="text-amber-600">{sinStock.length}</strong></span>}
-                {porRegla.length > 0 && <span className="text-[11px] text-slate-500">Revisar regla <strong className="text-rose-600">{porRegla.length}</strong></span>}
+                {sinStock.length > 0  && <span className="text-[11px] text-slate-500">Sin inventario <strong className="text-amber-600">{sinStock.length}</strong></span>}
+                {porRegla.length > 0  && <span className="text-[11px] text-slate-500">Revisar regla <strong className="text-rose-600">{porRegla.length}</strong></span>}
             </div>
 
-            {/* Productos enviados */}
-            <CollapsibleSection label="Productos enviados" count={enviados.length} badgeCls="bg-emerald-50 text-emerald-700 border-emerald-200">
-                <MiniTable columns={[COL_NOMBRE, COL_CANT, COL_STATUS]} rows={enviados} emptyText="Sin ítems enviados." />
-            </CollapsibleSection>
-
-            {/* Sin inventario */}
-            <CollapsibleSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-amber-50 text-amber-700 border-amber-200">
-                <p className="text-[10px] text-amber-600/80 mb-2">Estos productos no se incluyeron en el pedido por falta de stock en bodega.</p>
-                <MiniTable columns={[COL_NOMBRE, COL_NO_STOCK]} rows={sinStock} emptyText="Ninguno." />
-            </CollapsibleSection>
-
-            {/* Por regla de despacho */}
-            <CollapsibleSection label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-rose-50 text-rose-700 border-rose-200">
-                <div className="flex items-start gap-2 mb-2 text-[10px] text-rose-600/80 bg-rose-50/60 border border-rose-100 rounded-xl px-3 py-2">
-                    <ShieldAlert size={12} className="mt-0.5 shrink-0" />
-                    La cantidad requerida no alcanzó el umbral de despacho (40% de la unidad). Revisa la regla o los MIN/MAX del producto para estos artículos.
-                </div>
-                <MiniTable columns={[COL_NOMBRE, COL_REGLA]} rows={porRegla} emptyText="Ninguno." />
-            </CollapsibleSection>
+            <ItemSection
+                label="Productos enviados" count={enviados.length}
+                badgeCls="bg-emerald-50 text-emerald-700 border-emerald-200"
+                rows={enviados} columns={COLS_ENVIADOS}
+            />
+            <ItemSection
+                label="Sin inventario en bodega" count={sinStock.length}
+                badgeCls="bg-amber-50 text-amber-700 border-amber-200"
+                rows={sinStock} columns={COLS_SIN_STOCK}
+                noteEl={<p className="text-[10px] text-amber-600/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>}
+            />
+            <ItemSection
+                label="Revisar regla de despacho" count={porRegla.length}
+                badgeCls="bg-rose-50 text-rose-700 border-rose-200"
+                rows={porRegla} columns={COLS_REGLA}
+                noteEl={
+                    <div className="flex items-start gap-2 text-[10px] text-rose-600/80 bg-rose-50/60 border border-rose-100 rounded-xl px-3 py-2">
+                        <ShieldAlert size={12} className="mt-0.5 shrink-0 text-rose-500" />
+                        La cantidad requerida no alcanzó el 40% de la unidad mínima de despacho. Ajusta la regla o los MIN/MAX del producto para que se incluya en el próximo pedido.
+                    </div>
+                }
+            />
         </>
     );
 }
@@ -473,7 +580,13 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [modal,         setModal]         = useState(null);
     const [newAlert,      setNewAlert]      = useState(null);
 
-    // ── Branch ERP resolution ─────────────────────────────────────────────────
+    // Pause modal
+    const [pauseModal,   setPauseModal]   = useState(null);
+    const [pauseHistory, setPauseHistory] = useState([]);
+    const [pauseRazon,   setPauseRazon]   = useState('almuerzo');
+    const [pauseComment, setPauseComment] = useState('');
+
+    // ── Branch ERP ────────────────────────────────────────────────────────────
 
     useEffect(() => {
         if (!isBranch || !user?.id) return;
@@ -488,7 +601,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         })();
     }, [isBranch, user?.id]);
 
-    // ── Data loaders ──────────────────────────────────────────────────────────
+    // ── Loaders ───────────────────────────────────────────────────────────────
 
     const loadActive = useCallback(async () => {
         const { data, error } = await supabase.rpc('get_pedidos_en_curso');
@@ -545,7 +658,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         return () => supabase.removeChannel(ch);
     }, [loadActive, loadHistory, filterSuc, isBranch, erpSucursalId]); // eslint-disable-line
 
-    // ── Fetch items (no string parsing — IDs passed directly) ────────────────
+    // ── Fetch items ───────────────────────────────────────────────────────────
 
     const fetchItems = useCallback(async (key, pedidoId, sucId) => {
         if (!pedidoId) return;
@@ -553,7 +666,14 @@ export default function TabPedidos({ searchTerm = '' }) {
         const sucFilter = sucId ?? (isBranch && erpSucursalId ? erpSucursalId : null);
 
         let itemsQ = supabase.from('pedido_items')
-            .select('id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_recibida, status, nota_diferencia, received_at, lotes_asignados, sin_stock, revision_minmax, products ( nombre, es_antibiotico )')
+            .select(`
+                id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_recibida,
+                status, nota_diferencia, received_at, lotes_asignados,
+                sin_stock, revision_minmax,
+                factor, dispatch_tipo, dispatch_factor,
+                max_qty_snapshot, stock_packs_snapshot,
+                products ( nombre, es_antibiotico, laboratorios ( nombre ) )
+            `)
             .eq('pedido_id', pedidoId)
             .range(0, 999);
         if (sucFilter) itemsQ = itemsQ.eq('erp_sucursal_id', sucFilter);
@@ -580,16 +700,33 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-    const handleLifecycle = useCallback(async (pedidoId, sucId, stage) => {
+    const handleLifecycle = useCallback(async (pedidoId, sucId, stage, razon = null) => {
         const key = `lc_${pedidoId}_${sucId}`;
         setBusyLifecycle(key);
         try {
-            const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', { p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: stage, p_user_id: user?.id ?? null, p_razon: null });
+            const { error } = await supabase.rpc('update_pedido_sucursal_lifecycle', { p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: stage, p_user_id: user?.id ?? null, p_razon: razon });
             if (error) throw error;
-            useStaff.getState().appendAuditLog(`PEDIDO_LIFECYCLE_${stage.toUpperCase()}`, pedidoId, { sucursal_id: sucId });
+            useStaff.getState().appendAuditLog(`PEDIDO_LIFECYCLE_${stage.toUpperCase()}`, pedidoId, { sucursal_id: sucId, razon });
             loadActive();
         } catch (e) { console.error('Lifecycle error:', e); } finally { setBusyLifecycle(null); }
     }, [user, loadActive]);
+
+    const openPauseModal = useCallback(async (pedidoId, sucId) => {
+        const { data } = await supabase.from('pedido_pausa_historial').select('pausa_razon').eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+        setPauseHistory(data ?? []);
+        setPauseRazon('almuerzo');
+        setPauseComment('');
+        setPauseModal({ pedidoId, sucId });
+    }, []);
+
+    const confirmPause = useCallback(async () => {
+        if (!pauseModal) return;
+        const reason = PAUSE_REASONS.find(r => r.key === pauseRazon);
+        let razon = reason?.label ?? pauseRazon;
+        if (pauseComment.trim()) razon += ` — ${pauseComment.trim()}`;
+        await handleLifecycle(pauseModal.pedidoId, pauseModal.sucId, 'pausar', razon);
+        setPauseModal(null);
+    }, [pauseModal, pauseRazon, pauseComment, handleLifecycle]);
 
     // ── Reception ─────────────────────────────────────────────────────────────
 
@@ -619,9 +756,9 @@ export default function TabPedidos({ searchTerm = '' }) {
         setModal({ pedido: { id: pedidoId, numero }, sucId, key, rows });
     }, [items]);
 
-    // ── Derived data ──────────────────────────────────────────────────────────
+    // ── Derived ───────────────────────────────────────────────────────────────
 
-    const searchLower = searchTerm.toLowerCase();
+    const searchLower   = searchTerm.toLowerCase();
     const filterOptions = [{ value: 'all', label: 'Todas' }, ...ERP_ORDER.map(id => ({ value: id, label: ERP_NAMES[id] ?? `Suc. ${id}` }))];
 
     let filteredRows = activeRows;
@@ -664,7 +801,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 )}
             </AnimatePresence>
 
-            {/* ── ACTIVE SECTION ──────────────────────────────────────── */}
+            {/* ── EN CURSO ──────────────────────────────────────────────── */}
             <div>
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <span className="relative flex h-2 w-2 shrink-0">
@@ -686,10 +823,10 @@ export default function TabPedidos({ searchTerm = '' }) {
                 ) : (
                     <div className="space-y-2.5">
                         {filteredRows.map(row => {
-                            const stage   = getBranchStage(row, row.pedido_status);
-                            const cardKey = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
-                            const isExp   = expanded === cardKey;
-                            const lcKey   = `lc_${row.pedido_id}_${row.erp_sucursal_id}`;
+                            const stage    = getBranchStage(row, row.pedido_status);
+                            const cardKey  = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
+                            const isExp    = expanded === cardKey;
+                            const lcKey    = `lc_${row.pedido_id}_${row.erp_sucursal_id}`;
                             const isLCBusy = busyLifecycle === lcKey;
 
                             const canIniciar   = !isBranch && stage === 'sin_iniciar' && row.pedido_status === 'confirmado';
@@ -704,7 +841,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                             return (
                                 <motion.div key={cardKey} layout className={`${GLASS} overflow-hidden ${stage === 'pausado' ? 'ring-1 ring-amber-300' : ''}`}>
 
-                                    {/* Header */}
                                     <button onClick={() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id)} className="w-full text-left">
                                         <div className="flex items-center gap-2.5 px-4 py-3 flex-wrap">
                                             <span className="text-[13px] font-black text-slate-700 tabular-nums shrink-0">#{row.numero}</span>
@@ -716,7 +852,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {row.notes && <p className="px-4 pb-2 text-[11px] text-slate-400 italic text-left">{row.notes}</p>}
                                     </button>
 
-                                    {/* Stage row */}
+                                    {/* Stage + animation + actions */}
                                     <div className="border-t border-slate-100 px-4 py-3 flex items-center gap-3 flex-wrap">
                                         <StagePill stage={stage} />
                                         <StageAnim stage={stage} />
@@ -726,15 +862,14 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                         {(canIniciar || canPausar || canReanudar || canFinalizar) && (
                                             <div className="ml-auto flex items-center gap-2 flex-wrap">
-                                                {canIniciar   && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar')}   disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm shadow-blue-200">   {isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Play     size={11} fill="currentColor" />Iniciar</>}  </button>}
-                                                {canPausar    && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'pausar')}   disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm shadow-amber-200">   {isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Pause    size={11} fill="currentColor" />Pausar</>}   </button>}
-                                                {canFinalizar && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'finalizar')} disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm shadow-violet-200">  {isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Flag     size={11} />Finalizar</>}              </button>}
-                                                {canReanudar  && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')} disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm shadow-emerald-200"> {isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><RotateCcw size={11} />Reanudar</>}              </button>}
+                                                {canIniciar   && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar')}       disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm shadow-blue-200">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Play     size={11} fill="currentColor" />Iniciar</>}</button>}
+                                                {canPausar    && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}                  disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm shadow-amber-200">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Pause    size={11} fill="currentColor" />Pausar</>}</button>}
+                                                {canFinalizar && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'finalizar')}     disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm shadow-violet-200">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Flag     size={11} />Finalizar</>}</button>}
+                                                {canReanudar  && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}     disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm shadow-emerald-200">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><RotateCcw size={11} />Reanudar</>}</button>}
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Expanded: item sections */}
                                     <AnimatePresence>
                                         {isExp && (
                                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden">
@@ -760,7 +895,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 )}
             </div>
 
-            {/* ── HISTORY SECTION ─────────────────────────────────────── */}
+            {/* ── HISTORIAL ─────────────────────────────────────────────── */}
             <div>
                 <div className="flex items-center gap-2 mb-3 mt-2">
                     <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wide">Historial</span>
@@ -820,6 +955,20 @@ export default function TabPedidos({ searchTerm = '' }) {
                     </button>
                 )}
             </div>
+
+            {/* ── Modals ─────────────────────────────────────────────────── */}
+
+            {pauseModal && (
+                <PauseModal
+                    modal={pauseModal}
+                    history={pauseHistory}
+                    razonSel={pauseRazon}    setRazonSel={setPauseRazon}
+                    comment={pauseComment}   setComment={setPauseComment}
+                    onCancel={() => setPauseModal(null)}
+                    onConfirm={confirmPause}
+                    busy={busyLifecycle === `lc_${pauseModal.pedidoId}_${pauseModal.sucId}`}
+                />
+            )}
 
             {modal && (
                 <RecepcionModal open={!!modal} onClose={() => setModal(null)} pedido={modal.pedido} sucursalId={modal.sucId} sucursalNombre={branchName} rows={modal.rows} onConfirmed={() => { setModal(null); fetchItems(modal.key, modal.pedido.id, modal.sucId); }} />

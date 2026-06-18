@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.168';
+export const APP_VERSION = '2.2.169';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.169 — fix+feat(pedidos/TabPedidos): fix NaN en tiempos (elapsed usaba new Date(undefined)→Invalid Date; ahora new Date()); 3 secciones colapsables por card (Productos enviados/Sin inventario/Revisar regla) con MiniTable paginada (15/p) y estándar DataTable; resumen Solicitados·Enviados·Sin inventario·Revisar en strip al abrir card; nueva animación PreparandoAnim (sonar ping rings + package flotante + mini-boxes laterales); CollapsibleSection con AnimatePresence; columnas: Producto, Cant., Estado / Sin stock / Ajustar regla
 // v2.2.168 — fix+feat(pedidos/TabPedidos): fix 400 error — fetchItems recibe pedidoId/sucId directamente sin parsear el key string (NaN en UUIDs); pill de filtro a la derecha en header "En curso"; filtros en pill: Pendientes (confirmado) + En camino (enviado) + limpiar todo; SucPill de color por erp_sucursal_id; botones siempre visibles y progresivos (Iniciar→Pausar+Finalizar→Reanudar); animaciones mejoradas (MotorcycleAnim 44×28, BoxStackAnim 4 niveles, PausedAnim barras dobles, ruedas con rotate Framer)
 // v2.2.167 — fix(pedidos): TabPedidos — pill filtro estándar VentasView; sin botón Refrescar (realtime); una card por sucursal en sección activa; botón Iniciar inline en card cuando stage=sin_iniciar + pedido confirmado
 // v2.2.166 — fix(ventas): ReferenceError getScope — TabVentas, TabVendedores y TabProductos son componentes de nivel superior que no heredan el scope de VentasView; cada uno ahora llama useAuth() para obtener getScope localmente

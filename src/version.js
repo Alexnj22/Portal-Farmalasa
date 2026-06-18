@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.164';
+export const APP_VERSION = '2.2.165';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.165 — feat(pedidos): TabPedidos unificado — historial + en curso + recepción + diferencias fusionados en una sola vista de cards con animaciones por etapa (moto en tránsito, cajas apilando en preparación, ping dots pulsantes, scan teal, glow violeta); scope-aware: empleados BRANCH ven solo su sucursal y tienen flujo recepción inline (confirmar llegada → contar ítems → marcar ERP); filtro pill por sucursal para admins; PedidosView reducido a 4 tabs; PermissionsView actualizado
 // v2.2.164 — feat(minmax/scope): scope BRANCH implementado en Tab Sucursal — MinMaxView consulta erp_sucursal_map para obtener el erp_sucursal_id del usuario cuando scope=BRANCH; pasa lockedErpId a TabMinMax; TabMinMax inicializa selectedErp con lockedErpId y oculta el selector de sucursal cuando está bloqueado
 // v2.2.163 — feat(permisos/scope): scope BRANCH aplicado en 6 vistas — Monitor (BranchChips oculto), AuditView (dropdown sucursal oculto), VacationPlan (selector oculto), Ventas (FilterControls sin selector), Facturación (selector oculto), Nómina (selector oculto); todos inicializan filterBranch con user.branchId cuando scope=BRANCH; emp_schedule: ruta /my-schedule + PermissionGuard + entrada MODULE_MAP + SELF_KEYS + menú Inicio en AppLayout
 // v2.2.162 — feat(pedidos/permisos): TabHistorial historial completo pausas múltiples (pedido_pausa_historial — pause/resume, razón, duración, tiempo neto); TabDiferencias botones vista en filter pill estándar; permisos audit — emp_schedule, tabs promociones/pedidos/minmax, permKeys en_curso/metricas, schedules_tab_shifts, hasScope payroll/ventas/facturacion/minmax, TabMinMaxComparacion eliminado

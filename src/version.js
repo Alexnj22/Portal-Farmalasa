@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.166';
+export const APP_VERSION = '2.2.167';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.167 — fix(pedidos): TabPedidos — pill filtro estándar VentasView; sin botón Refrescar (realtime); una card por sucursal en sección activa; botón Iniciar inline en card cuando stage=sin_iniciar + pedido confirmado
 // v2.2.166 — fix(ventas): ReferenceError getScope — TabVentas, TabVendedores y TabProductos son componentes de nivel superior que no heredan el scope de VentasView; cada uno ahora llama useAuth() para obtener getScope localmente
 // v2.2.165 — feat(pedidos): TabPedidos unificado — historial + en curso + recepción + diferencias fusionados en una sola vista de cards con animaciones por etapa (moto en tránsito, cajas apilando en preparación, ping dots pulsantes, scan teal, glow violeta); scope-aware: empleados BRANCH ven solo su sucursal y tienen flujo recepción inline (confirmar llegada → contar ítems → marcar ERP); filtro pill por sucursal para admins; PedidosView reducido a 4 tabs; PermissionsView actualizado
 // v2.2.164 — feat(minmax/scope): scope BRANCH implementado en Tab Sucursal — MinMaxView consulta erp_sucursal_map para obtener el erp_sucursal_id del usuario cuando scope=BRANCH; pasa lockedErpId a TabMinMax; TabMinMax inicializa selectedErp con lockedErpId y oculta el selector de sucursal cuando está bloqueado

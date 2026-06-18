@@ -25,6 +25,7 @@ const MODULE_GROUPS = [
             { key: 'emp_announcements', label: 'Mis Avisos',          desc: 'Recibir y leer comunicados internos dirigidos al empleado',  icon: Bell,          hasApprove: false },
             { key: 'emp_profile',       label: 'Mi Perfil',           desc: 'Ver y actualizar datos personales propios',                  icon: User,          hasApprove: false },
             { key: 'emp_documents',     label: 'Mis Documentos',      desc: 'Consultar documentos personales: incapacidades, constancias, etc.', icon: FolderOpen, hasApprove: false },
+            { key: 'emp_schedule',      label: 'Mi Horario',           desc: 'Ver el horario semanal propio, turnos asignados y vacaciones programadas', icon: Calendar, hasApprove: false },
         ],
     },
     {
@@ -50,24 +51,24 @@ const MODULE_GROUPS = [
         modules: [
             { key: 'schedules',    label: 'Horarios y Turnos',      desc: 'Creación y asignación de horarios semanales',               icon: Calendar,      hasApprove: false, hasScope: true, tabs: [
                 { key: 'schedules_tab_calendar', label: 'Calendario' },
-                { key: 'schedules_tab_catalog',  label: 'Catálogo de Turnos' },
+                { key: 'schedules_tab_shifts',   label: 'Catálogo de Turnos' },
                 { key: 'schedules_tab_holidays', label: 'Feriados' },
             ]},
             { key: 'requests',     label: 'Solicitudes',            desc: 'Revisión y aprobación de permisos, vacaciones e incapacidades', icon: ClipboardList, hasApprove: true,  hasScope: true },
             { key: 'vacation_plan',label: 'Plan de Vacaciones',     desc: 'Planificación anual de períodos vacacionales',              icon: Palmtree,      hasApprove: false, hasScope: true },
-            { key: 'payroll',      label: 'Nómina',                 desc: 'Generación, edición y aprobación de planillas quincenales',  icon: DollarSign,    hasApprove: true  },
+            { key: 'payroll',      label: 'Nómina',                 desc: 'Generación, edición y aprobación de planillas quincenales',  icon: DollarSign,    hasApprove: true,  hasScope: true },
         ],
     },
     {
         group: 'Comercial',
         color: 'text-emerald-600',
         modules: [
-            { key: 'ventas',        label: 'Ventas',        desc: 'Anulaciones en tiempo real, ranking de vendedores y productos más vendidos', icon: TrendingUp, hasApprove: false, tabs: [
+            { key: 'ventas',        label: 'Ventas',        desc: 'Anulaciones en tiempo real, ranking de vendedores y productos más vendidos', icon: TrendingUp, hasApprove: false, hasScope: true, tabs: [
                 { key: 'ventas_tab_ventas',     label: 'Ventas'     },
                 { key: 'ventas_tab_vendedores', label: 'Vendedores' },
                 { key: 'ventas_tab_productos',  label: 'Productos'  },
             ]},
-            { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo y pagos no-efectivo',         icon: FileText,   hasApprove: false, tabs: [
+            { key: 'facturacion',   label: 'Facturación',   desc: 'Anuladas, pendientes MH, saltos de correlativo y pagos no-efectivo',         icon: FileText,   hasApprove: false, hasScope: true, tabs: [
                 { key: 'facturacion_tab_anuladas',     label: 'Anuladas'     },
                 { key: 'facturacion_tab_pendiente_mh', label: 'Pendiente MH' },
                 { key: 'facturacion_tab_saltos',       label: 'Saltos'       },
@@ -75,7 +76,11 @@ const MODULE_GROUPS = [
             ]},
             { key: 'cotizaciones',   label: 'Cotizaciones',  desc: 'Crear, guardar e imprimir cotizaciones con productos del catálogo, IVA y retención', icon: Receipt,       hasApprove: false, hasScope: true },
             { key: 'metas',          label: 'Metas',         desc: 'Dashboard de metas de ventas por sucursal con proyecciones y gráficas',                icon: Target,        hasApprove: false },
-            { key: 'promociones',    label: 'Promociones',   desc: 'Gestión de promociones activas, bonificaciones y cierre por stock o fecha',          icon: Gift,          hasApprove: false },
+            { key: 'promociones',    label: 'Promociones',   desc: 'Gestión de promociones activas, bonificaciones y cierre por stock o fecha',          icon: Gift,          hasApprove: false, tabs: [
+                { key: 'promociones_tab_activas',        label: 'Promociones'    },
+                { key: 'promociones_tab_bonificaciones', label: 'Bonificaciones' },
+                { key: 'promociones_tab_historial',      label: 'Historial'      },
+            ]},
             { key: 'bonificaciones', label: 'Bonificaciones',desc: 'Esquemas de bonificación por ventas y metas alcanzadas (próximamente)',                icon: DollarSign,    hasApprove: false, comingSoon: true },
         ],
     },
@@ -88,16 +93,22 @@ const MODULE_GROUPS = [
                 { key: 'productos_tab_inventario', label: 'Inventario' },
                 { key: 'productos_tab_sinventa',   label: 'Sin Venta'  },
             ]},
-            { key: 'minmax', label: 'Min / Max', desc: 'Análisis de stock mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros. Aprobar = publicar cambios y resolver solicitudes de ajuste', icon: BarChart2, hasApprove: true },
+            { key: 'minmax', label: 'Min / Max', desc: 'Análisis de stock mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros. Aprobar = publicar cambios y resolver solicitudes de ajuste', icon: BarChart2, hasApprove: true, hasScope: true, tabs: [
+                { key: 'minmax_tab_sucursal',    label: 'Sucursal'    },
+                { key: 'minmax_tab_red',         label: 'Red'         },
+                { key: 'minmax_tab_solicitudes', label: 'Solicitudes' },
+            ]},
             { key: 'ventas_perdidas', label: 'Ventas Perdidas', desc: 'Registro de productos solicitados sin stock; alertas de compra para logística con seguimiento de estado', icon: PackageMinus, hasApprove: false },
             { key: 'compras', label: 'Compras', desc: 'Historial de facturas de compra de Bodega desde el ERP: facturas por fecha y proveedor, detalle de ítems y resumen por producto', icon: ShoppingCart, hasApprove: false },
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
             { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, historial y reglas de despacho por producto', icon: Package, hasApprove: false, tabs: [
-                { key: 'pedidos_tab_generar',   label: 'Generar'              },
-                { key: 'pedidos_tab_historial', label: 'Historial'            },
-                { key: 'pedidos_tab_reglas',    label: 'Reglas de despacho'   },
-                { key: 'pedidos_tab_recepcion',   label: 'Recepción (Sucursal)'   },
-                { key: 'pedidos_tab_diferencias', label: 'Diferencias'             },
+                { key: 'pedidos_tab_generar',     label: 'Generar'              },
+                { key: 'pedidos_tab_historial',   label: 'Historial'            },
+                { key: 'pedidos_tab_en_curso',    label: 'En curso'             },
+                { key: 'pedidos_tab_metricas',    label: 'Métricas'             },
+                { key: 'pedidos_tab_reglas',      label: 'Reglas de despacho'   },
+                { key: 'pedidos_tab_recepcion',   label: 'Recepción (Sucursal)' },
+                { key: 'pedidos_tab_diferencias', label: 'Diferencias'          },
             ]},
         ],
     },
@@ -360,6 +371,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                 </div>
 
                 {/* Scope selector */}
+                {module.hasScope && console.log('[scope]', module.key, 'hasScope:', module.hasScope, 'can_view:', perms.can_view)}
                 {module.hasScope && perms.can_view && (
                     <div className="mt-3 pt-3 border-t border-white/40">
                         <div className="flex items-center gap-1.5 mb-2">

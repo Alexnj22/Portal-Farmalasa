@@ -1858,13 +1858,15 @@ function LabsPanel({ onClose, onChanged }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
+export default function TabMinMax({ searchTerm = '', config, onConfigChange, lockedErpId }) {
     const cycleDays = config?.cycle_days ?? 45;
 
     const { hasPermission } = useAuth();
     const canManage = hasPermission('minmax', 'can_edit');
 
-    const [selectedErp,  setSelectedErp]  = useState(5);
+    const [selectedErp,  setSelectedErp]  = useState(lockedErpId ?? 5);
+
+    useEffect(() => { if (lockedErpId) setSelectedErp(lockedErpId); }, [lockedErpId]);
     const [filterAbc,    setFilterAbc]    = useState('all');
     const [filterXyz,    setFilterXyz]    = useState('all');
     const [filterAlert,  setFilterAlert]  = useState('all');
@@ -2733,13 +2735,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange }) {
                     <div className="flex items-center overflow-visible">
 
                         {/* Branch selector */}
-                        <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
+                        {!lockedErpId && <div className="px-2 py-2 overflow-visible" style={{ width: '175px' }}>
                             <LiquidSelect
                                 value={String(selectedErp)}
                                 onChange={v => { if (v) { setSelectedErp(Number(v)); setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); setSortBy('laboratorio'); setSortDir('asc'); setFilterDraft(false); setFilterHidden(false); } }}
                                 options={erpOptions} icon={Building2} clearable={false} compact
                             />
-                        </div>
+                        </div>}
 
                         {/* Active ABC/XYZ filter badge + clear */}
                         {(filterAbc !== 'all' || filterXyz !== 'all') && (

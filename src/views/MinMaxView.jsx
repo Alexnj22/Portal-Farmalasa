@@ -8,7 +8,7 @@ import TabMinMaxRequests  from './productos/TabMinMaxRequests';
 import { supabase }      from '../supabaseClient';
 import { useAuth }       from '../context/AuthContext';
 
-const BASE_TABS = [
+const ALL_MINMAX_TABS = [
     { key: 'sucursal', label: 'Sucursal' },
     { key: 'red',      label: 'Red'      },
 ];
@@ -30,9 +30,10 @@ const DEFAULT_CONFIG = {
 };
 
 export default function MinMaxView() {
-    const { hasPermission } = useAuth();
+    const { user, hasPermission, getScope } = useAuth();
     const canApprove = hasPermission('minmax', 'can_approve');
-    const TABS = canApprove
+    const BASE_TABS = ALL_MINMAX_TABS.filter(t => hasPermission(`minmax_tab_${t.key}`));
+    const TABS = canApprove && hasPermission('minmax_tab_solicitudes')
         ? [...BASE_TABS, { key: 'solicitudes', label: 'Solicitudes' }]
         : BASE_TABS;
 
@@ -41,6 +42,7 @@ export default function MinMaxView() {
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [config,          setConfig]          = useState(DEFAULT_CONFIG);
     const [configLoaded,    setConfigLoaded]    = useState(false);
+    const [lockedErpId,     setLockedErpId]     = useState(null);
 
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(rawSearch), 350);
@@ -54,6 +56,16 @@ export default function MinMaxView() {
     }, []);
 
     useEffect(() => { loadConfig(); }, [loadConfig]);
+
+    useEffect(() => {
+        if (getScope('minmax') !== 'BRANCH' || !user?.branchId) return;
+        supabase
+            .from('erp_sucursal_map')
+            .select('erp_sucursal_id')
+            .eq('branch_id', user.branchId)
+            .maybeSingle()
+            .then(({ data }) => { if (data?.erp_sucursal_id) setLockedErpId(data.erp_sucursal_id); });
+    }, [user?.branchId, getScope]);
 
     const filtersContent = (
         <ViewTabBar
@@ -78,6 +90,7 @@ export default function MinMaxView() {
                     searchTerm={debouncedSearch}
                     config={config}
                     onConfigChange={setConfig}
+                    lockedErpId={lockedErpId}
                 />
             )}
             {configLoaded && activeTab === 'red' && (

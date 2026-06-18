@@ -2101,7 +2101,7 @@ const TABS = [
 
 export default function FacturacionView() {
     const branches = useStaff((state) => state.branches);
-    const { user: currentUser, hasPermission } = useAuth();
+    const { user: currentUser, hasPermission, getScope } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
 
     // Pestañas filtradas según permisos
@@ -2111,7 +2111,9 @@ export default function FacturacionView() {
     const rawTab      = searchParams.get('tab');
     const activeTab   = VALID_TABS.has(rawTab) && allowedTabs.some(t => t.key === rawTab) ? rawTab : defaultTab;
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
-    const [filterBranch, setFilterBranch] = useState('');
+    const [filterBranch, setFilterBranch] = useState(
+        getScope('facturacion') === 'BRANCH' ? String(currentUser?.branchId || '') : ''
+    );
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [rawSearch, setRawSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -2174,9 +2176,9 @@ export default function FacturacionView() {
 
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
 
-                <div className="w-[150px] md:w-[200px] overflow-visible h-full flex items-center">
+                {getScope('facturacion') !== 'BRANCH' && <div className="w-[150px] md:w-[200px] overflow-visible h-full flex items-center">
                     <LiquidSelect value={filterBranch} onChange={setFilterBranch} options={branchOptions} placeholder="Todas" icon={Building2} compact bare />
-                </div>
+                </div>}
 
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                 <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php" target="_blank" rel="noopener noreferrer"

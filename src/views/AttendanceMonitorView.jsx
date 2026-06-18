@@ -27,12 +27,16 @@ import { getTodayScheduleConfig, normalizeText } from "../utils/helpers";
 import GlassViewLayout from "../components/GlassViewLayout";
 import { toLocalISODate } from "../utils/timeClock.helpers";
 import BranchChips from "../components/common/BranchChips";
+import { useAuth } from '../context/AuthContext';
 
 const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   const { employees = [], branches = [], shifts = [], loadAttendanceLastDays } = useStaff();
+  const { user, getScope } = useAuth();
 
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [filterBranch, setFilterBranch] = useState("ALL");
+  const [filterBranch, setFilterBranch] = useState(
+    getScope('monitor') === 'BRANCH' ? String(user?.branchId || "ALL") : "ALL"
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [isDarkConcept, setIsDarkConcept] = useState(false);
 
@@ -393,7 +397,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
           {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
         </span>
       </div>
-      <BranchChips branches={branches || []} selectedBranch={filterBranch} onSelect={setFilterBranch} allowAll />
+      {getScope('monitor') !== 'BRANCH' && <BranchChips branches={branches || []} selectedBranch={filterBranch} onSelect={setFilterBranch} allowAll />}
       <button
         type="button"
         onClick={() => setSearchOpen((v) => !v)}
@@ -471,7 +475,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <BranchChips branches={branches || []} selectedBranch={filterBranch} onSelect={setFilterBranch} allowAll />
+            {getScope('monitor') !== 'BRANCH' && <BranchChips branches={branches || []} selectedBranch={filterBranch} onSelect={setFilterBranch} allowAll />}
             <button type="button" onClick={() => setSearchOpen(v => !v)}
               className="w-10 h-10 flex-shrink-0 rounded-[0.875rem] flex items-center justify-center transition-all duration-200 active:scale-[0.97]"
               style={searchOpen

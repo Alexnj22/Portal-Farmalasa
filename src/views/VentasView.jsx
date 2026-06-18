@@ -121,6 +121,7 @@ function FilterControls({
     filterAnuladas, setFilterAnuladas,
     filterAntibiotico, setFilterAntibiotico,
     showAntibiotico,
+    branchLocked,
 }) {
     const defaultRange = (() => { const r = currentMonthRange(); return `${r.fini}|${r.ffin}`; })();
 
@@ -146,7 +147,7 @@ function FilterControls({
         <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible">
 
             {/* Branch select + individual clear */}
-            <div className="flex items-center">
+            {!branchLocked && <div className="flex items-center">
                 <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: branchW + 'px' }}>
                     <LiquidSelect value={filterBranch} onChange={setFilterBranch}
                         options={branchOptions} placeholder="Todas" icon={Building2} compact bare />
@@ -157,7 +158,7 @@ function FilterControls({
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
-            </div>
+            </div>}
 
             <div className="h-5 w-px bg-slate-100 shrink-0" />
 
@@ -570,6 +571,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     filterAnuladas={filterAnuladas} setFilterAnuladas={setFilterAnuladas}
                     filterAntibiotico={filterAntibiotico} setFilterAntibiotico={setFilterAntibiotico}
                     showAntibiotico={antibioticIds.size > 0}
+                    branchLocked={getScope('ventas') === 'BRANCH'}
                 />
             </div>
 
@@ -1008,7 +1010,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </div>
-                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} />
+                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} />
             </div>
 
             <DataTable
@@ -1620,7 +1622,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </div>
-                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} />
+                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} />
             </div>
 
             {error && (
@@ -2054,7 +2056,7 @@ const TABS = [
 
 export default function VentasView() {
     const { branches, employees } = useStaff();
-    const { user: currentUser, hasPermission } = useAuth();
+    const { user: currentUser, hasPermission, getScope } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
 
     // Pestañas filtradas según permisos
@@ -2064,7 +2066,9 @@ export default function VentasView() {
     const rawTab      = searchParams.get('tab');
     const activeTab   = VALID_TABS.has(rawTab) && allowedTabs.some(t => t.key === rawTab) ? rawTab : defaultTab;
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
-    const [filterBranch, setFilterBranch] = useState('');
+    const [filterBranch, setFilterBranch] = useState(
+        getScope('ventas') === 'BRANCH' ? String(currentUser?.branchId || '') : ''
+    );
     const [monthRange, setMonthRange]   = useState(() => {
         const r = currentMonthRange();
         return `${r.fini}|${r.ffin}`;

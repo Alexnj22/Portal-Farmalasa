@@ -16,6 +16,7 @@ import EmployeeAnnouncementsView from "./views/employee/EmployeeAnnouncementsVie
 import EmployeeRequestsView from "./views/employee/EmployeeRequestsView";
 import EmployeeProfileView from "./views/employee/EmployeeProfileView";
 import EmployeeDocumentsView from "./views/employee/EmployeeDocumentsView";
+import EmployeeScheduleView from "./views/employee/EmployeeScheduleView";
 import UnifiedModal from "./components/UnifiedModal";
 import AttendanceMonitorView from "./views/AttendanceMonitorView";
 import StaffManagementView from "./views/StaffManagementView";
@@ -522,6 +523,7 @@ function MainApp() {
                                     <Route path="my-requests" element={<PermissionGuard moduleKey="emp_requests"><EmployeeRequestsView /></PermissionGuard>} />
                                     <Route path="my-announcements" element={<PermissionGuard moduleKey="emp_announcements"><EmployeeAnnouncementsView /></PermissionGuard>} />
                                     <Route path="my-documents" element={<PermissionGuard moduleKey="emp_documents"><EmployeeDocumentsView /></PermissionGuard>} />
+                                    <Route path="my-schedule" element={<PermissionGuard moduleKey="emp_schedule"><EmployeeScheduleView /></PermissionGuard>} />
                                     <Route path="profile" element={<PermissionGuard moduleKey="emp_profile"><EmployeeProfileView openModal={openModal} /></PermissionGuard>} />
 
                                     {/* ── Gestión de personal ── */}

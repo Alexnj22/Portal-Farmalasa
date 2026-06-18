@@ -908,7 +908,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
 // ── Main view ─────────────────────────────────────────────────────────────────
 const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) => {
   const navigate  = useNavigate();
-  const { user, hasPermission } = useAuth();
+  const { user, hasPermission, getScope } = useAuth();
   const canEdit   = hasPermission('time_audit', 'can_edit');
   const showToast = useToastStore(s => s.showToast);
   const {
@@ -924,7 +924,9 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const shifts     = isDemoMode ? mockData.shifts     : (storeShifts    || []);
 
   // ── State ─────────────────────────────────────────────────────────────────
-  const [filterBranch,      setFilterBranch]      = useState('');
+  const [filterBranch,      setFilterBranch]      = useState(
+    getScope('time_audit') === 'BRANCH' ? String(user?.branchId || '') : ''
+  );
   const [correctionTarget,  setCorrectionTarget]  = useState(null); // { emp, dateStr, dayPunches, shift, dayConfig }
   const [selectedQuincena,  setSelectedQuincena]  = useState(() => getCurrentQuincenaStart());
   const [reviewedPunchIds,  setReviewedPunchIds]  = useState(() => new Set());
@@ -1266,7 +1268,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       </div>
 
       {/* Branch dropdown pill */}
-      <div className="relative shrink-0" ref={branchDropRef}>
+      {getScope('time_audit') !== 'BRANCH' && <div className="relative shrink-0" ref={branchDropRef}>
         <button type="button" onClick={() => setBranchDropOpen(v => !v)}
           className={`${pillWrap} cursor-pointer`}>
           <Building2 size={13} className="opacity-60 shrink-0" />
@@ -1286,7 +1288,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Close quincena / Ver planilla */}
       {!isDemoMode && isQuincenaPast && (

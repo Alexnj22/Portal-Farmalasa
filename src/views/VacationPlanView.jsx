@@ -272,7 +272,7 @@ const GanttChart = ({ plans, year }) => {
 
 // ── Vista principal ───────────────────────────────────────────────────────────
 const VacationPlanView = () => {
-    const { user, hasPermission } = useAuth();
+    const { user, hasPermission, getScope } = useAuth();
     const canEdit = hasPermission('vacation_plan', 'can_edit');
     const employees                  = useStaffStore(s => s.employees);
     const branches                   = useStaffStore(s => s.branches);
@@ -304,7 +304,9 @@ const VacationPlanView = () => {
 
     const currentYear = new Date().getFullYear();
     const [year, setYear]               = useState(currentYear);
-    const [branchFilter, setBranchFilter] = useState('ALL');
+    const [branchFilter, setBranchFilter] = useState(
+        getScope('vacation_plan') === 'BRANCH' ? String(user?.branchId || '') : 'ALL'
+    );
     const [statusFilter, setStatusFilter] = useState('ALL');
 
     const [empId, setEmpId]         = useState('');
@@ -671,7 +673,7 @@ const VacationPlanView = () => {
                 <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
 
                 {/* Branch filter */}
-                <div className="w-[190px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
+                {getScope('vacation_plan') !== 'BRANCH' && <div className="w-[190px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
                     <LiquidSelect
                         value={branchFilter}
                         onChange={val => setBranchFilter(val)}
@@ -682,7 +684,7 @@ const VacationPlanView = () => {
                         icon={Building2}
                         bare
                     />
-                </div>
+                </div>}
 
                 <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
 

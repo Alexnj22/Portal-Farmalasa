@@ -26,6 +26,7 @@ const MODULE_MAP = {
     emp_announcements: { path: '/my-announcements',label: 'Mis Avisos',               icon: Bell          },
     emp_profile:       { path: '/profile',         label: 'Mi Perfil',                icon: User          },
     emp_documents:     { path: '/my-documents',   label: 'Mis Documentos',           icon: FolderOpen    },
+    emp_schedule:      { path: '/my-schedule',    label: 'Mi Horario',               icon: Calendar      },
     staff_list:        { path: '/dashboard',       label: 'Listado',                  icon: User          },
     monitor:           { path: '/monitor',         label: 'Monitor Real-Time',        icon: Monitor       },
     time_audit:        { path: '/audit',           label: 'Auditoría de Tiempos',     icon: AlertTriangle },
@@ -60,7 +61,7 @@ const MODULE_MAP = {
 // ── Grupos del menú (define el orden y agrupación) ──────────────────────────
 const MENU_GROUPS = [
     { key: 'overview',      label: 'Dashboard',     icon: LayoutDashboard, modules: ['overview']                          },
-    { key: 'inicio',        label: 'Inicio',        icon: Home,          modules: ['emp_home']                            },
+    { key: 'inicio',        label: 'Inicio',        icon: Home,          modules: ['emp_home', 'emp_schedule']            },
     { key: 'personal',      label: 'Personal',      icon: User,          modules: ['staff_list', 'payroll']               },
     { key: 'horarios',      label: 'Horarios y Turnos', icon: Calendar,  modules: ['schedules']                           },
     { key: 'solicitudes',   label: 'Solicitudes',   icon: ClipboardList, modules: ['emp_requests', 'requests']            },
@@ -75,7 +76,7 @@ const MENU_GROUPS = [
     { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'laboratorios', 'pedidos', 'minmax', 'ventas_perdidas', 'compras'] },
 ];
 
-const SELF_KEYS = ['emp_home', 'emp_requests', 'emp_announcements', 'emp_profile', 'emp_documents'];
+const SELF_KEYS = ['emp_home', 'emp_requests', 'emp_announcements', 'emp_profile', 'emp_documents', 'emp_schedule'];
 
 const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const { user, hasPermission, isSU } = useAuth();

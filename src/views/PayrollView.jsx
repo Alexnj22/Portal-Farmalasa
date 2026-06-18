@@ -363,7 +363,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
 
 // ─── Main view ────────────────────────────────────────────────────────────────
 const PayrollView = ({ openModal }) => {
-    const { hasPermission }      = useAuth();
+    const { user, hasPermission, getScope } = useAuth();
     const canApprove             = hasPermission('payroll', 'can_approve');
     const branches               = useStaffStore(s => s.branches);
     const payrollPeriods         = useStaffStore(s => s.payrollPeriods);
@@ -375,7 +375,9 @@ const PayrollView = ({ openModal }) => {
     const generatePayrollEntries = useStaffStore(s => s.generatePayrollEntries);
 
     const [activePeriod, setActivePeriod] = useState(null);
-    const [filterBranch, setFilterBranch] = useState('');
+    const [filterBranch, setFilterBranch] = useState(
+        getScope('payroll') === 'BRANCH' ? String(user?.branchId || '') : ''
+    );
     const [filterStatus, setFilterStatus] = useState('ALL');
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [searchTerm,   setSearchTerm]   = useState('');
@@ -493,10 +495,10 @@ const PayrollView = ({ openModal }) => {
             </div>
             {/* Normal mode */}
             <div className={`flex items-center gap-1 md:gap-2 h-full transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${isSearchMode ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[1200px] opacity-100'}`}>
-                <div className="w-[185px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
+                {getScope('payroll') !== 'BRANCH' && <><div className="w-[185px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
                     <LiquidSelect value={filterBranch} onChange={val => setFilterBranch(val||'')} options={branchOptions} placeholder="Todas las sucursales" compact clearable={false} icon={Building2} bare />
                 </div>
-                <div className="w-px h-6 bg-white/50 mx-1 shrink-0" />
+                <div className="w-px h-6 bg-white/50 mx-1 shrink-0" /></>}
                 <div className="w-[160px] overflow-visible hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
                     <LiquidSelect value={filterStatus} onChange={val => setFilterStatus(val||'ALL')} options={statusOptions} compact clearable={false} icon={ListFilter} bare />
                 </div>

@@ -16,6 +16,7 @@ import ModalShell from '../../components/common/ModalShell';
 import RecepcionModal from './RecepcionModal';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import PeriodPicker from '../../components/common/PeriodPicker';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -471,7 +472,7 @@ function ItemSections({ allItems, loading }) {
                 {sinStock.length > 0 && <span className="text-[11px] text-slate-500">Sin inventario <strong className="text-amber-600">{sinStock.length}</strong></span>}
                 {porRegla.length > 0 && <span className="text-[11px] text-slate-500">Revisar regla <strong className="text-rose-600">{porRegla.length}</strong></span>}
             </div>
-            <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-emerald-50 text-emerald-700 border-emerald-200" rows={enviados} columns={COLS_ENVIADOS} defaultOpen={true} />
+            <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-emerald-50 text-emerald-700 border-emerald-200" rows={enviados} columns={COLS_ENVIADOS} />
             <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-amber-50 text-amber-700 border-amber-200" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-[10px] text-amber-600/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
             <ItemSection
                 label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-rose-50 text-rose-700 border-rose-200" rows={porRegla} columns={COLS_REGLA}
@@ -513,9 +514,21 @@ function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLleg
 
 // ─── Filter pill ──────────────────────────────────────────────────────────────
 
-function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilterStatus, filterOptions }) {
-    const hasActive = filterSuc !== 'all' || filterStatus !== 'all';
-    const clearAll  = () => { setFilterSuc('all'); setFilterStatus('all'); };
+function currentMonthRange() {
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth();
+    const pad = n => String(n).padStart(2, '0');
+    const fini = `${y}-${pad(m + 1)}-01`;
+    const last = new Date(y, m + 1, 0);
+    const ffin = `${y}-${pad(m + 1)}-${pad(last.getDate())}`;
+    return `${fini}|${ffin}`;
+}
+
+function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilterStatus, filterOptions, filterDate, setFilterDate }) {
+    const defaultDate = currentMonthRange();
+    const dateDirty   = filterDate !== defaultDate;
+    const hasActive   = filterSuc !== '' || filterStatus !== 'all' || dateDirty;
+    const clearAll    = () => { setFilterSuc(''); setFilterStatus('all'); setFilterDate(defaultDate); };
 
     const statusBtn = (key, label) => (
         <button
@@ -533,14 +546,16 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
 
     return (
         <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 hover:border-slate-200 overflow-visible shrink-0">
+
+            {/* Sucursal */}
             {!isBranch && (
                 <>
                     <div className="flex items-center">
                         <div className="px-2 py-2 overflow-visible" style={{ width: '155px' }}>
                             <LiquidSelect value={filterSuc} onChange={v => setFilterSuc(v)} options={filterOptions} placeholder="Todas" icon={Building2} compact bare />
                         </div>
-                        {filterSuc !== 'all' && (
-                            <button onClick={() => setFilterSuc('all')} className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0">
+                        {filterSuc !== '' && (
+                            <button onClick={() => setFilterSuc('')} className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0">
                                 <X size={9} strokeWidth={3} />
                             </button>
                         )}
@@ -548,10 +563,27 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
                     <div className="h-5 w-px bg-slate-100 shrink-0" />
                 </>
             )}
+
+            {/* Estado */}
             <div className="flex items-center gap-1 px-2">
                 {statusBtn('confirmado', 'Pendientes')}
                 {statusBtn('enviado', 'En camino')}
             </div>
+
+            <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+            {/* Fecha */}
+            <div className="flex items-center">
+                <div className="px-2 py-2 overflow-visible">
+                    <PeriodPicker value={filterDate} onChange={setFilterDate} />
+                </div>
+                {dateDirty && (
+                    <button onClick={() => setFilterDate(defaultDate)} className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0">
+                        <X size={9} strokeWidth={3} />
+                    </button>
+                )}
+            </div>
+
             {hasActive && (
                 <>
                     <div className="h-5 w-px bg-slate-100 shrink-0" />
@@ -581,8 +613,9 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     const [erpSucursalId, setErpSucursalId] = useState(null);
     const [branchName,    setBranchName]    = useState('');
-    const [filterSuc,     setFilterSuc]     = useState('all');
+    const [filterSuc,     setFilterSuc]     = useState('');
     const [filterStatus,  setFilterStatus]  = useState('all');
+    const [filterDate,    setFilterDate]    = useState(() => currentMonthRange());
 
     const [activeRows,  setActiveRows]  = useState([]);
     const [history,     setHistory]     = useState([]);
@@ -635,10 +668,15 @@ export default function TabPedidos({ searchTerm = '' }) {
         if (!error) setActiveRows(data ?? []);
     }, []);
 
-    const loadHistory = useCallback(async (page = 0, suc = 'all') => {
+    const loadHistory = useCallback(async (page = 0, suc = '', date = null) => {
         if (page === 0) setLoadingHist(true);
         let q = supabase.from('pedidos').select('id, numero, created_at, status, notes, enviado_at, sucursal_ids, created_by').in('status', DONE_STATUSES).order('created_at', { ascending: false }).range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
-        if (suc !== 'all' && suc) q = q.contains('sucursal_ids', [suc]);
+        if (suc) q = q.contains('sucursal_ids', [suc]);
+        if (date) {
+            const [desde, hasta] = date.split('|');
+            if (desde) q = q.gte('created_at', desde);
+            if (hasta) q = q.lte('created_at', hasta + 'T23:59:59');
+        }
         const { data } = await q;
         const rows = data || [];
         if (page === 0) { setHistory(rows); setHistPage(0); } else { setHistory(prev => [...prev, ...rows]); setHistPage(page); }
@@ -649,17 +687,18 @@ export default function TabPedidos({ searchTerm = '' }) {
     useEffect(() => {
         (async () => {
             setLoading(true);
-            await Promise.all([loadActive(), loadHistory(0, 'all')]);
+            await Promise.all([loadActive(), loadHistory(0, '', currentMonthRange())]);
             setLoading(false);
         })();
     }, []); // eslint-disable-line
 
-    const prevFilterRef = useRef('all');
+    const prevFilterRef = useRef({ suc: '', date: currentMonthRange() });
     useEffect(() => {
-        if (filterSuc === prevFilterRef.current) return;
-        prevFilterRef.current = filterSuc;
-        loadHistory(0, filterSuc);
-    }, [filterSuc, loadHistory]);
+        const prev = prevFilterRef.current;
+        if (filterSuc === prev.suc && filterDate === prev.date) return;
+        prevFilterRef.current = { suc: filterSuc, date: filterDate };
+        loadHistory(0, filterSuc, filterDate);
+    }, [filterSuc, filterDate, loadHistory]);
 
     // ── Realtime ──────────────────────────────────────────────────────────────
 
@@ -668,7 +707,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, (payload) => {
                 loadActive();
                 const s = payload.new?.status;
-                if (s && DONE_STATUSES.includes(s)) loadHistory(0, filterSuc);
+                if (s && DONE_STATUSES.includes(s)) loadHistory(0, filterSuc, filterDate);
                 if (isBranch && s === 'enviado') {
                     const ids = payload.new?.sucursal_ids ?? [];
                     if (erpSucursalId && ids.includes(erpSucursalId)) {
@@ -683,7 +722,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'pedido_sucursal_status' }, () => { loadActive(); })
             .subscribe();
         return () => supabase.removeChannel(ch);
-    }, [loadActive, loadHistory, filterSuc, isBranch, erpSucursalId]); // eslint-disable-line
+    }, [loadActive, loadHistory, filterSuc, filterDate, isBranch, erpSucursalId]); // eslint-disable-line
 
     // ── Fetch items ───────────────────────────────────────────────────────────
 
@@ -745,7 +784,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             if (error) throw error;
             useStaff.getState().appendAuditLog('PEDIDO_MARCAR_EN_RUTA', pedidoId, {});
             loadActive();
-            loadHistory(0, filterSuc);
+            loadHistory(0, filterSuc, filterDate);
         } catch (e) { console.error('Envío error:', e); } finally { setBusyEnvio(null); }
     }, [user, loadActive, loadHistory, filterSuc]);
 
@@ -822,14 +861,13 @@ export default function TabPedidos({ searchTerm = '' }) {
     // ── Derived ───────────────────────────────────────────────────────────────
 
     const searchLower   = searchTerm.toLowerCase();
-    const filterOptions = [{ value: 'all', label: 'Todas' }, ...ERP_ORDER.map(id => ({ value: id, label: ERP_NAMES[id] ?? `Suc. ${id}` }))];
+    const filterOptions = ERP_ORDER.map(id => ({ value: id, label: ERP_NAMES[id] ?? `Suc. ${id}` }));
 
     // Group activeRows by pedido to detect if ALL sucursales for a pedido are preparado
     const pedidoStageMap = useMemo(() => {
-        const map = new Map(); // pedidoId → { allPreparado, anyPreparando }
+        const map = new Map();
         activeRows.forEach(row => {
-            const stage = getBranchStage(row, row.pedido_status);
-            const prev  = map.get(row.pedido_id) ?? { allFinalized: true, anyActive: false };
+            const prev = map.get(row.pedido_id) ?? { allFinalized: true, anyActive: false };
             map.set(row.pedido_id, {
                 allFinalized: prev.allFinalized && !!row.finalizado_at,
                 anyActive:    prev.anyActive || (!!row.iniciado_at && !row.finalizado_at),
@@ -839,9 +877,16 @@ export default function TabPedidos({ searchTerm = '' }) {
     }, [activeRows]);
 
     let filteredRows = activeRows;
-    if (filterSuc !== 'all' && filterSuc) filteredRows = filteredRows.filter(r => r.erp_sucursal_id === Number(filterSuc));
-    if (filterStatus !== 'all')            filteredRows = filteredRows.filter(r => r.pedido_status === filterStatus);
-    if (searchLower)                       filteredRows = filteredRows.filter(r => String(r.numero).includes(searchLower) || (r.notes ?? '').toLowerCase().includes(searchLower));
+    if (filterSuc)              filteredRows = filteredRows.filter(r => r.erp_sucursal_id === Number(filterSuc));
+    if (filterStatus !== 'all') filteredRows = filteredRows.filter(r => r.pedido_status === filterStatus);
+    if (filterDate) {
+        const [desde, hasta] = filterDate.split('|');
+        filteredRows = filteredRows.filter(r => {
+            const d = r.created_at?.slice(0, 10);
+            return (!desde || d >= desde) && (!hasta || d <= hasta);
+        });
+    }
+    if (searchLower) filteredRows = filteredRows.filter(r => String(r.numero).includes(searchLower) || (r.notes ?? '').toLowerCase().includes(searchLower));
 
     const STAGE_ORDER = { preparando: 0, transito: 1, contando: 2, pausado: 3, preparado: 4, sin_iniciar: 5, erp: 6 };
     filteredRows = [...filteredRows].sort((a, b) => {
@@ -887,7 +932,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     <span className="text-[12px] font-bold text-slate-700 uppercase tracking-wide">En curso</span>
                     {filteredRows.length > 0 && <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">{filteredRows.length}</span>}
                     <div className="ml-auto">
-                        <FilterPill isBranch={isBranch} filterSuc={filterSuc} setFilterSuc={setFilterSuc} filterStatus={filterStatus} setFilterStatus={setFilterStatus} filterOptions={filterOptions} />
+                        <FilterPill isBranch={isBranch} filterSuc={filterSuc} setFilterSuc={setFilterSuc} filterStatus={filterStatus} setFilterStatus={setFilterStatus} filterOptions={filterOptions} filterDate={filterDate} setFilterDate={setFilterDate} />
                     </div>
                 </div>
 
@@ -953,6 +998,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {elapsedPrep  && <span className="text-[10px] text-slate-500 tabular-nums">{elapsedPrep}</span>}
                                         {elapsedPause && <span className="text-[10px] text-amber-600 font-medium">{elapsedPause} pausado</span>}
                                         {elapsedTrans && <span className="text-[10px] text-indigo-500 tabular-nums">{elapsedTrans} en ruta</span>}
+                                        {stage === 'preparando' && (row.min_pausado_total ?? 0) > 0 && (
+                                            <span
+                                                title={`Tiempo acumulado en pausa: ${fmtMin(row.min_pausado_total)}`}
+                                                className="inline-flex items-center gap-1 text-[10px] text-amber-500 font-medium px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 cursor-help"
+                                            >
+                                                <Pause size={9} />
+                                                {fmtMin(row.min_pausado_total)} en pausa
+                                            </span>
+                                        )}
 
                                         <div className="ml-auto flex items-center gap-2 flex-wrap">
                                             {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar')}       disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Play     size={11} fill="currentColor" />Iniciar</>}</button>}
@@ -1041,7 +1095,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 )}
 
                 {hasMore && !searchLower && (
-                    <button onClick={() => loadHistory(histPage + 1, filterSuc)} className="mt-3 w-full py-2.5 rounded-2xl border border-slate-200/70 bg-white/60 text-[12px] text-slate-600 font-medium hover:bg-white/80 transition-all">
+                    <button onClick={() => loadHistory(histPage + 1, filterSuc, filterDate)} className="mt-3 w-full py-2.5 rounded-2xl border border-slate-200/70 bg-white/60 text-[12px] text-slate-600 font-medium hover:bg-white/80 transition-all">
                         Cargar más pedidos
                     </button>
                 )}

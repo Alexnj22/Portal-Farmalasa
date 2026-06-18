@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.175';
+export const APP_VERSION = '2.2.176';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.176 — feat(pedidos/TabPedidos): 5 mejoras — (1) filterSuc usa '' en vez de 'all' elimina duplicado Todas/Todos en dropdown; (2) 3 secciones de ítems colapsadas por default; (3) DataTable confirmado como componente global en common/DataTable; (4) PeriodPicker de fecha en FilterPill (igual a VentasView) — filtra historial en DB y en curso client-side; (5) badge "Nm en pausa" con tooltip en stage strip cuando hay tiempo acumulado de pausa
 // v2.2.175 — feat(pedidos/TabPedidos): columnas Presentación + Solicitado en las 3 secciones de ítems — COLS_ENVIADOS agrega Presentación; COLS_SIN_STOCK agrega Presentación y Solicitado; COLS_REGLA agrega Presentación y Solicitado; renderPresentacion helper muestra pill con tipo de despacho (Caja ×N, Blíster ×N, Unid ×N) con fallback a factor
 // v2.2.174 — fix(pedidos/TabPedidos): 3 fixes — (1) PauseModal: ModalShell requería open={true} — sin él retorna null y el modal nunca aparece al presionar Pausar; (2) canMarcarEnRuta simplificado a stage==='preparado' por sucursal, sin esperar allFinalized de otras sucursales; (3) ItemSection de Productos enviados abre por default (defaultOpen=true) para mostrar columna Solicitado inmediatamente
 // v2.2.173 — feat(pedidos/TabPedidos): 5 fixes — (1) BoxStackAnim reemplaza ConveyorAnim (vuelve a v2.2.168); (2) openPauseModal con try/catch — modal siempre abre aunque falle detección kiosko; (3) EmpChip muestra creador+iniciador con foto; botón "Marcar en Ruta" → marcar_pedido_enviado; gate canEdit=hasPermission(pedidos_en_curso,can_edit) en todos los botones de ciclo de vida; (4) DataTable estándar en ItemSections con DataRow/DataCell; (5) columna Solicitado en COLS_ENVIADOS = Math.max(0,ceil((max_qty_snapshot − stock_packs_snapshot×factor)/factor))

@@ -281,6 +281,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
 
 // ─── Tab: Ventas ──────────────────────────────────────────────────────────────
 function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, employees, branchOptions, privacyMode }) {
+    const { getScope } = useAuth();
     const [rows, setRows]             = useState([]);
     const [totalCount, setTotalCount] = useState(0);
     const [totalAmount, setTotalAmount] = useState(0);
@@ -842,6 +843,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
 // ─── Tab: Vendedores ──────────────────────────────────────────────────────────
 function TabVendedores({ branches, filterBranch, setFilterBranch, employees, searchTerm, monthRange, setMonthRange, branchOptions, privacyMode }) {
+    const { getScope } = useAuth();
     const [rows, setRows]               = useState([]);
     const [loading, setLoading]         = useState(true);
     const [expanded, setExpanded]       = useState(null);
@@ -1274,7 +1276,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
 }
 
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions, privacyMode }) {
-    const { maxPriceLevel } = useAuth();
+    const { maxPriceLevel, getScope } = useAuth();
     const allowedDrillTiers = useMemo(() => {
         if (!maxPriceLevel) return DRILL_TIERS;
         const maxIdx = DRILL_TIER_ORDER.indexOf(maxPriceLevel);

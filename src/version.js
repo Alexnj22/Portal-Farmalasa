@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.176';
+export const APP_VERSION = '2.2.177';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.177 — feat(pedidos/TabPedidos): (1) TablePagination estándar en ItemSection — selector de tamaño de página (25/50/100) + numeración animada con pill azul + ir-a-página + badge total, igual a TabInventario/TabMinMax; (2) LifecycleTimeline animado — 6 nodos (Confirmado→Inicio→Listo→En Ruta→Llegada→ERP) con dots de spring, ping pulsante en nodo activo, líneas que se llenan con motion, badge ⏸ Nm en la línea entre Inicio y Listo cuando hay pausa, dot ámbar cuando está pausado
 // v2.2.176 — feat(pedidos/TabPedidos): 5 mejoras — (1) filterSuc usa '' en vez de 'all' elimina duplicado Todas/Todos en dropdown; (2) 3 secciones de ítems colapsadas por default; (3) DataTable confirmado como componente global en common/DataTable; (4) PeriodPicker de fecha en FilterPill (igual a VentasView) — filtra historial en DB y en curso client-side; (5) badge "Nm en pausa" con tooltip en stage strip cuando hay tiempo acumulado de pausa
 // v2.2.175 — feat(pedidos/TabPedidos): columnas Presentación + Solicitado en las 3 secciones de ítems — COLS_ENVIADOS agrega Presentación; COLS_SIN_STOCK agrega Presentación y Solicitado; COLS_REGLA agrega Presentación y Solicitado; renderPresentacion helper muestra pill con tipo de despacho (Caja ×N, Blíster ×N, Unid ×N) con fallback a factor
 // v2.2.174 — fix(pedidos/TabPedidos): 3 fixes — (1) PauseModal: ModalShell requería open={true} — sin él retorna null y el modal nunca aparece al presionar Pausar; (2) canMarcarEnRuta simplificado a stage==='preparado' por sucursal, sin esperar allFinalized de otras sucursales; (3) ItemSection de Productos enviados abre por default (defaultOpen=true) para mostrar columna Solicitado inmediatamente

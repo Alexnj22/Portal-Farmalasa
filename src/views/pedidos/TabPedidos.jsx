@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import TablePagination from '../../components/common/TablePagination';
 import ModalShell from '../../components/common/ModalShell';
 import RecepcionModal from './RecepcionModal';
 import { ERP_NAMES } from '../../constants/erp';
@@ -403,11 +404,13 @@ const COLS_REGLA = [
     { key: 'motivo',     label: 'Motivo', render: () => <span className="text-rose-600 text-[11px]">Necesidad &lt; 40% de la unidad mínima de despacho</span> },
 ];
 
-function ItemSection({ label, count, badgeCls, rows, columns, noteEl, defaultOpen = false }) {
-    const [open,  setOpen]  = useState(defaultOpen);
-    const [page,  setPage]  = useState(0);
-    const totalPages = Math.ceil(rows.length / MINI_PAGE);
-    const pageRows   = rows.slice(page * MINI_PAGE, (page + 1) * MINI_PAGE);
+function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
+    const [open,     setOpen]     = useState(false);
+    const [page,     setPage]     = useState(1);
+    const [pageSize, setPageSize] = useState(MINI_PAGE);
+
+    const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+    const pageRows   = rows.slice((page - 1) * pageSize, page * pageSize);
 
     if (!count) return null;
 
@@ -426,15 +429,17 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, defaultOpe
                             <DataTable
                                 columns={columns}
                                 minWidth="400px"
-                                footer={totalPages > 1 ? (
-                                    <div className="flex items-center justify-between w-full">
-                                        <span className="text-[10px] text-slate-400">{rows.length} registros · p. {page + 1}/{totalPages}</span>
-                                        <div className="flex gap-1">
-                                            <button disabled={page === 0} onClick={() => setPage(p => p - 1)} className="w-6 h-6 text-[12px] flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30">‹</button>
-                                            <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} className="w-6 h-6 text-[12px] flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30">›</button>
-                                        </div>
-                                    </div>
-                                ) : undefined}
+                                footer={
+                                    <TablePagination
+                                        page={page}
+                                        totalPages={totalPages}
+                                        onPageChange={p => setPage(p)}
+                                        pageSize={pageSize}
+                                        onPageSizeChange={sz => { setPageSize(sz); setPage(1); }}
+                                        total={rows.length}
+                                        unit="productos"
+                                    />
+                                }
                             >
                                 {pageRows.map((row, idx) => (
                                     <DataRow key={row.id ?? idx} index={idx}>
@@ -453,6 +458,140 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, defaultOpe
         </div>
     );
 }
+
+// ─── Lifecycle Timeline ───────────────────────────────────────────────────────
+
+function fmtHM(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+const TL_DOT  = ['bg-blue-500','bg-blue-500','bg-violet-500','bg-indigo-500','bg-teal-500','bg-emerald-500'];
+const TL_PING = ['bg-blue-400/40','bg-blue-400/40','bg-violet-400/40','bg-indigo-400/40','bg-teal-400/40','bg-emerald-400/40'];
+const TL_LINE = ['bg-blue-300','bg-blue-300','bg-violet-300','bg-indigo-300','bg-teal-300','bg-emerald-300'];
+const TL_BORDER = ['border-blue-400','border-blue-400','border-violet-400','border-indigo-400','border-teal-400','border-emerald-400'];
+
+const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 4, erp: 5 };
+
+function LifecycleTimeline({ row, stage }) {
+    const hasPause = (row.min_pausado_total ?? 0) > 0;
+    const isPaused = stage === 'pausado';
+    const activeIdx = TL_STAGE_IDX[stage] ?? 0;
+
+    const nodes = [
+        { key: 'confirmado', label: 'Confirmado', time: row.created_at        },
+        { key: 'iniciado',   label: 'Inicio',     time: row.iniciado_at       },
+        { key: 'preparado',  label: 'Listo',      time: row.finalizado_at     },
+        { key: 'enviado',    label: 'En Ruta',    time: row.enviado_at        },
+        { key: 'llegada',    label: 'Llegada',    time: row.llegada_fisica_at },
+        { key: 'erp',        label: 'ERP',        time: row.recibido_erp_at   },
+    ];
+
+    return (
+        <div className="flex items-start w-full overflow-x-auto pb-1 pt-0.5">
+            {nodes.map((node, idx) => {
+                const isDone     = node.time != null && idx < activeIdx;
+                const isActive   = idx === activeIdx;
+                const isPausedDot = isActive && isPaused;
+                const isFuture   = !isDone && !isActive;
+
+                return (
+                    <React.Fragment key={node.key}>
+                        {/* Node */}
+                        <div className="flex flex-col items-center shrink-0" style={{ width: 58 }}>
+                            {/* Dot with ping */}
+                            <div className="relative flex items-center justify-center w-7 h-7">
+                                {isActive && !isPausedDot && (
+                                    <motion.div
+                                        className={`absolute w-7 h-7 rounded-full ${TL_PING[idx]}`}
+                                        animate={{ scale: [0.8, 2, 0.8], opacity: [0.6, 0, 0.6] }}
+                                        transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut' }}
+                                    />
+                                )}
+                                <motion.div
+                                    className={`w-5 h-5 rounded-full flex items-center justify-center z-10 ${
+                                        isDone      ? `${TL_DOT[idx]} shadow-sm` :
+                                        isPausedDot ? 'bg-amber-400 shadow-sm' :
+                                        isActive    ? `bg-white border-2 ${TL_BORDER[idx]}` :
+                                                      'bg-slate-100 border border-slate-200'
+                                    }`}
+                                    initial={{ scale: 0.5, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ type: 'spring', stiffness: 350, damping: 24, delay: idx * 0.06 }}
+                                >
+                                    {isDone && (
+                                        <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                                            <polyline points="1.5,4.5 3.5,6.5 7.5,2.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    )}
+                                    {isActive && !isPausedDot && (
+                                        <motion.div
+                                            className={`w-2 h-2 rounded-full ${TL_DOT[idx]}`}
+                                            animate={{ scale: [1, 1.4, 1] }}
+                                            transition={{ duration: 1.1, repeat: Infinity }}
+                                        />
+                                    )}
+                                    {isPausedDot && (
+                                        <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                                            <rect x="1.5" y="1.5" width="2.5" height="6" rx="0.6" fill="white" />
+                                            <rect x="5" y="1.5" width="2.5" height="6" rx="0.6" fill="white" />
+                                        </svg>
+                                    )}
+                                </motion.div>
+                            </div>
+
+                            {/* Label */}
+                            <span className={`text-[8px] font-semibold text-center leading-tight mt-0.5 ${isFuture ? 'text-slate-400' : 'text-slate-700'}`}>
+                                {isPausedDot ? 'Pausado' : node.label}
+                            </span>
+
+                            {/* Time */}
+                            <span className="text-[7px] text-slate-400 tabular-nums h-3 leading-tight">
+                                {fmtHM(node.time)}
+                            </span>
+                        </div>
+
+                        {/* Connector */}
+                        {idx < nodes.length - 1 && (
+                            <div className="relative flex-1 min-w-[10px] self-start mt-[11px]">
+                                {/* Track */}
+                                <div className="h-0.5 w-full bg-slate-200 rounded-full" />
+                                {/* Fill */}
+                                {(isDone || (isActive && node.time)) && (
+                                    <motion.div
+                                        className={`absolute top-0 left-0 h-0.5 rounded-full ${TL_LINE[idx]}`}
+                                        initial={{ width: '0%' }}
+                                        animate={{ width: (isDone && nodes[idx + 1]?.time) ? '100%' : isDone ? '100%' : '50%' }}
+                                        transition={{ duration: 0.6, ease: 'easeOut', delay: idx * 0.08 }}
+                                    />
+                                )}
+                                {/* Pause badge between iniciado and preparado */}
+                                {node.key === 'iniciado' && hasPause && (
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 -mt-px">
+                                        <motion.span
+                                            className={`inline-flex items-center gap-0.5 text-[7px] font-bold px-1.5 py-px rounded whitespace-nowrap shadow-sm leading-tight ${
+                                                isPaused
+                                                    ? 'bg-amber-400 text-white'
+                                                    : 'bg-white text-amber-600 border border-amber-200'
+                                            }`}
+                                            animate={isPaused ? { opacity: [1, 0.4, 1] } : { opacity: 1 }}
+                                            transition={isPaused ? { duration: 1.2, repeat: Infinity } : undefined}
+                                        >
+                                            ⏸ {fmtMin(row.min_pausado_total)}
+                                        </motion.span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </React.Fragment>
+                );
+            })}
+        </div>
+    );
+}
+
+// ─── Item sections ────────────────────────────────────────────────────────────
 
 function ItemSections({ allItems, loading }) {
     if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-slate-300" /></div>;
@@ -991,29 +1130,23 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     )}
 
-                                    {/* Stage strip */}
-                                    <div className="border-t border-slate-100 px-4 py-3 flex items-center gap-3 flex-wrap">
+                                    {/* Lifecycle Timeline */}
+                                    <div className="border-t border-slate-100 px-4 pt-3 pb-1">
+                                        <LifecycleTimeline row={row} stage={stage} />
+                                    </div>
+
+                                    {/* Actions + status strip */}
+                                    <div className="flex items-center gap-3 px-4 pb-3 flex-wrap">
                                         <StagePill stage={stage} />
-                                        <StageAnim stage={stage} />
                                         {elapsedPrep  && <span className="text-[10px] text-slate-500 tabular-nums">{elapsedPrep}</span>}
                                         {elapsedPause && <span className="text-[10px] text-amber-600 font-medium">{elapsedPause} pausado</span>}
                                         {elapsedTrans && <span className="text-[10px] text-indigo-500 tabular-nums">{elapsedTrans} en ruta</span>}
-                                        {stage === 'preparando' && (row.min_pausado_total ?? 0) > 0 && (
-                                            <span
-                                                title={`Tiempo acumulado en pausa: ${fmtMin(row.min_pausado_total)}`}
-                                                className="inline-flex items-center gap-1 text-[10px] text-amber-500 font-medium px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 cursor-help"
-                                            >
-                                                <Pause size={9} />
-                                                {fmtMin(row.min_pausado_total)} en pausa
-                                            </span>
-                                        )}
-
                                         <div className="ml-auto flex items-center gap-2 flex-wrap">
-                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar')}       disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Play     size={11} fill="currentColor" />Iniciar</>}</button>}
-                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}                  disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Pause    size={11} fill="currentColor" />Pausar</>}</button>}
-                                            {canFinalizar    && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'finalizar')}     disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Flag     size={11} />Finalizar</>}</button>}
-                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}     disabled={isLCBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><RotateCcw size={11} />Reanudar</>}</button>}
-                                            {canMarcarEnRuta && <button onClick={() => handleMarcarEnRuta(row.pedido_id)}                                   disabled={isEnvioBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={12} className="animate-spin" /> : <><Truck size={11} />Marcar en Ruta</>}</button>}
+                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar')}   disabled={isLCBusy}    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Play     size={11} fill="currentColor" />Iniciar</>}</button>}
+                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Pause    size={11} fill="currentColor" />Pausar</>}</button>}
+                                            {canFinalizar    && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'finalizar')} disabled={isLCBusy}    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Flag     size={11} />Finalizar</>}</button>}
+                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><RotateCcw size={11} />Reanudar</>}</button>}
+                                            {canMarcarEnRuta && <button onClick={() => handleMarcarEnRuta(row.pedido_id)}                               disabled={isEnvioBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={12} className="animate-spin" /> : <><Truck size={11} />Marcar en Ruta</>}</button>}
                                         </div>
                                     </div>
 

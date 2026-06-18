@@ -5,10 +5,13 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.178';
+export const APP_VERSION = '2.2.180';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.180 — fix(distribucion): get_pedido_preview — segundo WHEN en con_reglas requería asignado_uncapped > 0; sin esa guarda, productos con fracción < 40% (uncapped=0) y max_asignable grande enviaban FLOOR(max_asignable/unit_base)*unit_base en vez del parcial correcto (ej. VIROGRIP enviaba 96 cuando solo necesitaba 7)
+// v2.2.179 — fix(distribucion): get_pedido_preview — si bodega asignó packs pero la fracción no llega al 40% del dispatch_unit, ahora se envía asignado_raw como despacho parcial en vez de bloquear con cero. revision_minmax queda solo para sucursales donde asignado_raw=0 (bodega genuinamente sin stock para esa sucursal)
+// v2.2.178 — feat(pedidos/TabPedidos): 8 mejoras — (1) timeline con elapsed time + avatares del creador/iniciador por nodo; (2) último nodo renombrado a "Finalizado"; (3) botón Apoyo con scanner-only modal (kiosk_pin), tabla pedido_apoyo; (4) pausa con ring ámbar + shadow; (5) card completa clickeable; (6) texto más oscuro/grande (glassmorphism contrast); (7) PauseModal estilo UnifiedModal; (8) animación timeline con box-shadow glow (evita clipping)
 // v2.2.177 — feat(pedidos/TabPedidos): (1) TablePagination estándar en ItemSection — selector de tamaño de página (25/50/100) + numeración animada con pill azul + ir-a-página + badge total, igual a TabInventario/TabMinMax; (2) LifecycleTimeline animado — 6 nodos (Confirmado→Inicio→Listo→En Ruta→Llegada→ERP) con dots de spring, ping pulsante en nodo activo, líneas que se llenan con motion, badge ⏸ Nm en la línea entre Inicio y Listo cuando hay pausa, dot ámbar cuando está pausado
 // v2.2.176 — feat(pedidos/TabPedidos): 5 mejoras — (1) filterSuc usa '' en vez de 'all' elimina duplicado Todas/Todos en dropdown; (2) 3 secciones de ítems colapsadas por default; (3) DataTable confirmado como componente global en common/DataTable; (4) PeriodPicker de fecha en FilterPill (igual a VentasView) — filtra historial en DB y en curso client-side; (5) badge "Nm en pausa" con tooltip en stage strip cuando hay tiempo acumulado de pausa
 // v2.2.175 — feat(pedidos/TabPedidos): columnas Presentación + Solicitado en las 3 secciones de ítems — COLS_ENVIADOS agrega Presentación; COLS_SIN_STOCK agrega Presentación y Solicitado; COLS_REGLA agrega Presentación y Solicitado; renderPresentacion helper muestra pill con tipo de despacho (Caja ×N, Blíster ×N, Unid ×N) con fallback a factor

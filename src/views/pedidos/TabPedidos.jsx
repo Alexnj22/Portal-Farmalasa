@@ -1085,15 +1085,20 @@ export default function TabPedidos({ searchTerm = '' }) {
             .select('pedido_id, erp_sucursal_id, cantidad_asignada, sin_stock, revision_minmax')
             .in('pedido_id', ids)
             .range(0, 4999);
-        if (!itemData) return;
+        // Initialize all active cards with zeros so the section always renders
         const stats = {};
-        itemData.forEach(item => {
-            const k = `act_${item.pedido_id}_${item.erp_sucursal_id}`;
-            if (!stats[k]) stats[k] = { enviados: 0, sinStock: 0, porRegla: 0 };
-            if (item.cantidad_asignada > 0) stats[k].enviados++;
-            if (item.sin_stock)             stats[k].sinStock++;
-            if (item.revision_minmax)       stats[k].porRegla++;
+        (data ?? []).forEach(row => {
+            stats[`act_${row.pedido_id}_${row.erp_sucursal_id}`] = { enviados: 0, sinStock: 0, porRegla: 0 };
         });
+        if (itemData) {
+            itemData.forEach(item => {
+                const k = `act_${item.pedido_id}_${item.erp_sucursal_id}`;
+                if (!stats[k]) stats[k] = { enviados: 0, sinStock: 0, porRegla: 0 };
+                if (item.cantidad_asignada > 0) stats[k].enviados++;
+                if (item.sin_stock)             stats[k].sinStock++;
+                if (item.revision_minmax)       stats[k].porRegla++;
+            });
+        }
         setCardStats(stats);
     }, []);
 
@@ -1495,7 +1500,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         )}
                                         {elapsedTrans && <span className="text-[11px] text-indigo-600 tabular-nums">{elapsedTrans} en ruta</span>}
                                         <div className="ml-auto flex items-center gap-2 flex-wrap">
-                                            {canEdit && !isBranch && (
+                                            {!isBranch && (
                                                 <button
                                                     onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey })}
                                                     disabled={isLCBusy}

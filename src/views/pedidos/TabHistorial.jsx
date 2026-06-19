@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, ChevronRight, ChevronDown, CheckCircle2,
     X, Package, Building2, AlertTriangle, Ban, ArrowDown,
     Clock, CheckCheck, TrendingDown, FlaskConical, Printer,
     BookMarked, Trash2, CalendarDays, Send, Search, PackagePlus,
-    Play, Pause, Flag, Database,
+    Play, Pause, Flag, Database, UserPlus, Users2,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -167,6 +167,12 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     const [pauseModal,       setPauseModal]       = useState(null); // { pedidoId, sucId } | null
     const [pauseRazonSel,    setPauseRazonSel]    = useState('almuerzo');
     const [pauseRazonText,   setPauseRazonText]   = useState('');
+    const [filterSucursal,   setFilterSucursal]   = useState(null);
+    const [pedidoStats,      setPedidoStats]      = useState({});
+    const [apoyoModal,       setApoyoModal]       = useState(null);
+    const [allEmployees,     setAllEmployees]     = useState([]);
+    const [apoyoMap,         setApoyoMap]         = useState({});
+    const [apoyoEmpId,       setApoyoEmpId]       = useState('');
 
     // ── Section toggle helpers ─────────────────────────────────────────────────
     const isSecOpen = (key, def) => sectionOpen[key] ?? def;
@@ -214,6 +220,57 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         }));
     }, []);
 
+    // ── Carga stats de ítems (enviados / sin stock / por regla) ──────────────
+    const loadItemStats = useCallback(async (pedidoIds) => {
+        if (!pedidoIds.length) return;
+        const { data } = await supabase
+            .from('pedido_items')
+            .select('pedido_id, cantidad_asignada, sin_stock, revision_minmax')
+            .in('pedido_id', pedidoIds)
+            .range(0, 9999);
+        const stats = {};
+        for (const row of (data || [])) {
+            if (!stats[row.pedido_id]) stats[row.pedido_id] = { enviados: 0, sinStock: 0, porRegla: 0 };
+            if (row.sin_stock)                                    stats[row.pedido_id].sinStock++;
+            else if (row.revision_minmax)                         stats[row.pedido_id].porRegla++;
+            else if (row.cantidad_asignada > 0)                   stats[row.pedido_id].enviados++;
+        }
+        setPedidoStats(prev => ({ ...prev, ...stats }));
+    }, []);
+
+    // ── Carga empleados de apoyo por pedido ───────────────────────────────────
+    const loadApoyoForPedido = useCallback(async (pedidoId) => {
+        const { data } = await supabase
+            .from('pedido_apoyo')
+            .select('erp_sucursal_id, registered_at, employees:employee_id(id, name, photo_url)')
+            .eq('pedido_id', pedidoId)
+            .order('registered_at', { ascending: true });
+        const byS = {};
+        for (const row of (data || [])) {
+            if (!byS[row.erp_sucursal_id]) byS[row.erp_sucursal_id] = [];
+            byS[row.erp_sucursal_id].push(row);
+        }
+        setApoyoMap(prev => ({ ...prev, [pedidoId]: byS }));
+    }, []);
+
+    // ── Agrega apoyo manual ───────────────────────────────────────────────────
+    const handleAddApoyo = useCallback(async () => {
+        if (!apoyoModal || !apoyoEmpId) return;
+        const { pedidoId, sucId } = apoyoModal;
+        const { error } = await supabase.from('pedido_apoyo').insert({
+            pedido_id:       pedidoId,
+            erp_sucursal_id: sucId,
+            employee_id:     apoyoEmpId,
+            registered_by:   user?.id ?? null,
+        });
+        if (!error) {
+            useStaff.getState().appendAuditLog('PEDIDO_APOYO_ADD', pedidoId, { sucursal_id: sucId, employee_id: apoyoEmpId });
+            setApoyoModal(null);
+            setApoyoEmpId('');
+            loadApoyoForPedido(pedidoId);
+        }
+    }, [apoyoModal, apoyoEmpId, user, loadApoyoForPedido]);
+
     // ── Reset load ────────────────────────────────────────────────────────────
     const resetLoad = useCallback(async (desde, hasta) => {
         setLoading(true);
@@ -233,8 +290,8 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         setPedidos(rows);
         setHasMore(rows.length === PAGE_SIZE);
         setLoading(false);
-        if (rows.length) { loadSucursales(rows.map(p => p.id)); loadEmpsFromPedidos(rows); }
-    }, [loadSucursales, loadEmpsFromPedidos]);
+        if (rows.length) { loadSucursales(rows.map(p => p.id)); loadEmpsFromPedidos(rows); loadItemStats(rows.map(p => p.id)); }
+    }, [loadSucursales, loadEmpsFromPedidos, loadItemStats]);
 
     // ── Load more ──────────────────────────────────────────────────────────────
     const loadMore = useCallback(async () => {
@@ -254,8 +311,8 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         setPage(nextPage);
         setHasMore(rows.length === PAGE_SIZE);
         setLoadingMore(false);
-        if (rows.length) { loadSucursales(rows.map(p => p.id)); loadEmpsFromPedidos(rows); }
-    }, [page, loadSucursales, loadEmpsFromPedidos, filterDesde, filterHasta]);
+        if (rows.length) { loadSucursales(rows.map(p => p.id)); loadEmpsFromPedidos(rows); loadItemStats(rows.map(p => p.id)); }
+    }, [page, loadSucursales, loadEmpsFromPedidos, filterDesde, filterHasta, loadItemStats]);
 
     // Initial load
     useEffect(() => { resetLoad('', ''); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -281,6 +338,12 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     }, []);
 
     useEffect(() => { loadSnapshots(); }, [loadSnapshots]);
+
+    // Carga lista de empleados para el picker de apoyo
+    useEffect(() => {
+        supabase.from('employees').select('id, name, photo_url')
+            .order('name').then(({ data }) => setAllEmployees(data || []));
+    }, []);
 
     // ── Accurate DB-level counts (not limited to loaded page) ─────────────────
     const reloadCounts = useCallback(async () => {
@@ -396,7 +459,8 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
         }
 
         setLoadingItems(false);
-    }, [loadEmployees]);
+        loadApoyoForPedido(pedidoId);
+    }, [loadEmployees, loadApoyoForPedido]);
 
     const toggleExpand = useCallback(async (pedidoId) => {
         if (expanded === pedidoId) { setExpanded(null); return; }
@@ -585,17 +649,19 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     }, []);
 
     // ── Filtered / counts ─────────────────────────────────────────────────────
-    const filtered = pedidos
+    const filtered = useMemo(() => pedidos
         .filter(p => filterTab === 'todos' || p.status === filterTab)
+        .filter(p => !filterSucursal || (pedidoSucursales[p.id] ?? []).includes(filterSucursal))
         .filter(p => {
             if (!searchTerm.trim()) return true;
             const q = searchTerm.toLowerCase();
             return String(p.numero).includes(q) || (p.notes || '').toLowerCase().includes(q);
-        });
+        }),
+    [pedidos, filterTab, filterSucursal, pedidoSucursales, searchTerm]);
 
-    const counts = pedidos.reduce((acc, p) => {
+    const counts = useMemo(() => pedidos.reduce((acc, p) => {
         acc[p.status] = (acc[p.status] || 0) + 1; return acc;
-    }, {});
+    }, {}), [pedidos]);
 
     // ── Render ────────────────────────────────────────────────────────────────
     if (loading) {
@@ -647,6 +713,22 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                     })}
                 </div>
                 <div className="h-5 w-px bg-slate-100 shrink-0" />
+                {/* Sucursal chips */}
+                <div className="flex items-center gap-1 px-2 py-1.5 flex-wrap">
+                    <Building2 size={12} className="text-slate-400 shrink-0" />
+                    {ERP_ORDER.map(sid => {
+                        const isAct = filterSucursal === sid;
+                        return (
+                            <button key={sid} onClick={() => setFilterSucursal(isAct ? null : sid)}
+                                className={`text-[11px] px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                                    isAct ? 'bg-blue-600 text-white border-blue-600'
+                                          : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+                                }`}
+                            >{ERP_NAMES[sid]}</button>
+                        );
+                    })}
+                </div>
+                <div className="h-5 w-px bg-slate-100 shrink-0" />
                 <div className="flex items-center gap-1.5 px-3 py-1.5">
                     <CalendarDays size={13} className="text-slate-400 shrink-0" />
                     <input
@@ -659,10 +741,10 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                         className="text-[12px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-700 focus:outline-none focus:border-blue-400 transition-colors"
                     />
                 </div>
-                {(filterDesde || filterHasta) && (
+                {(filterDesde || filterHasta || filterSucursal) && (
                     <>
                         <div className="h-5 w-px bg-slate-100 shrink-0" />
-                        <button onClick={() => { setFilterDesde(''); setFilterHasta(''); }}
+                        <button onClick={() => { setFilterDesde(''); setFilterHasta(''); setFilterSucursal(null); }}
                             className="flex items-center gap-1 px-3 py-2 text-[11px] text-slate-400 hover:text-red-500 transition-colors whitespace-nowrap">
                             <X size={11} /> Limpiar
                         </button>
@@ -751,24 +833,29 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                 {ERP_NAMES[sid] ?? `Suc ${sid}`}
                                             </span>
                                         ))}
-                                        {/* B4: no-enviados badge (shows once items are loaded) */}
-                                        {pedItems.length > 0 && (() => {
-                                            const n = pedItems.filter(r => r.sin_stock || r.revision_minmax).length;
-                                            return n > 0 ? (
-                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-amber-700 font-semibold flex-shrink-0">
-                                                    {n} no enviado{n !== 1 ? 's' : ''}
-                                                </span>
-                                            ) : null;
+                                        {/* Stats pills — cargadas en paralelo al listar */}
+                                        {pedidoStats[p.id] && (() => {
+                                            const st = pedidoStats[p.id];
+                                            return (<>
+                                                {st.enviados > 0 && (
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold flex-shrink-0">
+                                                        {st.enviados} env.
+                                                    </span>
+                                                )}
+                                                {st.sinStock > 0 && (
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-600 font-semibold flex-shrink-0">
+                                                        {st.sinStock} sin stock
+                                                    </span>
+                                                )}
+                                                {st.porRegla > 0 && (
+                                                    <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-semibold flex-shrink-0">
+                                                        <AlertTriangle size={9} />
+                                                        {st.porRegla} por regla
+                                                    </span>
+                                                )}
+                                            </>);
                                         })()}
                                     </div>
-                                    {/* Responsables con foto */}
-                                    {(respEmp || envioEmp || anuloEmp) && (
-                                        <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                                            {respEmp  && <EmpChip emp={respEmp}  sub="responsable" />}
-                                            {envioEmp && <EmpChip emp={envioEmp} sub={`envió · ${fmtDate(p.enviado_at)}`} />}
-                                            {anuloEmp && <EmpChip emp={anuloEmp} sub="anuló" />}
-                                        </div>
-                                    )}
                                     {p.notes && (
                                         <p className="text-slate-400 text-[12px] truncate italic mt-0.5">"{p.notes}"</p>
                                     )}
@@ -815,6 +902,14 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                         {/* ── Expanded detail ────────────────────────────── */}
                         {isExp && (
                             <div className="border-t border-slate-100 px-4 py-3 space-y-3">
+                                {/* Responsables del pedido — visibles solo al expandir */}
+                                {(respEmp || envioEmp || anuloEmp) && (
+                                    <div className="flex items-center gap-3 flex-wrap pb-1 border-b border-slate-100">
+                                        {respEmp  && <EmpChip emp={respEmp}  sub="responsable"                        size="lg" />}
+                                        {envioEmp && <EmpChip emp={envioEmp} sub={`envió · ${fmtDate(p.enviado_at)}`} size="lg" />}
+                                        {anuloEmp && <EmpChip emp={anuloEmp} sub="anuló"                              size="lg" />}
+                                    </div>
+                                )}
                                 {/* Lupa expansible — busca productos dentro del pedido */}
                                 {pedItems.length > 0 && (
                                     <div className="flex items-center justify-end">
@@ -999,6 +1094,14 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                 Reanudar
                                                             </button>
                                                         )}
+                                                        {lifecycle.iniciado_at && !lifecycle.finalizado_at && !isPausado && (
+                                                            <button
+                                                                onClick={e => { e.stopPropagation(); setApoyoEmpId(''); setApoyoModal({ pedidoId: p.id, sucId: suc }); }}
+                                                                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold bg-violet-500 text-white hover:bg-violet-600 transition-colors"
+                                                            >
+                                                                <UserPlus size={11} /> Apoyo
+                                                            </button>
+                                                        )}
                                                         {canFinalizar && (
                                                             <button
                                                                 onClick={e => { e.stopPropagation(); handleLifecycleAction(p.id, suc, 'finalizar'); }}
@@ -1114,6 +1217,17 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                         Recibir en ERP
                                                                     </button>
                                                                 )}
+                                                            </div>
+                                                        )}
+
+                                                        {/* ── Apoyo registrado ──────────────────── */}
+                                                        {apoyoMap[p.id]?.[suc]?.length > 0 && (
+                                                            <div className="flex items-center gap-2 flex-wrap px-3 py-2 border-t border-slate-100 bg-slate-50/40">
+                                                                <Users2 size={12} className="text-violet-400 shrink-0" />
+                                                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Apoyo:</span>
+                                                                {apoyoMap[p.id][suc].map((a, i) => (
+                                                                    <EmpChip key={i} emp={a.employees} size="sm" />
+                                                                ))}
                                                             </div>
                                                         )}
 
@@ -1340,9 +1454,9 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                                                     </div>
                                                                 )}
                                                                 {recibioEmps.length > 0 && (
-                                                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                                                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Recibido por:</span>
-                                                                        {recibioEmps.map(emp => <EmpChip key={emp.id} emp={emp} />)}
+                                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                                        <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Recibido por:</span>
+                                                                        {recibioEmps.map(emp => <EmpChip key={emp.id} emp={emp} size="lg" />)}
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1502,6 +1616,46 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 isDestructive
                 isProcessing={deletingSnap}
             />
+
+            {/* ── Modal agregar apoyo ─────────────────────────────────────── */}
+            {apoyoModal && (
+                <ModalShell onClose={() => setApoyoModal(null)}>
+                    <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 space-y-4">
+                        <div className="flex items-center gap-2">
+                            <UserPlus size={18} className="text-violet-500" />
+                            <h3 className="font-bold text-slate-800 text-[16px]">Agregar apoyo</h3>
+                        </div>
+                        <p className="text-[12px] text-slate-400">
+                            {ERP_NAMES[apoyoModal.sucId] ?? `Sucursal ${apoyoModal.sucId}`} — selecciona al empleado que apoyó el despacho.
+                        </p>
+                        <select
+                            value={apoyoEmpId}
+                            onChange={e => setApoyoEmpId(e.target.value)}
+                            className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-violet-400 bg-white"
+                        >
+                            <option value="">Selecciona un empleado…</option>
+                            {allEmployees.map(e => (
+                                <option key={e.id} value={e.id}>{e.name}</option>
+                            ))}
+                        </select>
+                        <div className="flex justify-end gap-2 pt-1">
+                            <button
+                                onClick={() => setApoyoModal(null)}
+                                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleAddApoyo}
+                                disabled={!apoyoEmpId}
+                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 text-[13px] transition-colors disabled:opacity-50"
+                            >
+                                <UserPlus size={13} /> Agregar
+                            </button>
+                        </div>
+                    </div>
+                </ModalShell>
+            )}
 
             {/* ── Pausa reason modal ──────────────────────────────────────── */}
             {pauseModal && (

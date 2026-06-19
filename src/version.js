@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.194';
+export const APP_VERSION = '2.2.195';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.195 — fix(compras): precio_unitario histórico corregido — ERP siempre devolvía el precio actual del catálogo, sobreescribiendo el precio real de cada recibo; fix: precio_unitario=total_linea/cantidad (18,405 registros corregidos); sync actualizado para usar la misma lógica en nuevas compras; vista product_cost_history reconstruida con CASE que prioriza total_linea/cantidad sobre el campo crudo
 // v2.2.194 — fix(minmax/csv): proveedores y stock de red en CSV bodega — .range(0,9999) no bypasea el cap 1000 de PostgREST; fix real: chunkear los IDs de input en grupos de ≤1000 para que cada llamada RPC devuelva ≤1000 filas; Promise.all paralelo de todos los chunks; APETIL-CRECE y todos los productos 1001+ ahora muestran proveedor correcto
 // v2.2.193 — fix(minmax/rpc): get_sucursal_net_stock usa product_precios.factor (entero exacto) en vez de regex sobre detalle — CTE pres_factors deduplica por (product_id, UPPER(descripcion)) para evitar multiplicar filas en el SUM; fallback COALESCE(...,1) para presentaciones sin match
 // v2.2.192 — fix(minmax/rpc): get_sucursal_net_stock usaba columna 'presentacion' para extraer factor XxN — 24.7% de filas (4667/18872) tienen el patrón solo en 'detalle'; corregido a detalle; stock de red ahora correcto (ej. VENDA GASA 17→26 und)

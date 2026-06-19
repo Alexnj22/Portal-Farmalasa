@@ -231,14 +231,22 @@ async function syncBranch(
       const p = lines[lineIdx];
       const rawFecha = p.trazabilidad?.fecha_vencimiento ?? p.fecha_vencimiento ?? p.vencimiento ?? null;
 
+      const cantidad    = parseFloat(p.cantidad) || 0;
+      const totalLinea  = parseFloat(p.precios?.subtotal_linea ?? p.total_linea ?? p.total ?? 0) || 0;
+      // Derive unit price from total_linea/cantidad — more reliable than costo_unitario
+      // which the ERP always returns as the current catalog price, overwriting historical prices.
+      const precioUnit  = (cantidad > 0 && totalLinea > 0)
+        ? totalLinea / cantidad
+        : parseFloat(p.precios?.costo_unitario ?? p.precio_unitario ?? p.precio ?? 0) || 0;
+
       itemsToUpsert.push({
         receipt_id:        receiptId,
         linea_num:         lineIdx,
         erp_product_id:    p.producto_id ?? p.id ?? p.id_producto ?? null,
         descripcion:       p.nombre ?? p.descripcion ?? null,
-        cantidad:          parseFloat(p.cantidad) || 0,
-        precio_unitario:   parseFloat(p.precios?.costo_unitario ?? p.precio_unitario ?? p.precio ?? 0) || 0,
-        total_linea:       parseFloat(p.precios?.subtotal_linea ?? p.total_linea ?? p.total ?? 0) || 0,
+        cantidad,
+        precio_unitario:   precioUnit,
+        total_linea:       totalLinea,
         lote:              (p.trazabilidad?.lote ?? p.lote) || null,
         fecha_vencimiento: (rawFecha && rawFecha !== '0000-00-00') ? rawFecha : null,
       });

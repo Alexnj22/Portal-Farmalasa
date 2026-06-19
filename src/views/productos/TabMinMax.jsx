@@ -210,7 +210,7 @@ function applyPresRule(units, factor) {
 }
 
 // netStockMap: { erp_product_id → net_sucursal_stock } fetched before calling
-function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {}) {
+function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {}, supplierMap = {}) {
     const SEP = ';';
 
     // Bodega: ordenar por laboratorio → producto
@@ -223,7 +223,7 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {})
         : rows;
 
     const h = isBodega
-        ? ['Sucursal','Laboratorio','Producto','Clase','MIN','MAX','Presentación','Inventario actual','Ventas 6 meses','Alerta']
+        ? ['Sucursal','Laboratorio','Producto','Clase','MIN','MAX','Presentación','Inventario actual','Cantidad a pedir','Proveedor','Alerta']
         : ['Sucursal','Laboratorio','Producto','Clase','MIN (und)','MAX (und)','Ventas 6 meses'];
 
     const lines = sorted.map(r => {
@@ -268,6 +268,9 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {})
                 return '';
             })();
 
+            const cantidadAPedir = hasVal ? Math.max(0, maxPres - invPres) : '';
+            const proveedor = supplierMap[r.erp_product_id] || '';
+
             return [
                 `"${(sucursalName||'').replace(/"/g,'""')}"`,
                 `"${(r.laboratorio_nombre||'').replace(/"/g,'""')}"`,
@@ -277,7 +280,8 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {})
                 hasVal ? maxPres : '',
                 `"${tipo}"`,
                 invPres,
-                factor > 1 ? ((Number(r.units_sold_6m ?? 0) / factor).toFixed(1)).replace('.', ',') : (r.units_sold_6m ?? 0),
+                cantidadAPedir,
+                `"${proveedor.replace(/"/g,'""')}"`,
                 alertLabel,
             ].join(SEP);
         }
@@ -2764,12 +2768,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         {/* CSV */}
                         <motion.button onClick={async () => {
                             let netStockMap = {};
+                            let supplierMap = {};
                             if (isBodega && filtered.length > 0) {
                                 const ids = filtered.map(r => r.erp_product_id);
-                                const { data: ns } = await supabase.rpc('get_sucursal_net_stock', { p_product_ids: ids });
-                                if (ns) ns.forEach(r => { netStockMap[r.erp_product_id] = r.net_stock; });
+                                const [nsRes, spRes] = await Promise.all([
+                                    supabase.rpc('get_sucursal_net_stock', { p_product_ids: ids }),
+                                    supabase.rpc('get_top_supplier_per_product', { p_product_ids: ids }),
+                                ]);
+                                if (nsRes.data) nsRes.data.forEach(r => { netStockMap[r.erp_product_id] = r.net_stock; });
+                                if (spRes.data) spRes.data.forEach(r => { supplierMap[r.erp_product_id] = r.proveedor; });
                             }
-                            exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp], isBodega, netStockMap);
+                            exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp], isBodega, netStockMap, supplierMap);
                         }}
                             disabled={data.length === 0 || loading}
                             title="Exportar CSV"

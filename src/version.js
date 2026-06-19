@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.188';
+export const APP_VERSION = '2.2.189';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.189 — feat(minmax/csv): bodega CSV — quita Ventas 6 meses, agrega Cantidad a pedir (MAX-inventario, min 0), Proveedor (top por cantidad comprada via get_top_supplier_per_product RPC); orden final: Inventario actual → Cantidad a pedir → Proveedor → Alerta
 // v2.2.188 — fix(minmax/csv): alerta bodega prioriza MIN de bodega — si bodegaStock < effective_min siempre CRÍTICO independientemente de días de red; etiqueta "CRÍTICO (Xd red)" diferencia entre bajo-MIN vs cobertura-red-baja; corrige caso Tylenol (4 und / MIN 46) que salía ATENCIÓN por cobertura de red
 // v2.2.187 — fix(minmax/csv): alertas bodega — labels unificados CRÍTICO/ATENCIÓN para todas las clases (ya no separación A/B vs C), días de cobertura incluidos en etiqueta (ej. "CRÍTICO (8d)", "ATENCIÓN (22d)"), sin alerta cuando vel=0 (sin ventas recientes), header "Ventas período" → "Ventas 6 meses"
 // v2.2.186 — feat(pedidos/empty-state): subtítulos eliminados de empty states (text-slate-400 invisible sobre LiquidGlass); solo título bold; patrón glass-icon + glow guardado en memoria permanente

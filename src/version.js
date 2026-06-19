@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.191';
+export const APP_VERSION = '2.2.192';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.192 — fix(minmax/rpc): get_sucursal_net_stock usaba columna 'presentacion' para extraer factor XxN — 24.7% de filas (4667/18872) tienen el patrón solo en 'detalle'; corregido a detalle; stock de red ahora correcto (ej. VENDA GASA 17→26 und)
 // v2.2.191 — fix(minmax/csv): PostgREST cap en get_sucursal_net_stock y get_top_supplier_per_product — ambas RPC usan .range(0,9999) para no truncar en 1000 filas (causa de "Sin registro" en productos con proveedor real)
 // v2.2.190 — fix(minmax/csv): alerta SIN MIN/MAX cuando producto tiene inventario pero sin parámetros; proveedor vacío → "Sin registro" (sync compras desde may-2025, ~273 productos sin historial)
 // v2.2.189 — feat(minmax/csv): bodega CSV — quita Ventas 6 meses, agrega Cantidad a pedir (MAX-inventario, min 0), Proveedor (top por cantidad comprada via get_top_supplier_per_product RPC); orden final: Inventario actual → Cantidad a pedir → Proveedor → Alerta

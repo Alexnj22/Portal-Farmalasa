@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.197';
+export const APP_VERSION = '2.2.198';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.198 — fix(minmax/rpc): get_stock_analysis — columna Presentación mostraba la presentación MAYOR; nuevo CTE inv_base_pres busca la presentación con factor más pequeño en TODAS las sucursales (incluso bodega sin stock propio); va primero en el array para que "BLISTER" tenga prioridad sobre código ERP "1X10" al mismo factor
 // v2.2.197 — fix(minmax/ui): columna "Despacho" renombrada a "Presentación"; segunda fila MIN/MAX eliminada de la celda — solo queda la pill con tipo+factor (ej. "Blíster ×10")
 // v2.2.196 — fix(minmax/rpc): get_stock_analysis — (1) inv_base usa product_precios.factor via pres_factors CTE (NUNCA regex sobre detalle); (2) inv_summary solo agrega presentaciones factor>1; (3) catalog_pres fallback desde product_precios cuando no hay presentaciones con factor>1; (4) last_sale para bodega incluye ventas de TODAS las sucursales (bodega no vende al público); (5) canExpand agrega daily_velocity>0 como red de seguridad; LECHE NAN y OMEPRAZOL BALAXI ahora expanden y muestran presentación correcta
 // v2.2.195 — fix(compras): precio_unitario histórico corregido — ERP siempre devolvía el precio actual del catálogo, sobreescribiendo el precio real de cada recibo; fix: precio_unitario=total_linea/cantidad (18,405 registros corregidos); sync actualizado para usar la misma lógica en nuevas compras; vista product_cost_history reconstruida con CASE que prioriza total_linea/cantidad sobre el campo crudo

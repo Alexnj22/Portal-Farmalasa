@@ -1,0 +1,8 @@
+-- Regla: si max > 1, min debe ser >= 1 (min=0 con max>1 elimina el punto de reorden).
+-- Fuentes del problema: calculate_stock_params producía draft_min=0 en baja velocidad;
+-- publish_stock_params y el trigger sumaban esos 0s sin clampearlo.
+-- A. Data fix: 7 filas suc 5 (0/2 → 1/2) y 227 filas bodega (0/N → 1/N).
+-- B. publish_stock_params: GREATEST(min, 1) cuando max > 1 (en sucursales y bodega).
+-- C. trigger sync_bodega_draft_from_branch: igual clampeo tras el SUM.
+-- D. Constraint chk_min_lt_max reemplazado: cubre MIN=MAX Y MIN=0/MAX>1.
+-- Aplicado en BD: 2026-06-19.

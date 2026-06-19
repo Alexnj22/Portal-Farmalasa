@@ -223,8 +223,8 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {})
         : rows;
 
     const h = isBodega
-        ? ['Sucursal','Laboratorio','Producto','Clase','MIN','MAX','Presentación','Inventario actual','Ventas período','Alerta']
-        : ['Sucursal','Laboratorio','Producto','Clase','MIN (und)','MAX (und)','Ventas período'];
+        ? ['Sucursal','Laboratorio','Producto','Clase','MIN','MAX','Presentación','Inventario actual','Ventas 6 meses','Alerta']
+        : ['Sucursal','Laboratorio','Producto','Clase','MIN (und)','MAX (und)','Ventas 6 meses'];
 
     const lines = sorted.map(r => {
         const abc  = (r.draft_abc_class || r.abc_class || '');
@@ -257,12 +257,14 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {})
             // días de cobertura de la red; Infinity si sin velocidad (sin ventas recientes)
             const daysCoverage = vel > 0 ? totalStock / vel : Infinity;
 
-            const isHighRot = abc === 'A' || abc === 'B';
-            const alertLabel = bodegaStock === 0                             ? 'SIN STOCK'
-                             : (isHighRot && daysCoverage < 14)             ? 'CRÍTICO'
-                             : (isHighRot && daysCoverage < 30)             ? 'ATENCIÓN'
-                             : (!isHighRot && daysCoverage < 14)            ? 'BAJO MÍNIMO'
-                             : '';
+            const alertLabel = (() => {
+                if (bodegaStock === 0) return 'SIN STOCK';
+                if (vel <= 0 || !isFinite(daysCoverage)) return '';
+                const d = Math.round(daysCoverage);
+                if (daysCoverage < 14) return `CRÍTICO (${d}d)`;
+                if (daysCoverage < 30) return `ATENCIÓN (${d}d)`;
+                return '';
+            })();
 
             return [
                 `"${(sucursalName||'').replace(/"/g,'""')}"`,

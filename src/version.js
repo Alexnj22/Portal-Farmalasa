@@ -5,10 +5,12 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.186';
+export const APP_VERSION = '2.2.187';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.187 — fix(minmax/csv): alertas bodega — labels unificados CRÍTICO/ATENCIÓN para todas las clases (ya no separación A/B vs C), días de cobertura incluidos en etiqueta (ej. "CRÍTICO (8d)", "ATENCIÓN (22d)"), sin alerta cuando vel=0 (sin ventas recientes), header "Ventas período" → "Ventas 6 meses"
+// v2.2.186 — feat(pedidos/empty-state): subtítulos eliminados de empty states (text-slate-400 invisible sobre LiquidGlass); solo título bold; patrón glass-icon + glow guardado en memoria permanente
 // v2.2.185 — feat(pedidos/empty-state): empty states con glassmorphism — icono glass rounded + glow difuso + titulo bold + subtitulo descriptivo (patron my-announcements). Guardado como estandar de disenio para todo el proyecto.
 // v2.2.184 — fix(pedidos/TabPedidos): 7 correcciones — (1) apoyo explicado: canEdit→!isBranch (Edwin supervisor no tenía pedidos_en_curso.can_edit en role_permissions); (2) stats ahora usan get_pedido_item_stats RPC server-side en vez de fetch 5000+ filas client-side (range(0,4999) truncaba pedidos); (3) get_pedidos_en_curso v3 agrega campo codigo; (4) card muestra codigo del pedido (el que se imprime) en vez de #numero; (5) botón Apoyo solo visible en sin_iniciar/preparando/pausado — no en tránsito/contando/erp; (6) card más compacta (px-3 py-2, iconos 10px, nodo timeline 48px); (7) motion.div layout eliminado de cards (principal causa de lentitud); todos los pedidos de prueba borrados del DB
 // v2.2.183 — feat(pedidos/TabPedidos): 5 mejoras — (1) FilterPill: fecha se mueve antes de los status buttons (Sucursal → Fecha → Estado); (2) EmpChips duplicados eliminados sobre la timeline; avatares de creador/iniciador en timeline ampliados a w-7 h-7; (3) apoyo display simplificado solo con avatares; (4) pills de stats en card sin desplegar (enviados/sin stock/por regla con ⚠); (5) filteredRows y filteredHistory memoizados con useMemo

@@ -2000,22 +2000,42 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
     useEffect(() => { loadData(selectedErp); setFilterChangesOnly(false); setFilterDraft(false); setFilterSparse(false); }, [selectedErp, loadData]);
 
-    // Realtime: cuando el trigger actualiza la fila de bodega, recargar datos automáticamente
+    // Realtime: actualización quirúrgica de la fila inline cuando el trigger escribe bodega.
+    // No recarga toda la tabla — solo parchea el producto afectado en el estado local.
     useEffect(() => {
         if (selectedErp !== 6) return;
-        let timer = null;
         const channel = supabase
             .channel('bodega-params-watch')
             .on('postgres_changes',
                 { event: '*', schema: 'public', table: 'product_stock_params', filter: 'erp_sucursal_id=eq.6' },
-                () => {
-                    clearTimeout(timer);
-                    timer = setTimeout(() => loadData(6), 600);
+                (payload) => {
+                    const u = payload.new;
+                    if (!u?.erp_product_id) return;
+                    const pubMin  = u.min_units  ?? 0;
+                    const pubMax  = u.max_units  ?? 0;
+                    const effMin  = pubMin  + (u.manual_min  ?? 0);
+                    const effMax  = pubMax  + (u.manual_max  ?? 0);
+                    const hasManual = u.manual_min !== null || u.manual_max !== null;
+                    const apMult = 1 + (analysisConfigRef.current.approaching_pct ?? 20) / 100;
+                    setData(prev => prev.map(row => {
+                        if (row.erp_product_id !== u.erp_product_id) return row;
+                        const stock = Number(row.current_stock ?? 0);
+                        const alertStatus =
+                            stock === 0                         ? 'out_of_stock' :
+                            stock < effMin                      ? 'below_min'    :
+                            stock < effMin * apMult             ? 'approaching'  :
+                            effMax > 0 && stock > effMax        ? 'overstocked'  : 'ok';
+                        return { ...row, effective_min: effMin, effective_max: effMax,
+                            pub_min: pubMin, pub_max: pubMax, has_manual: hasManual,
+                            draft_status: u.draft_status ?? 'none',
+                            draft_min: u.draft_min ?? null, draft_max: u.draft_max ?? null,
+                            alert_status: alertStatus };
+                    }));
                 }
             )
             .subscribe();
-        return () => { clearTimeout(timer); supabase.removeChannel(channel); };
-    }, [selectedErp, loadData]);
+        return () => { supabase.removeChannel(channel); };
+    }, [selectedErp]);
 
     const fmtCalcError = msg => {
         if (!msg) return 'Error al calcular.';

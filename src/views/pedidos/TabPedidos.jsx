@@ -8,7 +8,7 @@ import {
     Database, Activity, TrendingDown,
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
-    UserPlus, ScanLine,
+    UserPlus, ScanLine, Inbox, History,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -1381,9 +1381,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                 </div>
 
                 {filteredRows.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-300">
-                        <CheckCircle2 size={28} className="opacity-50" />
-                        <p className="text-[12px] text-slate-400">No hay pedidos activos.</p>
+                    <div className="flex flex-col items-center justify-center min-h-[260px] animate-in fade-in zoom-in-95 duration-700">
+                        <div className="relative flex flex-col items-center text-center">
+                            <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-20 bg-blue-400" />
+                            <div className="relative z-10 w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-4 bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-blue-400">
+                                <Inbox size={34} strokeWidth={1.5} />
+                            </div>
+                            <h3 className="font-bold text-[18px] text-slate-700 tracking-tight mb-1">Sin pedidos activos</h3>
+                            <p className="text-[13px] text-slate-400 max-w-[240px] leading-relaxed">No hay pedidos en curso para los filtros seleccionados.</p>
+                        </div>
                     </div>
                 ) : (
                     <div className="space-y-2.5">
@@ -1545,9 +1551,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                 {loadingHist ? (
                     <div className="flex justify-center py-8"><Loader2 size={18} className="animate-spin text-slate-300" /></div>
                 ) : filteredHistory.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-10 gap-1 text-slate-300">
-                        <TrendingDown size={24} className="opacity-50" />
-                        <p className="text-[12px] text-slate-400">Sin historial.</p>
+                    <div className="flex flex-col items-center justify-center min-h-[220px] animate-in fade-in zoom-in-95 duration-700">
+                        <div className="relative flex flex-col items-center text-center">
+                            <div className="absolute top-2 w-24 h-24 rounded-full blur-[40px] opacity-20 bg-slate-400" />
+                            <div className="relative z-10 w-16 h-16 rounded-[1.25rem] flex items-center justify-center mb-3 bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-slate-400">
+                                <History size={28} strokeWidth={1.5} />
+                            </div>
+                            <h3 className="font-bold text-[16px] text-slate-600 tracking-tight mb-1">Sin historial</h3>
+                            <p className="text-[12px] text-slate-400 max-w-[220px] leading-relaxed">No hay pedidos completados en el período seleccionado.</p>
+                        </div>
                     </div>
                 ) : (
                     <div className="space-y-2">

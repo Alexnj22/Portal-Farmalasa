@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.202';
+export const APP_VERSION = '2.2.203';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.203 — fix(minmax/csv): presentaciones en CSV bodega usan nombres reales (CAJA/BLISTER) en vez de códigos ERP (1x10); un solo scan de inventory vía inv_all_pres → inv_base_pres + inv_other_pres_agg; fallback: red > catalog ERP
 // v2.2.202 — perf(minmax/bodega): realtime quirúrgico — product_stock_params en publicación supabase_realtime; payload postgres_changes parchea solo la fila afectada (effective/pub/alert_status) sin RPC extra ni reload de tabla
 // v2.2.201 — fix(minmax/bodega): (1) trigger usa solo valores publicados (min_units) nunca draft; bodega siempre live; (2) realtime subscription — bodega se auto-actualiza al editar sucursales sin reload; (3) badge "Suc. pendientes" en celda bodega live vía has_pending_branches; (4) label "Borrador" claro en stock en red y MIN·MAX red panel
 // v2.2.200 — feat(minmax/bodega): modelo aditivo — manual_min/max ahora es DELTA (excedente sobre Σ sucursales), no reemplazo; effective = sum + delta; si salas bajan a 0 bodega conserva solo su excedente; si salas suben bodega escala automáticamente; migración de datos existentes: old_manual − sum = nuevo delta

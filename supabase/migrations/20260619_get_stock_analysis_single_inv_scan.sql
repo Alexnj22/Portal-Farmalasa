@@ -1,0 +1,4 @@
+-- Optimización: reemplaza los dos scans de inventory (inv_base_pres + inv_other_pres)
+-- por un único CTE inv_all_pres. Ambos CTEs se derivan del mismo resultado.
+-- Aplicado junto con 20260619_get_stock_analysis_inv_other_pres.sql.
+-- Este archivo documenta la versión final con scan único aplicada a la BD.

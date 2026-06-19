@@ -960,11 +960,13 @@ function ExpandedPanel({ row, cycleDays }) {
                                                 </div>
                                             )}
                                             {hasDraft && (
-                                                <div className="flex items-center gap-0.5 text-[8px] tabular-nums leading-tight rounded px-0.5 py-px border border-dashed border-amber-300 bg-amber-50/50">
-                                                    <span className="text-amber-400 text-[7px] leading-none">→</span>
-                                                    <span className="text-amber-600 font-black">{bDraftMin > 0 ? bDraftMin.toLocaleString() : '—'}</span>
-                                                    <span className="text-amber-300">·</span>
-                                                    <span className="text-amber-600 font-black">{bDraftMax > 0 ? bDraftMax.toLocaleString() : '—'}</span>
+                                                <div className="flex flex-col items-start gap-0.5 mt-0.5">
+                                                    <span className="text-[7px] font-black uppercase tracking-wide text-amber-500 leading-none">Borrador</span>
+                                                    <div className="flex items-center gap-0.5 text-[8px] tabular-nums leading-tight rounded px-0.5 py-px border border-dashed border-amber-300 bg-amber-50/50">
+                                                        <span className="text-amber-600 font-black">{bDraftMin > 0 ? bDraftMin.toLocaleString() : '—'}</span>
+                                                        <span className="text-amber-300">·</span>
+                                                        <span className="text-amber-600 font-black">{bDraftMax > 0 ? bDraftMax.toLocaleString() : '—'}</span>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -1162,8 +1164,8 @@ function ExpandedPanel({ row, cycleDays }) {
                                                             <span className="text-slate-300">·</span>
                                                             <span className="text-blue-500 font-black tabular-nums">{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
                                                             {hasDraft && (
-                                                                <span className="text-[8px] text-amber-500 font-semibold border border-dashed border-amber-300 rounded px-0.5 tabular-nums whitespace-nowrap">
-                                                                    →{dMin > 0 ? dMin.toLocaleString() : '—'}·{dMax > 0 ? dMax.toLocaleString() : '—'}
+                                                                <span className="inline-flex items-center gap-0.5 text-[7px] font-black uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-300 border-dashed rounded px-1 py-px whitespace-nowrap">
+                                                                    Borrador {dMin > 0 ? dMin.toLocaleString() : '—'}·{dMax > 0 ? dMax.toLocaleString() : '—'}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -1997,6 +1999,23 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     }, []);
 
     useEffect(() => { loadData(selectedErp); setFilterChangesOnly(false); setFilterDraft(false); setFilterSparse(false); }, [selectedErp, loadData]);
+
+    // Realtime: cuando el trigger actualiza la fila de bodega, recargar datos automáticamente
+    useEffect(() => {
+        if (selectedErp !== 6) return;
+        let timer = null;
+        const channel = supabase
+            .channel('bodega-params-watch')
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'product_stock_params', filter: 'erp_sucursal_id=eq.6' },
+                () => {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => loadData(6), 600);
+                }
+            )
+            .subscribe();
+        return () => { clearTimeout(timer); supabase.removeChannel(channel); };
+    }, [selectedErp, loadData]);
 
     const fmtCalcError = msg => {
         if (!msg) return 'Error al calcular.';
@@ -3609,6 +3628,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 </div>
                                             );
 
+                                            const pendingBadge = isBodega && row.has_pending_branches ? (
+                                                <span
+                                                    title="Hover para ver sucursales pendientes"
+                                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 cursor-help select-none"
+                                                    onMouseEnter={async (e) => {
+                                                        if (bodegaTooltip?.productId === row.erp_product_id) return;
+                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                        const { data: branches } = await supabase.rpc('get_product_branch_summary', { p_erp_product_id: row.erp_product_id });
+                                                        const pending = (branches || []).filter(b => b.erp_sucursal_id !== 6 && b.draft_status === 'pending');
+                                                        setBodegaTooltip({ productId: row.erp_product_id, pending, rect });
+                                                    }}
+                                                    onMouseLeave={() => setBodegaTooltip(null)}
+                                                >
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block shrink-0" />
+                                                    Suc. pendientes
+                                                </span>
+                                            ) : null;
+
                                             if (isBodega && row.has_manual && (row.pub_min > 0 || row.pub_max > 0)) return (
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="flex items-center gap-1">
@@ -3617,14 +3654,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         {box(maxN.toLocaleString(), stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-slate-500 bg-white/70', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
                                                     </div>
                                                     <div className="text-[8px] font-semibold text-violet-500 tabular-nums">Σ {(row.pub_min ?? 0).toLocaleString()}·{(row.pub_max ?? 0).toLocaleString()}</div>
+                                                    {pendingBadge}
                                                 </div>
                                             );
 
                                             return (
-                                                <div className="flex items-center gap-1">
-                                                    {box(minN.toLocaleString(), stock < minN ? 'text-orange-600 bg-orange-50' : 'text-slate-600 bg-white/70', stock < minN ? 'border-orange-200' : 'border-slate-200', openMinEdit)}
-                                                    {sep}
-                                                    {box(maxN.toLocaleString(), stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-slate-500 bg-white/70', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <div className="flex items-center gap-1">
+                                                        {box(minN.toLocaleString(), stock < minN ? 'text-orange-600 bg-orange-50' : 'text-slate-600 bg-white/70', stock < minN ? 'border-orange-200' : 'border-slate-200', openMinEdit)}
+                                                        {sep}
+                                                        {box(maxN.toLocaleString(), stock > maxN && maxN > 0 ? 'text-blue-600 bg-blue-50' : 'text-slate-500 bg-white/70', stock > maxN && maxN > 0 ? 'border-blue-200' : 'border-slate-200', openMaxEdit)}
+                                                    </div>
+                                                    {pendingBadge}
                                                 </div>
                                             );
                                         })()}

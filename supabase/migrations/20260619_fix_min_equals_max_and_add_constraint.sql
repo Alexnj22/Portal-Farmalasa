@@ -1,0 +1,7 @@
+-- 327 filas con min_units = max_units (ambos > 0), originadas por el bug
+-- LEAST(NULL, N) = N en publish_stock_params (corregido en fix_publish_least_null_draft_min).
+-- Fix de datos: min = max - 1 (rango mínimo válido, conserva el max original).
+-- Paso 1: sucursales normales → trigger sync_bodega_draft_from_branch recalcula bodega.
+-- Paso 2: bodega directamente para los que aún queden con min=max.
+-- Prevención: constraint chk_min_lt_max garantiza min < max cuando ambos son positivos.
+-- Aplicado en BD: 2026-06-19.

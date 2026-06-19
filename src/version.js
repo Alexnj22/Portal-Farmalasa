@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.206';
+export const APP_VERSION = '2.2.207';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.207 — fix(minmax/data): 327 filas con min=max (ambos >0) corregidas con min=max-1; causa raíz: bug LEAST(NULL,N)=N ya corregido en v2.2.206; constraint chk_min_lt_max en DB bloquea min≥max (cuando ambos >0) a nivel de BD para siempre
 // v2.2.206 — fix(minmax/publish): LEAST(NULL,1)=1 en PostgreSQL — cuando solo se guardaba draft_max pero no draft_min, publish_stock_params publicaba min=max (ej. 0/1 → 1/1); fix: COALESCE(draft_min,0) y COALESCE(draft_max,0) en LEAST/GREATEST para tratar NULL como 0; data-fix retroactivo en ELEQUINE 750 X 5 suc.4
 // v2.2.205 — fix(minmax/pres): columna Presentación ahora usa catalog_base_pres (product_precios JOIN presentaciones por id_presentacion, factor ASC) en vez de inv_base_pres; corrige ELEQUINE 750 X 20 y todos los productos donde dos filas de product_precios comparten la misma descripcion pero distinto factor — pres_factors MAX(factor) borraba la UNIDAD (factor=1) y la base quedaba CAJA X 20
 // v2.2.204 — fix(minmax/pres): "Caja x 20 ×20" → "Caja x 20"; si el tipo ya contiene el factor como número no se agrega ×N; afectaba 161 productos (ELEQUINE y similares con presentacion="CAJA X N" y factor=N en product_precios)

@@ -1,0 +1,8 @@
+-- Bug: LEAST(NULL, 1) = 1 en PostgreSQL (ignora NULLs, no trata NULL como -∞).
+-- Cuando el usuario editaba solo draft_max pero no draft_min (quedaba NULL),
+-- publish_stock_params hacía LEAST(NULL, 1) = 1 → min_units = max_units = 1.
+-- Fix: COALESCE(draft_min, 0) y COALESCE(draft_max, 0) en LEAST/GREATEST
+-- para que NULL se trate como 0 (sin valor = sin restricción mínima).
+-- Ejemplo afectado: ELEQUINE 750 X 5 suc.4 → 1/1 en vez de 0/1.
+-- Data fix aplicado en la misma migración para ese producto específico.
+-- Aplicado en BD: 2026-06-19.

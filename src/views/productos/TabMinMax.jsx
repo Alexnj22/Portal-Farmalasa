@@ -248,19 +248,21 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {})
 
             const hasVal = maxU > 0 || minU > 0;
 
-            // Alerta basada en días de cobertura de la RED COMPLETA (bodega + sucursales).
-            // Un producto no es crítico si las sucursales tienen suficiente stock.
             const bodegaStock  = Number(r.current_stock ?? 0);
             const sucursalStock = Number(netStockMap[r.erp_product_id] ?? 0);
             const totalStock   = bodegaStock + sucursalStock;
             const vel          = Number(r.daily_velocity ?? 0);
-            // días de cobertura de la red; Infinity si sin velocidad (sin ventas recientes)
             const daysCoverage = vel > 0 ? totalStock / vel : Infinity;
+            // Bodega está bajo su propio MIN → no puede cumplir un ciclo de despacho completo
+            const belowBodegaMin = minU > 0 && bodegaStock < minU;
 
             const alertLabel = (() => {
                 if (bodegaStock === 0) return 'SIN STOCK';
-                if (vel <= 0 || !isFinite(daysCoverage)) return '';
-                const d = Math.round(daysCoverage);
+                const hasVel = vel > 0 && isFinite(daysCoverage);
+                const d = hasVel ? Math.round(daysCoverage) : null;
+                // Bajo el MIN de bodega → CRÍTICO siempre (aunque la red tenga días)
+                if (belowBodegaMin) return d !== null ? `CRÍTICO (${d}d red)` : 'CRÍTICO';
+                if (!hasVel) return '';
                 if (daysCoverage < 14) return `CRÍTICO (${d}d)`;
                 if (daysCoverage < 30) return `ATENCIÓN (${d}d)`;
                 return '';

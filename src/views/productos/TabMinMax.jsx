@@ -2771,12 +2771,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             let supplierMap = {};
                             if (isBodega && filtered.length > 0) {
                                 const ids = filtered.map(r => r.erp_product_id);
-                                const [nsRes, spRes] = await Promise.all([
-                                    supabase.rpc('get_sucursal_net_stock', { p_product_ids: ids }).range(0, 9999),
-                                    supabase.rpc('get_top_supplier_per_product', { p_product_ids: ids }).range(0, 9999),
+                                // Chunk input by 1000 so each RPC call returns ≤1000 rows (PostgREST cap)
+                                const CHUNK = 1000;
+                                const chunks = [];
+                                for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK));
+                                const [nsResults, spResults] = await Promise.all([
+                                    Promise.all(chunks.map(c => supabase.rpc('get_sucursal_net_stock', { p_product_ids: c }))),
+                                    Promise.all(chunks.map(c => supabase.rpc('get_top_supplier_per_product', { p_product_ids: c }))),
                                 ]);
-                                if (nsRes.data) nsRes.data.forEach(r => { netStockMap[r.erp_product_id] = r.net_stock; });
-                                if (spRes.data) spRes.data.forEach(r => { supplierMap[r.erp_product_id] = r.proveedor; });
+                                nsResults.forEach(r => { if (r.data) r.data.forEach(row => { netStockMap[row.erp_product_id] = row.net_stock; }); });
+                                spResults.forEach(r => { if (r.data) r.data.forEach(row => { supplierMap[row.erp_product_id] = row.proveedor; }); });
                             }
                             exportCsv(filtered, ERP_NAMES[selectedErp], ERP_NAMES[selectedErp], isBodega, netStockMap, supplierMap);
                         }}

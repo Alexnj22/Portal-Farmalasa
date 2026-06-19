@@ -752,11 +752,11 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp }) {
                 return (
                     <React.Fragment key={node.key}>
                         {/* Node */}
-                        <div className="flex flex-col items-center shrink-0" style={{ width: 60 }}>
+                        <div className="flex flex-col items-center shrink-0" style={{ width: 48 }}>
                             {/* Dot */}
-                            <div className="flex items-center justify-center w-8 h-8">
+                            <div className="flex items-center justify-center w-6 h-6">
                                 <motion.div
-                                    className={`w-5 h-5 rounded-full flex items-center justify-center z-10 ${
+                                    className={`w-4 h-4 rounded-full flex items-center justify-center z-10 ${
                                         isDone      ? `${TL_DOT[idx]} shadow-sm` :
                                         isPausedDot ? 'bg-amber-400 shadow-md' :
                                         isActive    ? `bg-white border-2 ${TL_BORDER[idx]}` :
@@ -1078,25 +1078,18 @@ export default function TabPedidos({ searchTerm = '' }) {
         const { data, error } = await supabase.rpc('get_pedidos_en_curso');
         if (error) return;
         setActiveRows(data ?? []);
-        const ids = [...new Set((data ?? []).map(r => r.pedido_id))];
-        if (!ids.length) { setCardStats({}); return; }
-        const { data: itemData } = await supabase
-            .from('pedido_items')
-            .select('pedido_id, erp_sucursal_id, cantidad_asignada, sin_stock, revision_minmax')
-            .in('pedido_id', ids)
-            .range(0, 4999);
-        // Initialize all active cards with zeros so the section always renders
+        const rows = data ?? [];
+        // Initialize all cards with zeros (server-side aggregation — no row limit issues)
         const stats = {};
-        (data ?? []).forEach(row => {
+        rows.forEach(row => {
             stats[`act_${row.pedido_id}_${row.erp_sucursal_id}`] = { enviados: 0, sinStock: 0, porRegla: 0 };
         });
-        if (itemData) {
-            itemData.forEach(item => {
-                const k = `act_${item.pedido_id}_${item.erp_sucursal_id}`;
-                if (!stats[k]) stats[k] = { enviados: 0, sinStock: 0, porRegla: 0 };
-                if (item.cantidad_asignada > 0) stats[k].enviados++;
-                if (item.sin_stock)             stats[k].sinStock++;
-                if (item.revision_minmax)       stats[k].porRegla++;
+        const ids = [...new Set(rows.map(r => r.pedido_id))];
+        if (ids.length) {
+            const { data: statRows } = await supabase.rpc('get_pedido_item_stats', { p_pedido_ids: ids });
+            (statRows ?? []).forEach(s => {
+                const k = `act_${s.pedido_id}_${s.erp_sucursal_id}`;
+                stats[k] = { enviados: s.enviados, sinStock: s.sin_stock, porRegla: s.por_regla };
             });
         }
         setCardStats(stats);
@@ -1421,9 +1414,11 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                             const cardApoyo = apoyoMap[cardKey] ?? [];
 
+                            const canApoyo = !isBranch && ['sin_iniciar','preparando','pausado'].includes(stage);
+
                             return (
-                                <motion.div
-                                    key={cardKey} layout
+                                <div
+                                    key={cardKey}
                                     className={`${GLASS} cursor-pointer select-none ${
                                         stage === 'pausado'
                                             ? 'ring-2 ring-amber-400 shadow-[0_4px_20px_rgba(251,191,36,0.25)]'
@@ -1433,28 +1428,27 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     onClick={() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id)}
                                 >
                                     {/* Header */}
-                                    <div className="flex items-center gap-2.5 px-4 py-3 flex-wrap">
+                                    <div className="flex items-center gap-2 px-3 py-2 flex-wrap">
                                         {stage === 'pausado' && (
-                                            <motion.span
-                                                className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-white shrink-0 shadow-sm"
-                                                animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.4, repeat: Infinity }}
-                                            >
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-white shrink-0 shadow-sm animate-pulse">
                                                 ⏸ Pausado
-                                            </motion.span>
+                                            </span>
                                         )}
-                                        <span className="text-[14px] font-black text-slate-800 tabular-nums shrink-0">#{row.numero}</span>
+                                        <span className="text-[13px] font-black text-slate-800 tabular-nums shrink-0">
+                                            {row.codigo ?? `#${row.numero}`}
+                                        </span>
                                         <SucPill sucId={row.erp_sucursal_id} />
-                                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${PEDIDO_PILL[row.pedido_status] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${PEDIDO_PILL[row.pedido_status] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>
                                             {PEDIDO_LABEL[row.pedido_status] ?? row.pedido_status}
                                         </span>
-                                        <span className="ml-auto text-[11px] text-slate-600 tabular-nums shrink-0">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
-                                        {isExp ? <ChevronDown size={14} className="text-slate-500 shrink-0" /> : <ChevronRight size={14} className="text-slate-500 shrink-0" />}
+                                        <span className="ml-auto text-[10px] text-slate-500 tabular-nums shrink-0">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
+                                        {isExp ? <ChevronDown size={13} className="text-slate-400 shrink-0" /> : <ChevronRight size={13} className="text-slate-400 shrink-0" />}
                                     </div>
-                                    {row.notes && <p className="px-4 pb-2 text-[12px] text-slate-600 italic">{row.notes}</p>}
+                                    {row.notes && <p className="px-3 pb-1.5 text-[11px] text-slate-600 italic">{row.notes}</p>}
 
-                                    {/* Stats pills — visible in collapsed card */}
+                                    {/* Stats pills */}
                                     {cardStats[cardKey] && (
-                                        <div className="flex items-center gap-1.5 px-4 pb-2 flex-wrap" onClick={e => e.stopPropagation()}>
+                                        <div className="flex items-center gap-1 px-3 pb-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
                                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
                                                 {cardStats[cardKey].enviados} enviados
                                             </span>
@@ -1473,53 +1467,52 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     {/* Apoyo display */}
                                     {cardApoyo.length > 0 && (
-                                        <div className="flex items-center gap-1.5 px-4 pb-1 flex-wrap">
+                                        <div className="flex items-center gap-1.5 px-3 pb-1 flex-wrap">
                                             <span className="text-[10px] text-slate-500 uppercase tracking-wide shrink-0">Apoyo</span>
                                             {cardApoyo.map(a => (
                                                 a.photo_url
-                                                    ? <img key={a.id} src={a.photo_url} title={a.name} className="w-6 h-6 rounded-full object-cover border-2 border-white shadow-sm" alt="" />
-                                                    : <span key={a.id} title={a.name} className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center"><UserCircle2 size={12} className="text-slate-500" /></span>
+                                                    ? <img key={a.id} src={a.photo_url} title={a.name} className="w-5 h-5 rounded-full object-cover border-2 border-white shadow-sm" alt="" />
+                                                    : <span key={a.id} title={a.name} className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center"><UserCircle2 size={11} className="text-slate-500" /></span>
                                             ))}
                                         </div>
                                     )}
 
                                     {/* Lifecycle Timeline */}
-                                    <div className="border-t border-slate-100 px-4 pt-3 pb-2">
+                                    <div className="border-t border-slate-100 px-3 pt-2 pb-1.5">
                                         <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} />
                                     </div>
 
                                     {/* Actions + status strip */}
-                                    <div className="flex items-center gap-3 px-4 pb-3 flex-wrap" onClick={e => e.stopPropagation()}>
+                                    <div className="flex items-center gap-2 px-3 pb-2 flex-wrap" onClick={e => e.stopPropagation()}>
                                         <StagePill stage={stage} />
-                                        {elapsedPrep  && <span className="text-[11px] text-slate-600 tabular-nums">{elapsedPrep}</span>}
+                                        {elapsedPrep  && <span className="text-[10px] text-slate-600 tabular-nums">{elapsedPrep}</span>}
                                         {elapsedPause && (
-                                            <motion.span className="text-[11px] text-amber-700 font-semibold tabular-nums"
-                                                animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.4, repeat: Infinity }}>
+                                            <span className="text-[10px] text-amber-700 font-semibold tabular-nums animate-pulse">
                                                 {elapsedPause} en pausa
-                                            </motion.span>
+                                            </span>
                                         )}
-                                        {elapsedTrans && <span className="text-[11px] text-indigo-600 tabular-nums">{elapsedTrans} en ruta</span>}
-                                        <div className="ml-auto flex items-center gap-2 flex-wrap">
-                                            {!isBranch && (
+                                        {elapsedTrans && <span className="text-[10px] text-indigo-600 tabular-nums">{elapsedTrans} en ruta</span>}
+                                        <div className="ml-auto flex items-center gap-1.5 flex-wrap">
+                                            {canApoyo && (
                                                 <button
                                                     onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey })}
                                                     disabled={isLCBusy}
-                                                    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all disabled:opacity-50"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all disabled:opacity-50"
                                                 >
-                                                    <UserPlus size={11} />Apoyo
+                                                    <UserPlus size={10} />Apoyo
                                                 </button>
                                             )}
-                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar')}   disabled={isLCBusy}    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Play     size={11} fill="currentColor" />Iniciar</>}</button>}
-                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Pause    size={11} fill="currentColor" />Pausar</>}</button>}
-                                            {canFinalizar    && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'finalizar')} disabled={isLCBusy}    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><Flag     size={11} />Finalizar</>}</button>}
-                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={12} className="animate-spin" /> : <><RotateCcw size={11} />Reanudar</>}</button>}
-                                            {canMarcarEnRuta && <button onClick={() => handleMarcarEnRuta(row.pedido_id)}                               disabled={isEnvioBusy} className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={12} className="animate-spin" /> : <><Truck size={11} />Marcar en Ruta</>}</button>}
+                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar')}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
+                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
+                                            {canFinalizar    && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'finalizar')} disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Flag     size={10} />Finalizar</>}</button>}
+                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
+                                            {canMarcarEnRuta && <button onClick={() => handleMarcarEnRuta(row.pedido_id)}                               disabled={isEnvioBusy} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={11} className="animate-spin" /> : <><Truck size={10} />En Ruta</>}</button>}
                                         </div>
                                     </div>
 
                                     <AnimatePresence>
                                         {isExp && (
-                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden" onClick={e => e.stopPropagation()}>
+                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden" onClick={e => e.stopPropagation()}>
                                                 <ItemSections allItems={items[cardKey] ?? []} loading={loadingItems && !items[cardKey]} />
                                                 {isBranch && erpSucursalId && row.pedido_status === 'enviado' && (
                                                     <ReceptionActions
@@ -1535,7 +1528,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
-                                </motion.div>
+                                </div>
                             );
                         })}
                     </div>

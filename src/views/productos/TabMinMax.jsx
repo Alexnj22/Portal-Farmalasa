@@ -2772,8 +2772,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             if (isBodega && filtered.length > 0) {
                                 const ids = filtered.map(r => r.erp_product_id);
                                 const [nsRes, spRes] = await Promise.all([
-                                    supabase.rpc('get_sucursal_net_stock', { p_product_ids: ids }),
-                                    supabase.rpc('get_top_supplier_per_product', { p_product_ids: ids }),
+                                    supabase.rpc('get_sucursal_net_stock', { p_product_ids: ids }).range(0, 9999),
+                                    supabase.rpc('get_top_supplier_per_product', { p_product_ids: ids }).range(0, 9999),
                                 ]);
                                 if (nsRes.data) nsRes.data.forEach(r => { netStockMap[r.erp_product_id] = r.net_stock; });
                                 if (spRes.data) spRes.data.forEach(r => { supplierMap[r.erp_product_id] = r.proveedor; });

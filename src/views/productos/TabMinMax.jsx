@@ -3707,7 +3707,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             const displayTipo = capTipo(isGenericUnit ? (spTipo || 'und') : spTipo);
                                             const displayFactor = sp?.factor ?? 1;
                                             const displayDesc = sp?.descripcion ?? null;
-                                            const baseLabel = displayFactor > 1
+                                            const factorInName = displayFactor > 1 && new RegExp(`\\b${displayFactor}\\b`).test(spTipo);
+                                            const baseLabel = displayFactor > 1 && !factorInName
                                                 ? `${displayTipo} ×${displayFactor}`
                                                 : displayDesc
                                                 ? `${displayTipo} ${displayDesc}`

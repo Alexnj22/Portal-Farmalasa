@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.204';
+export const APP_VERSION = '2.2.205';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.205 — fix(minmax/pres): columna Presentación ahora usa catalog_base_pres (product_precios JOIN presentaciones por id_presentacion, factor ASC) en vez de inv_base_pres; corrige ELEQUINE 750 X 20 y todos los productos donde dos filas de product_precios comparten la misma descripcion pero distinto factor — pres_factors MAX(factor) borraba la UNIDAD (factor=1) y la base quedaba CAJA X 20
 // v2.2.204 — fix(minmax/pres): "Caja x 20 ×20" → "Caja x 20"; si el tipo ya contiene el factor como número no se agrega ×N; afectaba 161 productos (ELEQUINE y similares con presentacion="CAJA X N" y factor=N en product_precios)
 // v2.2.203 — fix(minmax/csv): presentaciones en CSV bodega usan nombres reales (CAJA/BLISTER) en vez de códigos ERP (1x10); un solo scan de inventory vía inv_all_pres → inv_base_pres + inv_other_pres_agg; fallback: red > catalog ERP
 // v2.2.202 — perf(minmax/bodega): realtime quirúrgico — product_stock_params en publicación supabase_realtime; payload postgres_changes parchea solo la fila afectada (effective/pub/alert_status) sin RPC extra ni reload de tabla

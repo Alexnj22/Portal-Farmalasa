@@ -1,0 +1,10 @@
+-- Fix: presentación base se tomaba de inv_all_pres (vía pres_factors MAX(factor))
+-- y perdía factor=1 cuando dos filas de product_precios compartían la misma descripcion.
+-- Ejemplo: ELEQUINE 750 X 20 — descripcion="1" con factor=1 Y factor=20.
+-- Ambas tienen descripcion="1"; pres_factors hace MAX(factor)=20, borrando la UNIDAD.
+-- inv_all_pres solo veía factor=20; inv_base_pres lo tomaba como "base".
+-- Solución: catalog_base_pres usa product_precios JOIN presentaciones por id_presentacion
+-- (columna entero exacto, sin ambigüedad por descripcion), ordered by factor ASC.
+-- ELEQUINE: id_presentacion=1→UNIDAD factor=1 (correcto), id_presentacion=6→CAJA X 20 factor=20.
+-- catalog_base_pres se usa como fuente primaria; inv_base_pres como fallback.
+-- Aplicado en BD: 2026-06-19.

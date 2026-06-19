@@ -2687,7 +2687,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         { key: 'laboratorio',   label: 'Laboratorio', align: 'left',   sortable: true, className: 'w-[18%]' },
         { key: 'abc_xyz',       label: 'Clase',       align: 'center', sortable: true, className: 'w-14' },
         { key: 'effective_min', label: 'MIN · MAX',   align: 'center', sortable: true, className: 'w-[150px]' },
-        { key: 'presentacion',  label: 'Despacho',    align: 'center', className: 'w-[130px]' },
+        { key: 'presentacion',  label: 'Presentación', align: 'center', className: 'w-[130px]' },
         { key: 'acciones',      label: 'Acciones',    align: 'center', className: 'w-20' },
     ];
 
@@ -3670,21 +3670,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             };
 
                                             return (
-                                                <div className="flex flex-col items-center gap-1">
-                                                    {/* Pill: baseLabel + rule separator inline */}
-                                                    <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border leading-tight bg-slate-100 text-slate-600 border-slate-200 gap-1 whitespace-nowrap">
-                                                        {baseLabel}
-                                                        {ruleNote && <>
-                                                            <span className="w-px h-2.5 bg-slate-300 inline-block" />
-                                                            <span className="text-[9px] font-semibold text-slate-400">{ruleNote}</span>
-                                                        </>}
-                                                    </span>
-                                                    <span className={`text-[10px] font-semibold tabular-nums leading-none ${hasPres ? 'text-slate-600' : 'text-slate-400'} flex items-center gap-0.5`}>
-                                                        <span>{dispMin ? formatUnits(applyRule(dispMin), pres) : '—'}</span>
-                                                        <span className="text-slate-300 mx-0.5">·</span>
-                                                        <span className="text-slate-400">{dispMax ? formatUnits(applyRule(dispMax), pres) : '—'}</span>
-                                                    </span>
-                                                </div>
+                                                <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border leading-tight bg-slate-100 text-slate-600 border-slate-200 gap-1 whitespace-nowrap">
+                                                    {baseLabel}
+                                                    {ruleNote && <>
+                                                        <span className="w-px h-2.5 bg-slate-300 inline-block" />
+                                                        <span className="text-[9px] font-semibold text-slate-400">{ruleNote}</span>
+                                                    </>}
+                                                </span>
                                             );
                                         })()}
                                     </DataCell>

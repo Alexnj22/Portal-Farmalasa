@@ -258,9 +258,9 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {},
 
             const alertLabel = (() => {
                 if (bodegaStock === 0) return 'SIN STOCK';
+                if (!hasVal) return 'SIN MIN/MAX';
                 const hasVel = vel > 0 && isFinite(daysCoverage);
                 const d = hasVel ? Math.round(daysCoverage) : null;
-                // Bajo el MIN de bodega → CRÍTICO siempre (aunque la red tenga días)
                 if (belowBodegaMin) return d !== null ? `CRÍTICO (${d}d red)` : 'CRÍTICO';
                 if (!hasVel) return '';
                 if (daysCoverage < 14) return `CRÍTICO (${d}d)`;
@@ -269,7 +269,7 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {},
             })();
 
             const cantidadAPedir = hasVal ? Math.max(0, maxPres - invPres) : '';
-            const proveedor = supplierMap[r.erp_product_id] || '';
+            const proveedor = supplierMap[r.erp_product_id] || 'Sin registro';
 
             return [
                 `"${(sucursalName||'').replace(/"/g,'""')}"`,

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.199';
+export const APP_VERSION = '2.2.200';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.200 — feat(minmax/bodega): modelo aditivo — manual_min/max ahora es DELTA (excedente sobre Σ sucursales), no reemplazo; effective = sum + delta; si salas bajan a 0 bodega conserva solo su excedente; si salas suben bodega escala automáticamente; migración de datos existentes: old_manual − sum = nuevo delta
 // v2.2.199 — fix(minmax/bodega): trigger sync_bodega_draft_from_branch — antes siempre escribía draft_status='pending' en bodega aunque todas las sucursales estuvieran publicadas; ahora: si ALL sucursales publicadas → bodega actualiza min_units/max_units en modo live (none); 2,075 productos promovidos retroactivamente de borrador a live; 1,308 siguen pending porque tienen sucursales con borradores reales
 // v2.2.198 — fix(minmax/rpc): get_stock_analysis — columna Presentación mostraba la presentación MAYOR; nuevo CTE inv_base_pres busca la presentación con factor más pequeño en TODAS las sucursales (incluso bodega sin stock propio); va primero en el array para que "BLISTER" tenga prioridad sobre código ERP "1X10" al mismo factor
 // v2.2.197 — fix(minmax/ui): columna "Despacho" renombrada a "Presentación"; segunda fila MIN/MAX eliminada de la celda — solo queda la pill con tipo+factor (ej. "Blíster ×10")

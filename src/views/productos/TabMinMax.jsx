@@ -2192,9 +2192,13 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             }
             const col    = edit.field === 'min' ? 'manual_min' : 'manual_max';
             const effCol = edit.field === 'min' ? 'effective_min' : 'effective_max';
+            // Modelo aditivo: guardar el DELTA (excedente sobre el sum de sucursales).
+            // effective = sum + delta. Si no hay excedente (numVal === floor), delta = null.
+            const delta = numVal - floor;
+            const deltaToStore = delta > 0 ? delta : null;
             const { error: e } = await supabase.from('product_stock_params')
                 .upsert(
-                    { erp_product_id: edit.productId, erp_sucursal_id: 6, [col]: numVal, updated_at: new Date().toISOString() },
+                    { erp_product_id: edit.productId, erp_sucursal_id: 6, [col]: deltaToStore, updated_at: new Date().toISOString() },
                     { onConflict: 'erp_product_id,erp_sucursal_id' }
                 );
             if (e) { useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error'); return; }
@@ -2202,13 +2206,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 if (r.erp_product_id !== edit.productId || r._erp_sucursal_id !== 6) return r;
                 const newMin = edit.field === 'min' ? (numVal ?? 0) : (r.effective_min ?? 0);
                 const newMax = edit.field === 'max' ? (numVal ?? 0) : (r.effective_max ?? 0);
-                return { ...r, [effCol]: numVal ?? 0, has_manual: true, alert_status: calcAlertStatus(r.current_stock, newMin, newMax) };
+                return { ...r, [effCol]: numVal ?? 0, has_manual: deltaToStore !== null, alert_status: calcAlertStatus(r.current_stock, newMin, newMax) };
             }));
             useStaff.getState().appendAuditLog('MINMAX_BODEGA_MANUAL_OVERRIDE', String(edit.productId), {
                 field: edit.field === 'min' ? 'MIN' : 'MAX',
                 product: targetRow?.product_name,
                 old_value: edit.field === 'min' ? (targetRow?.effective_min ?? 0) : (targetRow?.effective_max ?? 0),
                 new_value: numVal,
+                delta: deltaToStore,
                 pub_sum: floor,
             });
             return;
@@ -2318,18 +2323,24 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 useToastStore.getState().showToast(productName || 'Producto', `MAX de Bodega no puede ser menor a la Σ sucursales (${floorMax.toLocaleString()})`, 'error');
                 return;
             }
+            // Modelo aditivo: guardar DELTA = total ingresado − sum sucursales.
+            const deltaMin = minNum - floorMin;
+            const deltaMax = maxNum - floorMax;
+            const deltaMinStore = deltaMin > 0 ? deltaMin : null;
+            const deltaMaxStore = deltaMax > 0 ? deltaMax : null;
             const { error: e } = await supabase.from('product_stock_params')
-                .upsert({ erp_product_id: productId, erp_sucursal_id: 6, manual_min: minNum, manual_max: maxNum, updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
+                .upsert({ erp_product_id: productId, erp_sucursal_id: 6, manual_min: deltaMinStore, manual_max: deltaMaxStore, updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
             if (e) { useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return; }
             setData(prev => prev.map(r => {
                 if (r.erp_product_id !== productId || r._erp_sucursal_id !== 6) return r;
-                return { ...r, effective_min: minNum ?? 0, effective_max: maxNum ?? 0, has_manual: true, alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
+                return { ...r, effective_min: minNum ?? 0, effective_max: maxNum ?? 0, has_manual: deltaMinStore !== null || deltaMaxStore !== null, alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
             }));
             useStaff.getState().appendAuditLog('MINMAX_BODEGA_MANUAL_OVERRIDE', String(productId), {
                 field: 'min+max', product: productName,
                 old_min: targetRow?.effective_min ?? 0, old_max: targetRow?.effective_max ?? 0,
                 new_min: minNum, new_max: maxNum,
-                pub_sum_min: targetRow?.pub_min ?? 0, pub_sum_max: targetRow?.pub_max ?? 0,
+                delta_min: deltaMinStore, delta_max: deltaMaxStore,
+                pub_sum_min: floorMin, pub_sum_max: floorMax,
             });
             return;
         }
@@ -3521,8 +3532,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     ));
                                                 }
                                                 const toastMsg = (freshFloorMin > 0 || freshFloorMax > 0)
-                                                    ? `Σ sucursales: MIN ${freshFloorMin.toLocaleString()} · MAX ${freshFloorMax.toLocaleString()} — el valor debe ser igual o mayor.`
-                                                    : 'Bodega sin valores en sucursales aún. Podés ingresar un valor manual.';
+                                                    ? `Σ sucursales: MIN ${freshFloorMin.toLocaleString()} · MAX ${freshFloorMax.toLocaleString()} — ingresá el total de bodega (sum + excedente).`
+                                                    : 'Sin MIN/MAX en salas. Ingresá el excedente que debe quedar en bodega.';
                                                 useToastStore.getState().showToast('Bodega', toastMsg, 'info');
                                                 setInlineDraftEdit({
                                                     productId: row.erp_product_id, sucursalId: row._erp_sucursal_id,

@@ -1387,8 +1387,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                             <div className="relative z-10 w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-4 bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-blue-400">
                                 <Inbox size={34} strokeWidth={1.5} />
                             </div>
-                            <h3 className="font-bold text-[18px] text-slate-700 tracking-tight mb-1">Sin pedidos activos</h3>
-                            <p className="text-[13px] text-slate-400 max-w-[240px] leading-relaxed">No hay pedidos en curso para los filtros seleccionados.</p>
+                            <h3 className="font-bold text-[18px] text-slate-700 tracking-tight">Sin pedidos activos</h3>
                         </div>
                     </div>
                 ) : (
@@ -1557,8 +1556,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                             <div className="relative z-10 w-16 h-16 rounded-[1.25rem] flex items-center justify-center mb-3 bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-slate-400">
                                 <History size={28} strokeWidth={1.5} />
                             </div>
-                            <h3 className="font-bold text-[16px] text-slate-600 tracking-tight mb-1">Sin historial</h3>
-                            <p className="text-[12px] text-slate-400 max-w-[220px] leading-relaxed">No hay pedidos completados en el período seleccionado.</p>
+                            <h3 className="font-bold text-[16px] text-slate-700 tracking-tight">Sin historial</h3>
                         </div>
                     </div>
                 ) : (

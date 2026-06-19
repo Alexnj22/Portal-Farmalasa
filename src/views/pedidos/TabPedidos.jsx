@@ -803,12 +803,12 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp }) {
 
                             {/* Responsible person mini-avatar */}
                             {node.emp && (
-                                <div className="flex items-center gap-0.5 mt-1">
+                                <div className="flex flex-col items-center gap-0.5 mt-1">
                                     {node.emp.photo
-                                        ? <img src={node.emp.photo} className="w-4 h-4 rounded-full object-cover border border-white shadow-sm shrink-0" alt="" />
-                                        : <span className="w-4 h-4 rounded-full bg-slate-200 flex items-center justify-center shrink-0"><UserCircle2 size={9} className="text-slate-500" /></span>
+                                        ? <img src={node.emp.photo} className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-md shrink-0" alt="" />
+                                        : <span className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center shrink-0"><UserCircle2 size={13} className="text-slate-500" /></span>
                                     }
-                                    <span className="text-[8px] text-slate-600 leading-tight">{node.emp.name?.split(' ')[0]}</span>
+                                    <span className="text-[9px] text-slate-600 leading-tight font-medium text-center">{node.emp.name?.split(' ')[0]}</span>
                                 </div>
                             )}
                         </div>
@@ -968,14 +968,6 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
                 </>
             )}
 
-            {/* Estado */}
-            <div className="flex items-center gap-1 px-2">
-                {statusBtn('confirmado', 'Pendientes')}
-                {statusBtn('enviado', 'En camino')}
-            </div>
-
-            <div className="h-5 w-px bg-slate-100 shrink-0" />
-
             {/* Fecha */}
             <div className="flex items-center">
                 <div className="px-2 py-2 overflow-visible">
@@ -986,6 +978,14 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
+            </div>
+
+            <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+            {/* Estado */}
+            <div className="flex items-center gap-1 px-2">
+                {statusBtn('confirmado', 'Pendientes')}
+                {statusBtn('enviado', 'En camino')}
             </div>
 
             {hasActive && (
@@ -1054,6 +1054,9 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [apoyoMap,   setApoyoMap]   = useState({}); // cardKey → [{id, name, photo_url}]
     const [apoyoModal, setApoyoModal] = useState(null); // { pedidoId, sucId, cardKey }
 
+    // Card stats (for collapsed pill display)
+    const [cardStats,  setCardStats]  = useState({}); // cardKey → { enviados, sinStock, porRegla }
+
     // ── Branch ERP ────────────────────────────────────────────────────────────
 
     useEffect(() => {
@@ -1073,7 +1076,25 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     const loadActive = useCallback(async () => {
         const { data, error } = await supabase.rpc('get_pedidos_en_curso');
-        if (!error) setActiveRows(data ?? []);
+        if (error) return;
+        setActiveRows(data ?? []);
+        const ids = [...new Set((data ?? []).map(r => r.pedido_id))];
+        if (!ids.length) { setCardStats({}); return; }
+        const { data: itemData } = await supabase
+            .from('pedido_items')
+            .select('pedido_id, erp_sucursal_id, cantidad_asignada, sin_stock, revision_minmax')
+            .in('pedido_id', ids)
+            .range(0, 4999);
+        if (!itemData) return;
+        const stats = {};
+        itemData.forEach(item => {
+            const k = `act_${item.pedido_id}_${item.erp_sucursal_id}`;
+            if (!stats[k]) stats[k] = { enviados: 0, sinStock: 0, porRegla: 0 };
+            if (item.cantidad_asignada > 0) stats[k].enviados++;
+            if (item.sin_stock)             stats[k].sinStock++;
+            if (item.revision_minmax)       stats[k].porRegla++;
+        });
+        setCardStats(stats);
     }, []);
 
     const loadHistory = useCallback(async (page = 0, suc = '', date = null) => {
@@ -1282,8 +1303,8 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     // ── Derived ───────────────────────────────────────────────────────────────
 
-    const searchLower   = searchTerm.toLowerCase();
-    const filterOptions = ERP_ORDER.map(id => ({ value: id, label: ERP_NAMES[id] ?? `Suc. ${id}` }));
+    const searchLower   = useMemo(() => searchTerm.toLowerCase(), [searchTerm]);
+    const filterOptions = useMemo(() => ERP_ORDER.map(id => ({ value: id, label: ERP_NAMES[id] ?? `Suc. ${id}` })), []);
 
     // Group activeRows by pedido to detect if ALL sucursales for a pedido are preparado
     const pedidoStageMap = useMemo(() => {
@@ -1298,27 +1319,30 @@ export default function TabPedidos({ searchTerm = '' }) {
         return map;
     }, [activeRows]);
 
-    let filteredRows = activeRows;
-    if (filterSuc)              filteredRows = filteredRows.filter(r => r.erp_sucursal_id === Number(filterSuc));
-    if (filterStatus !== 'all') filteredRows = filteredRows.filter(r => r.pedido_status === filterStatus);
-    if (filterDate) {
-        const [desde, hasta] = filterDate.split('|');
-        filteredRows = filteredRows.filter(r => {
-            const d = r.created_at?.slice(0, 10);
-            return (!desde || d >= desde) && (!hasta || d <= hasta);
-        });
-    }
-    if (searchLower) filteredRows = filteredRows.filter(r => String(r.numero).includes(searchLower) || (r.notes ?? '').toLowerCase().includes(searchLower));
-
     const STAGE_ORDER = { preparando: 0, transito: 1, contando: 2, pausado: 3, preparado: 4, sin_iniciar: 5, erp: 6 };
-    filteredRows = [...filteredRows].sort((a, b) => {
-        const sa = STAGE_ORDER[getBranchStage(a, a.pedido_status)] ?? 5;
-        const sb = STAGE_ORDER[getBranchStage(b, b.pedido_status)] ?? 5;
-        return sa !== sb ? sa - sb : new Date(b.created_at) - new Date(a.created_at);
-    });
 
-    const filteredHistory = history.filter(p =>
-        !searchLower || String(p.numero).includes(searchLower) || (p.notes ?? '').toLowerCase().includes(searchLower)
+    const filteredRows = useMemo(() => {
+        let rows = activeRows;
+        if (filterSuc)              rows = rows.filter(r => r.erp_sucursal_id === Number(filterSuc));
+        if (filterStatus !== 'all') rows = rows.filter(r => r.pedido_status === filterStatus);
+        if (filterDate) {
+            const [desde, hasta] = filterDate.split('|');
+            rows = rows.filter(r => {
+                const d = r.created_at?.slice(0, 10);
+                return (!desde || d >= desde) && (!hasta || d <= hasta);
+            });
+        }
+        if (searchLower) rows = rows.filter(r => String(r.numero).includes(searchLower) || (r.notes ?? '').toLowerCase().includes(searchLower));
+        return [...rows].sort((a, b) => {
+            const sa = STAGE_ORDER[getBranchStage(a, a.pedido_status)] ?? 5;
+            const sb = STAGE_ORDER[getBranchStage(b, b.pedido_status)] ?? 5;
+            return sa !== sb ? sa - sb : new Date(b.created_at) - new Date(a.created_at);
+        });
+    }, [activeRows, filterSuc, filterStatus, filterDate, searchLower]); // eslint-disable-line
+
+    const filteredHistory = useMemo(() =>
+        history.filter(p => !searchLower || String(p.numero).includes(searchLower) || (p.notes ?? '').toLowerCase().includes(searchLower)),
+        [history, searchLower]
     );
 
     // ── Render ────────────────────────────────────────────────────────────────
@@ -1423,21 +1447,34 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     </div>
                                     {row.notes && <p className="px-4 pb-2 text-[12px] text-slate-600 italic">{row.notes}</p>}
 
-                                    {/* Employee chips — creator + initiator + apoyo */}
-                                    {(creator || iniciador || cardApoyo.length > 0) && (
-                                        <div className="flex items-center gap-4 px-4 pb-2.5 flex-wrap">
-                                            {creator   && <EmpChip emp={creator}   label="Generó" />}
-                                            {iniciador && <EmpChip emp={iniciador} label="Inició" />}
-                                            {cardApoyo.length > 0 && (
-                                                <span className="inline-flex items-center gap-1.5 shrink-0">
-                                                    <span className="text-[10px] text-slate-500 uppercase tracking-wide">Apoyo</span>
-                                                    {cardApoyo.map(a => (
-                                                        a.photo_url
-                                                            ? <img key={a.id} src={a.photo_url} title={a.name} className="w-5 h-5 rounded-full object-cover border border-white shadow-sm" alt="" />
-                                                            : <span key={a.id} title={a.name} className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center"><UserCircle2 size={11} className="text-slate-500" /></span>
-                                                    ))}
+                                    {/* Stats pills — visible in collapsed card */}
+                                    {cardStats[cardKey] && (
+                                        <div className="flex items-center gap-1.5 px-4 pb-2 flex-wrap" onClick={e => e.stopPropagation()}>
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
+                                                {cardStats[cardKey].enviados} enviados
+                                            </span>
+                                            {cardStats[cardKey].sinStock > 0 && (
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200">
+                                                    {cardStats[cardKey].sinStock} sin stock
                                                 </span>
                                             )}
+                                            {cardStats[cardKey].porRegla > 0 && (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+                                                    <AlertTriangle size={9} />{cardStats[cardKey].porRegla} por regla
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Apoyo display */}
+                                    {cardApoyo.length > 0 && (
+                                        <div className="flex items-center gap-1.5 px-4 pb-1 flex-wrap">
+                                            <span className="text-[10px] text-slate-500 uppercase tracking-wide shrink-0">Apoyo</span>
+                                            {cardApoyo.map(a => (
+                                                a.photo_url
+                                                    ? <img key={a.id} src={a.photo_url} title={a.name} className="w-6 h-6 rounded-full object-cover border-2 border-white shadow-sm" alt="" />
+                                                    : <span key={a.id} title={a.name} className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center"><UserCircle2 size={12} className="text-slate-500" /></span>
+                                            ))}
                                         </div>
                                     )}
 

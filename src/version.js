@@ -5,10 +5,12 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.182';
+export const APP_VERSION = '2.2.183';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.183 — feat(pedidos/TabPedidos): 5 mejoras — (1) FilterPill: fecha se mueve antes de los status buttons (Sucursal → Fecha → Estado); (2) EmpChips duplicados eliminados sobre la timeline; avatares de creador/iniciador en timeline ampliados a w-7 h-7; (3) apoyo display simplificado solo con avatares; (4) pills de stats en card sin desplegar (enviados/sin stock/por regla con ⚠); (5) filteredRows y filteredHistory memoizados con useMemo
+// v2.2.182 — fix(pedidos): cleanup — migración incorrecta borrada (20260618_get_pedido_preview_garantia_minima.sql) y TabMinMaxComparacion.jsx eliminado (componente no usado)
 // v2.2.181 — fix(distribucion): get_pedido_preview v5 — regla de despacho siempre se respeta; parcial solo cuando bodega tiene menos de 1 dispatch_unit (huérfanos); revision_minmax usa asignado_raw=0 en vez de asignado_final=0 para no confundir regla correctamente bloqueada con escasez real
 // v2.2.180 — fix(distribucion): get_pedido_preview — segundo WHEN en con_reglas requería asignado_uncapped > 0; sin esa guarda, productos con fracción < 40% (uncapped=0) y max_asignable grande enviaban FLOOR(max_asignable/unit_base)*unit_base en vez del parcial correcto (ej. VIROGRIP enviaba 96 cuando solo necesitaba 7)
 // v2.2.179 — fix(distribucion): get_pedido_preview — si bodega asignó packs pero la fracción no llega al 40% del dispatch_unit, ahora se envía asignado_raw como despacho parcial en vez de bloquear con cero. revision_minmax queda solo para sucursales donde asignado_raw=0 (bodega genuinamente sin stock para esa sucursal)

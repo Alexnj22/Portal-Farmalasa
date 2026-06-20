@@ -136,10 +136,9 @@ export default function TabGenerar({ searchTerm = '' }) {
                 ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected] }
                 : { p_sucursal_ids: [...selected] };
             const { data, error: rpcErr } = await supabase
-                .rpc('get_pedido_preview', rpcParams)
-                .range(0, 49999);
+                .rpc('get_pedido_preview', rpcParams);
             if (rpcErr) throw rpcErr;
-            const rows = data || [];
+            const rows = Array.isArray(data) ? data : [];
             if (rows.length === 0) {
                 const msg = 'Las sucursales seleccionadas están abastecidas — no hay nada que pedir.';
                 setError(msg);

@@ -113,9 +113,7 @@ function getBranchStage(row, pedidoStatus) {
 // solicitado = need in presentation units before dispatch rounding
 function calcSolicitado(row) {
     if (row.max_qty_snapshot == null || row.stock_packs_snapshot == null) return null;
-    const factor = row.factor || 1;
-    const needUnits = row.max_qty_snapshot - row.stock_packs_snapshot * factor;
-    return Math.max(0, Math.ceil(needUnits / factor));
+    return Math.max(0, Math.ceil(row.max_qty_snapshot - row.stock_packs_snapshot));
 }
 
 function fmtRegla(row) {

@@ -7,11 +7,23 @@ import {
     Printer, Check, X,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useToastStore } from '../../store/toastStore';
 import { DataTable, DataRow } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
 import { printPerSucursal, buildPedidoCodigo, fefoProject } from '../../utils/pedidoPrint';
 import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
+
+function friendlyError(e) {
+    const msg = e?.message || String(e);
+    if (/statement timeout|canceling statement/i.test(msg))
+        return 'El cálculo tardó demasiado. Intenta seleccionando menos sucursales a la vez.';
+    if (/Failed to fetch|NetworkError|network/i.test(msg))
+        return 'Error de conexión. Verifica tu internet e intenta de nuevo.';
+    if (/abastecida|nada que pedir/i.test(msg))
+        return msg;
+    return 'Ocurrió un error al generar el pedido. Intenta de nuevo.';
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -48,6 +60,7 @@ const SUC_ANIM_CSS = `
 // ── Main component ───────────────────────────────────────────────────────────
 export default function TabGenerar({ searchTerm = '' }) {
     const { user } = useAuth();
+    const showToast = useToastStore(s => s.showToast);
 
     const [selected,   setSelected]   = useState(new Set());
     const [globalMode, setGlobalMode] = useState(false);
@@ -128,7 +141,9 @@ export default function TabGenerar({ searchTerm = '' }) {
             if (rpcErr) throw rpcErr;
             const rows = data || [];
             if (rows.length === 0) {
-                setError('Las sucursales seleccionadas están abastecidas — no hay nada que pedir.');
+                const msg = 'Las sucursales seleccionadas están abastecidas — no hay nada que pedir.';
+                setError(msg);
+                showToast('Sin necesidades', msg, 'info');
                 return;
             }
             const pItems = rows.map(row => ({
@@ -186,6 +201,11 @@ export default function TabGenerar({ searchTerm = '' }) {
             }).then(() => {}).catch(() => {});
 
             printPerSucursal(map, sucIds, r => r.cantidad_asignada, codigoFn, meta);
+            showToast(
+                `Pedido #${ped?.numero} confirmado`,
+                `${pItems.length} productos en ${sucIds.length} sucursal${sucIds.length > 1 ? 'es' : ''}. PDF listo para imprimir.`,
+                'success',
+            );
             setConfirmed({
                 id: pedidoId, numero: ped?.numero,
                 frozenGrouped: map, frozenSucIds: sucIds, codigosMap, printMeta: meta,
@@ -193,11 +213,13 @@ export default function TabGenerar({ searchTerm = '' }) {
             setSelected(new Set());
             refreshStats();
         } catch (e) {
-            setError(e.message);
+            const msg = friendlyError(e);
+            setError(msg);
+            showToast('Error al generar el pedido', msg, 'error');
         } finally {
             setConfirming(false);
         }
-    }, [selected, globalMode, employees, user, refreshStats]);
+    }, [selected, globalMode, employees, user, refreshStats, showToast]);
 
     // ── Derived maps ───────────────────────────────────────────
     const statMap = useMemo(() => {

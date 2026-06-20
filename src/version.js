@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.208';
+export const APP_VERSION = '2.2.209';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.209 — refactor(minmax): elimina erp_minmax — cron sync-erp-minmax-hourly desactivado, tabla erp_minmax eliminada, edge function sync-erp-minmax borrada; todas las funciones DB (get_pedido_preview, get_pedido_sucursal_stats, get_pedido_sin_bodega, get_stagnant_inventory, get_no_sales_products, get_products_sold_no_minmax, get_product_sales_agg) migradas a usar product_stock_params; parámetro p_use_portal_minmax eliminado de 2 RPCs; TabGenerar.jsx actualizado
 // v2.2.208 — fix(minmax/data): MIN=0 MAX>1 eliminado — 7 suc5 + 227 bodega corregidos a min=1; publish_stock_params y trigger bodega clampeados (GREATEST(min,1) cuando max>1); constraint chk_min_lt_max ampliado cubre ambos: MIN≥MAX y MIN=0/MAX>1
 // v2.2.207 — fix(minmax/data): 327 filas con min=max (ambos >0) corregidas con min=max-1; causa raíz: bug LEAST(NULL,N)=N ya corregido en v2.2.206; constraint chk_min_lt_max en DB bloquea min≥max (cuando ambos >0) a nivel de BD para siempre
 // v2.2.206 — fix(minmax/publish): LEAST(NULL,1)=1 en PostgreSQL — cuando solo se guardaba draft_max pero no draft_min, publish_stock_params publicaba min=max (ej. 0/1 → 1/1); fix: COALESCE(draft_min,0) y COALESCE(draft_max,0) en LEAST/GREATEST para tratar NULL como 0; data-fix retroactivo en ELEQUINE 750 X 5 suc.4

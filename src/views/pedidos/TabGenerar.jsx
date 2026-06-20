@@ -72,8 +72,7 @@ export default function TabGenerar({ searchTerm = '' }) {
     useEffect(() => {
         setDashLoading(true);
         supabase.rpc('get_pedido_sucursal_stats', {
-            p_sucursal_ids:      SUCURSALES,
-            p_use_portal_minmax: true,
+            p_sucursal_ids: SUCURSALES,
         }).then(({ data }) => { setDashStats(data || []); setDashLoading(false); });
     }, []);
 
@@ -98,8 +97,7 @@ export default function TabGenerar({ searchTerm = '' }) {
     const refreshStats = useCallback(() => {
         setDashLoading(true);
         supabase.rpc('get_pedido_sucursal_stats', {
-            p_sucursal_ids:      SUCURSALES,
-            p_use_portal_minmax: true,
+            p_sucursal_ids: SUCURSALES,
         }).then(({ data }) => { setDashStats(data || []); setDashLoading(false); });
         setSinBodegaLoad(true);
         supabase.rpc('get_pedido_sin_bodega', {
@@ -122,8 +120,8 @@ export default function TabGenerar({ searchTerm = '' }) {
         setConfirming(true); setError(null); setConfirmed(null);
         try {
             const rpcParams = globalMode
-                ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected], p_use_portal_minmax: true }
-                : { p_sucursal_ids: [...selected], p_use_portal_minmax: true };
+                ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected] }
+                : { p_sucursal_ids: [...selected] };
             const { data, error: rpcErr } = await supabase
                 .rpc('get_pedido_preview', rpcParams)
                 .range(0, 49999);

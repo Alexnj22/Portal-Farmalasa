@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.212';
+export const APP_VERSION = '2.2.213';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.213 — fix(pedidos/psp): data-fix PSP para ELEQUINE×20, ENALAM×10, ESOMEPRAKEM×10 — min_units/max_units estaban en "cajas ERP" (factor=1 erp) en vez de tabletas; se multiplican por el factor real para que ROUND(max/factor) dé el número de cajas correcto; trigger bodega recalculó Σ sucursales automáticamente
 // v2.2.212 — fix(pedidos/inv): factor de inventario desde product_precios — vista v_product_factor mapea (product_id, presentacion) → factor oficial; inv_suc/inv_bodega/inv_dedup hacen LEFT JOIN a la vista; fallback al split('x') del detalle si no hay match; corrige 13 filas con detalle incorrecto (ELEQUINE×20 reportaba 8 en vez de 160 tabletas, ENALAM×10 reportaba 2 en vez de 20, etc.)
 // v2.2.211 — fix(pedidos): timeout al generar — split inv_dedup→inv_suc+inv_bodega, SET statement_timeout=120s; errores en español + LiquidToast en TabGenerar
 // v2.2.210 — fix(pedidos): dedup presentaciones en get_pedido_preview/stats/sin_bodega — DISTINCT ON (suc,producto) + inv_agg elimina 710 filas extra causadas por N id_presentacion activos con mismo tipo+factor en product_precios

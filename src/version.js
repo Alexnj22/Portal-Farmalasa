@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.211';
+export const APP_VERSION = '2.2.212';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.212 — fix(pedidos/inv): factor de inventario desde product_precios — vista v_product_factor mapea (product_id, presentacion) → factor oficial; inv_suc/inv_bodega/inv_dedup hacen LEFT JOIN a la vista; fallback al split('x') del detalle si no hay match; corrige 13 filas con detalle incorrecto (ELEQUINE×20 reportaba 8 en vez de 160 tabletas, ENALAM×10 reportaba 2 en vez de 20, etc.)
 // v2.2.211 — fix(pedidos): timeout al generar — split inv_dedup→inv_suc+inv_bodega, SET statement_timeout=120s; errores en español + LiquidToast en TabGenerar
 // v2.2.210 — fix(pedidos): dedup presentaciones en get_pedido_preview/stats/sin_bodega — DISTINCT ON (suc,producto) + inv_agg elimina 710 filas extra causadas por N id_presentacion activos con mismo tipo+factor en product_precios
 // v2.2.209 — refactor(minmax): elimina erp_minmax — cron sync-erp-minmax-hourly desactivado, tabla erp_minmax eliminada, edge function sync-erp-minmax borrada; todas las funciones DB (get_pedido_preview, get_pedido_sucursal_stats, get_pedido_sin_bodega, get_stagnant_inventory, get_no_sales_products, get_products_sold_no_minmax, get_product_sales_agg) migradas a usar product_stock_params; parámetro p_use_portal_minmax eliminado de 2 RPCs; TabGenerar.jsx actualizado

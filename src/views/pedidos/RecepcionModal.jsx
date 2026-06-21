@@ -37,6 +37,14 @@ function fmtPresentacion(r) {
     return `${label}${showF ? ` ×${factor}` : ''}`;
 }
 
+// Formatea un factor numérico como label de presentación.
+// Para el factor de despacho usa fmtPresentacion (tiene tipo); otros usan ×N o "Unidad".
+function fmtFactor(row, factor) {
+    const dispFactor = row.dispatch_factor || row.factor || 1;
+    if (factor === dispFactor) return fmtPresentacion(row);
+    return factor === 1 ? 'Unidad' : `×${factor}`;
+}
+
 const ERROR_TIPOS = [
     { value: 'faltante',   label: 'Faltante'            },
     { value: 'danado',     label: 'Dañado'              },
@@ -96,12 +104,12 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             setApoyo((data || []).map(r => ({ id: r.employee_id, ...r.employees })));
         })();
 
-        // Presentaciones disponibles por producto
+        // Presentaciones disponibles por producto (solo factor; labels se construyen por fila)
         const productIds = [...new Set(rows.map(r => r.erp_product_id))];
         if (productIds.length > 0) {
             (async () => {
                 const { data } = await supabase.from('product_precios')
-                    .select('product_id, factor, descripcion')
+                    .select('product_id, factor')
                     .in('product_id', productIds)
                     .eq('activo', true);
                 const map = {};
@@ -109,9 +117,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                     const pid = p.product_id;
                     if (!map[pid]) map[pid] = [];
                     const f = p.factor || 1;
-                    if (!map[pid].find(x => x.factor === f)) {
-                        map[pid].push({ factor: f, label: p.descripcion || (f > 1 ? `×${f}` : 'Unidad') });
-                    }
+                    if (!map[pid].find(x => x.factor === f)) map[pid].push({ factor: f });
                 });
                 Object.values(map).forEach(arr => arr.sort((a, b) => a.factor - b.factor));
                 setPresMap(map);
@@ -150,9 +156,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
 
             let nota = notaVals[r.id] || null;
             if (fPres !== sPres && !nota) {
-                const fLabel = presMap[r.erp_product_id]?.find(x => x.factor === fPres)?.label || `×${fPres}`;
-                const sLabel = presMap[r.erp_product_id]?.find(x => x.factor === sPres)?.label || `×${sPres}`;
-                nota = `Físico: ${fLabel} — Sistema: ${sLabel}`;
+                nota = `Físico: ${fmtFactor(r, fPres)} — Sistema: ${fmtFactor(r, sPres)}`;
             }
 
             return {
@@ -288,9 +292,12 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         const showExtra = hasDiff || hasProb;
                         const delta    = fQty - sQty;
 
-                        const presOpts = presMap[r.erp_product_id] ?? [
-                            { factor: r.dispatch_factor || r.factor || 1, label: fmtPresentacion(r) },
-                        ];
+                        // Opciones de presentación: factores de product_precios + siempre incluye el de despacho
+                        const dispFactor = r.dispatch_factor || r.factor || 1;
+                        const rawOpts = presMap[r.erp_product_id] ?? [];
+                        const presOpts = rawOpts.length > 0
+                            ? rawOpts.map(o => ({ factor: o.factor, label: fmtFactor(r, o.factor) }))
+                            : [{ factor: dispFactor, label: fmtPresentacion(r) }];
 
                         return (
                             <div key={r.id} className={`transition-colors ${hasDiff ? 'bg-amber-50' : hasProb ? 'bg-orange-50/40' : 'bg-white hover:bg-slate-50/50'}`}>

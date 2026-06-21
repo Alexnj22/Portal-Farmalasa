@@ -713,18 +713,18 @@ const TL_GLOW   = [
 
 const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 4, erp: 5 };
 
-function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp }) {
+function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp }) {
     const hasPause  = (row.min_pausado_total ?? 0) > 0;
     const isPaused  = stage === 'pausado';
     const activeIdx = TL_STAGE_IDX[stage] ?? 0;
 
     const nodes = [
-        { key: 'confirmado', label: 'Confirmado', time: row.created_at,        emp: creatorEmp   },
-        { key: 'iniciado',   label: 'Inicio',     time: row.iniciado_at,       emp: iniciadorEmp },
-        { key: 'preparado',  label: 'Listo',      time: row.finalizado_at,     emp: null         },
-        { key: 'enviado',    label: 'En Ruta',    time: row.enviado_at,        emp: null         },
-        { key: 'llegada',    label: 'Llegada',    time: row.llegada_fisica_at, emp: null         },
-        { key: 'erp',        label: 'Finalizado', time: row.recibido_erp_at,   emp: null         },
+        { key: 'confirmado', label: 'Confirmado', time: row.created_at,        emp: creatorEmp    },
+        { key: 'iniciado',   label: 'Inicio',     time: row.iniciado_at,       emp: iniciadorEmp  },
+        { key: 'preparado',  label: 'Listo',      time: row.finalizado_at,     emp: finalizadorEmp },
+        { key: 'enviado',    label: 'En Ruta',    time: row.enviado_at,        emp: enviadorEmp    },
+        { key: 'llegada',    label: 'Llegada',    time: row.llegada_fisica_at, emp: null           },
+        { key: 'erp',        label: 'Finalizado', time: row.recibido_erp_at,   emp: null           },
     ];
 
     return (
@@ -1254,8 +1254,9 @@ export default function TabPedidos({ searchTerm = '' }) {
             await supabase.rpc('update_pedido_sucursal_lifecycle', { p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: 'confirmar_llegada', p_user_id: user?.id ?? null });
             useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { sucursal_id: sucId });
             setLlegadaStatus(prev => ({ ...prev, [key]: true }));
+            await loadActive();
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
-    }, [busyAction, user]);
+    }, [busyAction, user, loadActive]);
 
     const handleMarkErp = useCallback(async (pedidoId, sucId, key) => {
         if (busyAction) return;
@@ -1264,8 +1265,9 @@ export default function TabPedidos({ searchTerm = '' }) {
             await supabase.rpc('update_pedido_sucursal_lifecycle', { p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: 'recibir_erp', p_user_id: user?.id ?? null });
             useStaff.getState().appendAuditLog('PEDIDO_LIFECYCLE_RECIBIR_ERP', pedidoId, { sucursal_id: sucId });
             setErpStatus(prev => ({ ...prev, [key]: true }));
+            await loadActive();
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
-    }, [busyAction, user]);
+    }, [busyAction, user, loadActive]);
 
     const openModal = useCallback((pedidoId, numero, sucId, key) => {
         const rows = (items[key] || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0);
@@ -1379,8 +1381,10 @@ export default function TabPedidos({ searchTerm = '' }) {
                             // Botón aparece por sucursal cuando esa ya está lista (preparado), sin esperar a las demás
                             const canMarcarEnRuta  = canActuar && !isBranch && stage === 'preparado' && row.pedido_status === 'confirmado';
 
-                            const creator  = row.created_by  ? empMap.get(row.created_by)  : null;
-                            const iniciador = row.iniciado_por ? empMap.get(row.iniciado_por) : null;
+                            const creator      = row.created_by    ? empMap.get(row.created_by)    : null;
+                            const iniciador    = row.iniciado_por  ? empMap.get(row.iniciado_por)  : null;
+                            const finalizador  = row.finalizado_por ? empMap.get(row.finalizado_por) : null;
+                            const enviador     = row.enviado_por    ? empMap.get(row.enviado_por)    : null;
 
                             const elapsedPrep  = stage === 'preparando' ? fmtMin(Math.max(0, (elapsed(row.iniciado_at) ?? 0) - (row.min_pausado_total ?? 0))) : null;
                             const elapsedPause = stage === 'pausado'    ? fmtMin(elapsed(row.pausado_at)) : null;
@@ -1453,7 +1457,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     {/* Lifecycle Timeline */}
                                     <div className="border-t border-slate-100 px-3 pt-2 pb-1.5">
-                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} />
+                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} />
                                     </div>
 
                                     {/* Actions + status strip */}
@@ -1484,21 +1488,26 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     </div>
 
+                                    {/* Confirmar llegada — siempre visible para sucursal sin necesidad de expandir */}
+                                    {isBranch && erpSucursalId && row.pedido_status === 'enviado' && (
+                                        <div onClick={e => e.stopPropagation()}>
+                                            <ReceptionActions
+                                                pedidoId={row.pedido_id} sucId={erpSucursalId}
+                                                llegadaOk={!!llegadaStatus[cardKey] || !!row.llegada_fisica_at}
+                                                erpOk={!!erpStatus[cardKey] || !!row.recibido_erp_at}
+                                                items={items[cardKey]}
+                                                onMarkLlegada={() => handleLlegada(row.pedido_id, erpSucursalId, cardKey)}
+                                                onOpenRecibir={() => openModal(row.pedido_id, row.numero, erpSucursalId, cardKey)}
+                                                onMarkErp={() => handleMarkErp(row.pedido_id, erpSucursalId, cardKey)}
+                                                busy={busyAction}
+                                            />
+                                        </div>
+                                    )}
+
                                     <AnimatePresence>
                                         {isExp && (
                                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden" onClick={e => e.stopPropagation()}>
                                                 <ItemSections allItems={items[cardKey] ?? []} loading={loadingItems && !items[cardKey]} />
-                                                {isBranch && erpSucursalId && row.pedido_status === 'enviado' && (
-                                                    <ReceptionActions
-                                                        pedidoId={row.pedido_id} sucId={erpSucursalId}
-                                                        llegadaOk={!!llegadaStatus[cardKey]} erpOk={!!erpStatus[cardKey]}
-                                                        items={items[cardKey]}
-                                                        onMarkLlegada={() => handleLlegada(row.pedido_id, erpSucursalId, cardKey)}
-                                                        onOpenRecibir={() => openModal(row.pedido_id, row.numero, erpSucursalId, cardKey)}
-                                                        onMarkErp={() => handleMarkErp(row.pedido_id, erpSucursalId, cardKey)}
-                                                        busy={busyAction}
-                                                    />
-                                                )}
                                             </motion.div>
                                         )}
                                     </AnimatePresence>

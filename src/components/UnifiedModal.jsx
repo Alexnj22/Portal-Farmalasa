@@ -4,7 +4,7 @@ import {
     User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Edit2
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
-import ModalShell from "./common/ModalShell";
+import LiquidModal from "./common/LiquidModal";
 import { useToastStore } from '../store/toastStore';
 import { supabase } from '../supabaseClient'; 
 
@@ -664,13 +664,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-white/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-white/70 backdrop-blur-md";
 
     return (
-        <ModalShell open={isOpen} onClose={onClose} maxWidthClass={getModalSize()} zClass="z-[100]">
-            <div data-surface="modal" className={`flex flex-col rounded-[2.5rem] overflow-hidden border border-white/90 relative shadow-[0_40px_100px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.8)] animate-in fade-in zoom-in-[0.98] slide-in-from-bottom-2 duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] ${getModalHeightClass()}`}>
-
-                <div
-                    className="absolute inset-0 bg-white/50 backdrop-blur-[15px] backdrop-saturate-[300%] -z-10 pointer-events-none"
-                    style={{ willChange: 'transform', transform: 'translateZ(0)' }}
-                />
+        <LiquidModal open={isOpen} onClose={onClose} maxWidth={getModalSize()} zClass="z-[100]" className={getModalHeightClass()}>
 
                 {!hidesHeader && (
                     <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-white/40 flex flex-col gap-4 relative z-10 shrink-0">
@@ -858,8 +852,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                         </div>
                     );
                 })()}
-            </div>
-        </ModalShell>
+        </LiquidModal>
     );
 };
 

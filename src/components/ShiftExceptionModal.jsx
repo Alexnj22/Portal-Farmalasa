@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import LiquidModal from './common/LiquidModal';
 import { X, Calendar as CalendarIcon, Clock, Save, ShieldAlert, Utensils, Baby, Info } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
 import { supabase } from '../supabaseClient';
@@ -160,8 +161,7 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-3xl" zClass="z-50">
                 
                 {/* HEADER */}
                 <div className="bg-slate-900 p-6 flex items-center justify-between text-white">
@@ -311,8 +311,7 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
                     </div>
 
                 </div>
-            </div>
-        </div>
+        </LiquidModal>
     );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import LiquidModal from '../common/LiquidModal';
 import { supabase } from '../../supabaseClient';
 import {
     X, FlaskConical, Loader2, Check, SkipForward,
@@ -376,9 +376,8 @@ export default function SrsEnriquecerModal({ onClose }) {
     const isDone = phase === PHASE.REVIEWING && autoQueue.length === 0 && reviewDone;
 
     // ── Render ─────────────────────────────────────────────────────────────────
-    return createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden max-h-[90vh]">
+    return (
+        <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" zClass="z-[99999]" className="max-h-[90vh]">
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
@@ -745,8 +744,6 @@ export default function SrsEnriquecerModal({ onClose }) {
                         </div>
                     )}
                 </div>
-            </div>
-        </div>,
-        document.body
+        </LiquidModal>
     );
 }

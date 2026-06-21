@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import LiquidModal from '../../components/common/LiquidModal';
 import {
     Tag, X, Check, Loader2, ChevronRight, ChevronLeft,
     Package, Plus, Trash2, DollarSign, Calendar,
@@ -512,9 +512,8 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
 
     if (!isOpen) return null;
 
-    return createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md">
-            <div className="relative w-full max-w-xl flex flex-col rounded-[2rem] overflow-hidden shadow-[0_50px_120px_rgba(0,0,0,0.35),0_20px_40px_rgba(15,23,42,0.2)] animate-in fade-in zoom-in-[0.98] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] max-h-[90vh] bg-white">
+    return (
+        <LiquidModal open={isOpen} onClose={onClose} maxWidth="max-w-xl" className="max-h-[90vh]">
 
                 {/* Header — gradient */}
                 <div className="flex-none bg-gradient-to-br from-blue-700 via-blue-600 to-violet-600 px-7 pt-7 pb-6">
@@ -619,8 +618,6 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                         </button>
                     )}
                 </div>
-            </div>
-        </div>,
-        document.body
+        </LiquidModal>
     );
 }

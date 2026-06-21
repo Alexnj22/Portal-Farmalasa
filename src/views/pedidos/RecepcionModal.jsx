@@ -364,6 +364,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         </p>
                     )}
                 </div>
+                </PedidoModal.Body>
 
                 <PedidoModal.Footer className="space-y-2">
                     {saveError && (

@@ -317,7 +317,7 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
                             className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400 bg-white resize-none transition-colors text-slate-700"
                         />
                     </div>
-                </div>
+                </PedidoModal.Body>
 
                 <PedidoModal.Footer>
                     <div className="flex justify-end gap-2">
@@ -517,7 +517,7 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, onSucce
                             {error}
                         </div>
                     )}
-                </div>
+                </PedidoModal.Body>
 
                 <PedidoModal.Footer>
                     <div className="flex justify-between gap-2">

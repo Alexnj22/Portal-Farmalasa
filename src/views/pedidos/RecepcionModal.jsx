@@ -37,13 +37,6 @@ function fmtPresentacion(r) {
     return `${label}${showF ? ` ×${factor}` : ''}`;
 }
 
-// Formatea un factor numérico como label de presentación.
-// Para el factor de despacho usa fmtPresentacion (tiene tipo); otros usan ×N o "Unidad".
-function fmtFactor(row, factor) {
-    const dispFactor = row.dispatch_factor || row.factor || 1;
-    if (factor === dispFactor) return fmtPresentacion(row);
-    return factor === 1 ? 'Unidad' : `×${factor}`;
-}
 
 const ERROR_TIPOS = [
     { value: 'faltante',   label: 'Faltante'            },
@@ -104,22 +97,25 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             setApoyo((data || []).map(r => ({ id: r.employee_id, ...r.employees })));
         })();
 
-        // Presentaciones disponibles por producto (solo factor; labels se construyen por fila)
+        // Presentaciones disponibles por producto; deduplicar por factor (puede haber CAJA 1x100 y CAJA 1X100)
         const productIds = [...new Set(rows.map(r => r.erp_product_id))];
         if (productIds.length > 0) {
             (async () => {
                 const { data } = await supabase.from('product_precios')
-                    .select('product_id, factor')
+                    .select('product_id, factor, descripcion')
                     .in('product_id', productIds)
-                    .eq('activo', true);
+                    .eq('activo', true)
+                    .order('factor');
                 const map = {};
                 (data || []).forEach(p => {
                     const pid = p.product_id;
                     if (!map[pid]) map[pid] = [];
                     const f = p.factor || 1;
-                    if (!map[pid].find(x => x.factor === f)) map[pid].push({ factor: f });
+                    // deduplicar: solo primer registro por factor
+                    if (!map[pid].find(x => x.factor === f)) {
+                        map[pid].push({ factor: f, label: p.descripcion || (f === 1 ? 'Unidad' : `×${f}`) });
+                    }
                 });
-                Object.values(map).forEach(arr => arr.sort((a, b) => a.factor - b.factor));
                 setPresMap(map);
             })();
         }
@@ -156,7 +152,11 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
 
             let nota = notaVals[r.id] || null;
             if (fPres !== sPres && !nota) {
-                nota = `Físico: ${fmtFactor(r, fPres)} — Sistema: ${fmtFactor(r, sPres)}`;
+                const dispFactor = r.dispatch_factor || r.factor || 1;
+                const opts = presMap[r.erp_product_id] ?? [{ factor: dispFactor, label: fmtPresentacion(r) }];
+                const lf = opts.find(o => o.factor === fPres)?.label || `×${fPres}`;
+                const ls = opts.find(o => o.factor === sPres)?.label || `×${sPres}`;
+                nota = `Físico: ${lf} — Sistema: ${ls}`;
             }
 
             return {
@@ -292,11 +292,11 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         const showExtra = hasDiff || hasProb;
                         const delta    = fQty - sQty;
 
-                        // Opciones de presentación: factores de product_precios + siempre incluye el de despacho
+                        // Opciones de presentación desde product_precios (deduplicadas por factor)
                         const dispFactor = r.dispatch_factor || r.factor || 1;
                         const rawOpts = presMap[r.erp_product_id] ?? [];
                         const presOpts = rawOpts.length > 0
-                            ? rawOpts.map(o => ({ factor: o.factor, label: fmtFactor(r, o.factor) }))
+                            ? rawOpts
                             : [{ factor: dispFactor, label: fmtPresentacion(r) }];
 
                         return (
@@ -304,7 +304,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                 {/* Fila principal */}
                                 <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
                                     {/* Producto */}
-                                    <span className="text-[12px] text-slate-700 font-semibold truncate">{r.products?.nombre}</span>
+                                    <span className="text-[12px] text-slate-700 font-semibold leading-snug">{r.products?.nombre}</span>
 
                                     {/* Asignado (referencia, read-only) */}
                                     <span className="text-[12px] font-bold text-slate-400 tabular-nums text-center">{r.cantidad_asignada}</span>

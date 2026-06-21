@@ -246,7 +246,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
         try {
             const { error } = await supabase.rpc('receive_pedido_sucursal', {
                 p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
-                p_items, p_received_by: user?.id ?? null, p_responsables: [],
+                p_items, p_received_by: user?.id ?? null,
             });
             if (error) throw error;
 

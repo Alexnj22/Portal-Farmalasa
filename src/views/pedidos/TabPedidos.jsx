@@ -1277,6 +1277,16 @@ export default function TabPedidos({ searchTerm = '' }) {
         })();
     }, []); // eslint-disable-line
 
+    // Auto-load items for pedidos parciales so DifSection always shows item details
+    useEffect(() => {
+        const parciales = activeRows.filter(r => r.pedido_status === 'parcial');
+        if (!parciales.length) return;
+        parciales.forEach(r => {
+            const key = `act_${r.pedido_id}_${r.erp_sucursal_id}`;
+            if (!items[key]) fetchItems(key, r.pedido_id, r.erp_sucursal_id);
+        });
+    }, [activeRows]); // eslint-disable-line
+
     // Batch-load apoyo for branch users so it's always visible in the timeline (no expand needed)
     useEffect(() => {
         if (!isBranch || !erpSucursalId || !activeRows.length) return;

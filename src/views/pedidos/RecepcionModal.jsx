@@ -31,7 +31,7 @@ function fmtPresentacion(r) {
     const tipo   = r.dispatch_tipo;
     const factor = r.dispatch_factor || r.factor || 1;
     const LABELS = { caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja' };
-    if (!tipo) return factor > 1 ? `×${factor} unid` : null;
+    if (!tipo) return factor > 1 ? `×${factor} unid` : 'Unidad';
     const label = LABELS[tipo] ?? tipo;
     const showF = factor > 1 && ['caja','blister','solo_cajas','multiplo','multiplo_unidades'].includes(tipo);
     return `${label}${showF ? ` ×${factor}` : ''}`;
@@ -235,70 +235,79 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                     </AnimatePresence>
                 </PedidoModal.Header>
 
-                {/* Items */}
-                <PedidoModal.Body className="px-5 py-3 space-y-2.5 max-h-[42vh]">
+                {/* Items — tabla */}
+                <PedidoModal.Body className="px-0 py-0 max-h-[46vh]">
+                    {/* Encabezado */}
+                    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 items-center px-5 py-2 border-b border-slate-100 bg-slate-50/60 sticky top-0 z-10">
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Producto</span>
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide text-center w-20">Presentación</span>
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide text-center w-16">Asignado</span>
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide text-center w-16">Recibido</span>
+                    </div>
+
                     {visibleRows.length === 0 && (
-                        <p className="text-center text-[12px] text-slate-400 py-4">No se encontraron productos.</p>
+                        <p className="text-center text-[12px] text-slate-400 py-6">No se encontraron productos.</p>
                     )}
-                    {visibleRows.map(r => {
-                        const recibida = recepVals[r.id] ?? r.cantidad_asignada;
-                        const hasDiff  = recibida !== r.cantidad_asignada;
-                        const delta    = recibida - r.cantidad_asignada;
-                        const pres     = fmtPresentacion(r);
-                        return (
-                            <div key={r.id} className={`rounded-xl px-3 py-2.5 border transition-colors ${
-                                hasDiff ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-100'
-                            }`}>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                                        <span className="text-[13px] text-slate-700 font-semibold truncate">
+
+                    <div className="divide-y divide-slate-100">
+                        {visibleRows.map(r => {
+                            const recibida = recepVals[r.id] ?? r.cantidad_asignada;
+                            const hasDiff  = recibida !== r.cantidad_asignada;
+                            const delta    = recibida - r.cantidad_asignada;
+                            const pres     = fmtPresentacion(r);
+                            return (
+                                <div key={r.id} className={`transition-colors ${hasDiff ? 'bg-amber-50' : 'bg-white hover:bg-slate-50/60'}`}>
+                                    {/* Fila principal */}
+                                    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 items-center px-5 py-2.5">
+                                        <span className="text-[13px] text-slate-700 font-semibold truncate pr-1">
                                             {r.products?.nombre}
                                         </span>
-                                        {pres && (
-                                            <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+                                        <span className="w-20 text-center">
+                                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 whitespace-nowrap">
                                                 {pres}
                                             </span>
-                                        )}
+                                        </span>
+                                        <span className="w-16 text-center text-[13px] font-semibold text-slate-500 tabular-nums">
+                                            {r.cantidad_asignada}
+                                        </span>
+                                        <div className="w-16 flex items-center justify-center gap-1">
+                                            <input
+                                                type="number" min={0} value={recibida}
+                                                onChange={e => {
+                                                    const v = Math.max(0, parseInt(e.target.value) || 0);
+                                                    setRecepVals(prev => ({ ...prev, [r.id]: v }));
+                                                }}
+                                                className={`w-14 text-center border rounded-lg px-1 py-1 text-[13px] font-semibold focus:outline-none tabular-nums ${
+                                                    hasDiff ? 'border-amber-400 bg-amber-50 text-amber-700 focus:border-amber-500' : 'border-slate-200 focus:border-blue-400 bg-white'
+                                                }`}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                        <span className="text-[11px] text-slate-400">asignado: <b>{r.cantidad_asignada}</b></span>
-                                        {hasDiff && (
-                                            <span className={`text-[11px] font-bold ${delta > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                    {/* Delta + motivo */}
+                                    {hasDiff && (
+                                        <div className="flex items-center gap-2 px-5 pb-2.5">
+                                            <span className={`text-[11px] font-bold tabular-nums ${delta > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                                                 {delta > 0 ? '+' : ''}{delta}
                                             </span>
-                                        )}
-                                        <input
-                                            type="number" min={0} value={recibida}
-                                            onChange={e => {
-                                                const v = Math.max(0, parseInt(e.target.value) || 0);
-                                                setRecepVals(prev => ({ ...prev, [r.id]: v }));
-                                            }}
-                                            className={`w-16 text-center border rounded-lg px-1 py-1 text-[13px] font-semibold focus:outline-none tabular-nums ${
-                                                hasDiff ? 'border-amber-400 bg-amber-50 focus:border-amber-500' : 'border-slate-200 focus:border-blue-400 bg-white'
-                                            }`}
-                                        />
-                                    </div>
+                                            <select
+                                                value={errorVals[r.id] || 'faltante'}
+                                                onChange={e => setErrorVals(prev => ({ ...prev, [r.id]: e.target.value }))}
+                                                className="text-[11px] border border-amber-300 rounded-lg px-2 py-1 bg-white text-slate-700 focus:outline-none focus:border-amber-400"
+                                            >
+                                                {ERROR_TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                            </select>
+                                            <input
+                                                type="text" placeholder="Nota (opcional)…"
+                                                value={notaVals[r.id] ?? ''}
+                                                onChange={e => setNotaVals(prev => ({ ...prev, [r.id]: e.target.value }))}
+                                                className="flex-1 text-[11px] border border-amber-200 rounded-lg px-2 py-1 focus:outline-none focus:border-amber-400 bg-white placeholder-slate-300"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-                                {hasDiff && (
-                                    <div className="flex gap-2 mt-2">
-                                        <select
-                                            value={errorVals[r.id] || 'faltante'}
-                                            onChange={e => setErrorVals(prev => ({ ...prev, [r.id]: e.target.value }))}
-                                            className="text-[11px] border border-amber-300 rounded-lg px-2 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-amber-400"
-                                        >
-                                            {ERROR_TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                                        </select>
-                                        <input
-                                            type="text" placeholder="Nota sobre la diferencia (opcional)…"
-                                            value={notaVals[r.id] ?? ''}
-                                            onChange={e => setNotaVals(prev => ({ ...prev, [r.id]: e.target.value }))}
-                                            className="flex-1 text-[11px] border border-amber-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-amber-400 bg-white placeholder-slate-300"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </PedidoModal.Body>
 
                 {/* Productos no esperados */}

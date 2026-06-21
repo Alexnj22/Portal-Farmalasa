@@ -5,10 +5,12 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.239';
+export const APP_VERSION = '2.2.241';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.241 — fix(pedidos/recepcion): Revisar abre modal sin necesitar expandir — openModal carga items on-demand; fetchItems retorna datos además de setearlos
+// v2.2.240 — fix(pedidos/timeline): nodo erp renombrado a "Finalizado" en línea de tiempo
 // v2.2.239 — feat(pedidos/modal): responsables de apoyo en RecepcionModal — al abrir el modal carga pedido_apoyo y muestra los chips de empleados como "Responsables" (read-only)
 // v2.2.238 — feat(pedidos/recepcion): pendientes sin expandir + modal mejorado — get_pedido_item_stats agrega columna pendientes; Paso 2 muestra conteo desde cardStats sin necesitar abrir card; RecepcionModal: quita sección responsables (apoyo ya está afuera), agrega codigo en header, lupa de búsqueda de producto
 // v2.2.237 — feat(pedidos/sucursal): botón Apoyo en Paso 2 y 3 + avatares stack en timeline — batch-load apoyo al cargar tab (sin expandir); ReceptionActions muestra "Apoyo" con chip apilado en Paso 2 (revisión) y Paso 3 (sis.ventas); timeline nodos Llegada y Sis.Ventas muestran stack de fotos del equipo de apoyo siempre visible

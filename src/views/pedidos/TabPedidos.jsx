@@ -14,8 +14,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
-import ModalShell from '../../components/common/ModalShell';
 import RecepcionModal from './RecepcionModal';
+import PedidoModal from './PedidoModal';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
@@ -252,8 +252,8 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
     const canConfirm = !(reason?.requiresComment && !comment.trim());
 
     return (
-        <ModalShell open={true} onClose={onCancel} maxWidthClass="max-w-sm">
-            <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden">
+        <PedidoModal onClose={onCancel}>
+            <div className="w-full overflow-hidden">
 
                 {/* Header */}
                 <div className="px-6 py-5 bg-gradient-to-br from-amber-50 to-orange-50 border-b border-amber-100">
@@ -338,7 +338,7 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
                     </button>
                 </div>
             </div>
-        </ModalShell>
+        </PedidoModal>
     );
 }
 
@@ -443,8 +443,8 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, onSucce
     }, [employee, pedidoId, sucId, currentUserId, onSuccess, onClose]);
 
     return (
-        <ModalShell open={open} onClose={onClose} maxWidthClass="max-w-sm">
-            <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden">
+        <PedidoModal open={open} onClose={onClose}>
+            <div className="w-full overflow-hidden">
 
                 {/* Header */}
                 <div className="px-6 py-5 bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-blue-100">
@@ -548,7 +548,7 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, onSucce
                     </div>
                 </div>
             </div>
-        </ModalShell>
+        </PedidoModal>
     );
 }
 

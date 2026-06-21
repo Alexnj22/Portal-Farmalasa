@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
-import ModalShell from '../../components/common/ModalShell';
+import PedidoModal from './PedidoModal';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 
 // Tipos de error de recepción (pedido_items.error_tipo)
@@ -188,8 +188,8 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
     if (!open) return null;
 
     return (
-        <ModalShell open={open} onClose={saving ? undefined : onClose} maxWidthClass="max-w-xl">
-            <div className="rounded-2xl bg-white shadow-2xl overflow-hidden">
+        <PedidoModal open={open} onClose={saving ? undefined : onClose} maxWidth="max-w-xl">
+            <div className="overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/80">
                     <div>
@@ -385,6 +385,6 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                     </div>
                 </div>
             </div>
-        </ModalShell>
+        </PedidoModal>
     );
 }

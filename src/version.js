@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.220';
+export const APP_VERSION = '2.2.221';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.221 — feat(pedidos/modals): Liquid Glass estándar en todos los modals de pedidos — nuevo PedidoModal.jsx (ModalShell + tarjeta glass: rounded-[2.5rem], bg-white/50 backdrop-blur-[15px] backdrop-saturate-[300%], border white/90, shadow profunda); aplicado en PauseModal+ApoyoModal (TabPedidos), RecepcionModal, 3 modals de TabHistorial (anular, apoyo, pausa); igual al estándar de UnifiedModal
 // v2.2.220 — fix(pedidos/TabPedidos): columna Presentación en "Revisar regla" muestra unidad de stock en vez de unidad de despacho — nueva función renderPresStock: cuando factor≠dispatch_factor (ej. AZITROMICINA factor=1 tableta, despacho CAJA×12), muestra "Unidad" para que "Solicitado=4" lea como "4 Unidad"; cuando stocking=despacho (CLEVIUM CAJA X 10) mantiene el tipo original; COLS_REGLA usa renderPresStock; COLS_ENVIADOS y COLS_SIN_STOCK sin cambio (ahí sí aplica la unidad de despacho)
 // v2.2.219 — fix(pedidos/reglas): fmtRegla no duplica factor en badge — TabPedidos.jsx: showFactor ahora verifica que dispatch_tipo no contenga ya el factor numérico (ej. "CAJA X 10" con factor=10 mostraba "CAJA X 10 10"; fix: !dispatch_tipo.includes(String(factor))); también: data-fix regla Clevium (id=369) replicada a dispatch_id_presentacion=1 (UNIDAD) tras reversión accidental por auto-save del EditPanel con estado cacheado
 // v2.2.218 — fix(pedidos/reglas): 3 correcciones — (1) TabGenerar: botón "Reimprimir" → "Descargar pedido" con ícono Download; banner "confirmado e impreso" → "confirmado"; estado "Confirmando e imprimiendo…" → "Confirmando…"; (2) TabReglas EditPanel: subtexto de pill de presentación simplificado de "N und. por pack · descripcion" → "×N unidades" (elimina repetición del factor cuando el nombre del tipo ya lo contiene, ej. "CAJA X 10 [10 und. por pack]"); (3) DB data-fix: regla dispatch de CLEVIUM 25MG/10ML X 10 SOBRES (id=369) corregida de dispatch_id_presentacion=69 (CAJA X 10, factor=10) a dispatch_id_presentacion=1 (UNIDAD, factor=1) — el producto se despacha por sobre individual, no por caja; badge TabReglas ahora muestra "UNIDAD" en vez de "CAJA X 10" y el cálculo de pedido usa factor=1

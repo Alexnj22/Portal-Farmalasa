@@ -10,7 +10,7 @@ import {
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmModal from '../../components/common/ConfirmModal';
-import ModalShell from '../../components/common/ModalShell';
+import PedidoModal from './PedidoModal';
 import { printFromPedidoItems, printFromSnapshot } from '../../utils/pedidoPrint';
 import RecepcionModal, { EmpChip } from './RecepcionModal';
 
@@ -1559,8 +1559,8 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
 
             {/* ── Modal anular con motivo (ModalShell, centrado) ──────────── */}
             {confirmAnul && (
-                <ModalShell open={!!confirmAnul} onClose={() => { setConfirmAnul(null); setAnulMotivo(''); setAnulError(null); }} maxWidthClass="max-w-sm">
-                    <div className="w-full rounded-2xl bg-white shadow-2xl p-6 space-y-4">
+                <PedidoModal open={!!confirmAnul} onClose={() => { setConfirmAnul(null); setAnulMotivo(''); setAnulError(null); }}>
+                    <div className="w-full p-6 space-y-4">
                         <h3 className="font-bold text-slate-800 text-[16px]">
                             Anular Pedido #{confirmAnul.numero}
                         </h3>
@@ -1601,7 +1601,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                             </button>
                         </div>
                     </div>
-                </ModalShell>
+                </PedidoModal>
             )}
 
             {/* ── Confirm borrar snapshot ─────────────────────────────────── */}
@@ -1619,8 +1619,8 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
 
             {/* ── Modal agregar apoyo ─────────────────────────────────────── */}
             {apoyoModal && (
-                <ModalShell onClose={() => setApoyoModal(null)}>
-                    <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 space-y-4">
+                <PedidoModal onClose={() => setApoyoModal(null)}>
+                    <div className="w-full p-6 space-y-4">
                         <div className="flex items-center gap-2">
                             <UserPlus size={18} className="text-violet-500" />
                             <h3 className="font-bold text-slate-800 text-[16px]">Agregar apoyo</h3>
@@ -1654,13 +1654,13 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                             </button>
                         </div>
                     </div>
-                </ModalShell>
+                </PedidoModal>
             )}
 
             {/* ── Pausa reason modal ──────────────────────────────────────── */}
             {pauseModal && (
-                <ModalShell onClose={() => setPauseModal(null)}>
-                    <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 space-y-4">
+                <PedidoModal onClose={() => setPauseModal(null)}>
+                    <div className="w-full p-6 space-y-4">
                         <h3 className="font-bold text-slate-800 text-[16px]">¿Por qué pausas este despacho?</h3>
                         <p className="text-[12px] text-slate-400">
                             {ERP_NAMES[pauseModal.sucId] ?? `Sucursal ${pauseModal.sucId}`}
@@ -1722,7 +1722,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                             </button>
                         </div>
                     </div>
-                </ModalShell>
+                </PedidoModal>
             )}
         </div>
     );

@@ -171,17 +171,57 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
         <PedidoModal open={open} onClose={saving ? undefined : onClose} maxWidth="max-w-xl">
                 {/* Header */}
                 <PedidoModal.Header className="px-5 py-4">
-                    <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                            <h3 className="text-[15px] font-bold text-slate-800 leading-snug">
-                                Confirmar recepción
-                            </h3>
-                            <p className="text-[11px] text-slate-400 mt-0.5">
-                                {sucursalNombre}{pedido.codigo && ` · ${pedido.codigo}`} · {rows.length} productos
-                            </p>
-                        </div>
+                    <div className="flex items-center gap-2">
+                        {/* Título OR input de búsqueda — aparece a la izquierda de los botones */}
+                        <AnimatePresence mode="popLayout" initial={false}>
+                            {!showSearch ? (
+                                <motion.div
+                                    key="title"
+                                    className="flex-1 min-w-0"
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    transition={{ duration: 0.15 }}
+                                >
+                                    <h3 className="text-[15px] font-bold text-slate-800 leading-snug">
+                                        Confirmar recepción
+                                    </h3>
+                                    <p className="text-[11px] text-slate-400 mt-0.5">
+                                        {sucursalNombre}{pedido.codigo && ` · ${pedido.codigo}`} · {rows.length} productos
+                                    </p>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="search"
+                                    className="flex-1 min-w-0"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                                >
+                                    <div className="relative">
+                                        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                        <input
+                                            ref={searchRef}
+                                            type="text"
+                                            placeholder="Buscar producto…"
+                                            value={prodSearch}
+                                            onChange={e => setProdSearch(e.target.value)}
+                                            className="w-full text-[12px] border border-blue-200 rounded-lg pl-8 pr-8 py-2 focus:outline-none focus:border-blue-400 bg-blue-50/40 placeholder-slate-300"
+                                        />
+                                        {prodSearch && (
+                                            <button onClick={() => setProdSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500">
+                                                <X size={12} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Botones: lupa + cerrar */}
                         <div className="flex items-center gap-1.5 shrink-0">
-                            <button
+                            <motion.button
                                 onClick={() => {
                                     setShowSearch(s => {
                                         if (!s) setTimeout(() => searchRef.current?.focus(), 80);
@@ -189,50 +229,19 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                         return !s;
                                     });
                                 }}
+                                animate={showSearch ? { scale: 1.15 } : { scale: 1 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                                 className={`p-1.5 rounded-lg transition-colors ${showSearch ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
                                 title="Buscar producto"
                             >
-                                <motion.div
-                                    animate={showSearch ? { rotate: 0, scale: 1.15 } : { rotate: 0, scale: 1 }}
-                                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                                >
-                                    <Search size={15} />
-                                </motion.div>
-                            </button>
+                                <Search size={15} />
+                            </motion.button>
                             <button onClick={onClose} disabled={saving}
                                 className="text-slate-400 hover:text-slate-600 transition-colors p-1 disabled:opacity-40">
                                 <X size={18} />
                             </button>
                         </div>
                     </div>
-                    <AnimatePresence>
-                        {showSearch && (
-                            <motion.div
-                                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                                animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
-                                exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                                transition={{ duration: 0.18, ease: 'easeInOut' }}
-                                className="overflow-hidden"
-                            >
-                                <div className="relative">
-                                    <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300" />
-                                    <input
-                                        ref={searchRef}
-                                        type="text"
-                                        placeholder="Buscar producto…"
-                                        value={prodSearch}
-                                        onChange={e => setProdSearch(e.target.value)}
-                                        className="w-full text-[12px] border border-blue-200 rounded-lg pl-8 pr-8 py-2 focus:outline-none focus:border-blue-400 bg-blue-50/40 placeholder-slate-300"
-                                    />
-                                    {prodSearch && (
-                                        <button onClick={() => setProdSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500">
-                                            <X size={12} />
-                                        </button>
-                                    )}
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
                 </PedidoModal.Header>
 
                 {/* Items — tabla */}

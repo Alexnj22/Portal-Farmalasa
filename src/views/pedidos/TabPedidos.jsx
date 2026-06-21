@@ -8,7 +8,7 @@ import {
     Database, Activity, TrendingDown,
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
-    UserPlus, ScanLine, Inbox,
+    UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -698,9 +698,9 @@ function fmtHM(iso) {
     return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
-const TL_DOT    = ['bg-blue-500','bg-blue-500','bg-violet-500','bg-indigo-500','bg-teal-500','bg-emerald-500'];
-const TL_LINE   = ['bg-blue-300','bg-blue-300','bg-violet-300','bg-indigo-300','bg-teal-300','bg-emerald-300'];
-const TL_BORDER = ['border-blue-400','border-blue-400','border-violet-400','border-indigo-400','border-teal-400','border-emerald-400'];
+const TL_DOT    = ['bg-blue-500','bg-blue-500','bg-violet-500','bg-indigo-500','bg-teal-500','bg-emerald-500','bg-amber-500','bg-purple-500'];
+const TL_LINE   = ['bg-blue-300','bg-blue-300','bg-violet-300','bg-indigo-300','bg-teal-300','bg-emerald-300','bg-amber-300','bg-purple-300'];
+const TL_BORDER = ['border-blue-400','border-blue-400','border-violet-400','border-indigo-400','border-teal-400','border-emerald-400','border-amber-400','border-purple-400'];
 // box-shadow glow colors for active node — stays within dot bounds, no overflow
 const TL_GLOW   = [
     'rgba(59,130,246',   // blue
@@ -709,14 +709,17 @@ const TL_GLOW   = [
     'rgba(99,102,241',   // indigo
     'rgba(20,184,166',   // teal
     'rgba(16,185,129',   // emerald
+    'rgba(245,158,11',   // amber
+    'rgba(168,85,247',   // purple
 ];
 
 const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 4, erp: 5 };
 
-function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, erpEmp, receptionApoyo = [] }) {
+function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, erpEmp, difsEmp, corrConfEmp, receptionApoyo = [] }) {
     const hasPause  = (row.min_pausado_total ?? 0) > 0;
     const isPaused  = stage === 'pausado';
     const activeIdx = TL_STAGE_IDX[stage] ?? 0;
+    const hasDif    = !!row.diferencias_reportadas_at;
 
     const nodes = [
         { key: 'confirmado', label: 'Confirmado', time: row.created_at,        emp: creatorEmp    },
@@ -724,8 +727,12 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
         { key: 'preparado',  label: 'Listo',      time: row.finalizado_at,     emp: finalizadorEmp },
         { key: 'enviado',    label: 'En Ruta',    time: row.enviado_at,        emp: enviadorEmp    },
         { key: 'llegada',    label: 'Llegada',    time: row.llegada_fisica_at, emp: llegadaEmp,    apoyo: receptionApoyo },
-        { key: 'erp',        label: 'Finalizado',  time: row.recibido_erp_at,   emp: erpEmp,         apoyo: receptionApoyo },
+        { key: 'erp',        label: 'Finalizado', time: row.recibido_erp_at,   emp: erpEmp,        apoyo: receptionApoyo },
     ];
+    if (hasDif) {
+        nodes.push({ key: 'diferencias', label: 'Diferencias', time: row.diferencias_reportadas_at, emp: difsEmp });
+        nodes.push({ key: 'corregido',   label: 'Corregido',   time: row.confirmado_correccion_at,  emp: corrConfEmp });
+    }
 
     return (
         /* overflow-visible so box-shadow glow never gets clipped */
@@ -900,16 +907,94 @@ function ItemSections({ allItems, loading }) {
     );
 }
 
+// ─── Diferencias section ─────────────────────────────────────────────────────
+
+function DifSection({ row, difItems = [], isBranch, busyAction, onCorregir, onConfirmar }) {
+    const [nota, setNota] = React.useState('');
+    const hasCorrBodega = !!row.corregido_bodega_at;
+    const hasCorrConf   = !!row.confirmado_correccion_at;
+
+    return (
+        <div className="border-t border-amber-100 bg-amber-50/20 px-4 py-3 space-y-2.5">
+            <div className="flex items-center gap-1.5">
+                <AlertCircle size={12} className="text-amber-500 shrink-0" />
+                <span className="text-[10px] font-semibold text-amber-700 uppercase tracking-wide">
+                    Diferencias {hasCorrConf ? '— corregidas' : 'pendientes'}
+                </span>
+            </div>
+
+            {difItems.length > 0 && (
+                <div className="space-y-1">
+                    {difItems.slice(0, 4).map(r => (
+                        <div key={r.id} className="flex items-center gap-2 text-[11px] bg-white/70 rounded-lg px-2.5 py-1.5 border border-amber-100">
+                            <span className="flex-1 text-slate-700 font-medium truncate">{r.products?.nombre}</span>
+                            <span className="text-slate-400 text-[10px]">Sist.</span>
+                            <span className="text-slate-600 tabular-nums font-semibold w-6 text-center">{r.cantidad_asignada}</span>
+                            <span className="text-slate-400 text-[10px]">Fís.</span>
+                            <span className={`tabular-nums font-bold w-6 text-center ${(r.cantidad_recibida ?? 0) < r.cantidad_asignada ? 'text-red-600' : 'text-emerald-600'}`}>
+                                {r.cantidad_recibida ?? '?'}
+                            </span>
+                        </div>
+                    ))}
+                    {difItems.length > 4 && (
+                        <span className="text-[10px] text-slate-400 pl-1">+{difItems.length - 4} más</span>
+                    )}
+                </div>
+            )}
+
+            {/* Bodega: marcar como corregido */}
+            {!isBranch && !hasCorrBodega && (
+                <div className="flex items-center gap-2">
+                    <input
+                        type="text" value={nota} onChange={e => setNota(e.target.value)}
+                        placeholder="¿Qué se hizo para corregir? (opcional)…"
+                        className="flex-1 text-[11px] border border-amber-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-400 bg-white placeholder-slate-300"
+                    />
+                    <button
+                        onClick={() => { onCorregir(nota); setNota(''); }}
+                        disabled={busyAction === 'corr_bodega'}
+                        className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition-all disabled:opacity-50 shrink-0 whitespace-nowrap"
+                    >
+                        {busyAction === 'corr_bodega' ? <Loader2 size={10} className="animate-spin" /> : 'Marcar corregido'}
+                    </button>
+                </div>
+            )}
+
+            {/* Bodega ya marcó + confirmación de sucursal */}
+            {hasCorrBodega && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 px-3 py-2.5 space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                        <CheckSquare size={12} className="text-emerald-600 shrink-0" />
+                        <span className="text-[11px] font-semibold text-emerald-700">Bodega indicó corrección</span>
+                    </div>
+                    {row.corregido_bodega_nota && (
+                        <p className="text-[11px] text-slate-600 italic pl-[22px]">{row.corregido_bodega_nota}</p>
+                    )}
+                    {isBranch && !hasCorrConf && (
+                        <button
+                            onClick={onConfirmar}
+                            disabled={busyAction === 'confirmar_corr'}
+                            className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50"
+                        >
+                            <CheckCheck size={11} />
+                            {busyAction === 'confirmar_corr' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar corrección'}
+                        </button>
+                    )}
+                    {hasCorrConf && (
+                        <div className="flex items-center gap-1.5">
+                            <CheckCheck size={12} className="text-purple-500" />
+                            <span className="text-[11px] font-semibold text-purple-700">Corrección confirmada por sucursal</span>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ─── Reception actions ────────────────────────────────────────────────────────
 
-function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLlegada, onOpenRecibir, onMarkErp, onApoyo, busy, pedidoDone, llegadaEmp, conteoEmp, erpEmp, cardApoyo = [], pendientesCount = 0 }) {
-    const recibidosLoaded = items?.filter(r => r.status === 'recibido').length > 0;
-    const showPaso3       = llegadaOk && !erpOk && (pedidoDone || recibidosLoaded);
-    // pendientesCount viene de cardStats (sin necesitar expandir); items solo cuando está expandido
-    const pendientes      = items != null
-        ? (items.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0).length)
-        : pendientesCount;
-
+function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0 }) {
     const empChip = (emp) => emp ? (
         <span className="flex items-center gap-1 text-[10px] text-slate-500">
             {emp.photo_url
@@ -942,39 +1027,39 @@ function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLleg
             {/* Paso 1: Llegada */}
             <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] ${llegadaOk ? 'bg-emerald-50/40 border-emerald-100' : 'bg-blue-50/40 border-blue-100'}`}>
                 <PackageCheck size={13} className={llegadaOk ? 'text-emerald-500' : 'text-blue-500'} />
-                <span className={llegadaOk ? 'text-emerald-700' : 'text-blue-700'}>{llegadaOk ? 'Llegada de cajas confirmada' : 'Paso 1 — Confirmar llegada de cajas'}</span>
-                {llegadaOk ? <span className="ml-auto">{empChip(llegadaEmp)}</span> : <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all disabled:opacity-50">{busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}</button>}
+                <span className={llegadaOk ? 'text-emerald-700' : 'text-blue-700'}>
+                    {llegadaOk ? 'Llegada de cajas confirmada' : 'Paso 1 — Confirmar llegada de cajas'}
+                </span>
+                {llegadaOk
+                    ? <span className="ml-auto">{empChip(llegadaEmp)}</span>
+                    : <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all disabled:opacity-50">
+                        {busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}
+                    </button>
+                }
             </div>
 
-            {/* Paso 2: Conteo */}
-            {llegadaOk && (
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] ${(pedidoDone || erpOk) ? 'bg-emerald-50/40 border-emerald-100' : 'bg-teal-50/40 border-teal-100'}`}>
-                    <Activity size={13} className={(pedidoDone || erpOk) ? 'text-emerald-500' : 'text-teal-500'} />
-                    <span className={(pedidoDone || erpOk) ? 'text-emerald-700' : 'text-slate-700'}>
-                        {(pedidoDone || erpOk) ? 'Productos revisados' : `Paso 2 — Revisar productos (${pendientes} pendientes)`}
-                    </span>
-                    <div className="ml-auto flex items-center gap-1.5">
-                        {empChip(conteoEmp)}
-                        {apoyoChips}
-                        {!erpOk && apoyoBtn}
-                        {!pedidoDone && !erpOk && <button onClick={onOpenRecibir} disabled={pendientes === 0} className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-teal-500 text-white hover:bg-teal-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">Revisar</button>}
-                    </div>
-                </div>
-            )}
-
-            {/* Paso 3: Sistema de ventas */}
-            {showPaso3 && (
+            {/* Paso 2: Confirmar en Sistema de Ventas (abre modal) */}
+            {llegadaOk && !erpOk && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-violet-50/40 border-violet-100 text-[11px]">
                     <Database size={13} className="text-violet-500" />
-                    <span className="text-violet-700">Paso 3 — Confirmar en Sistema de Ventas</span>
+                    <span className="text-violet-700">
+                        Paso 2 — Confirmar en Sistema de Ventas {pendientesCount > 0 ? `(${pendientesCount})` : ''}
+                    </span>
                     <div className="ml-auto flex items-center gap-1.5">
                         {apoyoChips}
                         {apoyoBtn}
-                        <button onClick={onMarkErp} disabled={busy === 'erp'} className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-50">{busy === 'erp' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}</button>
+                        <button
+                            onClick={onOpenRecibir}
+                            disabled={pendientesCount === 0 && !busy}
+                            className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-50"
+                        >
+                            Confirmar
+                        </button>
                     </div>
                 </div>
             )}
 
+            {/* erpOk: confirmado */}
             {erpOk && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-emerald-50/40 border-emerald-100 text-[11px]">
                     <Database size={13} className="text-emerald-500" />
@@ -1225,7 +1310,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         let itemsQ = supabase.from('pedido_items')
             .select(`
                 id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_recibida,
-                status, nota_diferencia, received_at, lotes_asignados,
+                status, nota_diferencia, error_tipo, received_at, lotes_asignados,
                 sin_stock, revision_minmax,
                 factor, dispatch_tipo, dispatch_factor,
                 max_qty_snapshot, stock_packs_snapshot,
@@ -1367,6 +1452,63 @@ export default function TabPedidos({ searchTerm = '' }) {
         setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows });
     }, [items, fetchItems]);
 
+    const handleReportarDiferencias = useCallback(async (pedidoId, sucId, numero) => {
+        try {
+            await supabase.rpc('update_pedido_sucursal_lifecycle', {
+                p_pedido_id: pedidoId, p_sucursal_id: sucId,
+                p_stage: 'reportar_diferencias', p_user_id: user?.id ?? null,
+            });
+            useStaff.getState().appendAuditLog('PEDIDO_DIFERENCIAS_REPORTADAS', pedidoId, { sucursal_id: sucId });
+            try {
+                const { data: bodegaMap } = await supabase.from('erp_sucursal_map')
+                    .select('branch_id').eq('es_bodega', true).maybeSingle();
+                if (bodegaMap?.branch_id) {
+                    await supabase.from('announcements').insert({
+                        title:        `Diferencias en pedido #${numero} — ${branchName}`,
+                        message:      `La recepción del pedido #${numero} en ${branchName} reporta diferencias de cantidad. Revisá el pedido y marcalo como corregido.`,
+                        target_type:  'BRANCH',
+                        target_value: [bodegaMap.branch_id],
+                        read_by:      [], is_archived: false,
+                        created_by:   user?.id ?? null, priority: 'NORMAL',
+                    });
+                    supabase.functions.invoke('send-push-notification', {
+                        body: {
+                            title:        `Diferencias — pedido #${numero}`,
+                            message:      `${branchName} reporta diferencias en la recepción.`,
+                            url:          '/pedidos',
+                            target_type:  'BRANCH',
+                            target_value: [bodegaMap.branch_id],
+                        },
+                    }).catch(() => {});
+                }
+            } catch { /* non-fatal */ }
+        } catch (e) { console.error(e); }
+    }, [user, branchName]);
+
+    const handleCorregirBodega = useCallback(async (pedidoId, sucId, nota) => {
+        setBusyAction('corr_bodega');
+        try {
+            await supabase.rpc('update_pedido_sucursal_lifecycle', {
+                p_pedido_id: pedidoId, p_sucursal_id: sucId,
+                p_stage: 'corregir_bodega', p_user_id: user?.id ?? null, p_nota: nota || null,
+            });
+            useStaff.getState().appendAuditLog('PEDIDO_CORREGIDO_BODEGA', pedidoId, { sucursal_id: sucId, nota });
+            await loadActive();
+        } catch (e) { console.error(e); } finally { setBusyAction(null); }
+    }, [user, loadActive]);
+
+    const handleConfirmarCorreccion = useCallback(async (pedidoId, sucId) => {
+        setBusyAction('confirmar_corr');
+        try {
+            await supabase.rpc('update_pedido_sucursal_lifecycle', {
+                p_pedido_id: pedidoId, p_sucursal_id: sucId,
+                p_stage: 'confirmar_correccion', p_user_id: user?.id ?? null,
+            });
+            useStaff.getState().appendAuditLog('PEDIDO_CORRECCION_CONFIRMADA', pedidoId, { sucursal_id: sucId });
+            await loadActive();
+        } catch (e) { console.error(e); } finally { setBusyAction(null); }
+    }, [user, loadActive]);
+
     // ── Derived ───────────────────────────────────────────────────────────────
 
     const searchLower   = useMemo(() => searchTerm.toLowerCase(), [searchTerm]);
@@ -1477,13 +1619,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                             // Botón aparece por sucursal cuando esa ya está lista (preparado), sin esperar a las demás
                             const canMarcarEnRuta  = canActuar && !isBranch && stage === 'preparado' && row.pedido_status === 'confirmado';
 
-                            const creator      = row.created_by        ? empMap.get(row.created_by)        : null;
-                            const iniciador    = row.iniciado_por      ? empMap.get(row.iniciado_por)      : null;
-                            const finalizador  = row.finalizado_por    ? empMap.get(row.finalizado_por)    : null;
-                            const enviador     = row.enviado_por       ? empMap.get(row.enviado_por)       : null;
-                            const llegadaEmp   = row.llegada_fisica_por ? empMap.get(row.llegada_fisica_por) : null;
-                            const conteoEmp    = row.conteo_por        ? empMap.get(row.conteo_por)        : null;
-                            const erpEmp       = row.recibido_erp_por  ? empMap.get(row.recibido_erp_por)  : null;
+                            const creator      = row.created_by               ? empMap.get(row.created_by)               : null;
+                            const iniciador    = row.iniciado_por             ? empMap.get(row.iniciado_por)             : null;
+                            const finalizador  = row.finalizado_por           ? empMap.get(row.finalizado_por)           : null;
+                            const enviador     = row.enviado_por              ? empMap.get(row.enviado_por)              : null;
+                            const llegadaEmp   = row.llegada_fisica_por       ? empMap.get(row.llegada_fisica_por)       : null;
+                            const conteoEmp    = row.conteo_por               ? empMap.get(row.conteo_por)               : null;
+                            const erpEmp       = row.recibido_erp_por         ? empMap.get(row.recibido_erp_por)         : null;
+                            const difsEmp      = row.diferencias_reportadas_por ? empMap.get(row.diferencias_reportadas_por) : null;
+                            const corrConfEmp  = row.confirmado_correccion_por  ? empMap.get(row.confirmado_correccion_por)  : null;
 
                             const elapsedPrep  = stage === 'preparando' ? fmtMin(Math.max(0, (elapsed(row.iniciado_at) ?? 0) - (row.min_pausado_total ?? 0))) : null;
                             const elapsedPause = stage === 'pausado'    ? fmtMin(elapsed(row.pausado_at)) : null;
@@ -1493,9 +1637,9 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                             const canApoyo = !isBranch && ['sin_iniciar','preparando','pausado'].includes(stage);
 
-                            const isDone    = row.pedido_status === 'completado' || row.pedido_status === 'parcial';
-                            // Opacidad reducida solo cuando el ciclo completo terminó (recibido_erp_at puesto)
-                            const isFadedOut = isDone && !!row.recibido_erp_at;
+                            const isDone     = row.pedido_status === 'completado' || row.pedido_status === 'parcial';
+                            // Solo fade cuando completado: parcial queda visible (pendiente corrección)
+                            const isFadedOut = row.pedido_status === 'completado' && !!row.recibido_erp_at;
 
                             return (
                                 <div
@@ -1562,7 +1706,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     {/* Lifecycle Timeline */}
                                     <div className="border-t border-slate-100 px-3 pt-2 pb-1.5">
-                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} erpEmp={erpEmp} receptionApoyo={isBranch ? cardApoyo : []} />
+                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={isBranch ? cardApoyo : []} />
                                     </div>
 
                                     {/* Actions + status strip */}
@@ -1593,25 +1737,34 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     </div>
 
-                                    {/* Confirmar llegada — visible mientras recibido_erp_at no esté puesto, independiente del pedido_status */}
+                                    {/* Recepción — visible mientras no esté confirmado en sistema */}
                                     {isBranch && erpSucursalId && stage !== 'erp' && (
                                         <div onClick={e => e.stopPropagation()}>
                                             <ReceptionActions
-                                                pedidoId={row.pedido_id} sucId={erpSucursalId}
                                                 llegadaOk={!!llegadaStatus[cardKey] || !!row.llegada_fisica_at}
                                                 erpOk={!!erpStatus[cardKey] || !!row.recibido_erp_at}
-                                                items={items[cardKey]}
-                                                pedidoDone={isDone}
                                                 llegadaEmp={llegadaEmp}
-                                                conteoEmp={conteoEmp}
                                                 erpEmp={erpEmp}
                                                 cardApoyo={cardApoyo}
                                                 pendientesCount={cardStats[cardKey]?.pendientes ?? 0}
                                                 onMarkLlegada={() => handleLlegada(row.pedido_id, erpSucursalId, cardKey)}
                                                 onOpenRecibir={() => openModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
-                                                onMarkErp={() => handleMarkErp(row.pedido_id, erpSucursalId, cardKey)}
                                                 onApoyo={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: erpSucursalId, cardKey })}
                                                 busy={busyAction}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Diferencias — visible cuando parcial */}
+                                    {row.pedido_status === 'parcial' && (
+                                        <div onClick={e => e.stopPropagation()}>
+                                            <DifSection
+                                                row={row}
+                                                difItems={(items[cardKey] ?? []).filter(r => r.status === 'con_diferencia' || r.error_tipo)}
+                                                isBranch={isBranch}
+                                                busyAction={busyAction}
+                                                onCorregir={(nota) => handleCorregirBodega(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, nota)}
+                                                onConfirmar={() => handleConfirmarCorreccion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id)}
                                             />
                                         </div>
                                     )}
@@ -1656,7 +1809,21 @@ export default function TabPedidos({ searchTerm = '' }) {
             />
 
             {modal && (
-                <RecepcionModal open={!!modal} onClose={() => setModal(null)} pedido={modal.pedido} sucursalId={modal.sucId} sucursalNombre={branchName} rows={modal.rows} onConfirmed={() => { setModal(null); fetchItems(modal.key, modal.pedido.id, modal.sucId); }} />
+                <RecepcionModal
+                    open={!!modal}
+                    onClose={() => setModal(null)}
+                    pedido={modal.pedido}
+                    sucursalId={modal.sucId}
+                    sucursalNombre={branchName}
+                    rows={modal.rows}
+                    onConfirmed={async ({ hasDiff }) => {
+                        const { pedido, sucId, key } = modal;
+                        setModal(null);
+                        await handleMarkErp(pedido.id, sucId, key);
+                        if (hasDiff) await handleReportarDiferencias(pedido.id, sucId, pedido.numero);
+                        fetchItems(key, pedido.id, sucId);
+                    }}
+                />
             )}
         </div>
     );

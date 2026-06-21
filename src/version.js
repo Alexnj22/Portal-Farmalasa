@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.244';
+export const APP_VERSION = '2.2.245';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.245 — feat(pedidos/diferencias): flujo completo — lupa horizontal, modal en Paso 2 llama recibir_erp+reportar_diferencias, DifSection, TL 2 nodos condicionales, get_pedidos_en_curso v7, 3 nuevos lifecycle stages
 // v2.2.244 — fix(recepcion/modal): layout tabular (Producto | Presentación | Asignado | Recibido) + fmtPresentacion siempre retorna valor (Unidad como fallback)
 // v2.2.243 — fix(recepcion/modal): presentación inline a la derecha del nombre del producto, no debajo
 // v2.2.242 — feat(recepcion/modal): 4 mejoras — (1) quita "Pedido #N" del título, codigo queda en subtítulo; (2) elimina botón "Todo exacto"; (3) lupa animada con AnimatePresence + motion; (4) presentación del producto (Caja ×24, Blíster ×10…) bajo el nombre según dispatch_tipo/dispatch_factor

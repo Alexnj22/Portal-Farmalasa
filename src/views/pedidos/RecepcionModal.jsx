@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, X, PackageCheck, AlertTriangle, Search,
-    Plus, Trash2, PackagePlus,
+    Plus, Trash2, PackagePlus, Check,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -27,24 +27,24 @@ export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
     );
 }
 
-function fmtPresentacion(r) {
-    const tipo   = r.dispatch_tipo;
-    const factor = r.dispatch_factor || r.factor || 1;
-    const LABELS = { caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja' };
-    if (!tipo) return factor > 1 ? `×${factor} unid` : 'Unidad';
-    const label = LABELS[tipo] ?? tipo;
-    const showF = factor > 1 && ['caja','blister','solo_cajas','multiplo','multiplo_unidades'].includes(tipo);
-    return `${label}${showF ? ` ×${factor}` : ''}`;
+// Misma fórmula que pedidoPrint.js
+function toDispatch(qty, erpFactor, dispFactor) {
+    if (!dispFactor || dispFactor === erpFactor) return qty;
+    return Math.round(qty * erpFactor / dispFactor);
 }
 
+function fmtDispatchLabel(dispatch_tipo, dispatch_factor) {
+    const f = Number(dispatch_factor) || 1;
+    const LABELS = { CAJA: 'Caja', BLISTER: 'Blíster', MULTIPLO: 'Unid', UNIDAD: 'Unidad', caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja', unidad: 'Unidad' };
+    const label = LABELS[dispatch_tipo] ?? dispatch_tipo ?? 'Unidad';
+    return f > 1 ? `${label} ×${f}` : label;
+}
+
+// Solo causa manual (faltante/sobrante/equivocado/pres se detectan automáticamente)
 const ERROR_TIPOS = [
-    { value: 'faltante',     label: 'Faltante'              },
-    { value: 'sobrante',     label: 'Sobrante'              },
-    { value: 'danado',       label: 'Dañado'                },
-    { value: 'vencido',      label: 'Vencido'               },
-    { value: 'equivocado',   label: 'Equivocado'            },
-    { value: 'presentacion', label: 'Pres. distinta'        },
-    { value: 'otro',         label: 'Otro'                  },
+    { value: 'danado',  label: 'Dañado'  },
+    { value: 'vencido', label: 'Vencido' },
+    { value: 'otro',    label: 'Otro'    },
 ];
 
 // 7-column grid: Producto | Asig | F.Pres | F.Qty | S.Pres | S.Qty | ⚠
@@ -56,7 +56,7 @@ async function fetchPresOpts(productId) {
         .eq('product_id', productId).eq('activo', true).order('factor');
     const opts = [];
     (data || []).forEach(p => {
-        const f = p.factor || 1;
+        const f = Number(p.factor) || 1;
         if (!opts.find(x => x.factor === f)) {
             const tipo = p.presentaciones?.tipo || '';
             const det  = p.descripcion || '';
@@ -76,6 +76,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
     const [sPresVals, setSPresVals] = useState({});
     const [notaVals,  setNotaVals]  = useState({});
     const [errorVals, setErrorVals] = useState({});
+    // tieneProblema[id]: false = nada | true = panel abierto | 'done' = confirmado
     const [tieneProblema, setTieneProblema] = useState({});
     const [presMap,   setPresMap]   = useState({});
     const [saving,    setSaving]    = useState(false);
@@ -106,11 +107,11 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
         if (!open) return;
         const fQ = {}, fP = {}, sQ = {}, sP = {}, notas = {}, errs = {};
         for (const r of rows) {
-            // cantidad_asignada ya está en unidades de despacho (display), no en unidades base
-            const def = r.dispatch_factor || r.factor || 1;
-            const dispQty = r.cantidad_asignada;
-            fQ[r.id] = dispQty; fP[r.id] = def;
-            sQ[r.id] = dispQty; sP[r.id] = def;
+            const erpF  = Number(r.factor) || 1;
+            const dispF = Number(r.dispatch_factor) || erpF;
+            const dispQty = toDispatch(r.cantidad_asignada, erpF, dispF);
+            fQ[r.id] = dispQty; fP[r.id] = dispF;
+            sQ[r.id] = dispQty; sP[r.id] = dispF;
             notas[r.id] = ''; errs[r.id] = '';
         }
         setFQtyVals(fQ); setFPresVals(fP); setSQtyVals(sQ); setSPresVals(sP);
@@ -137,7 +138,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                 (data || []).forEach(p => {
                     const pid = p.product_id;
                     if (!map[pid]) map[pid] = [];
-                    const f = p.factor || 1;
+                    const f = Number(p.factor) || 1;
                     if (!map[pid].find(x => x.factor === f)) {
                         const tipo = p.presentaciones?.tipo || '';
                         const det  = p.descripcion || '';
@@ -170,13 +171,31 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
         if (extras.some(e => e.erp_product_id === prod.id)) return;
         setExtraSearch(''); setExtraResults([]);
 
-        // Cargar presentaciones si no están en cache
-        let opts = presMap[prod.id];
-        if (!opts || opts.length === 0) {
+        // Cargar presentaciones de product_precios
+        let opts = presMap[prod.id] ? [...presMap[prod.id]] : [];
+        if (opts.length === 0) {
             opts = await fetchPresOpts(prod.id);
-            if (opts.length > 0) setPresMap(prev => ({ ...prev, [prod.id]: opts }));
         }
-        const defF = opts?.[0]?.factor ?? 1;
+
+        // Buscar regla de despacho del último pedido para este producto
+        const { data: lastDispatch } = await supabase.from('pedido_items')
+            .select('dispatch_factor, dispatch_tipo')
+            .eq('erp_product_id', prod.id)
+            .not('dispatch_tipo', 'is', null)
+            .not('dispatch_factor', 'is', null)
+            .order('id', { ascending: false })
+            .limit(1);
+        if (lastDispatch?.[0]) {
+            const df = Number(lastDispatch[0].dispatch_factor) || 1;
+            if (!opts.find(o => o.factor === df)) {
+                const label = fmtDispatchLabel(lastDispatch[0].dispatch_tipo, df);
+                opts.unshift({ factor: df, label });
+            }
+        }
+
+        if (opts.length > 0) setPresMap(prev => ({ ...prev, [prod.id]: opts }));
+
+        const defF = opts[0]?.factor ?? 1;
         setExtras(prev => [...prev, {
             erp_product_id: prod.id, nombre: prod.nombre,
             fPres: defF, fQty: 1, sPres: defF, sQty: 1, nota: '',
@@ -187,23 +206,28 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
     const handleConfirmar = useCallback(async () => {
         setSaving(true); setSaveError(null);
         const p_items = rows.map(r => {
-            const dispFactor = r.dispatch_factor || r.factor || 1;
-            const defDispQty = r.cantidad_asignada; // ya en unidades de despacho
+            const erpFactor  = Number(r.factor) || 1;
+            const dispFactor = Number(r.dispatch_factor) || erpFactor;
+            const defDispQty = toDispatch(r.cantidad_asignada, erpFactor, dispFactor);
             const fQty  = fQtyVals[r.id]  ?? defDispQty;
             const sQty  = sQtyVals[r.id]  ?? defDispQty;
             const fPres = fPresVals[r.id] ?? dispFactor;
             const sPres = sPresVals[r.id] ?? dispFactor;
-            const hasProb = !!tieneProblema[r.id];
-            const isDiff = fQty !== sQty || fPres !== sPres || hasProb;
+            const tp = tieneProblema[r.id];
+            const hasProb = !!tp;
+            // Convertir de vuelta a unidades ERP: qty * pres / erpFactor
+            const fRaw = Math.round(fQty * fPres / erpFactor);
+            const sRaw = Math.round(sQty * sPres / erpFactor);
+            const isDiff = fRaw !== sRaw || fPres !== sPres || hasProb;
 
             let nota = notaVals[r.id] || null;
             let error_tipo = null;
             if (isDiff) {
                 if (hasProb && errorVals[r.id]) {
                     error_tipo = errorVals[r.id];
-                } else if (fQty < sQty) {
+                } else if (fRaw < sRaw) {
                     error_tipo = 'faltante';
-                } else if (fQty > sQty) {
+                } else if (fRaw > sRaw) {
                     error_tipo = 'sobrante';
                 } else if (fPres !== sPres) {
                     error_tipo = 'presentacion';
@@ -217,7 +241,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                     nota = `Físico: ${lf} — Sistema: ${ls}`;
                 }
             }
-            return { pedido_item_id: r.id, cantidad_recibida: fQty, nota_diferencia: nota, error_tipo };
+            return { pedido_item_id: r.id, cantidad_recibida: fRaw, nota_diferencia: nota, error_tipo };
         });
         try {
             const { error } = await supabase.rpc('receive_pedido_sucursal', {
@@ -227,16 +251,21 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             if (error) throw error;
 
             if (extras.length > 0) {
+                const erpFactorMap = {};
+                rows.forEach(r => { erpFactorMap[r.erp_product_id] = Number(r.factor) || 1; });
                 const { error: exErr } = await supabase.from('pedido_recepcion_extras').insert(
-                    extras.map(e => ({
-                        pedido_id: pedido.id, erp_sucursal_id: sucursalId,
-                        erp_product_id: e.erp_product_id,
-                        cantidad: e.fQty * e.fPres,
-                        nota: e.nota || (e.fPres !== e.sPres || e.fQty !== e.sQty
-                            ? `Sistema: ${e.sQty} × ${presMap[e.erp_product_id]?.find(x => x.factor === e.sPres)?.label ?? `×${e.sPres}`}`
-                            : null),
-                        reported_by: user?.id ?? null,
-                    }))
+                    extras.map(e => {
+                        const ef = erpFactorMap[e.erp_product_id] ?? 1;
+                        return {
+                            pedido_id: pedido.id, erp_sucursal_id: sucursalId,
+                            erp_product_id: e.erp_product_id,
+                            cantidad: Math.round(e.fQty * e.fPres / ef),
+                            nota: e.nota || (e.fPres !== e.sPres || e.fQty !== e.sQty
+                                ? `Sistema: ${e.sQty} × ${presMap[e.erp_product_id]?.find(x => x.factor === e.sPres)?.label ?? `×${e.sPres}`}`
+                                : null),
+                            reported_by: user?.id ?? null,
+                        };
+                    })
                 );
                 if (exErr) throw exErr;
             }
@@ -306,11 +335,12 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         >
                             <Search size={15} />
                         </motion.button>
+                        {/* X cierra buscador si está abierto, si no cierra el modal */}
                         <button
                             onClick={showSearch ? () => { setShowSearch(false); setProdSearch(''); } : onClose}
                             disabled={!showSearch && saving}
                             className="text-slate-400 hover:text-slate-600 transition-colors p-1 disabled:opacity-40"
-                            title={showSearch ? 'Cerrar búsqueda' : 'Cerrar modal'}
+                            title={showSearch ? 'Cerrar búsqueda' : 'Cerrar'}
                         >
                             <X size={18} />
                         </button>
@@ -345,24 +375,42 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
 
                 <div className="divide-y divide-slate-100">
                     {visibleRows.map((r, rowIdx) => {
-                        const dispFactor = r.dispatch_factor || r.factor || 1;
-                        const defDispQty = r.cantidad_asignada; // ya en unidades de despacho
+                        const erpFactor  = Number(r.factor) || 1;
+                        const dispFactor = Number(r.dispatch_factor) || erpFactor;
+                        const defDispQty = toDispatch(r.cantidad_asignada, erpFactor, dispFactor);
                         const fQty  = fQtyVals[r.id]  ?? defDispQty;
                         const sQty  = sQtyVals[r.id]  ?? defDispQty;
                         const fPres = fPresVals[r.id] ?? dispFactor;
                         const sPres = sPresVals[r.id] ?? dispFactor;
-                        const hasProb  = !!tieneProblema[r.id];
-                        const hasDiff  = fQty !== sQty || fPres !== sPres;
-                        const delta    = fQty - sQty; // en unidades de display
+                        const tp = tieneProblema[r.id];
+                        const hasProb    = !!tp; // true o 'done'
+                        const panelOpen  = tp === true; // panel de edición abierto
+                        // Raw ERP units para comparar
+                        const fRaw = Math.round(fQty * fPres / erpFactor);
+                        const sRaw = Math.round(sQty * sPres / erpFactor);
+                        const hasDiff = fRaw !== sRaw || fPres !== sPres;
+                        const delta   = fRaw - sRaw;
 
                         // Presentaciones: siempre incluir la de despacho (regla especial del PDF)
-                        const rawOpts = presMap[r.erp_product_id] ?? [];
-                        const dispOpt = { factor: dispFactor, label: fmtPresentacion(r) };
+                        const rawOpts  = presMap[r.erp_product_id] ?? [];
+                        const dispLabel = fmtDispatchLabel(r.dispatch_tipo, dispFactor);
+                        const dispOpt  = { factor: dispFactor, label: dispLabel };
                         const presOpts = rawOpts.length > 0
                             ? rawOpts.find(o => o.factor === dispFactor) ? rawOpts : [dispOpt, ...rawOpts]
                             : [dispOpt];
 
                         const navKey = (col, dir) => document.querySelector(`[data-qty-row="${rowIdx + dir}"][data-qty-col="${col}"]`)?.focus();
+
+                        const toggleProblema = () => {
+                            setTieneProblema(p => {
+                                const cur = p[r.id];
+                                if (!cur) return { ...p, [r.id]: true };          // abrir panel
+                                if (cur === true) { setErrorVals(ev => ({ ...ev, [r.id]: '' })); return { ...p, [r.id]: false }; } // cancelar
+                                return { ...p, [r.id]: true };                    // re-abrir desde 'done'
+                            });
+                        };
+
+                        const confirmProblema = () => setTieneProblema(p => ({ ...p, [r.id]: 'done' }));
 
                         return (
                             <div key={r.id} className={`transition-colors ${hasDiff ? 'bg-amber-50' : hasProb ? 'bg-orange-50/40' : 'bg-white hover:bg-slate-50/50'}`}>
@@ -423,12 +471,12 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                     />
 
                                     {/* ⚠ — toggle problema manual */}
-                                    <button
-                                        onClick={() => setTieneProblema(p => ({ ...p, [r.id]: !p[r.id] }))}
-                                        title={hasProb ? 'Quitar reporte' : hasDiff ? 'Diferencia automática' : 'Reportar problema'}
+                                    <button onClick={toggleProblema}
+                                        title={panelOpen ? 'Cancelar problema' : hasProb ? 'Editar problema' : hasDiff ? 'Diferencia detectada' : 'Reportar problema'}
                                         className={`flex justify-center p-1 rounded-lg transition-colors ${
-                                            hasProb ? 'text-orange-500 bg-orange-100'
-                                            : hasDiff ? 'text-amber-500 hover:bg-amber-100'
+                                            tp === 'done' ? 'text-orange-500 bg-orange-100'
+                                            : tp === true  ? 'text-orange-500 bg-orange-100'
+                                            : hasDiff      ? 'text-amber-500 hover:bg-amber-100'
                                             : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50'
                                         }`}
                                     >
@@ -436,13 +484,13 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                     </button>
                                 </div>
 
-                                {/* Panel de problema — solo cuando se activa ⚠ manualmente */}
-                                {hasProb && (
-                                    <div className="px-5 pb-2.5 flex flex-wrap items-center gap-1.5">
+                                {/* Panel de problema — solo causas manuales: dañado / vencido / otro */}
+                                {panelOpen && (
+                                    <div className="px-5 pb-2.5 flex items-center gap-2 flex-nowrap">
                                         {ERROR_TIPOS.map(t => (
                                             <button key={t.value}
-                                                onClick={() => setErrorVals(p => ({ ...p, [r.id]: t.value }))}
-                                                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all ${
+                                                onClick={() => setErrorVals(p => ({ ...p, [r.id]: (p[r.id] === t.value ? '' : t.value) }))}
+                                                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all shrink-0 ${
                                                     (errorVals[r.id] || '') === t.value
                                                         ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
                                                         : 'bg-white text-slate-500 border-slate-200 hover:border-orange-300 hover:text-orange-500'
@@ -452,8 +500,13 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                         <input type="text" placeholder="Nota…"
                                             value={notaVals[r.id] ?? ''}
                                             onChange={e => setNotaVals(p => ({ ...p, [r.id]: e.target.value }))}
-                                            className="flex-1 min-w-[120px] text-[11px] border border-orange-200 rounded-full px-3 py-1 focus:outline-none focus:border-orange-400 bg-white placeholder-slate-300"
+                                            onKeyDown={e => e.key === 'Enter' && confirmProblema()}
+                                            className="flex-1 min-w-0 text-[11px] border border-orange-200 rounded-full px-3 py-1 focus:outline-none focus:border-orange-400 bg-white placeholder-slate-300"
                                         />
+                                        <button onClick={confirmProblema}
+                                            className="shrink-0 flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-orange-500 text-white hover:bg-orange-600 transition-colors">
+                                            <Check size={10} /> Listo
+                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -504,7 +557,6 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                         <Trash2 size={13} />
                                     </button>
                                 </div>
-                                {/* Nota del extra */}
                                 <div className="px-5 pb-2">
                                     <input type="text" placeholder="Nota (opcional)…" value={e.nota}
                                         onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, nota: ev.target.value } : x))}

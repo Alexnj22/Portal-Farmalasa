@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.253';
+export const APP_VERSION = '2.2.254';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.254 — fix(pedidos/recepcion): fórmula toDispatch(qty*erpFactor/dispFactor) igual que PDF para qty correcta (Electrolit=cajas, Acetaminofen=10); extra busca regla despacho en pedido_items; ERROR_TIPOS solo Dañado/Vencido/Otro; panel problema en 1 línea + campo nota + botón Listo/Enter
 // v2.2.253 — fix(pedidos/recepcion): X cierra buscador (no modal) cuando search abierto; scroll a extra recién agregado; cantidad_asignada ya es display unit (no dividir por factor); cantidad_recibida = fQty (no ×factor); delta y hasDiff en display units
 // v2.2.252 — fix(pedidos/recepcion): botón "Confirmar" siempre clickeable (no depende de pendientesCount); rows ordenados por laboratorio; pres despacho siempre en presOpts; diff detecta auto error_tipo; ⚠ abre panel pills de causa; extras como filas de tabla (fPres/fQty/sPres/sQty) con color indigo + borrar
 // v2.2.251 — fix(pedidos/recepcion): qty en unidades despacho (÷factor, submit ×factor); extras filtra productos ya en pedido; col pres 8rem; asig centrado; ⚠ más visible

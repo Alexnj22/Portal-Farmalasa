@@ -713,7 +713,7 @@ const TL_GLOW   = [
 
 const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 4, erp: 5 };
 
-function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, erpEmp }) {
+function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, erpEmp, receptionApoyo = [] }) {
     const hasPause  = (row.min_pausado_total ?? 0) > 0;
     const isPaused  = stage === 'pausado';
     const activeIdx = TL_STAGE_IDX[stage] ?? 0;
@@ -723,8 +723,8 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
         { key: 'iniciado',   label: 'Inicio',     time: row.iniciado_at,       emp: iniciadorEmp  },
         { key: 'preparado',  label: 'Listo',      time: row.finalizado_at,     emp: finalizadorEmp },
         { key: 'enviado',    label: 'En Ruta',    time: row.enviado_at,        emp: enviadorEmp    },
-        { key: 'llegada',    label: 'Llegada',    time: row.llegada_fisica_at, emp: llegadaEmp     },
-        { key: 'erp',        label: 'Sis. Ventas',time: row.recibido_erp_at,   emp: erpEmp         },
+        { key: 'llegada',    label: 'Llegada',    time: row.llegada_fisica_at, emp: llegadaEmp,    apoyo: receptionApoyo },
+        { key: 'erp',        label: 'Sis. Ventas',time: row.recibido_erp_at,   emp: erpEmp,         apoyo: receptionApoyo },
     ];
 
     return (
@@ -815,6 +815,16 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
                                     <span className="text-[9px] text-slate-600 leading-tight font-medium text-center">{node.emp.name?.split(' ')[0]}</span>
                                 </div>
                             )}
+                            {/* Apoyo avatar stack */}
+                            {node.apoyo?.length > 0 && (
+                                <div className="flex justify-center mt-0.5" style={{ paddingLeft: node.apoyo.length > 1 ? 6 : 0 }}>
+                                    {node.apoyo.slice(0, 3).map((a, i) => (
+                                        a.photo_url
+                                            ? <img key={a.id} src={a.photo_url} title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full object-cover border-2 border-white shadow-sm shrink-0 relative" alt="" />
+                                            : <span key={a.id} title={a.name} style={{ marginLeft: i > 0 ? -6 : 0, zIndex: i }} className="w-5 h-5 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center shrink-0 relative"><UserCircle2 size={10} className="text-slate-500" /></span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Connector */}
@@ -892,19 +902,35 @@ function ItemSections({ allItems, loading }) {
 
 // ─── Reception actions ────────────────────────────────────────────────────────
 
-function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLlegada, onOpenRecibir, onMarkErp, busy, pedidoDone, llegadaEmp, conteoEmp, erpEmp }) {
+function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLlegada, onOpenRecibir, onMarkErp, onApoyo, busy, pedidoDone, llegadaEmp, conteoEmp, erpEmp, cardApoyo = [] }) {
     const recibidosLoaded = items?.filter(r => r.status === 'recibido').length > 0;
     const showPaso3       = llegadaOk && !erpOk && (pedidoDone || recibidosLoaded);
     const pendientes      = items?.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0).length ?? 0;
 
     const empChip = (emp) => emp ? (
-        <span className="ml-auto flex items-center gap-1 text-[10px] text-slate-500">
+        <span className="flex items-center gap-1 text-[10px] text-slate-500">
             {emp.photo_url
                 ? <img src={emp.photo_url} className="w-4 h-4 rounded-full object-cover border border-white shadow-sm" alt="" />
                 : <UserCircle2 size={12} className="text-slate-400" />}
             {emp.name?.split(' ')[0]}
         </span>
     ) : null;
+
+    const apoyoChips = cardApoyo.length > 0 ? (
+        <div className="flex items-center gap-0.5">
+            {cardApoyo.slice(0, 4).map((a, i) => (
+                a.photo_url
+                    ? <img key={a.id} src={a.photo_url} title={a.name} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full object-cover border-2 border-white shadow-sm shrink-0" alt="" />
+                    : <span key={a.id} title={a.name} style={{ marginLeft: i > 0 ? -5 : 0 }} className="w-4 h-4 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center shrink-0"><UserCircle2 size={9} className="text-slate-500" /></span>
+            ))}
+        </div>
+    ) : null;
+
+    const apoyoBtn = (
+        <button onClick={onApoyo} className="flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all shrink-0">
+            <UserPlus size={10} />Apoyo
+        </button>
+    );
 
     return (
         <div className="border-t border-slate-100 px-4 py-3 space-y-2">
@@ -914,7 +940,7 @@ function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLleg
             <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] ${llegadaOk ? 'bg-emerald-50/40 border-emerald-100' : 'bg-blue-50/40 border-blue-100'}`}>
                 <PackageCheck size={13} className={llegadaOk ? 'text-emerald-500' : 'text-blue-500'} />
                 <span className={llegadaOk ? 'text-emerald-700' : 'text-blue-700'}>{llegadaOk ? 'Llegada de cajas confirmada' : 'Paso 1 — Confirmar llegada de cajas'}</span>
-                {llegadaOk ? empChip(llegadaEmp) : <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all disabled:opacity-50">{busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}</button>}
+                {llegadaOk ? <span className="ml-auto">{empChip(llegadaEmp)}</span> : <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all disabled:opacity-50">{busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}</button>}
             </div>
 
             {/* Paso 2: Conteo */}
@@ -924,7 +950,12 @@ function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLleg
                     <span className={(pedidoDone || erpOk) ? 'text-emerald-700' : 'text-slate-700'}>
                         {(pedidoDone || erpOk) ? 'Productos revisados' : `Paso 2 — Revisar productos (${pendientes} pendientes)`}
                     </span>
-                    {(pedidoDone || erpOk) ? empChip(conteoEmp) : <button onClick={onOpenRecibir} disabled={pendientes === 0} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-teal-500 text-white hover:bg-teal-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">Revisar</button>}
+                    <div className="ml-auto flex items-center gap-1.5">
+                        {empChip(conteoEmp)}
+                        {apoyoChips}
+                        {!erpOk && apoyoBtn}
+                        {!pedidoDone && !erpOk && <button onClick={onOpenRecibir} disabled={pendientes === 0} className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-teal-500 text-white hover:bg-teal-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">Revisar</button>}
+                    </div>
                 </div>
             )}
 
@@ -933,7 +964,11 @@ function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLleg
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-violet-50/40 border-violet-100 text-[11px]">
                     <Database size={13} className="text-violet-500" />
                     <span className="text-violet-700">Paso 3 — Confirmar en Sistema de Ventas</span>
-                    <button onClick={onMarkErp} disabled={busy === 'erp'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-50">{busy === 'erp' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}</button>
+                    <div className="ml-auto flex items-center gap-1.5">
+                        {apoyoChips}
+                        {apoyoBtn}
+                        <button onClick={onMarkErp} disabled={busy === 'erp'} className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-50">{busy === 'erp' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}</button>
+                    </div>
                 </div>
             )}
 
@@ -941,7 +976,10 @@ function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLleg
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-emerald-50/40 border-emerald-100 text-[11px]">
                     <Database size={13} className="text-emerald-500" />
                     <span className="text-emerald-700">Confirmado en Sistema de Ventas</span>
-                    {empChip(erpEmp)}
+                    <div className="ml-auto flex items-center gap-1.5">
+                        {empChip(erpEmp)}
+                        {apoyoChips}
+                    </div>
                 </div>
             )}
         </div>
@@ -1129,6 +1167,27 @@ export default function TabPedidos({ searchTerm = '' }) {
             setLoading(false);
         })();
     }, []); // eslint-disable-line
+
+    // Batch-load apoyo for branch users so it's always visible in the timeline (no expand needed)
+    useEffect(() => {
+        if (!isBranch || !erpSucursalId || !activeRows.length) return;
+        (async () => {
+            const ids = [...new Set(activeRows.map(r => r.pedido_id))];
+            if (!ids.length) return;
+            const { data } = await supabase.from('pedido_apoyo')
+                .select('pedido_id, employee_id, employees(name, photo_url)')
+                .in('pedido_id', ids)
+                .eq('erp_sucursal_id', erpSucursalId);
+            if (!data) return;
+            const map = {};
+            data.forEach(r => {
+                const key = `act_${r.pedido_id}_${erpSucursalId}`;
+                if (!map[key]) map[key] = [];
+                map[key].push({ id: r.employee_id, ...r.employees });
+            });
+            setApoyoMap(prev => ({ ...prev, ...map }));
+        })();
+    }, [isBranch, erpSucursalId, activeRows]); // eslint-disable-line
 
     // ── Realtime ──────────────────────────────────────────────────────────────
 
@@ -1497,7 +1556,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     {/* Lifecycle Timeline */}
                                     <div className="border-t border-slate-100 px-3 pt-2 pb-1.5">
-                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} erpEmp={erpEmp} />
+                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} erpEmp={erpEmp} receptionApoyo={isBranch ? cardApoyo : []} />
                                     </div>
 
                                     {/* Actions + status strip */}
@@ -1540,9 +1599,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 llegadaEmp={llegadaEmp}
                                                 conteoEmp={conteoEmp}
                                                 erpEmp={erpEmp}
+                                                cardApoyo={cardApoyo}
                                                 onMarkLlegada={() => handleLlegada(row.pedido_id, erpSucursalId, cardKey)}
                                                 onOpenRecibir={() => openModal(row.pedido_id, row.numero, erpSucursalId, cardKey)}
                                                 onMarkErp={() => handleMarkErp(row.pedido_id, erpSucursalId, cardKey)}
+                                                onApoyo={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: erpSucursalId, cardKey })}
                                                 busy={busyAction}
                                             />
                                         </div>

@@ -225,8 +225,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                     <div>
                                         <p className="text-[12px] font-semibold leading-tight">{tipo}</p>
                                         <p className={`text-[9px] leading-tight ${isActive ? 'text-white/70' : 'text-slate-400'}`}>
-                                            {pres.factor > 1 ? `${pres.factor} und. por pack` : 'unidad base'}
-                                            {pres.descripcion ? ` · ${pres.descripcion}` : ''}
+                                            {pres.factor > 1 ? `×${pres.factor} unidades` : 'unidad base'}
                                         </p>
                                     </div>
                                 </button>

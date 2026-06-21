@@ -4,7 +4,7 @@ import {
     Loader2, Building2, ClipboardList, CheckCircle2,
     Package, AlertTriangle, Info,
     TriangleAlert, TrendingUp,
-    Printer, Check, X,
+    Download, Check, X,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -307,8 +307,8 @@ export default function TabGenerar({ searchTerm = '' }) {
                         <CheckCircle2 size={18} className="text-emerald-500" />
                     </div>
                     <div className="flex-1 min-w-[180px]">
-                        <p className="font-semibold text-emerald-700 text-[14px]">Pedido #{confirmed.numero} confirmado e impreso</p>
-                        <p className="text-[11px] text-emerald-600/70">Si el diálogo de impresión no apareció, usa Reimprimir. Puedes verlo en Historial.</p>
+                        <p className="font-semibold text-emerald-700 text-[14px]">Pedido #{confirmed.numero} confirmado</p>
+                        <p className="text-[11px] text-emerald-600/70">PDF generado. Puedes descargarlo de nuevo si es necesario. Visible en Historial.</p>
                     </div>
                     <button
                         onClick={() => printPerSucursal(
@@ -319,7 +319,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         )}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-emerald-300 text-emerald-700 hover:bg-emerald-100 transition-colors"
                     >
-                        <Printer size={12} /> Reimprimir
+                        <Download size={12} /> Descargar pedido
                     </button>
                     <button onClick={() => setConfirmed(null)}
                         className="p-1.5 rounded-lg text-emerald-400 hover:text-emerald-600 transition-colors">
@@ -507,7 +507,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                     >
                         {confirming ? <Loader2 size={18} className="animate-spin" /> : <ClipboardList size={18} />}
                         {confirming
-                            ? 'Confirmando e imprimiendo…'
+                            ? 'Confirmando…'
                             : `Generar y confirmar${selected.size > 0 ? ` (${selected.size} sucursal${selected.size > 1 ? 'es' : ''})` : ''}`}
                     </button>
                     {error && (

@@ -250,12 +250,12 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                 hasDiff ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-100'
                             }`}>
                                 <div className="flex items-center gap-3">
-                                    <div className="flex-1 min-w-0">
-                                        <span className="text-[13px] text-slate-700 font-semibold truncate block">
+                                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                                        <span className="text-[13px] text-slate-700 font-semibold truncate">
                                             {r.products?.nombre}
                                         </span>
                                         {pres && (
-                                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 inline-block mt-0.5">
+                                            <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
                                                 {pres}
                                             </span>
                                         )}

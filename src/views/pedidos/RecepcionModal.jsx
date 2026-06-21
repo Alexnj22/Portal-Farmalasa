@@ -210,6 +210,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                             <X size={18} />
                         </button>
                     </div>
+                    </div>
                 </PedidoModal.Header>
 
                 {/* Items */}
@@ -265,7 +266,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                             </div>
                         );
                     })}
-                </div>
+                </PedidoModal.Body>
 
                 {/* Productos no esperados */}
                 <div className="border-t border-slate-100 px-5 py-3 space-y-2">
@@ -364,7 +365,6 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         </p>
                     )}
                 </div>
-                </PedidoModal.Body>
 
                 <PedidoModal.Footer className="space-y-2">
                     {saveError && (

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.234';
+export const APP_VERSION = '2.2.235';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.235 — fix(pedidos/sucursal): opacity solo cuando recibido_erp_at está puesto (isFadedOut); Paso 3 Marcar ERP aparece sin necesitar items cargados — pedidoDone=true (completado/parcial) activa Paso 3 directamente; Paso 2 muestra "Ítems confirmados" cuando pedidoDone
 // v2.2.234 — fix(pedidos/card): 3 correcciones — (1) quita badge doble "Completado" (PEDIDO_PILL ya lo muestra); (2) ReceptionActions visible para completado/parcial cuando recibido_erp_at es null (stage!='erp'), permite Marcar ERP tras contar ítems; (3) get_pedidos_en_curso v5 restaura pss.codigo (perdido en v3/v4)
 // v2.2.233 — fix(pedidos): fecha filtra completados igual que ventas — get_pedidos_en_curso v4 sin restricción de días (el filterDate del frontend controla el rango, mismo patrón que VentasView); sort pone completado/parcial siempre al fondo; FilterPill compacta (text-[11px] py-1 buttons, py-1.5 sections) igual al estándar VentasView/Historial
 // v2.2.232 — fix(pedidos): pedidos completado/parcial visibles 7 días — get_pedidos_en_curso v4 incluye status completado/parcial de los últimos 7 días; activos siempre primero; card con opacity-60 + badge "Completado" (verde) / "Con diferencias" (ámbar) sin botones de acción

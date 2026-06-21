@@ -892,7 +892,13 @@ function ItemSections({ allItems, loading }) {
 
 // ─── Reception actions ────────────────────────────────────────────────────────
 
-function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLlegada, onOpenRecibir, onMarkErp, busy }) {
+function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLlegada, onOpenRecibir, onMarkErp, busy, pedidoDone }) {
+    // pedidoDone=true cuando pedido_status es completado/parcial — significa que el conteo ya se hizo
+    // aunque items no estén cargados (card no expandida), Paso 3 debe aparecer
+    const recibidosLoaded = items?.filter(r => r.status === 'recibido').length > 0;
+    const showPaso3       = llegadaOk && !erpOk && (pedidoDone || recibidosLoaded);
+    const pendientes      = items?.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0).length ?? 0;
+
     return (
         <div className="border-t border-slate-100 px-4 py-3 space-y-2">
             <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Recepción</div>
@@ -902,13 +908,15 @@ function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLleg
                 {!llegadaOk && <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all disabled:opacity-50">{busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}</button>}
             </div>
             {llegadaOk && (
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] ${erpOk ? 'bg-emerald-50/40 border-emerald-100' : 'bg-teal-50/40 border-teal-100'}`}>
-                    <Activity size={13} className={erpOk ? 'text-emerald-500' : 'text-teal-500'} />
-                    <span className={erpOk ? 'text-emerald-700' : 'text-slate-700'}>{erpOk ? 'Ítems confirmados' : `Paso 2 — Contar ítems (${items?.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0).length ?? 0} pendientes)`}</span>
-                    {!erpOk && <button onClick={onOpenRecibir} disabled={!items?.some(r => r.status === 'pendiente' && r.cantidad_asignada > 0)} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-teal-500 text-white hover:bg-teal-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">Recibir</button>}
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] ${(pedidoDone || erpOk) ? 'bg-emerald-50/40 border-emerald-100' : 'bg-teal-50/40 border-teal-100'}`}>
+                    <Activity size={13} className={(pedidoDone || erpOk) ? 'text-emerald-500' : 'text-teal-500'} />
+                    <span className={(pedidoDone || erpOk) ? 'text-emerald-700' : 'text-slate-700'}>
+                        {(pedidoDone || erpOk) ? 'Ítems confirmados' : `Paso 2 — Contar ítems (${pendientes} pendientes)`}
+                    </span>
+                    {!pedidoDone && !erpOk && <button onClick={onOpenRecibir} disabled={pendientes === 0} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-teal-500 text-white hover:bg-teal-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">Recibir</button>}
                 </div>
             )}
-            {llegadaOk && items?.filter(r => r.status === 'recibido').length > 0 && !erpOk && (
+            {showPaso3 && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-violet-50/40 border-violet-100 text-[11px]">
                     <Database size={13} className="text-violet-500" />
                     <span className="text-violet-700">Paso 3 — Marcar ingresado al ERP</span>
@@ -1397,7 +1405,9 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                             const canApoyo = !isBranch && ['sin_iniciar','preparando','pausado'].includes(stage);
 
-                            const isDone = row.pedido_status === 'completado' || row.pedido_status === 'parcial';
+                            const isDone    = row.pedido_status === 'completado' || row.pedido_status === 'parcial';
+                            // Opacidad reducida solo cuando el ciclo completo terminó (recibido_erp_at puesto)
+                            const isFadedOut = isDone && !!row.recibido_erp_at;
 
                             return (
                                 <div
@@ -1405,7 +1415,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     className={`${GLASS} cursor-pointer select-none ${
                                         stage === 'pausado'
                                             ? 'ring-2 ring-amber-400 shadow-[0_4px_20px_rgba(251,191,36,0.25)]'
-                                            : isDone
+                                            : isFadedOut
                                                 ? 'opacity-60'
                                                 : ''
                                     }`}
@@ -1503,6 +1513,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 llegadaOk={!!llegadaStatus[cardKey] || !!row.llegada_fisica_at}
                                                 erpOk={!!erpStatus[cardKey] || !!row.recibido_erp_at}
                                                 items={items[cardKey]}
+                                                pedidoDone={isDone}
                                                 onMarkLlegada={() => handleLlegada(row.pedido_id, erpSucursalId, cardKey)}
                                                 onOpenRecibir={() => openModal(row.pedido_id, row.numero, erpSucursalId, cardKey)}
                                                 onMarkErp={() => handleMarkErp(row.pedido_id, erpSucursalId, cardKey)}

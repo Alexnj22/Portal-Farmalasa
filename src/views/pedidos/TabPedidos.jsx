@@ -63,7 +63,6 @@ const PEDIDO_LABEL = { confirmado: 'Por despachar', enviado: 'En camino', parcia
 
 const PAUSE_REASONS = [
     { key: 'almuerzo',     label: 'Almuerzo',             icon: Coffee,        maxUses: 1    },
-    { key: 'personal',     label: 'Falta de personal',    icon: Users,         maxUses: null },
     { key: 'insumos',      label: 'Espera de insumos',    icon: Clock,         maxUses: null },
     { key: 'reunion',      label: 'Reunión de turno',     icon: ClipboardList, maxUses: null },
     { key: 'interrupcion', label: 'Interrupción externa', icon: Bell,          maxUses: null },
@@ -1245,7 +1244,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             setKioskLunch(onKioskLunch);
             setPauseHistory(history);
-            setPauseRazon(onKioskLunch && !alreadyUsedAlmuerzo ? 'almuerzo' : 'personal');
+            setPauseRazon(onKioskLunch && !alreadyUsedAlmuerzo ? 'almuerzo' : 'insumos');
             setPauseComment('');
             setPauseModal({ pedidoId, sucId });
         } catch (e) {
@@ -1253,7 +1252,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             // Abre el modal aunque falle la detección de kiosko
             setPauseHistory([]);
             setKioskLunch(false);
-            setPauseRazon('personal');
+            setPauseRazon('insumos');
             setPauseComment('');
             setPauseModal({ pedidoId, sucId });
         }

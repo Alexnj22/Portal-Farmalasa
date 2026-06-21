@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.224';
+export const APP_VERSION = '2.2.225';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.225 — fix(pedidos/pausa): elimina razón "Falta de personal" del modal de pausa de despacho
 // v2.2.224 — fix(modals): restaura blur de fondo en todos los modals — ModalShell overlay vuelve a bg-slate-900/40 backdrop-blur-sm (revertido accidentalmente en commit ececdaf de abril); todos los modals del portal recuperan el scrim oscuro + blur de fondo estándar
 // v2.2.223 — refactor(modals): LiquidModal sub-components Header/Body/Footer; bg-transparent en header + relative z-10 en secciones para que el glass blur sea visible; migrados PauseModal+ApoioScanModal (TabPedidos), anular+apoyo+pausa (TabHistorial), RecepcionModal, SrsEnriquecerModal; inputs/selects pasan a bg-white/60 para no tapar glass
 // v2.2.222 — refactor(modals): LiquidModal — componente estándar glass en src/components/common/LiquidModal.jsx; migrados UnifiedModal, SrsEnriquecerModal, ShiftExceptionModal, PromoModal, PedidoModal (ahora re-exporta LiquidModal); elimina 5 overlays propios y 5 tarjetas bg-white opacas; AlertModal/ConfirmModal/KioskConfigModal/PhotoEditorModal quedan sin cambios (estilos especializados justificados)

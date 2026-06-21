@@ -738,8 +738,11 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
         /* overflow-visible so box-shadow glow never gets clipped */
         <div className="flex items-start w-full pb-1 pt-0.5" style={{ overflow: 'visible' }}>
             {nodes.map((node, idx) => {
-                const isDone      = node.time != null && idx < activeIdx;
-                const isActive    = idx === activeIdx;
+                // Nodes appended after the main sequence (Diferencias, Corregido) are "done"
+                // purely based on whether they have a timestamp, regardless of activeIdx
+                const isExtraNode = idx >= 6;
+                const isDone      = node.time != null && (isExtraNode || idx < activeIdx);
+                const isActive    = !isExtraNode && idx === activeIdx;
                 const isPausedDot = isActive && isPaused;
                 const isFuture    = !isDone && !isActive;
                 const nextNode    = nodes[idx + 1];

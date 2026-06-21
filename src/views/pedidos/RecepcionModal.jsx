@@ -97,12 +97,12 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             setApoyo((data || []).map(r => ({ id: r.employee_id, ...r.employees })));
         })();
 
-        // Presentaciones disponibles por producto; deduplicar por factor (puede haber CAJA 1x100 y CAJA 1X100)
+        // Presentaciones disponibles; join presentaciones(tipo) para label "CAJA 1x100", "BLISTER 1x10"
         const productIds = [...new Set(rows.map(r => r.erp_product_id))];
         if (productIds.length > 0) {
             (async () => {
                 const { data } = await supabase.from('product_precios')
-                    .select('product_id, factor, descripcion')
+                    .select('product_id, factor, descripcion, presentaciones(tipo)')
                     .in('product_id', productIds)
                     .eq('activo', true)
                     .order('factor');
@@ -111,9 +111,13 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                     const pid = p.product_id;
                     if (!map[pid]) map[pid] = [];
                     const f = p.factor || 1;
-                    // deduplicar: solo primer registro por factor
                     if (!map[pid].find(x => x.factor === f)) {
-                        map[pid].push({ factor: f, label: p.descripcion || (f === 1 ? 'Unidad' : `×${f}`) });
+                        const tipo = p.presentaciones?.tipo || '';
+                        const det  = p.descripcion || '';
+                        const label = tipo
+                            ? `${tipo}${det ? ' ' + det : ''}`
+                            : det || (f === 1 ? 'Unidad' : `×${f}`);
+                        map[pid].push({ factor: f, label });
                     }
                 });
                 setPresMap(map);
@@ -259,22 +263,25 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
 
             {/* Tabla comparativa: Físico vs Sistema */}
             <PedidoModal.Body className="px-0 py-0 max-h-[50vh]">
-                {/* Grupos de encabezado */}
-                <div className={`grid ${GRID} gap-x-2 px-5 pt-2 pb-1`}>
-                    <span /><span />
-                    <span className="col-span-2 text-center text-[9px] font-bold text-teal-600 uppercase tracking-wider border-b border-teal-200 pb-0.5">Físico</span>
-                    <span className="col-span-2 text-center text-[9px] font-bold text-violet-600 uppercase tracking-wider border-b border-violet-200 pb-0.5">Sistema</span>
-                    <span />
-                </div>
-                {/* Cabecera de columnas */}
-                <div className={`grid ${GRID} gap-x-2 items-center px-5 py-1.5 border-b border-slate-100 bg-slate-50/70 sticky top-0 z-10`}>
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Producto</span>
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase text-center">Asig.</span>
-                    <span className="text-[10px] font-semibold text-teal-500 uppercase text-center">Pres.</span>
-                    <span className="text-[10px] font-semibold text-teal-500 uppercase text-center">Qty</span>
-                    <span className="text-[10px] font-semibold text-violet-500 uppercase text-center">Pres.</span>
-                    <span className="text-[10px] font-semibold text-violet-500 uppercase text-center">Qty</span>
-                    <span />
+                {/* Header fijo: grupos + columnas juntos */}
+                <div className="sticky top-0 z-10 bg-white border-b-2 border-slate-200 shadow-sm">
+                    {/* Grupos Físico / Sistema */}
+                    <div className={`grid ${GRID} gap-x-2 px-5 pt-2 pb-1`}>
+                        <span /><span />
+                        <span className="col-span-2 text-center text-[10px] font-bold text-teal-600 uppercase tracking-widest border-b-2 border-teal-400 pb-1">Físico</span>
+                        <span className="col-span-2 text-center text-[10px] font-bold text-violet-600 uppercase tracking-widest border-b-2 border-violet-400 pb-1">Sistema</span>
+                        <span />
+                    </div>
+                    {/* Columnas */}
+                    <div className={`grid ${GRID} gap-x-2 items-center px-5 py-1.5`}>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Producto</span>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase text-center">Asig.</span>
+                        <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Pres.</span>
+                        <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Qty</span>
+                        <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Pres.</span>
+                        <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Qty</span>
+                        <span />
+                    </div>
                 </div>
 
                 {visibleRows.length === 0 && (
@@ -282,7 +289,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                 )}
 
                 <div className="divide-y divide-slate-100">
-                    {visibleRows.map(r => {
+                    {visibleRows.map((r, rowIdx) => {
                         const fQty  = fQtyVals[r.id]  ?? r.cantidad_asignada;
                         const sQty  = sQtyVals[r.id]  ?? r.cantidad_asignada;
                         const fPres = fPresVals[r.id] ?? (r.dispatch_factor || r.factor || 1);
@@ -323,7 +330,15 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                     {/* Físico: Qty */}
                                     <input
                                         type="number" min={0} value={fQty}
+                                        data-qty-row={rowIdx} data-qty-col="fqty"
                                         onChange={e => setFQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                                        onKeyDown={e => {
+                                            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                                                e.preventDefault();
+                                                const next = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="fqty"]`);
+                                                next?.focus(); next?.select();
+                                            }
+                                        }}
                                         className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${
                                             fQty !== sQty ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-slate-700 focus:border-teal-400'
                                         }`}
@@ -343,7 +358,15 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                     {/* Sistema: Qty */}
                                     <input
                                         type="number" min={0} value={sQty}
+                                        data-qty-row={rowIdx} data-qty-col="sqty"
                                         onChange={e => setSQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                                        onKeyDown={e => {
+                                            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                                                e.preventDefault();
+                                                const next = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="sqty"]`);
+                                                next?.focus(); next?.select();
+                                            }
+                                        }}
                                         className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${
                                             fQty !== sQty ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-slate-700 focus:border-violet-400'
                                         }`}

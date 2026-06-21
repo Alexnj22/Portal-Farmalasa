@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.248';
+export const APP_VERSION = '2.2.249';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.249 — fix(pedidos/recepcion): presentaciones con join presentaciones(tipo) → "BLISTER 1x10"; header fijo con grupo+cols visible; nav flechas ↑↓ entre filas en qty inputs
 // v2.2.248 — fix(pedidos/recepcion): presentaciones desde descripcion ERP (BLISTER 1x10, CAJA 1x100, UNIDAD 1x1); dedup por factor; nombre producto sin truncar
 // v2.2.247 — fix(pedidos/recepcion): labels de presentación usando fmtFactor (Caja ×N, Blíster ×N, Unidad) en lugar de descripcion ERP; presMap solo guarda factor
 // v2.2.246 — feat(pedidos/recepcion): modal 6 columnas Físico vs Sistema — presentación editable (dropdown product_precios), qty editable ambos lados, diff auto-detectado, botón ⚠ para problema sin diff (dañado/vencido); fix receive_pedido_sucursal: error_tipo IS NOT NULL también activa con_diferencia

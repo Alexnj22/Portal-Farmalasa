@@ -909,6 +909,16 @@ function ItemSections({ allItems, loading }) {
 
 // ─── Diferencias section ─────────────────────────────────────────────────────
 
+const ERROR_TIPO_LABEL = {
+    faltante: { label: 'Faltante',       color: 'bg-red-100 text-red-700 border-red-200'      },
+    sobrante: { label: 'Sobrante',       color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    danado:   { label: 'Dañado',         color: 'bg-orange-100 text-orange-700 border-orange-200'   },
+    vencido:  { label: 'Vencido',        color: 'bg-purple-100 text-purple-700 border-purple-200'   },
+    presentacion: { label: 'Pres. distinta', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    otro:     { label: 'Otro',           color: 'bg-slate-100 text-slate-600 border-slate-200'  },
+    diferencia: { label: 'Diferencia',   color: 'bg-amber-100 text-amber-700 border-amber-200' },
+};
+
 function DifSection({ row, difItems = [], isBranch, busyAction, onCorregir, onConfirmar }) {
     const [nota, setNota] = React.useState('');
     const hasCorrBodega = !!row.corregido_bodega_at;
@@ -925,17 +935,28 @@ function DifSection({ row, difItems = [], isBranch, busyAction, onCorregir, onCo
 
             {difItems.length > 0 && (
                 <div className="space-y-1">
-                    {difItems.slice(0, 4).map(r => (
-                        <div key={r.id} className="flex items-center gap-2 text-[11px] bg-white/70 rounded-lg px-2.5 py-1.5 border border-amber-100">
-                            <span className="flex-1 text-slate-700 font-medium truncate">{r.products?.nombre}</span>
-                            <span className="text-slate-400 text-[10px]">Sist.</span>
-                            <span className="text-slate-600 tabular-nums font-semibold w-6 text-center">{r.cantidad_asignada}</span>
-                            <span className="text-slate-400 text-[10px]">Fís.</span>
-                            <span className={`tabular-nums font-bold w-6 text-center ${(r.cantidad_recibida ?? 0) < r.cantidad_asignada ? 'text-red-600' : 'text-emerald-600'}`}>
-                                {r.cantidad_recibida ?? '?'}
-                            </span>
-                        </div>
-                    ))}
+                    {difItems.slice(0, 4).map(r => {
+                        const et = ERROR_TIPO_LABEL[r.error_tipo] ?? null;
+                        const qtyDiff = r.cantidad_recibida !== null && r.cantidad_recibida !== r.cantidad_asignada;
+                        return (
+                            <div key={r.id} className="flex items-center gap-2 text-[11px] bg-white/70 rounded-lg px-2.5 py-1.5 border border-amber-100">
+                                <span className="flex-1 text-slate-700 font-medium truncate">{r.products?.nombre}</span>
+                                {et && (
+                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${et.color}`}>{et.label}</span>
+                                )}
+                                {qtyDiff && (
+                                    <>
+                                        <span className="text-slate-400 text-[10px] shrink-0">Sist.</span>
+                                        <span className="text-slate-600 tabular-nums font-semibold w-5 text-center shrink-0">{r.cantidad_asignada}</span>
+                                        <span className="text-slate-400 text-[10px] shrink-0">Fís.</span>
+                                        <span className={`tabular-nums font-bold w-5 text-center shrink-0 ${(r.cantidad_recibida ?? 0) < r.cantidad_asignada ? 'text-red-600' : 'text-emerald-600'}`}>
+                                            {r.cantidad_recibida ?? '?'}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
+                        );
+                    })}
                     {difItems.length > 4 && (
                         <span className="text-[10px] text-slate-400 pl-1">+{difItems.length - 4} más</span>
                     )}
@@ -1310,7 +1331,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         let itemsQ = supabase.from('pedido_items')
             .select(`
                 id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_recibida,
-                status, nota_diferencia, error_tipo, received_at, lotes_asignados,
+                status, nota_diferencia, error_tipo, received_at, received_by, lotes_asignados,
                 sin_stock, revision_minmax,
                 factor, dispatch_tipo, dispatch_factor,
                 max_qty_snapshot, stock_packs_snapshot,
@@ -1453,36 +1474,36 @@ export default function TabPedidos({ searchTerm = '' }) {
     }, [items, fetchItems]);
 
     const handleReportarDiferencias = useCallback(async (pedidoId, sucId, numero) => {
+        // Lifecycle + audit (non-fatal — notification must always run)
+        supabase.rpc('update_pedido_sucursal_lifecycle', {
+            p_pedido_id: pedidoId, p_sucursal_id: sucId,
+            p_stage: 'reportar_diferencias', p_user_id: user?.id ?? null,
+        }).catch(e => console.error('lifecycle reportar_diferencias:', e));
+        useStaff.getState().appendAuditLog('PEDIDO_DIFERENCIAS_REPORTADAS', pedidoId, { sucursal_id: sucId });
+        // Notificación a bodega — siempre corre independiente del lifecycle
         try {
-            await supabase.rpc('update_pedido_sucursal_lifecycle', {
-                p_pedido_id: pedidoId, p_sucursal_id: sucId,
-                p_stage: 'reportar_diferencias', p_user_id: user?.id ?? null,
-            });
-            useStaff.getState().appendAuditLog('PEDIDO_DIFERENCIAS_REPORTADAS', pedidoId, { sucursal_id: sucId });
-            try {
-                const { data: bodegaMap } = await supabase.from('erp_sucursal_map')
-                    .select('branch_id').eq('es_bodega', true).maybeSingle();
-                if (bodegaMap?.branch_id) {
-                    await supabase.from('announcements').insert({
-                        title:        `Diferencias en pedido #${numero} — ${branchName}`,
-                        message:      `La recepción del pedido #${numero} en ${branchName} reporta diferencias de cantidad. Revisá el pedido y marcalo como corregido.`,
+            const { data: bodegaMap } = await supabase.from('erp_sucursal_map')
+                .select('branch_id').eq('es_bodega', true).maybeSingle();
+            if (bodegaMap?.branch_id) {
+                await supabase.from('announcements').insert({
+                    title:        `Diferencias en pedido #${numero} — ${branchName}`,
+                    message:      `La recepción del pedido #${numero} en ${branchName} reporta diferencias. Revisá el pedido y marcalo como corregido.`,
+                    target_type:  'BRANCH',
+                    target_value: [bodegaMap.branch_id],
+                    read_by:      [], is_archived: false,
+                    created_by:   user?.id ?? null, priority: 'NORMAL',
+                });
+                supabase.functions.invoke('send-push-notification', {
+                    body: {
+                        title:        `Diferencias — pedido #${numero}`,
+                        message:      `${branchName} reporta diferencias en la recepción.`,
+                        url:          '/pedidos',
                         target_type:  'BRANCH',
                         target_value: [bodegaMap.branch_id],
-                        read_by:      [], is_archived: false,
-                        created_by:   user?.id ?? null, priority: 'NORMAL',
-                    });
-                    supabase.functions.invoke('send-push-notification', {
-                        body: {
-                            title:        `Diferencias — pedido #${numero}`,
-                            message:      `${branchName} reporta diferencias en la recepción.`,
-                            url:          '/pedidos',
-                            target_type:  'BRANCH',
-                            target_value: [bodegaMap.branch_id],
-                        },
-                    }).catch(() => {});
-                }
-            } catch { /* non-fatal */ }
-        } catch (e) { console.error(e); }
+                    },
+                }).catch(() => {});
+            }
+        } catch (e) { console.error('notificacion diferencias:', e); }
     }, [user, branchName]);
 
     const handleCorregirBodega = useCallback(async (pedidoId, sucId, nota) => {

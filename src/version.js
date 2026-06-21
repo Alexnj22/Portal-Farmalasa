@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.254';
+export const APP_VERSION = '2.2.255';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.255 — fix(pedidos/recepcion): header sticky dentro del scroll container (alineación exacta con columnas sin mismatch de scrollbar); workflow diferencias completo: migración DB add corregido_bodega_at/confirmado_correccion_at/diferencias_reportadas_at + lifecycle stages + get_pedidos_en_curso v6; notificación bodega siempre corre (desacoplada del RPC); DifSection muestra error_tipo badge con colores; received_by en fetchItems
 // v2.2.254 — fix(pedidos/recepcion): fórmula toDispatch(qty*erpFactor/dispFactor) igual que PDF para qty correcta (Electrolit=cajas, Acetaminofen=10); extra busca regla despacho en pedido_items; ERROR_TIPOS solo Dañado/Vencido/Otro; panel problema en 1 línea + campo nota + botón Listo/Enter
 // v2.2.253 — fix(pedidos/recepcion): X cierra buscador (no modal) cuando search abierto; scroll a extra recién agregado; cantidad_asignada ya es display unit (no dividir por factor); cantidad_recibida = fQty (no ×factor); delta y hasDiff en display units
 // v2.2.252 — fix(pedidos/recepcion): botón "Confirmar" siempre clickeable (no depende de pendientesCount); rows ordenados por laboratorio; pres despacho siempre en presOpts; diff detecta auto error_tipo; ⚠ abre panel pills de causa; extras como filas de tabla (fPres/fQty/sPres/sQty) con color indigo + borrar

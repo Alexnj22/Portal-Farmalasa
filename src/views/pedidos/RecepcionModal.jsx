@@ -348,27 +348,29 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                 </div>
             </PedidoModal.Header>
 
-            {/* Header tabla — fuera del Body (no scrollea) */}
-            <div className="flex-none bg-white/90 border-b-2 border-slate-200">
-                <div className={`grid ${GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
-                    <span /><span />
-                    <span className="col-span-2 text-center text-[10px] font-bold text-teal-600 uppercase tracking-widest border-b-2 border-teal-400 pb-1">Físico</span>
-                    <span className="col-span-2 text-center text-[10px] font-bold text-violet-600 uppercase tracking-widest border-b-2 border-violet-400 pb-1">Sistema</span>
-                    <span />
-                </div>
-                <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
-                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Producto</span>
-                    <span className="text-[10px] font-bold text-slate-600 uppercase text-center">Asig.</span>
-                    <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Pres.</span>
-                    <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Qty</span>
-                    <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Pres.</span>
-                    <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Qty</span>
-                    <span />
-                </div>
-            </div>
+            {/* Tabla — Body sin overflow propio; el div interno maneja el scroll */}
+            <PedidoModal.Body className="px-0 py-0" style={{ overflow: 'hidden', flex: 'none' }}>
+              <div className="max-h-[48vh] overflow-y-auto">
 
-            {/* Tabla */}
-            <PedidoModal.Body className="px-0 py-0 max-h-[44vh]">
+                {/* Header sticky — dentro del contenedor scroll, ancho idéntico a las filas */}
+                <div className="sticky top-0 z-10 bg-white/97 backdrop-blur-sm border-b-2 border-slate-200 shadow-sm">
+                    <div className={`grid ${GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
+                        <span /><span />
+                        <span className="col-span-2 text-center text-[10px] font-bold text-teal-600 uppercase tracking-widest border-b-2 border-teal-400 pb-1">Físico</span>
+                        <span className="col-span-2 text-center text-[10px] font-bold text-violet-600 uppercase tracking-widest border-b-2 border-violet-400 pb-1">Sistema</span>
+                        <span />
+                    </div>
+                    <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
+                        <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Producto</span>
+                        <span className="text-[10px] font-bold text-slate-600 uppercase text-center">Asig.</span>
+                        <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Pres.</span>
+                        <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Qty</span>
+                        <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Pres.</span>
+                        <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Qty</span>
+                        <span />
+                    </div>
+                </div>
+
                 {visibleRows.length === 0 && !extras.length && (
                     <p className="text-center text-[12px] text-slate-400 py-6">No se encontraron productos.</p>
                 )}
@@ -568,6 +570,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                     })}
                     <div ref={extrasEndRef} />
                 </div>
+              </div>{/* end inner scroll container */}
             </PedidoModal.Body>
 
             {/* Buscador de extras */}

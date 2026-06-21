@@ -910,103 +910,244 @@ function ItemSections({ allItems, loading }) {
 // ─── Diferencias section ─────────────────────────────────────────────────────
 
 const ERROR_TIPO_LABEL = {
-    faltante: { label: 'Faltante',       color: 'bg-red-100 text-red-700 border-red-200'      },
-    sobrante: { label: 'Sobrante',       color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    danado:   { label: 'Dañado',         color: 'bg-orange-100 text-orange-700 border-orange-200'   },
-    vencido:  { label: 'Vencido',        color: 'bg-purple-100 text-purple-700 border-purple-200'   },
-    presentacion: { label: 'Pres. distinta', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-    otro:     { label: 'Otro',           color: 'bg-slate-100 text-slate-600 border-slate-200'  },
-    diferencia: { label: 'Diferencia',   color: 'bg-amber-100 text-amber-700 border-amber-200' },
+    faltante:     { label: 'Faltante',        color: 'bg-red-100 text-red-700 border-red-200'           },
+    sobrante:     { label: 'Sobrante',        color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    danado:       { label: 'Dañado',          color: 'bg-orange-100 text-orange-700 border-orange-200'   },
+    vencido:      { label: 'Vencido',         color: 'bg-purple-100 text-purple-700 border-purple-200'   },
+    presentacion: { label: 'Pres. distinta',  color: 'bg-blue-100 text-blue-700 border-blue-200'         },
+    otro:         { label: 'Otro',            color: 'bg-slate-100 text-slate-600 border-slate-200'      },
+    diferencia:   { label: 'Diferencia',      color: 'bg-amber-100 text-amber-700 border-amber-200'      },
 };
 
-function DifSection({ row, difItems = [], isBranch, busyAction, onCorregir, onConfirmar }) {
-    const [nota, setNota] = React.useState('');
-    const hasCorrBodega = !!row.corregido_bodega_at;
-    const hasCorrConf   = !!row.confirmado_correccion_at;
+const RESOLUCION_OPTS = {
+    faltante:     [['envio_fisico','Enviar producto'],['ajuste_sistema','Ajuste en sistema']],
+    sobrante:     [['aceptar_sobrante','Sucursal queda con sobrante'],['devolver_bodega','Devolver a bodega']],
+    danado:       [['devolucion_aceptada','Aceptar devolución'],['devolucion_negada','Negar devolución']],
+    vencido:      [['devolucion_aceptada','Aceptar devolución'],['devolucion_negada','Negar devolución']],
+    presentacion: [['ajuste_sistema','Ajuste en sistema'],['aceptar_dif_pres','Aceptar dif. presentación']],
+    otro:         [['resuelto','Resuelto'],['no_aplica','Sin solución']],
+};
+
+const RESOLUCION_LABEL = {
+    envio_fisico:        'Enviar producto',
+    ajuste_sistema:      'Ajuste en sistema',
+    aceptar_sobrante:    'Sucursal queda con sobrante',
+    devolver_bodega:     'Devolver a bodega',
+    devolucion_aceptada: 'Devolución aceptada',
+    devolucion_negada:   'Devolución negada',
+    aceptar_dif_pres:    'Dif. presentación aceptada',
+    resuelto:            'Resuelto',
+    no_aplica:           'Sin solución',
+};
+
+const EVENTO_LABEL = {
+    resolucion_propuesta:  'propuso resolución',
+    resolucion_confirmada: 'confirmó resolución',
+    resolucion_rechazada:  'rechazó resolución',
+};
+
+function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, empMap = new Map(), onResolver }) {
+    const [tipoSel,    setTipoSel]    = React.useState({});
+    const [notaSel,    setNotaSel]    = React.useState({});
+    const [rejectOpen, setRejectOpen] = React.useState({});
+    const [notaRec,    setNotaRec]    = React.useState({});
+
+    const allConfirmed = difItems.length > 0 && difItems.every(r => r.resolucion_status === 'confirmada');
 
     return (
-        <div className="border-t border-amber-100 bg-amber-50/20 px-4 py-3 space-y-2.5">
+        <div className="border-t border-amber-100 bg-gradient-to-b from-amber-50/40 to-white px-4 py-3 space-y-3">
             <div className="flex items-center gap-1.5">
                 <AlertCircle size={12} className="text-amber-500 shrink-0" />
                 <span className="text-[10px] font-semibold text-amber-700 uppercase tracking-wide">
-                    Diferencias {hasCorrConf ? '— corregidas' : 'pendientes'}
+                    {allConfirmed ? 'Diferencias resueltas ✓' : 'Diferencias — pendiente resolución'}
                 </span>
             </div>
 
-            {difItems.length > 0 && (
-                <div className="space-y-1">
-                    {difItems.slice(0, 4).map(r => {
-                        const et = ERROR_TIPO_LABEL[r.error_tipo] ?? null;
-                        const qtyDiff = r.cantidad_recibida !== null && r.cantidad_recibida !== r.cantidad_asignada;
+            {difItems.map(item => {
+                const opts    = RESOLUCION_OPTS[item.error_tipo] ?? [['resuelto','Resuelto'],['no_aplica','Sin solución']];
+                const selTipo = tipoSel[item.id] ?? opts[0]?.[0] ?? '';
+                const isBusy  = busyAction === `res_${item.id}`;
+                const et      = ERROR_TIPO_LABEL[item.error_tipo];
+                const res     = item.resolucion_status;
+                const qtyDiff = item.cantidad_recibida !== null && item.cantidad_recibida !== item.cantidad_asignada;
+
+                const resueltoEmp   = item.resuelto_por       ? empMap.get(item.resuelto_por)       : null;
+                const confirmadoEmp = item.confirmado_suc_por ? empMap.get(item.confirmado_suc_por)  : null;
+                const rechazadoEmp  = item.rechazado_por      ? empMap.get(item.rechazado_por)       : null;
+
+                const borderCls = res === 'confirmada' ? 'border-emerald-200 bg-emerald-50/30'
+                                : res === 'rechazada'  ? 'border-red-200 bg-red-50/20'
+                                : res === 'propuesta'  ? 'border-violet-200 bg-violet-50/20'
+                                :                        'border-amber-200 bg-white';
+
+                return (
+                    <div key={item.id} className={`rounded-xl border overflow-hidden ${borderCls}`}>
+                        {/* Item header */}
+                        <div className="flex items-center gap-2 px-3 py-2">
+                            <span className="flex-1 text-[11px] font-semibold text-slate-700 truncate">{item.products?.nombre}</span>
+                            {et && <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${et.color}`}>{et.label}</span>}
+                            {res === 'confirmada' && <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />}
+                            {res === 'rechazada'  && <X size={13} className="text-red-500 shrink-0" />}
+                        </div>
+
+                        {/* Qty diff */}
+                        {qtyDiff && (
+                            <div className="flex items-center gap-1.5 px-3 pb-1.5 text-[10px] text-slate-500">
+                                <span>Sistema: <strong className="text-slate-700">{item.cantidad_asignada}</strong></span>
+                                <span className="text-slate-300">→</span>
+                                <span>Físico: <strong className={item.cantidad_recibida < item.cantidad_asignada ? 'text-red-600' : 'text-emerald-600'}>{item.cantidad_recibida}</strong></span>
+                            </div>
+                        )}
+
+                        <div className="px-3 pb-3 space-y-2">
+
+                            {/* ── Estado: null o rechazada — BODEGA propone ── */}
+                            {(!res || res === 'rechazada') && !isBranch && (
+                                <>
+                                    {res === 'rechazada' && (
+                                        <div className="flex items-start gap-1.5 text-[10px] bg-red-50 rounded-lg px-2.5 py-1.5 border border-red-100">
+                                            <X size={10} className="text-red-500 mt-0.5 shrink-0" />
+                                            <div>
+                                                <span className="font-semibold text-red-700">Rechazado</span>
+                                                {rechazadoEmp && <span className="text-red-600"> por {rechazadoEmp.name?.split(' ')[0]}</span>}
+                                                {item.nota_rechazo && <p className="text-red-600 italic">{item.nota_rechazo}</p>}
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className="flex gap-2">
+                                        <select
+                                            value={selTipo}
+                                            onChange={e => setTipoSel(p => ({ ...p, [item.id]: e.target.value }))}
+                                            className="flex-1 text-[10px] border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-violet-400"
+                                        >
+                                            {opts.map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text" placeholder="Nota (opcional)…"
+                                            value={notaSel[item.id] ?? ''}
+                                            onChange={e => setNotaSel(p => ({ ...p, [item.id]: e.target.value }))}
+                                            className="flex-1 text-[10px] border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-violet-400 bg-white placeholder-slate-300"
+                                        />
+                                        <button
+                                            onClick={() => onResolver(item.id, 'proponer', selTipo, notaSel[item.id] || null)}
+                                            disabled={isBusy || !selTipo}
+                                            className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-50 shrink-0 active:scale-95 transition-all"
+                                        >
+                                            {isBusy ? <Loader2 size={10} className="animate-spin" /> : res === 'rechazada' ? 'Volver a proponer' : 'Proponer'}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* ── Estado: null — SUCURSAL espera ── */}
+                            {!res && isBranch && (
+                                <p className="text-[10px] text-slate-400 italic">Esperando resolución de bodega…</p>
+                            )}
+
+                            {/* ── Estado: propuesta — mostrar propuesta ── */}
+                            {res === 'propuesta' && (
+                                <>
+                                    <div className="flex items-start gap-1.5 text-[10px] bg-violet-50 rounded-lg px-2.5 py-1.5 border border-violet-100">
+                                        <div className="flex-1">
+                                            <span className="font-semibold text-violet-800">{RESOLUCION_LABEL[item.resolucion_tipo] ?? item.resolucion_tipo}</span>
+                                            {resueltoEmp && <span className="text-violet-600"> — {resueltoEmp.name?.split(' ')[0]}</span>}
+                                            {item.resolucion_nota && <p className="text-violet-600 italic">{item.resolucion_nota}</p>}
+                                        </div>
+                                    </div>
+                                    {isBranch && (
+                                        rejectOpen[item.id] ? (
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text" placeholder="Razón del rechazo…" autoFocus
+                                                    value={notaRec[item.id] ?? ''}
+                                                    onChange={e => setNotaRec(p => ({ ...p, [item.id]: e.target.value }))}
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Enter') onResolver(item.id, 'rechazar', null, notaRec[item.id] || null);
+                                                        if (e.key === 'Escape') setRejectOpen(p => ({ ...p, [item.id]: false }));
+                                                    }}
+                                                    className="flex-1 text-[10px] border border-red-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-red-400 bg-white placeholder-slate-300"
+                                                />
+                                                <button
+                                                    onClick={() => onResolver(item.id, 'rechazar', null, notaRec[item.id] || null)}
+                                                    disabled={isBusy}
+                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 shrink-0 active:scale-95 transition-all"
+                                                >
+                                                    {isBusy ? <Loader2 size={10} className="animate-spin" /> : 'Rechazar'}
+                                                </button>
+                                                <button onClick={() => setRejectOpen(p => ({ ...p, [item.id]: false }))} className="text-[10px] text-slate-400 hover:text-slate-600 px-1">✕</button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => onResolver(item.id, 'confirmar', null, null)}
+                                                    disabled={isBusy}
+                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 active:scale-95 transition-all"
+                                                >
+                                                    {isBusy ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar'}
+                                                </button>
+                                                <button
+                                                    onClick={() => setRejectOpen(p => ({ ...p, [item.id]: true }))}
+                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 active:scale-95 transition-all"
+                                                >
+                                                    Rechazar
+                                                </button>
+                                            </div>
+                                        )
+                                    )}
+                                    {!isBranch && (
+                                        <p className="text-[10px] text-slate-400 italic">Esperando confirmación de sucursal…</p>
+                                    )}
+                                </>
+                            )}
+
+                            {/* ── Estado: rechazada — SUCURSAL espera ── */}
+                            {res === 'rechazada' && isBranch && (
+                                <div className="text-[10px] bg-red-50 rounded-lg px-2.5 py-1.5 border border-red-100 space-y-0.5">
+                                    <div>
+                                        <span className="font-semibold text-red-700">Rechazada</span>
+                                        {rechazadoEmp && <span className="text-red-600"> por {rechazadoEmp.name?.split(' ')[0]}</span>}
+                                    </div>
+                                    {item.nota_rechazo && <p className="text-red-600 italic">{item.nota_rechazo}</p>}
+                                    <p className="text-slate-400">Esperando nueva propuesta de bodega…</p>
+                                </div>
+                            )}
+
+                            {/* ── Estado: confirmada ── */}
+                            {res === 'confirmada' && (
+                                <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-emerald-700">
+                                    <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
+                                    <strong>{RESOLUCION_LABEL[item.resolucion_tipo] ?? item.resolucion_tipo}</strong>
+                                    {confirmadoEmp && <span className="text-emerald-600">— {confirmadoEmp.name?.split(' ')[0]}</span>}
+                                    {item.resolucion_nota && <span className="text-emerald-600 italic">· {item.resolucion_nota}</span>}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            })}
+
+            {/* ── Actividad ── */}
+            {eventos.length > 0 && (
+                <div className="border-t border-amber-100 pt-2 space-y-1.5">
+                    <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Actividad</p>
+                    {eventos.map(ev => {
+                        const emp       = ev.hecho_por ? empMap.get(ev.hecho_por) : null;
+                        const itemName  = difItems.find(d => d.id === ev.pedido_item_id)?.products?.nombre;
                         return (
-                            <div key={r.id} className="flex items-center gap-2 text-[11px] bg-white/70 rounded-lg px-2.5 py-1.5 border border-amber-100">
-                                <span className="flex-1 text-slate-700 font-medium truncate">{r.products?.nombre}</span>
-                                {et && (
-                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border shrink-0 ${et.color}`}>{et.label}</span>
-                                )}
-                                {qtyDiff && (
-                                    <>
-                                        <span className="text-slate-400 text-[10px] shrink-0">Sist.</span>
-                                        <span className="text-slate-600 tabular-nums font-semibold w-5 text-center shrink-0">{r.cantidad_asignada}</span>
-                                        <span className="text-slate-400 text-[10px] shrink-0">Fís.</span>
-                                        <span className={`tabular-nums font-bold w-5 text-center shrink-0 ${(r.cantidad_recibida ?? 0) < r.cantidad_asignada ? 'text-red-600' : 'text-emerald-600'}`}>
-                                            {r.cantidad_recibida ?? '?'}
-                                        </span>
-                                    </>
-                                )}
+                            <div key={ev.id} className="flex items-start gap-2 text-[10px] text-slate-600">
+                                <span className="text-slate-400 shrink-0 tabular-nums">{fmtRelative(ev.created_at)}</span>
+                                <span>
+                                    <strong className="text-slate-700">{emp?.name?.split(' ')[0] ?? '—'}</strong>{' '}
+                                    {EVENTO_LABEL[ev.tipo] ?? ev.tipo}
+                                    {ev.resolucion_tipo && <em className="text-slate-500"> ({RESOLUCION_LABEL[ev.resolucion_tipo] ?? ev.resolucion_tipo})</em>}
+                                    {itemName && <span className="text-slate-400"> · {itemName}</span>}
+                                    {ev.nota && <span className="text-slate-500 italic"> — {ev.nota}</span>}
+                                </span>
                             </div>
                         );
                     })}
-                    {difItems.length > 4 && (
-                        <span className="text-[10px] text-slate-400 pl-1">+{difItems.length - 4} más</span>
-                    )}
-                </div>
-            )}
-
-            {/* Bodega: marcar como corregido */}
-            {!isBranch && !hasCorrBodega && (
-                <div className="flex items-center gap-2">
-                    <input
-                        type="text" value={nota} onChange={e => setNota(e.target.value)}
-                        placeholder="¿Qué se hizo para corregir? (opcional)…"
-                        className="flex-1 text-[11px] border border-amber-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-amber-400 bg-white placeholder-slate-300"
-                    />
-                    <button
-                        onClick={() => { onCorregir(nota); setNota(''); }}
-                        disabled={busyAction === 'corr_bodega'}
-                        className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition-all disabled:opacity-50 shrink-0 whitespace-nowrap"
-                    >
-                        {busyAction === 'corr_bodega' ? <Loader2 size={10} className="animate-spin" /> : 'Marcar corregido'}
-                    </button>
-                </div>
-            )}
-
-            {/* Bodega ya marcó + confirmación de sucursal */}
-            {hasCorrBodega && (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 px-3 py-2.5 space-y-1.5">
-                    <div className="flex items-center gap-1.5">
-                        <CheckSquare size={12} className="text-emerald-600 shrink-0" />
-                        <span className="text-[11px] font-semibold text-emerald-700">Bodega indicó corrección</span>
-                    </div>
-                    {row.corregido_bodega_nota && (
-                        <p className="text-[11px] text-slate-600 italic pl-[22px]">{row.corregido_bodega_nota}</p>
-                    )}
-                    {isBranch && !hasCorrConf && (
-                        <button
-                            onClick={onConfirmar}
-                            disabled={busyAction === 'confirmar_corr'}
-                            className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50"
-                        >
-                            <CheckCheck size={11} />
-                            {busyAction === 'confirmar_corr' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar corrección'}
-                        </button>
-                    )}
-                    {hasCorrConf && (
-                        <div className="flex items-center gap-1.5">
-                            <CheckCheck size={12} className="text-purple-500" />
-                            <span className="text-[11px] font-semibold text-purple-700">Corrección confirmada por sucursal</span>
-                        </div>
-                    )}
                 </div>
             )}
         </div>
@@ -1208,6 +1349,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     useEffect(() => { expandedMetaRef.current = expandedMeta; }, [expandedMeta]);
 
     const [items,         setItems]         = useState({});
+    const [eventosMap,    setEventosMap]    = useState({});
     const [loadingItems,  setLoadingItems]  = useState(false);
     const [llegadaStatus, setLlegadaStatus] = useState({});
     const [erpStatus,     setErpStatus]     = useState({});
@@ -1327,6 +1469,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                 if (meta && meta.pedidoId === affectedId) fetchItems(expanded, meta.pedidoId, meta.sucId);
             })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'pedido_sucursal_status' }, () => { loadActive(); })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pedido_item_eventos' }, (payload) => {
+                const { pedido_id, erp_sucursal_id } = payload.new ?? {};
+                if (!pedido_id) return;
+                const key = `act_${pedido_id}_${erp_sucursal_id}`;
+                fetchItems(key, pedido_id, erp_sucursal_id);
+                loadActive();
+            })
             .subscribe();
         return () => supabase.removeChannel(ch);
     }, [loadActive, isBranch, erpSucursalId]); // eslint-disable-line
@@ -1345,6 +1494,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                 sin_stock, revision_minmax,
                 factor, dispatch_tipo, dispatch_factor,
                 max_qty_snapshot, stock_packs_snapshot,
+                resolucion_status, resolucion_tipo, resolucion_nota,
+                resuelto_por, resuelto_at, confirmado_suc_por, confirmado_suc_at,
+                rechazado_por, rechazado_at, nota_rechazo,
                 products ( nombre, es_antibiotico, laboratorios ( nombre ) )
             `)
             .eq('pedido_id', pedidoId)
@@ -1360,9 +1512,16 @@ export default function TabPedidos({ searchTerm = '' }) {
             .eq('pedido_id', pedidoId);
         if (sucFilter) apoyoQ = apoyoQ.eq('erp_sucursal_id', sucFilter);
 
-        const [{ data: itemRows }, { data: lcRow }, { data: apoyoRows }] = await Promise.all([itemsQ, lcPromise, apoyoQ]);
+        let eventosQ = supabase.from('pedido_item_eventos')
+            .select('id, pedido_item_id, tipo, resolucion_tipo, nota, hecho_por, created_at')
+            .eq('pedido_id', pedidoId)
+            .order('created_at', { ascending: true });
+        if (sucFilter) eventosQ = eventosQ.eq('erp_sucursal_id', sucFilter);
+
+        const [{ data: itemRows }, { data: lcRow }, { data: apoyoRows }, { data: evRows }] = await Promise.all([itemsQ, lcPromise, apoyoQ, eventosQ]);
         const resolved = itemRows || [];
         setItems(prev => ({ ...prev, [key]: resolved }));
+        setEventosMap(prev => ({ ...prev, [key]: evRows || [] }));
         setApoyoMap(prev => ({ ...prev, [key]: (apoyoRows || []).map(r => ({ id: r.employee_id, ...r.employees })) }));
         if (lcRow) {
             setErpStatus(prev => ({ ...prev, [key]: !!lcRow.recibido_erp_at }));
@@ -1539,6 +1698,22 @@ export default function TabPedidos({ searchTerm = '' }) {
             await loadActive();
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [user, loadActive]);
+
+    const handleResolverItem = useCallback(async (pedidoId, sucId, itemId, action, tipo, nota) => {
+        setBusyAction(`res_${itemId}`);
+        try {
+            const { error } = await supabase.rpc('resolve_pedido_item', {
+                p_item_id: itemId, p_action: action,
+                p_user_id: user?.id ?? null,
+                p_tipo:    tipo ?? null,
+                p_nota:    nota ?? null,
+            });
+            if (error) throw error;
+            useStaff.getState().appendAuditLog(`PEDIDO_RESOLUCION_${action.toUpperCase()}`, pedidoId, { item_id: itemId, tipo, nota });
+            const key = `act_${pedidoId}_${sucId}`;
+            await Promise.all([loadActive(), fetchItems(key, pedidoId, sucId)]);
+        } catch (e) { console.error('resolverItem:', e); } finally { setBusyAction(null); }
+    }, [user, loadActive, fetchItems]);
 
     // ── Derived ───────────────────────────────────────────────────────────────
 
@@ -1792,10 +1967,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             <DifSection
                                                 row={row}
                                                 difItems={(items[cardKey] ?? []).filter(r => r.status === 'con_diferencia' || r.error_tipo)}
+                                                eventos={eventosMap[cardKey] ?? []}
                                                 isBranch={isBranch}
                                                 busyAction={busyAction}
-                                                onCorregir={(nota) => handleCorregirBodega(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, nota)}
-                                                onConfirmar={() => handleConfirmarCorreccion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id)}
+                                                empMap={empMap}
+                                                onResolver={(itemId, action, tipo, nota) =>
+                                                    handleResolverItem(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId, action, tipo, nota)
+                                                }
                                             />
                                         </div>
                                     )}

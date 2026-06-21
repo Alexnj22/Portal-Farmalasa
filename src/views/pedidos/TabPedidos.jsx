@@ -1488,8 +1488,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     </div>
 
-                                    {/* Confirmar llegada — siempre visible para sucursal sin necesidad de expandir */}
-                                    {isBranch && erpSucursalId && row.pedido_status === 'enviado' && (
+                                    {/* Confirmar llegada — visible hasta que recibido_erp_at esté puesto (stage erp = ya procesado) */}
+                                    {isBranch && erpSucursalId && row.pedido_status === 'enviado' && stage !== 'erp' && (
                                         <div onClick={e => e.stopPropagation()}>
                                             <ReceptionActions
                                                 pedidoId={row.pedido_id} sucId={erpSucursalId}

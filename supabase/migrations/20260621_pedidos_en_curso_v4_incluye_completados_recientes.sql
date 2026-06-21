@@ -62,10 +62,6 @@ AS $$
     FROM   pedidos p
     JOIN   pedido_sucursal_status pss ON pss.pedido_id = p.id
     WHERE  p.status <> 'anulado'
-      AND (
-            p.status NOT IN ('completado', 'parcial')
-            OR p.created_at >= NOW() - INTERVAL '7 days'
-          )
     ORDER BY
         CASE WHEN p.status IN ('completado', 'parcial') THEN 1 ELSE 0 END,
         p.created_at DESC;

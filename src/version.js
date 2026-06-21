@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.232';
+export const APP_VERSION = '2.2.233';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.233 — fix(pedidos): fecha filtra completados igual que ventas — get_pedidos_en_curso v4 sin restricción de días (el filterDate del frontend controla el rango, mismo patrón que VentasView); sort pone completado/parcial siempre al fondo; FilterPill compacta (text-[11px] py-1 buttons, py-1.5 sections) igual al estándar VentasView/Historial
 // v2.2.232 — fix(pedidos): pedidos completado/parcial visibles 7 días — get_pedidos_en_curso v4 incluye status completado/parcial de los últimos 7 días; activos siempre primero; card con opacity-60 + badge "Completado" (verde) / "Con diferencias" (ámbar) sin botones de acción
 // v2.2.231 — fix(pedidos/sucursal): oculta ReceptionActions cuando stage=erp (recibido_erp_at ya puesto) — el timeline ya muestra el pedido como finalizado, el bloque de recepción es redundante
 // v2.2.230 — fix(pedidos/sucursal): 3 correcciones card sucursal — (1) botones Confirmar llegada y Recibir visibles sin expandir la card; (2) timeline muestra nombre del empleado que marcó Listo (finalizado_por) y En Ruta (enviado_por); (3) confirmar llegada ahora avanza el timeline inmediatamente (handleLlegada/handleMarkErp llaman loadActive tras el RPC); get_pedidos_en_curso v3 agrega finalizado_por+enviado_por

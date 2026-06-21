@@ -941,11 +941,10 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
     const statusBtn = (key, label) => (
         <button
             onClick={() => setFilterStatus(v => v === key ? 'all' : key)}
-            className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 whitespace-nowrap shrink-0 ${
+            className={`flex items-center gap-1 text-[11px] px-3 py-1 rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
                 filterStatus === key
-                    ? (key === 'confirmado' ? 'bg-blue-100 border-blue-200 text-blue-700 shadow-sm'
-                      : 'bg-indigo-100 border-indigo-200 text-indigo-700 shadow-sm')
-                    : 'bg-transparent text-slate-400 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
             }`}
         >
             {label}{filterStatus === key && <X size={9} strokeWidth={3} className="ml-0.5" />}
@@ -953,17 +952,17 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
     );
 
     return (
-        <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 hover:border-slate-200 overflow-visible shrink-0">
+        <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 overflow-visible shrink-0">
 
             {/* Sucursal */}
             {!isBranch && (
                 <>
                     <div className="flex items-center">
-                        <div className="px-2 py-2 overflow-visible" style={{ width: '155px' }}>
+                        <div className="px-2 py-1.5 overflow-visible" style={{ width: '150px' }}>
                             <LiquidSelect value={filterSuc} onChange={v => setFilterSuc(v)} options={filterOptions} placeholder="Todas" icon={Building2} compact bare />
                         </div>
                         {filterSuc !== '' && (
-                            <button onClick={() => setFilterSuc('')} className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0">
+                            <button onClick={() => setFilterSuc('')} title="Quitar sucursal" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
                                 <X size={9} strokeWidth={3} />
                             </button>
                         )}
@@ -974,11 +973,11 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
 
             {/* Fecha */}
             <div className="flex items-center">
-                <div className="px-2 py-2 overflow-visible">
+                <div className="px-2 py-1.5 overflow-visible">
                     <PeriodPicker value={filterDate} onChange={setFilterDate} />
                 </div>
                 {dateDirty && (
-                    <button onClick={() => setFilterDate(defaultDate)} className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0">
+                    <button onClick={() => setFilterDate(defaultDate)} title="Quitar fecha" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
@@ -987,7 +986,7 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
             <div className="h-5 w-px bg-slate-100 shrink-0" />
 
             {/* Estado */}
-            <div className="flex items-center gap-1 px-2">
+            <div className="flex items-center gap-1 px-2 py-1.5">
                 {statusBtn('confirmado', 'Pendientes')}
                 {statusBtn('enviado', 'En camino')}
             </div>
@@ -1307,7 +1306,11 @@ export default function TabPedidos({ searchTerm = '' }) {
             });
         }
         if (searchLower) rows = rows.filter(r => String(r.numero).includes(searchLower) || (r.notes ?? '').toLowerCase().includes(searchLower));
+        const DONE_SET = new Set(['completado', 'parcial']);
         return [...rows].sort((a, b) => {
+            const aDone = DONE_SET.has(a.pedido_status);
+            const bDone = DONE_SET.has(b.pedido_status);
+            if (aDone !== bDone) return aDone ? 1 : -1;
             const sa = STAGE_ORDER[getBranchStage(a, a.pedido_status)] ?? 5;
             const sb = STAGE_ORDER[getBranchStage(b, b.pedido_status)] ?? 5;
             return sa !== sb ? sa - sb : new Date(b.created_at) - new Date(a.created_at);

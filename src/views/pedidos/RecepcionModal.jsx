@@ -47,7 +47,7 @@ const ERROR_TIPOS = [
 ];
 
 // 7-column grid: Producto | Asig | F.Pres | F.Qty | S.Pres | S.Qty | ⚠
-const GRID = 'grid-cols-[minmax(0,1fr)_2.75rem_5.5rem_3.25rem_5.5rem_3.25rem_1.75rem]';
+const GRID = 'grid-cols-[minmax(0,1fr)_2.75rem_8rem_3.25rem_8rem_3.25rem_1.75rem]';
 
 export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucursalNombre, rows, onConfirmed }) {
     const { user } = useAuth();
@@ -81,8 +81,10 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
         const fQ = {}, fP = {}, sQ = {}, sP = {}, notas = {}, errs = {};
         for (const r of rows) {
             const def = r.dispatch_factor || r.factor || 1;
-            fQ[r.id] = r.cantidad_asignada; fP[r.id] = def;
-            sQ[r.id] = r.cantidad_asignada; sP[r.id] = def;
+            // Mostrar en unidades de despacho (como el PDF de bodega)
+            const dispQty = Math.round(r.cantidad_asignada / def);
+            fQ[r.id] = dispQty; fP[r.id] = def;
+            sQ[r.id] = dispQty; sP[r.id] = def;
             notas[r.id] = ''; errs[r.id] = '';
         }
         setFQtyVals(fQ); setFPresVals(fP); setSQtyVals(sQ); setSPresVals(sP);
@@ -128,15 +130,18 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
 
     useEffect(() => {
         if (!extraOpen || extraSearch.trim().length < 2) { setExtraResults([]); return; }
+        const existingIds = rows.map(r => r.erp_product_id);
         const t = setTimeout(async () => {
             setExtraBusy(true);
-            const { data } = await supabase.from('products').select('id, nombre')
-                .eq('activo', true).ilike('nombre', `%${extraSearch.trim()}%`).order('nombre').limit(8);
-            setExtraResults(data || []);
+            let q = supabase.from('products').select('id, nombre')
+                .eq('activo', true).ilike('nombre', `%${extraSearch.trim()}%`).order('nombre').limit(10);
+            if (existingIds.length > 0) q = q.not('id', 'in', `(${existingIds.join(',')})`);
+            const { data } = await q;
+            setExtraResults((data || []).slice(0, 8));
             setExtraBusy(false);
         }, 300);
         return () => clearTimeout(t);
-    }, [extraSearch, extraOpen]);
+    }, [extraSearch, extraOpen, rows]);
 
     const addExtra = useCallback((prod) => {
         setExtras(prev => prev.some(e => e.erp_product_id === prod.id)
@@ -148,16 +153,20 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
     const handleConfirmar = useCallback(async () => {
         setSaving(true); setSaveError(null);
         const p_items = rows.map(r => {
-            const fQty  = fQtyVals[r.id]  ?? r.cantidad_asignada;
-            const sQty  = sQtyVals[r.id]  ?? r.cantidad_asignada;
-            const fPres = fPresVals[r.id] ?? (r.dispatch_factor || r.factor || 1);
-            const sPres = sPresVals[r.id] ?? (r.dispatch_factor || r.factor || 1);
+            const dispFactor = r.dispatch_factor || r.factor || 1;
+            const defDispQty = Math.round(r.cantidad_asignada / dispFactor);
+            const fQty  = fQtyVals[r.id]  ?? defDispQty;
+            const sQty  = sQtyVals[r.id]  ?? defDispQty;
+            const fPres = fPresVals[r.id] ?? dispFactor;
+            const sPres = sPresVals[r.id] ?? dispFactor;
             const hasProb = !!tieneProblema[r.id];
-            const isDiff  = fQty !== sQty || fPres !== sPres || hasProb;
+            // Comparar en unidades crudas para detectar diff real de cantidad
+            const fRaw   = fQty * fPres;
+            const sRaw   = sQty * sPres;
+            const isDiff = fRaw !== sRaw || fPres !== sPres || hasProb;
 
             let nota = notaVals[r.id] || null;
             if (fPres !== sPres && !nota) {
-                const dispFactor = r.dispatch_factor || r.factor || 1;
                 const opts = presMap[r.erp_product_id] ?? [{ factor: dispFactor, label: fmtPresentacion(r) }];
                 const lf = opts.find(o => o.factor === fPres)?.label || `×${fPres}`;
                 const ls = opts.find(o => o.factor === sPres)?.label || `×${sPres}`;
@@ -166,7 +175,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
 
             return {
                 pedido_item_id:    r.id,
-                cantidad_recibida: fQty,
+                cantidad_recibida: fRaw,  // siempre en unidades crudas para el RPC
                 nota_diferencia:   isDiff ? nota : null,
                 error_tipo:        isDiff ? (errorVals[r.id] || 'faltante') : null,
             };
@@ -289,17 +298,19 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
 
                 <div className="divide-y divide-slate-100">
                     {visibleRows.map((r, rowIdx) => {
-                        const fQty  = fQtyVals[r.id]  ?? r.cantidad_asignada;
-                        const sQty  = sQtyVals[r.id]  ?? r.cantidad_asignada;
-                        const fPres = fPresVals[r.id] ?? (r.dispatch_factor || r.factor || 1);
-                        const sPres = sPresVals[r.id] ?? (r.dispatch_factor || r.factor || 1);
+                        const dispFactor = r.dispatch_factor || r.factor || 1;
+                        const defDispQty = Math.round(r.cantidad_asignada / dispFactor);
+                        const fQty  = fQtyVals[r.id]  ?? defDispQty;
+                        const sQty  = sQtyVals[r.id]  ?? defDispQty;
+                        const fPres = fPresVals[r.id] ?? dispFactor;
+                        const sPres = sPresVals[r.id] ?? dispFactor;
                         const hasProb  = !!tieneProblema[r.id];
-                        const hasDiff  = fQty !== sQty || fPres !== sPres;
+                        // Diff en unidades crudas
+                        const hasDiff  = (fQty * fPres) !== (sQty * sPres) || fPres !== sPres;
                         const showExtra = hasDiff || hasProb;
-                        const delta    = fQty - sQty;
+                        const delta    = (fQty * fPres) - (sQty * sPres);
 
                         // Opciones de presentación desde product_precios (deduplicadas por factor)
-                        const dispFactor = r.dispatch_factor || r.factor || 1;
                         const rawOpts = presMap[r.erp_product_id] ?? [];
                         const presOpts = rawOpts.length > 0
                             ? rawOpts
@@ -312,8 +323,8 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                     {/* Producto */}
                                     <span className="text-[12px] text-slate-700 font-semibold leading-snug">{r.products?.nombre}</span>
 
-                                    {/* Asignado (referencia, read-only) */}
-                                    <span className="text-[12px] font-bold text-slate-400 tabular-nums text-center">{r.cantidad_asignada}</span>
+                                    {/* Asignado: en unidades de despacho, centrado */}
+                                    <span className="text-[12px] font-bold text-slate-500 tabular-nums text-center">{defDispQty}</span>
 
                                     {/* Físico: Presentación */}
                                     <select
@@ -393,16 +404,16 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                     {!hasDiff ? (
                                         <button
                                             onClick={() => setTieneProblema(p => ({ ...p, [r.id]: !p[r.id] }))}
-                                            title="Reportar problema sin diferencia de cantidad"
+                                            title="Reportar problema (dañado, vencido, etc.)"
                                             className={`flex justify-center p-1 rounded-lg transition-colors ${
-                                                hasProb ? 'text-orange-500 bg-orange-100' : 'text-slate-200 hover:text-amber-400'
+                                                hasProb ? 'text-orange-500 bg-orange-100' : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50'
                                             }`}
                                         >
-                                            <AlertTriangle size={13} />
+                                            <AlertTriangle size={14} />
                                         </button>
                                     ) : (
                                         <div className="flex justify-center p-1 text-amber-500" title="Diferencia detectada">
-                                            <AlertTriangle size={13} />
+                                            <AlertTriangle size={14} />
                                         </div>
                                     )}
                                 </div>

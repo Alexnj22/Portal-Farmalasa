@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.237';
+export const APP_VERSION = '2.2.238';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.238 — feat(pedidos/recepcion): pendientes sin expandir + modal mejorado — get_pedido_item_stats agrega columna pendientes; Paso 2 muestra conteo desde cardStats sin necesitar abrir card; RecepcionModal: quita sección responsables (apoyo ya está afuera), agrega codigo en header, lupa de búsqueda de producto
 // v2.2.237 — feat(pedidos/sucursal): botón Apoyo en Paso 2 y 3 + avatares stack en timeline — batch-load apoyo al cargar tab (sin expandir); ReceptionActions muestra "Apoyo" con chip apilado en Paso 2 (revisión) y Paso 3 (sis.ventas); timeline nodos Llegada y Sis.Ventas muestran stack de fotos del equipo de apoyo siempre visible
 // v2.2.236 — feat(pedidos/sucursal): responsables en recepción + renombrar ERP→Sistema de Ventas — get_pedidos_en_curso v6 agrega llegada_fisica_por, recibido_erp_por, conteo_por; timeline nodos Llegada y Sis.Ventas muestran foto+nombre del responsable; ReceptionActions muestra chip de empleado en cada paso confirmado; "ERP"/"Finalizado" renombrado a "Sistema de Ventas" en labels, stage pill, botones
 // v2.2.235 — fix(pedidos/sucursal): opacity solo cuando recibido_erp_at está puesto (isFadedOut); Paso 3 Marcar ERP aparece sin necesitar items cargados — pedidoDone=true (completado/parcial) activa Paso 3 directamente; Paso 2 muestra "Ítems confirmados" cuando pedidoDone

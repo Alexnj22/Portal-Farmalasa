@@ -902,10 +902,13 @@ function ItemSections({ allItems, loading }) {
 
 // ─── Reception actions ────────────────────────────────────────────────────────
 
-function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLlegada, onOpenRecibir, onMarkErp, onApoyo, busy, pedidoDone, llegadaEmp, conteoEmp, erpEmp, cardApoyo = [] }) {
+function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLlegada, onOpenRecibir, onMarkErp, onApoyo, busy, pedidoDone, llegadaEmp, conteoEmp, erpEmp, cardApoyo = [], pendientesCount = 0 }) {
     const recibidosLoaded = items?.filter(r => r.status === 'recibido').length > 0;
     const showPaso3       = llegadaOk && !erpOk && (pedidoDone || recibidosLoaded);
-    const pendientes      = items?.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0).length ?? 0;
+    // pendientesCount viene de cardStats (sin necesitar expandir); items solo cuando está expandido
+    const pendientes      = items != null
+        ? (items.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0).length)
+        : pendientesCount;
 
     const empChip = (emp) => emp ? (
         <span className="flex items-center gap-1 text-[10px] text-slate-500">
@@ -1154,7 +1157,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             const { data: statRows } = await supabase.rpc('get_pedido_item_stats', { p_pedido_ids: ids });
             (statRows ?? []).forEach(s => {
                 const k = `act_${s.pedido_id}_${s.erp_sucursal_id}`;
-                stats[k] = { enviados: s.enviados, sinStock: s.sin_stock, porRegla: s.por_regla };
+                stats[k] = { enviados: s.enviados, sinStock: s.sin_stock, porRegla: s.por_regla, pendientes: s.pendientes ?? 0 };
             });
         }
         setCardStats(stats);
@@ -1355,10 +1358,10 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [busyAction, user, loadActive]);
 
-    const openModal = useCallback((pedidoId, numero, sucId, key) => {
+    const openModal = useCallback((pedidoId, numero, codigo, sucId, key) => {
         const rows = (items[key] || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0);
         if (!rows.length) return;
-        setModal({ pedido: { id: pedidoId, numero }, sucId, key, rows });
+        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows });
     }, [items]);
 
     // ── Derived ───────────────────────────────────────────────────────────────
@@ -1600,8 +1603,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 conteoEmp={conteoEmp}
                                                 erpEmp={erpEmp}
                                                 cardApoyo={cardApoyo}
+                                                pendientesCount={cardStats[cardKey]?.pendientes ?? 0}
                                                 onMarkLlegada={() => handleLlegada(row.pedido_id, erpSucursalId, cardKey)}
-                                                onOpenRecibir={() => openModal(row.pedido_id, row.numero, erpSucursalId, cardKey)}
+                                                onOpenRecibir={() => openModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
                                                 onMarkErp={() => handleMarkErp(row.pedido_id, erpSucursalId, cardKey)}
                                                 onApoyo={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: erpSucursalId, cardKey })}
                                                 busy={busyAction}

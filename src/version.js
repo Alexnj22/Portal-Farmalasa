@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.228';
+export const APP_VERSION = '2.2.229';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.229 — feat(dashboard): scope Mi Sucursal activo en 9 widgets (trend, shifts, sales, absences, requests, branches, birthdays, KPI general/rrhh)
 // v2.2.228 — feat(permisos): agrega selector de scope "Todos / Mi Sucursal" al módulo Pedidos a Sucursales
 // v2.2.227 — fix(pedidos/timeline): tiempo transcurrido entre etapas más grande (9px) y color más sólido (slate-600 semibold)
 // v2.2.226 — feat(pedidos): elimina sección Historial de TabPedidos; los filtros de fecha cubren la funcionalidad

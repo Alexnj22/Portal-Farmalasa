@@ -44,7 +44,7 @@ export default function ModalShell({
       // 🚨 FIX 1: Quitamos transition-all. Usamos animate-in fade-in.
       // Esto hace que el fondo aparezca suavemente, pero una vez que termina, 
       // el navegador deja de monitorear cambios de opacidad, liberando el CPU.
-      className={`fixed inset-0 ${zClass} bg-black/[0.06] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500`}
+      className={`fixed inset-0 ${zClass} bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500`}
       role="dialog"
       aria-modal="true"
     >

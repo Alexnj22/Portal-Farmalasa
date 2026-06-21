@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.233';
+export const APP_VERSION = '2.2.234';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.234 — fix(pedidos/card): 3 correcciones — (1) quita badge doble "Completado" (PEDIDO_PILL ya lo muestra); (2) ReceptionActions visible para completado/parcial cuando recibido_erp_at es null (stage!='erp'), permite Marcar ERP tras contar ítems; (3) get_pedidos_en_curso v5 restaura pss.codigo (perdido en v3/v4)
 // v2.2.233 — fix(pedidos): fecha filtra completados igual que ventas — get_pedidos_en_curso v4 sin restricción de días (el filterDate del frontend controla el rango, mismo patrón que VentasView); sort pone completado/parcial siempre al fondo; FilterPill compacta (text-[11px] py-1 buttons, py-1.5 sections) igual al estándar VentasView/Historial
 // v2.2.232 — fix(pedidos): pedidos completado/parcial visibles 7 días — get_pedidos_en_curso v4 incluye status completado/parcial de los últimos 7 días; activos siempre primero; card con opacity-60 + badge "Completado" (verde) / "Con diferencias" (ámbar) sin botones de acción
 // v2.2.231 — fix(pedidos/sucursal): oculta ReceptionActions cuando stage=erp (recibido_erp_at ya puesto) — el timeline ya muestra el pedido como finalizado, el bloque de recepción es redundante

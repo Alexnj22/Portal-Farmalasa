@@ -1414,16 +1414,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 >
                                     {/* Header */}
                                     <div className="flex items-center gap-2 px-3 py-2 flex-wrap">
-                                        {row.pedido_status === 'completado' && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white shrink-0 shadow-sm">
-                                                ✓ Completado
-                                            </span>
-                                        )}
-                                        {row.pedido_status === 'parcial' && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-white shrink-0 shadow-sm">
-                                                ⚠ Con diferencias
-                                            </span>
-                                        )}
                                         {stage === 'pausado' && (
                                             <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-white shrink-0 shadow-sm animate-pulse">
                                                 ⏸ Pausado
@@ -1505,8 +1495,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     </div>
 
-                                    {/* Confirmar llegada — visible hasta que recibido_erp_at esté puesto (stage erp = ya procesado) */}
-                                    {isBranch && erpSucursalId && row.pedido_status === 'enviado' && stage !== 'erp' && (
+                                    {/* Confirmar llegada — visible mientras recibido_erp_at no esté puesto, independiente del pedido_status */}
+                                    {isBranch && erpSucursalId && stage !== 'erp' && (
                                         <div onClick={e => e.stopPropagation()}>
                                             <ReceptionActions
                                                 pedidoId={row.pedido_id} sucId={erpSucursalId}

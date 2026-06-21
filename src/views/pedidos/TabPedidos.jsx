@@ -8,7 +8,7 @@ import {
     Database, Activity, TrendingDown,
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
-    UserPlus, ScanLine, Inbox, History,
+    UserPlus, ScanLine, Inbox,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -1026,11 +1026,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [filterDate,    setFilterDate]    = useState(() => currentMonthRange());
 
     const [activeRows,  setActiveRows]  = useState([]);
-    const [history,     setHistory]     = useState([]);
     const [loading,     setLoading]     = useState(true);
-    const [loadingHist, setLoadingHist] = useState(false);
-    const [hasMore,     setHasMore]     = useState(false);
-    const [histPage,    setHistPage]    = useState(0);
 
     const [expanded,     setExpanded]     = useState(null);
     const [expandedMeta, setExpandedMeta] = useState(null);
@@ -1099,37 +1095,13 @@ export default function TabPedidos({ searchTerm = '' }) {
         setCardStats(stats);
     }, []);
 
-    const loadHistory = useCallback(async (page = 0, suc = '', date = null) => {
-        if (page === 0) setLoadingHist(true);
-        let q = supabase.from('pedidos').select('id, numero, created_at, status, notes, enviado_at, sucursal_ids, created_by').in('status', DONE_STATUSES).order('created_at', { ascending: false }).range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
-        if (suc) q = q.contains('sucursal_ids', [suc]);
-        if (date) {
-            const [desde, hasta] = date.split('|');
-            if (desde) q = q.gte('created_at', desde);
-            if (hasta) q = q.lte('created_at', hasta + 'T23:59:59');
-        }
-        const { data } = await q;
-        const rows = data || [];
-        if (page === 0) { setHistory(rows); setHistPage(0); } else { setHistory(prev => [...prev, ...rows]); setHistPage(page); }
-        setHasMore(rows.length === PAGE_SIZE);
-        if (page === 0) setLoadingHist(false);
-    }, []);
-
     useEffect(() => {
         (async () => {
             setLoading(true);
-            await Promise.all([loadActive(), loadHistory(0, '', currentMonthRange())]);
+            await loadActive();
             setLoading(false);
         })();
     }, []); // eslint-disable-line
-
-    const prevFilterRef = useRef({ suc: '', date: currentMonthRange() });
-    useEffect(() => {
-        const prev = prevFilterRef.current;
-        if (filterSuc === prev.suc && filterDate === prev.date) return;
-        prevFilterRef.current = { suc: filterSuc, date: filterDate };
-        loadHistory(0, filterSuc, filterDate);
-    }, [filterSuc, filterDate, loadHistory]);
 
     // ── Realtime ──────────────────────────────────────────────────────────────
 
@@ -1138,7 +1110,6 @@ export default function TabPedidos({ searchTerm = '' }) {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, (payload) => {
                 loadActive();
                 const s = payload.new?.status;
-                if (s && DONE_STATUSES.includes(s)) loadHistory(0, filterSuc, filterDate);
                 if (isBranch && s === 'enviado') {
                     const ids = payload.new?.sucursal_ids ?? [];
                     if (erpSucursalId && ids.includes(erpSucursalId)) {
@@ -1153,7 +1124,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'pedido_sucursal_status' }, () => { loadActive(); })
             .subscribe();
         return () => supabase.removeChannel(ch);
-    }, [loadActive, loadHistory, filterSuc, filterDate, isBranch, erpSucursalId]); // eslint-disable-line
+    }, [loadActive, isBranch, erpSucursalId]); // eslint-disable-line
 
     // ── Fetch items ───────────────────────────────────────────────────────────
 
@@ -1221,9 +1192,8 @@ export default function TabPedidos({ searchTerm = '' }) {
             if (error) throw error;
             useStaff.getState().appendAuditLog('PEDIDO_MARCAR_EN_RUTA', pedidoId, {});
             loadActive();
-            loadHistory(0, filterSuc, filterDate);
         } catch (e) { console.error('Envío error:', e); } finally { setBusyEnvio(null); }
-    }, [user, loadActive, loadHistory, filterSuc]);
+    }, [user, loadActive]);
 
     const openPauseModal = useCallback(async (pedidoId, sucId) => {
         try {
@@ -1341,11 +1311,6 @@ export default function TabPedidos({ searchTerm = '' }) {
             return sa !== sb ? sa - sb : new Date(b.created_at) - new Date(a.created_at);
         });
     }, [activeRows, filterSuc, filterStatus, filterDate, searchLower]); // eslint-disable-line
-
-    const filteredHistory = useMemo(() =>
-        history.filter(p => !searchLower || String(p.numero).includes(searchLower) || (p.notes ?? '').toLowerCase().includes(searchLower)),
-        [history, searchLower]
-    );
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -1544,67 +1509,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                 )}
             </div>
 
-            {/* ── HISTORIAL ─────────────────────────────────────────────── */}
-            <div>
-                <div className="flex items-center gap-2 mb-3 mt-2">
-                    <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wide">Historial</span>
-                    {filteredHistory.length > 0 && <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">{filteredHistory.length}{hasMore ? '+' : ''}</span>}
-                </div>
-
-                {loadingHist ? (
-                    <div className="flex justify-center py-8"><Loader2 size={18} className="animate-spin text-slate-300" /></div>
-                ) : filteredHistory.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center min-h-[220px] animate-in fade-in zoom-in-95 duration-700">
-                        <div className="relative flex flex-col items-center text-center">
-                            <div className="absolute top-2 w-24 h-24 rounded-full blur-[40px] opacity-20 bg-slate-400" />
-                            <div className="relative z-10 w-16 h-16 rounded-[1.25rem] flex items-center justify-center mb-3 bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-slate-400">
-                                <History size={28} strokeWidth={1.5} />
-                            </div>
-                            <h3 className="font-bold text-[16px] text-slate-700 tracking-tight">Sin historial</h3>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="space-y-2">
-                        {filteredHistory.map(pedido => {
-                            const histKey = `hist_${pedido.id}`;
-                            const isExp   = expanded === histKey;
-                            const creator = pedido.created_by ? empMap.get(pedido.created_by) : null;
-
-                            return (
-                                <motion.div key={pedido.id} layout className={`${GLASS} overflow-hidden cursor-pointer select-none ${pedido.status === 'anulado' ? 'opacity-70' : ''}`} onClick={() => toggleExpand(histKey, pedido.id, null)}>
-                                    <div className="flex items-center gap-2.5 px-4 py-3 flex-wrap">
-                                        <span className={`text-[14px] font-black tabular-nums shrink-0 ${pedido.status === 'anulado' ? 'line-through text-slate-400' : 'text-slate-800'}`}>#{pedido.numero}</span>
-                                        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${PEDIDO_PILL[pedido.status] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>{PEDIDO_LABEL[pedido.status] ?? pedido.status}</span>
-                                        {creator && <EmpChip emp={creator} label="Por" />}
-                                        <span className="ml-auto text-[11px] text-slate-600 shrink-0">{fmtDate(pedido.created_at)}</span>
-                                        {isExp ? <ChevronDown size={13} className="text-slate-500 shrink-0" /> : <ChevronRight size={13} className="text-slate-500 shrink-0" />}
-                                    </div>
-
-                                    {(pedido.sucursal_ids?.length ?? 0) > 0 && (
-                                        <div className="flex flex-wrap gap-1.5 border-t border-slate-100 px-4 py-2">
-                                            {(pedido.sucursal_ids ?? []).map(sid => <SucPill key={sid} sucId={sid} />)}
-                                        </div>
-                                    )}
-
-                                    <AnimatePresence>
-                                        {isExp && (
-                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden">
-                                                <ItemSections allItems={items[histKey] ?? []} loading={loadingItems && !items[histKey]} />
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {hasMore && !searchLower && (
-                    <button onClick={() => loadHistory(histPage + 1, filterSuc, filterDate)} className="mt-3 w-full py-2.5 rounded-2xl border border-slate-200/70 bg-white/60 text-[12px] text-slate-600 font-medium hover:bg-white/80 transition-all">
-                        Cargar más pedidos
-                    </button>
-                )}
-            </div>
 
             {/* ── Modals ─────────────────────────────────────────────────── */}
 

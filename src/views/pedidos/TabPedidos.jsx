@@ -1394,19 +1394,33 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                             const canApoyo = !isBranch && ['sin_iniciar','preparando','pausado'].includes(stage);
 
+                            const isDone = row.pedido_status === 'completado' || row.pedido_status === 'parcial';
+
                             return (
                                 <div
                                     key={cardKey}
                                     className={`${GLASS} cursor-pointer select-none ${
                                         stage === 'pausado'
                                             ? 'ring-2 ring-amber-400 shadow-[0_4px_20px_rgba(251,191,36,0.25)]'
-                                            : ''
+                                            : isDone
+                                                ? 'opacity-60'
+                                                : ''
                                     }`}
                                     style={{ overflow: 'visible' }}
                                     onClick={() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id)}
                                 >
                                     {/* Header */}
                                     <div className="flex items-center gap-2 px-3 py-2 flex-wrap">
+                                        {row.pedido_status === 'completado' && (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white shrink-0 shadow-sm">
+                                                ✓ Completado
+                                            </span>
+                                        )}
+                                        {row.pedido_status === 'parcial' && (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-white shrink-0 shadow-sm">
+                                                ⚠ Con diferencias
+                                            </span>
+                                        )}
                                         {stage === 'pausado' && (
                                             <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-white shrink-0 shadow-sm animate-pulse">
                                                 ⏸ Pausado

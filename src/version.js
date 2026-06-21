@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.249';
+export const APP_VERSION = '2.2.250';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.250 — fix(pedidos/recepcion): header tabla fuera del Body (siempre visible); flechas en selects de presentación con detección de borde; extras rediseñado con dropdown hacia arriba + auto-focus
 // v2.2.249 — fix(pedidos/recepcion): presentaciones con join presentaciones(tipo) → "BLISTER 1x10"; header fijo con grupo+cols visible; nav flechas ↑↓ entre filas en qty inputs
 // v2.2.248 — fix(pedidos/recepcion): presentaciones desde descripcion ERP (BLISTER 1x10, CAJA 1x100, UNIDAD 1x1); dedup por factor; nombre producto sin truncar
 // v2.2.247 — fix(pedidos/recepcion): labels de presentación usando fmtFactor (Caja ×N, Blíster ×N, Unidad) en lugar de descripcion ERP; presMap solo guarda factor

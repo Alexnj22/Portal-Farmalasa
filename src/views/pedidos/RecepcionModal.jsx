@@ -73,7 +73,8 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
     const [extraBusy,    setExtraBusy]    = useState(false);
     const [extraOpen,    setExtraOpen]    = useState(false);
 
-    const searchRef = useRef(null);
+    const searchRef   = useRef(null);
+    const extraRef    = useRef(null);
 
     useEffect(() => {
         if (!open) return;
@@ -261,29 +262,27 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                 </div>
             </PedidoModal.Header>
 
-            {/* Tabla comparativa: Físico vs Sistema */}
-            <PedidoModal.Body className="px-0 py-0 max-h-[50vh]">
-                {/* Header fijo: grupos + columnas juntos */}
-                <div className="sticky top-0 z-10 bg-white border-b-2 border-slate-200 shadow-sm">
-                    {/* Grupos Físico / Sistema */}
-                    <div className={`grid ${GRID} gap-x-2 px-5 pt-2 pb-1`}>
-                        <span /><span />
-                        <span className="col-span-2 text-center text-[10px] font-bold text-teal-600 uppercase tracking-widest border-b-2 border-teal-400 pb-1">Físico</span>
-                        <span className="col-span-2 text-center text-[10px] font-bold text-violet-600 uppercase tracking-widest border-b-2 border-violet-400 pb-1">Sistema</span>
-                        <span />
-                    </div>
-                    {/* Columnas */}
-                    <div className={`grid ${GRID} gap-x-2 items-center px-5 py-1.5`}>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Producto</span>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase text-center">Asig.</span>
-                        <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Pres.</span>
-                        <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Qty</span>
-                        <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Pres.</span>
-                        <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Qty</span>
-                        <span />
-                    </div>
+            {/* Header de tabla — fuera del Body para que no scrollee con las filas */}
+            <div className="flex-none bg-white/90 border-b-2 border-slate-200">
+                <div className={`grid ${GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
+                    <span /><span />
+                    <span className="col-span-2 text-center text-[10px] font-bold text-teal-600 uppercase tracking-widest border-b-2 border-teal-400 pb-1">Físico</span>
+                    <span className="col-span-2 text-center text-[10px] font-bold text-violet-600 uppercase tracking-widest border-b-2 border-violet-400 pb-1">Sistema</span>
+                    <span />
                 </div>
+                <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
+                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Producto</span>
+                    <span className="text-[10px] font-bold text-slate-600 uppercase text-center">Asig.</span>
+                    <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Pres.</span>
+                    <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Qty</span>
+                    <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Pres.</span>
+                    <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Qty</span>
+                    <span />
+                </div>
+            </div>
 
+            {/* Tabla comparativa: Físico vs Sistema */}
+            <PedidoModal.Body className="px-0 py-0 max-h-[44vh]">
                 {visibleRows.length === 0 && (
                     <p className="text-center text-[12px] text-slate-400 py-6">No se encontraron productos.</p>
                 )}
@@ -319,7 +318,16 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                     {/* Físico: Presentación */}
                                     <select
                                         value={fPres}
+                                        data-qty-row={rowIdx} data-qty-col="fpres"
                                         onChange={e => setFPresVals(p => ({ ...p, [r.id]: Number(e.target.value) }))}
+                                        onKeyDown={e => {
+                                            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                                                const dir = e.key === 'ArrowDown' ? 1 : -1;
+                                                const sel = e.currentTarget;
+                                                const atBoundary = dir === 1 ? sel.selectedIndex === sel.options.length - 1 : sel.selectedIndex === 0;
+                                                if (atBoundary) { e.preventDefault(); document.querySelector(`[data-qty-row="${rowIdx + dir}"][data-qty-col="fpres"]`)?.focus(); }
+                                            }
+                                        }}
                                         className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full truncate ${
                                             fPres !== sPres ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-slate-700 focus:border-teal-400'
                                         }`}
@@ -347,7 +355,16 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                     {/* Sistema: Presentación */}
                                     <select
                                         value={sPres}
+                                        data-qty-row={rowIdx} data-qty-col="spres"
                                         onChange={e => setSPresVals(p => ({ ...p, [r.id]: Number(e.target.value) }))}
+                                        onKeyDown={e => {
+                                            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                                                const dir = e.key === 'ArrowDown' ? 1 : -1;
+                                                const sel = e.currentTarget;
+                                                const atBoundary = dir === 1 ? sel.selectedIndex === sel.options.length - 1 : sel.selectedIndex === 0;
+                                                if (atBoundary) { e.preventDefault(); document.querySelector(`[data-qty-row="${rowIdx + dir}"][data-qty-col="spres"]`)?.focus(); }
+                                            }
+                                        }}
                                         className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full truncate ${
                                             fPres !== sPres ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-slate-700 focus:border-violet-400'
                                         }`}
@@ -420,57 +437,75 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             </PedidoModal.Body>
 
             {/* Productos no esperados */}
-            <div className="border-t border-slate-100 px-5 py-3 space-y-2">
-                <button
-                    onClick={() => setExtraOpen(o => !o)}
-                    className="flex items-center gap-1.5 text-[11px] font-semibold text-violet-600 hover:text-violet-700 transition-colors"
-                >
-                    <PackagePlus size={13} />
-                    ¿Llegó un producto que no estaba en el pedido? {extras.length > 0 && `(${extras.length})`}
-                </button>
-                {extraOpen && (
-                    <div className="space-y-2">
-                        <div className="relative">
-                            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300" />
-                            <input
-                                type="text" placeholder="Buscar producto recibido de más…"
-                                value={extraSearch} onChange={e => setExtraSearch(e.target.value)}
-                                className="w-full text-[12px] border border-violet-200 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-violet-400 bg-violet-50/40 placeholder-slate-300"
-                            />
-                            {extraBusy && <Loader2 size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 animate-spin text-violet-300" />}
-                            {extraResults.length > 0 && (
-                                <div className="absolute z-10 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-xl overflow-hidden">
-                                    {extraResults.map(prod => (
-                                        <button key={prod.id} onClick={() => addExtra(prod)}
-                                            className="w-full flex items-center gap-2 px-3 py-2 text-left text-[12px] text-slate-700 hover:bg-violet-50 transition-colors">
-                                            <Plus size={12} className="text-violet-400 flex-shrink-0" />
-                                            {prod.nombre}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+            <div className="flex-none border-t border-slate-100 px-5 py-3">
+                {/* Extras ya agregados */}
+                {extras.length > 0 && (
+                    <div className="space-y-1.5 mb-2">
                         {extras.map((e, i) => (
-                            <div key={e.erp_product_id} className="flex items-center gap-2 rounded-xl px-3 py-2 bg-violet-50/60 border border-violet-200">
+                            <div key={e.erp_product_id} className="flex items-center gap-2 rounded-xl px-3 py-2 bg-violet-50 border border-violet-200">
+                                <PackagePlus size={12} className="text-violet-400 shrink-0" />
                                 <span className="flex-1 text-[12px] font-medium text-slate-700 min-w-0 truncate">{e.nombre}</span>
                                 <input
                                     type="number" min={1} value={e.cantidad}
                                     onChange={ev => { const v = Math.max(1, parseInt(ev.target.value) || 1); setExtras(prev => prev.map((x, j) => j === i ? { ...x, cantidad: v } : x)); }}
-                                    className="w-14 text-center border border-violet-300 rounded-lg px-1 py-1 text-[12px] font-semibold bg-white focus:outline-none focus:border-violet-400 tabular-nums"
+                                    className="w-12 text-center border border-violet-300 rounded-lg px-1 py-1 text-[12px] font-bold bg-white focus:outline-none focus:border-violet-400 tabular-nums"
                                 />
                                 <input
                                     type="text" placeholder="Nota…" value={e.nota}
                                     onChange={ev => setExtras(prev => prev.map((x, j) => j === i ? { ...x, nota: ev.target.value } : x))}
-                                    className="w-32 text-[11px] border border-violet-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-violet-400 placeholder-slate-300"
+                                    className="w-28 text-[11px] border border-violet-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-violet-400 placeholder-slate-300"
                                 />
                                 <button onClick={() => setExtras(prev => prev.filter((_, j) => j !== i))}
-                                    className="text-slate-300 hover:text-red-500 transition-colors">
+                                    className="text-slate-300 hover:text-red-500 transition-colors shrink-0">
                                     <Trash2 size={12} />
                                 </button>
                             </div>
                         ))}
                     </div>
                 )}
+
+                {/* Input de búsqueda — dropdown abre hacia arriba para no ser tapado */}
+                <div className="relative">
+                    {extraOpen && (
+                        <>
+                            <div className="flex items-center gap-2 rounded-xl border border-violet-300 bg-violet-50/60 px-3 py-2">
+                                <Search size={13} className="text-violet-400 shrink-0" />
+                                <input
+                                    ref={extraRef}
+                                    type="text" placeholder="Buscar producto extra recibido…"
+                                    value={extraSearch} onChange={e => setExtraSearch(e.target.value)}
+                                    onKeyDown={e => e.key === 'Escape' && (setExtraOpen(false), setExtraSearch(''))}
+                                    className="flex-1 text-[12px] bg-transparent focus:outline-none placeholder-violet-300 text-slate-700"
+                                />
+                                {extraBusy
+                                    ? <Loader2 size={12} className="animate-spin text-violet-400 shrink-0" />
+                                    : <button onClick={() => { setExtraOpen(false); setExtraSearch(''); setExtraResults([]); }} className="text-slate-300 hover:text-slate-500 shrink-0"><X size={13} /></button>
+                                }
+                            </div>
+                            {/* Dropdown hacia arriba (bottom-full) para no quedar tapado por el footer */}
+                            {extraResults.length > 0 && (
+                                <div className="absolute bottom-full mb-1 left-0 right-0 rounded-xl border border-violet-200 bg-white shadow-2xl overflow-hidden z-50">
+                                    {extraResults.map(prod => (
+                                        <button key={prod.id} onMouseDown={() => addExtra(prod)}
+                                            className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-slate-700 hover:bg-violet-50 transition-colors border-b border-slate-50 last:border-0">
+                                            <Plus size={12} className="text-violet-400 shrink-0" />
+                                            {prod.nombre}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {!extraOpen && (
+                        <button
+                            onClick={() => { setExtraOpen(true); setTimeout(() => extraRef.current?.focus(), 60); }}
+                            className="flex items-center gap-1.5 text-[11px] font-semibold text-violet-500 hover:text-violet-700 transition-colors py-0.5"
+                        >
+                            <PackagePlus size={13} />
+                            ¿Llegó un producto extra?{extras.length > 0 && <span className="ml-1 bg-violet-100 text-violet-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Responsables (apoyo registrado externamente) */}

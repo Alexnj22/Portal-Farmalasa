@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.227';
+export const APP_VERSION = '2.2.228';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.228 — feat(permisos): agrega selector de scope "Todos / Mi Sucursal" al módulo Pedidos a Sucursales
 // v2.2.227 — fix(pedidos/timeline): tiempo transcurrido entre etapas más grande (9px) y color más sólido (slate-600 semibold)
 // v2.2.226 — feat(pedidos): elimina sección Historial de TabPedidos; los filtros de fecha cubren la funcionalidad
 // v2.2.225 — fix(pedidos/pausa): elimina razón "Falta de personal" del modal de pausa de despacho

@@ -383,6 +383,7 @@ const initTabSizes = (userId) => {
 // ─── Main component ────────────────────────────────────────────────────────────
 const DashboardView = ({ openModal }) => {
   const { user, hasPermission, getScope } = useAuth();
+  const userBranchStr = String(user?.branchId ?? user?.branch_id ?? '');
   const navigate = useNavigate();
 
   const employees        = useStaff(s => s.employees);
@@ -835,8 +836,12 @@ const DashboardView = ({ openModal }) => {
 
   useEffect(() => {
     if (salesBranch || !salesBranches.length) return;
-    const pop = salesBranches.find(b => /popular/i.test(b.name)) || salesBranches[0];
-    setSalesBranch(String(pop.id));
+    if (getScope('dash_sales') === 'BRANCH' && userBranchStr) {
+      setSalesBranch(userBranchStr);
+    } else {
+      const pop = salesBranches.find(b => /popular/i.test(b.name)) || salesBranches[0];
+      setSalesBranch(String(pop.id));
+    }
   }, [salesBranches, salesBranch]);
 
   useEffect(() => {
@@ -982,10 +987,15 @@ const DashboardView = ({ openModal }) => {
   const presentToday    = useMemo(()=>{ const ids=new Set(); employees.forEach(e=>(e.attendance||[]).forEach(a=>{if((a.date||a.timestamp?.split('T')[0])===today) ids.add(e.id);})); return ids.size; },[employees,today]);
   const branchAlerts    = useMemo(()=>branches.filter(b=>getBranchIssue(b)!==null),[branches]);
 
+  const trendScopeIsBranch = getScope('dash_trend') === 'BRANCH';
+  const trendEmployees = trendScopeIsBranch && userBranchStr
+    ? employees.filter(e => String(e.branchId ?? e.branch_id ?? '') === userBranchStr)
+    : employees;
+
   const trendData = useMemo(()=>{
     const base=new Date(); base.setDate(base.getDate()+trendOffset*7);
-    return Array.from({length:7},(_,i)=>{ const d=new Date(base); d.setDate(d.getDate()-(6-i)); const ds=localDateStr(d); const ids=new Set(); employees.forEach(e=>(e.attendance||[]).forEach(a=>{if((a.date||a.timestamp?.split('T')[0])===ds) ids.add(e.id);})); return {day:d.toLocaleDateString('es',{weekday:'short'}).replace('.',''),date:ds,total:ids.size}; });
-  },[employees,trendOffset]);
+    return Array.from({length:7},(_,i)=>{ const d=new Date(base); d.setDate(d.getDate()-(6-i)); const ds=localDateStr(d); const ids=new Set(); trendEmployees.forEach(e=>(e.attendance||[]).forEach(a=>{if((a.date||a.timestamp?.split('T')[0])===ds) ids.add(e.id);})); return {day:d.toLocaleDateString('es',{weekday:'short'}).replace('.',''),date:ds,total:ids.size}; });
+  },[trendEmployees,trendOffset]);
 
   const trendRangeLabel = useMemo(()=>{
     const base=new Date(); base.setDate(base.getDate()+trendOffset*7);
@@ -995,7 +1005,9 @@ const DashboardView = ({ openModal }) => {
   },[trendOffset]);
 
   const activeBranches     = useMemo(()=>branches.filter(b=>b.id),[branches]);
-  const currentShiftBranch = shiftBranch || String(activeBranches[0]?.id||'');
+  const currentShiftBranch = getScope('dash_shifts') === 'BRANCH' && userBranchStr
+    ? userBranchStr
+    : (shiftBranch || String(activeBranches[0]?.id||''));
   const shiftStatusData    = useMemo(()=>activeEmployees.filter(e=>String(e.branchId)===currentShiftBranch).map(e=>({...e,currentStatus:getTodayAttendanceStatus(e)})),[activeEmployees,currentShiftBranch]);
   const shiftGroups        = useMemo(()=>{ const g={}; shiftStatusData.forEach(e=>{const s=e.currentStatus?.status||'ABSENT'; if(!g[s])g[s]=[]; g[s].push(e);}); return g; },[shiftStatusData]);
 
@@ -1207,7 +1219,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('shifts','dash_shifts')) return null;
       return wrapWidget('shifts',
         <WidgetCard title="Estado de Turnos" icon={Clock} category="personal"
-          action={activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact theme="light" bare/>)}>
+          action={getScope('dash_shifts') !== 'BRANCH' && activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact theme="light" bare/>)}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-slate-50">
             {employees.length === 0 ? (
               <div className="px-4 py-3 space-y-5">
@@ -1245,13 +1257,15 @@ const DashboardView = ({ openModal }) => {
     /* ── SALES ── */
     if (wid === 'sales') {
       if (!showWidget('sales','dash_sales')) return null;
+      const isSalesLocked = getScope('dash_sales') === 'BRANCH';
+      const effectiveSalesBranch = isSalesLocked && userBranchStr ? userBranchStr : salesBranch;
       return wrapWidget('sales',
         <WidgetCard noClip icon={BarChart2} category="ventas"
           title={typeof salesView==='number'?`Horas · ${DAY_NAMES[salesView]}`:salesView==='HOURS'?'Promedio por hora':'Ventas por día'}
           action={
             <div className="flex items-center gap-2">
               {openModal&&<button onClick={()=>openModal('viewWfmAnalytics')} className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-100 text-slate-400 hover:bg-[#0052CC] hover:text-white transition-[background-color,color] active:scale-[0.97] shrink-0"><Maximize2 size={12} strokeWidth={2.5}/></button>}
-              <LiquidSelect value={salesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact theme="light" bare/>
+              {!isSalesLocked && <LiquidSelect value={effectiveSalesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact theme="light" bare/>}
               <div className="flex items-center bg-slate-100 p-0.5 rounded-full h-7">
                 {typeof salesView==='number'&&<button onClick={()=>setSalesView('DAYS')} className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full text-slate-500 hover:bg-white/70 flex items-center gap-1 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={10} strokeWidth={3}/> Días</button>}
                 <button onClick={()=>setSalesView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='HOURS'?'bg-white text-[#0052CC] shadow-sm':'text-slate-400 hover:text-slate-600'}`}>Horas</button>
@@ -1263,7 +1277,7 @@ const DashboardView = ({ openModal }) => {
             <div className="relative flex-1 min-h-0">
               <div className="flex flex-col justify-between pointer-events-none absolute inset-x-0 top-0 h-full opacity-10"><div className="border-t border-dashed border-slate-500 w-full"/><div className="border-t border-dashed border-slate-500 w-full"/></div>
               <div className="flex items-end gap-1.5 w-full h-full relative overflow-visible">
-                {!salesBranch?(
+                {!effectiveSalesBranch?(
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-slate-300"/><p className="text-[9px] font-black text-slate-400/60 uppercase tracking-widest">Selecciona una sucursal</p></div>
                 ):salesLoading?(
                   <div className="absolute inset-0 flex items-end gap-1.5 px-1 pb-1">
@@ -1367,6 +1381,13 @@ const DashboardView = ({ openModal }) => {
     /* ── ABSENCES ── */
     if (wid === 'absences') {
       if (!showWidget('absences','dash_absences')) return null;
+      const absScope = getScope('dash_absences');
+      const displayAbsences = absScope === 'BRANCH' && userBranchStr
+        ? absences.filter(r => {
+            const emp = employees.find(e => String(e.id) === String(r.employee_id));
+            return emp && String(emp.branchId ?? emp.branch_id ?? '') === userBranchStr;
+          })
+        : absences;
       return wrapWidget('absences',
         <WidgetCard title="Ausencias Activas" icon={UserX} category="personal"
           action={canManage('dash_absences')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
@@ -1381,8 +1402,8 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-5 w-16 rounded-full flex-shrink-0" />
               </div>
             ))
-              :absences.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><UserCheck size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin ausencias activas</p></div>
-              :absences.map(r=>{
+              :displayAbsences.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><UserCheck size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin ausencias activas</p></div>
+              :displayAbsences.map(r=>{
                 const meta=parseMeta(r.metadata), cfg=ABSENCE_COLORS[r.type]||ABSENCE_COLORS.PERMIT;
                 const end=meta.endDate||(meta.permissionDates||[])[(meta.permissionDates||[]).length-1];
                 return (
@@ -1401,6 +1422,13 @@ const DashboardView = ({ openModal }) => {
     /* ── REQUESTS ── */
     if (wid === 'requests') {
       if (!showWidget('requests','dash_requests')) return null;
+      const reqsScope = getScope('dash_requests');
+      const displayReqs = reqsScope === 'BRANCH' && userBranchStr
+        ? pendingReqs.filter(r => {
+            const emp = employees.find(e => String(e.id) === String(r.employee_id));
+            return emp && String(emp.branchId ?? emp.branch_id ?? '') === userBranchStr;
+          })
+        : pendingReqs;
       return wrapWidget('requests',
         <WidgetCard title="Solicitudes Pendientes" icon={ClipboardList} category="personal"
           action={canManage('dash_requests')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver todas <ChevronRight size={11}/></button>}>
@@ -1415,8 +1443,8 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-2.5 w-10 flex-shrink-0" />
               </div>
             ))
-              :pendingReqs.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><ClipboardList size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin solicitudes pendientes</p></div>
-              :pendingReqs.map(r=>(
+              :displayReqs.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><ClipboardList size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin solicitudes pendientes</p></div>
+              :displayReqs.map(r=>(
                 <button key={r.id} onClick={canManage('dash_requests')?()=>navigate('/requests'):undefined}
                   className={`w-full flex items-center gap-3 px-5 py-3 transition-colors text-left ${canManage('dash_requests')?'hover:bg-slate-50 cursor-pointer':'cursor-default'}`}>
                   <div className="w-7 h-7 rounded-[0.6rem] bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0"><ClipboardList size={13} className="text-amber-500"/></div>
@@ -1432,11 +1460,18 @@ const DashboardView = ({ openModal }) => {
     /* ── BRANCHES ── */
     if (wid === 'branches') {
       if (!showWidget('branches','dash_branches')) return null;
+      const branchesWidgetScope = getScope('dash_branches');
+      const displayBranchAlerts = branchesWidgetScope === 'BRANCH' && userBranchStr
+        ? branchAlerts.filter(b => String(b.id) === userBranchStr)
+        : branchAlerts;
+      const displayBranches = branchesWidgetScope === 'BRANCH' && userBranchStr
+        ? branches.filter(b => String(b.id) === userBranchStr)
+        : branches;
       return wrapWidget('branches',
         <WidgetCard title="Alertas · Sucursales" icon={Building2} category="general"
           action={canManage('dash_branches')&&<button onClick={()=>navigate('/branches')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
           <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {branches.length === 0 ? (
+            {displayBranches.length === 0 ? (
               [0,1,2].map(i => (
                 <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-100 bg-slate-50/50">
                   <Skel className="w-5 h-5 rounded-full flex-shrink-0" />
@@ -1446,14 +1481,14 @@ const DashboardView = ({ openModal }) => {
                   </div>
                 </div>
               ))
-            ) : branchAlerts.length===0?(
+            ) : displayBranchAlerts.length===0?(
               <div className="flex flex-col items-center justify-center py-6 gap-2">
                 <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center"><CheckCircle2 size={20} className="text-green-500"/></div>
                 <p className="text-[12px] font-bold text-slate-500">Todo en orden</p>
-                <p className="text-[10px] text-slate-300">{branches.length} sucursal{branches.length!==1?'es':''} activa{branches.length!==1?'s':''}</p>
+                <p className="text-[10px] text-slate-300">{displayBranches.length} sucursal{displayBranches.length!==1?'es':''} activa{displayBranches.length!==1?'s':''}</p>
               </div>
             ):(
-              branchAlerts.map(b=>{
+              displayBranchAlerts.map(b=>{
                 const issue=getBranchIssue(b);
                 return (
                   <button key={b.id} onClick={canManage('dash_branches')?()=>navigate(`/branches/${b.id}`):undefined}
@@ -1553,6 +1588,10 @@ const DashboardView = ({ openModal }) => {
     /* ── BIRTHDAYS ── */
     if (wid === 'birthdays') {
       if (!showWidget('birthdays','dash_birthdays')) return null;
+      const bdScope = getScope('dash_birthdays');
+      const displayBirthdays = bdScope === 'BRANCH' && userBranchStr
+        ? birthdaysOfMonth.filter(e => String(e.branchId ?? e.branch_id ?? '') === userBranchStr)
+        : birthdaysOfMonth;
       const MONTH_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       return wrapWidget('birthdays',
         <div className="h-full rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] flex flex-col overflow-hidden relative">
@@ -1591,14 +1630,14 @@ const DashboardView = ({ openModal }) => {
                   </div>
                 ))}
               </div>
-            ) : birthdaysOfMonth.length === 0 ? (
+            ) : displayBirthdays.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full py-8 text-slate-300">
                 <Gift size={32} strokeWidth={1}/>
                 <p className="text-[12px] font-medium mt-2 text-center">Sin cumpleaños<br/>este mes</p>
               </div>
             ) : (
               <div className="space-y-1.5">
-                {birthdaysOfMonth.map((e,i)=>{
+                {displayBirthdays.map((e,i)=>{
                   const initials=(e.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
                   const dayLabel=`${e.day} ${new Date(bdMonth.getFullYear(),bdMonth.getMonth(),e.day).toLocaleDateString('es',{month:'short'})}`;
                   const cardCls = e.isToday
@@ -2011,14 +2050,32 @@ const DashboardView = ({ openModal }) => {
         <div key={activeTab} className={`space-y-5 pb-10 ${tabDir === 'right' ? 'animate-tab-enter-right' : 'animate-tab-enter-left'}`}>
 
         {/* KPI row — content varies by tab */}
+        {(()=>{
+          const kpiScope = getScope('dash_kpi') === 'BRANCH';
+          const kpiBranchStr = kpiScope ? userBranchStr : '';
+          const kpiEmps = kpiBranchStr
+            ? activeEmployees.filter(e => String(e.branchId ?? e.branch_id ?? '') === kpiBranchStr)
+            : activeEmployees;
+          const kpiPresent = kpiBranchStr
+            ? (() => { const ids=new Set(); kpiEmps.forEach(e=>(e.attendance||[]).forEach(a=>{if((a.date||a.timestamp?.split('T')[0])===today) ids.add(e.id);})); return ids.size; })()
+            : presentToday;
+          const kpiPending = kpiBranchStr
+            ? pendingReqs.filter(r => { const emp=employees.find(e=>String(e.id)===String(r.employee_id)); return emp&&String(emp.branchId??emp.branch_id??'')===kpiBranchStr; }).length
+            : pendingReqs.length;
+          const kpiBranches = kpiBranchStr ? branches.filter(b=>String(b.id)===kpiBranchStr) : branches;
+          const kpiBranchAlerts = kpiBranchStr ? branchAlerts.filter(b=>String(b.id)===kpiBranchStr) : branchAlerts;
+          const kpiAbsCount = kpiBranchStr
+            ? absences.filter(r => { const emp=employees.find(e=>String(e.id)===String(r.employee_id)); return emp&&String(emp.branchId??emp.branch_id??'')===kpiBranchStr; }).length
+            : absences.length;
+          return (<>
         {showWidget('kpi','dash_kpi') && activeTab === 'general' && (
           employees.length === 0
             ? <div key="kpi-general-skel" className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0,1,2,3].map(i=><KpiCardSkeleton key={i}/>)}</div>
             : <div key="kpi-general" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#0052CC" onClick={canManage('dash_kpi')?()=>navigate('/dashboard'):undefined}/>
-                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#12B76A" sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}% del total`:'0%'}/>
-                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#F79009" sub={pendingReqs.length===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
-                <KpiCard icon={Building2}     label="Sucursales"            value={branches.length}         color={branchAlerts.length>0?'#F04438':'#12B76A'} sub={branchAlerts.length>0?`${branchAlerts.length} alerta${branchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
+                <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="#0052CC" onClick={canManage('dash_kpi')?()=>navigate('/dashboard'):undefined}/>
+                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="#12B76A" sub={kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:'0%'}/>
+                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="#F79009" sub={kpiPending===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
+                <KpiCard icon={Building2}     label="Sucursales"            value={kpiBranches.length}      color={kpiBranchAlerts.length>0?'#F04438':'#12B76A'} sub={kpiBranchAlerts.length>0?`${kpiBranchAlerts.length} alerta${kpiBranchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={canManage('dash_kpi')?()=>navigate('/branches'):undefined}/>
               </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'comercial' && (
@@ -2033,12 +2090,14 @@ const DashboardView = ({ openModal }) => {
           employees.length === 0
             ? <div key="kpi-rrhh-skel" className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0,1,2,3].map(i=><KpiCardSkeleton key={i}/>)}</div>
             : <div key="kpi-rrhh" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <KpiCard icon={Users}         label="Empleados activos"     value={activeEmployees.length}  color="#0052CC"/>
-                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={presentToday}            color="#12B76A" sub={activeEmployees.length>0?`${Math.round(presentToday/activeEmployees.length*100)}% del total`:'0%'}/>
-                <KpiCard icon={UserX}         label="Ausencias activas"     value={absences.length}         color="#F04438" sub={absences.length===0?'Sin ausencias':undefined} onClick={canManage('dash_absences')?()=>navigate('/requests'):undefined}/>
-                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={pendingReqs.length}      color="#F79009" sub={pendingReqs.length===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
+                <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="#0052CC"/>
+                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="#12B76A" sub={kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:'0%'}/>
+                <KpiCard icon={UserX}         label="Ausencias activas"     value={kpiAbsCount}             color="#F04438" sub={kpiAbsCount===0?'Sin ausencias':undefined} onClick={canManage('dash_absences')?()=>navigate('/requests'):undefined}/>
+                <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="#F79009" sub={kpiPending===0?'Al día':undefined} onClick={canManage('dash_kpi')?()=>navigate('/requests'):undefined}/>
               </div>
         )}
+          </>);
+        })()}
 
         {/* Main widget grid — 4 cols desktop, 2 cols mobile */}
         <div

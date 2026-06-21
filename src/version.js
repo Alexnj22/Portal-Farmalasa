@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.216';
+export const APP_VERSION = '2.2.217';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.217 — fix(pedidos/reponer): regla del 40% aplicada en espacio de unidades — get_pedido_preview v23: necesidades.reponer ahora calcula need_units=max_units−stock_units y aplica FLOOR(need/factor)+(need%factor≥40%×factor?1:0); corrige ALKA SELTZER EXTREME (max=80,stock=41,need=39≥20→1 CAJA, antes ROUND(80/50)=2→2 CAJAS); también corrige cualquier producto donde max_units no es múltiplo exacto del factor; stock_sucursal expone max_units_raw y stock_units_raw para el cálculo
 // v2.2.216 — fix(pedidos/pdf): dispatch_label activa etiqueta visual de CAJA en PDF — get_pedido_preview v22: dispatch_pres_factor expone dp_display_factor (dp_factor × dp_multiplo cuando dispatch_label IS NOT NULL) y dp_tipo=COALESCE(dispatch_label, pres.tipo); con_reglas usa dp_display_factor en dispatch_factor output; PDF llama toDispatch(N, 1, 12)=1 CAJA en lugar de 12 UNIDADES; dispatch_label='CAJA' seteado en 11 productos ELECTROLIT ×12; sin cambios en product_precios — puramente visual vía dispatch_rules.dispatch_label
 // v2.2.215 — fix(pedidos): 2 correcciones — (1) get_pedido_preview cambia RETURNS TABLE→RETURNS jsonb (bypasa cap 1000 filas de PostgREST; pedido #39 truncaba 18+ productos en suc.4); TabGenerar elimina .range(0,49999) y parsea Array.isArray(data); (2) calcSolicitado corregido — max_qty_snapshot y stock_packs_snapshot ambos están en PACKS, fórmula correcta: Math.ceil(max - stock), no Math.ceil((max - stock×factor)/factor); NOTA: la sobre-asignación por 40%-roundup de dispatch_multiplo es comportamiento intencional (19 packs ≥ 40% de 25 → enviar 25 completos)
 // v2.2.214 — fix(pedidos/dispatch): pref_factor CTE en stock_sucursal — al elegir la presentación de cálculo se prioriza el factor de la dispatch rule (cuando existe), luego el menor factor > 1; corrige NOVOMIT suc1 (ROUND(181/250)=1 pasaba con factor=250 → ahora factor=10/BLISTER, max_qty=18 en vez de 1) y AERO OM suc2/4 (mismo bug); auto_pres_factor cambia ORDER BY DESC→ASC para fallback sin regla (BLISTER antes que CAJA); aplica a get_pedido_preview, get_pedido_sucursal_stats y get_pedido_sin_bodega

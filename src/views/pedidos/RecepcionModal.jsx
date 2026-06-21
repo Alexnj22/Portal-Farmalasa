@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import {
-    Loader2, X, CheckCircle2, PackageCheck, AlertTriangle, Search,
+    Loader2, X, PackageCheck, AlertTriangle, Search,
     Plus, Trash2, PackagePlus,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -24,6 +25,16 @@ export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
             )}
         </span>
     );
+}
+
+function fmtPresentacion(r) {
+    const tipo   = r.dispatch_tipo;
+    const factor = r.dispatch_factor || r.factor || 1;
+    const LABELS = { caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja' };
+    if (!tipo) return factor > 1 ? `×${factor} unid` : null;
+    const label = LABELS[tipo] ?? tipo;
+    const showF = factor > 1 && ['caja','blister','solo_cajas','multiplo','multiplo_unidades'].includes(tipo);
+    return `${label}${showF ? ` ×${factor}` : ''}`;
 }
 
 const ERROR_TIPOS = [
@@ -96,12 +107,6 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
         setExtraSearch(''); setExtraResults([]);
     }, []);
 
-    const handleTodoRecibido = useCallback(() => {
-        const vals = {}, notas = {}, errs = {};
-        for (const r of rows) { vals[r.id] = r.cantidad_asignada; notas[r.id] = ''; errs[r.id] = ''; }
-        setRecepVals(vals); setNotaVals(notas); setErrorVals(errs);
-    }, [rows]);
-
     // ── Confirmar ─────────────────────────────────────────────────────────────
     const handleConfirmar = useCallback(async () => {
         setSaving(true); setSaveError(null);
@@ -169,24 +174,30 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                     <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                             <h3 className="text-[15px] font-bold text-slate-800 leading-snug">
-                                Confirmar recepción — Pedido #{pedido.numero}
-                                {pedido.codigo && <span className="ml-2 text-[13px] font-normal text-slate-400">· {pedido.codigo}</span>}
+                                Confirmar recepción
                             </h3>
-                            <p className="text-[11px] text-slate-400 mt-0.5">{sucursalNombre} · {rows.length} productos</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                                {sucursalNombre}{pedido.codigo && ` · ${pedido.codigo}`} · {rows.length} productos
+                            </p>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
                             <button
-                                onClick={() => { setShowSearch(s => !s); if (!showSearch) setTimeout(() => searchRef.current?.focus(), 50); }}
+                                onClick={() => {
+                                    setShowSearch(s => {
+                                        if (!s) setTimeout(() => searchRef.current?.focus(), 80);
+                                        else setProdSearch('');
+                                        return !s;
+                                    });
+                                }}
                                 className={`p-1.5 rounded-lg transition-colors ${showSearch ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
                                 title="Buscar producto"
                             >
-                                <Search size={15} />
-                            </button>
-                            <button
-                                onClick={handleTodoRecibido}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
-                            >
-                                <CheckCircle2 size={12} /> Todo exacto
+                                <motion.div
+                                    animate={showSearch ? { rotate: 0, scale: 1.15 } : { rotate: 0, scale: 1 }}
+                                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                                >
+                                    <Search size={15} />
+                                </motion.div>
                             </button>
                             <button onClick={onClose} disabled={saving}
                                 className="text-slate-400 hover:text-slate-600 transition-colors p-1 disabled:opacity-40">
@@ -194,24 +205,34 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                             </button>
                         </div>
                     </div>
-                    {showSearch && (
-                        <div className="mt-2 relative">
-                            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300" />
-                            <input
-                                ref={searchRef}
-                                type="text"
-                                placeholder="Buscar producto…"
-                                value={prodSearch}
-                                onChange={e => setProdSearch(e.target.value)}
-                                className="w-full text-[12px] border border-blue-200 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-blue-400 bg-blue-50/40 placeholder-slate-300"
-                            />
-                            {prodSearch && (
-                                <button onClick={() => setProdSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500">
-                                    <X size={12} />
-                                </button>
-                            )}
-                        </div>
-                    )}
+                    <AnimatePresence>
+                        {showSearch && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                                animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
+                                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                                transition={{ duration: 0.18, ease: 'easeInOut' }}
+                                className="overflow-hidden"
+                            >
+                                <div className="relative">
+                                    <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300" />
+                                    <input
+                                        ref={searchRef}
+                                        type="text"
+                                        placeholder="Buscar producto…"
+                                        value={prodSearch}
+                                        onChange={e => setProdSearch(e.target.value)}
+                                        className="w-full text-[12px] border border-blue-200 rounded-lg pl-8 pr-8 py-2 focus:outline-none focus:border-blue-400 bg-blue-50/40 placeholder-slate-300"
+                                    />
+                                    {prodSearch && (
+                                        <button onClick={() => setProdSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500">
+                                            <X size={12} />
+                                        </button>
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </PedidoModal.Header>
 
                 {/* Items */}
@@ -223,14 +244,22 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         const recibida = recepVals[r.id] ?? r.cantidad_asignada;
                         const hasDiff  = recibida !== r.cantidad_asignada;
                         const delta    = recibida - r.cantidad_asignada;
+                        const pres     = fmtPresentacion(r);
                         return (
                             <div key={r.id} className={`rounded-xl px-3 py-2.5 border transition-colors ${
                                 hasDiff ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-100'
                             }`}>
                                 <div className="flex items-center gap-3">
-                                    <span className="flex-1 text-[13px] text-slate-700 font-semibold min-w-0 truncate">
-                                        {r.products?.nombre}
-                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                        <span className="text-[13px] text-slate-700 font-semibold truncate block">
+                                            {r.products?.nombre}
+                                        </span>
+                                        {pres && (
+                                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 inline-block mt-0.5">
+                                                {pres}
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                         <span className="text-[11px] text-slate-400">asignado: <b>{r.cantidad_asignada}</b></span>
                                         {hasDiff && (

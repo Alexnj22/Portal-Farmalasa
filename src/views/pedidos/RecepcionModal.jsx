@@ -91,8 +91,9 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
     const [extraBusy,    setExtraBusy]    = useState(false);
     const [extraOpen,    setExtraOpen]    = useState(false);
 
-    const searchRef = useRef(null);
-    const extraRef  = useRef(null);
+    const searchRef    = useRef(null);
+    const extraRef     = useRef(null);
+    const extrasEndRef = useRef(null);
 
     // Ordenar por laboratorio (igual que PDF)
     const sortedRows = useMemo(() => [...rows].sort((a, b) => {
@@ -105,8 +106,9 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
         if (!open) return;
         const fQ = {}, fP = {}, sQ = {}, sP = {}, notas = {}, errs = {};
         for (const r of rows) {
+            // cantidad_asignada ya está en unidades de despacho (display), no en unidades base
             const def = r.dispatch_factor || r.factor || 1;
-            const dispQty = Math.round(r.cantidad_asignada / def);
+            const dispQty = r.cantidad_asignada;
             fQ[r.id] = dispQty; fP[r.id] = def;
             sQ[r.id] = dispQty; sP[r.id] = def;
             notas[r.id] = ''; errs[r.id] = '';
@@ -179,30 +181,29 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             erp_product_id: prod.id, nombre: prod.nombre,
             fPres: defF, fQty: 1, sPres: defF, sQty: 1, nota: '',
         }]);
+        setTimeout(() => extrasEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 80);
     }, [extras, presMap]);
 
     const handleConfirmar = useCallback(async () => {
         setSaving(true); setSaveError(null);
         const p_items = rows.map(r => {
             const dispFactor = r.dispatch_factor || r.factor || 1;
-            const defDispQty = Math.round(r.cantidad_asignada / dispFactor);
+            const defDispQty = r.cantidad_asignada; // ya en unidades de despacho
             const fQty  = fQtyVals[r.id]  ?? defDispQty;
             const sQty  = sQtyVals[r.id]  ?? defDispQty;
             const fPres = fPresVals[r.id] ?? dispFactor;
             const sPres = sPresVals[r.id] ?? dispFactor;
             const hasProb = !!tieneProblema[r.id];
-            const fRaw = fQty * fPres;
-            const sRaw = sQty * sPres;
-            const isDiff = fRaw !== sRaw || fPres !== sPres || hasProb;
+            const isDiff = fQty !== sQty || fPres !== sPres || hasProb;
 
             let nota = notaVals[r.id] || null;
             let error_tipo = null;
             if (isDiff) {
                 if (hasProb && errorVals[r.id]) {
                     error_tipo = errorVals[r.id];
-                } else if (fRaw < sRaw) {
+                } else if (fQty < sQty) {
                     error_tipo = 'faltante';
-                } else if (fRaw > sRaw) {
+                } else if (fQty > sQty) {
                     error_tipo = 'sobrante';
                 } else if (fPres !== sPres) {
                     error_tipo = 'presentacion';
@@ -216,7 +217,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                     nota = `Físico: ${lf} — Sistema: ${ls}`;
                 }
             }
-            return { pedido_item_id: r.id, cantidad_recibida: fRaw, nota_diferencia: nota, error_tipo };
+            return { pedido_item_id: r.id, cantidad_recibida: fQty, nota_diferencia: nota, error_tipo };
         });
         try {
             const { error } = await supabase.rpc('receive_pedido_sucursal', {
@@ -305,8 +306,12 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         >
                             <Search size={15} />
                         </motion.button>
-                        <button onClick={onClose} disabled={saving}
-                            className="text-slate-400 hover:text-slate-600 transition-colors p-1 disabled:opacity-40">
+                        <button
+                            onClick={showSearch ? () => { setShowSearch(false); setProdSearch(''); } : onClose}
+                            disabled={!showSearch && saving}
+                            className="text-slate-400 hover:text-slate-600 transition-colors p-1 disabled:opacity-40"
+                            title={showSearch ? 'Cerrar búsqueda' : 'Cerrar modal'}
+                        >
                             <X size={18} />
                         </button>
                     </div>
@@ -341,16 +346,14 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                 <div className="divide-y divide-slate-100">
                     {visibleRows.map((r, rowIdx) => {
                         const dispFactor = r.dispatch_factor || r.factor || 1;
-                        const defDispQty = Math.round(r.cantidad_asignada / dispFactor);
+                        const defDispQty = r.cantidad_asignada; // ya en unidades de despacho
                         const fQty  = fQtyVals[r.id]  ?? defDispQty;
                         const sQty  = sQtyVals[r.id]  ?? defDispQty;
                         const fPres = fPresVals[r.id] ?? dispFactor;
                         const sPres = sPresVals[r.id] ?? dispFactor;
                         const hasProb  = !!tieneProblema[r.id];
-                        const fRaw     = fQty * fPres;
-                        const sRaw     = sQty * sPres;
-                        const hasDiff  = fRaw !== sRaw || fPres !== sPres;
-                        const delta    = fRaw - sRaw; // en unidades crudas
+                        const hasDiff  = fQty !== sQty || fPres !== sPres;
+                        const delta    = fQty - sQty; // en unidades de display
 
                         // Presentaciones: siempre incluir la de despacho (regla especial del PDF)
                         const rawOpts = presMap[r.erp_product_id] ?? [];
@@ -511,6 +514,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                             </div>
                         );
                     })}
+                    <div ref={extrasEndRef} />
                 </div>
             </PedidoModal.Body>
 

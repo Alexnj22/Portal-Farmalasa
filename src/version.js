@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.226';
+export const APP_VERSION = '2.2.227';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.227 — fix(pedidos/timeline): tiempo transcurrido entre etapas más grande (9px) y color más sólido (slate-600 semibold)
 // v2.2.226 — feat(pedidos): elimina sección Historial de TabPedidos; los filtros de fecha cubren la funcionalidad
 // v2.2.225 — fix(pedidos/pausa): elimina razón "Falta de personal" del modal de pausa de despacho
 // v2.2.224 — fix(modals): restaura blur de fondo en todos los modals — ModalShell overlay vuelve a bg-slate-900/40 backdrop-blur-sm (revertido accidentalmente en commit ececdaf de abril); todos los modals del portal recuperan el scrim oscuro + blur de fondo estándar

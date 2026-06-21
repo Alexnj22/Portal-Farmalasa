@@ -848,7 +848,7 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp }) {
                                 {/* Elapsed time — below the line */}
                                 {segElapsed && (
                                     <div className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap" style={{ top: 4 }}>
-                                        <span className="text-[7px] text-slate-400 tabular-nums">{segElapsed}</span>
+                                        <span className="text-[9px] font-semibold text-slate-600 tabular-nums">{segElapsed}</span>
                                     </div>
                                 )}
                             </div>

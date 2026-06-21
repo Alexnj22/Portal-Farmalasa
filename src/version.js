@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.235';
+export const APP_VERSION = '2.2.236';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.236 — feat(pedidos/sucursal): responsables en recepción + renombrar ERP→Sistema de Ventas — get_pedidos_en_curso v6 agrega llegada_fisica_por, recibido_erp_por, conteo_por; timeline nodos Llegada y Sis.Ventas muestran foto+nombre del responsable; ReceptionActions muestra chip de empleado en cada paso confirmado; "ERP"/"Finalizado" renombrado a "Sistema de Ventas" en labels, stage pill, botones
 // v2.2.235 — fix(pedidos/sucursal): opacity solo cuando recibido_erp_at está puesto (isFadedOut); Paso 3 Marcar ERP aparece sin necesitar items cargados — pedidoDone=true (completado/parcial) activa Paso 3 directamente; Paso 2 muestra "Ítems confirmados" cuando pedidoDone
 // v2.2.234 — fix(pedidos/card): 3 correcciones — (1) quita badge doble "Completado" (PEDIDO_PILL ya lo muestra); (2) ReceptionActions visible para completado/parcial cuando recibido_erp_at es null (stage!='erp'), permite Marcar ERP tras contar ítems; (3) get_pedidos_en_curso v5 restaura pss.codigo (perdido en v3/v4)
 // v2.2.233 — fix(pedidos): fecha filtra completados igual que ventas — get_pedidos_en_curso v4 sin restricción de días (el filterDate del frontend controla el rango, mismo patrón que VentasView); sort pone completado/parcial siempre al fondo; FilterPill compacta (text-[11px] py-1 buttons, py-1.5 sections) igual al estándar VentasView/Historial

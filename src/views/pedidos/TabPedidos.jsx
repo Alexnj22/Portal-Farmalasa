@@ -45,7 +45,7 @@ const STAGE_CONFIG = {
     preparado:   { label: 'Listo p/ envío',  color: 'violet',  icon: CheckCircle2 },
     transito:    { label: 'En tránsito',     color: 'indigo',  icon: Truck        },
     contando:    { label: 'Cajas recibidas', color: 'teal',    icon: PackageCheck },
-    erp:         { label: 'En ERP',          color: 'emerald', icon: Database     },
+    erp:         { label: 'Sis. Ventas',      color: 'emerald', icon: Database     },
 };
 
 const COLOR_CLS = {
@@ -713,7 +713,7 @@ const TL_GLOW   = [
 
 const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 4, erp: 5 };
 
-function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp }) {
+function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, erpEmp }) {
     const hasPause  = (row.min_pausado_total ?? 0) > 0;
     const isPaused  = stage === 'pausado';
     const activeIdx = TL_STAGE_IDX[stage] ?? 0;
@@ -723,8 +723,8 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
         { key: 'iniciado',   label: 'Inicio',     time: row.iniciado_at,       emp: iniciadorEmp  },
         { key: 'preparado',  label: 'Listo',      time: row.finalizado_at,     emp: finalizadorEmp },
         { key: 'enviado',    label: 'En Ruta',    time: row.enviado_at,        emp: enviadorEmp    },
-        { key: 'llegada',    label: 'Llegada',    time: row.llegada_fisica_at, emp: null           },
-        { key: 'erp',        label: 'Finalizado', time: row.recibido_erp_at,   emp: null           },
+        { key: 'llegada',    label: 'Llegada',    time: row.llegada_fisica_at, emp: llegadaEmp     },
+        { key: 'erp',        label: 'Sis. Ventas',time: row.recibido_erp_at,   emp: erpEmp         },
     ];
 
     return (
@@ -892,38 +892,58 @@ function ItemSections({ allItems, loading }) {
 
 // ─── Reception actions ────────────────────────────────────────────────────────
 
-function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLlegada, onOpenRecibir, onMarkErp, busy, pedidoDone }) {
-    // pedidoDone=true cuando pedido_status es completado/parcial — significa que el conteo ya se hizo
-    // aunque items no estén cargados (card no expandida), Paso 3 debe aparecer
+function ReceptionActions({ pedidoId, sucId, llegadaOk, erpOk, items, onMarkLlegada, onOpenRecibir, onMarkErp, busy, pedidoDone, llegadaEmp, conteoEmp, erpEmp }) {
     const recibidosLoaded = items?.filter(r => r.status === 'recibido').length > 0;
     const showPaso3       = llegadaOk && !erpOk && (pedidoDone || recibidosLoaded);
     const pendientes      = items?.filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0).length ?? 0;
 
+    const empChip = (emp) => emp ? (
+        <span className="ml-auto flex items-center gap-1 text-[10px] text-slate-500">
+            {emp.photo_url
+                ? <img src={emp.photo_url} className="w-4 h-4 rounded-full object-cover border border-white shadow-sm" alt="" />
+                : <UserCircle2 size={12} className="text-slate-400" />}
+            {emp.name?.split(' ')[0]}
+        </span>
+    ) : null;
+
     return (
         <div className="border-t border-slate-100 px-4 py-3 space-y-2">
             <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Recepción</div>
+
+            {/* Paso 1: Llegada */}
             <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] ${llegadaOk ? 'bg-emerald-50/40 border-emerald-100' : 'bg-blue-50/40 border-blue-100'}`}>
                 <PackageCheck size={13} className={llegadaOk ? 'text-emerald-500' : 'text-blue-500'} />
-                <span className={llegadaOk ? 'text-emerald-700' : 'text-blue-700'}>{llegadaOk ? 'Llegada física confirmada' : 'Paso 1 — Confirmar llegada de cajas'}</span>
-                {!llegadaOk && <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all disabled:opacity-50">{busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}</button>}
+                <span className={llegadaOk ? 'text-emerald-700' : 'text-blue-700'}>{llegadaOk ? 'Llegada de cajas confirmada' : 'Paso 1 — Confirmar llegada de cajas'}</span>
+                {llegadaOk ? empChip(llegadaEmp) : <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all disabled:opacity-50">{busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}</button>}
             </div>
+
+            {/* Paso 2: Conteo */}
             {llegadaOk && (
                 <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] ${(pedidoDone || erpOk) ? 'bg-emerald-50/40 border-emerald-100' : 'bg-teal-50/40 border-teal-100'}`}>
                     <Activity size={13} className={(pedidoDone || erpOk) ? 'text-emerald-500' : 'text-teal-500'} />
                     <span className={(pedidoDone || erpOk) ? 'text-emerald-700' : 'text-slate-700'}>
-                        {(pedidoDone || erpOk) ? 'Ítems confirmados' : `Paso 2 — Contar ítems (${pendientes} pendientes)`}
+                        {(pedidoDone || erpOk) ? 'Productos revisados' : `Paso 2 — Revisar productos (${pendientes} pendientes)`}
                     </span>
-                    {!pedidoDone && !erpOk && <button onClick={onOpenRecibir} disabled={pendientes === 0} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-teal-500 text-white hover:bg-teal-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">Recibir</button>}
+                    {(pedidoDone || erpOk) ? empChip(conteoEmp) : <button onClick={onOpenRecibir} disabled={pendientes === 0} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-teal-500 text-white hover:bg-teal-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">Revisar</button>}
                 </div>
             )}
+
+            {/* Paso 3: Sistema de ventas */}
             {showPaso3 && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-violet-50/40 border-violet-100 text-[11px]">
                     <Database size={13} className="text-violet-500" />
-                    <span className="text-violet-700">Paso 3 — Marcar ingresado al ERP</span>
-                    <button onClick={onMarkErp} disabled={busy === 'erp'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-50">{busy === 'erp' ? <Loader2 size={10} className="animate-spin" /> : 'Marcar ERP'}</button>
+                    <span className="text-violet-700">Paso 3 — Confirmar en Sistema de Ventas</span>
+                    <button onClick={onMarkErp} disabled={busy === 'erp'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-50">{busy === 'erp' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}</button>
                 </div>
             )}
-            {erpOk && <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 font-medium px-1"><CheckCheck size={12} />Recepción completa</div>}
+
+            {erpOk && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-emerald-50/40 border-emerald-100 text-[11px]">
+                    <Database size={13} className="text-emerald-500" />
+                    <span className="text-emerald-700">Confirmado en Sistema de Ventas</span>
+                    {empChip(erpEmp)}
+                </div>
+            )}
         </div>
     );
 }
@@ -1392,10 +1412,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                             // Botón aparece por sucursal cuando esa ya está lista (preparado), sin esperar a las demás
                             const canMarcarEnRuta  = canActuar && !isBranch && stage === 'preparado' && row.pedido_status === 'confirmado';
 
-                            const creator      = row.created_by    ? empMap.get(row.created_by)    : null;
-                            const iniciador    = row.iniciado_por  ? empMap.get(row.iniciado_por)  : null;
-                            const finalizador  = row.finalizado_por ? empMap.get(row.finalizado_por) : null;
-                            const enviador     = row.enviado_por    ? empMap.get(row.enviado_por)    : null;
+                            const creator      = row.created_by        ? empMap.get(row.created_by)        : null;
+                            const iniciador    = row.iniciado_por      ? empMap.get(row.iniciado_por)      : null;
+                            const finalizador  = row.finalizado_por    ? empMap.get(row.finalizado_por)    : null;
+                            const enviador     = row.enviado_por       ? empMap.get(row.enviado_por)       : null;
+                            const llegadaEmp   = row.llegada_fisica_por ? empMap.get(row.llegada_fisica_por) : null;
+                            const conteoEmp    = row.conteo_por        ? empMap.get(row.conteo_por)        : null;
+                            const erpEmp       = row.recibido_erp_por  ? empMap.get(row.recibido_erp_por)  : null;
 
                             const elapsedPrep  = stage === 'preparando' ? fmtMin(Math.max(0, (elapsed(row.iniciado_at) ?? 0) - (row.min_pausado_total ?? 0))) : null;
                             const elapsedPause = stage === 'pausado'    ? fmtMin(elapsed(row.pausado_at)) : null;
@@ -1474,7 +1497,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     {/* Lifecycle Timeline */}
                                     <div className="border-t border-slate-100 px-3 pt-2 pb-1.5">
-                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} />
+                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} erpEmp={erpEmp} />
                                     </div>
 
                                     {/* Actions + status strip */}
@@ -1514,6 +1537,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 erpOk={!!erpStatus[cardKey] || !!row.recibido_erp_at}
                                                 items={items[cardKey]}
                                                 pedidoDone={isDone}
+                                                llegadaEmp={llegadaEmp}
+                                                conteoEmp={conteoEmp}
+                                                erpEmp={erpEmp}
                                                 onMarkLlegada={() => handleLlegada(row.pedido_id, erpSucursalId, cardKey)}
                                                 onOpenRecibir={() => openModal(row.pedido_id, row.numero, erpSucursalId, cardKey)}
                                                 onMarkErp={() => handleMarkErp(row.pedido_id, erpSucursalId, cardKey)}

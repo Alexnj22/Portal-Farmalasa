@@ -1050,7 +1050,7 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onAp
                         {apoyoBtn}
                         <button
                             onClick={onOpenRecibir}
-                            disabled={pendientesCount === 0 && !busy}
+                            disabled={!!busy}
                             className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-50"
                         >
                             Confirmar

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import {
@@ -37,22 +37,39 @@ function fmtPresentacion(r) {
     return `${label}${showF ? ` ×${factor}` : ''}`;
 }
 
-
 const ERROR_TIPOS = [
-    { value: 'faltante',   label: 'Faltante'            },
-    { value: 'danado',     label: 'Dañado'              },
-    { value: 'vencido',    label: 'Vencido'             },
-    { value: 'equivocado', label: 'Producto equivocado' },
-    { value: 'otro',       label: 'Otro'                },
+    { value: 'faltante',     label: 'Faltante'              },
+    { value: 'sobrante',     label: 'Sobrante'              },
+    { value: 'danado',       label: 'Dañado'                },
+    { value: 'vencido',      label: 'Vencido'               },
+    { value: 'equivocado',   label: 'Equivocado'            },
+    { value: 'presentacion', label: 'Pres. distinta'        },
+    { value: 'otro',         label: 'Otro'                  },
 ];
 
 // 7-column grid: Producto | Asig | F.Pres | F.Qty | S.Pres | S.Qty | ⚠
-const GRID = 'grid-cols-[minmax(0,1fr)_2.75rem_8rem_3.25rem_8rem_3.25rem_1.75rem]';
+const GRID = 'grid-cols-[minmax(0,1fr)_2.75rem_8rem_3.25rem_8rem_3.25rem_2rem]';
+
+async function fetchPresOpts(productId) {
+    const { data } = await supabase.from('product_precios')
+        .select('product_id, factor, descripcion, presentaciones(tipo)')
+        .eq('product_id', productId).eq('activo', true).order('factor');
+    const opts = [];
+    (data || []).forEach(p => {
+        const f = p.factor || 1;
+        if (!opts.find(x => x.factor === f)) {
+            const tipo = p.presentaciones?.tipo || '';
+            const det  = p.descripcion || '';
+            const label = tipo ? `${tipo}${det ? ' ' + det : ''}` : det || (f === 1 ? 'Unidad' : `×${f}`);
+            opts.push({ factor: f, label });
+        }
+    });
+    return opts;
+}
 
 export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucursalNombre, rows, onConfirmed }) {
     const { user } = useAuth();
 
-    // Per-item state: f = físico (what arrived physically), s = sistema (what to record in system)
     const [fQtyVals,  setFQtyVals]  = useState({});
     const [fPresVals, setFPresVals] = useState({});
     const [sQtyVals,  setSQtyVals]  = useState({});
@@ -67,21 +84,28 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
     const [showSearch, setShowSearch] = useState(false);
     const [apoyo,      setApoyo]      = useState([]);
 
+    // extras: { erp_product_id, nombre, fPres, fQty, sPres, sQty, nota }
     const [extras,       setExtras]       = useState([]);
     const [extraSearch,  setExtraSearch]  = useState('');
     const [extraResults, setExtraResults] = useState([]);
     const [extraBusy,    setExtraBusy]    = useState(false);
     const [extraOpen,    setExtraOpen]    = useState(false);
 
-    const searchRef   = useRef(null);
-    const extraRef    = useRef(null);
+    const searchRef = useRef(null);
+    const extraRef  = useRef(null);
+
+    // Ordenar por laboratorio (igual que PDF)
+    const sortedRows = useMemo(() => [...rows].sort((a, b) => {
+        const la = a.products?.laboratorios?.nombre ?? '';
+        const lb = b.products?.laboratorios?.nombre ?? '';
+        return la.localeCompare(lb, 'es') || (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es');
+    }), [rows]);
 
     useEffect(() => {
         if (!open) return;
         const fQ = {}, fP = {}, sQ = {}, sP = {}, notas = {}, errs = {};
         for (const r of rows) {
             const def = r.dispatch_factor || r.factor || 1;
-            // Mostrar en unidades de despacho (como el PDF de bodega)
             const dispQty = Math.round(r.cantidad_asignada / def);
             fQ[r.id] = dispQty; fP[r.id] = def;
             sQ[r.id] = dispQty; sP[r.id] = def;
@@ -100,15 +124,13 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             setApoyo((data || []).map(r => ({ id: r.employee_id, ...r.employees })));
         })();
 
-        // Presentaciones disponibles; join presentaciones(tipo) para label "CAJA 1x100", "BLISTER 1x10"
+        // Presentaciones disponibles por producto
         const productIds = [...new Set(rows.map(r => r.erp_product_id))];
         if (productIds.length > 0) {
             (async () => {
                 const { data } = await supabase.from('product_precios')
                     .select('product_id, factor, descripcion, presentaciones(tipo)')
-                    .in('product_id', productIds)
-                    .eq('activo', true)
-                    .order('factor');
+                    .in('product_id', productIds).eq('activo', true).order('factor');
                 const map = {};
                 (data || []).forEach(p => {
                     const pid = p.product_id;
@@ -117,9 +139,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                     if (!map[pid].find(x => x.factor === f)) {
                         const tipo = p.presentaciones?.tipo || '';
                         const det  = p.descripcion || '';
-                        const label = tipo
-                            ? `${tipo}${det ? ' ' + det : ''}`
-                            : det || (f === 1 ? 'Unidad' : `×${f}`);
+                        const label = tipo ? `${tipo}${det ? ' ' + det : ''}` : det || (f === 1 ? 'Unidad' : `×${f}`);
                         map[pid].push({ factor: f, label });
                     }
                 });
@@ -128,9 +148,10 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
         }
     }, [open, rows, pedido?.id, sucursalId]); // eslint-disable-line
 
+    // Búsqueda extras — excluye productos ya en el pedido
     useEffect(() => {
         if (!extraOpen || extraSearch.trim().length < 2) { setExtraResults([]); return; }
-        const existingIds = rows.map(r => r.erp_product_id);
+        const existingIds = [...rows.map(r => r.erp_product_id), ...extras.map(e => e.erp_product_id)];
         const t = setTimeout(async () => {
             setExtraBusy(true);
             let q = supabase.from('products').select('id, nombre')
@@ -141,14 +162,24 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             setExtraBusy(false);
         }, 300);
         return () => clearTimeout(t);
-    }, [extraSearch, extraOpen, rows]);
+    }, [extraSearch, extraOpen, rows, extras]);
 
-    const addExtra = useCallback((prod) => {
-        setExtras(prev => prev.some(e => e.erp_product_id === prod.id)
-            ? prev
-            : [...prev, { erp_product_id: prod.id, nombre: prod.nombre, cantidad: 1, nota: '' }]);
+    const addExtra = useCallback(async (prod) => {
+        if (extras.some(e => e.erp_product_id === prod.id)) return;
         setExtraSearch(''); setExtraResults([]);
-    }, []);
+
+        // Cargar presentaciones si no están en cache
+        let opts = presMap[prod.id];
+        if (!opts || opts.length === 0) {
+            opts = await fetchPresOpts(prod.id);
+            if (opts.length > 0) setPresMap(prev => ({ ...prev, [prod.id]: opts }));
+        }
+        const defF = opts?.[0]?.factor ?? 1;
+        setExtras(prev => [...prev, {
+            erp_product_id: prod.id, nombre: prod.nombre,
+            fPres: defF, fQty: 1, sPres: defF, sQty: 1, nota: '',
+        }]);
+    }, [extras, presMap]);
 
     const handleConfirmar = useCallback(async () => {
         setSaving(true); setSaveError(null);
@@ -160,25 +191,32 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             const fPres = fPresVals[r.id] ?? dispFactor;
             const sPres = sPresVals[r.id] ?? dispFactor;
             const hasProb = !!tieneProblema[r.id];
-            // Comparar en unidades crudas para detectar diff real de cantidad
-            const fRaw   = fQty * fPres;
-            const sRaw   = sQty * sPres;
+            const fRaw = fQty * fPres;
+            const sRaw = sQty * sPres;
             const isDiff = fRaw !== sRaw || fPres !== sPres || hasProb;
 
             let nota = notaVals[r.id] || null;
-            if (fPres !== sPres && !nota) {
-                const opts = presMap[r.erp_product_id] ?? [{ factor: dispFactor, label: fmtPresentacion(r) }];
-                const lf = opts.find(o => o.factor === fPres)?.label || `×${fPres}`;
-                const ls = opts.find(o => o.factor === sPres)?.label || `×${sPres}`;
-                nota = `Físico: ${lf} — Sistema: ${ls}`;
+            let error_tipo = null;
+            if (isDiff) {
+                if (hasProb && errorVals[r.id]) {
+                    error_tipo = errorVals[r.id];
+                } else if (fRaw < sRaw) {
+                    error_tipo = 'faltante';
+                } else if (fRaw > sRaw) {
+                    error_tipo = 'sobrante';
+                } else if (fPres !== sPres) {
+                    error_tipo = 'presentacion';
+                } else {
+                    error_tipo = 'otro';
+                }
+                if (fPres !== sPres && !nota) {
+                    const opts = presMap[r.erp_product_id] ?? [];
+                    const lf = opts.find(o => o.factor === fPres)?.label || `×${fPres}`;
+                    const ls = opts.find(o => o.factor === sPres)?.label || `×${sPres}`;
+                    nota = `Físico: ${lf} — Sistema: ${ls}`;
+                }
             }
-
-            return {
-                pedido_item_id:    r.id,
-                cantidad_recibida: fRaw,  // siempre en unidades crudas para el RPC
-                nota_diferencia:   isDiff ? nota : null,
-                error_tipo:        isDiff ? (errorVals[r.id] || 'faltante') : null,
-            };
+            return { pedido_item_id: r.id, cantidad_recibida: fRaw, nota_diferencia: nota, error_tipo };
         });
         try {
             const { error } = await supabase.rpc('receive_pedido_sucursal', {
@@ -191,8 +229,12 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                 const { error: exErr } = await supabase.from('pedido_recepcion_extras').insert(
                     extras.map(e => ({
                         pedido_id: pedido.id, erp_sucursal_id: sucursalId,
-                        erp_product_id: e.erp_product_id, cantidad: e.cantidad,
-                        nota: e.nota || null, reported_by: user?.id ?? null,
+                        erp_product_id: e.erp_product_id,
+                        cantidad: e.fQty * e.fPres,
+                        nota: e.nota || (e.fPres !== e.sPres || e.fQty !== e.sQty
+                            ? `Sistema: ${e.sQty} × ${presMap[e.erp_product_id]?.find(x => x.factor === e.sPres)?.label ?? `×${e.sPres}`}`
+                            : null),
+                        reported_by: user?.id ?? null,
                     }))
                 );
                 if (exErr) throw exErr;
@@ -216,8 +258,8 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
     if (!open) return null;
 
     const visibleRows = prodSearch.trim()
-        ? rows.filter(r => r.products?.nombre?.toLowerCase().includes(prodSearch.trim().toLowerCase()))
-        : rows;
+        ? sortedRows.filter(r => r.products?.nombre?.toLowerCase().includes(prodSearch.trim().toLowerCase()))
+        : sortedRows;
 
     return (
         <PedidoModal open={open} onClose={saving ? undefined : onClose} maxWidth="max-w-2xl">
@@ -271,7 +313,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                 </div>
             </PedidoModal.Header>
 
-            {/* Header de tabla — fuera del Body para que no scrollee con las filas */}
+            {/* Header tabla — fuera del Body (no scrollea) */}
             <div className="flex-none bg-white/90 border-b-2 border-slate-200">
                 <div className={`grid ${GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                     <span /><span />
@@ -290,9 +332,9 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                 </div>
             </div>
 
-            {/* Tabla comparativa: Físico vs Sistema */}
+            {/* Tabla */}
             <PedidoModal.Body className="px-0 py-0 max-h-[44vh]">
-                {visibleRows.length === 0 && (
+                {visibleRows.length === 0 && !extras.length && (
                     <p className="text-center text-[12px] text-slate-400 py-6">No se encontraron productos.</p>
                 )}
 
@@ -305,201 +347,196 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         const fPres = fPresVals[r.id] ?? dispFactor;
                         const sPres = sPresVals[r.id] ?? dispFactor;
                         const hasProb  = !!tieneProblema[r.id];
-                        // Diff en unidades crudas
-                        const hasDiff  = (fQty * fPres) !== (sQty * sPres) || fPres !== sPres;
-                        const showExtra = hasDiff || hasProb;
-                        const delta    = (fQty * fPres) - (sQty * sPres);
+                        const fRaw     = fQty * fPres;
+                        const sRaw     = sQty * sPres;
+                        const hasDiff  = fRaw !== sRaw || fPres !== sPres;
+                        const delta    = fRaw - sRaw; // en unidades crudas
 
-                        // Opciones de presentación desde product_precios (deduplicadas por factor)
+                        // Presentaciones: siempre incluir la de despacho (regla especial del PDF)
                         const rawOpts = presMap[r.erp_product_id] ?? [];
+                        const dispOpt = { factor: dispFactor, label: fmtPresentacion(r) };
                         const presOpts = rawOpts.length > 0
-                            ? rawOpts
-                            : [{ factor: dispFactor, label: fmtPresentacion(r) }];
+                            ? rawOpts.find(o => o.factor === dispFactor) ? rawOpts : [dispOpt, ...rawOpts]
+                            : [dispOpt];
+
+                        const navKey = (col, dir) => document.querySelector(`[data-qty-row="${rowIdx + dir}"][data-qty-col="${col}"]`)?.focus();
 
                         return (
                             <div key={r.id} className={`transition-colors ${hasDiff ? 'bg-amber-50' : hasProb ? 'bg-orange-50/40' : 'bg-white hover:bg-slate-50/50'}`}>
-                                {/* Fila principal */}
                                 <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
                                     {/* Producto */}
                                     <span className="text-[12px] text-slate-700 font-semibold leading-snug">{r.products?.nombre}</span>
 
-                                    {/* Asignado: en unidades de despacho, centrado */}
+                                    {/* Asignado */}
                                     <span className="text-[12px] font-bold text-slate-500 tabular-nums text-center">{defDispQty}</span>
 
-                                    {/* Físico: Presentación */}
-                                    <select
-                                        value={fPres}
+                                    {/* Físico Pres */}
+                                    <select value={fPres}
                                         data-qty-row={rowIdx} data-qty-col="fpres"
                                         onChange={e => setFPresVals(p => ({ ...p, [r.id]: Number(e.target.value) }))}
                                         onKeyDown={e => {
-                                            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                                                const dir = e.key === 'ArrowDown' ? 1 : -1;
-                                                const sel = e.currentTarget;
-                                                const atBoundary = dir === 1 ? sel.selectedIndex === sel.options.length - 1 : sel.selectedIndex === 0;
-                                                if (atBoundary) { e.preventDefault(); document.querySelector(`[data-qty-row="${rowIdx + dir}"][data-qty-col="fpres"]`)?.focus(); }
-                                            }
+                                            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+                                            const dir = e.key === 'ArrowDown' ? 1 : -1;
+                                            const sel = e.currentTarget;
+                                            if (dir === 1 ? sel.selectedIndex === sel.options.length - 1 : sel.selectedIndex === 0) { e.preventDefault(); navKey('fpres', dir); }
                                         }}
-                                        className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full truncate ${
-                                            fPres !== sPres ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-slate-700 focus:border-teal-400'
-                                        }`}
-                                    >
-                                        {presOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}
-                                    </select>
+                                        className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full ${fPres !== sPres ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-slate-700 focus:border-teal-400'}`}
+                                    >{presOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
 
-                                    {/* Físico: Qty */}
-                                    <input
-                                        type="number" min={0} value={fQty}
-                                        data-qty-row={rowIdx} data-qty-col="fqty"
-                                        onChange={e => setFQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
-                                        onKeyDown={e => {
-                                            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                                                e.preventDefault();
-                                                const next = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="fqty"]`);
-                                                next?.focus(); next?.select();
-                                            }
-                                        }}
-                                        className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${
-                                            fQty !== sQty ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-slate-700 focus:border-teal-400'
-                                        }`}
-                                    />
-
-                                    {/* Sistema: Presentación */}
-                                    <select
-                                        value={sPres}
-                                        data-qty-row={rowIdx} data-qty-col="spres"
-                                        onChange={e => setSPresVals(p => ({ ...p, [r.id]: Number(e.target.value) }))}
-                                        onKeyDown={e => {
-                                            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                                                const dir = e.key === 'ArrowDown' ? 1 : -1;
-                                                const sel = e.currentTarget;
-                                                const atBoundary = dir === 1 ? sel.selectedIndex === sel.options.length - 1 : sel.selectedIndex === 0;
-                                                if (atBoundary) { e.preventDefault(); document.querySelector(`[data-qty-row="${rowIdx + dir}"][data-qty-col="spres"]`)?.focus(); }
-                                            }
-                                        }}
-                                        className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full truncate ${
-                                            fPres !== sPres ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-slate-700 focus:border-violet-400'
-                                        }`}
-                                    >
-                                        {presOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}
-                                    </select>
-
-                                    {/* Sistema: Qty */}
-                                    <input
-                                        type="number" min={0} value={sQty}
-                                        data-qty-row={rowIdx} data-qty-col="sqty"
-                                        onChange={e => setSQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
-                                        onKeyDown={e => {
-                                            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                                                e.preventDefault();
-                                                const next = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="sqty"]`);
-                                                next?.focus(); next?.select();
-                                            }
-                                        }}
-                                        className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${
-                                            fQty !== sQty ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-slate-700 focus:border-violet-400'
-                                        }`}
-                                    />
-
-                                    {/* Problema toggle (cuando físico == sistema pero hay otra novedad) */}
-                                    {!hasDiff ? (
-                                        <button
-                                            onClick={() => setTieneProblema(p => ({ ...p, [r.id]: !p[r.id] }))}
-                                            title="Reportar problema (dañado, vencido, etc.)"
-                                            className={`flex justify-center p-1 rounded-lg transition-colors ${
-                                                hasProb ? 'text-orange-500 bg-orange-100' : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50'
-                                            }`}
-                                        >
-                                            <AlertTriangle size={14} />
-                                        </button>
-                                    ) : (
-                                        <div className="flex justify-center p-1 text-amber-500" title="Diferencia detectada">
-                                            <AlertTriangle size={14} />
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Sub-fila: motivo + nota cuando hay diff o problema */}
-                                {showExtra && (
-                                    <div className="flex items-center gap-2 px-5 pb-2.5">
-                                        {hasDiff && fQty !== sQty && (
-                                            <span className={`text-[11px] font-bold tabular-nums shrink-0 ${delta < 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                    {/* Físico Qty */}
+                                    <div className="relative">
+                                        <input type="number" min={0} value={fQty}
+                                            data-qty-row={rowIdx} data-qty-col="fqty"
+                                            onChange={e => setFQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                                            onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="fqty"]`); n?.focus(); n?.select(); } }}
+                                            className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-slate-700 focus:border-teal-400'}`}
+                                        />
+                                        {hasDiff && (
+                                            <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
                                                 {delta > 0 ? '+' : ''}{delta}
                                             </span>
                                         )}
-                                        <select
-                                            value={errorVals[r.id] || 'faltante'}
-                                            onChange={e => setErrorVals(p => ({ ...p, [r.id]: e.target.value }))}
-                                            className="text-[11px] border border-amber-300 rounded-lg px-2 py-1 bg-white text-slate-700 focus:outline-none focus:border-amber-400 shrink-0"
-                                        >
-                                            {ERROR_TIPOS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                                        </select>
-                                        <input
-                                            type="text" placeholder="Nota (opcional)…"
+                                    </div>
+
+                                    {/* Sistema Pres */}
+                                    <select value={sPres}
+                                        data-qty-row={rowIdx} data-qty-col="spres"
+                                        onChange={e => setSPresVals(p => ({ ...p, [r.id]: Number(e.target.value) }))}
+                                        onKeyDown={e => {
+                                            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+                                            const dir = e.key === 'ArrowDown' ? 1 : -1;
+                                            const sel = e.currentTarget;
+                                            if (dir === 1 ? sel.selectedIndex === sel.options.length - 1 : sel.selectedIndex === 0) { e.preventDefault(); navKey('spres', dir); }
+                                        }}
+                                        className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full ${fPres !== sPres ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-slate-700 focus:border-violet-400'}`}
+                                    >{presOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
+
+                                    {/* Sistema Qty */}
+                                    <input type="number" min={0} value={sQty}
+                                        data-qty-row={rowIdx} data-qty-col="sqty"
+                                        onChange={e => setSQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                                        onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="sqty"]`); n?.focus(); n?.select(); } }}
+                                        className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-slate-700 focus:border-violet-400'}`}
+                                    />
+
+                                    {/* ⚠ — toggle problema manual */}
+                                    <button
+                                        onClick={() => setTieneProblema(p => ({ ...p, [r.id]: !p[r.id] }))}
+                                        title={hasProb ? 'Quitar reporte' : hasDiff ? 'Diferencia automática' : 'Reportar problema'}
+                                        className={`flex justify-center p-1 rounded-lg transition-colors ${
+                                            hasProb ? 'text-orange-500 bg-orange-100'
+                                            : hasDiff ? 'text-amber-500 hover:bg-amber-100'
+                                            : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50'
+                                        }`}
+                                    >
+                                        <AlertTriangle size={14} />
+                                    </button>
+                                </div>
+
+                                {/* Panel de problema — solo cuando se activa ⚠ manualmente */}
+                                {hasProb && (
+                                    <div className="px-5 pb-2.5 flex flex-wrap items-center gap-1.5">
+                                        {ERROR_TIPOS.map(t => (
+                                            <button key={t.value}
+                                                onClick={() => setErrorVals(p => ({ ...p, [r.id]: t.value }))}
+                                                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border transition-all ${
+                                                    (errorVals[r.id] || '') === t.value
+                                                        ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                                                        : 'bg-white text-slate-500 border-slate-200 hover:border-orange-300 hover:text-orange-500'
+                                                }`}
+                                            >{t.label}</button>
+                                        ))}
+                                        <input type="text" placeholder="Nota…"
                                             value={notaVals[r.id] ?? ''}
                                             onChange={e => setNotaVals(p => ({ ...p, [r.id]: e.target.value }))}
-                                            className="flex-1 text-[11px] border border-amber-200 rounded-lg px-2 py-1 focus:outline-none focus:border-amber-400 bg-white placeholder-slate-300"
+                                            className="flex-1 min-w-[120px] text-[11px] border border-orange-200 rounded-full px-3 py-1 focus:outline-none focus:border-orange-400 bg-white placeholder-slate-300"
                                         />
                                     </div>
                                 )}
                             </div>
                         );
                     })}
+
+                    {/* Extras — misma grid, color distinto */}
+                    {extras.map((e, ei) => {
+                        const eOpts = presMap[e.erp_product_id] ?? [{ factor: 1, label: 'Unidad' }];
+                        const eDiff = e.fQty !== e.sQty || e.fPres !== e.sPres;
+                        return (
+                            <div key={e.erp_product_id} className="bg-indigo-50/60">
+                                <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
+                                    <div className="min-w-0">
+                                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-500 uppercase bg-indigo-100 px-1.5 py-0.5 rounded-full mb-0.5">
+                                            <Plus size={8} /> Extra
+                                        </span>
+                                        <p className="text-[12px] text-indigo-700 font-semibold leading-snug">{e.nombre}</p>
+                                    </div>
+                                    <span className="text-[12px] text-slate-400 text-center">—</span>
+
+                                    {/* Físico Pres */}
+                                    <select value={e.fPres}
+                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fPres: Number(ev.target.value) } : x))}
+                                        className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-indigo-700'}`}
+                                    >{eOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
+
+                                    {/* Físico Qty */}
+                                    <input type="number" min={1} value={e.fQty}
+                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(1, parseInt(ev.target.value) || 1) } : x))}
+                                        className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-indigo-700'}`}
+                                    />
+
+                                    {/* Sistema Pres */}
+                                    <select value={e.sPres}
+                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sPres: Number(ev.target.value) } : x))}
+                                        className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-indigo-700'}`}
+                                    >{eOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
+
+                                    {/* Sistema Qty */}
+                                    <input type="number" min={1} value={e.sQty}
+                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(1, parseInt(ev.target.value) || 1) } : x))}
+                                        className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-indigo-700'}`}
+                                    />
+
+                                    <button onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))}
+                                        className="flex justify-center p-1 text-slate-300 hover:text-red-500 transition-colors">
+                                        <Trash2 size={13} />
+                                    </button>
+                                </div>
+                                {/* Nota del extra */}
+                                <div className="px-5 pb-2">
+                                    <input type="text" placeholder="Nota (opcional)…" value={e.nota}
+                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, nota: ev.target.value } : x))}
+                                        className="w-full text-[11px] border border-indigo-200 rounded-lg px-3 py-1 bg-white focus:outline-none focus:border-indigo-400 placeholder-slate-300"
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </PedidoModal.Body>
 
-            {/* Productos no esperados */}
+            {/* Buscador de extras */}
             <div className="flex-none border-t border-slate-100 px-5 py-3">
-                {/* Extras ya agregados */}
-                {extras.length > 0 && (
-                    <div className="space-y-1.5 mb-2">
-                        {extras.map((e, i) => (
-                            <div key={e.erp_product_id} className="flex items-center gap-2 rounded-xl px-3 py-2 bg-violet-50 border border-violet-200">
-                                <PackagePlus size={12} className="text-violet-400 shrink-0" />
-                                <span className="flex-1 text-[12px] font-medium text-slate-700 min-w-0 truncate">{e.nombre}</span>
-                                <input
-                                    type="number" min={1} value={e.cantidad}
-                                    onChange={ev => { const v = Math.max(1, parseInt(ev.target.value) || 1); setExtras(prev => prev.map((x, j) => j === i ? { ...x, cantidad: v } : x)); }}
-                                    className="w-12 text-center border border-violet-300 rounded-lg px-1 py-1 text-[12px] font-bold bg-white focus:outline-none focus:border-violet-400 tabular-nums"
-                                />
-                                <input
-                                    type="text" placeholder="Nota…" value={e.nota}
-                                    onChange={ev => setExtras(prev => prev.map((x, j) => j === i ? { ...x, nota: ev.target.value } : x))}
-                                    className="w-28 text-[11px] border border-violet-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-violet-400 placeholder-slate-300"
-                                />
-                                <button onClick={() => setExtras(prev => prev.filter((_, j) => j !== i))}
-                                    className="text-slate-300 hover:text-red-500 transition-colors shrink-0">
-                                    <Trash2 size={12} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Input de búsqueda — dropdown abre hacia arriba para no ser tapado */}
                 <div className="relative">
                     {extraOpen && (
                         <>
-                            <div className="flex items-center gap-2 rounded-xl border border-violet-300 bg-violet-50/60 px-3 py-2">
-                                <Search size={13} className="text-violet-400 shrink-0" />
-                                <input
-                                    ref={extraRef}
-                                    type="text" placeholder="Buscar producto extra recibido…"
+                            <div className="flex items-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50/60 px-3 py-2">
+                                <Search size={13} className="text-indigo-400 shrink-0" />
+                                <input ref={extraRef} type="text" placeholder="Buscar producto extra recibido…"
                                     value={extraSearch} onChange={e => setExtraSearch(e.target.value)}
                                     onKeyDown={e => e.key === 'Escape' && (setExtraOpen(false), setExtraSearch(''))}
-                                    className="flex-1 text-[12px] bg-transparent focus:outline-none placeholder-violet-300 text-slate-700"
+                                    className="flex-1 text-[12px] bg-transparent focus:outline-none placeholder-indigo-300 text-slate-700"
                                 />
                                 {extraBusy
-                                    ? <Loader2 size={12} className="animate-spin text-violet-400 shrink-0" />
+                                    ? <Loader2 size={12} className="animate-spin text-indigo-400 shrink-0" />
                                     : <button onClick={() => { setExtraOpen(false); setExtraSearch(''); setExtraResults([]); }} className="text-slate-300 hover:text-slate-500 shrink-0"><X size={13} /></button>
                                 }
                             </div>
-                            {/* Dropdown hacia arriba (bottom-full) para no quedar tapado por el footer */}
                             {extraResults.length > 0 && (
-                                <div className="absolute bottom-full mb-1 left-0 right-0 rounded-xl border border-violet-200 bg-white shadow-2xl overflow-hidden z-50">
+                                <div className="absolute bottom-full mb-1 left-0 right-0 rounded-xl border border-indigo-200 bg-white shadow-2xl overflow-hidden z-50">
                                     {extraResults.map(prod => (
                                         <button key={prod.id} onMouseDown={() => addExtra(prod)}
-                                            className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-slate-700 hover:bg-violet-50 transition-colors border-b border-slate-50 last:border-0">
-                                            <Plus size={12} className="text-violet-400 shrink-0" />
+                                            className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-slate-700 hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0">
+                                            <Plus size={12} className="text-indigo-400 shrink-0" />
                                             {prod.nombre}
                                         </button>
                                     ))}
@@ -510,18 +547,19 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                     {!extraOpen && (
                         <button
                             onClick={() => { setExtraOpen(true); setTimeout(() => extraRef.current?.focus(), 60); }}
-                            className="flex items-center gap-1.5 text-[11px] font-semibold text-violet-500 hover:text-violet-700 transition-colors py-0.5"
+                            className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-500 hover:text-indigo-700 transition-colors py-0.5"
                         >
                             <PackagePlus size={13} />
-                            ¿Llegó un producto extra?{extras.length > 0 && <span className="ml-1 bg-violet-100 text-violet-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
+                            ¿Llegó un producto extra?
+                            {extras.length > 0 && <span className="ml-1 bg-indigo-100 text-indigo-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
                         </button>
                     )}
                 </div>
             </div>
 
-            {/* Responsables (apoyo registrado externamente) */}
+            {/* Responsables */}
             {apoyo.length > 0 && (
-                <div className="border-t border-slate-100 px-5 py-3">
+                <div className="flex-none border-t border-slate-100 px-5 py-3">
                     <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Responsables</p>
                     <div className="flex items-center gap-1.5 flex-wrap">
                         {apoyo.map(a => <EmpChip key={a.id} emp={a} />)}

@@ -120,7 +120,9 @@ function fmtRegla(row) {
     if (!row.dispatch_tipo) return <span className="text-slate-400">—</span>;
     const tipos = { caja: 'CAJA', blister: 'BLISTER', multiplo: 'UND ×', multiplo_unidades: 'UND ×', solo_cajas: 'SOLO CAJAS' };
     const base  = tipos[row.dispatch_tipo] ?? row.dispatch_tipo.toUpperCase();
-    const showFactor = row.dispatch_factor > 1 && !['solo_cajas'].includes(row.dispatch_tipo);
+    const showFactor = row.dispatch_factor > 1
+        && !['solo_cajas'].includes(row.dispatch_tipo)
+        && !row.dispatch_tipo.includes(String(row.dispatch_factor));
     return (
         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
             {base}{showFactor ? ` ${row.dispatch_factor}` : ''}

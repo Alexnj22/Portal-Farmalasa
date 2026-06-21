@@ -1245,13 +1245,15 @@ export default function TabPedidos({ searchTerm = '' }) {
         if (sucFilter) apoyoQ = apoyoQ.eq('erp_sucursal_id', sucFilter);
 
         const [{ data: itemRows }, { data: lcRow }, { data: apoyoRows }] = await Promise.all([itemsQ, lcPromise, apoyoQ]);
-        setItems(prev => ({ ...prev, [key]: itemRows || [] }));
+        const resolved = itemRows || [];
+        setItems(prev => ({ ...prev, [key]: resolved }));
         setApoyoMap(prev => ({ ...prev, [key]: (apoyoRows || []).map(r => ({ id: r.employee_id, ...r.employees })) }));
         if (lcRow) {
             setErpStatus(prev => ({ ...prev, [key]: !!lcRow.recibido_erp_at }));
             setLlegadaStatus(prev => ({ ...prev, [key]: !!lcRow.llegada_fisica_at }));
         }
         setLoadingItems(false);
+        return resolved;
     }, [isBranch, erpSucursalId]);
 
     const toggleExpand = useCallback(async (key, pedidoId, sucId) => {
@@ -1358,11 +1360,12 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [busyAction, user, loadActive]);
 
-    const openModal = useCallback((pedidoId, numero, codigo, sucId, key) => {
-        const rows = (items[key] || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0);
+    const openModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
+        const loaded = items[key] ?? await fetchItems(key, pedidoId, sucId);
+        const rows = (loaded || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0);
         if (!rows.length) return;
         setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows });
-    }, [items]);
+    }, [items, fetchItems]);
 
     // ── Derived ───────────────────────────────────────────────────────────────
 

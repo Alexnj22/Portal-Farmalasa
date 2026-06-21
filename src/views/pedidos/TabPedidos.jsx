@@ -581,6 +581,19 @@ function renderPresentacion(row) {
         </span>
     );
 }
+// Para la sección "Revisar regla": muestra la unidad de stock (lo que pidió la sucursal),
+// no la unidad de despacho. Así "Solicitado=4" lee como "4 Unidad", no "4 CAJA".
+function renderPresStock(row) {
+    const factor     = row.factor || 1;
+    const dispFactor = row.dispatch_factor || factor;
+    if (factor === dispFactor || !row.dispatch_tipo) return renderPresentacion(row);
+    return (
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">
+            {factor <= 1 ? 'Unidad' : `×${factor} unid`}
+        </span>
+    );
+}
+
 const renderSolicitado = r => {
     const sol = calcSolicitado(r);
     return sol != null
@@ -625,7 +638,7 @@ const COLS_SIN_STOCK = [
 const COLS_REGLA = [
     { key: 'lab',        label: 'Laboratorio',   render: renderLab },
     { key: 'prod',       label: 'Producto',      render: renderProd },
-    { key: 'pres',       label: 'Presentación',  render: renderPresentacion },
+    { key: 'pres',       label: 'Presentación',  render: renderPresStock },
     { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
     { key: 'regla',      label: 'Regla',         render: fmtRegla },
     { key: 'motivo',     label: 'Motivo', render: () => <span className="text-rose-600 text-[11px]">Necesidad &lt; 40% de la unidad mínima de despacho</span> },

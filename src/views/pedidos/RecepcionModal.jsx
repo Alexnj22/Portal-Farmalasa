@@ -189,9 +189,9 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
 
     return (
         <PedidoModal open={open} onClose={saving ? undefined : onClose} maxWidth="max-w-xl">
-            <div className="overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/80">
+                <PedidoModal.Header className="px-5 py-4">
+                    <div className="flex items-center justify-between">
                     <div>
                         <h3 className="text-[15px] font-bold text-slate-800">
                             Confirmar recepción — Pedido #{pedido.numero}
@@ -210,10 +210,10 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                             <X size={18} />
                         </button>
                     </div>
-                </div>
+                </PedidoModal.Header>
 
                 {/* Items */}
-                <div className="px-5 py-3 space-y-2.5 max-h-[42vh] overflow-y-auto">
+                <PedidoModal.Body className="px-5 py-3 space-y-2.5 max-h-[42vh]">
                     {rows.map(r => {
                         const recibida = recepVals[r.id] ?? r.cantidad_asignada;
                         const hasDiff  = recibida !== r.cantidad_asignada;
@@ -365,8 +365,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="px-5 py-4 border-t border-slate-100 space-y-2">
+                <PedidoModal.Footer className="space-y-2">
                     {saveError && (
                         <div className="flex items-center gap-2 text-red-600 text-[12px] bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                             <AlertTriangle size={13} /> {saveError}
@@ -383,8 +382,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                             Confirmar recepción
                         </button>
                     </div>
-                </div>
-            </div>
+                </PedidoModal.Footer>
         </PedidoModal>
     );
 }

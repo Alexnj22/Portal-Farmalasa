@@ -1560,13 +1560,11 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
             {/* ── Modal anular con motivo (ModalShell, centrado) ──────────── */}
             {confirmAnul && (
                 <PedidoModal open={!!confirmAnul} onClose={() => { setConfirmAnul(null); setAnulMotivo(''); setAnulError(null); }}>
-                    <div className="w-full p-6 space-y-4">
-                        <h3 className="font-bold text-slate-800 text-[16px]">
-                            Anular Pedido #{confirmAnul.numero}
-                        </h3>
-                        <p className="text-[13px] text-slate-500">
-                            Se cancelarán todos los ítems pendientes. Esta acción no se puede deshacer.
-                        </p>
+                    <PedidoModal.Header>
+                        <h3 className="font-bold text-slate-800 text-[16px]">Anular Pedido #{confirmAnul.numero}</h3>
+                        <p className="text-[13px] text-slate-500 mt-1">Se cancelarán todos los ítems pendientes. Esta acción no se puede deshacer.</p>
+                    </PedidoModal.Header>
+                    <PedidoModal.Body className="space-y-4">
                         <div>
                             <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">
                                 Motivo <span className="font-normal normal-case">(opcional)</span>
@@ -1576,7 +1574,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                 onChange={e => setAnulMotivo(e.target.value)}
                                 placeholder="Describe el motivo de la anulación…"
                                 rows={3}
-                                className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-400 resize-none bg-white"
+                                className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-400 resize-none bg-white/60"
                             />
                         </div>
                         {anulError && (
@@ -1584,6 +1582,8 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                 <AlertTriangle size={13} /> {anulError}
                             </div>
                         )}
+                    </PedidoModal.Body>
+                    <PedidoModal.Footer>
                         <div className="flex justify-end gap-2">
                             <button
                                 onClick={() => { setConfirmAnul(null); setAnulMotivo(''); setAnulError(null); }}
@@ -1600,7 +1600,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                 Sí, anular
                             </button>
                         </div>
-                    </div>
+                    </PedidoModal.Footer>
                 </PedidoModal>
             )}
 
@@ -1620,25 +1620,29 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
             {/* ── Modal agregar apoyo ─────────────────────────────────────── */}
             {apoyoModal && (
                 <PedidoModal onClose={() => setApoyoModal(null)}>
-                    <div className="w-full p-6 space-y-4">
+                    <PedidoModal.Header>
                         <div className="flex items-center gap-2">
                             <UserPlus size={18} className="text-violet-500" />
                             <h3 className="font-bold text-slate-800 text-[16px]">Agregar apoyo</h3>
                         </div>
-                        <p className="text-[12px] text-slate-400">
+                        <p className="text-[12px] text-slate-500 mt-1">
                             {ERP_NAMES[apoyoModal.sucId] ?? `Sucursal ${apoyoModal.sucId}`} — selecciona al empleado que apoyó el despacho.
                         </p>
+                    </PedidoModal.Header>
+                    <PedidoModal.Body>
                         <select
                             value={apoyoEmpId}
                             onChange={e => setApoyoEmpId(e.target.value)}
-                            className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-violet-400 bg-white"
+                            className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-violet-400 bg-white/60"
                         >
                             <option value="">Selecciona un empleado…</option>
                             {allEmployees.map(e => (
                                 <option key={e.id} value={e.id}>{e.name}</option>
                             ))}
                         </select>
-                        <div className="flex justify-end gap-2 pt-1">
+                    </PedidoModal.Body>
+                    <PedidoModal.Footer>
+                        <div className="flex justify-end gap-2">
                             <button
                                 onClick={() => setApoyoModal(null)}
                                 className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors"
@@ -1653,18 +1657,20 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                 <UserPlus size={13} /> Agregar
                             </button>
                         </div>
-                    </div>
+                    </PedidoModal.Footer>
                 </PedidoModal>
             )}
 
             {/* ── Pausa reason modal ──────────────────────────────────────── */}
             {pauseModal && (
                 <PedidoModal onClose={() => setPauseModal(null)}>
-                    <div className="w-full p-6 space-y-4">
+                    <PedidoModal.Header>
                         <h3 className="font-bold text-slate-800 text-[16px]">¿Por qué pausas este despacho?</h3>
-                        <p className="text-[12px] text-slate-400">
+                        <p className="text-[12px] text-slate-500 mt-1">
                             {ERP_NAMES[pauseModal.sucId] ?? `Sucursal ${pauseModal.sucId}`}
                         </p>
+                    </PedidoModal.Header>
+                    <PedidoModal.Body className="space-y-3">
                         <div className="grid grid-cols-2 gap-2">
                             {[
                                 { key: 'almuerzo',      label: 'Almuerzo' },
@@ -1691,11 +1697,13 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                 value={pauseRazonText}
                                 onChange={e => setPauseRazonText(e.target.value)}
                                 placeholder="Describe la razón…"
-                                className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400 bg-white"
+                                className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400 bg-white/60"
                                 autoFocus
                             />
                         )}
-                        <div className="flex justify-end gap-2 pt-1">
+                    </PedidoModal.Body>
+                    <PedidoModal.Footer>
+                        <div className="flex justify-end gap-2">
                             <button
                                 onClick={() => setPauseModal(null)}
                                 className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors"
@@ -1721,7 +1729,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                                 <Pause size={13} /> Confirmar pausa
                             </button>
                         </div>
-                    </div>
+                    </PedidoModal.Footer>
                 </PedidoModal>
             )}
         </div>

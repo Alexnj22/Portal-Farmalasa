@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.222';
+export const APP_VERSION = '2.2.223';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.223 — refactor(modals): LiquidModal sub-components Header/Body/Footer; bg-transparent en header + relative z-10 en secciones para que el glass blur sea visible; migrados PauseModal+ApoioScanModal (TabPedidos), anular+apoyo+pausa (TabHistorial), RecepcionModal, SrsEnriquecerModal; inputs/selects pasan a bg-white/60 para no tapar glass
 // v2.2.222 — refactor(modals): LiquidModal — componente estándar glass en src/components/common/LiquidModal.jsx; migrados UnifiedModal, SrsEnriquecerModal, ShiftExceptionModal, PromoModal, PedidoModal (ahora re-exporta LiquidModal); elimina 5 overlays propios y 5 tarjetas bg-white opacas; AlertModal/ConfirmModal/KioskConfigModal/PhotoEditorModal quedan sin cambios (estilos especializados justificados)
 // v2.2.221 — feat(pedidos/modals): Liquid Glass estándar en todos los modals de pedidos — nuevo PedidoModal.jsx (ModalShell + tarjeta glass: rounded-[2.5rem], bg-white/50 backdrop-blur-[15px] backdrop-saturate-[300%], border white/90, shadow profunda); aplicado en PauseModal+ApoyoModal (TabPedidos), RecepcionModal, 3 modals de TabHistorial (anular, apoyo, pausa); igual al estándar de UnifiedModal
 // v2.2.220 — fix(pedidos/TabPedidos): columna Presentación en "Revisar regla" muestra unidad de stock en vez de unidad de despacho — nueva función renderPresStock: cuando factor≠dispatch_factor (ej. AZITROMICINA factor=1 tableta, despacho CAJA×12), muestra "Unidad" para que "Solicitado=4" lea como "4 Unidad"; cuando stocking=despacho (CLEVIUM CAJA X 10) mantiene el tipo original; COLS_REGLA usa renderPresStock; COLS_ENVIADOS y COLS_SIN_STOCK sin cambio (ahí sí aplica la unidad de despacho)

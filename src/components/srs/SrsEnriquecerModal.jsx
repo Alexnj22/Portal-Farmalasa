@@ -379,24 +379,24 @@ export default function SrsEnriquecerModal({ onClose }) {
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" zClass="z-[99999]" className="max-h-[90vh]">
 
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-violet-100 flex items-center justify-center">
-                            <FlaskConical size={15} className="text-violet-600" />
+                <LiquidModal.Header>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-violet-100 flex items-center justify-center">
+                                <FlaskConical size={15} className="text-violet-600" />
+                            </div>
+                            <div>
+                                <p className="text-[14px] font-black text-slate-800">Enriquecer desde SRS</p>
+                                <p className="text-[11px] text-slate-500">Busca y aplica principios activos del Registro Sanitario</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-[14px] font-black text-slate-800">Enriquecer desde SRS</p>
-                            <p className="text-[11px] text-slate-400">Busca y aplica principios activos del Registro Sanitario</p>
-                        </div>
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/60 text-slate-400 transition-colors">
+                            <X size={16} strokeWidth={2.5} />
+                        </button>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
-                        <X size={16} strokeWidth={2.5} />
-                    </button>
-                </div>
+                </LiquidModal.Header>
 
-                {/* Body */}
-                <div className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-5">
+                <LiquidModal.Body className="flex flex-col gap-5">
 
                     {/* ── IDLE ── */}
                     {phase === PHASE.IDLE && (
@@ -743,7 +743,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                             )}
                         </div>
                     )}
-                </div>
+                </LiquidModal.Body>
         </LiquidModal>
     );
 }

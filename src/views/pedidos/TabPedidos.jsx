@@ -253,10 +253,7 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
 
     return (
         <PedidoModal onClose={onCancel}>
-            <div className="w-full overflow-hidden">
-
-                {/* Header */}
-                <div className="px-6 py-5 bg-gradient-to-br from-amber-50 to-orange-50 border-b border-amber-100">
+                <PedidoModal.Header>
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center shadow-sm shrink-0">
                             <Pause size={20} className="text-white" />
@@ -266,10 +263,9 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
                             <p className="text-[12px] text-slate-600 mt-0.5">{ERP_NAMES[modal.sucId] ?? `Sucursal ${modal.sucId}`}</p>
                         </div>
                     </div>
-                </div>
+                </PedidoModal.Header>
 
-                {/* Body */}
-                <div className="px-6 py-5 space-y-4">
+                <PedidoModal.Body className="space-y-4">
                     {kioskLunch && (
                         <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-teal-50 border border-teal-200">
                             <Coffee size={15} className="text-teal-500 shrink-0" />
@@ -323,21 +319,21 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/60">
-                    <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[13px] font-medium transition-colors">
-                        Cancelar
-                    </button>
-                    <button
-                        disabled={!canConfirm || busy}
-                        onClick={onConfirm}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 text-[13px] transition-colors disabled:opacity-50 shadow-sm"
-                    >
-                        {busy ? <Loader2 size={13} className="animate-spin" /> : <Pause size={13} />}
-                        Confirmar pausa
-                    </button>
-                </div>
-            </div>
+                <PedidoModal.Footer>
+                    <div className="flex justify-end gap-2">
+                        <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[13px] font-medium transition-colors">
+                            Cancelar
+                        </button>
+                        <button
+                            disabled={!canConfirm || busy}
+                            onClick={onConfirm}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 text-[13px] transition-colors disabled:opacity-50 shadow-sm"
+                        >
+                            {busy ? <Loader2 size={13} className="animate-spin" /> : <Pause size={13} />}
+                            Confirmar pausa
+                        </button>
+                    </div>
+                </PedidoModal.Footer>
         </PedidoModal>
     );
 }
@@ -444,10 +440,7 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, onSucce
 
     return (
         <PedidoModal open={open} onClose={onClose}>
-            <div className="w-full overflow-hidden">
-
-                {/* Header */}
-                <div className="px-6 py-5 bg-gradient-to-br from-blue-50 to-indigo-50 border-b border-blue-100">
+                <PedidoModal.Header>
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center shadow-sm shrink-0">
                             <Users size={20} className="text-white" />
@@ -457,10 +450,9 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, onSucce
                             <p className="text-[12px] text-slate-600 mt-0.5">Escanea el carnet del empleado</p>
                         </div>
                     </div>
-                </div>
+                </PedidoModal.Header>
 
-                {/* Body */}
-                <div className="px-6 py-5 space-y-4">
+                <PedidoModal.Body className="space-y-4">
                     {!employee && (
                         <div className="flex flex-col items-center gap-3 py-3">
                             <div className="relative w-16 h-16 rounded-2xl bg-blue-50 border-2 border-blue-200 flex items-center justify-center">
@@ -527,27 +519,27 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, onSucce
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="flex justify-between gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/60">
-                    <button onClick={() => { setEmployee(null); setDisplayDots(0); setError(''); setManualWarn(false); bufferRef.current = ''; }}
-                        className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[12px] transition-colors">
-                        Limpiar
-                    </button>
-                    <div className="flex gap-2">
-                        <button onClick={onClose} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[13px] font-medium transition-colors">
-                            Cancelar
+                <PedidoModal.Footer>
+                    <div className="flex justify-between gap-2">
+                        <button onClick={() => { setEmployee(null); setDisplayDots(0); setError(''); setManualWarn(false); bufferRef.current = ''; }}
+                            className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[12px] transition-colors">
+                            Limpiar
                         </button>
-                        {employee && (
-                            <button onClick={confirmApoyo} disabled={loading}
-                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-500 text-white font-semibold hover:bg-blue-600 text-[13px] transition-colors disabled:opacity-50 shadow-sm"
-                            >
-                                {loading ? <Loader2 size={13} className="animate-spin" /> : <CheckCheck size={13} />}
-                                Confirmar
+                        <div className="flex gap-2">
+                            <button onClick={onClose} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[13px] font-medium transition-colors">
+                                Cancelar
                             </button>
-                        )}
+                            {employee && (
+                                <button onClick={confirmApoyo} disabled={loading}
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-500 text-white font-semibold hover:bg-blue-600 text-[13px] transition-colors disabled:opacity-50 shadow-sm"
+                                >
+                                    {loading ? <Loader2 size={13} className="animate-spin" /> : <CheckCheck size={13} />}
+                                    Confirmar
+                                </button>
+                            )}
+                        </div>
                     </div>
-                </div>
-            </div>
+                </PedidoModal.Footer>
         </PedidoModal>
     );
 }

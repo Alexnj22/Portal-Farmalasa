@@ -724,7 +724,7 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
         { key: 'preparado',  label: 'Listo',      time: row.finalizado_at,     emp: finalizadorEmp },
         { key: 'enviado',    label: 'En Ruta',    time: row.enviado_at,        emp: enviadorEmp    },
         { key: 'llegada',    label: 'Llegada',    time: row.llegada_fisica_at, emp: llegadaEmp,    apoyo: receptionApoyo },
-        { key: 'erp',        label: 'Sis. Ventas',time: row.recibido_erp_at,   emp: erpEmp,         apoyo: receptionApoyo },
+        { key: 'erp',        label: 'Finalizado',  time: row.recibido_erp_at,   emp: erpEmp,         apoyo: receptionApoyo },
     ];
 
     return (

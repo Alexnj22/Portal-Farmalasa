@@ -44,6 +44,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
     const [saveError,  setSaveError]  = useState(null);
     const [prodSearch, setProdSearch] = useState('');
     const [showSearch, setShowSearch] = useState(false);
+    const [apoyo,      setApoyo]      = useState([]);
 
     // Productos no esperados
     const [extras,       setExtras]       = useState([]);
@@ -61,7 +62,15 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
         setRecepVals(vals); setNotaVals(notas); setErrorVals(errs);
         setSaveError(null); setExtras([]); setExtraSearch(''); setExtraResults([]); setExtraOpen(false);
         setProdSearch(''); setShowSearch(false);
-    }, [open, rows]);
+        // Cargar apoyo registrado para este pedido/sucursal
+        (async () => {
+            const { data } = await supabase.from('pedido_apoyo')
+                .select('employee_id, employees(name, photo_url)')
+                .eq('pedido_id', pedido.id)
+                .eq('erp_sucursal_id', sucursalId);
+            setApoyo((data || []).map(r => ({ id: r.employee_id, ...r.employees })));
+        })();
+    }, [open, rows, pedido?.id, sucursalId]);
 
     // ── Búsqueda de productos no esperados ─────────────────────────────────────
     useEffect(() => {
@@ -321,6 +330,16 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         </div>
                     )}
                 </div>
+
+                {/* Responsables (apoyo registrado externamente) */}
+                {apoyo.length > 0 && (
+                    <div className="border-t border-slate-100 px-5 py-3">
+                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Responsables</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            {apoyo.map(a => <EmpChip key={a.id} emp={a} />)}
+                        </div>
+                    </div>
+                )}
 
                 <PedidoModal.Footer className="space-y-2">
                     {saveError && (

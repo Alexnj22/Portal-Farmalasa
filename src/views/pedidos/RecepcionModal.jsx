@@ -67,7 +67,7 @@ async function fetchPresOpts(productId) {
     return opts;
 }
 
-export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucursalNombre, rows, onConfirmed }) {
+export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucursalNombre, rows, onConfirmed, cajaDanada = [] }) {
     const { user } = useAuth();
 
     const [fQtyVals,  setFQtyVals]  = useState({});
@@ -323,6 +323,14 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                 <p className="text-[11px] text-slate-400 mt-0.5">
                                     {sucursalNombre}{pedido.codigo && ` · ${pedido.codigo}`} · {rows.length} productos
                                 </p>
+                                {cajaDanada.length > 0 && (
+                                    <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
+                                        <AlertTriangle size={11} className="text-amber-500 shrink-0" />
+                                        <span className="text-[10px] text-amber-700 font-medium">
+                                            Caja{cajaDanada.length > 1 ? 's' : ''} {cajaDanada.map(n => `#${n}`).join(', ')} llegó dañada — revisá el estado físico de los productos al contar
+                                        </span>
+                                    </div>
+                                )}
                             </motion.div>
                         ) : (
                             <motion.div key="search" className="flex-1 min-w-0"

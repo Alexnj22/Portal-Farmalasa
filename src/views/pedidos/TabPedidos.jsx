@@ -16,6 +16,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination from '../../components/common/TablePagination';
 import RecepcionModal from './RecepcionModal';
 import PedidoModal from './PedidoModal';
+import LlegadaModal from './LlegadaModal';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
@@ -730,6 +731,11 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
         { key: 'llegada',    label: 'Llegada',    time: row.llegada_fisica_at, emp: llegadaEmp,    apoyo: receptionApoyo },
         { key: 'erp',        label: 'Finalizado', time: row.recibido_erp_at,   emp: erpEmp,        apoyo: receptionApoyo },
     ];
+    if (row.falta_caja_at) {
+        nodes.push({ key: 'falta_caja', label: row.llegada_tipo === 'caja_danada' ? 'Caja dañada' : 'Falta caja', time: row.falta_caja_at });
+        if (row.reenvio_bodega_at) nodes.push({ key: 'reenvio', label: 'Reenvío', time: row.reenvio_bodega_at });
+        if (row.segunda_llegada_at) nodes.push({ key: 'seg_llegada', label: '2ª Llegada', time: row.segunda_llegada_at });
+    }
     if (hasDif) {
         nodes.push({ key: 'diferencias', label: 'Diferencias', time: row.diferencias_reportadas_at, emp: difsEmp });
         nodes.push({ key: 'corregido',   label: 'Corregido',   time: row.confirmado_correccion_at,  emp: corrConfEmp });
@@ -1160,7 +1166,7 @@ function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, em
 
 // ─── Reception actions ────────────────────────────────────────────────────────
 
-function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0 }) {
+function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0, llegadaTipo, reenvioBodygaAt, segundaLlegadaAt, faltaCajas = [], hasFaltaItems = false }) {
     const empChip = (emp) => emp ? (
         <span className="flex items-center gap-1 text-[10px] text-slate-500">
             {emp.photo_url
@@ -1203,6 +1209,36 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onAp
                     </button>
                 }
             </div>
+
+            {/* Sub-fila: estado de caja faltante / reenvío */}
+            {llegadaOk && llegadaTipo === 'falta_caja' && !segundaLlegadaAt && (
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] ${reenvioBodygaAt ? 'bg-indigo-50/40 border-indigo-100' : 'bg-amber-50/40 border-amber-100'}`}>
+                    <AlertTriangle size={12} className={reenvioBodygaAt ? 'text-indigo-400' : 'text-amber-500'} />
+                    <span className={reenvioBodygaAt ? 'text-indigo-700' : 'text-amber-700'}>
+                        {reenvioBodygaAt
+                            ? `Reenvío en camino — caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map(n => `#${n}`).join(', ')}`
+                            : `Caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map(n => `#${n}`).join(', ')} — bodega notificada`}
+                    </span>
+                    {reenvioBodygaAt && (
+                        <button onClick={onSegundaLlegada} disabled={!!busy}
+                            className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50">
+                            {busy === 'segunda_llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar llegada'}
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {/* Paso 3 reenvío — contar items de la caja que llegó después */}
+            {llegadaOk && llegadaTipo === 'falta_caja' && segundaLlegadaAt && hasFaltaItems && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-violet-50/40 border-violet-100 text-[11px]">
+                    <Database size={13} className="text-violet-500" />
+                    <span className="text-violet-700">Revisar caja del reenvío en Sistema de Ventas</span>
+                    <button onClick={onOpenReenvioModal} disabled={!!busy}
+                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-50">
+                        Revisar
+                    </button>
+                </div>
+            )}
 
             {/* Paso 2: Confirmar en Sistema de Ventas (abre modal) */}
             {llegadaOk && !erpOk && (
@@ -1361,6 +1397,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [busyLifecycle, setBusyLifecycle] = useState(null);
     const [busyEnvio,     setBusyEnvio]     = useState(null);
     const [modal,         setModal]         = useState(null);
+    const [llegadaModal,  setLlegadaModal]  = useState(null); // { pedidoId, sucId, key, rows }
     const [newAlert,      setNewAlert]      = useState(null);
 
     // Pause modal
@@ -1642,13 +1679,99 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     // ── Reception ─────────────────────────────────────────────────────────────
 
+    const ROWS_PER_PAGE_PDF = 30;
+
     const handleLlegada = useCallback(async (pedidoId, sucId, key) => {
         if (busyAction) return;
+        let rows = items[key];
+        if (!rows) {
+            setBusyAction('llegada');
+            rows = await fetchItems(key, pedidoId, sucId);
+            setBusyAction(null);
+        }
+        setLlegadaModal({ pedidoId, sucId, key, rows: rows ?? [] });
+    }, [busyAction, items, fetchItems]);
+
+    const handleLlegadaConfirm = useCallback(async ({ tipo, cajasAfectadas, nota }) => {
+        if (!llegadaModal) return;
+        const { pedidoId, sucId, key, rows } = llegadaModal;
+        setLlegadaModal(null);
         setBusyAction('llegada');
         try {
-            await supabase.rpc('update_pedido_sucursal_lifecycle', { p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: 'confirmar_llegada', p_user_id: user?.id ?? null });
-            useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { sucursal_id: sucId });
+            // 1. Marcar items de la caja faltante
+            if (tipo === 'falta_caja' && cajasAfectadas.length > 0) {
+                const printable = [...rows]
+                    .filter(r => !r.sin_stock && (r.cantidad_asignada ?? 0) > 0)
+                    .sort((a, b) =>
+                        (a.products?.laboratorios?.nombre ?? '').localeCompare(b.products?.laboratorios?.nombre ?? '', 'es')
+                        || (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es')
+                    );
+                const missingIds = cajasAfectadas.flatMap(n =>
+                    printable.slice((n - 1) * ROWS_PER_PAGE_PDF, n * ROWS_PER_PAGE_PDF).map(r => r.id)
+                );
+                if (missingIds.length > 0) {
+                    await supabase.from('pedido_items').update({ falta_caja: true }).in('id', missingIds);
+                }
+            }
+            // 2. Confirmar llegada física (siempre — falta_caja incluido, para habilitar Paso 2)
+            await supabase.rpc('update_pedido_sucursal_lifecycle', {
+                p_pedido_id: pedidoId, p_sucursal_id: sucId,
+                p_stage: 'confirmar_llegada', p_user_id: user?.id ?? null,
+            });
+            // 3. Guardar metadata de llegada
+            await supabase.from('pedido_sucursal_status').update({
+                llegada_tipo:   tipo,
+                llegada_nota:   nota || null,
+                falta_cajas:    cajasAfectadas,
+                ...(tipo === 'falta_caja' ? { falta_caja_at: new Date().toISOString() } : {}),
+            }).eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+
+            useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { tipo, cajasAfectadas });
             setLlegadaStatus(prev => ({ ...prev, [key]: true }));
+
+            // 4. Notificar bodega si hay problema
+            if (tipo !== 'completa') {
+                supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
+                    if (!b?.branch_id) return;
+                    const cajasStr = cajasAfectadas.map(n => `#${n}`).join(', ');
+                    const title   = tipo === 'falta_caja' ? `Falta caja ${cajasStr} — ${branchName}` : `Caja dañada ${cajasStr} — ${branchName}`;
+                    const message = tipo === 'falta_caja'
+                        ? `${branchName} reporta que no llegó la caja ${cajasStr}. Se requiere reenvío.`
+                        : `${branchName} reporta que la caja ${cajasStr} llegó dañada.${nota ? ' ' + nota : ''} Revisar productos al contar.`;
+                    supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
+                    supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
+                }).catch(() => {});
+            }
+            await loadActive();
+            await fetchItems(key, pedidoId, sucId);
+        } catch (e) { console.error('llegada confirm:', e); } finally { setBusyAction(null); }
+    }, [llegadaModal, user, branchName, loadActive, fetchItems]);
+
+    const handleReenviarCaja = useCallback(async (pedidoId, sucId, numero, faltaCajas) => {
+        setBusyAction('reenvio');
+        try {
+            await supabase.from('pedido_sucursal_status')
+                .update({ reenvio_bodega_at: new Date().toISOString() })
+                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+            useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, cajas: faltaCajas });
+            supabase.from('erp_sucursal_map').select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
+                if (!m?.branch_id) return;
+                const cajasStr = (faltaCajas ?? []).map(n => `#${n}`).join(', ');
+                supabase.from('announcements').insert({ title: `Reenvío en camino — pedido #${numero}`, message: `La caja ${cajasStr} del pedido #${numero} ya salió de bodega. Confirma la llegada cuando la recibas.`, target_type: 'BRANCH', target_value: [m.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
+                supabase.functions.invoke('send-push-notification', { body: { title: `Caja ${cajasStr} en camino — pedido #${numero}`, message: 'La caja faltante ya salió de bodega.', url: '/pedidos', target_type: 'BRANCH', target_value: [m.branch_id] } }).catch(() => {});
+            }).catch(() => {});
+            await loadActive();
+        } catch (e) { console.error(e); } finally { setBusyAction(null); }
+    }, [user, loadActive]);
+
+    const handleSegundaLlegada = useCallback(async (pedidoId, sucId, key) => {
+        if (busyAction) return;
+        setBusyAction('segunda_llegada');
+        try {
+            await supabase.from('pedido_sucursal_status')
+                .update({ segunda_llegada_at: new Date().toISOString() })
+                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+            useStaff.getState().appendAuditLog('PEDIDO_SEGUNDA_LLEGADA', pedidoId, { sucursal_id: sucId });
             await loadActive();
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [busyAction, user, loadActive]);
@@ -1666,9 +1789,18 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     const openModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
         const loaded = items[key] ?? await fetchItems(key, pedidoId, sucId);
-        const rows = (loaded || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0);
+        const rows = (loaded || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0 && !r.falta_caja);
         if (!rows.length) return;
-        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows });
+        const activeRow  = activeRows.find(r => r.pedido_id === pedidoId && r.erp_sucursal_id === sucId);
+        const cajaDanada = activeRow?.llegada_tipo === 'caja_danada' ? (activeRow?.falta_cajas ?? []) : [];
+        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada });
+    }, [items, fetchItems, activeRows]);
+
+    const openReenvioModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
+        const loaded = items[key] ?? await fetchItems(key, pedidoId, sucId);
+        const rows = (loaded || []).filter(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0);
+        if (!rows.length) return;
+        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada: [] });
     }, [items, fetchItems]);
 
     const handleReportarDiferencias = useCallback(async (pedidoId, sucId) => {
@@ -1953,6 +2085,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canFinalizar    && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'finalizar')} disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Flag     size={10} />Finalizar</>}</button>}
                                             {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
                                             {canMarcarEnRuta && <button onClick={() => handleMarcarEnRuta(row.pedido_id, row.erp_sucursal_id, row.numero)}                               disabled={isEnvioBusy} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={11} className="animate-spin" /> : <><Truck size={10} />En Ruta</>}</button>}
+                                            {canActuar && !isBranch && row.llegada_tipo === 'falta_caja' && !row.reenvio_bodega_at && (
+                                                <button onClick={() => handleReenviarCaja(row.pedido_id, row.erp_sucursal_id, row.numero, row.falta_cajas ?? [])} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">
+                                                    {busyAction === 'reenvio' ? <Loader2 size={10} className="animate-spin" /> : <><Truck size={10} />Reenviar caja</>}
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
 
@@ -1968,8 +2105,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 pendientesCount={cardStats[cardKey]?.pendientes ?? 0}
                                                 onMarkLlegada={() => handleLlegada(row.pedido_id, erpSucursalId, cardKey)}
                                                 onOpenRecibir={() => openModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
+                                                onOpenReenvioModal={() => openReenvioModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
+                                                onSegundaLlegada={() => handleSegundaLlegada(row.pedido_id, erpSucursalId, cardKey)}
                                                 onApoyo={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: erpSucursalId, cardKey })}
                                                 busy={busyAction}
+                                                llegadaTipo={row.llegada_tipo}
+                                                reenvioBodygaAt={row.reenvio_bodega_at}
+                                                segundaLlegadaAt={row.segunda_llegada_at}
+                                                faltaCajas={row.falta_cajas ?? []}
+                                                hasFaltaItems={(items[cardKey] ?? []).some(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0)}
                                             />
                                         </div>
                                     )}
@@ -2008,6 +2152,14 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             {/* ── Modals ─────────────────────────────────────────────────── */}
 
+            <LlegadaModal
+                open={!!llegadaModal}
+                onClose={() => setLlegadaModal(null)}
+                onConfirm={handleLlegadaConfirm}
+                items={llegadaModal?.rows ?? []}
+                pedidoNumero={llegadaModal ? activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.numero : null}
+            />
+
             {pauseModal && (
                 <PauseModal
                     modal={pauseModal}
@@ -2038,6 +2190,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     sucursalId={modal.sucId}
                     sucursalNombre={branchName}
                     rows={modal.rows}
+                    cajaDanada={modal.cajaDanada ?? []}
                     onConfirmed={async ({ hasDiff }) => {
                         const { pedido, sucId, key } = modal;
                         setModal(null);

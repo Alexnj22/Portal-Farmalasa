@@ -205,6 +205,11 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
     }, [extras, presMap]);
 
     const handleConfirmar = useCallback(async () => {
+        const invalidExtra = extras.find(e => e.fQty === 0 && e.sQty === 0);
+        if (invalidExtra) {
+            setSaveError(`"${invalidExtra.nombre}": al menos uno de físico o sistema debe ser mayor a 0.`);
+            return;
+        }
         setSaving(true); setSaveError(null);
         const p_items = rows.map(r => {
             const erpFactor  = Number(r.factor) || 1;
@@ -534,16 +539,18 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
 
                     {/* Extras — misma grid, color distinto */}
                     {extras.map((e, ei) => {
-                        const eOpts = presMap[e.erp_product_id] ?? [{ factor: 1, label: 'Unidad' }];
-                        const eDiff = e.fQty !== e.sQty || e.fPres !== e.sPres;
+                        const eOpts   = presMap[e.erp_product_id] ?? [{ factor: 1, label: 'Unidad' }];
+                        const eDiff   = e.fQty !== e.sQty || e.fPres !== e.sPres;
+                        const eBothZero = e.fQty === 0 && e.sQty === 0;
                         return (
-                            <div key={e.erp_product_id} className="bg-indigo-50/60">
+                            <div key={e.erp_product_id} className={`${eBothZero ? 'bg-red-50/70' : 'bg-indigo-50/60'}`}>
                                 <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
                                     <div className="min-w-0">
-                                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-500 uppercase bg-indigo-100 px-1.5 py-0.5 rounded-full mb-0.5">
+                                        <span className={`inline-flex items-center gap-1 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full mb-0.5 ${eBothZero ? 'text-red-500 bg-red-100' : 'text-indigo-500 bg-indigo-100'}`}>
                                             <Plus size={8} /> Extra
                                         </span>
-                                        <p className="text-[12px] text-indigo-700 font-semibold leading-snug">{e.nombre}</p>
+                                        <p className={`text-[12px] font-semibold leading-snug ${eBothZero ? 'text-red-600' : 'text-indigo-700'}`}>{e.nombre}</p>
+                                        {eBothZero && <p className="text-[10px] text-red-500 font-medium mt-0.5">Al menos uno debe tener valor</p>}
                                     </div>
                                     <span className="text-[12px] text-slate-400 text-center">—</span>
 

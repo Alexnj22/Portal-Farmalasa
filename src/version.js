@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.259';
+export const APP_VERSION = '2.2.260';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.260 — fix(pedidos/recepcion): extras con 0+0 muestra warning visual + bloquea submit con mensaje claro
 // v2.2.259 — fix(pedidos/recepcion): (1) drop overload p_responsables que causaba ambigüedad en RPC; (2) input ¿Cuántos? al marcar dañado/vencido (cantidad_problema en DB); (3) extras permiten qty=0 en físico o sistema
 // v2.2.258 — fix(pedidos/timeline): nodos Diferencias/Corregido muestran checkmark cuando tienen timestamp (isExtraNode bypass); get_pedidos_en_curso v7 agrega llegada_fisica_por + recibido_erp_por
 // v2.2.257 — feat(pedidos/diferencias): resolución por ítem bodega↔sucursal: bodega propone tipo+nota, sucursal confirma o rechaza con razón, bodega re-propone; auto-completa pedido al confirmar todos; historial actividad realtime en DifSection; DB: pedido_item_eventos table + resolve_pedido_item RPC + 10 columnas en pedido_items

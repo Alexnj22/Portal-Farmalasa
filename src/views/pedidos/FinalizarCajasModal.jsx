@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Loader2, X, Box } from 'lucide-react';
+import { ChevronLeft, Loader2, X, Package, PackageCheck } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import { getExactPageGroups } from '../../utils/pedidoPrint';
 
 export default function FinalizarCajasModal({ open, onClose, onConfirm, items = [], sucId, pedidoNumero, paginas = null }) {
     const [screen,          setScreen]          = useState(1);
     const [totalCajasInput, setTotalCajasInput] = useState('');
-    const [pageAssignments, setPageAssignments] = useState([]);  // [boxNum[]] por página
+    const [pageAssignments, setPageAssignments] = useState([]);
     const [submitting,      setSubmitting]      = useState(false);
     const [pageGroups,      setPageGroups]      = useState([]);
     const [loadingPages,    setLoadingPages]    = useState(false);
@@ -14,12 +14,10 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
     useEffect(() => {
         if (!open) return;
         if (paginas) {
-            // Pre-calculado al generar el PDF — sin espera
             setPageGroups(paginas);
             setLoadingPages(false);
             return;
         }
-        // Fallback: calcular ahora con pdfmake (pageBreakBefore)
         if (!items.length || !sucId) return;
         setLoadingPages(true);
         setPageGroups([]);
@@ -48,7 +46,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             const next = prev.map(arr => [...arr]);
             const cur  = next[pageIdx] ?? [];
             if (cur.includes(boxNum)) {
-                if (cur.length === 1) return next;  // no dejar sin caja
+                if (cur.length === 1) return next;
                 next[pageIdx] = cur.filter(b => b !== boxNum);
             } else {
                 next[pageIdx] = [...cur, boxNum].sort((a, b) => a - b);
@@ -89,116 +87,174 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
     if (!open) return null;
 
     const boxes = Array.from({ length: cajaCount }, (_, b) => b + 1);
+    const parsedCajas = parseInt(totalCajasInput, 10);
 
     return (
         <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-sm">
-            {/* Header */}
-            <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-100">
+
+            {/* ── Header ─────────────────────────────────── */}
+            <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-white/40">
                 {screen === 2 && (
                     <button onClick={() => setScreen(1)} disabled={submitting}
-                        className="text-slate-400 hover:text-slate-600 transition-colors">
-                        <ChevronLeft size={16} />
+                        className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100/80 text-slate-500 hover:bg-slate-200 transition-all shrink-0">
+                        <ChevronLeft size={14} />
                     </button>
                 )}
-                <div className="flex-1">
-                    <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Pedido #{pedidoNumero}</p>
-                    <h3 className="text-[14px] font-bold text-slate-800 leading-tight">
-                        {screen === 1 ? 'Finalizar — Asignar cajas' : 'Asignar páginas a cajas'}
+                <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-semibold text-violet-500 uppercase tracking-wider">Pedido #{pedidoNumero}</p>
+                    <h3 className="text-[15px] font-black text-slate-800 leading-tight">
+                        {screen === 1 ? 'Asignar cajas' : 'Página → Caja'}
                     </h3>
                 </div>
                 <button onClick={handleClose} disabled={submitting}
-                    className="text-slate-400 hover:text-slate-600 transition-colors shrink-0">
-                    <X size={15} />
+                    className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100/80 text-slate-500 hover:bg-slate-200 transition-all shrink-0">
+                    <X size={13} />
                 </button>
             </div>
 
-            {/* Screen 1 */}
+            {/* ── Screen 1 ───────────────────────────────── */}
             {screen === 1 && (
-                <div className="px-5 py-5 space-y-4">
-                    <div className="flex items-start gap-3 px-4 py-3 rounded-2xl bg-slate-50 border border-slate-100">
-                        <Box size={14} className="text-slate-400 shrink-0 mt-0.5" />
-                        {loadingPages ? (
-                            <div className="flex items-center gap-2">
-                                <Loader2 size={12} className="animate-spin text-violet-400" />
-                                <p className="text-[11px] text-slate-400">Calculando páginas del PDF…</p>
-                            </div>
-                        ) : (
-                            <p className="text-[11px] text-slate-500 leading-relaxed">
-                                El pedido tiene <span className="font-bold text-slate-700">{totalPages} página{totalPages !== 1 ? 's' : ''}</span> en el PDF.
-                                En la siguiente pantalla asignarás cada página a su caja física.
+                <div className="px-5 py-5 space-y-5">
+                    {/* Page count card */}
+                    <div className="flex items-center gap-4 px-4 py-4 rounded-2xl bg-violet-50/70 border border-violet-100/80">
+                        <div className="w-12 h-12 rounded-2xl bg-violet-500 shadow-[0_4px_14px_rgba(139,92,246,0.4)] flex items-center justify-center shrink-0">
+                            {loadingPages
+                                ? <Loader2 size={19} className="animate-spin text-white" />
+                                : <Package size={19} className="text-white" />
+                            }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            {loadingPages ? (
+                                <p className="text-[12px] text-slate-500 font-medium">Calculando páginas del PDF…</p>
+                            ) : (
+                                <>
+                                    <p className="text-[26px] font-black text-slate-800 leading-none tabular-nums">
+                                        {totalPages}
+                                        <span className="text-[13px] font-semibold text-slate-400 ml-1.5">
+                                            {totalPages === 1 ? 'página' : 'páginas'}
+                                        </span>
+                                    </p>
+                                    <p className="text-[11px] text-slate-500 mt-0.5">en el PDF del pedido</p>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Box count input */}
+                    <div>
+                        <label className="block text-[11px] font-bold text-slate-600 mb-2 uppercase tracking-wide">
+                            ¿Cuántas cajas salen?
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="number" min={1} max={99}
+                                value={totalCajasInput}
+                                onChange={e => setTotalCajasInput(e.target.value)}
+                                placeholder="Ej. 4"
+                                autoFocus
+                                className="w-full text-[22px] font-black text-slate-800 rounded-2xl border-2 border-slate-200 bg-white/80 px-4 py-3 pr-16 focus:outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition-all"
+                            />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-slate-400 pointer-events-none">
+                                cajas
+                            </span>
+                        </div>
+                        {totalCajasInput && parsedCajas > 0 && !loadingPages && totalPages > 0 && (
+                            <p className="text-[10px] text-slate-400 mt-1.5 pl-1">
+                                {parsedCajas >= totalPages
+                                    ? `1 página por caja`
+                                    : `~${(totalPages / parsedCajas).toFixed(1)} páginas por caja`
+                                }
                             </p>
                         )}
                     </div>
-                    <div>
-                        <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
-                            ¿Cuántas cajas salen con el pedido?
-                        </label>
-                        <input
-                            type="number" min={1} max={99}
-                            value={totalCajasInput}
-                            onChange={e => setTotalCajasInput(e.target.value)}
-                            placeholder="Ej. 4"
-                            autoFocus
-                            className="mt-1.5 w-full text-[14px] font-bold rounded-xl border border-slate-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-violet-300"
-                        />
+                </div>
+            )}
+
+            {/* ── Screen 2 ───────────────────────────────── */}
+            {screen === 2 && (
+                <div className="px-4 py-3 max-h-[56vh] overflow-y-auto">
+                    {/* Box legend */}
+                    <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mr-1">Cajas:</span>
+                        {boxes.map(b => (
+                            <span key={b} className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-violet-100 text-violet-600 border border-violet-200">
+                                C{b}
+                            </span>
+                        ))}
+                        <span className="ml-auto text-[10px] text-slate-400">{totalPages} pág.</span>
+                    </div>
+
+                    {/* Page rows */}
+                    <div className="space-y-2">
+                        {pageGroups.map((pg, idx) => {
+                            const assigned     = pageAssignments[idx] ?? [];
+                            const hasAssignment = assigned.length > 0;
+                            return (
+                                <div key={idx}
+                                    className={`rounded-2xl border transition-all ${
+                                        hasAssignment
+                                            ? 'bg-white/70 border-slate-200/70'
+                                            : 'bg-amber-50/60 border-amber-200'
+                                    }`}>
+                                    {/* Page info row */}
+                                    <div className="flex items-center gap-3 px-3 pt-3 pb-2">
+                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-black text-[13px] tabular-nums transition-all ${
+                                            hasAssignment
+                                                ? 'bg-violet-500 text-white shadow-[0_2px_8px_rgba(139,92,246,0.35)]'
+                                                : 'bg-amber-400 text-white'
+                                        }`}>
+                                            {idx + 1}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[11px] font-semibold text-slate-700 truncate leading-tight">{pg.firstItem}</p>
+                                            <p className="text-[9px] text-slate-400 truncate mt-0.5">{pg.firstLab} · {pg.itemCount} prod.</p>
+                                        </div>
+                                    </div>
+                                    {/* Box selector */}
+                                    <div className="flex gap-1.5 px-3 pb-3 flex-wrap">
+                                        {boxes.map(box => {
+                                            const sel = assigned.includes(box);
+                                            return (
+                                                <button key={box} onClick={() => toggleBox(idx, box)}
+                                                    className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border-2 transition-all active:scale-95 ${
+                                                        sel
+                                                            ? 'bg-violet-500 border-violet-500 text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)]'
+                                                            : 'bg-white/80 border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50'
+                                                    }`}>
+                                                    Caja {box}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             )}
 
-            {/* Screen 2 */}
-            {screen === 2 && (
-                <div className="px-5 py-3 max-h-[58vh] overflow-y-auto space-y-1.5">
-                    <p className="text-[10px] text-slate-400 pb-1">
-                        Toca las cajas donde va cada página. Una página puede ir en más de una caja.
-                    </p>
-                    {pageGroups.map((pg, idx) => {
-                        const assigned = pageAssignments[idx] ?? [];
-                        return (
-                            <div key={idx} className="flex items-center gap-2 py-1 border-b border-slate-50 last:border-0">
-                                <span className="text-[10px] font-bold text-slate-400 w-9 shrink-0 tabular-nums">
-                                    Pág.{idx + 1}
-                                </span>
-                                <div className="flex gap-1 flex-wrap">
-                                    {boxes.map(box => {
-                                        const sel = assigned.includes(box);
-                                        return (
-                                            <button key={box} onClick={() => toggleBox(idx, box)}
-                                                className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-95
-                                                    ${sel
-                                                        ? 'bg-violet-500 border-violet-500 text-white shadow-sm'
-                                                        : 'bg-white border-slate-200 text-slate-400 hover:border-violet-300 hover:text-violet-500'
-                                                    }`}>
-                                                C{box}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                                <div className="flex-1 min-w-0 text-right">
-                                    <p className="text-[9px] text-slate-500 font-medium truncate" title={pg.firstItem}>{pg.firstItem}</p>
-                                    <p className="text-[8px] text-slate-400 truncate" title={pg.firstLab}>{pg.firstLab} · {pg.itemCount} prod.</p>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-
-            {/* Footer */}
-            <div className="px-5 pb-5 pt-3 flex items-center justify-between gap-2 border-t border-slate-100">
+            {/* ── Footer ─────────────────────────────────── */}
+            <div className="px-5 pb-5 pt-3 flex items-center justify-between gap-2 border-t border-white/40">
                 <button onClick={handleClose} disabled={submitting}
-                    className="text-[11px] font-semibold px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-all">
+                    className="text-[12px] font-semibold px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100/80 transition-all">
                     Cancelar
                 </button>
                 {screen === 1 ? (
                     <button onClick={handleGoScreen2}
-                        disabled={loadingPages || !totalCajasInput || parseInt(totalCajasInput, 10) < 1 || totalPages === 0}
-                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-40 active:scale-95 transition-all">
-                        {loadingPages ? <Loader2 size={11} className="animate-spin" /> : 'Siguiente →'}
+                        disabled={loadingPages || !totalCajasInput || parsedCajas < 1 || totalPages === 0}
+                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-40 active:scale-95 transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(139,92,246,0.35)]">
+                        {loadingPages
+                            ? <Loader2 size={12} className="animate-spin" />
+                            : <>Siguiente <span className="opacity-60">→</span></>
+                        }
                     </button>
                 ) : (
                     <button onClick={handleConfirm} disabled={submitting || !isValid}
-                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-40 active:scale-95 transition-all flex items-center gap-1.5">
-                        {submitting ? <Loader2 size={11} className="animate-spin" /> : null}
+                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-40 active:scale-95 transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(139,92,246,0.35)]">
+                        {submitting
+                            ? <Loader2 size={12} className="animate-spin" />
+                            : <PackageCheck size={13} />
+                        }
                         Confirmar y Finalizar
                     </button>
                 )}

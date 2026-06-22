@@ -718,7 +718,7 @@ const TL_GLOW   = [
 
 const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 4, erp: 5 };
 
-function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, erpEmp, difsEmp, corrConfEmp, receptionApoyo = [] }) {
+function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, reenvioEmp, erpEmp, difsEmp, corrConfEmp, receptionApoyo = [] }) {
     const hasPause  = (row.min_pausado_total ?? 0) > 0;
     const isPaused  = stage === 'pausado';
     const activeIdx = TL_STAGE_IDX[stage] ?? 0;
@@ -733,8 +733,8 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
         { key: 'erp',        label: 'Finalizado', time: row.recibido_erp_at,   emp: erpEmp,        apoyo: receptionApoyo },
     ];
     if (row.falta_caja_at) {
-        nodes.push({ key: 'falta_caja', label: row.llegada_tipo === 'caja_danada' ? 'Caja dañada' : 'Falta caja', time: row.falta_caja_at });
-        if (row.reenvio_bodega_at) nodes.push({ key: 'reenvio', label: 'Reenvío', time: row.reenvio_bodega_at });
+        nodes.push({ key: 'falta_caja', label: row.llegada_tipo === 'caja_danada' ? 'Caja dañada' : 'Falta caja', time: row.falta_caja_at, emp: llegadaEmp });
+        if (row.reenvio_bodega_at) nodes.push({ key: 'reenvio', label: 'Reenvío', time: row.reenvio_bodega_at, emp: reenvioEmp });
         if (row.segunda_llegada_at) nodes.push({ key: 'seg_llegada', label: '2ª Llegada', time: row.segunda_llegada_at });
     }
     if (hasDif) {
@@ -1799,7 +1799,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         setBusyAction('reenvio');
         try {
             await supabase.from('pedido_sucursal_status')
-                .update({ reenvio_bodega_at: new Date().toISOString() })
+                .update({ reenvio_bodega_at: new Date().toISOString(), reenvio_por: user?.id ?? null })
                 .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, cajas: faltaCajas });
             supabase.from('erp_sucursal_map').select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
@@ -2018,6 +2018,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const erpEmp       = row.recibido_erp_por         ? empMap.get(row.recibido_erp_por)         : null;
                             const difsEmp      = row.diferencias_reportadas_por ? empMap.get(row.diferencias_reportadas_por) : null;
                             const corrConfEmp  = row.confirmado_correccion_por  ? empMap.get(row.confirmado_correccion_por)  : null;
+                            const reenvioEmp   = row.reenvio_por                ? empMap.get(row.reenvio_por)                : null;
 
                             const elapsedPrep  = stage === 'preparando' ? fmtMin(Math.max(0, (elapsed(row.iniciado_at) ?? 0) - (row.min_pausado_total ?? 0))) : null;
                             const elapsedPause = stage === 'pausado'    ? fmtMin(elapsed(row.pausado_at)) : null;
@@ -2029,7 +2030,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                             const isDone     = row.pedido_status === 'completado' || row.pedido_status === 'parcial';
                             // Solo fade cuando completado: parcial queda visible (pendiente corrección)
-                            const isFadedOut = row.pedido_status === 'completado' && !!row.recibido_erp_at;
+                            const isFadedOut = row.pedido_status === 'completado' && !!row.recibido_erp_at;  // sutil: solo baja un poco la opacidad
 
                             return (
                                 <div
@@ -2038,7 +2039,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         stage === 'pausado'
                                             ? 'ring-2 ring-amber-400 shadow-[0_4px_20px_rgba(251,191,36,0.25)]'
                                             : isFadedOut
-                                                ? 'opacity-60'
+                                                ? 'opacity-80'
                                                 : ''
                                     }`}
                                     style={{ overflow: 'visible' }}
@@ -2096,7 +2097,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     {/* Lifecycle Timeline */}
                                     <div className="border-t border-slate-100 px-3 pt-2 pb-1.5">
-                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={isBranch ? cardApoyo : []} />
+                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={isBranch ? cardApoyo : []} />
                                     </div>
 
                                     {/* Actions + status strip */}

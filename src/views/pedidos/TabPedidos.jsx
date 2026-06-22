@@ -1802,6 +1802,10 @@ export default function TabPedidos({ searchTerm = '' }) {
     const handleFinalizarConCajas = useCallback(async ({ totalCajas, cajaMap, paginaItems }) => {
         if (!finalizarModal) return;
         const { pedidoId, sucId } = finalizarModal;
+        // Contar cajas de Electrolit (display units = cantidad_asignada / factor)
+        const cajasElectrolit = (finalizarModal.rows ?? [])
+            .filter(r => (r.products?.nombre ?? '').toLowerCase().includes('electrolit'))
+            .reduce((sum, r) => sum + Math.round((r.cantidad_asignada ?? 0) / (r.factor || 1)), 0);
         setFinalizarModal(null);
         setBusyAction('finalizar');
         try {
@@ -1809,9 +1813,10 @@ export default function TabPedidos({ searchTerm = '' }) {
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
                 p_stage: 'finalizar', p_user_id: user?.id ?? null,
             });
-            await supabase.from('pedido_sucursal_status').update({ total_cajas: totalCajas, caja_map: cajaMap, pagina_items: paginaItems })
+            await supabase.from('pedido_sucursal_status')
+                .update({ total_cajas: totalCajas, caja_map: cajaMap, pagina_items: paginaItems, cajas_electrolit: cajasElectrolit })
                 .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
-            useStaff.getState().appendAuditLog('PEDIDO_FINALIZADO', pedidoId, { totalCajas, cajas: Object.keys(cajaMap).length });
+            useStaff.getState().appendAuditLog('PEDIDO_FINALIZADO', pedidoId, { totalCajas, cajasElectrolit, cajas: Object.keys(cajaMap).length });
             await loadActive();
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [finalizarModal, user, loadActive]);
@@ -2334,6 +2339,12 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 {row.total_cajas} caja{row.total_cajas !== 1 ? 's' : ''}
                                             </span>
                                         )}
+                                        {(row.cajas_electrolit ?? 0) > 0 && (
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 border border-sky-200 tabular-nums shrink-0">
+                                                <Inbox size={10} className="text-sky-500 shrink-0" />
+                                                {row.cajas_electrolit} Electrolit
+                                            </span>
+                                        )}
                                         {elapsedPrep  && <span className="text-[10px] text-slate-600 tabular-nums">{elapsedPrep}</span>}
                                         {elapsedPause && (
                                             <span className="text-[10px] text-amber-700 font-semibold tabular-nums animate-pulse">
@@ -2364,7 +2375,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
                                             {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === 'finalizar_load'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === 'finalizar_load') ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
                                             {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
-                                            {canMarcarEnRuta && <button onClick={() => setEnRutaConfirm({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, totalCajas: row.total_cajas ?? 0 })} disabled={isEnvioBusy} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={11} className="animate-spin" /> : <><Truck size={10} />En Ruta</>}</button>}
+                                            {canMarcarEnRuta && <button onClick={() => setEnRutaConfirm({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, totalCajas: row.total_cajas ?? 0, cajasElectrolit: row.cajas_electrolit ?? 0 })} disabled={isEnvioBusy} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={11} className="animate-spin" /> : <><Truck size={10} />En Ruta</>}</button>}
                                             {canActuar && !isBranch && (row.falta_cajas ?? []).length > 0 && !(row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at) && (
                                                 // Mostrar "Reenviar caja" cuando hay cajas faltantes y no hay un ciclo en camino sin confirmar
                                                 <button onClick={() => handleReenviarCaja(row.pedido_id, row.erp_sucursal_id, row.numero, row.falta_cajas ?? [])} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">
@@ -2556,6 +2567,17 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 <p className="text-[14px] font-semibold text-slate-500">
                                     {enRutaConfirm.totalCajas === 1 ? 'caja en este pedido' : 'cajas en este pedido'}
                                 </p>
+                                {enRutaConfirm.cajasElectrolit > 0 && (
+                                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-sky-50 border border-sky-200 mt-1">
+                                        <Inbox size={14} className="text-sky-500 shrink-0" />
+                                        <span className="text-[13px] font-black text-sky-700 tabular-nums">
+                                            {enRutaConfirm.cajasElectrolit}
+                                        </span>
+                                        <span className="text-[12px] font-semibold text-sky-600">
+                                            {enRutaConfirm.cajasElectrolit === 1 ? 'caja Electrolit' : 'cajas Electrolit'}
+                                        </span>
+                                    </div>
+                                )}
                                 <p className="text-[11px] text-slate-400 text-center mt-1">
                                     Verificá que tenés todas las cajas antes de salir.
                                 </p>

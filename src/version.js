@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.290';
+export const APP_VERSION = '2.2.291';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.291 — feat(pedidos): contador cajas Electrolit en card + modal En Ruta; calculado al finalizar y guardado en DB
 // v2.2.290 — fix(pedidos): PackageX faltaba en imports TabPedidos; mejorar toggles LlegadaModal/ReenvioLlegadaModal con label + fondo reactivo
 // v2.2.289 — feat(pedidos/apoyo): separar apoyo preparación (bodega) vs recepción (sala venta); limpiar pedido 51 para pruebas
 // v2.2.288 — fix(pedidos/reenvio): 2 bugs stress-test — handleSegundaLlegada legacy abre modal para pedidos sin historial; falta_cajas no se limpiaba al llegar todo el reenvío

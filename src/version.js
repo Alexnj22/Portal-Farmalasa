@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.280';
+export const APP_VERSION = '2.2.281';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.281 — fix(pedidos/apoyo): batch-load para TODOS los usuarios (no solo branch); bodega perdía apoyo al refrescar porque el effect tenía guard isBranch
 // v2.2.280 — fix(pedidos/cards): badge+ring caja dañada, apoyo con nombre+foto, cajas siempre visible, confirm En Ruta con nro cajas grande, fix apoyo desaparecía (loadActive post-save)
 // v2.2.279 — feat(pedidos/recepcion): botón "Todo OK" en grid de caja — confirma cantidades exactas sin diferencias en un tap, sin tocar el estado de los inputs
 // v2.2.278 — feat(pedidos/recepcion): recepción por caja independiente — picker de cajas, confirmar caja a caja, cajas_recibidas en DB, falta_caja separada, lastbox cierra + notifica; fallback sin caja_map = flujo original

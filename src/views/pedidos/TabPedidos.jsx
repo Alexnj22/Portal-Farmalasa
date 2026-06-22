@@ -1473,22 +1473,26 @@ export default function TabPedidos({ searchTerm = '' }) {
         });
     }, [activeRows]); // eslint-disable-line
 
-    // Batch-load apoyo for branch users so it's always visible in the timeline (no expand needed)
+    // Batch-load apoyo for ALL users whenever activeRows changes (branch + bodega)
     useEffect(() => {
-        if (!isBranch || !erpSucursalId || !activeRows.length) return;
+        if (!activeRows.length) return;
         (async () => {
             const ids = [...new Set(activeRows.map(r => r.pedido_id))];
             if (!ids.length) return;
-            const { data } = await supabase.from('pedido_apoyo')
-                .select('pedido_id, employee_id, employees(name, photo_url)')
-                .in('pedido_id', ids)
-                .eq('erp_sucursal_id', erpSucursalId);
+            let q = supabase.from('pedido_apoyo')
+                .select('pedido_id, erp_sucursal_id, employee_id, employees(name, photo_url)')
+                .in('pedido_id', ids);
+            // Branch: filter to their sucursal only; bodega: load all sucursales
+            if (isBranch && erpSucursalId) q = q.eq('erp_sucursal_id', erpSucursalId);
+            const { data } = await q;
             if (!data) return;
             const map = {};
             data.forEach(r => {
-                const key = `act_${r.pedido_id}_${erpSucursalId}`;
+                const key = `act_${r.pedido_id}_${r.erp_sucursal_id}`;
                 if (!map[key]) map[key] = [];
-                map[key].push({ id: r.employee_id, ...r.employees });
+                if (!map[key].find(e => e.id === r.employee_id)) {
+                    map[key].push({ id: r.employee_id, ...r.employees });
+                }
             });
             setApoyoMap(prev => ({ ...prev, ...map }));
         })();

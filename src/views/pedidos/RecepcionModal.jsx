@@ -388,6 +388,61 @@ export default function RecepcionModal({
         saveExtras, onConfirmed, onClose,
     ]);
 
+    // ── Confirmar todo sin errores (acción rápida) ──────────────────────────────
+    const handleTodoOk = useCallback(async () => {
+        const rowsToSave = (hasCajaMap && selectedCaja !== null) ? selectedCajaRows : sortedRows;
+        setSaving(true); setSaveError(null);
+
+        // Payload con cantidades exactas asignadas, sin diferencias
+        const p_items = rowsToSave.map(r => {
+            const erpFactor  = Number(r.factor) || 1;
+            const dispFactor = Number(r.dispatch_factor) || erpFactor;
+            const dispQty    = toDispatch(r.cantidad_asignada, erpFactor, dispFactor);
+            const rawQty     = Math.round(dispQty * dispFactor / erpFactor);
+            return { pedido_item_id: r.id, cantidad_recibida: rawQty, nota_diferencia: null, error_tipo: null, cantidad_problema: null };
+        });
+
+        try {
+            const { error } = await supabase.rpc('receive_pedido_sucursal', {
+                p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
+                p_items, p_received_by: user?.id ?? null,
+            });
+            if (error) throw error;
+
+            if (hasCajaMap && selectedCaja !== null) {
+                const newRec = [...new Set([...allRecibidas, selectedCaja])].sort((a, b) => a - b);
+                await supabase.from('pedido_sucursal_status')
+                    .update({ cajas_recibidas: newRec })
+                    .eq('pedido_id', pedido.id).eq('erp_sucursal_id', sucursalId);
+                setLocalRec(prev => [...new Set([...prev, selectedCaja])].sort((a, b) => a - b));
+
+                const nowAllDone = accessibleBoxNums.every(n => newRec.includes(n));
+                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_CAJA', pedido.id, {
+                    sucursal_id: sucursalId, caja: selectedCaja, items_count: p_items.length, todo_ok: true,
+                });
+
+                if (nowAllDone) {
+                    await saveExtras();
+                    useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, { sucursal_id: sucursalId, extras_count: extras.length });
+                    onConfirmed?.({ hasDiff: anyHasDiff, allDone: true });
+                    onClose();
+                } else {
+                    setScreen('cajas'); setSelectedCaja(null); setProdSearch(''); setShowSearch(false);
+                }
+            } else {
+                await saveExtras();
+                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, { sucursal_id: sucursalId, items_count: p_items.length, todo_ok: true });
+                onConfirmed?.({ hasDiff: false, allDone: true });
+                onClose();
+            }
+        } catch (e) {
+            setSaveError(e.message);
+        } finally {
+            setSaving(false);
+        }
+    }, [hasCajaMap, selectedCaja, selectedCajaRows, sortedRows, pedido, sucursalId, user,
+        anyHasDiff, allRecibidas, accessibleBoxNums, extras, saveExtras, onConfirmed, onClose]);
+
     // ── Finalizar desde la pantalla de cajas (cuando todas ya están recibidas) ──
     const handleFinalizar = useCallback(async () => {
         setSaving(true); setSaveError(null);
@@ -954,11 +1009,19 @@ export default function RecepcionModal({
                         className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors disabled:opacity-40">
                         {hasCajaMap ? 'Volver' : 'Cancelar'}
                     </button>
-                    <button onClick={handleConfirmarCaja} disabled={saving}
-                        className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 text-[13px] transition-colors disabled:opacity-50">
-                        {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
-                        {hasCajaMap ? `Confirmar Caja ${selectedCaja}` : 'Confirmar recepción'}
-                    </button>
+                    <div className="flex gap-2">
+                        <button onClick={handleTodoOk} disabled={saving}
+                            title="Confirmar todo sin diferencias"
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-emerald-300 text-emerald-700 font-bold text-[12px] hover:bg-emerald-50 active:scale-95 transition-all disabled:opacity-40">
+                            <Check size={13} />
+                            Todo OK
+                        </button>
+                        <button onClick={handleConfirmarCaja} disabled={saving}
+                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 text-[13px] transition-colors disabled:opacity-50">
+                            {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
+                            {hasCajaMap ? `Confirmar Caja ${selectedCaja}` : 'Confirmar recepción'}
+                        </button>
+                    </div>
                 </div>
             </PedidoModal.Footer>
         </PedidoModal>

@@ -712,9 +712,13 @@ function fmtHM(iso) {
     return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
-const TL_DOT    = ['bg-blue-500','bg-blue-500','bg-violet-500','bg-indigo-500','bg-teal-500','bg-emerald-500','bg-amber-500','bg-purple-500'];
-const TL_LINE   = ['bg-blue-300','bg-blue-300','bg-violet-300','bg-indigo-300','bg-teal-300','bg-emerald-300','bg-amber-300','bg-purple-300'];
-const TL_BORDER = ['border-blue-400','border-blue-400','border-violet-400','border-indigo-400','border-teal-400','border-emerald-400','border-amber-400','border-purple-400'];
+// Extra indices (reenvío cycles) repeat the last two colors
+const TL_DOT_BASE    = ['bg-blue-500','bg-blue-500','bg-violet-500','bg-indigo-500','bg-teal-500','bg-emerald-500','bg-amber-500','bg-purple-500'];
+const TL_LINE_BASE   = ['bg-blue-300','bg-blue-300','bg-violet-300','bg-indigo-300','bg-teal-300','bg-emerald-300','bg-amber-300','bg-purple-300'];
+const TL_BORDER_BASE = ['border-blue-400','border-blue-400','border-violet-400','border-indigo-400','border-teal-400','border-emerald-400','border-amber-400','border-purple-400'];
+const tlDot    = (i) => TL_DOT_BASE[i]    ?? TL_DOT_BASE[TL_DOT_BASE.length - 1];
+const tlLine   = (i) => TL_LINE_BASE[i]   ?? TL_LINE_BASE[TL_LINE_BASE.length - 1];
+const tlBorder = (i) => TL_BORDER_BASE[i] ?? TL_BORDER_BASE[TL_BORDER_BASE.length - 1];
 // box-shadow glow colors for active node — stays within dot bounds, no overflow
 const TL_GLOW   = [
     'rgba(59,130,246',   // blue
@@ -726,6 +730,7 @@ const TL_GLOW   = [
     'rgba(245,158,11',   // amber
     'rgba(168,85,247',   // purple
 ];
+const tlGlow = (i) => TL_GLOW[i] ?? TL_GLOW[TL_GLOW.length - 1];
 
 const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 4, erp: 5 };
 
@@ -791,7 +796,7 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
                     : null;
 
                 // Glow animation for active dot — uses box-shadow (no overflow)
-                const glowColor = TL_GLOW[idx];
+                const glowColor = tlGlow(idx);
                 const activeAnimate = isActive && !isPausedDot ? {
                     scale: 1, opacity: 1,
                     boxShadow: [
@@ -809,9 +814,9 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
                             <div className="flex items-center justify-center w-6 h-6">
                                 <motion.div
                                     className={`w-4 h-4 rounded-full flex items-center justify-center z-10 ${
-                                        isDone      ? `${TL_DOT[idx]} shadow-sm` :
+                                        isDone      ? `${tlDot(idx)} shadow-sm` :
                                         isPausedDot ? 'bg-amber-400 shadow-md' :
-                                        isActive    ? `bg-white border-2 ${TL_BORDER[idx]}` :
+                                        isActive    ? `bg-white border-2 ${tlBorder(idx)}` :
                                                       'bg-slate-100 border border-slate-200'
                                     }`}
                                     initial={{ scale: 0.5, opacity: 0 }}
@@ -829,7 +834,7 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
                                     )}
                                     {isActive && !isPausedDot && (
                                         <motion.div
-                                            className={`w-2 h-2 rounded-full ${TL_DOT[idx]}`}
+                                            className={`w-2 h-2 rounded-full ${tlDot(idx)}`}
                                             animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
                                             transition={{ duration: 1.4, repeat: Infinity }}
                                         />
@@ -883,7 +888,7 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
                                 {/* Fill */}
                                 {(isDone || (isActive && node.time)) && (
                                     <motion.div
-                                        className={`absolute top-0 left-0 h-0.5 rounded-full ${TL_LINE[idx]}`}
+                                        className={`absolute top-0 left-0 h-0.5 rounded-full ${tlLine(idx)}`}
                                         initial={{ width: '0%' }}
                                         animate={{ width: isDone && nextNode?.time ? '100%' : isDone ? '100%' : '50%' }}
                                         transition={{ duration: 0.6, ease: 'easeOut', delay: idx * 0.08 }}
@@ -1197,7 +1202,7 @@ function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, em
 
 // ─── Reception actions ────────────────────────────────────────────────────────
 
-function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false }) {
+function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false, reenvioBodygaAt = null, segundaLlegadaAt = null }) {
     const empChip = (emp) => emp ? (
         <span className="flex items-center gap-1 text-[10px] text-slate-500">
             {emp.photo_url
@@ -1224,13 +1229,19 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
     );
 
     // Estado de reenvíos — ciclo pendiente de llegada
-    const cicloEnCamino = reenviosHistorial.find(c => c.sent_at && !c.arrived_at);
-    const hasFaltaPendiente = faltaCajas.length > 0;
+    // Fallback para pedidos viejos: si no hay historial pero reenvio_bodega_at está seteado, sintetizar un ciclo virtual
+    const cicloEnCamino = reenviosHistorial.find(c => c.sent_at && !c.arrived_at)
+        ?? (reenvioBodygaAt && !segundaLlegadaAt && faltaCajas.length > 0
+            ? { sent_at: reenvioBodygaAt, cajas: faltaCajas, ciclo: 1, _legacy: true }
+            : null);
+    const hasFaltaPendiente  = faltaCajas.length > 0;
     const hasDanadaPendiente = cajasDanadas.length > 0;
-    const hayProblema = hasFaltaPendiente || hasDanadaPendiente;
 
     // ¿Cuántos ciclos de reenvío se han completado? (todos tienen arrived_at)
-    const todosReenviosResueltos = reenviosHistorial.length > 0 && reenviosHistorial.every(c => c.arrived_at);
+    // Para pedidos viejos: "resuelto" cuando segunda_llegada_at está seteado
+    const todosReenviosResueltos = reenviosHistorial.length > 0
+        ? reenviosHistorial.every(c => c.arrived_at)
+        : !!segundaLlegadaAt;
 
     return (
         <div className="border-t border-slate-100 px-4 py-3 space-y-2">
@@ -1285,7 +1296,7 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
             )}
 
             {/* Revisar items del reenvío (después de confirmar la segunda llegada) */}
-            {llegadaOk && todosReenviosResueltos && hasFaltaItems && (
+            {llegadaOk && todosReenviosResueltos && !hasFaltaPendiente && hasFaltaItems && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-violet-50/40 border-violet-100 text-[11px]">
                     <Database size={13} className="text-violet-500" />
                     <span className="text-violet-700">Revisar caja del reenvío en Sistema de Ventas</span>
@@ -1959,17 +1970,32 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_LLEGADA', pedidoId, { ciclo, arrived_tipo, cajasOk, cajasDanadas, cajasFaltantes });
 
-            // Si aún hay cajas faltantes, marcar sus items como falta_caja: true (para bloquear recepción)
-            if (hasFalta) {
-                const { data: pss } = await supabase.from('pedido_sucursal_status')
-                    .select('caja_map, pagina_items')
-                    .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
-                const cajaMapDb     = pss?.caja_map    ?? {};
-                const paginaItemsDb = pss?.pagina_items ?? {};
-                if (Object.keys(paginaItemsDb).length > 0) {
-                    const mIds = cajasFaltantes.flatMap(n => (cajaMapDb[String(n)] ?? []).flatMap(p => paginaItemsDb[String(p)] ?? []));
-                    if (mIds.length > 0) await supabase.from('pedido_items').update({ falta_caja: true }).in('id', mIds);
+            // Cargar mapa de páginas → ítems una sola vez
+            const { data: pss } = await supabase.from('pedido_sucursal_status')
+                .select('caja_map, pagina_items')
+                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
+            const cajaMapDb     = pss?.caja_map    ?? {};
+            const paginaItemsDb = pss?.pagina_items ?? {};
+
+            const getItemIds = (cajas) => {
+                if (!Object.keys(paginaItemsDb).length) return [];
+                return cajas.flatMap(n => (cajaMapDb[String(n)] ?? []).flatMap(p => paginaItemsDb[String(p)] ?? []));
+            };
+
+            // Limpiar falta_caja en ítems de cajas que SÍ llegaron (OK o dañadas)
+            const cajasLlegaron = [...cajasOk, ...cajasDanadas];
+            if (cajasLlegaron.length > 0) {
+                const llegadaIds = getItemIds(cajasLlegaron);
+                if (llegadaIds.length > 0) {
+                    await supabase.from('pedido_items').update({ falta_caja: false }).in('id', llegadaIds);
                 }
+            }
+
+            // Mantener falta_caja: true solo en cajas que AÚN no llegaron
+            if (hasFalta) {
+                const mIds = getItemIds(cajasFaltantes);
+                if (mIds.length > 0) await supabase.from('pedido_items').update({ falta_caja: true }).in('id', mIds);
+
                 // Notificar bodega para nuevo reenvío
                 supabase.from('erp_sucursal_map').select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
                     if (!m?.branch_id) return;
@@ -2353,6 +2379,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 reenviosHistorial={row.reenvios_historial ?? []}
                                                 faltaCajas={row.falta_cajas ?? []}
                                                 cajasDanadas={row.cajas_danadas ?? []}
+                                                reenvioBodygaAt={row.reenvio_bodega_at ?? null}
+                                                segundaLlegadaAt={row.segunda_llegada_at ?? null}
                                                 hasFaltaItems={(items[cardKey] ?? []).some(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0)}
                                             />
                                         </div>

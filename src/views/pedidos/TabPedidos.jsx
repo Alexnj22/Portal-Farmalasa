@@ -1802,10 +1802,14 @@ export default function TabPedidos({ searchTerm = '' }) {
     const handleFinalizarConCajas = useCallback(async ({ totalCajas, cajaMap, paginaItems }) => {
         if (!finalizarModal) return;
         const { pedidoId, sucId } = finalizarModal;
-        // Contar cajas de Electrolit (display units = cantidad_asignada / factor)
+        // Contar cajas Electrolit: solo los que despachan por CAJA (625ml)
+        // Pediátrico tiene dispatch_tipo=UNIDAD → excluido
         const cajasElectrolit = (finalizarModal.rows ?? [])
-            .filter(r => (r.products?.nombre ?? '').toLowerCase().includes('electrolit'))
-            .reduce((sum, r) => sum + Math.round((r.cantidad_asignada ?? 0) / (r.factor || 1)), 0);
+            .filter(r =>
+                (r.products?.nombre ?? '').toLowerCase().includes('electrolit') &&
+                (r.dispatch_tipo ?? '').toUpperCase() === 'CAJA'
+            )
+            .reduce((sum, r) => sum + Math.round((r.cantidad_asignada ?? 0) / (Number(r.dispatch_factor) || 1)), 0);
         setFinalizarModal(null);
         setBusyAction('finalizar');
         try {

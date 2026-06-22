@@ -401,13 +401,14 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         const hasDiff = fRaw !== sRaw || fPres !== sPres;
                         const delta   = fRaw - sRaw;
 
-                        // Presentaciones: siempre incluir la de despacho (regla especial del PDF)
+                        // La presentación de la regla (dispatch) siempre va primero, igual que el PDF
                         const rawOpts  = presMap[r.erp_product_id] ?? [];
                         const dispLabel = fmtDispatchLabel(r.dispatch_tipo, dispFactor);
                         const dispOpt  = { factor: dispFactor, label: dispLabel };
-                        const presOpts = rawOpts.length > 0
-                            ? rawOpts.find(o => o.factor === dispFactor) ? rawOpts : [dispOpt, ...rawOpts]
-                            : [dispOpt];
+                        const hasDispRule = r.dispatch_tipo && dispFactor !== erpFactor;
+                        const presOpts = hasDispRule
+                            ? [dispOpt, ...rawOpts.filter(o => o.factor !== dispFactor)]
+                            : rawOpts.length > 0 ? rawOpts : [dispOpt];
 
                         const navKey = (col, dir) => document.querySelector(`[data-qty-row="${rowIdx + dir}"][data-qty-col="${col}"]`)?.focus();
 

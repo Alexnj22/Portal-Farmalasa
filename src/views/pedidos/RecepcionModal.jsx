@@ -52,7 +52,7 @@ const GRID = 'grid-cols-[minmax(0,1fr)_2.75rem_8rem_3.25rem_8rem_3.25rem_2rem]';
 
 async function fetchPresOpts(productId) {
     const { data } = await supabase.from('product_precios')
-        .select('product_id, factor, descripcion, presentaciones(tipo)')
+        .select('product_id, factor, descripcion, presentaciones!id_presentacion(tipo)')
         .eq('product_id', productId).eq('activo', true).order('factor');
     const opts = [];
     (data || []).forEach(p => {
@@ -128,15 +128,25 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             setApoyo((data || []).map(r => ({ id: r.employee_id, ...r.employees })));
         })();
 
-        // Presentaciones disponibles por producto
+        // Presentaciones disponibles por producto — paginado para evitar el cap de 1000 filas de PostgREST
         const productIds = [...new Set(rows.map(r => r.erp_product_id))];
         if (productIds.length > 0) {
             (async () => {
-                const { data } = await supabase.from('product_precios')
-                    .select('product_id, factor, descripcion, presentaciones(tipo)')
-                    .in('product_id', productIds).eq('activo', true).order('factor');
+                const PAGE = 1000;
+                let allData = [];
+                let from = 0;
+                while (true) {
+                    const { data } = await supabase.from('product_precios')
+                        .select('product_id, factor, descripcion, presentaciones!id_presentacion(tipo)')
+                        .in('product_id', productIds).eq('activo', true).order('factor')
+                        .range(from, from + PAGE - 1);
+                    if (!data || data.length === 0) break;
+                    allData = [...allData, ...data];
+                    if (data.length < PAGE) break;
+                    from += PAGE;
+                }
                 const map = {};
-                (data || []).forEach(p => {
+                allData.forEach(p => {
                     const pid = p.product_id;
                     if (!map[pid]) map[pid] = [];
                     const f = Number(p.factor) || 1;

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.262';
+export const APP_VERSION = '2.2.263';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.263 — fix(pedidos/recepcion): presentaciones paginadas en chunks de 1000 (evita cap PostgREST); join explícito id_presentacion; AMOXICILINA y similares ahora muestran todas las presentaciones (caja+blíster+unidad)
 // v2.2.262 — fix(pedidos/recepcion): presOpts muestra presentaciones originales (product_precios) + presentación especial de la regla primero, sin duplicados
 // v2.2.261 — fix(pedidos/recepcion): presOpts siempre pone la presentación de la regla (dispatch) primero cuando dispatch_tipo existe y factor ≠ factor_erp; elimina dependencia del match de rawOpts
 // v2.2.260 — fix(pedidos/recepcion): extras con 0+0 muestra warning visual + bloquea submit con mensaje claro

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.269';
+export const APP_VERSION = '2.2.270';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.270 — fix(pedidos/pdf): fetchItems ahora incluye presentaciones!erp_presentacion_id(tipo); printFromPedidoItems mostraba '-' en productos sin dispatch_tipo porque el join faltaba
 // v2.2.269 — fix(pedidos/notif): bodega recibe 1 sola notificación al confirmar recepción (sin novedad → normal, con diferencias/problemas → HIGH); elimina duplicado confirmado+diferencias
 // v2.2.268 — feat(pedidos/notif): push+bell a bodega al confirmar recepción ERP (siempre) + ya existía notif de diferencias/problemas (dañado/vencido) vía handleReportarDiferencias
 // v2.2.267 — feat(pedidos/notif): 2 notificaciones push+bell a la sucursal destino: al Iniciar (bodega empieza a preparar) y al marcar En Ruta; lookup por erp_sucursal_id→branch_id en erp_sucursal_map

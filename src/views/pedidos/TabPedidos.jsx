@@ -1501,7 +1501,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                 resolucion_status, resolucion_tipo, resolucion_nota,
                 resuelto_por, resuelto_at, confirmado_suc_por, confirmado_suc_at,
                 rechazado_por, rechazado_at, nota_rechazo,
-                products ( nombre, es_antibiotico, laboratorios ( nombre ) )
+                products ( nombre, es_antibiotico, laboratorios ( nombre ) ),
+                presentaciones!erp_presentacion_id ( tipo )
             `)
             .eq('pedido_id', pedidoId)
             .range(0, 999);

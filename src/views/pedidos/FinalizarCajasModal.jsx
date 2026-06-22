@@ -1,21 +1,31 @@
-import React, { useState, useMemo } from 'react';
-import { ChevronLeft, Loader2, X, Box, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, Loader2, X, Box } from 'lucide-react';
 import PedidoModal from './PedidoModal';
-import { getPageGroups } from '../../utils/pedidoPrint';
+import { getExactPageGroups } from '../../utils/pedidoPrint';
 
-export default function FinalizarCajasModal({ open, onClose, onConfirm, items = [], pedidoNumero }) {
+export default function FinalizarCajasModal({ open, onClose, onConfirm, items = [], sucId, pedidoNumero }) {
     const [screen,          setScreen]          = useState(1);
     const [totalCajasInput, setTotalCajasInput] = useState('');
-    // pageAssignments[i] = array de números de caja para esa página (multi-select)
-    const [pageAssignments, setPageAssignments] = useState([]);
+    const [pageAssignments, setPageAssignments] = useState([]);  // [boxNum[]] por página
     const [submitting,      setSubmitting]      = useState(false);
+    const [pageGroups,      setPageGroups]      = useState([]);
+    const [loadingPages,    setLoadingPages]    = useState(false);
 
-    const pageGroups = useMemo(() => getPageGroups(items), [items]);
+    // Calcular grupos de página exactos con pdfmake (pageBreakBefore)
+    useEffect(() => {
+        if (!open || !items.length || !sucId) return;
+        setLoadingPages(true);
+        setPageGroups([]);
+        getExactPageGroups(sucId, items)
+            .then(groups => setPageGroups(groups))
+            .catch(() => setPageGroups([]))  // fallback a vacío
+            .finally(() => setLoadingPages(false));
+    }, [open, items, sucId]);
+
     const totalPages = pageGroups.length;
     const cajaCount  = Math.max(1, parseInt(totalCajasInput, 10) || 1);
 
     const handleGoScreen2 = () => {
-        // Default: distribuir páginas proporcionalmente, cada página en 1 caja
         const defaults = Array.from({ length: totalPages }, (_, i) => {
             const box = cajaCount >= totalPages
                 ? i + 1
@@ -31,8 +41,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             const next = prev.map(arr => [...arr]);
             const cur  = next[pageIdx] ?? [];
             if (cur.includes(boxNum)) {
-                // no permitir dejar sin caja
-                if (cur.length === 1) return next;
+                if (cur.length === 1) return next;  // no dejar sin caja
                 next[pageIdx] = cur.filter(b => b !== boxNum);
             } else {
                 next[pageIdx] = [...cur, boxNum].sort((a, b) => a - b);
@@ -47,7 +56,6 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
         if (submitting || !isValid) return;
         setSubmitting(true);
 
-        // cajaMap: { "1": [págs...], "2": [págs...] }
         const cajaMap = {};
         for (let i = 1; i <= cajaCount; i++) cajaMap[String(i)] = [];
         pageAssignments.forEach((boxes, idx) => {
@@ -58,7 +66,6 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             });
         });
 
-        // paginaItems: { "1": [ids...], "2": [ids...] }
         const paginaItems = {};
         pageGroups.forEach((pg, idx) => { paginaItems[String(idx + 1)] = pg.ids; });
 
@@ -67,7 +74,8 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
 
     const handleClose = () => {
         if (submitting) return;
-        setScreen(1); setTotalCajasInput(''); setPageAssignments([]); setSubmitting(false);
+        setScreen(1); setTotalCajasInput(''); setPageAssignments([]);
+        setSubmitting(false); setPageGroups([]); setLoadingPages(false);
         onClose();
     };
 
@@ -102,10 +110,17 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                 <div className="px-5 py-5 space-y-4">
                     <div className="flex items-start gap-3 px-4 py-3 rounded-2xl bg-slate-50 border border-slate-100">
                         <Box size={14} className="text-slate-400 shrink-0 mt-0.5" />
-                        <p className="text-[11px] text-slate-500 leading-relaxed">
-                            El pedido tiene <span className="font-bold text-slate-700">{totalPages} página{totalPages !== 1 ? 's' : ''}</span> en el PDF.
-                            En la siguiente pantalla asignarás cada página a su caja física.
-                        </p>
+                        {loadingPages ? (
+                            <div className="flex items-center gap-2">
+                                <Loader2 size={12} className="animate-spin text-violet-400" />
+                                <p className="text-[11px] text-slate-400">Calculando páginas del PDF…</p>
+                            </div>
+                        ) : (
+                            <p className="text-[11px] text-slate-500 leading-relaxed">
+                                El pedido tiene <span className="font-bold text-slate-700">{totalPages} página{totalPages !== 1 ? 's' : ''}</span> en el PDF.
+                                En la siguiente pantalla asignarás cada página a su caja física.
+                            </p>
+                        )}
                     </div>
                     <div>
                         <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
@@ -127,18 +142,15 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             {screen === 2 && (
                 <div className="px-5 py-3 max-h-[58vh] overflow-y-auto space-y-1.5">
                     <p className="text-[10px] text-slate-400 pb-1">
-                        Toca las cajas donde va cada página. Si una página se reparte entre 2 cajas, selecciona ambas.
+                        Toca las cajas donde va cada página. Una página puede ir en más de una caja.
                     </p>
                     {pageGroups.map((pg, idx) => {
                         const assigned = pageAssignments[idx] ?? [];
                         return (
                             <div key={idx} className="flex items-center gap-2 py-1 border-b border-slate-50 last:border-0">
-                                {/* Número de página */}
                                 <span className="text-[10px] font-bold text-slate-400 w-9 shrink-0 tabular-nums">
                                     Pág.{idx + 1}
                                 </span>
-
-                                {/* Botones de cajas — multi-select */}
                                 <div className="flex gap-1 flex-wrap">
                                     {boxes.map(box => {
                                         const sel = assigned.includes(box);
@@ -154,11 +166,9 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                         );
                                     })}
                                 </div>
-
-                                {/* Primer producto de la página */}
                                 <div className="flex-1 min-w-0 text-right">
-                                    <p className="text-[9px] text-slate-400 truncate" title={pg.firstItem}>{pg.firstItem}</p>
-                                    <p className="text-[8px] text-slate-300 truncate" title={pg.firstLab}>{pg.firstLab} · {pg.itemCount} prod.</p>
+                                    <p className="text-[9px] text-slate-500 font-medium truncate" title={pg.firstItem}>{pg.firstItem}</p>
+                                    <p className="text-[8px] text-slate-400 truncate" title={pg.firstLab}>{pg.firstLab} · {pg.itemCount} prod.</p>
                                 </div>
                             </div>
                         );
@@ -174,9 +184,9 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                 </button>
                 {screen === 1 ? (
                     <button onClick={handleGoScreen2}
-                        disabled={!totalCajasInput || parseInt(totalCajasInput, 10) < 1}
+                        disabled={loadingPages || !totalCajasInput || parseInt(totalCajasInput, 10) < 1 || totalPages === 0}
                         className="text-[11px] font-bold px-5 py-2 rounded-xl bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-40 active:scale-95 transition-all">
-                        Siguiente →
+                        {loadingPages ? <Loader2 size={11} className="animate-spin" /> : 'Siguiente →'}
                     </button>
                 ) : (
                     <button onClick={handleConfirm} disabled={submitting || !isValid}

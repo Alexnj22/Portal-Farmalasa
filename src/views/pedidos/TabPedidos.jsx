@@ -2215,6 +2215,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 onClose={() => setFinalizarModal(null)}
                 onConfirm={handleFinalizarConCajas}
                 items={finalizarModal?.rows ?? []}
+                sucId={finalizarModal?.sucId}
                 pedidoNumero={finalizarModal?.numero}
             />
 

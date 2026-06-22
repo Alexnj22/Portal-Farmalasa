@@ -122,7 +122,10 @@ function loteStackNode(lotes, bg) {
     return { stack: lines, fillColor: bg, verticalAlignment: 'middle' };
 }
 
-function buildProductRows(rows) {
+// withRowIds: si true, añade id='row_N' a la celda de laboratorio de cada fila.
+// pdfmake preserva ese id en linearNodeList → pageBreakBefore puede leerlo
+// para saber qué fila (N) aparece primero en cada página.
+function buildProductRows(rows, withRowIds = false) {
     const body = [];
     sortRows(rows).forEach((r, idx) => {
         const bg  = idx % 2 === 1 ? '#f2f2f2' : '#ffffff';
@@ -138,8 +141,10 @@ function buildProductRows(rows) {
                 margin: [0, 2, 0, 0],
             });
         }
+        const labCell = { text: r.laboratorio || '—', fillColor: bg, fontSize: 7, color: '#333', margin: [0, 2, 0, 2], verticalAlignment: 'middle' };
+        if (withRowIds) labCell.id = `row_${idx}`;
         body.push([
-            { text: r.laboratorio || '—', fillColor: bg, fontSize: 7, color: '#333', margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
+            labCell,
             { stack: productStack, fillColor: bg, margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
             { text: r.presentacion_tipo || '—', fillColor: bg, fontSize: 7, color: '#333', margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
             { text: String(r.qty), fillColor: bg, fontSize: 9.5, bold: true, alignment: 'center', margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
@@ -219,7 +224,7 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
     }));
 
     const bodyRows = sec.rows.length
-        ? buildProductRows(sec.rows)
+        ? buildProductRows(sec.rows, sec._withRowIds ?? false)
         : [[
             { text: 'Sin productos para esta sucursal', colSpan: 6, alignment: 'center', fontSize: 9, color: '#555', margin: [0, 10, 0, 10] },
             {}, {}, {}, {}, {},
@@ -423,6 +428,79 @@ export function getPageGroups(rows) {
         firstLab:  p[0]?.products?.laboratorios?.nombre ?? '',
         itemCount: p.length,
     }));
+}
+
+// ── Extracción exacta de páginas vía pageBreakBefore ─────────────────────────
+// Construye el mismo docDef que se imprimiría, añade id='row_N' a cada celda
+// de laboratorio, y usa pdfMake.createPdf().getBuffer() para disparar el layout.
+// pageBreakBefore captura en qué página aparece por primera vez cada fila.
+// Resultado: grupos EXACTOS que coinciden 100% con el PDF impreso.
+export async function getExactPageGroups(sucId, rawItems) {
+    const [logo, addrMap] = await Promise.all([getLogoBase64(), getAddressMap()]);
+
+    const printRows = rawItems.filter(r => !r.sin_stock).map(r => {
+        const erpFactor  = r.factor ?? 1;
+        const dispFactor = r.dispatch_factor ?? erpFactor;
+        return {
+            _rawId:          r.id,
+            product_name:    r.products?.nombre ?? '?',
+            laboratorio:     r.products?.laboratorios?.nombre ?? '',
+            presentacion_tipo: r.dispatch_tipo ?? r.presentaciones?.tipo ?? '',
+            es_antibiotico:  r.products?.es_antibiotico ?? false,
+            qty:   toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor),
+            lotes: lotesAsignadosToDispatch(
+                Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
+                erpFactor, dispFactor,
+            ),
+        };
+    }).filter(r => r.qty > 0);
+
+    if (!printRows.length) return [];
+
+    // sortRows devuelve el mismo orden que buildProductRows usa internamente
+    const sorted = sortRows(printRows);
+
+    const section = {
+        sucId,
+        nombre:   ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
+        codigo:   null,
+        rows:     printRows,
+        sinCount: 0,
+        revCount: 0,
+        _withRowIds: true,   // activa los id='row_N' en buildProductRows
+    };
+
+    // pageFirstIdx: { pageNumber → sorted index del primer item en esa página }
+    const pageFirstIdx = {};
+
+    const docDef = buildDocDefinition([section], '', {}, logo, addrMap);
+    docDef.pageBreakBefore = (currentNode) => {
+        const id = currentNode.id;
+        if (typeof id === 'string' && id.startsWith('row_') && currentNode.startPosition) {
+            const pg  = currentNode.startPosition.pageNumber; // 1-indexed
+            const idx = parseInt(id.slice(4), 10);
+            if (pageFirstIdx[pg] === undefined) pageFirstIdx[pg] = idx;
+        }
+        return false; // nunca añadir saltos extra
+    };
+
+    // getBuffer dispara el layout completo → pageBreakBefore se ejecuta
+    await new Promise(resolve => pdfMake.createPdf(docDef).getBuffer(resolve));
+
+    const pageNums = Object.keys(pageFirstIdx).map(Number).sort((a, b) => a - b);
+    if (!pageNums.length) return getPageGroups(rawItems); // fallback
+
+    return pageNums.map((pg, pi) => {
+        const start   = pageFirstIdx[pg];
+        const end     = pi < pageNums.length - 1 ? pageFirstIdx[pageNums[pi + 1]] : sorted.length;
+        const pageRows = sorted.slice(start, end);
+        return {
+            ids:       pageRows.map(r => r._rawId).filter(Boolean),
+            firstItem: pageRows[0]?.product_name ?? '',
+            firstLab:  pageRows[0]?.laboratorio  ?? '',
+            itemCount: pageRows.length,
+        };
+    });
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

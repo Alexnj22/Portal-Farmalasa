@@ -18,9 +18,9 @@ function deriveCajas(cajaMap, items) {
 }
 
 const TOGGLE_CFG = {
-    ok:       { Icon: PackageCheck,  active: 'bg-emerald-500 text-white ring-2 ring-emerald-300', idle: 'bg-white text-slate-400 hover:text-emerald-500 hover:bg-emerald-50' },
-    danada:   { Icon: AlertTriangle, active: 'bg-amber-500 text-white ring-2 ring-amber-300',   idle: 'bg-white text-slate-400 hover:text-amber-500 hover:bg-amber-50' },
-    faltante: { Icon: PackageX,      active: 'bg-rose-500 text-white ring-2 ring-rose-300',     idle: 'bg-white text-slate-400 hover:text-rose-500 hover:bg-rose-50' },
+    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-emerald-500 text-white shadow-[0_2px_8px_rgba(16,185,129,0.45)]', idle: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200' },
+    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-amber-500 text-white shadow-[0_2px_8px_rgba(245,158,11,0.45)]',   idle: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200' },
+    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-rose-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200' },
 };
 
 export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, totalCajas = 0 }) {
@@ -72,25 +72,29 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
                 {cajas.map(c => {
                     const est = getEst(c.num);
-                    const numBg = est === 'ok' ? 'bg-emerald-500 shadow-[0_2px_8px_rgba(16,185,129,0.35)]'
-                                : est === 'danada' ? 'bg-amber-500 shadow-[0_2px_8px_rgba(245,158,11,0.35)]'
-                                : 'bg-rose-500 shadow-[0_2px_8px_rgba(239,68,68,0.35)]';
+                    const rowBg = est === 'ok'      ? 'bg-emerald-50/60 border-emerald-200/70'
+                                : est === 'danada'  ? 'bg-amber-50/60 border-amber-200/70'
+                                :                     'bg-rose-50/60 border-rose-200/70';
+                    const numBg = est === 'ok'      ? 'bg-emerald-500 shadow-[0_2px_8px_rgba(16,185,129,0.4)]'
+                                : est === 'danada'  ? 'bg-amber-500 shadow-[0_2px_8px_rgba(245,158,11,0.4)]'
+                                :                     'bg-rose-500 shadow-[0_2px_8px_rgba(239,68,68,0.4)]';
                     return (
-                        <div key={c.num} className="flex items-center gap-2.5 p-2.5 rounded-2xl border border-slate-200/80 bg-white/70">
-                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-[13px] tabular-nums text-white transition-all ${numBg}`}>
+                        <div key={c.num} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all ${rowBg}`}>
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-[14px] tabular-nums text-white transition-all ${numBg}`}>
                                 {c.num}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-[11px] font-semibold text-slate-700 leading-tight">{c.label}</p>
-                                <p className="text-[9px] text-slate-400">{c.hint}</p>
+                                <p className="text-[12px] font-bold text-slate-700 leading-tight">{c.label}</p>
+                                <p className="text-[9px] text-slate-500">{c.hint}</p>
                             </div>
-                            <div className="flex items-center gap-1 shrink-0">
+                            <div className="flex items-center gap-1.5 shrink-0">
                                 {(['ok', 'danada', 'faltante']).map(e => {
-                                    const { Icon, active, idle } = TOGGLE_CFG[e];
+                                    const { Icon, label, active, idle } = TOGGLE_CFG[e];
                                     return (
                                         <button key={e} onClick={() => setEst(c.num, e)}
-                                            className={`w-8 h-8 rounded-xl border border-slate-200 flex items-center justify-center transition-all active:scale-95 ${est === e ? active : idle}`}>
-                                            <Icon size={13} />
+                                            className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl border transition-all active:scale-95 ${est === e ? active : idle}`}>
+                                            <Icon size={14} />
+                                            <span className="text-[9px] font-bold leading-none">{label}</span>
                                         </button>
                                     );
                                 })}

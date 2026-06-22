@@ -1927,15 +1927,21 @@ export default function TabPedidos({ searchTerm = '' }) {
     }, [user, loadActive]);
 
     // Abre el modal de confirmación de llegada de reenvío (sustituye el botón ciego anterior)
-    const handleSegundaLlegada = useCallback((pedidoId, sucId, key, reenviosHistorial) => {
+    const handleSegundaLlegada = useCallback((pedidoId, sucId, key, reenviosHistorial, faltaCajasLegacy = []) => {
         const historial = reenviosHistorial ?? [];
         // El ciclo pendiente es el último sin arrived_at
         const cicloIdx  = historial.findIndex(c => !c.arrived_at);
         const ciclo     = cicloIdx >= 0 ? historial[cicloIdx] : historial[historial.length - 1];
-        if (!ciclo) return;
+        if (!ciclo) {
+            // Pedido legacy sin reenvios_historial — abrir modal con las cajas faltantes del row
+            if (faltaCajasLegacy.length > 0) {
+                setReenvioLlegadaModal({ pedidoId, sucId, key, ciclo: 1, cajasCiclo: faltaCajasLegacy, historial: [] });
+            }
+            return;
+        }
         setReenvioLlegadaModal({
             pedidoId, sucId, key,
-            ciclo:     ciclo.ciclo,
+            ciclo:      ciclo.ciclo,
             cajasCiclo: ciclo.cajas ?? [],
             historial,
         });
@@ -1962,10 +1968,10 @@ export default function TabPedidos({ searchTerm = '' }) {
             );
 
             await supabase.from('pedido_sucursal_status').update({
-                segunda_llegada_at:  now,
-                reenvios_historial:  nuevoHistorial,
-                // Si aún faltan cajas, actualizamos falta_cajas para el siguiente ciclo
-                ...(hasFalta ? { falta_cajas: cajasFaltantes } : {}),
+                segunda_llegada_at: now,
+                reenvios_historial: nuevoHistorial,
+                // Siempre actualizar falta_cajas: vacío si todo llegó, o las cajas aún pendientes
+                falta_cajas: hasFalta ? cajasFaltantes : [],
             }).eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
 
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_LLEGADA', pedidoId, { ciclo, arrived_tipo, cajasOk, cajasDanadas, cajasFaltantes });
@@ -2372,7 +2378,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 onMarkLlegada={() => handleLlegada(row.pedido_id, erpSucursalId, cardKey)}
                                                 onOpenRecibir={() => openModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
                                                 onOpenReenvioModal={() => openReenvioModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
-                                                onSegundaLlegada={() => handleSegundaLlegada(row.pedido_id, erpSucursalId, cardKey, row.reenvios_historial ?? [])}
+                                                onSegundaLlegada={() => handleSegundaLlegada(row.pedido_id, erpSucursalId, cardKey, row.reenvios_historial ?? [], row.falta_cajas ?? [])}
                                                 onApoyo={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: erpSucursalId, cardKey })}
                                                 busy={busyAction}
                                                 llegadaTipo={row.llegada_tipo}

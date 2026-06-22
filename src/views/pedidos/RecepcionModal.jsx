@@ -77,7 +77,8 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
     const [notaVals,  setNotaVals]  = useState({});
     const [errorVals, setErrorVals] = useState({});
     // tieneProblema[id]: false = nada | true = panel abierto | 'done' = confirmado
-    const [tieneProblema, setTieneProblema] = useState({});
+    const [tieneProblema,    setTieneProblema]    = useState({});
+    const [cantProblemaVals, setCantProblemaVals] = useState({});
     const [presMap,   setPresMap]   = useState({});
     const [saving,    setSaving]    = useState(false);
     const [saveError, setSaveError] = useState(null);
@@ -115,7 +116,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             notas[r.id] = ''; errs[r.id] = '';
         }
         setFQtyVals(fQ); setFPresVals(fP); setSQtyVals(sQ); setSPresVals(sP);
-        setNotaVals(notas); setErrorVals(errs); setTieneProblema({});
+        setNotaVals(notas); setErrorVals(errs); setTieneProblema({}); setCantProblemaVals({});
         setSaveError(null); setExtras([]); setExtraSearch(''); setExtraResults([]); setExtraOpen(false);
         setProdSearch(''); setShowSearch(false);
 
@@ -241,7 +242,9 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                     nota = `Físico: ${lf} — Sistema: ${ls}`;
                 }
             }
-            return { pedido_item_id: r.id, cantidad_recibida: fRaw, nota_diferencia: nota, error_tipo };
+            const cantProb = (error_tipo === 'danado' || error_tipo === 'vencido')
+                ? (cantProblemaVals[r.id] ?? 1) : null;
+            return { pedido_item_id: r.id, cantidad_recibida: fRaw, nota_diferencia: nota, error_tipo, cantidad_problema: cantProb };
         });
         try {
             const { error } = await supabase.rpc('receive_pedido_sucursal', {
@@ -283,7 +286,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             setSaving(false);
         }
     }, [rows, fQtyVals, fPresVals, sQtyVals, sPresVals, notaVals, errorVals, tieneProblema,
-        presMap, extras, pedido, sucursalId, user, onConfirmed, onClose]);
+        cantProblemaVals, presMap, extras, pedido, sucursalId, user, onConfirmed, onClose]);
 
     if (!open) return null;
 
@@ -488,7 +491,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
 
                                 {/* Panel de problema — solo causas manuales: dañado / vencido / otro */}
                                 {panelOpen && (
-                                    <div className="px-5 pb-2.5 flex items-center gap-2 flex-nowrap">
+                                    <div className="px-5 pb-2.5 flex items-center gap-2 flex-wrap">
                                         {ERROR_TIPOS.map(t => (
                                             <button key={t.value}
                                                 onClick={() => setErrorVals(p => ({ ...p, [r.id]: (p[r.id] === t.value ? '' : t.value) }))}
@@ -499,6 +502,20 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                                 }`}
                                             >{t.label}</button>
                                         ))}
+                                        {/* ¿Cuántos están dañados/vencidos? */}
+                                        {(errorVals[r.id] === 'danado' || errorVals[r.id] === 'vencido') && (
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                <span className="text-[10px] text-slate-400">¿Cuántos?</span>
+                                                <input type="number" min={1} max={fQty}
+                                                    value={cantProblemaVals[r.id] ?? 1}
+                                                    onChange={e => setCantProblemaVals(p => ({
+                                                        ...p, [r.id]: Math.max(1, Math.min(fQty, parseInt(e.target.value) || 1))
+                                                    }))}
+                                                    className="w-12 text-center border border-orange-300 rounded-full px-2 py-1 text-[11px] font-bold focus:outline-none focus:border-orange-500 bg-white text-orange-700"
+                                                />
+                                                <span className="text-[10px] text-slate-400">de {fQty}</span>
+                                            </div>
+                                        )}
                                         <input type="text" placeholder="Nota…"
                                             value={notaVals[r.id] ?? ''}
                                             onChange={e => setNotaVals(p => ({ ...p, [r.id]: e.target.value }))}
@@ -537,8 +554,8 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                     >{eOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
 
                                     {/* Físico Qty */}
-                                    <input type="number" min={1} value={e.fQty}
-                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(1, parseInt(ev.target.value) || 1) } : x))}
+                                    <input type="number" min={0} value={e.fQty}
+                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) ?? 0) } : x))}
                                         className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-indigo-700'}`}
                                     />
 
@@ -549,8 +566,8 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                     >{eOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
 
                                     {/* Sistema Qty */}
-                                    <input type="number" min={1} value={e.sQty}
-                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(1, parseInt(ev.target.value) || 1) } : x))}
+                                    <input type="number" min={0} value={e.sQty}
+                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(0, parseInt(ev.target.value) ?? 0) } : x))}
                                         className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-indigo-700'}`}
                                     />
 

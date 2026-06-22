@@ -3,7 +3,7 @@ import { ChevronLeft, Loader2, X, Box } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import { getExactPageGroups } from '../../utils/pedidoPrint';
 
-export default function FinalizarCajasModal({ open, onClose, onConfirm, items = [], sucId, pedidoNumero }) {
+export default function FinalizarCajasModal({ open, onClose, onConfirm, items = [], sucId, pedidoNumero, paginas = null }) {
     const [screen,          setScreen]          = useState(1);
     const [totalCajasInput, setTotalCajasInput] = useState('');
     const [pageAssignments, setPageAssignments] = useState([]);  // [boxNum[]] por página
@@ -11,16 +11,23 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
     const [pageGroups,      setPageGroups]      = useState([]);
     const [loadingPages,    setLoadingPages]    = useState(false);
 
-    // Calcular grupos de página exactos con pdfmake (pageBreakBefore)
     useEffect(() => {
-        if (!open || !items.length || !sucId) return;
+        if (!open) return;
+        if (paginas) {
+            // Pre-calculado al generar el PDF — sin espera
+            setPageGroups(paginas);
+            setLoadingPages(false);
+            return;
+        }
+        // Fallback: calcular ahora con pdfmake (pageBreakBefore)
+        if (!items.length || !sucId) return;
         setLoadingPages(true);
         setPageGroups([]);
         getExactPageGroups(sucId, items)
             .then(groups => setPageGroups(groups))
-            .catch(() => setPageGroups([]))  // fallback a vacío
+            .catch(() => setPageGroups([]))
             .finally(() => setLoadingPages(false));
-    }, [open, items, sucId]);
+    }, [open, items, sucId, paginas]);
 
     const totalPages = pageGroups.length;
     const cajaCount  = Math.max(1, parseInt(totalCajasInput, 10) || 1);

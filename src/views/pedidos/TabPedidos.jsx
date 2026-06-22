@@ -1688,13 +1688,18 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     const openFinalizarModal = useCallback(async (pedidoId, sucId, numero, key) => {
         if (busyAction) return;
-        let rows = items[key];
-        if (!rows) {
-            setBusyAction('finalizar_load');
-            rows = await fetchItems(key, pedidoId, sucId);
-            setBusyAction(null);
-        }
-        setFinalizarModal({ pedidoId, sucId, numero, key, rows: rows ?? [] });
+        setBusyAction('finalizar_load');
+        const [rowsResult, pssResult] = await Promise.all([
+            items[key] ? Promise.resolve(items[key]) : fetchItems(key, pedidoId, sucId),
+            supabase.from('pedido_sucursal_status').select('paginas')
+                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle(),
+        ]);
+        setBusyAction(null);
+        setFinalizarModal({
+            pedidoId, sucId, numero, key,
+            rows:    rowsResult ?? [],
+            paginas: pssResult.data?.paginas ?? null,
+        });
     }, [busyAction, items, fetchItems]);
 
     const handleFinalizarConCajas = useCallback(async ({ totalCajas, cajaMap, paginaItems }) => {
@@ -2217,6 +2222,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 items={finalizarModal?.rows ?? []}
                 sucId={finalizarModal?.sucId}
                 pedidoNumero={finalizarModal?.numero}
+                paginas={finalizarModal?.paginas ?? null}
             />
 
             {pauseModal && (

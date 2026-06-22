@@ -11,7 +11,7 @@ import { useToastStore } from '../../store/toastStore';
 import { DataTable, DataRow } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
-import { printPerSucursal, buildPedidoCodigo, fefoProject } from '../../utils/pedidoPrint';
+import { printPerSucursal, buildPedidoCodigo, fefoProject, getExactPageGroups } from '../../utils/pedidoPrint';
 import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
 
 function friendlyError(e) {
@@ -200,6 +200,29 @@ export default function TabGenerar({ searchTerm = '' }) {
             }).then(() => {}).catch(() => {});
 
             printPerSucursal(map, sucIds, r => r.cantidad_asignada, codigoFn, meta);
+
+            // Capturar grupos de páginas en background para que Finalizar sea instantáneo
+            ;(async () => {
+                try {
+                    for (const sid of sucIds) {
+                        const { data: rawItems } = await supabase
+                            .from('pedido_items')
+                            .select('id, factor, dispatch_factor, dispatch_tipo, cantidad_asignada, lotes_asignados, sin_stock, products(nombre, es_antibiotico, laboratorios(nombre))')
+                            .eq('pedido_id', pedidoId)
+                            .eq('erp_sucursal_id', sid)
+                            .gt('cantidad_asignada', 0);
+                        if (!rawItems?.length) continue;
+                        const groups = await getExactPageGroups(sid, rawItems);
+                        if (groups.length) {
+                            await supabase.from('pedido_sucursal_status')
+                                .update({ paginas: groups })
+                                .eq('pedido_id', pedidoId)
+                                .eq('erp_sucursal_id', sid);
+                        }
+                    }
+                } catch { /* silencioso — Finalizar tiene fallback */ }
+            })();
+
             showToast(
                 `Pedido #${ped?.numero} confirmado`,
                 `${pItems.length} productos en ${sucIds.length} sucursal${sucIds.length > 1 ? 'es' : ''}. PDF listo para imprimir.`,

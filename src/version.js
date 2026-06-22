@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.275';
+export const APP_VERSION = '2.2.276';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.276 — feat(pedidos/finalizar): paginas pre-calculadas al generar PDF → Finalizar instantáneo; fix getBuffer() Promise API; paginas guardadas en pedido_sucursal_status
 // v2.2.275 — feat(pedidos/finalizar): getExactPageGroups via pdfmake pageBreakBefore — id='row_N' en celdas → conteo exacto de páginas y primer producto por página del PDF real
 // v2.2.274 — fix(pedidos/finalizar): recalibrar alturas de fila getPageGroups (paddingTop/Bottom=0 en layout → _ROW_BASE=15, _LOTE_XTRA=9, _BADGE_ADD=8); revertir printFromPedidoItems a paginación pdfmake natural — PDF queda idéntico al original
 // v2.2.273 — fix(pedidos/finalizar): paginación manual sincronizada — PDF y modal usan splitPrintRows idéntico; conteo de páginas exacto; getPageGroups mapea igual que printFromPedidoItems; FinalizarCajasModal multi-select cajas por página; muestra primer producto+lab+count por página

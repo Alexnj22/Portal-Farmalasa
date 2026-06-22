@@ -484,8 +484,8 @@ export async function getExactPageGroups(sucId, rawItems) {
         return false; // nunca añadir saltos extra
     };
 
-    // getBuffer dispara el layout completo → pageBreakBefore se ejecuta
-    await new Promise(resolve => pdfMake.createPdf(docDef).getBuffer(resolve));
+    // getBuffer() retorna una Promise (no usa callback en v0.3.11)
+    await pdfMake.createPdf(docDef).getBuffer();
 
     const pageNums = Object.keys(pageFirstIdx).map(Number).sort((a, b) => a - b);
     if (!pageNums.length) return getPageGroups(rawItems); // fallback

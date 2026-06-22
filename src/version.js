@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.288';
+export const APP_VERSION = '2.2.289';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.289 — feat(pedidos/apoyo): separar apoyo preparación (bodega) vs recepción (sala venta); limpiar pedido 51 para pruebas
 // v2.2.288 — fix(pedidos/reenvio): 2 bugs stress-test — handleSegundaLlegada legacy abre modal para pedidos sin historial; falta_cajas no se limpiaba al llegar todo el reenvío
 // v2.2.287 — fix(pedidos/reenvio): 4 bugs — falta_caja no se limpiaba en cajas llegadas, TL arrays OOB en ciclos 3+, banner Revisar aparecía con faltantes pendientes, compat pedidos viejos reenvio_bodega_at sin historial
 // v2.2.286 — feat(pedidos/llegada): flujo reenvío completo — LlegadaModal per-caja 3-way (OK/Dañada/No llegó), soporte tipo 'mixto', ReenvioLlegadaModal para confirmar reenvío con estado por caja, ciclos múltiples en reenvios_historial, ReceptionActions con banners independientes dañada+faltante, timeline anidado por ciclo

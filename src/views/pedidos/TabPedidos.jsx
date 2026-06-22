@@ -344,7 +344,7 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
 
 // ─── Apoyo scanner modal ──────────────────────────────────────────────────────
 
-function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existingApoyo = [], onSuccess }) {
+function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existingApoyo = [], onSuccess, tipo = 'preparacion' }) {
     const [displayDots, setDisplayDots] = useState(0);
     const [employee,    setEmployee]    = useState(null);
     const [error,       setError]       = useState('');
@@ -440,8 +440,8 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existin
         setLoading(true);
         try {
             const { error: e } = await supabase.from('pedido_apoyo').upsert(
-                { pedido_id: pedidoId, erp_sucursal_id: sucId, employee_id: employee.id, registered_by: currentUserId },
-                { onConflict: 'pedido_id,erp_sucursal_id,employee_id' }
+                { pedido_id: pedidoId, erp_sucursal_id: sucId, employee_id: employee.id, registered_by: currentUserId, tipo },
+                { onConflict: 'pedido_id,erp_sucursal_id,employee_id,tipo' }
             );
             if (e) throw e;
             useStaff.getState().appendAuditLog('PEDIDO_APOYO_REGISTRADO', pedidoId, { sucursal_id: sucId, employee_id: employee.id });
@@ -459,7 +459,7 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existin
                             <Users size={20} className="text-white" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-800 text-[15px]">Registrar apoyo</h3>
+                            <h3 className="font-bold text-slate-800 text-[15px]">Apoyo — {tipo === 'recepcion' ? 'Recepción' : 'Preparación'}</h3>
                             <p className="text-[12px] text-slate-600 mt-0.5">Escanea el carnet del empleado</p>
                         </div>
                     </div>
@@ -1544,7 +1544,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             const ids = [...new Set(activeRows.map(r => r.pedido_id))];
             if (!ids.length) return;
             let q = supabase.from('pedido_apoyo')
-                .select('pedido_id, erp_sucursal_id, employee_id, employees(name, photo_url)')
+                .select('pedido_id, erp_sucursal_id, employee_id, tipo, employees(name, photo_url)')
                 .in('pedido_id', ids);
             // Branch: filter to their sucursal only; bodega: load all sucursales
             if (isBranch && erpSucursalId) q = q.eq('erp_sucursal_id', erpSucursalId);
@@ -1553,9 +1553,11 @@ export default function TabPedidos({ searchTerm = '' }) {
             const map = {};
             data.forEach(r => {
                 const key = `act_${r.pedido_id}_${r.erp_sucursal_id}`;
-                if (!map[key]) map[key] = [];
-                if (!map[key].find(e => e.id === r.employee_id)) {
-                    map[key].push({ id: r.employee_id, ...r.employees });
+                if (!map[key]) map[key] = { preparacion: [], recepcion: [] };
+                const t = r.tipo ?? 'preparacion';
+                if (!map[key][t]) map[key][t] = [];
+                if (!map[key][t].find(e => e.id === r.employee_id)) {
+                    map[key][t].push({ id: r.employee_id, ...r.employees });
                 }
             });
             setApoyoMap(prev => ({ ...prev, ...map }));
@@ -1631,7 +1633,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             : Promise.resolve({ data: null });
 
         let apoyoQ = supabase.from('pedido_apoyo')
-            .select('id, employee_id, employees(name, photo_url)')
+            .select('id, employee_id, tipo, employees(name, photo_url)')
             .eq('pedido_id', pedidoId);
         if (sucFilter) apoyoQ = apoyoQ.eq('erp_sucursal_id', sucFilter);
 
@@ -1653,7 +1655,13 @@ export default function TabPedidos({ searchTerm = '' }) {
         const resolved = allItemRows;
         setItems(prev => ({ ...prev, [key]: resolved }));
         setEventosMap(prev => ({ ...prev, [key]: allEvRows }));
-        setApoyoMap(prev => ({ ...prev, [key]: (apoyoRows || []).map(r => ({ id: r.employee_id, ...r.employees })) }));
+        const apoyoByTipo = { preparacion: [], recepcion: [] };
+        (apoyoRows || []).forEach(r => {
+            const t = r.tipo ?? 'preparacion';
+            if (!apoyoByTipo[t]) apoyoByTipo[t] = [];
+            apoyoByTipo[t].push({ id: r.employee_id, ...r.employees });
+        });
+        setApoyoMap(prev => ({ ...prev, [key]: apoyoByTipo }));
         if (lcRow) {
             setErpStatus(prev => ({ ...prev, [key]: !!lcRow.recibido_erp_at }));
             setLlegadaStatus(prev => ({ ...prev, [key]: !!lcRow.llegada_fisica_at }));
@@ -1763,14 +1771,13 @@ export default function TabPedidos({ searchTerm = '' }) {
         setPauseModal(null);
     }, [pauseModal, pauseRazon, pauseComment, handleLifecycle]);
 
-    const handleApoyoSuccess = useCallback((emp, cardKey) => {
-        // Optimistic add
+    const handleApoyoSuccess = useCallback((emp, cardKey, tipo = 'preparacion') => {
         setApoyoMap(prev => {
-            const existing = prev[cardKey] ?? [];
-            if (existing.find(e => e.id === emp.id)) return prev;
-            return { ...prev, [cardKey]: [...existing, { id: emp.id, name: emp.name, photo_url: emp.photo_url }] };
+            const existing = prev[cardKey] ?? { preparacion: [], recepcion: [] };
+            const bucket   = existing[tipo] ?? [];
+            if (bucket.find(e => e.id === emp.id)) return prev;
+            return { ...prev, [cardKey]: { ...existing, [tipo]: [...bucket, { id: emp.id, name: emp.name, photo_url: emp.photo_url }] } };
         });
-        // Sync from DB so batch-load doesn't overwrite on next realtime trigger
         loadActive();
     }, [loadActive]);
 
@@ -2229,7 +2236,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const elapsedPause = stage === 'pausado'    ? fmtMin(elapsed(row.pausado_at)) : null;
                             const elapsedTrans = stage === 'transito'   ? fmtMin(elapsed(row.finalizado_at)) : null;
 
-                            const cardApoyo = apoyoMap[cardKey] ?? [];
+                            const apoyoBucket = apoyoMap[cardKey] ?? { preparacion: [], recepcion: [] };
+                            const prepApoyo   = apoyoBucket.preparacion ?? [];
+                            const recepApoyo  = apoyoBucket.recepcion   ?? [];
 
                             const canApoyo = !isBranch && ['sin_iniciar','preparando','pausado'].includes(stage);
 
@@ -2295,11 +2304,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     )}
 
-                                    {/* Apoyo display */}
-                                    {cardApoyo.length > 0 && (
+                                    {/* Apoyo preparación (bodega) */}
+                                    {prepApoyo.length > 0 && (
                                         <div className="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap">
-                                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">Apoyo:</span>
-                                            {cardApoyo.map(a => (
+                                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">Prep:</span>
+                                            {prepApoyo.map(a => (
                                                 <span key={a.id} className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-white border border-slate-200 shadow-sm">
                                                     {a.photo_url
                                                         ? <img src={a.photo_url} alt={a.name} className="w-5 h-5 rounded-full object-cover shrink-0" />
@@ -2313,7 +2322,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     {/* Lifecycle Timeline */}
                                     <div className="border-t border-slate-100 px-3 pt-2 pb-1.5">
-                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={isBranch ? cardApoyo : []} />
+                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} />
                                     </div>
 
                                     {/* Actions + status strip */}
@@ -2335,7 +2344,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         <div className="ml-auto flex items-center gap-1.5 flex-wrap">
                                             {canApoyo && (
                                                 <button
-                                                    onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey })}
+                                                    onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}
                                                     disabled={isLCBusy}
                                                     className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all disabled:opacity-50"
                                                 >
@@ -2373,13 +2382,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 erpOk={!!erpStatus[cardKey] || !!row.recibido_erp_at}
                                                 llegadaEmp={llegadaEmp}
                                                 erpEmp={erpEmp}
-                                                cardApoyo={cardApoyo}
+                                                cardApoyo={recepApoyo}
                                                 pendientesCount={cardStats[cardKey]?.pendientes ?? 0}
                                                 onMarkLlegada={() => handleLlegada(row.pedido_id, erpSucursalId, cardKey)}
                                                 onOpenRecibir={() => openModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
                                                 onOpenReenvioModal={() => openReenvioModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
                                                 onSegundaLlegada={() => handleSegundaLlegada(row.pedido_id, erpSucursalId, cardKey, row.reenvios_historial ?? [], row.falta_cajas ?? [])}
-                                                onApoyo={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: erpSucursalId, cardKey })}
+                                                onApoyo={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: erpSucursalId, cardKey, tipo: 'recepcion' })}
                                                 busy={busyAction}
                                                 llegadaTipo={row.llegada_tipo}
                                                 reenviosHistorial={row.reenvios_historial ?? []}
@@ -2474,8 +2483,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                 pedidoId={apoyoModal?.pedidoId}
                 sucId={apoyoModal?.sucId}
                 currentUserId={user?.id}
-                existingApoyo={apoyoMap[apoyoModal?.cardKey] ?? []}
-                onSuccess={(emp) => handleApoyoSuccess(emp, apoyoModal?.cardKey)}
+                tipo={apoyoModal?.tipo ?? 'preparacion'}
+                existingApoyo={(apoyoMap[apoyoModal?.cardKey] ?? { preparacion: [], recepcion: [] })[apoyoModal?.tipo ?? 'preparacion'] ?? []}
+                onSuccess={(emp) => handleApoyoSuccess(emp, apoyoModal?.cardKey, apoyoModal?.tipo ?? 'preparacion')}
             />
 
             {modal && (

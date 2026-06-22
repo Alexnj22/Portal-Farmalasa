@@ -8,7 +8,7 @@ import {
     Database, Activity, TrendingDown,
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
-    UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare,
+    UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -19,6 +19,7 @@ import PedidoModal from './PedidoModal';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
+import { printFromPedidoItems, buildPedidoCodigo } from '../../utils/pedidoPrint';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -1554,6 +1555,18 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error('Lifecycle error:', e); } finally { setBusyLifecycle(null); }
     }, [user, loadActive]);
 
+    const [printingPdf, setPrintingPdf] = useState(null);
+    const handlePrintPdf = useCallback(async (pedidoId, pedidoNumero, sucId, cardKey) => {
+        setPrintingPdf(pedidoId);
+        try {
+            let rows = items[cardKey];
+            if (!rows) rows = await fetchItems(cardKey, pedidoId, sucId);
+            const codigoFn  = buildPedidoCodigo(pedidoNumero, new Date(), 1);
+            const titulo    = codigoFn(sucId);
+            await printFromPedidoItems(pedidoNumero, [[sucId, rows ?? []]], {}, titulo);
+        } catch (e) { console.error('PDF error:', e); } finally { setPrintingPdf(null); }
+    }, [items, fetchItems]);
+
     const handleMarcarEnRuta = useCallback(async (pedidoId) => {
         setBusyEnvio(pedidoId);
         try {
@@ -1936,6 +1949,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all disabled:opacity-50"
                                                 >
                                                     <UserPlus size={10} />Apoyo
+                                                </button>
+                                            )}
+                                            {!isBranch && (
+                                                <button
+                                                    onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey); }}
+                                                    disabled={printingPdf === row.pedido_id}
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all disabled:opacity-50"
+                                                >
+                                                    {printingPdf === row.pedido_id ? <Loader2 size={10} className="animate-spin" /> : <FileDown size={10} />}PDF
                                                 </button>
                                             )}
                                             {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar')}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}

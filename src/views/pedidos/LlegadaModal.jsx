@@ -85,7 +85,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-[12px] font-bold text-slate-700 leading-tight">{c.label}</p>
-                                <p className="text-[9px] text-slate-500">{c.hint}</p>
+                                <p className="text-[10px] font-medium text-slate-400 mt-0.5">{c.hint}</p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
                                 {(['ok', 'danada', 'faltante']).map(e => {

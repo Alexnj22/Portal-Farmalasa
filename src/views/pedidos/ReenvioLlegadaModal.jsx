@@ -20,7 +20,13 @@ const TOGGLE_CFG = {
  *   cajasCiclo     – number[] — cajas que vienen en este reenvío
  *   cicloNum       – number — número de ciclo (1, 2, …)
  */
-export default function ReenvioLlegadaModal({ open, onClose, onConfirm, pedidoNumero, cajasCiclo = [], cicloNum = 1 }) {
+const pageHint = (cajaMap, num) => {
+    const pages = cajaMap?.[String(num)] ?? [];
+    if (!pages.length) return null;
+    return pages.length === 1 ? `pág. ${pages[0]}` : `págs. ${pages[0]}–${pages[pages.length - 1]}`;
+};
+
+export default function ReenvioLlegadaModal({ open, onClose, onConfirm, pedidoNumero, cajasCiclo = [], cicloNum = 1, cajaMap = {} }) {
     const [estados,    setEstados]    = useState({});
     const [nota,       setNota]       = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -85,7 +91,9 @@ export default function ReenvioLlegadaModal({ open, onClose, onConfirm, pedidoNu
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-[12px] font-bold text-slate-700 leading-tight">Caja #{num}</p>
-                                <p className="text-[9px] text-slate-500">Reenvío {cicloNum > 1 ? cicloNum : '1'}</p>
+                                <p className="text-[10px] font-medium text-slate-400 mt-0.5">
+                                    {pageHint(cajaMap, num) ?? `Reenvío ${cicloNum}`}
+                                </p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
                                 {(['ok', 'danada', 'faltante']).map(e => {

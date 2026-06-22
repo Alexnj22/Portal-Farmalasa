@@ -1936,15 +1936,13 @@ export default function TabPedidos({ searchTerm = '' }) {
     }, [user, loadActive]);
 
     // Abre el modal de confirmación de llegada de reenvío (sustituye el botón ciego anterior)
-    const handleSegundaLlegada = useCallback((pedidoId, sucId, key, reenviosHistorial, faltaCajasLegacy = []) => {
+    const handleSegundaLlegada = useCallback((pedidoId, sucId, key, reenviosHistorial, faltaCajasLegacy = [], cajaMap = {}) => {
         const historial = reenviosHistorial ?? [];
-        // El ciclo pendiente es el último sin arrived_at
         const cicloIdx  = historial.findIndex(c => !c.arrived_at);
         const ciclo     = cicloIdx >= 0 ? historial[cicloIdx] : historial[historial.length - 1];
         if (!ciclo) {
-            // Pedido legacy sin reenvios_historial — abrir modal con las cajas faltantes del row
             if (faltaCajasLegacy.length > 0) {
-                setReenvioLlegadaModal({ pedidoId, sucId, key, ciclo: 1, cajasCiclo: faltaCajasLegacy, historial: [] });
+                setReenvioLlegadaModal({ pedidoId, sucId, key, ciclo: 1, cajasCiclo: faltaCajasLegacy, historial: [], cajaMap });
             }
             return;
         }
@@ -1953,6 +1951,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             ciclo:      ciclo.ciclo,
             cajasCiclo: ciclo.cajas ?? [],
             historial,
+            cajaMap,
         });
     }, []);
 
@@ -2395,7 +2394,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 onMarkLlegada={() => handleLlegada(row.pedido_id, erpSucursalId, cardKey)}
                                                 onOpenRecibir={() => openModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
                                                 onOpenReenvioModal={() => openReenvioModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
-                                                onSegundaLlegada={() => handleSegundaLlegada(row.pedido_id, erpSucursalId, cardKey, row.reenvios_historial ?? [], row.falta_cajas ?? [])}
+                                                onSegundaLlegada={() => handleSegundaLlegada(row.pedido_id, erpSucursalId, cardKey, row.reenvios_historial ?? [], row.falta_cajas ?? [], row.caja_map ?? {})}
                                                 onApoyo={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: erpSucursalId, cardKey, tipo: 'recepcion' })}
                                                 busy={busyAction}
                                                 llegadaTipo={row.llegada_tipo}
@@ -2460,6 +2459,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 pedidoNumero={reenvioLlegadaModal ? activeRows.find(r => r.pedido_id === reenvioLlegadaModal.pedidoId)?.numero : null}
                 cajasCiclo={reenvioLlegadaModal?.cajasCiclo ?? []}
                 cicloNum={reenvioLlegadaModal?.ciclo ?? 1}
+                cajaMap={reenvioLlegadaModal?.cajaMap ?? {}}
             />
 
             <FinalizarCajasModal

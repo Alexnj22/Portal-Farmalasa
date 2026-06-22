@@ -1247,37 +1247,30 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
         <div className="border-t border-slate-100 px-4 py-3 space-y-2">
             <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Recepción</div>
 
-            {/* Paso 1: Llegada */}
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] ${llegadaOk ? 'bg-emerald-50/40 border-emerald-100' : 'bg-blue-50/40 border-blue-100'}`}>
-                <PackageCheck size={13} className={llegadaOk ? 'text-emerald-500' : 'text-blue-500'} />
-                <span className={llegadaOk ? 'text-emerald-700' : 'text-blue-700'}>
-                    {llegadaOk ? 'Llegada de cajas confirmada' : 'Paso 1 — Confirmar llegada de cajas'}
-                </span>
-                {llegadaOk
-                    ? <span className="ml-auto">{empChip(llegadaEmp)}</span>
-                    : <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all disabled:opacity-50">
+            {/* Paso 1: Llegada — solo visible cuando aún no confirmada */}
+            {!llegadaOk && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-blue-50/40 border-blue-100 text-[11px]">
+                    <PackageCheck size={13} className="text-blue-500" />
+                    <span className="text-blue-700">Paso 1 — Confirmar llegada de cajas</span>
+                    <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all disabled:opacity-50">
                         {busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}
                     </button>
-                }
-            </div>
-
-            {/* Banner: cajas dañadas (info — accesibles para recepción) */}
-            {llegadaOk && hasDanadaPendiente && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-amber-50/40 border-amber-100 text-[11px]">
-                    <AlertTriangle size={12} className="text-amber-500 shrink-0" />
-                    <span className="text-amber-700">
-                        Caja{cajasDanadas.length > 1 ? 's' : ''} dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')} — revisar productos al contar
-                    </span>
                 </div>
             )}
 
-            {/* Banner: cajas faltantes — ciclos de reenvío */}
-            {llegadaOk && hasFaltaPendiente && !cicloEnCamino && !todosReenviosResueltos && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-rose-50/40 border-rose-100 text-[11px]">
-                    <PackageX size={12} className="text-rose-500 shrink-0" />
-                    <span className="text-rose-700">
-                        Caja{faltaCajas.length > 1 ? 's' : ''} {faltaCajas.map(n => `#${n}`).join(', ')} — bodega notificada, esperando reenvío
-                    </span>
+            {/* Badges compactos: cajas dañadas + faltantes */}
+            {llegadaOk && (hasDanadaPendiente || (hasFaltaPendiente && !cicloEnCamino && !todosReenviosResueltos)) && (
+                <div className="flex flex-wrap gap-1.5">
+                    {hasDanadaPendiente && cajasDanadas.map(n => (
+                        <span key={`d${n}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-[10px] font-semibold text-amber-700">
+                            <AlertTriangle size={9} />#{n} dañada
+                        </span>
+                    ))}
+                    {hasFaltaPendiente && !cicloEnCamino && !todosReenviosResueltos && faltaCajas.map(n => (
+                        <span key={`f${n}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 border border-rose-200 text-[10px] font-semibold text-rose-700">
+                            <PackageX size={9} />#{n} no llegó
+                        </span>
+                    ))}
                 </div>
             )}
 

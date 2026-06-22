@@ -365,22 +365,31 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
     // ── Fetch items + lotes + firmas + extras for expanded pedido ─────────────
     const fetchPedidoItems = useCallback(async (pedidoId) => {
         setLoadingItems(true);
-        const [{ data }, { data: firmaRows }, { data: extraRows }, { data: lifecycleRows }, { data: pausaHistRows }] = await Promise.all([
-            supabase
-                .from('pedido_items')
-                .select(`
-                    id, erp_sucursal_id, erp_product_id, erp_presentacion_id,
-                    cantidad_asignada, cantidad_recibida,
-                    sin_stock, revision_minmax,
-                    max_qty_snapshot, stock_packs_snapshot,
-                    status, nota_diferencia, error_tipo, received_at, received_by,
-                    lotes_asignados,
-                    factor, dispatch_tipo, dispatch_factor,
-                    products ( nombre, es_antibiotico, laboratorios ( nombre ) ),
-                    presentaciones ( tipo )
-                `)
-                .eq('pedido_id', pedidoId)
-                .range(0, 9999),
+
+        // Paginated fetch — pedidos con >1000 items existen en producción
+        const HIST_SELECT = `
+            id, erp_sucursal_id, erp_product_id, erp_presentacion_id,
+            cantidad_asignada, cantidad_recibida,
+            sin_stock, revision_minmax,
+            max_qty_snapshot, stock_packs_snapshot,
+            status, nota_diferencia, error_tipo, received_at, received_by,
+            lotes_asignados,
+            factor, dispatch_tipo, dispatch_factor,
+            products ( nombre, es_antibiotico, laboratorios ( nombre ) ),
+            presentaciones ( tipo )
+        `;
+        const PAGE = 1000;
+        let allHistItems = [], hFrom = 0;
+        while (true) {
+            const { data: page } = await supabase.from('pedido_items').select(HIST_SELECT)
+                .eq('pedido_id', pedidoId).range(hFrom, hFrom + PAGE - 1);
+            if (!page || page.length === 0) break;
+            allHistItems = allHistItems.concat(page);
+            if (page.length < PAGE) break;
+            hFrom += PAGE;
+        }
+
+        const [{ data: firmaRows }, { data: extraRows }, { data: lifecycleRows }, { data: pausaHistRows }] = await Promise.all([
             supabase
                 .from('pedido_recepcion_firmas')
                 .select('erp_sucursal_id, created_at, employees:employee_id ( id, name, photo_url )')
@@ -400,7 +409,7 @@ export default function TabHistorial({ searchTerm = '', refreshKey = 0 }) {
                 .order('pausado_at', { ascending: true }),
         ]);
 
-        const rows = data || [];
+        const rows = allHistItems;
         setItems(prev => ({ ...prev, [pedidoId]: rows }));
         setFirmasMap(prev => ({ ...prev, [pedidoId]: firmaRows || [] }));
         setExtrasMap(prev => ({ ...prev, [pedidoId]: extraRows || [] }));

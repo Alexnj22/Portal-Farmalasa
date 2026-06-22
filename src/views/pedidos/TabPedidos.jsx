@@ -1545,22 +1545,32 @@ export default function TabPedidos({ searchTerm = '' }) {
         setLoadingItems(true);
         const sucFilter = sucId ?? (isBranch && erpSucursalId ? erpSucursalId : null);
 
-        let itemsQ = supabase.from('pedido_items')
-            .select(`
-                id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_recibida,
-                status, nota_diferencia, error_tipo, received_at, received_by, lotes_asignados,
-                sin_stock, revision_minmax,
-                factor, dispatch_tipo, dispatch_factor,
-                max_qty_snapshot, stock_packs_snapshot,
-                resolucion_status, resolucion_tipo, resolucion_nota,
-                resuelto_por, resuelto_at, confirmado_suc_por, confirmado_suc_at,
-                rechazado_por, rechazado_at, nota_rechazo,
-                products ( nombre, es_antibiotico, laboratorios ( nombre ) ),
-                presentaciones!erp_presentacion_id ( tipo )
-            `)
-            .eq('pedido_id', pedidoId)
-            .range(0, 999);
-        if (sucFilter) itemsQ = itemsQ.eq('erp_sucursal_id', sucFilter);
+        const ITEMS_SELECT = `
+            id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_recibida,
+            status, nota_diferencia, error_tipo, received_at, received_by, lotes_asignados,
+            sin_stock, revision_minmax,
+            factor, dispatch_tipo, dispatch_factor,
+            max_qty_snapshot, stock_packs_snapshot,
+            resolucion_status, resolucion_tipo, resolucion_nota,
+            resuelto_por, resuelto_at, confirmado_suc_por, confirmado_suc_at,
+            rechazado_por, rechazado_at, nota_rechazo,
+            products ( nombre, es_antibiotico, laboratorios ( nombre ) ),
+            presentaciones!erp_presentacion_id ( tipo )
+        `;
+
+        // Paginated fetch — pedidos con >1000 items existen en producción
+        const PAGE = 1000;
+        let allItemRows = [], from = 0;
+        while (true) {
+            let q = supabase.from('pedido_items').select(ITEMS_SELECT)
+                .eq('pedido_id', pedidoId).range(from, from + PAGE - 1);
+            if (sucFilter) q = q.eq('erp_sucursal_id', sucFilter);
+            const { data: page } = await q;
+            if (!page || page.length === 0) break;
+            allItemRows = allItemRows.concat(page);
+            if (page.length < PAGE) break;
+            from += PAGE;
+        }
 
         const lcPromise = (sucFilter && isBranch)
             ? supabase.from('pedido_sucursal_status').select('recibido_erp_at, llegada_fisica_at').eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucFilter).maybeSingle()
@@ -1574,11 +1584,12 @@ export default function TabPedidos({ searchTerm = '' }) {
         let eventosQ = supabase.from('pedido_item_eventos')
             .select('id, pedido_item_id, tipo, resolucion_tipo, nota, hecho_por, created_at')
             .eq('pedido_id', pedidoId)
-            .order('created_at', { ascending: true });
+            .order('created_at', { ascending: true })
+            .range(0, 4999);
         if (sucFilter) eventosQ = eventosQ.eq('erp_sucursal_id', sucFilter);
 
-        const [{ data: itemRows }, { data: lcRow }, { data: apoyoRows }, { data: evRows }] = await Promise.all([itemsQ, lcPromise, apoyoQ, eventosQ]);
-        const resolved = itemRows || [];
+        const [{ data: lcRow }, { data: apoyoRows }, { data: evRows }] = await Promise.all([lcPromise, apoyoQ, eventosQ]);
+        const resolved = allItemRows;
         setItems(prev => ({ ...prev, [key]: resolved }));
         setEventosMap(prev => ({ ...prev, [key]: evRows || [] }));
         setApoyoMap(prev => ({ ...prev, [key]: (apoyoRows || []).map(r => ({ id: r.employee_id, ...r.employees })) }));

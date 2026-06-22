@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.273';
+export const APP_VERSION = '2.2.274';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.274 — fix(pedidos/finalizar): recalibrar alturas de fila getPageGroups (paddingTop/Bottom=0 en layout → _ROW_BASE=15, _LOTE_XTRA=9, _BADGE_ADD=8); revertir printFromPedidoItems a paginación pdfmake natural — PDF queda idéntico al original
 // v2.2.273 — fix(pedidos/finalizar): paginación manual sincronizada — PDF y modal usan splitPrintRows idéntico; conteo de páginas exacto; getPageGroups mapea igual que printFromPedidoItems; FinalizarCajasModal multi-select cajas por página; muestra primer producto+lab+count por página
 // v2.2.272 — feat(pedidos/finalizar): asignación página→caja al Finalizar (FinalizarCajasModal); getPageGroups calibrado empíricamente (≈35 filas/pág); LlegadaModal usa caja_map real de DB; PDF agrega espacio 'Caja: ___'; falta_caja usa pagina_items exacto; total_cajas visible en card y en notif En Ruta
 // v2.2.271 — feat(pedidos/llegada): modal de confirmación de llegada con 3 opciones (completa/falta_caja/caja_dañada); selección de nº de caja; falta_caja notifica bodega+reenvío+segunda llegada; RecepcionModal filtra items falta_caja y muestra banner caja dañada

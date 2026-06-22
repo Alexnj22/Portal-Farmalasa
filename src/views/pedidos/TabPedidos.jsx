@@ -1652,7 +1652,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [busyAction, user, loadActive]);
 
-    const handleMarkErp = useCallback(async (pedidoId, sucId, key) => {
+    const handleMarkErp = useCallback(async (pedidoId, sucId, key, numero) => {
         if (busyAction) return;
         setBusyAction('erp');
         try {
@@ -1660,8 +1660,15 @@ export default function TabPedidos({ searchTerm = '' }) {
             useStaff.getState().appendAuditLog('PEDIDO_LIFECYCLE_RECIBIR_ERP', pedidoId, { sucursal_id: sucId });
             setErpStatus(prev => ({ ...prev, [key]: true }));
             await loadActive();
+            if (numero != null) {
+                supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
+                    if (!b?.branch_id) return;
+                    supabase.from('announcements').insert({ title: `Pedido #${numero} confirmado por ${branchName}`, message: `${branchName} confirmó la recepción del pedido #${numero} en el sistema ERP.`, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'NORMAL' }).catch(() => {});
+                    supabase.functions.invoke('send-push-notification', { body: { title: `Pedido #${numero} confirmado`, message: `${branchName} confirmó la recepción en ERP.`, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
+                }).catch(() => {});
+            }
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
-    }, [busyAction, user, loadActive]);
+    }, [busyAction, user, branchName, loadActive]);
 
     const openModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
         const loaded = items[key] ?? await fetchItems(key, pedidoId, sucId);
@@ -2065,7 +2072,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     onConfirmed={async ({ hasDiff }) => {
                         const { pedido, sucId, key } = modal;
                         setModal(null);
-                        await handleMarkErp(pedido.id, sucId, key);
+                        await handleMarkErp(pedido.id, sucId, key, pedido.numero);
                         if (hasDiff) await handleReportarDiferencias(pedido.id, sucId, pedido.numero);
                         fetchItems(key, pedido.id, sucId);
                     }}

@@ -1328,7 +1328,7 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
 export default function TabPedidos({ searchTerm = '' }) {
     const { user, getScope, hasPermission } = useAuth();
     const isBranch = getScope('pedidos') === 'BRANCH';
-    const canEdit  = hasPermission('pedidos_en_curso', 'can_edit');
+    const canEdit  = hasPermission('pedidos', 'can_edit');
 
     // Employee store for name/photo lookups
     const storeEmployees = useStaff(s => s.employees);
@@ -1968,8 +1968,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     </div>
 
-                                    {/* Recepción — visible mientras no esté confirmado en sistema */}
-                                    {isBranch && erpSucursalId && stage !== 'erp' && (
+                                    {/* Recepción — solo cuando el pedido ya fue marcado En Ruta */}
+                                    {isBranch && erpSucursalId && row.pedido_status === 'enviado' && stage !== 'erp' && (
                                         <div onClick={e => e.stopPropagation()}>
                                             <ReceptionActions
                                                 llegadaOk={!!llegadaStatus[cardKey] || !!row.llegada_fisica_at}

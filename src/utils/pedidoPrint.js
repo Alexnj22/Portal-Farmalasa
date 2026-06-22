@@ -367,37 +367,36 @@ function downloadPdf(docDefinition, filename) {
     pdfMake.createPdf(docDefinition).download(filename);
 }
 
-// ── Page simulation (calibrada: LETTER + PAGE_MARGINS + estilos actuales) ─────
-// Empírico: ~35 filas de producto caben por página para items típicos de farmacia
+// ── Paginación manual (sincronizada: misma lógica en PDF y en FinalizarCajasModal) ───
+// Los items se dividen AQUÍ antes de pasarlos a pdfmake.
+// Así el conteo de páginas del modal == páginas reales del PDF, siempre.
+//
+// Constantes para LETTER + PAGE_MARGINS = [24,22,24,44]:
 const _AVAIL_H    = 792 - PAGE_MARGINS[1] - PAGE_MARGINS[3]; // 726pt
 const _HEADER_PT  = 61;   // titleRow(24) + subtitleRow(22) + colHeaderRow(12) + sep(3)
-const _DATA_AVAIL = _AVAIL_H - _HEADER_PT;                   // 665pt ÷ 19pt ≈ 35 filas
-const _ROW_BASE   = 19;   // pt por fila simple (1 lote, sin badge) — calibrado empíricamente
-const _LOTE_XTRA  = 11;   // pt por lote adicional
-const _BADGE_ADD  = 10;   // pt extra por badge BAJO RECETA
+const _SAFETY     = 18;   // buffer para variaciones de altura en pdfmake
+const _DATA_AVAIL = _AVAIL_H - _HEADER_PT - _SAFETY;         // 647pt
+const _ROW_BASE   = 19;   // fila simple (1 lote, sin badge)
+const _LOTE_XTRA  = 11;   // pt por lote adicional al primero
+const _BADGE_ADD  = 10;   // badge BAJO RECETA
 
-function _rowPt(row) {
-    const lotes = Array.isArray(row.lotes_asignados) ? row.lotes_asignados.length : 0;
-    const badge = row.products?.es_antibiotico ?? false;
+// Altura estimada de una fila ya mapeada (tiene .lotes array y .es_antibiotico bool)
+function _rowPtMapped(row) {
+    const loteCnt = Array.isArray(row.lotes) ? row.lotes.length : 0;
+    const badge   = row.es_antibiotico ?? false;
     return Math.max(
         _ROW_BASE + (badge ? _BADGE_ADD : 0),
-        lotes > 1 ? _ROW_BASE + (lotes - 1) * _LOTE_XTRA : _ROW_BASE,
+        loteCnt > 1 ? _ROW_BASE + (loteCnt - 1) * _LOTE_XTRA : _ROW_BASE,
     );
 }
 
-// Retorna array de páginas: [{ ids: [uuid...], firstItem: 'AMOXICILINA...' }, ...]
-// Usa el mismo sort que buildProductRows (lab → producto).
-export function getPageGroups(rows) {
-    const printable = [...rows]
-        .filter(r => !r.sin_stock && (r.cantidad_asignada ?? 0) > 0)
-        .sort((a, b) =>
-            (a.products?.laboratorios?.nombre ?? '').localeCompare(b.products?.laboratorios?.nombre ?? '', 'es')
-            || (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es')
-        );
+// Divide filas ya mapeadas (formato print) en grupos de una página.
+// El PDF y getPageGroups usan esta misma función → conteo idéntico.
+function splitPrintRows(printRows) {
     const pages = [];
     let page = [], used = 0;
-    for (const row of printable) {
-        const h = _rowPt(row);
+    for (const row of printRows) {
+        const h = _rowPtMapped(row);
         if (used + h > _DATA_AVAIL && page.length > 0) {
             pages.push(page); page = []; used = 0;
         }
@@ -405,7 +404,42 @@ export function getPageGroups(rows) {
         used += h;
     }
     if (page.length > 0) pages.push(page);
-    return pages.map(p => ({ ids: p.map(r => r.id), firstItem: p[0]?.products?.nombre ?? '' }));
+    return pages;
+}
+
+// API pública: convierte pedido_items crudos → grupos de página con metadatos.
+// Usa exactamente el mismo mapeo + filtro + sort que printFromPedidoItems.
+// Retorna [{ ids, firstItem, firstLab, itemCount }, ...]
+export function getPageGroups(rows) {
+    const printable = [...rows]
+        .filter(r => !r.sin_stock)
+        .map(r => {
+            const erpFactor  = r.factor ?? 1;
+            const dispFactor = r.dispatch_factor ?? erpFactor;
+            return {
+                id:           r.id,
+                product_name: r.products?.nombre ?? '?',
+                laboratorio:  r.products?.laboratorios?.nombre ?? '',
+                es_antibiotico: r.products?.es_antibiotico ?? false,
+                qty:   toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor),
+                lotes: lotesAsignadosToDispatch(
+                    Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
+                    erpFactor, dispFactor,
+                ),
+            };
+        })
+        .filter(r => r.qty > 0)
+        .sort((a, b) =>
+            a.laboratorio.localeCompare(b.laboratorio, 'es')
+            || a.product_name.localeCompare(b.product_name, 'es')
+        );
+
+    return splitPrintRows(printable).map(p => ({
+        ids:       p.map(r => r.id),
+        firstItem: p[0]?.product_name ?? '',
+        firstLab:  p[0]?.laboratorio  ?? '',
+        itemCount: p.length,
+    }));
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -556,31 +590,37 @@ export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, t
     const [logo, addrMap] = await Promise.all([getLogoBase64(), getAddressMap()]);
     const ds = dateSuffix();
 
-    const sections = sucGroups.map(([sucId, rows]) => {
-        const printRows = rows.filter(r => !r.sin_stock).map(r => {
+    // Paginación manual: una sección pdfmake por página → conteo exacto == modal
+    const allSections = sucGroups.flatMap(([sucId, rows]) => {
+        const mapped = rows.filter(r => !r.sin_stock).map(r => {
             const erpFactor  = r.factor ?? 1;
             const dispFactor = r.dispatch_factor ?? erpFactor;
-            const dispTipo   = r.dispatch_tipo ?? r.presentaciones?.tipo ?? '';
-            const qty        = toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor);
             return {
                 product_name:      r.products?.nombre ?? '?',
                 laboratorio:       r.products?.laboratorios?.nombre ?? '',
-                presentacion_tipo: dispTipo,
+                presentacion_tipo: r.dispatch_tipo ?? r.presentaciones?.tipo ?? '',
                 es_antibiotico:    r.products?.es_antibiotico ?? false,
-                qty,
+                qty:   toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor),
                 lotes: lotesAsignadosToDispatch(
                     Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
                     erpFactor, dispFactor,
                 ),
             };
         }).filter(r => r.qty > 0);
-        return {
-            sucId, nombre: ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
-            codigo: sucGroups.length === 1 ? (titleOverride ?? null) : null,
-            rows:     printRows,
-            sinCount: rows.filter(r => r.sin_stock).length,
-            revCount: rows.filter(r => r.revision_minmax && !r.sin_stock).length,
-        };
+
+        const nombre   = ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`;
+        const codigo   = sucGroups.length === 1 ? (titleOverride ?? null) : null;
+        const sinCount = rows.filter(r => r.sin_stock).length;
+        const revCount = rows.filter(r => r.revision_minmax && !r.sin_stock).length;
+        const pages    = splitPrintRows(mapped);
+        const lastIdx  = pages.length - 1;
+
+        return pages.map((pageRows, pi) => ({
+            sucId, nombre, codigo,
+            rows:     pageRows,
+            sinCount: pi === lastIdx ? sinCount : 0,
+            revCount: pi === lastIdx ? revCount : 0,
+        }));
     });
 
     const title = titleOverride
@@ -588,5 +628,5 @@ export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, t
             ? `Pedido_${(ERP_NAMES_DEFAULT[sucGroups[0][0]] ?? `Sucursal_${sucGroups[0][0]}`).replace(/ /g, '_')}_${ds}`
             : `Pedido_${String(pedidoNumero).padStart(3,'0')}_${ds}`);
     const filename = `${title.replace(/[^a-zA-Z0-9_\-]/g,'_')}.pdf`;
-    downloadPdf(buildDocDefinition(sections, title, meta, logo, addrMap), filename);
+    downloadPdf(buildDocDefinition(allSections, title, meta, logo, addrMap), filename);
 }

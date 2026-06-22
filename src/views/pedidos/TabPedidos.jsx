@@ -17,10 +17,11 @@ import TablePagination from '../../components/common/TablePagination';
 import RecepcionModal from './RecepcionModal';
 import PedidoModal from './PedidoModal';
 import LlegadaModal from './LlegadaModal';
+import FinalizarCajasModal from './FinalizarCajasModal';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
-import { printFromPedidoItems, buildPedidoCodigo } from '../../utils/pedidoPrint';
+import { printFromPedidoItems, buildPedidoCodigo, getPageGroups } from '../../utils/pedidoPrint';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -1397,7 +1398,8 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [busyLifecycle, setBusyLifecycle] = useState(null);
     const [busyEnvio,     setBusyEnvio]     = useState(null);
     const [modal,         setModal]         = useState(null);
-    const [llegadaModal,  setLlegadaModal]  = useState(null); // { pedidoId, sucId, key, rows }
+    const [llegadaModal,    setLlegadaModal]    = useState(null); // { pedidoId, sucId, key, rows }
+    const [finalizarModal,  setFinalizarModal]  = useState(null); // { pedidoId, sucId, numero, key, rows }
     const [newAlert,      setNewAlert]      = useState(null);
 
     // Pause modal
@@ -1619,10 +1621,15 @@ export default function TabPedidos({ searchTerm = '' }) {
             if (error) throw error;
             useStaff.getState().appendAuditLog('PEDIDO_MARCAR_EN_RUTA', pedidoId, {});
             loadActive();
-            supabase.from('erp_sucursal_map').select('branch_id, nombre').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
-                if (!m?.branch_id) return;
-                supabase.from('announcements').insert({ title: `Pedido #${numero} en camino`, message: `Tu pedido #${numero} salió de bodega y va en camino. Prepárate para recibirlo.`, target_type: 'BRANCH', target_value: [m.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'NORMAL' }).catch(() => {});
-                supabase.functions.invoke('send-push-notification', { body: { title: `Pedido #${numero} en camino 🚚`, message: `Tu pedido ya salió de bodega. Prepárate para recibirlo.`, url: '/pedidos', target_type: 'BRANCH', target_value: [m.branch_id] } }).catch(() => {});
+            // Obtener total_cajas para incluirlo en la notificación
+            supabase.from('pedido_sucursal_status').select('total_cajas').eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: pss }) => {
+                const cajas = pss?.total_cajas;
+                const cajasStr = cajas ? ` en ${cajas} caja${cajas !== 1 ? 's' : ''}` : '';
+                supabase.from('erp_sucursal_map').select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
+                    if (!m?.branch_id) return;
+                    supabase.from('announcements').insert({ title: `Pedido #${numero} en camino`, message: `Tu pedido #${numero} salió de bodega${cajasStr} y va en camino. Prepárate para recibirlo.`, target_type: 'BRANCH', target_value: [m.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'NORMAL' }).catch(() => {});
+                    supabase.functions.invoke('send-push-notification', { body: { title: `Pedido #${numero} en camino`, message: `Tu pedido ya salió de bodega${cajasStr}. Prepárate para recibirlo.`, url: '/pedidos', target_type: 'BRANCH', target_value: [m.branch_id] } }).catch(() => {});
+                }).catch(() => {});
             }).catch(() => {});
         } catch (e) { console.error('Envío error:', e); } finally { setBusyEnvio(null); }
     }, [user, loadActive]);
@@ -1679,7 +1686,33 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     // ── Reception ─────────────────────────────────────────────────────────────
 
-    const ROWS_PER_PAGE_PDF = 30;
+    const openFinalizarModal = useCallback(async (pedidoId, sucId, numero, key) => {
+        if (busyAction) return;
+        let rows = items[key];
+        if (!rows) {
+            setBusyAction('finalizar_load');
+            rows = await fetchItems(key, pedidoId, sucId);
+            setBusyAction(null);
+        }
+        setFinalizarModal({ pedidoId, sucId, numero, key, rows: rows ?? [] });
+    }, [busyAction, items, fetchItems]);
+
+    const handleFinalizarConCajas = useCallback(async ({ totalCajas, cajaMap, paginaItems }) => {
+        if (!finalizarModal) return;
+        const { pedidoId, sucId } = finalizarModal;
+        setFinalizarModal(null);
+        setBusyAction('finalizar');
+        try {
+            await supabase.rpc('update_pedido_sucursal_lifecycle', {
+                p_pedido_id: pedidoId, p_sucursal_id: sucId,
+                p_stage: 'finalizar', p_user_id: user?.id ?? null,
+            });
+            await supabase.from('pedido_sucursal_status').update({ total_cajas: totalCajas, caja_map: cajaMap, pagina_items: paginaItems })
+                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+            useStaff.getState().appendAuditLog('PEDIDO_FINALIZADO', pedidoId, { totalCajas, cajas: Object.keys(cajaMap).length });
+            await loadActive();
+        } catch (e) { console.error(e); } finally { setBusyAction(null); }
+    }, [finalizarModal, user, loadActive]);
 
     const handleLlegada = useCallback(async (pedidoId, sucId, key) => {
         if (busyAction) return;
@@ -1698,17 +1731,27 @@ export default function TabPedidos({ searchTerm = '' }) {
         setLlegadaModal(null);
         setBusyAction('llegada');
         try {
-            // 1. Marcar items de la caja faltante
-            if (tipo === 'falta_caja' && cajasAfectadas.length > 0) {
-                const printable = [...rows]
-                    .filter(r => !r.sin_stock && (r.cantidad_asignada ?? 0) > 0)
-                    .sort((a, b) =>
-                        (a.products?.laboratorios?.nombre ?? '').localeCompare(b.products?.laboratorios?.nombre ?? '', 'es')
-                        || (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es')
-                    );
-                const missingIds = cajasAfectadas.flatMap(n =>
-                    printable.slice((n - 1) * ROWS_PER_PAGE_PDF, n * ROWS_PER_PAGE_PDF).map(r => r.id)
-                );
+            // 1. Marcar items de la caja faltante/dañada
+            if (cajasAfectadas.length > 0) {
+                // Intentar usar el mapa exacto guardado al Finalizar
+                const { data: pss } = await supabase
+                    .from('pedido_sucursal_status')
+                    .select('caja_map, pagina_items')
+                    .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
+                    .maybeSingle();
+                const cajaMapDb    = pss?.caja_map    ?? {};
+                const paginaItemsDb = pss?.pagina_items ?? {};
+
+                let missingIds = [];
+                if (Object.keys(paginaItemsDb).length > 0) {
+                    // Mapa exacto disponible
+                    const missingPages = cajasAfectadas.flatMap(n => cajaMapDb[String(n)] ?? []);
+                    missingIds = missingPages.flatMap(p => paginaItemsDb[String(p)] ?? []);
+                } else {
+                    // Fallback: simular con getPageGroups (pedidos anteriores sin mapa)
+                    const pageGroups = getPageGroups(rows);
+                    missingIds = cajasAfectadas.flatMap(n => pageGroups[n - 1]?.ids ?? []);
+                }
                 if (missingIds.length > 0) {
                     await supabase.from('pedido_items').update({ falta_caja: true }).in('id', missingIds);
                 }
@@ -2054,6 +2097,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Actions + status strip */}
                                     <div className="flex items-center gap-2 px-3 pb-2 flex-wrap" onClick={e => e.stopPropagation()}>
                                         <StagePill stage={stage} />
+                                        {row.total_cajas > 0 && (stage === 'preparado' || row.pedido_status === 'enviado') && (
+                                            <span className="text-[10px] font-semibold text-slate-500 tabular-nums">
+                                                {row.total_cajas} caja{row.total_cajas !== 1 ? 's' : ''}
+                                            </span>
+                                        )}
                                         {elapsedPrep  && <span className="text-[10px] text-slate-600 tabular-nums">{elapsedPrep}</span>}
                                         {elapsedPause && (
                                             <span className="text-[10px] text-amber-700 font-semibold tabular-nums animate-pulse">
@@ -2082,7 +2130,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             )}
                                             {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
                                             {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
-                                            {canFinalizar    && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'finalizar')} disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Flag     size={10} />Finalizar</>}</button>}
+                                            {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === 'finalizar_load'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === 'finalizar_load') ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
                                             {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
                                             {canMarcarEnRuta && <button onClick={() => handleMarcarEnRuta(row.pedido_id, row.erp_sucursal_id, row.numero)}                               disabled={isEnvioBusy} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={11} className="animate-spin" /> : <><Truck size={10} />En Ruta</>}</button>}
                                             {canActuar && !isBranch && row.llegada_tipo === 'falta_caja' && !row.reenvio_bodega_at && (
@@ -2158,6 +2206,16 @@ export default function TabPedidos({ searchTerm = '' }) {
                 onConfirm={handleLlegadaConfirm}
                 items={llegadaModal?.rows ?? []}
                 pedidoNumero={llegadaModal ? activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.numero : null}
+                cajaMap={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.caja_map ?? {}) : {}}
+                totalCajas={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.total_cajas ?? 0) : 0}
+            />
+
+            <FinalizarCajasModal
+                open={!!finalizarModal}
+                onClose={() => setFinalizarModal(null)}
+                onConfirm={handleFinalizarConCajas}
+                items={finalizarModal?.rows ?? []}
+                pedidoNumero={finalizarModal?.numero}
             />
 
             {pauseModal && (

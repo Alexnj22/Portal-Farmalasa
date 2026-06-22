@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.271';
+export const APP_VERSION = '2.2.272';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.272 — feat(pedidos/finalizar): asignación página→caja al Finalizar (FinalizarCajasModal); getPageGroups calibrado empíricamente (≈35 filas/pág); LlegadaModal usa caja_map real de DB; PDF agrega espacio 'Caja: ___'; falta_caja usa pagina_items exacto; total_cajas visible en card y en notif En Ruta
 // v2.2.271 — feat(pedidos/llegada): modal de confirmación de llegada con 3 opciones (completa/falta_caja/caja_dañada); selección de nº de caja; falta_caja notifica bodega+reenvío+segunda llegada; RecepcionModal filtra items falta_caja y muestra banner caja dañada
 // v2.2.270 — fix(pedidos/pdf): fetchItems ahora incluye presentaciones!erp_presentacion_id(tipo); printFromPedidoItems mostraba '-' en productos sin dispatch_tipo porque el join faltaba
 // v2.2.269 — fix(pedidos/notif): bodega recibe 1 sola notificación al confirmar recepción (sin novedad → normal, con diferencias/problemas → HIGH); elimina duplicado confirmado+diferencias

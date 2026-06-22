@@ -182,6 +182,7 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
                     stack: [
                         { text: sec.codigo ?? '', fontSize: 7.5, bold: true, color: '#111', alignment: 'right' },
                         { text: fecha, fontSize: 6.5, color: '#666', alignment: 'right' },
+                        { text: 'Caja: ______', fontSize: 6, color: '#bbb', alignment: 'right', margin: [0, 1, 0, 0] },
                     ],
                     width: '24%',
                 },
@@ -364,6 +365,47 @@ function buildDocDefinition(sections, title, meta, logo, addrMap) {
 
 function downloadPdf(docDefinition, filename) {
     pdfMake.createPdf(docDefinition).download(filename);
+}
+
+// ── Page simulation (calibrada: LETTER + PAGE_MARGINS + estilos actuales) ─────
+// Empírico: ~35 filas de producto caben por página para items típicos de farmacia
+const _AVAIL_H    = 792 - PAGE_MARGINS[1] - PAGE_MARGINS[3]; // 726pt
+const _HEADER_PT  = 61;   // titleRow(24) + subtitleRow(22) + colHeaderRow(12) + sep(3)
+const _DATA_AVAIL = _AVAIL_H - _HEADER_PT;                   // 665pt ÷ 19pt ≈ 35 filas
+const _ROW_BASE   = 19;   // pt por fila simple (1 lote, sin badge) — calibrado empíricamente
+const _LOTE_XTRA  = 11;   // pt por lote adicional
+const _BADGE_ADD  = 10;   // pt extra por badge BAJO RECETA
+
+function _rowPt(row) {
+    const lotes = Array.isArray(row.lotes_asignados) ? row.lotes_asignados.length : 0;
+    const badge = row.products?.es_antibiotico ?? false;
+    return Math.max(
+        _ROW_BASE + (badge ? _BADGE_ADD : 0),
+        lotes > 1 ? _ROW_BASE + (lotes - 1) * _LOTE_XTRA : _ROW_BASE,
+    );
+}
+
+// Retorna array de páginas: [{ ids: [uuid...], firstItem: 'AMOXICILINA...' }, ...]
+// Usa el mismo sort que buildProductRows (lab → producto).
+export function getPageGroups(rows) {
+    const printable = [...rows]
+        .filter(r => !r.sin_stock && (r.cantidad_asignada ?? 0) > 0)
+        .sort((a, b) =>
+            (a.products?.laboratorios?.nombre ?? '').localeCompare(b.products?.laboratorios?.nombre ?? '', 'es')
+            || (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es')
+        );
+    const pages = [];
+    let page = [], used = 0;
+    for (const row of printable) {
+        const h = _rowPt(row);
+        if (used + h > _DATA_AVAIL && page.length > 0) {
+            pages.push(page); page = []; used = 0;
+        }
+        page.push(row);
+        used += h;
+    }
+    if (page.length > 0) pages.push(page);
+    return pages.map(p => ({ ids: p.map(r => r.id), firstItem: p[0]?.products?.nombre ?? '' }));
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

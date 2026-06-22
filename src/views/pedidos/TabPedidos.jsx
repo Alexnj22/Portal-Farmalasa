@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useToastStore } from '../../store/toastStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import RecepcionModal from './RecepcionModal';
@@ -342,7 +343,7 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
 
 // ─── Apoyo scanner modal ──────────────────────────────────────────────────────
 
-function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, onSuccess }) {
+function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existingApoyo = [], onSuccess }) {
     const [displayDots, setDisplayDots] = useState(0);
     const [employee,    setEmployee]    = useState(null);
     const [error,       setError]       = useState('');
@@ -426,6 +427,15 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, onSucce
 
     const confirmApoyo = useCallback(async () => {
         if (!employee) return;
+        if (existingApoyo.some(a => a.id === employee.id)) {
+            useToastStore.getState().showToast(
+                'Ya está de apoyo',
+                `${employee.name} ya está registrado en este pedido.`,
+                'warning'
+            );
+            onClose();
+            return;
+        }
         setLoading(true);
         try {
             const { error: e } = await supabase.from('pedido_apoyo').upsert(
@@ -438,7 +448,7 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, onSucce
             onClose();
         } catch (err) { setError(err?.message || 'Error al registrar apoyo.'); }
         finally  { setLoading(false); }
-    }, [employee, pedidoId, sucId, currentUserId, onSuccess, onClose]);
+    }, [employee, existingApoyo, pedidoId, sucId, currentUserId, onSuccess, onClose]);
 
     return (
         <PedidoModal open={open} onClose={onClose}>
@@ -2278,6 +2288,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 pedidoId={apoyoModal?.pedidoId}
                 sucId={apoyoModal?.sucId}
                 currentUserId={user?.id}
+                existingApoyo={apoyoMap[apoyoModal?.cardKey] ?? []}
                 onSuccess={(emp) => handleApoyoSuccess(emp, apoyoModal?.cardKey)}
             />
 

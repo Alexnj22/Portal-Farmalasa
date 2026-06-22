@@ -8,7 +8,7 @@ import {
     Database, Activity, TrendingDown,
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
-    UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown,
+    UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -1397,6 +1397,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [busyAction,    setBusyAction]    = useState(null);
     const [busyLifecycle, setBusyLifecycle] = useState(null);
     const [busyEnvio,     setBusyEnvio]     = useState(null);
+    const [enRutaConfirm, setEnRutaConfirm] = useState(null); // { pedidoId, sucId, numero, totalCajas }
     const [modal,         setModal]         = useState(null);
     const [llegadaModal,    setLlegadaModal]    = useState(null); // { pedidoId, sucId, key, rows }
     const [finalizarModal,  setFinalizarModal]  = useState(null); // { pedidoId, sucId, numero, key, rows }
@@ -1677,12 +1678,15 @@ export default function TabPedidos({ searchTerm = '' }) {
     }, [pauseModal, pauseRazon, pauseComment, handleLifecycle]);
 
     const handleApoyoSuccess = useCallback((emp, cardKey) => {
+        // Optimistic add
         setApoyoMap(prev => {
             const existing = prev[cardKey] ?? [];
             if (existing.find(e => e.id === emp.id)) return prev;
             return { ...prev, [cardKey]: [...existing, { id: emp.id, name: emp.name, photo_url: emp.photo_url }] };
         });
-    }, []);
+        // Sync from DB so batch-load doesn't overwrite on next realtime trigger
+        loadActive();
+    }, [loadActive]);
 
     // ── Reception ─────────────────────────────────────────────────────────────
 
@@ -2051,9 +2055,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     className={`${GLASS} cursor-pointer select-none ${
                                         stage === 'pausado'
                                             ? 'ring-2 ring-amber-400 shadow-[0_4px_20px_rgba(251,191,36,0.25)]'
-                                            : isFadedOut
-                                                ? 'opacity-80'
-                                                : ''
+                                            : row.llegada_tipo === 'caja_danada'
+                                                ? 'ring-2 ring-orange-400 shadow-[0_4px_20px_rgba(249,115,22,0.18)]'
+                                                : isFadedOut
+                                                    ? 'opacity-80'
+                                                    : ''
                                     }`}
                                     style={{ overflow: 'visible' }}
                                     onClick={() => toggleExpand(cardKey, row.pedido_id, row.erp_sucursal_id)}
@@ -2063,6 +2069,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {stage === 'pausado' && (
                                             <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-white shrink-0 shadow-sm animate-pulse">
                                                 ⏸ Pausado
+                                            </span>
+                                        )}
+                                        {row.llegada_tipo === 'caja_danada' && (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-500 text-white shrink-0 shadow-sm">
+                                                <AlertTriangle size={9} /> Caja dañada
                                             </span>
                                         )}
                                         <span className="text-[13px] font-black text-slate-800 tabular-nums shrink-0">
@@ -2098,12 +2109,16 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     {/* Apoyo display */}
                                     {cardApoyo.length > 0 && (
-                                        <div className="flex items-center gap-1.5 px-3 pb-1 flex-wrap">
-                                            <span className="text-[10px] text-slate-500 uppercase tracking-wide shrink-0">Apoyo</span>
+                                        <div className="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap">
+                                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">Apoyo:</span>
                                             {cardApoyo.map(a => (
-                                                a.photo_url
-                                                    ? <img key={a.id} src={a.photo_url} title={a.name} className="w-5 h-5 rounded-full object-cover border-2 border-white shadow-sm" alt="" />
-                                                    : <span key={a.id} title={a.name} className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center"><UserCircle2 size={11} className="text-slate-500" /></span>
+                                                <span key={a.id} className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-white border border-slate-200 shadow-sm">
+                                                    {a.photo_url
+                                                        ? <img src={a.photo_url} alt={a.name} className="w-5 h-5 rounded-full object-cover shrink-0" />
+                                                        : <span className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center shrink-0"><UserCircle2 size={10} className="text-slate-500" /></span>
+                                                    }
+                                                    <span className="text-[11px] font-semibold text-slate-700 whitespace-nowrap">{a.name}</span>
+                                                </span>
                                             ))}
                                         </div>
                                     )}
@@ -2116,8 +2131,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Actions + status strip */}
                                     <div className="flex items-center gap-2 px-3 pb-2 flex-wrap" onClick={e => e.stopPropagation()}>
                                         <StagePill stage={stage} />
-                                        {row.total_cajas > 0 && (stage === 'preparado' || row.pedido_status === 'enviado') && (
-                                            <span className="text-[10px] font-semibold text-slate-500 tabular-nums">
+                                        {row.total_cajas > 0 && (
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 tabular-nums shrink-0">
+                                                <Box size={10} className="text-slate-500 shrink-0" />
                                                 {row.total_cajas} caja{row.total_cajas !== 1 ? 's' : ''}
                                             </span>
                                         )}
@@ -2151,7 +2167,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
                                             {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === 'finalizar_load'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === 'finalizar_load') ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
                                             {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
-                                            {canMarcarEnRuta && <button onClick={() => handleMarcarEnRuta(row.pedido_id, row.erp_sucursal_id, row.numero)}                               disabled={isEnvioBusy} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={11} className="animate-spin" /> : <><Truck size={10} />En Ruta</>}</button>}
+                                            {canMarcarEnRuta && <button onClick={() => setEnRutaConfirm({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, totalCajas: row.total_cajas ?? 0 })} disabled={isEnvioBusy} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={11} className="animate-spin" /> : <><Truck size={10} />En Ruta</>}</button>}
                                             {canActuar && !isBranch && row.llegada_tipo === 'falta_caja' && !row.reenvio_bodega_at && (
                                                 <button onClick={() => handleReenviarCaja(row.pedido_id, row.erp_sucursal_id, row.numero, row.falta_cajas ?? [])} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">
                                                     {busyAction === 'reenvio' ? <Loader2 size={10} className="animate-spin" /> : <><Truck size={10} />Reenviar caja</>}
@@ -2301,6 +2317,60 @@ export default function TabPedidos({ searchTerm = '' }) {
                         await loadActive();
                     }}
                 />
+            )}
+
+            {/* ── En Ruta confirmation modal ──────────────────────────────────────── */}
+            {enRutaConfirm && (
+                <PedidoModal open onClose={() => setEnRutaConfirm(null)} maxWidth="max-w-xs">
+                    <PedidoModal.Header className="px-5 pt-5 pb-4">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <p className="text-[10px] font-semibold text-indigo-500 uppercase tracking-wider mb-1">Pedido #{enRutaConfirm.numero}</p>
+                                <h3 className="text-[16px] font-black text-slate-800 leading-tight">Marcar en ruta</h3>
+                            </div>
+                            <button onClick={() => setEnRutaConfirm(null)} className="text-slate-400 hover:text-slate-600 p-1 transition-colors mt-0.5">
+                                <X size={16} />
+                            </button>
+                        </div>
+                    </PedidoModal.Header>
+                    <PedidoModal.Body className="px-5 py-5">
+                        {enRutaConfirm.totalCajas > 0 ? (
+                            <div className="flex flex-col items-center gap-2 py-2">
+                                <div className="w-16 h-16 rounded-2xl bg-indigo-500 shadow-[0_6px_20px_rgba(99,102,241,0.4)] flex items-center justify-center">
+                                    <Box size={28} className="text-white" />
+                                </div>
+                                <p className="text-[52px] font-black text-slate-800 tabular-nums leading-none mt-1">
+                                    {enRutaConfirm.totalCajas}
+                                </p>
+                                <p className="text-[14px] font-semibold text-slate-500">
+                                    {enRutaConfirm.totalCajas === 1 ? 'caja en este pedido' : 'cajas en este pedido'}
+                                </p>
+                                <p className="text-[11px] text-slate-400 text-center mt-1">
+                                    Verificá que tenés todas las cajas antes de salir.
+                                </p>
+                            </div>
+                        ) : (
+                            <p className="text-[13px] text-slate-600 text-center py-3">
+                                ¿Confirmar que el pedido #{enRutaConfirm.numero} salió de bodega?
+                            </p>
+                        )}
+                    </PedidoModal.Body>
+                    <PedidoModal.Footer className="flex justify-between gap-2">
+                        <button onClick={() => setEnRutaConfirm(null)}
+                            className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors">
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={() => {
+                                const { pedidoId, sucId, numero } = enRutaConfirm;
+                                setEnRutaConfirm(null);
+                                handleMarcarEnRuta(pedidoId, sucId, numero);
+                            }}
+                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold text-[13px] hover:bg-indigo-700 transition-colors shadow-sm">
+                            <Truck size={14} /> Confirmar salida
+                        </button>
+                    </PedidoModal.Footer>
+                </PedidoModal>
             )}
         </div>
     );

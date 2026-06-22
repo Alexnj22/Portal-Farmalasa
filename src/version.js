@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.266';
+export const APP_VERSION = '2.2.267';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.267 — feat(pedidos/notif): 2 notificaciones push+bell a la sucursal destino: al Iniciar (bodega empieza a preparar) y al marcar En Ruta; lookup por erp_sucursal_id→branch_id en erp_sucursal_map
 // v2.2.266 — fix(pedidos): (1) canEdit usa 'pedidos' como module_key correcto (antes 'pedidos_en_curso' nunca matcheaba → Edwin sin acceso); (2) ReceptionActions solo visible cuando pedido_status='enviado' (pedido en ruta), no antes
 // v2.2.265 — fix(pedidos/permisos): GESTIONAR ahora gatéa PDF+Iniciar+Pausar+Finalizar+Reanudar+EnRuta — canActuar cambia de (canEdit||!isBranch) a (canEdit&&!isBranch); sin GESTIONAR solo se puede ver
 // v2.2.264 — feat(pedidos): botón PDF en cada card de TabPedidos — descarga el PDF del pedido directamente desde los items guardados en DB (printFromPedidoItems); visible solo para admin/bodega (!isBranch); spinner mientras genera

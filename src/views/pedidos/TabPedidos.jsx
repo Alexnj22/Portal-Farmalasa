@@ -1544,7 +1544,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-    const handleLifecycle = useCallback(async (pedidoId, sucId, stage, razon = null) => {
+    const handleLifecycle = useCallback(async (pedidoId, sucId, stage, razon = null, numero = null) => {
         const key = `lc_${pedidoId}_${sucId}`;
         setBusyLifecycle(key);
         try {
@@ -1552,6 +1552,13 @@ export default function TabPedidos({ searchTerm = '' }) {
             if (error) throw error;
             useStaff.getState().appendAuditLog(`PEDIDO_LIFECYCLE_${stage.toUpperCase()}`, pedidoId, { sucursal_id: sucId, razon });
             loadActive();
+            if (stage === 'iniciar' && numero != null) {
+                supabase.from('erp_sucursal_map').select('branch_id, nombre').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
+                    if (!m?.branch_id) return;
+                    supabase.from('announcements').insert({ title: `Pedido #${numero} en preparación`, message: `Bodega ha iniciado la preparación de tu pedido #${numero}. Te avisaremos cuando salga en camino.`, target_type: 'BRANCH', target_value: [m.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'NORMAL' }).catch(() => {});
+                    supabase.functions.invoke('send-push-notification', { body: { title: `Pedido #${numero} en preparación`, message: `Bodega está preparando tu pedido. Te avisamos cuando salga.`, url: '/pedidos', target_type: 'BRANCH', target_value: [m.branch_id] } }).catch(() => {});
+                }).catch(() => {});
+            }
         } catch (e) { console.error('Lifecycle error:', e); } finally { setBusyLifecycle(null); }
     }, [user, loadActive]);
 
@@ -1567,13 +1574,18 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error('PDF error:', e); } finally { setPrintingPdf(null); }
     }, [items, fetchItems]);
 
-    const handleMarcarEnRuta = useCallback(async (pedidoId) => {
+    const handleMarcarEnRuta = useCallback(async (pedidoId, sucId, numero) => {
         setBusyEnvio(pedidoId);
         try {
             const { error } = await supabase.rpc('marcar_pedido_enviado', { p_pedido_id: pedidoId, p_enviado_por: user?.id ?? null });
             if (error) throw error;
             useStaff.getState().appendAuditLog('PEDIDO_MARCAR_EN_RUTA', pedidoId, {});
             loadActive();
+            supabase.from('erp_sucursal_map').select('branch_id, nombre').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
+                if (!m?.branch_id) return;
+                supabase.from('announcements').insert({ title: `Pedido #${numero} en camino`, message: `Tu pedido #${numero} salió de bodega y va en camino. Prepárate para recibirlo.`, target_type: 'BRANCH', target_value: [m.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'NORMAL' }).catch(() => {});
+                supabase.functions.invoke('send-push-notification', { body: { title: `Pedido #${numero} en camino 🚚`, message: `Tu pedido ya salió de bodega. Prepárate para recibirlo.`, url: '/pedidos', target_type: 'BRANCH', target_value: [m.branch_id] } }).catch(() => {});
+            }).catch(() => {});
         } catch (e) { console.error('Envío error:', e); } finally { setBusyEnvio(null); }
     }, [user, loadActive]);
 
@@ -1960,11 +1972,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     {printingPdf === row.pedido_id ? <Loader2 size={10} className="animate-spin" /> : <FileDown size={10} />}PDF
                                                 </button>
                                             )}
-                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar')}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
+                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
                                             {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
                                             {canFinalizar    && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'finalizar')} disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Flag     size={10} />Finalizar</>}</button>}
                                             {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
-                                            {canMarcarEnRuta && <button onClick={() => handleMarcarEnRuta(row.pedido_id)}                               disabled={isEnvioBusy} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={11} className="animate-spin" /> : <><Truck size={10} />En Ruta</>}</button>}
+                                            {canMarcarEnRuta && <button onClick={() => handleMarcarEnRuta(row.pedido_id, row.erp_sucursal_id, row.numero)}                               disabled={isEnvioBusy} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={11} className="animate-spin" /> : <><Truck size={10} />En Ruta</>}</button>}
                                         </div>
                                     </div>
 

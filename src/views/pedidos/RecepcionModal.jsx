@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, X, PackageCheck, AlertTriangle, Search,
-    Plus, Trash2, PackagePlus, Check,
+    Plus, Trash2, PackagePlus, Check, ChevronLeft, Box, Truck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -27,7 +27,6 @@ export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
     );
 }
 
-// Misma fórmula que pedidoPrint.js
 function toDispatch(qty, erpFactor, dispFactor) {
     if (!dispFactor || dispFactor === erpFactor) return qty;
     return Math.round(qty * erpFactor / dispFactor);
@@ -40,14 +39,12 @@ function fmtDispatchLabel(dispatch_tipo, dispatch_factor) {
     return f > 1 ? `${label} ×${f}` : label;
 }
 
-// Solo causa manual (faltante/sobrante/equivocado/pres se detectan automáticamente)
 const ERROR_TIPOS = [
     { value: 'danado',  label: 'Dañado'  },
     { value: 'vencido', label: 'Vencido' },
     { value: 'otro',    label: 'Otro'    },
 ];
 
-// 7-column grid: Producto | Asig | F.Pres | F.Qty | S.Pres | S.Qty | ⚠
 const GRID = 'grid-cols-[minmax(0,1fr)_2.75rem_8rem_3.25rem_8rem_3.25rem_2rem]';
 
 async function fetchPresOpts(productId) {
@@ -67,16 +64,32 @@ async function fetchPresOpts(productId) {
     return opts;
 }
 
-export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucursalNombre, rows, onConfirmed, cajaDanada = [] }) {
+export default function RecepcionModal({
+    open, onClose, pedido, sucursalId, sucursalNombre, rows, onConfirmed,
+    cajaDanada   = [],   // box numbers that arrived damaged (items still present)
+    cajaMap      = {},   // {"1":[1,2],"2":[3,4]} → box → page numbers
+    paginaItems  = {},   // {"1":[itemId,...],...} → page → pedido_item IDs
+    cajasRecibidas: initCajasRecibidas = [], // already confirmed box numbers (from DB)
+    faltaCajas   = [],   // box numbers physically missing (items excluded)
+}) {
     const { user } = useAuth();
 
+    // Whether we have enough data to do per-box reception
+    const hasCajaMap = Object.keys(cajaMap).length > 0 && Object.keys(paginaItems).length > 0;
+
+    // ── Screen ─────────────────────────────────────────────────────────────────
+    const [screen,       setScreen]       = useState('cajas');
+    const [selectedCaja, setSelectedCaja] = useState(null);
+    const [localRec,     setLocalRec]     = useState([]);   // confirmed this session
+    const [anyHasDiff,   setAnyHasDiff]   = useState(false);
+
+    // ── Per-item input state ────────────────────────────────────────────────────
     const [fQtyVals,  setFQtyVals]  = useState({});
     const [fPresVals, setFPresVals] = useState({});
     const [sQtyVals,  setSQtyVals]  = useState({});
     const [sPresVals, setSPresVals] = useState({});
     const [notaVals,  setNotaVals]  = useState({});
     const [errorVals, setErrorVals] = useState({});
-    // tieneProblema[id]: false = nada | true = panel abierto | 'done' = confirmado
     const [tieneProblema,    setTieneProblema]    = useState({});
     const [cantProblemaVals, setCantProblemaVals] = useState({});
     const [presMap,   setPresMap]   = useState({});
@@ -86,7 +99,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
     const [showSearch, setShowSearch] = useState(false);
     const [apoyo,      setApoyo]      = useState([]);
 
-    // extras: { erp_product_id, nombre, fPres, fQty, sPres, sQty, nota }
+    // ── Extras ─────────────────────────────────────────────────────────────────
     const [extras,       setExtras]       = useState([]);
     const [extraSearch,  setExtraSearch]  = useState('');
     const [extraResults, setExtraResults] = useState([]);
@@ -97,15 +110,59 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
     const extraRef     = useRef(null);
     const extrasEndRef = useRef(null);
 
-    // Ordenar por laboratorio (igual que PDF)
+    // ── Sorted all rows ─────────────────────────────────────────────────────────
     const sortedRows = useMemo(() => [...rows].sort((a, b) => {
         const la = a.products?.laboratorios?.nombre ?? '';
         const lb = b.products?.laboratorios?.nombre ?? '';
         return la.localeCompare(lb, 'es') || (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es');
     }), [rows]);
 
+    // ── Per-box derived data ────────────────────────────────────────────────────
+    const itemIdsByCaja = useMemo(() => {
+        if (!hasCajaMap) return {};
+        const result = {};
+        Object.entries(cajaMap).forEach(([boxStr, pages]) => {
+            result[boxStr] = new Set(pages.flatMap(p => paginaItems[String(p)] ?? []));
+        });
+        return result;
+    }, [cajaMap, paginaItems, hasCajaMap]);
+
+    const allBoxNums = useMemo(() =>
+        Object.keys(cajaMap).map(Number).sort((a, b) => a - b),
+    [cajaMap]);
+
+    // Combined received: DB init + locally confirmed this session
+    const allRecibidas = useMemo(() => {
+        const s = new Set([...initCajasRecibidas, ...localRec]);
+        return [...s].sort((a, b) => a - b);
+    }, [initCajasRecibidas, localRec]);
+
+    const accessibleBoxNums = useMemo(() =>
+        allBoxNums.filter(n => !faltaCajas.includes(n)),
+    [allBoxNums, faltaCajas]);
+
+    const allAccessibleDone = accessibleBoxNums.length > 0 &&
+        accessibleBoxNums.every(n => allRecibidas.includes(n));
+
+    // Rows for the currently selected box (or all rows if no caja map)
+    const selectedCajaRows = useMemo(() => {
+        if (selectedCaja === null || !hasCajaMap) return sortedRows;
+        const ids = itemIdsByCaja[String(selectedCaja)];
+        if (!ids) return sortedRows;
+        return sortedRows.filter(r => ids.has(r.id));
+    }, [selectedCaja, itemIdsByCaja, sortedRows, hasCajaMap]);
+
+    // ── Init on open ────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!open) return;
+        setScreen(hasCajaMap ? 'cajas' : 'items');
+        setSelectedCaja(null);
+        setLocalRec([]);
+        setAnyHasDiff(false);
+        setSaveError(null);
+        setExtras([]); setExtraSearch(''); setExtraResults([]); setExtraOpen(false);
+        setProdSearch(''); setShowSearch(false);
+
         const fQ = {}, fP = {}, sQ = {}, sP = {}, notas = {}, errs = {};
         for (const r of rows) {
             const erpF  = Number(r.factor) || 1;
@@ -117,10 +174,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
         }
         setFQtyVals(fQ); setFPresVals(fP); setSQtyVals(sQ); setSPresVals(sP);
         setNotaVals(notas); setErrorVals(errs); setTieneProblema({}); setCantProblemaVals({});
-        setSaveError(null); setExtras([]); setExtraSearch(''); setExtraResults([]); setExtraOpen(false);
-        setProdSearch(''); setShowSearch(false);
 
-        // Apoyo
         (async () => {
             const { data } = await supabase.from('pedido_apoyo')
                 .select('employee_id, employees(name, photo_url)')
@@ -128,13 +182,11 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             setApoyo((data || []).map(r => ({ id: r.employee_id, ...r.employees })));
         })();
 
-        // Presentaciones disponibles por producto — paginado para evitar el cap de 1000 filas de PostgREST
         const productIds = [...new Set(rows.map(r => r.erp_product_id))];
         if (productIds.length > 0) {
             (async () => {
                 const PAGE = 1000;
-                let allData = [];
-                let from = 0;
+                let allData = [], from = 0;
                 while (true) {
                     const { data } = await supabase.from('product_precios')
                         .select('product_id, factor, descripcion, presentaciones!id_presentacion(tipo)')
@@ -162,7 +214,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
         }
     }, [open, rows, pedido?.id, sucursalId]); // eslint-disable-line
 
-    // Búsqueda extras — excluye productos ya en el pedido
+    // ── Extras search ────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!extraOpen || extraSearch.trim().length < 2) { setExtraResults([]); return; }
         const existingIds = [...rows.map(r => r.erp_product_id), ...extras.map(e => e.erp_product_id)];
@@ -182,30 +234,22 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
         if (extras.some(e => e.erp_product_id === prod.id)) return;
         setExtraSearch(''); setExtraResults([]);
 
-        // Cargar presentaciones de product_precios
         let opts = presMap[prod.id] ? [...presMap[prod.id]] : [];
-        if (opts.length === 0) {
-            opts = await fetchPresOpts(prod.id);
-        }
+        if (opts.length === 0) opts = await fetchPresOpts(prod.id);
 
-        // Buscar regla de despacho del último pedido para este producto
         const { data: lastDispatch } = await supabase.from('pedido_items')
             .select('dispatch_factor, dispatch_tipo')
             .eq('erp_product_id', prod.id)
-            .not('dispatch_tipo', 'is', null)
-            .not('dispatch_factor', 'is', null)
-            .order('id', { ascending: false })
-            .limit(1);
+            .not('dispatch_tipo', 'is', null).not('dispatch_factor', 'is', null)
+            .order('id', { ascending: false }).limit(1);
         if (lastDispatch?.[0]) {
             const df = Number(lastDispatch[0].dispatch_factor) || 1;
             if (!opts.find(o => o.factor === df)) {
-                const label = fmtDispatchLabel(lastDispatch[0].dispatch_tipo, df);
-                opts.unshift({ factor: df, label });
+                opts.unshift({ factor: df, label: fmtDispatchLabel(lastDispatch[0].dispatch_tipo, df) });
             }
         }
 
         if (opts.length > 0) setPresMap(prev => ({ ...prev, [prod.id]: opts }));
-
         const defF = opts[0]?.factor ?? 1;
         setExtras(prev => [...prev, {
             erp_product_id: prod.id, nombre: prod.nombre,
@@ -214,14 +258,9 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
         setTimeout(() => extrasEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 80);
     }, [extras, presMap]);
 
-    const handleConfirmar = useCallback(async () => {
-        const invalidExtra = extras.find(e => e.fQty === 0 && e.sQty === 0);
-        if (invalidExtra) {
-            setSaveError(`"${invalidExtra.nombre}": al menos uno de físico o sistema debe ser mayor a 0.`);
-            return;
-        }
-        setSaving(true); setSaveError(null);
-        const p_items = rows.map(r => {
+    // ── Build p_items payload for a set of rows ─────────────────────────────────
+    const buildPItems = useCallback((rowsToProcess) => {
+        return rowsToProcess.map(r => {
             const erpFactor  = Number(r.factor) || 1;
             const dispFactor = Number(r.dispatch_factor) || erpFactor;
             const defDispQty = toDispatch(r.cantidad_asignada, erpFactor, dispFactor);
@@ -231,7 +270,6 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             const sPres = sPresVals[r.id] ?? dispFactor;
             const tp = tieneProblema[r.id];
             const hasProb = !!tp;
-            // Convertir de vuelta a unidades ERP: qty * pres / erpFactor
             const fRaw = Math.round(fQty * fPres / erpFactor);
             const sRaw = Math.round(sQty * sPres / erpFactor);
             const isDiff = fRaw !== sRaw || fPres !== sPres || hasProb;
@@ -241,15 +279,11 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             if (isDiff) {
                 if (hasProb && errorVals[r.id]) {
                     error_tipo = errorVals[r.id];
-                } else if (fRaw < sRaw) {
-                    error_tipo = 'faltante';
-                } else if (fRaw > sRaw) {
-                    error_tipo = 'sobrante';
-                } else if (fPres !== sPres) {
-                    error_tipo = 'presentacion';
-                } else {
-                    error_tipo = 'otro';
-                }
+                } else if (fRaw < sRaw)      error_tipo = 'faltante';
+                else if (fRaw > sRaw)         error_tipo = 'sobrante';
+                else if (fPres !== sPres)     error_tipo = 'presentacion';
+                else                          error_tipo = 'otro';
+
                 if (fPres !== sPres && !nota) {
                     const opts = presMap[r.erp_product_id] ?? [];
                     const lf = opts.find(o => o.factor === fPres)?.label || `×${fPres}`;
@@ -261,6 +295,41 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                 ? (cantProblemaVals[r.id] ?? 1) : null;
             return { pedido_item_id: r.id, cantidad_recibida: fRaw, nota_diferencia: nota, error_tipo, cantidad_problema: cantProb };
         });
+    }, [fQtyVals, fPresVals, sQtyVals, sPresVals, notaVals, errorVals, tieneProblema, cantProblemaVals, presMap]);
+
+    const saveExtras = useCallback(async () => {
+        if (!extras.length) return;
+        const erpFactorMap = {};
+        rows.forEach(r => { erpFactorMap[r.erp_product_id] = Number(r.factor) || 1; });
+        await supabase.from('pedido_recepcion_extras').insert(
+            extras.map(e => {
+                const ef = erpFactorMap[e.erp_product_id] ?? 1;
+                return {
+                    pedido_id: pedido.id, erp_sucursal_id: sucursalId,
+                    erp_product_id: e.erp_product_id,
+                    cantidad: Math.round(e.fQty * e.fPres / ef),
+                    nota: e.nota || (e.fPres !== e.sPres || e.fQty !== e.sQty
+                        ? `Sistema: ${e.sQty} × ${presMap[e.erp_product_id]?.find(x => x.factor === e.sPres)?.label ?? `×${e.sPres}`}`
+                        : null),
+                    reported_by: user?.id ?? null,
+                };
+            })
+        );
+    }, [extras, rows, pedido?.id, sucursalId, presMap, user]);
+
+    // ── Confirm a single box (or all if no caja map) ────────────────────────────
+    const handleConfirmarCaja = useCallback(async () => {
+        const rowsToSave = (hasCajaMap && selectedCaja !== null) ? selectedCajaRows : sortedRows;
+
+        const invalidExtra = extras.find(e => e.fQty === 0 && e.sQty === 0);
+        if (invalidExtra) {
+            setSaveError(`"${invalidExtra.nombre}": al menos uno de físico o sistema debe ser mayor a 0.`);
+            return;
+        }
+
+        setSaving(true); setSaveError(null);
+        const p_items = buildPItems(rowsToSave);
+
         try {
             const { error } = await supabase.rpc('receive_pedido_sucursal', {
                 p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
@@ -268,66 +337,293 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
             });
             if (error) throw error;
 
-            if (extras.length > 0) {
-                const erpFactorMap = {};
-                rows.forEach(r => { erpFactorMap[r.erp_product_id] = Number(r.factor) || 1; });
-                const { error: exErr } = await supabase.from('pedido_recepcion_extras').insert(
-                    extras.map(e => {
-                        const ef = erpFactorMap[e.erp_product_id] ?? 1;
-                        return {
-                            pedido_id: pedido.id, erp_sucursal_id: sucursalId,
-                            erp_product_id: e.erp_product_id,
-                            cantidad: Math.round(e.fQty * e.fPres / ef),
-                            nota: e.nota || (e.fPres !== e.sPres || e.fQty !== e.sQty
-                                ? `Sistema: ${e.sQty} × ${presMap[e.erp_product_id]?.find(x => x.factor === e.sPres)?.label ?? `×${e.sPres}`}`
-                                : null),
-                            reported_by: user?.id ?? null,
-                        };
-                    })
-                );
-                if (exErr) throw exErr;
+            const boxHasDiff  = p_items.some(it => it.error_tipo !== null);
+            const newAnyDiff  = anyHasDiff || boxHasDiff;
+            setAnyHasDiff(newAnyDiff);
+
+            if (hasCajaMap && selectedCaja !== null) {
+                // Mark this box as received
+                const newRec = [...new Set([...allRecibidas, selectedCaja])].sort((a, b) => a - b);
+                await supabase.from('pedido_sucursal_status')
+                    .update({ cajas_recibidas: newRec })
+                    .eq('pedido_id', pedido.id).eq('erp_sucursal_id', sucursalId);
+                setLocalRec(prev => [...new Set([...prev, selectedCaja])].sort((a, b) => a - b));
+
+                const nowAllDone = accessibleBoxNums.every(n => newRec.includes(n));
+
+                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_CAJA', pedido.id, {
+                    sucursal_id: sucursalId, caja: selectedCaja, items_count: p_items.length,
+                });
+
+                if (nowAllDone) {
+                    await saveExtras();
+                    useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
+                        sucursal_id: sucursalId, extras_count: extras.length,
+                    });
+                    onConfirmed?.({ hasDiff: newAnyDiff, allDone: true });
+                    onClose();
+                } else {
+                    // More boxes pending — back to picker
+                    setScreen('cajas');
+                    setSelectedCaja(null);
+                    setProdSearch(''); setShowSearch(false);
+                }
+            } else {
+                // No caja map — single confirm, original behavior
+                await saveExtras();
+                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
+                    sucursal_id: sucursalId, items_count: p_items.length, extras_count: extras.length,
+                });
+                onConfirmed?.({ hasDiff: boxHasDiff, allDone: true });
+                onClose();
             }
+        } catch (e) {
+            setSaveError(e.message);
+        } finally {
+            setSaving(false);
+        }
+    }, [
+        hasCajaMap, selectedCaja, selectedCajaRows, sortedRows, extras, buildPItems,
+        pedido, sucursalId, user, anyHasDiff, allRecibidas, accessibleBoxNums,
+        saveExtras, onConfirmed, onClose,
+    ]);
 
-            useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
-                sucursal_id: sucursalId, items_count: p_items.length, extras_count: extras.length,
-            });
-
-            const hasDiff = p_items.some(it => it.error_tipo !== null);
-            onConfirmed?.({ hasDiff, extras });
+    // ── Finalizar desde la pantalla de cajas (cuando todas ya están recibidas) ──
+    const handleFinalizar = useCallback(async () => {
+        setSaving(true); setSaveError(null);
+        try {
+            await saveExtras();
+            if (extras.length > 0) {
+                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
+                    sucursal_id: sucursalId, extras_count: extras.length,
+                });
+            }
+            onConfirmed?.({ hasDiff: anyHasDiff, allDone: true });
             onClose();
         } catch (e) {
             setSaveError(e.message);
         } finally {
             setSaving(false);
         }
-    }, [rows, fQtyVals, fPresVals, sQtyVals, sPresVals, notaVals, errorVals, tieneProblema,
-        cantProblemaVals, presMap, extras, pedido, sucursalId, user, onConfirmed, onClose]);
+    }, [saveExtras, extras, pedido?.id, sucursalId, anyHasDiff, onConfirmed, onClose]);
 
     if (!open) return null;
 
+    // Visible rows for the items grid
+    const gridRows = selectedCaja !== null ? selectedCajaRows : sortedRows;
     const visibleRows = prodSearch.trim()
-        ? sortedRows.filter(r => r.products?.nombre?.toLowerCase().includes(prodSearch.trim().toLowerCase()))
-        : sortedRows;
+        ? gridRows.filter(r => r.products?.nombre?.toLowerCase().includes(prodSearch.trim().toLowerCase()))
+        : gridRows;
+
+    // ════════════════════════════════════════════════════════════════
+    // SCREEN: CAJAS — box picker
+    // ════════════════════════════════════════════════════════════════
+    if (screen === 'cajas' && hasCajaMap) {
+        const receivedAccessible = accessibleBoxNums.filter(n => allRecibidas.includes(n)).length;
+
+        return (
+            <PedidoModal open={open} onClose={saving ? undefined : onClose} maxWidth="max-w-md">
+                <PedidoModal.Header className="px-5 py-4">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-[15px] font-bold text-slate-800 leading-snug">Confirmar recepción</h3>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                                {sucursalNombre} · {rows.length} prod. · {allBoxNums.length} caja{allBoxNums.length !== 1 ? 's' : ''}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
+                                allAccessibleDone
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : 'bg-slate-50 text-slate-600 border-slate-200'
+                            }`}>
+                                {receivedAccessible}/{accessibleBoxNums.length} recibidas
+                            </span>
+                            <button onClick={onClose} disabled={saving} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
+                                <X size={18} />
+                            </button>
+                        </div>
+                    </div>
+                </PedidoModal.Header>
+
+                <PedidoModal.Body className="px-4 py-4">
+                    <div className={`grid gap-2 ${allBoxNums.length <= 4 ? 'grid-cols-2' : allBoxNums.length <= 9 ? 'grid-cols-3' : 'grid-cols-4'}`}>
+                        {allBoxNums.map(boxNum => {
+                            const isRecibida = allRecibidas.includes(boxNum);
+                            const isFalta    = faltaCajas.includes(boxNum);
+                            const isDanada   = cajaDanada.includes(boxNum);
+                            const itemCount  = itemIdsByCaja[String(boxNum)]?.size ?? 0;
+
+                            return (
+                                <button key={boxNum}
+                                    disabled={isRecibida || isFalta}
+                                    onClick={() => { setSelectedCaja(boxNum); setScreen('items'); }}
+                                    className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 text-center transition-all ${
+                                        isRecibida ? 'bg-emerald-50 border-emerald-200 cursor-default' :
+                                        isFalta    ? 'bg-slate-50 border-slate-100 cursor-default opacity-50' :
+                                        isDanada   ? 'bg-amber-50 border-amber-300 hover:border-amber-400 active:scale-95 cursor-pointer' :
+                                                     'bg-white border-slate-200 hover:border-violet-300 hover:bg-violet-50 active:scale-95 cursor-pointer'
+                                    }`}>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
+                                        isRecibida ? 'bg-emerald-500' :
+                                        isFalta    ? 'bg-slate-300' :
+                                        isDanada   ? 'bg-amber-400' :
+                                                     'bg-violet-500 shadow-[0_2px_8px_rgba(139,92,246,0.3)]'
+                                    }`}>
+                                        {isRecibida ? <Check size={18} className="text-white" /> :
+                                         isFalta    ? <Truck size={16} className="text-white" /> :
+                                         isDanada   ? <AlertTriangle size={16} className="text-white" /> :
+                                                      <Box size={16} className="text-white" />}
+                                    </div>
+                                    <div>
+                                        <p className={`text-[12px] font-black leading-none ${
+                                            isRecibida ? 'text-emerald-700' : isFalta ? 'text-slate-400' : 'text-slate-700'
+                                        }`}>Caja {boxNum}</p>
+                                        <p className={`text-[9px] font-medium mt-0.5 ${
+                                            isRecibida ? 'text-emerald-500' : isFalta ? 'text-slate-400' : isDanada ? 'text-amber-600' : 'text-slate-400'
+                                        }`}>
+                                            {isRecibida ? '✓ Recibida' : isFalta ? 'En reenvío' : isDanada ? `${itemCount} prod. ⚠` : `${itemCount} prod.`}
+                                        </p>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {allAccessibleDone && (
+                        <div className="mt-4 flex items-start gap-2.5 px-3 py-3 rounded-2xl bg-emerald-50 border border-emerald-200">
+                            <PackageCheck size={15} className="text-emerald-500 shrink-0 mt-0.5" />
+                            <p className="text-[12px] text-emerald-700 font-medium leading-snug">
+                                {faltaCajas.length > 0
+                                    ? `Todas las cajas disponibles confirmadas. Caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map(n => `#${n}`).join(', ')} pendiente${faltaCajas.length > 1 ? 's' : ''} de reenvío.`
+                                    : '¡Todas las cajas recibidas!'
+                                }
+                            </p>
+                        </div>
+                    )}
+
+                    {faltaCajas.length > 0 && !allAccessibleDone && (
+                        <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200">
+                            <Truck size={12} className="text-slate-400 shrink-0" />
+                            <p className="text-[11px] text-slate-500">
+                                Caja{faltaCajas.length > 1 ? 's' : ''} {faltaCajas.map(n => `#${n}`).join(', ')} en reenvío — se recibirá por separado.
+                            </p>
+                        </div>
+                    )}
+                </PedidoModal.Body>
+
+                {/* Extras section on cajas screen */}
+                <div className="flex-none border-t border-slate-100 px-4 py-3">
+                    {extraOpen ? (
+                        <div className="relative">
+                            <div className="flex items-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50/60 px-3 py-2">
+                                <Search size={13} className="text-indigo-400 shrink-0" />
+                                <input ref={extraRef} type="text" placeholder="Buscar producto extra recibido…"
+                                    value={extraSearch} onChange={e => setExtraSearch(e.target.value)}
+                                    onKeyDown={e => e.key === 'Escape' && (setExtraOpen(false), setExtraSearch(''))}
+                                    className="flex-1 text-[12px] bg-transparent focus:outline-none placeholder-indigo-300 text-slate-700"
+                                />
+                                {extraBusy
+                                    ? <Loader2 size={12} className="animate-spin text-indigo-400 shrink-0" />
+                                    : <button onClick={() => { setExtraOpen(false); setExtraSearch(''); setExtraResults([]); }} className="text-slate-300 hover:text-slate-500 shrink-0"><X size={13} /></button>
+                                }
+                            </div>
+                            {extraResults.length > 0 && (
+                                <div className="absolute bottom-full mb-1 left-0 right-0 rounded-xl border border-indigo-200 bg-white shadow-2xl overflow-hidden z-50">
+                                    {extraResults.map(prod => (
+                                        <button key={prod.id} onMouseDown={() => addExtra(prod)}
+                                            className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-slate-700 hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0">
+                                            <Plus size={12} className="text-indigo-400 shrink-0" />
+                                            {prod.nombre}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <button onClick={() => { setExtraOpen(true); setTimeout(() => extraRef.current?.focus(), 60); }}
+                            className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-500 hover:text-indigo-700 transition-colors py-0.5">
+                            <PackagePlus size={13} />
+                            ¿Llegó un producto extra?
+                            {extras.length > 0 && <span className="ml-1 bg-indigo-100 text-indigo-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
+                        </button>
+                    )}
+                </div>
+
+                {allAccessibleDone && (
+                    <PedidoModal.Footer className="space-y-2">
+                        {saveError && (
+                            <div className="flex items-center gap-2 text-red-600 text-[12px] bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                                <AlertTriangle size={13} /> {saveError}
+                            </div>
+                        )}
+                        <div className="flex justify-end">
+                            <button onClick={handleFinalizar} disabled={saving}
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-[13px] hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-sm">
+                                {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
+                                Finalizar recepción
+                            </button>
+                        </div>
+                    </PedidoModal.Footer>
+                )}
+            </PedidoModal>
+        );
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // SCREEN: ITEMS — product grid for selected box (or all items)
+    // ════════════════════════════════════════════════════════════════
+    const goBack = () => { setScreen('cajas'); setSelectedCaja(null); setProdSearch(''); setShowSearch(false); };
+    const isDanadaBox = cajaDanada.includes(selectedCaja);
 
     return (
-        <PedidoModal open={open} onClose={saving ? undefined : onClose} maxWidth="max-w-2xl">
+        <PedidoModal open={open} onClose={saving ? undefined : (hasCajaMap ? goBack : onClose)} maxWidth="max-w-2xl">
+
             {/* Header */}
             <PedidoModal.Header className="px-5 py-4">
                 <div className="flex items-center gap-2">
+                    {hasCajaMap && (
+                        <button onClick={goBack} disabled={saving}
+                            className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all shrink-0 disabled:opacity-40">
+                            <ChevronLeft size={14} />
+                        </button>
+                    )}
                     <AnimatePresence mode="popLayout" initial={false}>
                         {!showSearch ? (
                             <motion.div key="title" className="flex-1 min-w-0"
                                 initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.15 }}>
-                                <h3 className="text-[15px] font-bold text-slate-800 leading-snug">Confirmar recepción</h3>
-                                <p className="text-[11px] text-slate-400 mt-0.5">
-                                    {sucursalNombre}{pedido.codigo && ` · ${pedido.codigo}`} · {rows.length} productos
-                                </p>
-                                {cajaDanada.length > 0 && (
-                                    <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
+                                {hasCajaMap ? (
+                                    <>
+                                        <h3 className="text-[15px] font-bold text-slate-800 leading-snug">
+                                            Caja {selectedCaja}
+                                            {isDanadaBox && <span className="ml-2 text-[11px] font-semibold text-amber-600">⚠ Dañada</span>}
+                                        </h3>
+                                        <p className="text-[11px] text-slate-400 mt-0.5">
+                                            {selectedCajaRows.length} productos · {sucursalNombre}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h3 className="text-[15px] font-bold text-slate-800 leading-snug">Confirmar recepción</h3>
+                                        <p className="text-[11px] text-slate-400 mt-0.5">
+                                            {sucursalNombre}{pedido.codigo && ` · ${pedido.codigo}`} · {rows.length} productos
+                                        </p>
+                                    </>
+                                )}
+                                {isDanadaBox && (
+                                    <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
                                         <AlertTriangle size={11} className="text-amber-500 shrink-0" />
                                         <span className="text-[10px] text-amber-700 font-medium">
-                                            Caja{cajaDanada.length > 1 ? 's' : ''} {cajaDanada.map(n => `#${n}`).join(', ')} llegó dañada — revisá el estado físico de los productos al contar
+                                            Esta caja llegó dañada — revisá el estado físico al contar
+                                        </span>
+                                    </div>
+                                )}
+                                {!hasCajaMap && cajaDanada.length > 0 && (
+                                    <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
+                                        <AlertTriangle size={11} className="text-amber-500 shrink-0" />
+                                        <span className="text-[10px] text-amber-700 font-medium">
+                                            Caja{cajaDanada.length > 1 ? 's' : ''} {cajaDanada.map(n => `#${n}`).join(', ')} llegó dañada — revisá el estado físico
                                         </span>
                                     </div>
                                 )}
@@ -361,12 +657,10 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         >
                             <Search size={15} />
                         </motion.button>
-                        {/* X cierra buscador si está abierto, si no cierra el modal */}
                         <button
-                            onClick={showSearch ? () => { setShowSearch(false); setProdSearch(''); } : onClose}
+                            onClick={showSearch ? () => { setShowSearch(false); setProdSearch(''); } : (hasCajaMap ? goBack : onClose)}
                             disabled={!showSearch && saving}
                             className="text-slate-400 hover:text-slate-600 transition-colors p-1 disabled:opacity-40"
-                            title={showSearch ? 'Cerrar búsqueda' : 'Cerrar'}
                         >
                             <X size={18} />
                         </button>
@@ -374,11 +668,9 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                 </div>
             </PedidoModal.Header>
 
-            {/* Tabla — Body sin overflow propio; el div interno maneja el scroll */}
+            {/* Item grid */}
             <PedidoModal.Body className="px-0 py-0" style={{ overflow: 'hidden', flex: 'none' }}>
               <div className="max-h-[48vh] overflow-y-auto">
-
-                {/* Header sticky — dentro del contenedor scroll, ancho idéntico a las filas */}
                 <div className="sticky top-0 z-10 bg-white/97 backdrop-blur-sm border-b-2 border-slate-200 shadow-sm">
                     <div className={`grid ${GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                         <span /><span />
@@ -411,20 +703,17 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         const fPres = fPresVals[r.id] ?? dispFactor;
                         const sPres = sPresVals[r.id] ?? dispFactor;
                         const tp = tieneProblema[r.id];
-                        const hasProb    = !!tp; // true o 'done'
-                        const panelOpen  = tp === true; // panel de edición abierto
-                        // Raw ERP units para comparar
+                        const hasProb   = !!tp;
+                        const panelOpen = tp === true;
                         const fRaw = Math.round(fQty * fPres / erpFactor);
                         const sRaw = Math.round(sQty * sPres / erpFactor);
                         const hasDiff = fRaw !== sRaw || fPres !== sPres;
                         const delta   = fRaw - sRaw;
 
-                        // Presentaciones: regla de despacho primero + originales de product_precios
                         const rawOpts  = presMap[r.erp_product_id] ?? [];
                         const dispLabel = fmtDispatchLabel(r.dispatch_tipo, dispFactor);
                         const dispOpt  = { factor: dispFactor, label: dispLabel };
                         const hasDispRule = r.dispatch_tipo && dispFactor !== erpFactor;
-                        // Construir lista: dispatch primero (sin duplicar), luego todas las de product_precios
                         const _seen = new Set();
                         const presOpts = [];
                         if (hasDispRule) { presOpts.push(dispOpt); _seen.add(dispFactor); }
@@ -436,24 +725,19 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         const toggleProblema = () => {
                             setTieneProblema(p => {
                                 const cur = p[r.id];
-                                if (!cur) return { ...p, [r.id]: true };          // abrir panel
-                                if (cur === true) { setErrorVals(ev => ({ ...ev, [r.id]: '' })); return { ...p, [r.id]: false }; } // cancelar
-                                return { ...p, [r.id]: true };                    // re-abrir desde 'done'
+                                if (!cur) return { ...p, [r.id]: true };
+                                if (cur === true) { setErrorVals(ev => ({ ...ev, [r.id]: '' })); return { ...p, [r.id]: false }; }
+                                return { ...p, [r.id]: true };
                             });
                         };
-
                         const confirmProblema = () => setTieneProblema(p => ({ ...p, [r.id]: 'done' }));
 
                         return (
                             <div key={r.id} className={`transition-colors ${hasDiff ? 'bg-amber-50' : hasProb ? 'bg-orange-50/40' : 'bg-white hover:bg-slate-50/50'}`}>
                                 <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
-                                    {/* Producto */}
                                     <span className="text-[12px] text-slate-700 font-semibold leading-snug">{r.products?.nombre}</span>
-
-                                    {/* Asignado */}
                                     <span className="text-[12px] font-bold text-slate-500 tabular-nums text-center">{defDispQty}</span>
 
-                                    {/* Físico Pres */}
                                     <select value={fPres}
                                         data-qty-row={rowIdx} data-qty-col="fpres"
                                         onChange={e => setFPresVals(p => ({ ...p, [r.id]: Number(e.target.value) }))}
@@ -466,7 +750,6 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                         className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full ${fPres !== sPres ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-slate-700 focus:border-teal-400'}`}
                                     >{presOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
 
-                                    {/* Físico Qty */}
                                     <div className="relative">
                                         <input type="number" min={0} value={fQty}
                                             data-qty-row={rowIdx} data-qty-col="fqty"
@@ -481,7 +764,6 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                         )}
                                     </div>
 
-                                    {/* Sistema Pres */}
                                     <select value={sPres}
                                         data-qty-row={rowIdx} data-qty-col="spres"
                                         onChange={e => setSPresVals(p => ({ ...p, [r.id]: Number(e.target.value) }))}
@@ -494,7 +776,6 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                         className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full ${fPres !== sPres ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-slate-700 focus:border-violet-400'}`}
                                     >{presOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
 
-                                    {/* Sistema Qty */}
                                     <input type="number" min={0} value={sQty}
                                         data-qty-row={rowIdx} data-qty-col="sqty"
                                         onChange={e => setSQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
@@ -502,7 +783,6 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                         className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-slate-700 focus:border-violet-400'}`}
                                     />
 
-                                    {/* ⚠ — toggle problema manual */}
                                     <button onClick={toggleProblema}
                                         title={panelOpen ? 'Cancelar problema' : hasProb ? 'Editar problema' : hasDiff ? 'Diferencia detectada' : 'Reportar problema'}
                                         className={`flex justify-center p-1 rounded-lg transition-colors ${
@@ -516,7 +796,6 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                     </button>
                                 </div>
 
-                                {/* Panel de problema — solo causas manuales: dañado / vencido / otro */}
                                 {panelOpen && (
                                     <div className="px-5 pb-2.5 flex items-center gap-2 flex-wrap">
                                         {ERROR_TIPOS.map(t => (
@@ -529,7 +808,6 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                                 }`}
                                             >{t.label}</button>
                                         ))}
-                                        {/* ¿Cuántos están dañados/vencidos? */}
                                         {(errorVals[r.id] === 'danado' || errorVals[r.id] === 'vencido') && (
                                             <div className="flex items-center gap-1.5 shrink-0">
                                                 <span className="text-[10px] text-slate-400">¿Cuántos?</span>
@@ -559,7 +837,7 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         );
                     })}
 
-                    {/* Extras — misma grid, color distinto */}
+                    {/* Extras */}
                     {extras.map((e, ei) => {
                         const eOpts   = presMap[e.erp_product_id] ?? [{ factor: 1, label: 'Unidad' }];
                         const eDiff   = e.fQty !== e.sQty || e.fPres !== e.sPres;
@@ -575,31 +853,22 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                                         {eBothZero && <p className="text-[10px] text-red-500 font-medium mt-0.5">Al menos uno debe tener valor</p>}
                                     </div>
                                     <span className="text-[12px] text-slate-400 text-center">—</span>
-
-                                    {/* Físico Pres */}
                                     <select value={e.fPres}
                                         onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fPres: Number(ev.target.value) } : x))}
                                         className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-indigo-700'}`}
                                     >{eOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
-
-                                    {/* Físico Qty */}
                                     <input type="number" min={0} value={e.fQty}
                                         onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) ?? 0) } : x))}
                                         className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-indigo-700'}`}
                                     />
-
-                                    {/* Sistema Pres */}
                                     <select value={e.sPres}
                                         onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sPres: Number(ev.target.value) } : x))}
                                         className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-indigo-700'}`}
                                     >{eOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
-
-                                    {/* Sistema Qty */}
                                     <input type="number" min={0} value={e.sQty}
                                         onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(0, parseInt(ev.target.value) ?? 0) } : x))}
                                         className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-indigo-700'}`}
                                     />
-
                                     <button onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))}
                                         className="flex justify-center p-1 text-slate-300 hover:text-red-500 transition-colors">
                                         <Trash2 size={13} />
@@ -616,10 +885,10 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                     })}
                     <div ref={extrasEndRef} />
                 </div>
-              </div>{/* end inner scroll container */}
+              </div>
             </PedidoModal.Body>
 
-            {/* Buscador de extras */}
+            {/* Extras search bar */}
             <div className="flex-none border-t border-slate-100 px-5 py-3">
                 <div className="relative">
                     {extraOpen && (
@@ -678,15 +947,17 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         <AlertTriangle size={13} /> {saveError}
                     </div>
                 )}
-                <div className="flex justify-end gap-2">
-                    <button onClick={onClose} disabled={saving}
+                <div className="flex justify-between gap-2">
+                    <button
+                        onClick={hasCajaMap ? goBack : onClose}
+                        disabled={saving}
                         className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors disabled:opacity-40">
-                        Cancelar
+                        {hasCajaMap ? 'Volver' : 'Cancelar'}
                     </button>
-                    <button onClick={handleConfirmar} disabled={saving}
+                    <button onClick={handleConfirmarCaja} disabled={saving}
                         className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 text-[13px] transition-colors disabled:opacity-50">
                         {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
-                        Confirmar recepción
+                        {hasCajaMap ? `Confirmar Caja ${selectedCaja}` : 'Confirmar recepción'}
                     </button>
                 </div>
             </PedidoModal.Footer>

@@ -1841,7 +1841,20 @@ export default function TabPedidos({ searchTerm = '' }) {
         if (!rows.length) return;
         const activeRow  = activeRows.find(r => r.pedido_id === pedidoId && r.erp_sucursal_id === sucId);
         const cajaDanada = activeRow?.llegada_tipo === 'caja_danada' ? (activeRow?.falta_cajas ?? []) : [];
-        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada });
+        const faltaCajas = activeRow?.llegada_tipo === 'falta_caja'  ? (activeRow?.falta_cajas ?? []) : [];
+        const cajaMap    = activeRow?.caja_map ?? {};
+
+        // Load pagina_items + cajas_recibidas only when caja_map is available
+        let paginaItems = {}, cajasRecibidas = [];
+        if (Object.keys(cajaMap).length > 0) {
+            const { data: pss } = await supabase.from('pedido_sucursal_status')
+                .select('pagina_items, cajas_recibidas')
+                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
+            paginaItems    = pss?.pagina_items    ?? {};
+            cajasRecibidas = pss?.cajas_recibidas ?? [];
+        }
+
+        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada, cajaMap, paginaItems, cajasRecibidas, faltaCajas });
     }, [items, fetchItems, activeRows]);
 
     const openReenvioModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
@@ -2256,25 +2269,36 @@ export default function TabPedidos({ searchTerm = '' }) {
                     sucursalId={modal.sucId}
                     sucursalNombre={branchName}
                     rows={modal.rows}
-                    cajaDanada={modal.cajaDanada ?? []}
-                    onConfirmed={async ({ hasDiff }) => {
+                    cajaDanada={modal.cajaDanada   ?? []}
+                    cajaMap={modal.cajaMap         ?? {}}
+                    paginaItems={modal.paginaItems  ?? {}}
+                    cajasRecibidas={modal.cajasRecibidas ?? []}
+                    faltaCajas={modal.faltaCajas   ?? []}
+                    onConfirmed={async ({ hasDiff, allDone }) => {
                         const { pedido, sucId, key } = modal;
                         setModal(null);
-                        await handleMarkErp(pedido.id, sucId, key);
-                        if (hasDiff) await handleReportarDiferencias(pedido.id, sucId);
-                        fetchItems(key, pedido.id, sucId);
-                        // Una sola notificación a bodega — sin problema o con problema
-                        supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
-                            if (!b?.branch_id) return;
-                            const title   = hasDiff
-                                ? `Problemas en pedido #${pedido.numero} — ${branchName}`
-                                : `Pedido #${pedido.numero} confirmado — ${branchName}`;
-                            const message = hasDiff
-                                ? `${branchName} reporta diferencias o productos con problemas en la recepción del pedido #${pedido.numero}. Revisá y marcalo como corregido.`
-                                : `${branchName} confirmó la recepción del pedido #${pedido.numero} sin novedades.`;
-                            supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: hasDiff ? 'HIGH' : 'NORMAL' }).catch(() => {});
-                            supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
-                        }).catch(() => {});
+                        if (allDone) {
+                            await handleMarkErp(pedido.id, sucId, key);
+                            // Re-fetch items to get accurate con_diferencia count
+                            const loaded = await fetchItems(key, pedido.id, sucId);
+                            const realHasDiff = hasDiff || (loaded || []).some(r => r.status === 'con_diferencia');
+                            if (realHasDiff) await handleReportarDiferencias(pedido.id, sucId);
+                            supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
+                                if (!b?.branch_id) return;
+                                const title   = realHasDiff
+                                    ? `Problemas en pedido #${pedido.numero} — ${branchName}`
+                                    : `Pedido #${pedido.numero} confirmado — ${branchName}`;
+                                const message = realHasDiff
+                                    ? `${branchName} reporta diferencias en la recepción del pedido #${pedido.numero}. Revisá y marcalo como corregido.`
+                                    : `${branchName} confirmó la recepción del pedido #${pedido.numero} sin novedades.`;
+                                supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: realHasDiff ? 'HIGH' : 'NORMAL' }).catch(() => {});
+                                supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
+                            }).catch(() => {});
+                        } else {
+                            // Partial box confirmed — reload items silently
+                            fetchItems(key, pedido.id, sucId);
+                        }
+                        await loadActive();
                     }}
                 />
             )}

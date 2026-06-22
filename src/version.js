@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.277';
+export const APP_VERSION = '2.2.278';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.278 — feat(pedidos/recepcion): recepción por caja independiente — picker de cajas, confirmar caja a caja, cajas_recibidas en DB, falta_caja separada, lastbox cierra + notifica; fallback sin caja_map = flujo original
 // v2.2.277 — feat(pedidos/timeline): reenvio_por guardado en DB + mostrado en timeline; falta_caja reutiliza llegadaEmp; opacity cards completadas 60→80; FinalizarCajasModal rediseño visual (page-count card, input grande, page rows con badge+cards de cajas)
 // v2.2.276 — feat(pedidos/finalizar): paginas pre-calculadas al generar PDF → Finalizar instantáneo; fix getBuffer() Promise API; paginas guardadas en pedido_sucursal_status
 // v2.2.275 — feat(pedidos/finalizar): getExactPageGroups via pdfmake pageBreakBefore — id='row_N' en celdas → conteo exacto de páginas y primer producto por página del PDF real

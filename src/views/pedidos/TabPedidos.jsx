@@ -1832,7 +1832,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const isEnvioBusy = busyEnvio === row.pedido_id;
 
                             const pedidoStages = pedidoStageMap.get(row.pedido_id) ?? {};
-                            const canActuar = canEdit || !isBranch; // admin/bodega
+                            const canActuar = canEdit && !isBranch; // GESTIONAR + Alcance TODOS
 
                             const canIniciar       = canActuar && !isBranch && stage === 'sin_iniciar' && row.pedido_status === 'confirmado';
                             const canPausar        = canActuar && !isBranch && stage === 'preparando';
@@ -1951,7 +1951,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     <UserPlus size={10} />Apoyo
                                                 </button>
                                             )}
-                                            {!isBranch && (
+                                            {canActuar && (
                                                 <button
                                                     onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey); }}
                                                     disabled={printingPdf === row.pedido_id}

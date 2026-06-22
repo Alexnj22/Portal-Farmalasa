@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.264';
+export const APP_VERSION = '2.2.265';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.265 — fix(pedidos/permisos): GESTIONAR ahora gatéa PDF+Iniciar+Pausar+Finalizar+Reanudar+EnRuta — canActuar cambia de (canEdit||!isBranch) a (canEdit&&!isBranch); sin GESTIONAR solo se puede ver
 // v2.2.264 — feat(pedidos): botón PDF en cada card de TabPedidos — descarga el PDF del pedido directamente desde los items guardados en DB (printFromPedidoItems); visible solo para admin/bodega (!isBranch); spinner mientras genera
 // v2.2.263 — fix(pedidos/recepcion): presentaciones paginadas en chunks de 1000 (evita cap PostgREST); join explícito id_presentacion; AMOXICILINA y similares ahora muestran todas las presentaciones (caja+blíster+unidad)
 // v2.2.262 — fix(pedidos/recepcion): presOpts muestra presentaciones originales (product_precios) + presentación especial de la regla primero, sin duplicados

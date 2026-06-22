@@ -436,7 +436,7 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, onSucce
             useStaff.getState().appendAuditLog('PEDIDO_APOYO_REGISTRADO', pedidoId, { sucursal_id: sucId, employee_id: employee.id });
             onSuccess(employee);
             onClose();
-        } catch { setError('Error al registrar apoyo.'); }
+        } catch (err) { setError(err?.message || 'Error al registrar apoyo.'); }
         finally  { setLoading(false); }
     }, [employee, pedidoId, sucId, currentUserId, onSuccess, onClose]);
 

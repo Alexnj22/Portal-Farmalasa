@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.281';
+export const APP_VERSION = '2.2.282';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.282 — fix(pedidos/apoyo): UNIQUE INDEX en (pedido_id,erp_sucursal_id,employee_id) + drop FK registered_by→employees; upsert fallaba silenciosamente para usuarios sin registro en employees
 // v2.2.281 — fix(pedidos/apoyo): batch-load para TODOS los usuarios (no solo branch); bodega perdía apoyo al refrescar porque el effect tenía guard isBranch
 // v2.2.280 — fix(pedidos/cards): badge+ring caja dañada, apoyo con nombre+foto, cajas siempre visible, confirm En Ruta con nro cajas grande, fix apoyo desaparecía (loadActive post-save)
 // v2.2.279 — feat(pedidos/recepcion): botón "Todo OK" en grid de caja — confirma cantidades exactas sin diferencias en un tap, sin tocar el estado de los inputs

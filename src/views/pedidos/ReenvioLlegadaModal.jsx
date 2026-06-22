@@ -1,41 +1,36 @@
-import React, { useState, useMemo } from 'react';
-import { PackageCheck, PackageX, AlertTriangle, X, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck } from 'lucide-react';
 import PedidoModal from './PedidoModal';
-import { getPageGroups } from '../../utils/pedidoPrint';
-
-function deriveCajas(cajaMap, items) {
-    if (cajaMap && Object.keys(cajaMap).length > 0) {
-        return Object.entries(cajaMap)
-            .sort(([a], [b]) => Number(a) - Number(b))
-            .map(([boxNum, pages]) => ({
-                num: Number(boxNum),
-                label: `Caja ${boxNum}`,
-                hint: pages.length === 1 ? `pág. ${pages[0]}` : `págs. ${pages[0]}–${pages[pages.length - 1]}`,
-            }));
-    }
-    const groups = getPageGroups(items);
-    return groups.map((_, i) => ({ num: i + 1, label: `Caja ${i + 1}`, hint: `pág. ${i + 1}` }));
-}
 
 const TOGGLE_CFG = {
     ok:       { Icon: PackageCheck,  active: 'bg-emerald-500 text-white ring-2 ring-emerald-300', idle: 'bg-white text-slate-400 hover:text-emerald-500 hover:bg-emerald-50' },
-    danada:   { Icon: AlertTriangle, active: 'bg-amber-500 text-white ring-2 ring-amber-300',   idle: 'bg-white text-slate-400 hover:text-amber-500 hover:bg-amber-50' },
-    faltante: { Icon: PackageX,      active: 'bg-rose-500 text-white ring-2 ring-rose-300',     idle: 'bg-white text-slate-400 hover:text-rose-500 hover:bg-rose-50' },
+    danada:   { Icon: AlertTriangle, active: 'bg-amber-500 text-white ring-2 ring-amber-300',     idle: 'bg-white text-slate-400 hover:text-amber-500 hover:bg-amber-50' },
+    faltante: { Icon: PackageX,      active: 'bg-rose-500 text-white ring-2 ring-rose-300',       idle: 'bg-white text-slate-400 hover:text-rose-500 hover:bg-rose-50' },
 };
 
-export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, totalCajas = 0 }) {
+/**
+ * Modal que se abre cuando llega el reenvío de cajas faltantes.
+ * Por cada caja del ciclo de reenvío, el usuario elige: OK / Dañada / Aún falta.
+ *
+ * Props:
+ *   open           – boolean
+ *   onClose        – () => void
+ *   onConfirm      – ({ cajasOk, cajasDanadas, cajasFaltantes, nota }) => void
+ *   pedidoNumero   – number
+ *   cajasCiclo     – number[] — cajas que vienen en este reenvío
+ *   cicloNum       – number — número de ciclo (1, 2, …)
+ */
+export default function ReenvioLlegadaModal({ open, onClose, onConfirm, pedidoNumero, cajasCiclo = [], cicloNum = 1 }) {
     const [estados,    setEstados]    = useState({});
     const [nota,       setNota]       = useState('');
     const [submitting, setSubmitting] = useState(false);
 
-    const cajas = useMemo(() => deriveCajas(cajaMap, items), [cajaMap, items]);
+    const getEst = (num) => estados[num] ?? 'ok';
+    const setEst = (num, val) => setEstados(prev => ({ ...prev, [num]: val }));
 
-    const getEst  = (num) => estados[num] ?? 'ok';
-    const setEst  = (num, val) => setEstados(prev => ({ ...prev, [num]: val }));
-
-    const cajasOk        = cajas.filter(c => getEst(c.num) === 'ok').map(c => c.num);
-    const cajasDanadas   = cajas.filter(c => getEst(c.num) === 'danada').map(c => c.num);
-    const cajasFaltantes = cajas.filter(c => getEst(c.num) === 'faltante').map(c => c.num);
+    const cajasOk        = cajasCiclo.filter(n => getEst(n) === 'ok');
+    const cajasDanadas   = cajasCiclo.filter(n => getEst(n) === 'danada');
+    const cajasFaltantes = cajasCiclo.filter(n => getEst(n) === 'faltante');
     const hayProblemas   = cajasDanadas.length > 0 || cajasFaltantes.length > 0;
 
     const handleConfirm = () => {
@@ -55,9 +50,14 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
         <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-sm">
             {/* Header */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-100">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500 shadow-[0_2px_10px_rgba(99,102,241,0.4)] flex items-center justify-center shrink-0">
+                    <Truck size={16} className="text-white" />
+                </div>
                 <div className="flex-1">
-                    <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Pedido #{pedidoNumero}</p>
-                    <h3 className="text-[14px] font-bold text-slate-800 leading-tight">¿Cómo llegó cada caja?</h3>
+                    <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">
+                        Pedido #{pedidoNumero} · Reenvío {cicloNum > 1 ? cicloNum : ''}
+                    </p>
+                    <h3 className="text-[14px] font-bold text-slate-800 leading-tight">¿Cómo llegó el reenvío?</h3>
                 </div>
                 <button onClick={handleClose} disabled={submitting} className="text-slate-400 hover:text-slate-600 transition-colors">
                     <X size={15} />
@@ -65,30 +65,30 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             </div>
 
             {/* Body */}
-            <div className="px-5 py-4 space-y-2 max-h-[55vh] overflow-y-auto">
+            <div className="px-5 py-4 space-y-2 max-h-[50vh] overflow-y-auto">
                 <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold mb-3">
-                    {cajas.length} caja{cajas.length !== 1 ? 's' : ''} en el pedido
+                    {cajasCiclo.length} caja{cajasCiclo.length !== 1 ? 's' : ''} esperadas en este reenvío
                 </p>
 
-                {cajas.map(c => {
-                    const est = getEst(c.num);
-                    const numBg = est === 'ok' ? 'bg-emerald-500 shadow-[0_2px_8px_rgba(16,185,129,0.35)]'
+                {cajasCiclo.map(num => {
+                    const est  = getEst(num);
+                    const numBg = est === 'ok'     ? 'bg-emerald-500 shadow-[0_2px_8px_rgba(16,185,129,0.35)]'
                                 : est === 'danada' ? 'bg-amber-500 shadow-[0_2px_8px_rgba(245,158,11,0.35)]'
-                                : 'bg-rose-500 shadow-[0_2px_8px_rgba(239,68,68,0.35)]';
+                                :                    'bg-rose-500 shadow-[0_2px_8px_rgba(239,68,68,0.35)]';
                     return (
-                        <div key={c.num} className="flex items-center gap-2.5 p-2.5 rounded-2xl border border-slate-200/80 bg-white/70">
+                        <div key={num} className="flex items-center gap-2.5 p-2.5 rounded-2xl border border-slate-200/80 bg-white/70">
                             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-[13px] tabular-nums text-white transition-all ${numBg}`}>
-                                {c.num}
+                                {num}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-[11px] font-semibold text-slate-700 leading-tight">{c.label}</p>
-                                <p className="text-[9px] text-slate-400">{c.hint}</p>
+                                <p className="text-[11px] font-semibold text-slate-700 leading-tight">Caja #{num}</p>
+                                <p className="text-[9px] text-slate-400">Reenvío {cicloNum > 1 ? cicloNum : '1'}</p>
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                                 {(['ok', 'danada', 'faltante']).map(e => {
                                     const { Icon, active, idle } = TOGGLE_CFG[e];
                                     return (
-                                        <button key={e} onClick={() => setEst(c.num, e)}
+                                        <button key={e} onClick={() => setEst(num, e)}
                                             className={`w-8 h-8 rounded-xl border border-slate-200 flex items-center justify-center transition-all active:scale-95 ${est === e ? active : idle}`}>
                                             <Icon size={13} />
                                         </button>
@@ -104,8 +104,8 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Nota (opcional)</label>
                         <textarea
                             value={nota} onChange={e => setNota(e.target.value)} rows={2}
-                            placeholder="Ej. caja 3 aplastada, caja 4 nunca fue cargada…"
-                            className="mt-1 w-full text-[11px] rounded-xl border border-slate-200 px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            placeholder="Ej. caja dañada en el fondo, caja 4 nunca llegó…"
+                            className="mt-1 w-full text-[11px] rounded-xl border border-slate-200 px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
                         />
                     </div>
                 )}
@@ -122,7 +122,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         )}
                         {cajasFaltantes.length > 0 && (
                             <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
-                                ✗ No llegó{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')}
+                                ✗ Aún falta{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')} — se solicitará otro reenvío
                             </span>
                         )}
                     </div>
@@ -133,9 +133,9 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         Cancelar
                     </button>
                     <button onClick={handleConfirm} disabled={submitting}
-                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-40 active:scale-95 transition-all flex items-center gap-1.5">
+                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 active:scale-95 transition-all flex items-center gap-1.5">
                         {submitting && <Loader2 size={11} className="animate-spin" />}
-                        Confirmar llegada
+                        Confirmar reenvío
                     </button>
                 </div>
             </div>

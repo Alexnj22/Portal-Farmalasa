@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.285';
+export const APP_VERSION = '2.2.286';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.286 — feat(pedidos/llegada): flujo reenvío completo — LlegadaModal per-caja 3-way (OK/Dañada/No llegó), soporte tipo 'mixto', ReenvioLlegadaModal para confirmar reenvío con estado por caja, ciclos múltiples en reenvios_historial, ReceptionActions con banners independientes dañada+faltante, timeline anidado por ciclo
 // v2.2.285 — fix(pedidos/cap1000): eventos también paginado con loop; .range(0,4999) no supera el cap igual que .range(0,9999)
 // v2.2.284 — fix(pedidos/cap1000): paginación en fetchItems+fetchPedidoItems; hay pedidos activos con 1007/1003 items que se truncaban silenciosamente; +range(0,4999) en eventos
 // v2.2.283 — feat(pedidos/apoyo): toast "Ya está de apoyo" si el empleado ya fue registrado; check local antes de tocar DB

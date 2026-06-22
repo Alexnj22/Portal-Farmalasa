@@ -18,6 +18,7 @@ import TablePagination from '../../components/common/TablePagination';
 import RecepcionModal from './RecepcionModal';
 import PedidoModal from './PedidoModal';
 import LlegadaModal from './LlegadaModal';
+import ReenvioLlegadaModal from './ReenvioLlegadaModal';
 import FinalizarCajasModal from './FinalizarCajasModal';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -743,9 +744,28 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
         { key: 'erp',        label: 'Finalizado', time: row.recibido_erp_at,   emp: erpEmp,        apoyo: receptionApoyo },
     ];
     if (row.falta_caja_at) {
-        nodes.push({ key: 'falta_caja', label: row.llegada_tipo === 'caja_danada' ? 'Caja dañada' : 'Falta caja', time: row.falta_caja_at, emp: llegadaEmp });
-        if (row.reenvio_bodega_at) nodes.push({ key: 'reenvio', label: 'Reenvío', time: row.reenvio_bodega_at, emp: reenvioEmp });
-        if (row.segunda_llegada_at) nodes.push({ key: 'seg_llegada', label: '2ª Llegada', time: row.segunda_llegada_at });
+        // Label descriptivo según tipo
+        const problemaLabel = row.llegada_tipo === 'mixto'      ? 'Dañada + Falta'
+                            : row.llegada_tipo === 'caja_danada' ? 'Caja dañada'
+                            :                                       'Falta caja';
+        nodes.push({ key: 'falta_caja', label: problemaLabel, time: row.falta_caja_at, emp: llegadaEmp });
+
+        // Ciclos de reenvío desde reenvios_historial (nuevo)
+        const historial = row.reenvios_historial ?? [];
+        if (historial.length > 0) {
+            historial.forEach((ciclo, i) => {
+                const lbl = historial.length > 1 ? `Reenvío ${ciclo.ciclo}` : 'Reenvío';
+                nodes.push({ key: `reenvio_${i}`, label: lbl, time: ciclo.sent_at, emp: reenvioEmp });
+                if (ciclo.arrived_at) {
+                    const llegadaLbl = historial.length > 1 ? `Llegada R.${ciclo.ciclo}` : '2ª Llegada';
+                    nodes.push({ key: `seg_llegada_${i}`, label: llegadaLbl, time: ciclo.arrived_at });
+                }
+            });
+        } else {
+            // Compat con pedidos anteriores sin reenvios_historial
+            if (row.reenvio_bodega_at) nodes.push({ key: 'reenvio', label: 'Reenvío', time: row.reenvio_bodega_at, emp: reenvioEmp });
+            if (row.segunda_llegada_at) nodes.push({ key: 'seg_llegada', label: '2ª Llegada', time: row.segunda_llegada_at });
+        }
     }
     if (hasDif) {
         nodes.push({ key: 'diferencias', label: 'Diferencias', time: row.diferencias_reportadas_at, emp: difsEmp });
@@ -1177,7 +1197,7 @@ function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, em
 
 // ─── Reception actions ────────────────────────────────────────────────────────
 
-function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0, llegadaTipo, reenvioBodygaAt, segundaLlegadaAt, faltaCajas = [], hasFaltaItems = false }) {
+function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false }) {
     const empChip = (emp) => emp ? (
         <span className="flex items-center gap-1 text-[10px] text-slate-500">
             {emp.photo_url
@@ -1203,6 +1223,15 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
         </button>
     );
 
+    // Estado de reenvíos — ciclo pendiente de llegada
+    const cicloEnCamino = reenviosHistorial.find(c => c.sent_at && !c.arrived_at);
+    const hasFaltaPendiente = faltaCajas.length > 0;
+    const hasDanadaPendiente = cajasDanadas.length > 0;
+    const hayProblema = hasFaltaPendiente || hasDanadaPendiente;
+
+    // ¿Cuántos ciclos de reenvío se han completado? (todos tienen arrived_at)
+    const todosReenviosResueltos = reenviosHistorial.length > 0 && reenviosHistorial.every(c => c.arrived_at);
+
     return (
         <div className="border-t border-slate-100 px-4 py-3 space-y-2">
             <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Recepción</div>
@@ -1221,26 +1250,42 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
                 }
             </div>
 
-            {/* Sub-fila: estado de caja faltante / reenvío */}
-            {llegadaOk && llegadaTipo === 'falta_caja' && !segundaLlegadaAt && (
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] ${reenvioBodygaAt ? 'bg-indigo-50/40 border-indigo-100' : 'bg-amber-50/40 border-amber-100'}`}>
-                    <AlertTriangle size={12} className={reenvioBodygaAt ? 'text-indigo-400' : 'text-amber-500'} />
-                    <span className={reenvioBodygaAt ? 'text-indigo-700' : 'text-amber-700'}>
-                        {reenvioBodygaAt
-                            ? `Reenvío en camino — caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map(n => `#${n}`).join(', ')}`
-                            : `Caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map(n => `#${n}`).join(', ')} — bodega notificada`}
+            {/* Banner: cajas dañadas (info — accesibles para recepción) */}
+            {llegadaOk && hasDanadaPendiente && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-amber-50/40 border-amber-100 text-[11px]">
+                    <AlertTriangle size={12} className="text-amber-500 shrink-0" />
+                    <span className="text-amber-700">
+                        Caja{cajasDanadas.length > 1 ? 's' : ''} dañada{cajasDanadas.length > 1 ? 's' : ''}: {cajasDanadas.map(n => `#${n}`).join(', ')} — revisar productos al contar
                     </span>
-                    {reenvioBodygaAt && (
-                        <button onClick={onSegundaLlegada} disabled={!!busy}
-                            className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50">
-                            {busy === 'segunda_llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar llegada'}
-                        </button>
-                    )}
                 </div>
             )}
 
-            {/* Paso 3 reenvío — contar items de la caja que llegó después */}
-            {llegadaOk && llegadaTipo === 'falta_caja' && segundaLlegadaAt && hasFaltaItems && (
+            {/* Banner: cajas faltantes — ciclos de reenvío */}
+            {llegadaOk && hasFaltaPendiente && !cicloEnCamino && !todosReenviosResueltos && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-rose-50/40 border-rose-100 text-[11px]">
+                    <PackageX size={12} className="text-rose-500 shrink-0" />
+                    <span className="text-rose-700">
+                        Caja{faltaCajas.length > 1 ? 's' : ''} {faltaCajas.map(n => `#${n}`).join(', ')} — bodega notificada, esperando reenvío
+                    </span>
+                </div>
+            )}
+
+            {/* Banner: reenvío en camino — mostrar por cada ciclo activo */}
+            {llegadaOk && cicloEnCamino && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-indigo-50/40 border-indigo-100 text-[11px]">
+                    <Truck size={12} className="text-indigo-400 shrink-0" />
+                    <span className="text-indigo-700">
+                        {reenviosHistorial.length > 1 ? `Reenvío ${cicloEnCamino.ciclo} en camino` : 'Reenvío en camino'} — caja{cicloEnCamino.cajas?.length > 1 ? 's' : ''} {(cicloEnCamino.cajas ?? []).map(n => `#${n}`).join(', ')}
+                    </span>
+                    <button onClick={onSegundaLlegada} disabled={!!busy}
+                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shrink-0">
+                        {busy === 'segunda_llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar llegada'}
+                    </button>
+                </div>
+            )}
+
+            {/* Revisar items del reenvío (después de confirmar la segunda llegada) */}
+            {llegadaOk && todosReenviosResueltos && hasFaltaItems && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-violet-50/40 border-violet-100 text-[11px]">
                     <Database size={13} className="text-violet-500" />
                     <span className="text-violet-700">Revisar caja del reenvío en Sistema de Ventas</span>
@@ -1251,7 +1296,7 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
                 </div>
             )}
 
-            {/* Paso 2: Confirmar en Sistema de Ventas (abre modal) */}
+            {/* Paso 2: Confirmar en Sistema de Ventas */}
             {llegadaOk && !erpOk && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-violet-50/40 border-violet-100 text-[11px]">
                     <Database size={13} className="text-violet-500" />
@@ -1261,18 +1306,15 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
                     <div className="ml-auto flex items-center gap-1.5">
                         {apoyoChips}
                         {apoyoBtn}
-                        <button
-                            onClick={onOpenRecibir}
-                            disabled={!!busy}
-                            className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-50"
-                        >
+                        <button onClick={onOpenRecibir} disabled={!!busy}
+                            className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-50">
                             Confirmar
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* erpOk: confirmado */}
+            {/* Completado en ERP */}
             {erpOk && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-emerald-50/40 border-emerald-100 text-[11px]">
                     <Database size={13} className="text-emerald-500" />
@@ -1409,8 +1451,9 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [busyEnvio,     setBusyEnvio]     = useState(null);
     const [enRutaConfirm, setEnRutaConfirm] = useState(null); // { pedidoId, sucId, numero, totalCajas }
     const [modal,         setModal]         = useState(null);
-    const [llegadaModal,    setLlegadaModal]    = useState(null); // { pedidoId, sucId, key, rows }
-    const [finalizarModal,  setFinalizarModal]  = useState(null); // { pedidoId, sucId, numero, key, rows }
+    const [llegadaModal,       setLlegadaModal]       = useState(null); // { pedidoId, sucId, key, rows }
+    const [reenvioLlegadaModal,setReenvioLlegadaModal] = useState(null); // { pedidoId, sucId, key, ciclo, cajasCiclo }
+    const [finalizarModal,     setFinalizarModal]      = useState(null); // { pedidoId, sucId, numero, key, rows }
     const [newAlert,      setNewAlert]      = useState(null);
 
     // Pause modal
@@ -1766,62 +1809,71 @@ export default function TabPedidos({ searchTerm = '' }) {
         setLlegadaModal({ pedidoId, sucId, key, rows: rows ?? [] });
     }, [busyAction, items, fetchItems]);
 
-    const handleLlegadaConfirm = useCallback(async ({ tipo, cajasAfectadas, nota }) => {
+    const handleLlegadaConfirm = useCallback(async ({ cajasOk, cajasDanadas, cajasFaltantes, nota }) => {
         if (!llegadaModal) return;
         const { pedidoId, sucId, key, rows } = llegadaModal;
         setLlegadaModal(null);
         setBusyAction('llegada');
         try {
-            // 1. Marcar items de la caja faltante/dañada
-            if (cajasAfectadas.length > 0) {
-                // Intentar usar el mapa exacto guardado al Finalizar
+            // 1. Determinar tipo global
+            const hasFalta  = cajasFaltantes.length > 0;
+            const hasDanada = cajasDanadas.length > 0;
+            const tipo = hasFalta && hasDanada ? 'mixto'
+                       : hasFalta              ? 'falta_caja'
+                       : hasDanada             ? 'caja_danada'
+                       :                         'completa';
+
+            // 2. Marcar items de cajas faltantes como falta_caja: true
+            if (hasFalta) {
                 const { data: pss } = await supabase
                     .from('pedido_sucursal_status')
                     .select('caja_map, pagina_items')
                     .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
                     .maybeSingle();
-                const cajaMapDb    = pss?.caja_map    ?? {};
+                const cajaMapDb     = pss?.caja_map    ?? {};
                 const paginaItemsDb = pss?.pagina_items ?? {};
 
                 let missingIds = [];
                 if (Object.keys(paginaItemsDb).length > 0) {
-                    // Mapa exacto disponible
-                    const missingPages = cajasAfectadas.flatMap(n => cajaMapDb[String(n)] ?? []);
+                    const missingPages = cajasFaltantes.flatMap(n => cajaMapDb[String(n)] ?? []);
                     missingIds = missingPages.flatMap(p => paginaItemsDb[String(p)] ?? []);
                 } else {
-                    // Fallback: simular con getPageGroups (pedidos anteriores sin mapa)
                     const pageGroups = getPageGroups(rows);
-                    missingIds = cajasAfectadas.flatMap(n => pageGroups[n - 1]?.ids ?? []);
+                    missingIds = cajasFaltantes.flatMap(n => pageGroups[n - 1]?.ids ?? []);
                 }
                 if (missingIds.length > 0) {
                     await supabase.from('pedido_items').update({ falta_caja: true }).in('id', missingIds);
                 }
             }
-            // 2. Confirmar llegada física (siempre — falta_caja incluido, para habilitar Paso 2)
+
+            // 3. Confirmar llegada física
             await supabase.rpc('update_pedido_sucursal_lifecycle', {
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
                 p_stage: 'confirmar_llegada', p_user_id: user?.id ?? null,
             });
-            // 3. Guardar metadata de llegada
+
+            // 4. Guardar metadata de llegada
             await supabase.from('pedido_sucursal_status').update({
-                llegada_tipo:   tipo,
-                llegada_nota:   nota || null,
-                falta_cajas:    cajasAfectadas,
-                ...(tipo === 'falta_caja' ? { falta_caja_at: new Date().toISOString() } : {}),
+                llegada_tipo:  tipo,
+                llegada_nota:  nota || null,
+                falta_cajas:   cajasFaltantes,
+                cajas_danadas: cajasDanadas,
+                // falta_caja_at actúa como "problema detectado en llegada" — se usa en el timeline
+                ...((hasFalta || hasDanada) ? { falta_caja_at: new Date().toISOString() } : {}),
             }).eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
 
-            useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { tipo, cajasAfectadas });
+            useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { tipo, cajasFaltantes, cajasDanadas });
             setLlegadaStatus(prev => ({ ...prev, [key]: true }));
 
-            // 4. Notificar bodega si hay problema
+            // 5. Notificar bodega si hay problema
             if (tipo !== 'completa') {
                 supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
                     if (!b?.branch_id) return;
-                    const cajasStr = cajasAfectadas.map(n => `#${n}`).join(', ');
-                    const title   = tipo === 'falta_caja' ? `Falta caja ${cajasStr} — ${branchName}` : `Caja dañada ${cajasStr} — ${branchName}`;
-                    const message = tipo === 'falta_caja'
-                        ? `${branchName} reporta que no llegó la caja ${cajasStr}. Se requiere reenvío.`
-                        : `${branchName} reporta que la caja ${cajasStr} llegó dañada.${nota ? ' ' + nota : ''} Revisar productos al contar.`;
+                    const parts = [];
+                    if (cajasDanadas.length > 0)  parts.push(`caja${cajasDanadas.length > 1 ? 's' : ''} dañada${cajasDanadas.length > 1 ? 's' : ''} ${cajasDanadas.map(n => `#${n}`).join(', ')}`);
+                    if (cajasFaltantes.length > 0) parts.push(`caja${cajasFaltantes.length > 1 ? 's' : ''} faltante${cajasFaltantes.length > 1 ? 's' : ''} ${cajasFaltantes.map(n => `#${n}`).join(', ')}`);
+                    const title   = `Problema en llegada — ${branchName}`;
+                    const message = `${branchName} reporta: ${parts.join(' y ')}.${nota ? ' ' + nota : ''}`;
                     supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
                     supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
                 }).catch(() => {});
@@ -1831,34 +1883,105 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error('llegada confirm:', e); } finally { setBusyAction(null); }
     }, [llegadaModal, user, branchName, loadActive, fetchItems]);
 
-    const handleReenviarCaja = useCallback(async (pedidoId, sucId, numero, faltaCajas) => {
+    const handleReenviarCaja = useCallback(async (pedidoId, sucId, numero, cajasFaltantes) => {
         setBusyAction('reenvio');
         try {
+            const now = new Date().toISOString();
+            // Leer historial actual para calcular ciclo
+            const { data: pss } = await supabase.from('pedido_sucursal_status')
+                .select('reenvios_historial')
+                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
+            const historial = pss?.reenvios_historial ?? [];
+            const ciclo     = historial.length + 1;
+            const nuevoCiclo = { ciclo, cajas: cajasFaltantes, sent_at: now, sent_by: user?.id ?? null, arrived_at: null, arrived_tipo: null, cajas_ok: [], cajas_danadas: [], cajas_aun_faltantes: [] };
+
             await supabase.from('pedido_sucursal_status')
-                .update({ reenvio_bodega_at: new Date().toISOString(), reenvio_por: user?.id ?? null })
+                .update({
+                    reenvio_bodega_at:  now,
+                    reenvio_por:        user?.id ?? null,
+                    reenvios_historial: [...historial, nuevoCiclo],
+                })
                 .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
-            useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, cajas: faltaCajas });
+
+            useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, ciclo, cajas: cajasFaltantes });
+
             supabase.from('erp_sucursal_map').select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
                 if (!m?.branch_id) return;
-                const cajasStr = (faltaCajas ?? []).map(n => `#${n}`).join(', ');
+                const cajasStr = cajasFaltantes.map(n => `#${n}`).join(', ');
                 supabase.from('announcements').insert({ title: `Reenvío en camino — pedido #${numero}`, message: `La caja ${cajasStr} del pedido #${numero} ya salió de bodega. Confirma la llegada cuando la recibas.`, target_type: 'BRANCH', target_value: [m.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
-                supabase.functions.invoke('send-push-notification', { body: { title: `Caja ${cajasStr} en camino — pedido #${numero}`, message: 'La caja faltante ya salió de bodega.', url: '/pedidos', target_type: 'BRANCH', target_value: [m.branch_id] } }).catch(() => {});
+                supabase.functions.invoke('send-push-notification', { body: { title: `Caja ${cajasStr} en camino`, message: 'La caja faltante ya salió de bodega.', url: '/pedidos', target_type: 'BRANCH', target_value: [m.branch_id] } }).catch(() => {});
             }).catch(() => {});
             await loadActive();
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [user, loadActive]);
 
-    const handleSegundaLlegada = useCallback(async (pedidoId, sucId, key) => {
-        if (busyAction) return;
+    // Abre el modal de confirmación de llegada de reenvío (sustituye el botón ciego anterior)
+    const handleSegundaLlegada = useCallback((pedidoId, sucId, key, reenviosHistorial) => {
+        const historial = reenviosHistorial ?? [];
+        // El ciclo pendiente es el último sin arrived_at
+        const cicloIdx  = historial.findIndex(c => !c.arrived_at);
+        const ciclo     = cicloIdx >= 0 ? historial[cicloIdx] : historial[historial.length - 1];
+        if (!ciclo) return;
+        setReenvioLlegadaModal({
+            pedidoId, sucId, key,
+            ciclo:     ciclo.ciclo,
+            cajasCiclo: ciclo.cajas ?? [],
+            historial,
+        });
+    }, []);
+
+    const handleReenvioLlegadaConfirm = useCallback(async ({ cajasOk, cajasDanadas, cajasFaltantes, nota }) => {
+        if (!reenvioLlegadaModal) return;
+        const { pedidoId, sucId, key, ciclo, historial } = reenvioLlegadaModal;
+        setReenvioLlegadaModal(null);
         setBusyAction('segunda_llegada');
         try {
-            await supabase.from('pedido_sucursal_status')
-                .update({ segunda_llegada_at: new Date().toISOString() })
-                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
-            useStaff.getState().appendAuditLog('PEDIDO_SEGUNDA_LLEGADA', pedidoId, { sucursal_id: sucId });
+            const now = new Date().toISOString();
+            const hasFalta = cajasFaltantes.length > 0;
+            const arrived_tipo = hasFalta && cajasDanadas.length > 0 ? 'mixto'
+                               : hasFalta                            ? 'falta_caja'
+                               : cajasDanadas.length > 0             ? 'caja_danada'
+                               :                                        'ok';
+
+            // Actualizar el ciclo correspondiente en el historial
+            const nuevoHistorial = historial.map(c =>
+                c.ciclo === ciclo
+                    ? { ...c, arrived_at: now, arrived_tipo, cajas_ok: cajasOk, cajas_danadas: cajasDanadas, cajas_aun_faltantes: cajasFaltantes, nota: nota || null }
+                    : c
+            );
+
+            await supabase.from('pedido_sucursal_status').update({
+                segunda_llegada_at:  now,
+                reenvios_historial:  nuevoHistorial,
+                // Si aún faltan cajas, actualizamos falta_cajas para el siguiente ciclo
+                ...(hasFalta ? { falta_cajas: cajasFaltantes } : {}),
+            }).eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+
+            useStaff.getState().appendAuditLog('PEDIDO_REENVIO_LLEGADA', pedidoId, { ciclo, arrived_tipo, cajasOk, cajasDanadas, cajasFaltantes });
+
+            // Si aún hay cajas faltantes, marcar sus items como falta_caja: true (para bloquear recepción)
+            if (hasFalta) {
+                const { data: pss } = await supabase.from('pedido_sucursal_status')
+                    .select('caja_map, pagina_items')
+                    .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
+                const cajaMapDb     = pss?.caja_map    ?? {};
+                const paginaItemsDb = pss?.pagina_items ?? {};
+                if (Object.keys(paginaItemsDb).length > 0) {
+                    const mIds = cajasFaltantes.flatMap(n => (cajaMapDb[String(n)] ?? []).flatMap(p => paginaItemsDb[String(p)] ?? []));
+                    if (mIds.length > 0) await supabase.from('pedido_items').update({ falta_caja: true }).in('id', mIds);
+                }
+                // Notificar bodega para nuevo reenvío
+                supabase.from('erp_sucursal_map').select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
+                    if (!m?.branch_id) return;
+                    const cajasStr = cajasFaltantes.map(n => `#${n}`).join(', ');
+                    supabase.from('announcements').insert({ title: `Aún falta caja — reenvío ${ciclo}`, message: `${branchName} reporta que la caja ${cajasStr} aún no llegó en el reenvío ${ciclo}. Se requiere otro envío.`, target_type: 'BRANCH', target_value: [m.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
+                }).catch(() => {});
+            }
+
             await loadActive();
+            await fetchItems(key, pedidoId, sucId);
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
-    }, [busyAction, user, loadActive]);
+    }, [reenvioLlegadaModal, user, branchName, loadActive, fetchItems]);
 
     const handleMarkErp = useCallback(async (pedidoId, sucId, key) => {
         if (busyAction) return;
@@ -1876,9 +1999,10 @@ export default function TabPedidos({ searchTerm = '' }) {
         const rows = (loaded || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0 && !r.falta_caja);
         if (!rows.length) return;
         const activeRow  = activeRows.find(r => r.pedido_id === pedidoId && r.erp_sucursal_id === sucId);
-        const cajaDanada = activeRow?.llegada_tipo === 'caja_danada' ? (activeRow?.falta_cajas ?? []) : [];
-        const faltaCajas = activeRow?.llegada_tipo === 'falta_caja'  ? (activeRow?.falta_cajas ?? []) : [];
-        const cajaMap    = activeRow?.caja_map ?? {};
+        // cajas_danadas y falta_cajas son ahora arrays independientes (soporta 'mixto')
+        const cajaDanada = activeRow?.cajas_danadas ?? [];
+        const faltaCajas = activeRow?.falta_cajas   ?? [];
+        const cajaMap    = activeRow?.caja_map       ?? {};
 
         // Load pagina_items + cajas_recibidas only when caja_map is available
         let paginaItems = {}, cajasRecibidas = [];
@@ -2200,8 +2324,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === 'finalizar_load'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === 'finalizar_load') ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
                                             {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
                                             {canMarcarEnRuta && <button onClick={() => setEnRutaConfirm({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, totalCajas: row.total_cajas ?? 0 })} disabled={isEnvioBusy} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={11} className="animate-spin" /> : <><Truck size={10} />En Ruta</>}</button>}
-                                            {canActuar && !isBranch && row.llegada_tipo === 'falta_caja' && !row.reenvio_bodega_at && (
-                                                <button onClick={() => handleReenviarCaja(row.pedido_id, row.erp_sucursal_id, row.numero, row.falta_cajas ?? [])} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">
+                                            {canActuar && !isBranch && (row.falta_cajas ?? []).length > 0 && !(row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at) && (
+                                                // Mostrar "Reenviar caja" cuando hay cajas faltantes y no hay un ciclo en camino sin confirmar
+                                                <button onClick={() => handleReenviarCaja(row.pedido_id, row.erp_sucursal_id, row.numero, row.falta_cajas ?? [])} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">
                                                     {busyAction === 'reenvio' ? <Loader2 size={10} className="animate-spin" /> : <><Truck size={10} />Reenviar caja</>}
                                                 </button>
                                             )}
@@ -2221,13 +2346,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 onMarkLlegada={() => handleLlegada(row.pedido_id, erpSucursalId, cardKey)}
                                                 onOpenRecibir={() => openModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
                                                 onOpenReenvioModal={() => openReenvioModal(row.pedido_id, row.numero, row.codigo, erpSucursalId, cardKey)}
-                                                onSegundaLlegada={() => handleSegundaLlegada(row.pedido_id, erpSucursalId, cardKey)}
+                                                onSegundaLlegada={() => handleSegundaLlegada(row.pedido_id, erpSucursalId, cardKey, row.reenvios_historial ?? [])}
                                                 onApoyo={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: erpSucursalId, cardKey })}
                                                 busy={busyAction}
                                                 llegadaTipo={row.llegada_tipo}
-                                                reenvioBodygaAt={row.reenvio_bodega_at}
-                                                segundaLlegadaAt={row.segunda_llegada_at}
+                                                reenviosHistorial={row.reenvios_historial ?? []}
                                                 faltaCajas={row.falta_cajas ?? []}
+                                                cajasDanadas={row.cajas_danadas ?? []}
                                                 hasFaltaItems={(items[cardKey] ?? []).some(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0)}
                                             />
                                         </div>
@@ -2275,6 +2400,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                 pedidoNumero={llegadaModal ? activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.numero : null}
                 cajaMap={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.caja_map ?? {}) : {}}
                 totalCajas={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.total_cajas ?? 0) : 0}
+            />
+
+            <ReenvioLlegadaModal
+                open={!!reenvioLlegadaModal}
+                onClose={() => setReenvioLlegadaModal(null)}
+                onConfirm={handleReenvioLlegadaConfirm}
+                pedidoNumero={reenvioLlegadaModal ? activeRows.find(r => r.pedido_id === reenvioLlegadaModal.pedidoId)?.numero : null}
+                cajasCiclo={reenvioLlegadaModal?.cajasCiclo ?? []}
+                cicloNum={reenvioLlegadaModal?.ciclo ?? 1}
             />
 
             <FinalizarCajasModal

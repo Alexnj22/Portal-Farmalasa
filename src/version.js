@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.284';
+export const APP_VERSION = '2.2.285';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.285 — fix(pedidos/cap1000): eventos también paginado con loop; .range(0,4999) no supera el cap igual que .range(0,9999)
 // v2.2.284 — fix(pedidos/cap1000): paginación en fetchItems+fetchPedidoItems; hay pedidos activos con 1007/1003 items que se truncaban silenciosamente; +range(0,4999) en eventos
 // v2.2.283 — feat(pedidos/apoyo): toast "Ya está de apoyo" si el empleado ya fue registrado; check local antes de tocar DB
 // v2.2.282 — fix(pedidos/apoyo): UNIQUE INDEX en (pedido_id,erp_sucursal_id,employee_id) + drop FK registered_by→employees; upsert fallaba silenciosamente para usuarios sin registro en employees

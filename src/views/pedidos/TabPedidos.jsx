@@ -1581,17 +1581,24 @@ export default function TabPedidos({ searchTerm = '' }) {
             .eq('pedido_id', pedidoId);
         if (sucFilter) apoyoQ = apoyoQ.eq('erp_sucursal_id', sucFilter);
 
-        let eventosQ = supabase.from('pedido_item_eventos')
+        // Paginated eventos fetch (cap-safe)
+        let evBase = supabase.from('pedido_item_eventos')
             .select('id, pedido_item_id, tipo, resolucion_tipo, nota, hecho_por, created_at')
-            .eq('pedido_id', pedidoId)
-            .order('created_at', { ascending: true })
-            .range(0, 4999);
-        if (sucFilter) eventosQ = eventosQ.eq('erp_sucursal_id', sucFilter);
+            .eq('pedido_id', pedidoId).order('created_at', { ascending: true });
+        if (sucFilter) evBase = evBase.eq('erp_sucursal_id', sucFilter);
+        let allEvRows = [], evFrom = 0;
+        while (true) {
+            const { data: evPage } = await evBase.range(evFrom, evFrom + 999);
+            if (!evPage || evPage.length === 0) break;
+            allEvRows = allEvRows.concat(evPage);
+            if (evPage.length < 1000) break;
+            evFrom += 1000;
+        }
 
-        const [{ data: lcRow }, { data: apoyoRows }, { data: evRows }] = await Promise.all([lcPromise, apoyoQ, eventosQ]);
+        const [{ data: lcRow }, { data: apoyoRows }] = await Promise.all([lcPromise, apoyoQ]);
         const resolved = allItemRows;
         setItems(prev => ({ ...prev, [key]: resolved }));
-        setEventosMap(prev => ({ ...prev, [key]: evRows || [] }));
+        setEventosMap(prev => ({ ...prev, [key]: allEvRows }));
         setApoyoMap(prev => ({ ...prev, [key]: (apoyoRows || []).map(r => ({ id: r.employee_id, ...r.employees })) }));
         if (lcRow) {
             setErpStatus(prev => ({ ...prev, [key]: !!lcRow.recibido_erp_at }));

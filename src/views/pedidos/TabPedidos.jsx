@@ -1652,7 +1652,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [busyAction, user, loadActive]);
 
-    const handleMarkErp = useCallback(async (pedidoId, sucId, key, numero) => {
+    const handleMarkErp = useCallback(async (pedidoId, sucId, key) => {
         if (busyAction) return;
         setBusyAction('erp');
         try {
@@ -1660,15 +1660,8 @@ export default function TabPedidos({ searchTerm = '' }) {
             useStaff.getState().appendAuditLog('PEDIDO_LIFECYCLE_RECIBIR_ERP', pedidoId, { sucursal_id: sucId });
             setErpStatus(prev => ({ ...prev, [key]: true }));
             await loadActive();
-            if (numero != null) {
-                supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
-                    if (!b?.branch_id) return;
-                    supabase.from('announcements').insert({ title: `Pedido #${numero} confirmado por ${branchName}`, message: `${branchName} confirmó la recepción del pedido #${numero} en el sistema ERP.`, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'NORMAL' }).catch(() => {});
-                    supabase.functions.invoke('send-push-notification', { body: { title: `Pedido #${numero} confirmado`, message: `${branchName} confirmó la recepción en ERP.`, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
-                }).catch(() => {});
-            }
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
-    }, [busyAction, user, branchName, loadActive]);
+    }, [busyAction, user, loadActive]);
 
     const openModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
         const loaded = items[key] ?? await fetchItems(key, pedidoId, sucId);
@@ -1677,38 +1670,13 @@ export default function TabPedidos({ searchTerm = '' }) {
         setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows });
     }, [items, fetchItems]);
 
-    const handleReportarDiferencias = useCallback(async (pedidoId, sucId, numero) => {
-        // Lifecycle + audit (non-fatal — notification must always run)
+    const handleReportarDiferencias = useCallback(async (pedidoId, sucId) => {
         supabase.rpc('update_pedido_sucursal_lifecycle', {
             p_pedido_id: pedidoId, p_sucursal_id: sucId,
             p_stage: 'reportar_diferencias', p_user_id: user?.id ?? null,
         }).catch(e => console.error('lifecycle reportar_diferencias:', e));
         useStaff.getState().appendAuditLog('PEDIDO_DIFERENCIAS_REPORTADAS', pedidoId, { sucursal_id: sucId });
-        // Notificación a bodega — siempre corre independiente del lifecycle
-        try {
-            const { data: bodegaMap } = await supabase.from('erp_sucursal_map')
-                .select('branch_id').eq('es_bodega', true).maybeSingle();
-            if (bodegaMap?.branch_id) {
-                await supabase.from('announcements').insert({
-                    title:        `Diferencias en pedido #${numero} — ${branchName}`,
-                    message:      `La recepción del pedido #${numero} en ${branchName} reporta diferencias. Revisá el pedido y marcalo como corregido.`,
-                    target_type:  'BRANCH',
-                    target_value: [bodegaMap.branch_id],
-                    read_by:      [], is_archived: false,
-                    created_by:   user?.id ?? null, priority: 'NORMAL',
-                });
-                supabase.functions.invoke('send-push-notification', {
-                    body: {
-                        title:        `Diferencias — pedido #${numero}`,
-                        message:      `${branchName} reporta diferencias en la recepción.`,
-                        url:          '/pedidos',
-                        target_type:  'BRANCH',
-                        target_value: [bodegaMap.branch_id],
-                    },
-                }).catch(() => {});
-            }
-        } catch (e) { console.error('notificacion diferencias:', e); }
-    }, [user, branchName]);
+    }, [user]);
 
     const handleCorregirBodega = useCallback(async (pedidoId, sucId, nota) => {
         setBusyAction('corr_bodega');
@@ -2072,9 +2040,21 @@ export default function TabPedidos({ searchTerm = '' }) {
                     onConfirmed={async ({ hasDiff }) => {
                         const { pedido, sucId, key } = modal;
                         setModal(null);
-                        await handleMarkErp(pedido.id, sucId, key, pedido.numero);
-                        if (hasDiff) await handleReportarDiferencias(pedido.id, sucId, pedido.numero);
+                        await handleMarkErp(pedido.id, sucId, key);
+                        if (hasDiff) await handleReportarDiferencias(pedido.id, sucId);
                         fetchItems(key, pedido.id, sucId);
+                        // Una sola notificación a bodega — sin problema o con problema
+                        supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
+                            if (!b?.branch_id) return;
+                            const title   = hasDiff
+                                ? `Problemas en pedido #${pedido.numero} — ${branchName}`
+                                : `Pedido #${pedido.numero} confirmado — ${branchName}`;
+                            const message = hasDiff
+                                ? `${branchName} reporta diferencias o productos con problemas en la recepción del pedido #${pedido.numero}. Revisá y marcalo como corregido.`
+                                : `${branchName} confirmó la recepción del pedido #${pedido.numero} sin novedades.`;
+                            supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: hasDiff ? 'HIGH' : 'NORMAL' }).catch(() => {});
+                            supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
+                        }).catch(() => {});
                     }}
                 />
             )}

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.261';
+export const APP_VERSION = '2.2.262';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.262 — fix(pedidos/recepcion): presOpts muestra presentaciones originales (product_precios) + presentación especial de la regla primero, sin duplicados
 // v2.2.261 — fix(pedidos/recepcion): presOpts siempre pone la presentación de la regla (dispatch) primero cuando dispatch_tipo existe y factor ≠ factor_erp; elimina dependencia del match de rawOpts
 // v2.2.260 — fix(pedidos/recepcion): extras con 0+0 muestra warning visual + bloquea submit con mensaje claro
 // v2.2.259 — fix(pedidos/recepcion): (1) drop overload p_responsables que causaba ambigüedad en RPC; (2) input ¿Cuántos? al marcar dañado/vencido (cantidad_problema en DB); (3) extras permiten qty=0 en físico o sistema

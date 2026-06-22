@@ -401,14 +401,17 @@ export default function RecepcionModal({ open, onClose, pedido, sucursalId, sucu
                         const hasDiff = fRaw !== sRaw || fPres !== sPres;
                         const delta   = fRaw - sRaw;
 
-                        // La presentación de la regla (dispatch) siempre va primero, igual que el PDF
+                        // Presentaciones: regla de despacho primero + originales de product_precios
                         const rawOpts  = presMap[r.erp_product_id] ?? [];
                         const dispLabel = fmtDispatchLabel(r.dispatch_tipo, dispFactor);
                         const dispOpt  = { factor: dispFactor, label: dispLabel };
                         const hasDispRule = r.dispatch_tipo && dispFactor !== erpFactor;
-                        const presOpts = hasDispRule
-                            ? [dispOpt, ...rawOpts.filter(o => o.factor !== dispFactor)]
-                            : rawOpts.length > 0 ? rawOpts : [dispOpt];
+                        // Construir lista: dispatch primero (sin duplicar), luego todas las de product_precios
+                        const _seen = new Set();
+                        const presOpts = [];
+                        if (hasDispRule) { presOpts.push(dispOpt); _seen.add(dispFactor); }
+                        rawOpts.forEach(o => { if (!_seen.has(o.factor)) { presOpts.push(o); _seen.add(o.factor); } });
+                        if (!presOpts.length) presOpts.push(dispOpt);
 
                         const navKey = (col, dir) => document.querySelector(`[data-qty-row="${rowIdx + dir}"][data-qty-col="${col}"]`)?.focus();
 

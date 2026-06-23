@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import PedidoModal from './PedidoModal';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
+import LiquidSelect from '../../components/common/LiquidSelect';
 
 export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
     if (!emp) return null;
@@ -748,11 +749,15 @@ export default function RecepcionModal({
                                         <div className="space-y-2">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wide w-12 shrink-0">Físico</span>
-                                                <select value={e.fPres}
-                                                    onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fPres: Number(ev.target.value) } : x))}
-                                                    className="flex-1 text-[11px] border border-teal-200 rounded-xl px-2 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-teal-400">
-                                                    {eOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}
-                                                </select>
+                                                <div className="flex-1">
+                                                    <LiquidSelect
+                                                        value={String(e.fPres)}
+                                                        onChange={v => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fPres: Number(v) } : x))}
+                                                        options={eOpts.map(o => ({ value: String(o.factor), label: o.label }))}
+                                                        compact
+                                                        clearable={false}
+                                                    />
+                                                </div>
                                                 <input type="number" min={0} value={e.fQty}
                                                     onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
                                                     className="w-16 text-center border border-teal-200 rounded-xl px-2 py-1.5 text-[13px] font-bold tabular-nums bg-white text-teal-700 focus:outline-none focus:border-teal-400"
@@ -760,11 +765,15 @@ export default function RecepcionModal({
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-[10px] font-bold text-violet-600 uppercase tracking-wide w-12 shrink-0">Sistema</span>
-                                                <select value={e.sPres}
-                                                    onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sPres: Number(ev.target.value) } : x))}
-                                                    className="flex-1 text-[11px] border border-violet-200 rounded-xl px-2 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-violet-400">
-                                                    {eOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}
-                                                </select>
+                                                <div className="flex-1">
+                                                    <LiquidSelect
+                                                        value={String(e.sPres)}
+                                                        onChange={v => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sPres: Number(v) } : x))}
+                                                        options={eOpts.map(o => ({ value: String(o.factor), label: o.label }))}
+                                                        compact
+                                                        clearable={false}
+                                                    />
+                                                </div>
                                                 <input type="number" min={0} value={e.sQty}
                                                     onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
                                                     className="w-16 text-center border border-violet-200 rounded-xl px-2 py-1.5 text-[13px] font-bold tabular-nums bg-white text-violet-700 focus:outline-none focus:border-violet-400"
@@ -973,17 +982,15 @@ export default function RecepcionModal({
                                     <span className="text-[12px] text-slate-700 font-semibold leading-snug">{r.products?.nombre}</span>
                                     <span className="text-[12px] font-bold text-slate-500 tabular-nums text-center">{defDispQty}</span>
 
-                                    <select value={fPres}
-                                        data-qty-row={rowIdx} data-qty-col="fpres"
-                                        onChange={e => setFPresVals(p => ({ ...p, [r.id]: Number(e.target.value) }))}
-                                        onKeyDown={e => {
-                                            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-                                            const dir = e.key === 'ArrowDown' ? 1 : -1;
-                                            const sel = e.currentTarget;
-                                            if (dir === 1 ? sel.selectedIndex === sel.options.length - 1 : sel.selectedIndex === 0) { e.preventDefault(); navKey('fpres', dir); }
-                                        }}
-                                        className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full ${fPres !== sPres ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-slate-700 focus:border-teal-400'}`}
-                                    >{presOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
+                                    <div className={fPres !== sPres ? 'ring-2 ring-amber-400 ring-offset-0 rounded-2xl' : ''}>
+                                        <LiquidSelect
+                                            value={String(fPres)}
+                                            onChange={v => setFPresVals(p => ({ ...p, [r.id]: Number(v) }))}
+                                            options={presOpts.map(o => ({ value: String(o.factor), label: o.label }))}
+                                            compact
+                                            clearable={false}
+                                        />
+                                    </div>
 
                                     <div className="relative">
                                         <input type="number" min={0} value={fQty}
@@ -999,17 +1006,15 @@ export default function RecepcionModal({
                                         )}
                                     </div>
 
-                                    <select value={sPres}
-                                        data-qty-row={rowIdx} data-qty-col="spres"
-                                        onChange={e => setSPresVals(p => ({ ...p, [r.id]: Number(e.target.value) }))}
-                                        onKeyDown={e => {
-                                            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-                                            const dir = e.key === 'ArrowDown' ? 1 : -1;
-                                            const sel = e.currentTarget;
-                                            if (dir === 1 ? sel.selectedIndex === sel.options.length - 1 : sel.selectedIndex === 0) { e.preventDefault(); navKey('spres', dir); }
-                                        }}
-                                        className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full ${fPres !== sPres ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-slate-700 focus:border-violet-400'}`}
-                                    >{presOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
+                                    <div className={fPres !== sPres ? 'ring-2 ring-amber-400 ring-offset-0 rounded-2xl' : ''}>
+                                        <LiquidSelect
+                                            value={String(sPres)}
+                                            onChange={v => setSPresVals(p => ({ ...p, [r.id]: Number(v) }))}
+                                            options={presOpts.map(o => ({ value: String(o.factor), label: o.label }))}
+                                            compact
+                                            clearable={false}
+                                        />
+                                    </div>
 
                                     <input type="number" min={0} value={sQty}
                                         data-qty-row={rowIdx} data-qty-col="sqty"

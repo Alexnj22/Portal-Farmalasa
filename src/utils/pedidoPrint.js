@@ -196,29 +196,21 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
         {}, {}, {}, {}, {},
     ];
 
-    // Fila 2 — blanco, ruta origen | N° caja | destino
+    // Fila 2 — blanco, origen (izq) | destino + Caja (der)
     const originText = bodegaAddr ? `Origen: Bodega\n${bodegaAddr}` : 'Origen: Bodega';
     const destText   = sucAddr ? `Destino: ${sec.nombre}\n${sucAddr}` : `Destino: ${sec.nombre}`;
     const subtitleRow = [
         {
-            colSpan: 6, fillColor: '#ffffff', margin: [6, 4, 6, 4],
+            colSpan: 6, fillColor: '#ffffff', margin: [6, 5, 6, 8],
             columns: [
-                { text: originText, fontSize: 6, color: '#555', width: '36%', lineHeight: 1.4 },
+                { text: originText, fontSize: 6, color: '#555', width: '48%', lineHeight: 1.5 },
                 {
-                    width: '28%',
-                    margin: [6, 0, 6, 0],
+                    width: '52%',
                     stack: [
-                        { text: 'N° CAJA', fontSize: 6, bold: true, color: '#333', alignment: 'center', margin: [0, 0, 0, 2] },
-                        {
-                            table: { widths: ['*'], body: [[{ text: ' ', fontSize: 11, margin: [0, 5, 0, 5] }]] },
-                            layout: {
-                                hLineWidth: () => 1, vLineWidth: () => 1,
-                                hLineColor: () => '#444', vLineColor: () => '#444',
-                            },
-                        },
+                        { text: destText, fontSize: 6, color: '#555', alignment: 'right', lineHeight: 1.5 },
+                        { text: 'Caja: ___________', fontSize: 6.5, color: '#333', alignment: 'right', margin: [0, 7, 0, 0] },
                     ],
                 },
-                { text: destText, fontSize: 6, color: '#555', width: '36%', alignment: 'right', lineHeight: 1.4 },
             ],
         },
         {}, {}, {}, {}, {},
@@ -450,15 +442,18 @@ export async function getExactPageGroups(sucId, rawItems) {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export function buildPedidoCodigo(numero, date, nSelected) {
-    const nn     = String(numero ?? 0).padStart(2, '0');
+// countsBySuc: { [erp_sucursal_id]: numero_mensual_por_sucursal }
+export function buildPedidoCodigo(countsBySuc, date, nSelected) {
     const d      = date instanceof Date ? date : new Date();
     const dd     = String(d.getDate()).padStart(2, '0');
     const mm     = String(d.getMonth() + 1).padStart(2, '0');
     const yy     = String(d.getFullYear()).slice(-2);
     const aabbcc = `${dd}${mm}${yy}`;
     const dist   = nSelected >= TOTAL_NON_BODEGA ? '3' : nSelected > 1 ? '2' : '1';
-    return (sucId) => `${nn}-${aabbcc}-${dist}-${SUCURSAL_CODES[sucId] ?? `S${sucId}`}`;
+    return (sucId) => {
+        const nn = String(countsBySuc[sucId] ?? 1).padStart(2, '0');
+        return `${nn}-${aabbcc}-${dist}-${SUCURSAL_CODES[sucId] ?? `S${sucId}`}`;
+    };
 }
 
 function toDispatch(qty, erpFactor, dispFactor) {

@@ -190,7 +190,24 @@ export default function TabGenerar({ searchTerm = '' }) {
             }
             const sucIds     = SUCURSALES.filter(id => map[id]);
             const meta       = { responsable: user?.name ?? null, revisor: null, generadoPor: user?.name ?? null, pedidoNumero: ped?.numero };
-            const codigoFn   = buildPedidoCodigo(ped?.numero, new Date(), sucIds.length);
+
+            // Numero por sucursal por mes: cuántos pedidos previos tiene cada sucursal este mes + 1
+            const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+            const { data: pedidosMes } = await supabase
+                .from('pedidos').select('id').gte('created_at', monthStart).neq('id', pedidoId);
+            const pedidoIdsMes = (pedidosMes ?? []).map(p => p.id);
+            const countsBySuc = {};
+            for (const id of sucIds) countsBySuc[id] = 1;
+            if (pedidoIdsMes.length > 0) {
+                const { data: sucRecs } = await supabase
+                    .from('pedido_sucursal_status').select('erp_sucursal_id')
+                    .in('pedido_id', pedidoIdsMes).in('erp_sucursal_id', sucIds);
+                for (const r of (sucRecs ?? [])) {
+                    if (countsBySuc[r.erp_sucursal_id] !== undefined) countsBySuc[r.erp_sucursal_id]++;
+                }
+            }
+
+            const codigoFn   = buildPedidoCodigo(countsBySuc, new Date(), sucIds.length);
             const codigosMap = {};
             for (const id of sucIds) codigosMap[id] = codigoFn(id);
 

@@ -1700,14 +1700,12 @@ export default function TabPedidos({ searchTerm = '' }) {
     }, [user, loadActive]);
 
     const [printingPdf, setPrintingPdf] = useState(null);
-    const handlePrintPdf = useCallback(async (pedidoId, pedidoNumero, sucId, cardKey) => {
+    const handlePrintPdf = useCallback(async (pedidoId, pedidoNumero, sucId, cardKey, codigo) => {
         setPrintingPdf(pedidoId);
         try {
             let rows = items[cardKey];
             if (!rows) rows = await fetchItems(cardKey, pedidoId, sucId);
-            const codigoFn  = buildPedidoCodigo(pedidoNumero, new Date(), 1);
-            const titulo    = codigoFn(sucId);
-            await printFromPedidoItems(pedidoNumero, [[sucId, rows ?? []]], {}, titulo);
+            await printFromPedidoItems(pedidoNumero, [[sucId, rows ?? []]], {}, codigo ?? `${pedidoNumero}`);
         } catch (e) { console.error('PDF error:', e); } finally { setPrintingPdf(null); }
     }, [items, fetchItems]);
 
@@ -2471,7 +2469,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             )}
                                             {canActuar && (
                                                 <button
-                                                    onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey); }}
+                                                    onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey, row.codigo); }}
                                                     disabled={printingPdf === row.pedido_id}
                                                     className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all disabled:opacity-50"
                                                 >

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.311';
+export const APP_VERSION = '2.2.312';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.312 — feat(pedidos): numeración por sucursal/mes + PDF caja a la derecha (v2.2.312)
 // v2.2.311 — fix(pedidos/pill): X limpiar no aparece en branch sin filtro activo
 // v2.2.310 — fix(pedidos): pill h-14 fijo para altura consistente
 // v2.2.309 — fix(pedidos): cards y pill corregidos al estándar real de TabInventario

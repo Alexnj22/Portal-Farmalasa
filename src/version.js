@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.313';
+export const APP_VERSION = '2.2.314';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.314 — fix(pedidos): quitar auto-open RecepcionModal + corregir JSONB {} vs [] (v2.2.314)
 // v2.2.313 — fix+feat(pedidos): 6 mejoras recepción + PDF 3col + electrolit (v2.2.313)
 // v2.2.312 — feat(pedidos): numeración por sucursal/mes + PDF caja a la derecha (v2.2.312)
 // v2.2.311 — fix(pedidos/pill): X limpiar no aparece en branch sin filtro activo

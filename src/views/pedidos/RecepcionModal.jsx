@@ -47,7 +47,10 @@ const ERROR_TIPOS = [
     { value: 'otro',    label: 'Otro'    },
 ];
 
-const GRID = 'grid-cols-[minmax(0,1fr)_2.75rem_9rem_3.25rem_9rem_3.25rem_2rem]';
+// Items screen: producto | asig | presF | qtyF | presS | qtyS | acción
+const GRID = 'grid-cols-[minmax(0,1fr)_2.5rem_9rem_3rem_9rem_3rem_1.75rem]';
+// Extras screen: sin columna "asig" → más espacio para el nombre
+const EXTRAS_GRID = 'grid-cols-[minmax(0,1fr)_9rem_3rem_9rem_3rem_1.75rem]';
 
 async function fetchPresOpts(productId) {
     const { data } = await supabase.from('product_precios')
@@ -697,15 +700,14 @@ export default function RecepcionModal({
                 <PedidoModal.Body className="px-0 py-0" style={{ overflow: 'hidden', flex: 'none' }}>
                     <div className="max-h-[48vh] overflow-y-auto">
                         <div className="sticky top-0 z-10 bg-white/97 backdrop-blur-sm border-b-2 border-slate-200 shadow-sm">
-                            <div className={`grid ${GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
-                                <span /><span />
+                            <div className={`grid ${EXTRAS_GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
+                                <span />
                                 <span className="col-span-2 text-center text-[10px] font-bold text-teal-600 uppercase tracking-widest border-b-2 border-teal-400 pb-1">Físico</span>
                                 <span className="col-span-2 text-center text-[10px] font-bold text-violet-600 uppercase tracking-widest border-b-2 border-violet-400 pb-1">Sistema</span>
                                 <span />
                             </div>
-                            <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
+                            <div className={`grid ${EXTRAS_GRID} gap-x-2 items-center px-5 py-2`}>
                                 <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Producto</span>
-                                <span className="text-[10px] font-bold text-indigo-400 uppercase text-center">Extra</span>
                                 <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Pres.</span>
                                 <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Qty</span>
                                 <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Pres.</span>
@@ -732,7 +734,7 @@ export default function RecepcionModal({
                                 const delta     = fRaw - sRaw;
                                 return (
                                     <div key={e.erp_product_id} className={`transition-colors ${eBothZero ? 'bg-red-50' : eDiff ? 'bg-amber-50' : 'bg-white hover:bg-slate-50/50'}`}>
-                                        <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
+                                        <div className={`grid ${EXTRAS_GRID} gap-x-2 items-center px-5 py-2`}>
                                             <div className="min-w-0">
                                                 <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600 mb-0.5">
                                                     <Plus size={8} /> Extra
@@ -740,7 +742,6 @@ export default function RecepcionModal({
                                                 <p className={`text-[12px] font-semibold leading-snug ${eBothZero ? 'text-red-600' : 'text-slate-700'}`}>{e.nombre}</p>
                                                 {eBothZero && <p className="text-[10px] text-red-500 font-medium">Al menos uno &gt; 0</p>}
                                             </div>
-                                            <span className="text-[12px] text-slate-300 text-center">—</span>
 
                                             <div className={eDiff ? 'ring-2 ring-amber-400 ring-offset-0 rounded-2xl' : ''}>
                                                 <LiquidSelect

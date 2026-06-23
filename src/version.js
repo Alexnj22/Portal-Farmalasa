@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.307';
+export const APP_VERSION = '2.2.308';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.308 — fix(pedidos): pill glass idéntico a productos; cards sin translate, border via style
 // v2.2.307 — fix(pedidos): branch ve su propia card informativa del mes
 // v2.2.306 — fix(pedidos): cards glass exacto CostCards; observaciones en strip cajas/electrolit
 // v2.2.305 — fix(pedidos): cards glass estándar en misma línea que pill; observaciones inline con divisor

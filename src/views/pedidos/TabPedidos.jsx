@@ -1357,67 +1357,77 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
     const hasActive   = filterSuc !== '' || filterStatus !== 'all' || dateDirty;
     const clearAll    = () => { setFilterSuc(''); setFilterStatus('all'); setFilterDate(defaultDate); };
 
-    const statusBtn = (key, label, activeClass = 'bg-blue-600 text-white border-blue-600') => (
+    const chip = (key, label, activeCls) => (
         <button
             onClick={() => setFilterStatus(v => v === key ? 'all' : key)}
-            className={`flex items-center gap-1 text-[11px] px-3 py-1 rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
-                filterStatus === key
-                    ? activeClass
-                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
-            }`}
+            className={`flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-xl font-semibold select-none whitespace-nowrap
+                transition-[background-color,color,border-color,box-shadow] duration-100
+                ${filterStatus === key
+                    ? `${activeCls} border shadow-[0_2px_10px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.88)]`
+                    : 'text-slate-500 border border-transparent hover:bg-white/60 hover:text-slate-700'
+                }`}
         >
-            {label}{filterStatus === key && <X size={9} strokeWidth={3} className="ml-0.5" />}
+            {label}
+            {filterStatus === key && <X size={8} strokeWidth={3} className="ml-0.5 opacity-60" />}
         </button>
     );
 
-    return (
-        <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 overflow-visible shrink-0">
+    const PILL_STYLE = {
+        background: 'rgba(255,255,255,0.58)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        border: '1px solid rgba(255,255,255,0.85)',
+        boxShadow: '0 8px 32px rgba(0,82,204,0.07), inset 0 1px 0 rgba(255,255,255,0.92)',
+    };
 
-            {/* Sucursal */}
+    return (
+        <div className="flex items-center rounded-2xl overflow-hidden shrink-0" style={PILL_STYLE}>
+
+            {/* Sucursal (solo bodega) */}
             {!isBranch && (
                 <>
-                    <div className="flex items-center">
-                        <div className="px-2 py-1.5 overflow-visible" style={{ width: '150px' }}>
+                    <div className="flex items-center" style={{ width: '148px' }}>
+                        <div className="flex-1 px-2.5 py-1.5">
                             <LiquidSelect value={filterSuc} onChange={v => setFilterSuc(v)} options={filterOptions} placeholder="Todas" icon={Building2} compact bare />
                         </div>
                         {filterSuc !== '' && (
-                            <button onClick={() => setFilterSuc('')} title="Quitar sucursal" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
-                                <X size={9} strokeWidth={3} />
+                            <button onClick={() => setFilterSuc('')} title="Quitar" className="mr-1.5 w-4 h-4 flex items-center justify-center rounded-full bg-slate-200/70 hover:bg-red-500 text-slate-500 hover:text-white transition-all shrink-0">
+                                <X size={8} strokeWidth={3} />
                             </button>
                         )}
                     </div>
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+                    <div className="h-5 w-px bg-slate-200/50 shrink-0" />
                 </>
             )}
 
             {/* Fecha */}
             <div className="flex items-center">
-                <div className="px-2 py-1.5 overflow-visible">
+                <div className="px-2.5 py-1.5">
                     <PeriodPicker value={filterDate} onChange={setFilterDate} />
                 </div>
                 {dateDirty && (
-                    <button onClick={() => setFilterDate(defaultDate)} title="Quitar fecha" className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
-                        <X size={9} strokeWidth={3} />
+                    <button onClick={() => setFilterDate(defaultDate)} title="Quitar" className="mr-1.5 w-4 h-4 flex items-center justify-center rounded-full bg-slate-200/70 hover:bg-red-500 text-slate-500 hover:text-white transition-all shrink-0">
+                        <X size={8} strokeWidth={3} />
                     </button>
                 )}
             </div>
 
-            <div className="h-5 w-px bg-slate-100 shrink-0" />
+            <div className="h-5 w-px bg-slate-200/50 shrink-0" />
 
             {/* Estado */}
-            <div className="flex items-center gap-1 px-2 py-1.5">
-                {statusBtn('confirmado', 'Pendientes')}
-                {statusBtn('enviado', 'En camino')}
-                <div className="h-3.5 w-px bg-slate-100 mx-0.5 shrink-0" />
-                {statusBtn('observacion', 'Con observación', 'bg-amber-500 text-white border-amber-500')}
-                {statusBtn('completado',  'Completados',     'bg-emerald-600 text-white border-emerald-600')}
+            <div className="flex items-center gap-0 px-1.5">
+                {chip('confirmado', 'Pendientes',      'bg-blue-50/90 text-blue-700 border-blue-200/80')}
+                {chip('enviado',    'En camino',        'bg-sky-50/90 text-sky-700 border-sky-200/80')}
+                <div className="h-3.5 w-px bg-slate-200/50 mx-1 shrink-0" />
+                {chip('observacion','Con observación',  'bg-amber-50/90 text-amber-700 border-amber-200/80')}
+                {chip('completado', 'Completados',      'bg-emerald-50/90 text-emerald-700 border-emerald-200/80')}
             </div>
 
             {hasActive && (
                 <>
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
-                    <button onClick={clearAll} className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0">
-                        <X size={11} strokeWidth={3} />
+                    <div className="h-5 w-px bg-slate-200/50 shrink-0" />
+                    <button onClick={clearAll} className="mx-2 w-5 h-5 flex items-center justify-center rounded-full bg-slate-200/60 hover:bg-red-500 text-slate-500 hover:text-white transition-all duration-150 shrink-0">
+                        <X size={9} strokeWidth={3} />
                     </button>
                 </>
             )}
@@ -2243,30 +2253,32 @@ export default function TabPedidos({ searchTerm = '' }) {
                 {/* Fila única: cards por sucursal (izq) + FilterPill (der) */}
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                     {/* Bodega / alcance todos: card clicable por sucursal */}
-                    {!isBranch && sucursalCounts.map(({ id, name, total }) => (
-                        <button
-                            key={id}
-                            onClick={() => setFilterSuc(v => v === String(id) ? '' : String(id))}
-                            className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 ${
-                                filterSuc === String(id)
-                                    ? 'bg-indigo-600 border-indigo-500 shadow-[0_4px_20px_rgba(79,70,229,0.25)]'
-                                    : 'border-white/70'
-                            }`}
-                            style={filterSuc === String(id) ? {} : { background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}
-                        >
-                            <Building2 size={13} className={filterSuc === String(id) ? 'text-white/70 shrink-0' : 'text-slate-400 shrink-0'} />
-                            <div className="flex flex-col leading-snug gap-0.5">
-                                <span className={`text-[10px] font-semibold ${filterSuc === String(id) ? 'text-white/75' : 'text-slate-500'}`}>{name}</span>
-                                <span className={`text-[14px] font-black tabular-nums leading-none ${filterSuc === String(id) ? 'text-white' : 'text-slate-800'}`}>{total}</span>
-                            </div>
-                        </button>
-                    ))}
+                    {!isBranch && sucursalCounts.map(({ id, name, total }) => {
+                        const active = filterSuc === String(id);
+                        return (
+                            <button
+                                key={id}
+                                onClick={() => setFilterSuc(v => v === String(id) ? '' : String(id))}
+                                className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border backdrop-blur-sm transition-[box-shadow,border-color,background-color] duration-200 min-w-[80px]"
+                                style={active
+                                    ? { background: 'rgba(79,70,229,1)', border: '1px solid rgba(67,56,202,1)', boxShadow: '0 4px 20px rgba(79,70,229,0.30)' }
+                                    : { background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.70)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }
+                                }
+                            >
+                                <Building2 size={13} className={active ? 'text-white/70 shrink-0' : 'text-slate-400 shrink-0'} />
+                                <div className="flex flex-col leading-snug gap-0.5">
+                                    <span className={`text-[10px] font-semibold ${active ? 'text-white/75' : 'text-slate-500'}`}>{name}</span>
+                                    <span className={`text-[14px] font-black tabular-nums leading-none ${active ? 'text-white' : 'text-slate-800'}`}>{total}</span>
+                                </div>
+                            </button>
+                        );
+                    })}
                     {/* Sucursal (BRANCH): card propia, solo informativa */}
                     {isBranch && sucursalCounts.length > 0 && (() => {
                         const own = sucursalCounts[0];
                         return (
-                            <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm"
-                                style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
+                            <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border backdrop-blur-sm min-w-[80px]"
+                                style={{ background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.70)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
                                 <Building2 size={13} className="text-slate-400 shrink-0" />
                                 <div className="flex flex-col leading-snug gap-0.5">
                                     <span className="text-[10px] font-semibold text-slate-500">{own.name}</span>

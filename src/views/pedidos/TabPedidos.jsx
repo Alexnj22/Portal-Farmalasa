@@ -998,24 +998,29 @@ const EVENTO_LABEL = {
     resolucion_rechazada:  'rechazó resolución',
 };
 
+const DIF_MAX = 3;
+
 function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, empMap = new Map(), onResolver }) {
     const [tipoSel,    setTipoSel]    = React.useState({});
     const [notaSel,    setNotaSel]    = React.useState({});
     const [rejectOpen, setRejectOpen] = React.useState({});
     const [notaRec,    setNotaRec]    = React.useState({});
+    const [showAll,    setShowAll]    = React.useState(false);
 
-    const allConfirmed = difItems.length > 0 && difItems.every(r => r.resolucion_status === 'confirmada');
+    const allConfirmed  = difItems.length > 0 && difItems.every(r => r.resolucion_status === 'confirmada');
+    const visibleItems  = showAll ? difItems : difItems.slice(0, DIF_MAX);
+    const hiddenCount   = difItems.length - DIF_MAX;
 
     return (
         <div className="border-t border-amber-100 bg-gradient-to-b from-amber-50/40 to-white px-4 py-3 space-y-3">
             <div className="flex items-center gap-1.5">
                 <AlertCircle size={12} className="text-amber-500 shrink-0" />
                 <span className="text-[10px] font-semibold text-amber-700 uppercase tracking-wide">
-                    {allConfirmed ? 'Diferencias resueltas ✓' : 'Diferencias — pendiente resolución'}
+                    {allConfirmed ? 'Diferencias resueltas ✓' : `Diferencias — pendiente resolución${difItems.length > 1 ? ` (${difItems.length})` : ''}`}
                 </span>
             </div>
 
-            {difItems.map(item => {
+            {visibleItems.map(item => {
                 const opts    = RESOLUCION_OPTS[item.error_tipo] ?? [['resuelto','Resuelto'],['no_aplica','Sin solución']];
                 const selTipo = tipoSel[item.id] ?? opts[0]?.[0] ?? '';
                 const isBusy  = busyAction === `res_${item.id}`;
@@ -1066,15 +1071,13 @@ function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, em
                                             </div>
                                         </div>
                                     )}
-                                    <div className="flex gap-2">
-                                        <select
-                                            value={selTipo}
-                                            onChange={e => setTipoSel(p => ({ ...p, [item.id]: e.target.value }))}
-                                            className="flex-1 text-[10px] border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-violet-400"
-                                        >
-                                            {opts.map(([v,l]) => <option key={v} value={v}>{l}</option>)}
-                                        </select>
-                                    </div>
+                                    <LiquidSelect
+                                        value={selTipo}
+                                        onChange={v => setTipoSel(p => ({ ...p, [item.id]: v }))}
+                                        options={opts.map(([v, l]) => ({ value: v, label: l }))}
+                                        compact
+                                        clearable={false}
+                                    />
                                     <div className="flex gap-2">
                                         <input
                                             type="text" placeholder="Nota (opcional)…"
@@ -1201,6 +1204,13 @@ function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, em
                         );
                     })}
                 </div>
+            )}
+
+            {hiddenCount > 0 && (
+                <button onClick={() => setShowAll(s => !s)}
+                    className="w-full text-[10px] font-semibold text-amber-600 hover:text-amber-800 py-1 rounded-lg hover:bg-amber-50 transition-all text-center">
+                    {showAll ? 'Ver menos ↑' : `Ver todas las diferencias (${difItems.length}) ↓`}
+                </button>
             )}
         </div>
     );
@@ -1836,7 +1846,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         setLlegadaModal({ pedidoId, sucId, key, rows: rows ?? [] });
     }, [busyAction, items, fetchItems]);
 
-    const handleLlegadaConfirm = useCallback(async ({ cajasOk, cajasDanadas, cajasFaltantes, nota }) => {
+    const handleLlegadaConfirm = useCallback(async ({ cajasOk, cajasDanadas, cajasFaltantes, nota, electrolitOk = null }) => {
         if (!llegadaModal) return;
         const { pedidoId, sucId, key, rows } = llegadaModal;
         setLlegadaModal(null);
@@ -1885,8 +1895,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                 llegada_nota:  nota || null,
                 falta_cajas:   cajasFaltantes,
                 cajas_danadas: cajasDanadas,
-                // falta_caja_at actúa como "problema detectado en llegada" — se usa en el timeline
                 ...((hasFalta || hasDanada) ? { falta_caja_at: new Date().toISOString() } : {}),
+                ...(electrolitOk !== null ? { electrolit_ok: electrolitOk } : {}),
             }).eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
 
             useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { tipo, cajasFaltantes, cajasDanadas });
@@ -2490,8 +2500,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     </div>
 
-                                    {/* Recepción — solo cuando el pedido ya fue marcado En Ruta */}
-                                    {isBranch && erpSucursalId && row.pedido_status === 'enviado' && stage !== 'erp' && (
+                                    {/* Recepción — enviado, o parcial con reenvío aún en camino */}
+                                    {isBranch && erpSucursalId && (row.pedido_status === 'enviado' || (row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at)) && stage !== 'erp' && (
                                         <div onClick={e => e.stopPropagation()}>
                                             <ReceptionActions
                                                 llegadaOk={!!llegadaStatus[cardKey] || !!row.llegada_fisica_at}
@@ -2559,6 +2569,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 pedidoNumero={llegadaModal ? activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.numero : null}
                 cajaMap={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.caja_map ?? {}) : {}}
                 totalCajas={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.total_cajas ?? 0) : 0}
+                cajasElectrolit={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.cajas_electrolit ?? 0) : 0}
             />
 
             <ReenvioLlegadaModal
@@ -2639,8 +2650,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
                             }).catch(() => {});
                         } else {
-                            // Partial box confirmed — reload items silently
-                            fetchItems(key, pedido.id, sucId);
+                            // Partial box confirmed — reload items before active so DifSection gets fresh data
+                            await fetchItems(key, pedido.id, sucId);
                         }
                         await loadActive();
                     }}

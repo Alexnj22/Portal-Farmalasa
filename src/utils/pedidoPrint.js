@@ -196,19 +196,19 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
         {}, {}, {}, {}, {},
     ];
 
-    // Fila 2 — blanco, origen (izq) | destino + Caja (der)
+    // Fila 2 — blanco, 3 columnas: Origen | Destino | Caja:___
     const originText = bodegaAddr ? `Origen: Bodega\n${bodegaAddr}` : 'Origen: Bodega';
     const destText   = sucAddr ? `Destino: ${sec.nombre}\n${sucAddr}` : `Destino: ${sec.nombre}`;
     const subtitleRow = [
         {
             colSpan: 6, fillColor: '#ffffff', margin: [6, 5, 6, 8],
             columns: [
-                { text: originText, fontSize: 6, color: '#555', width: '48%', lineHeight: 1.5 },
+                { text: originText, fontSize: 6, color: '#555', width: '36%', lineHeight: 1.5 },
+                { text: destText,   fontSize: 6, color: '#555', width: '40%', alignment: 'center', lineHeight: 1.5 },
                 {
-                    width: '52%',
+                    width: '24%',
                     stack: [
-                        { text: destText, fontSize: 6, color: '#555', alignment: 'right', lineHeight: 1.5 },
-                        { text: 'Caja: ___________', fontSize: 6.5, color: '#333', alignment: 'right', margin: [0, 7, 0, 0] },
+                        { text: 'Caja: ___________', fontSize: 6.5, color: '#333', alignment: 'right', margin: [0, 4, 0, 0] },
                     ],
                 },
             ],

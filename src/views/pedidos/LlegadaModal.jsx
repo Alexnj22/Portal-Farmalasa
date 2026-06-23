@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { PackageCheck, PackageX, AlertTriangle, X, Loader2 } from 'lucide-react';
+import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Zap } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import { getPageGroups } from '../../utils/pedidoPrint';
 
@@ -23,10 +23,11 @@ const TOGGLE_CFG = {
     faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-rose-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200' },
 };
 
-export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, totalCajas = 0 }) {
-    const [estados,    setEstados]    = useState({});
-    const [nota,       setNota]       = useState('');
-    const [submitting, setSubmitting] = useState(false);
+export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, totalCajas = 0, cajasElectrolit = 0 }) {
+    const [estados,       setEstados]       = useState({});
+    const [nota,          setNota]          = useState('');
+    const [electrolitOk,  setElectrolitOk]  = useState(null); // null=sin respuesta, true=llegaron, false=no
+    const [submitting,    setSubmitting]    = useState(false);
 
     const cajas = useMemo(() => deriveCajas(cajaMap, items), [cajaMap, items]);
 
@@ -40,12 +41,12 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
     const handleConfirm = () => {
         setSubmitting(true);
-        onConfirm({ cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim() });
+        onConfirm({ cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim(), electrolitOk: cajasElectrolit > 0 ? electrolitOk : null });
     };
 
     const handleClose = () => {
         if (submitting) return;
-        setEstados({}); setNota(''); setSubmitting(false);
+        setEstados({}); setNota(''); setElectrolitOk(null); setSubmitting(false);
         onClose();
     };
 
@@ -114,6 +115,31 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     </div>
                 )}
             </div>
+
+            {/* Electrolit — pregunta no bloqueante */}
+            {cajasElectrolit > 0 && (
+                <div className="px-5 pb-4">
+                    <div className="flex items-center gap-2 p-3 rounded-2xl border border-amber-100 bg-amber-50/60">
+                        <Zap size={14} className="text-amber-500 shrink-0" />
+                        <span className="text-[11px] font-semibold text-amber-700 flex-1">
+                            ¿Llegaron las {cajasElectrolit} caja{cajasElectrolit > 1 ? 's' : ''} de Electrolit?
+                        </span>
+                        <div className="flex items-center gap-1">
+                            {[true, false].map(val => (
+                                <button key={String(val)} onClick={() => setElectrolitOk(val)}
+                                    className={`text-[10px] font-bold px-3 py-1 rounded-xl border transition-all active:scale-95 ${electrolitOk === val
+                                        ? val ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-rose-500 text-white border-rose-500 shadow-sm'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}>
+                                    {val ? 'Sí' : 'No'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    {electrolitOk === false && (
+                        <p className="text-[10px] text-rose-600 mt-1.5 px-1">⚠ Se notificará a bodega. La recepción continúa normal.</p>
+                    )}
+                </div>
+            )}
 
             {/* Footer */}
             <div className="px-5 pb-5 pt-3 border-t border-slate-100 space-y-3">

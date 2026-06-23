@@ -2240,35 +2240,30 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             {/* ── FILTROS + CARDS SUCURSALES ─────────────────────────── */}
             <div>
-                {/* Fila de filtros */}
+                {/* Fila única: cards por sucursal (izq) + FilterPill (der) */}
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    {!isBranch && sucursalCounts.map(({ id, name, total }) => (
+                        <button
+                            key={id}
+                            onClick={() => setFilterSuc(v => v === String(id) ? '' : String(id))}
+                            className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 ${
+                                filterSuc === String(id)
+                                    ? 'bg-indigo-600 border-indigo-500 shadow-[0_4px_20px_rgba(79,70,229,0.25)]'
+                                    : 'border-white/70'
+                            }`}
+                            style={filterSuc === String(id) ? {} : { background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}
+                        >
+                            <Building2 size={12} className={filterSuc === String(id) ? 'text-white/80 shrink-0' : 'text-slate-400 shrink-0'} />
+                            <div className="flex flex-col leading-snug gap-0">
+                                <span className={`text-[9px] font-semibold leading-tight ${filterSuc === String(id) ? 'text-white/75' : 'text-slate-500'}`}>{name}</span>
+                                <span className={`text-[14px] font-black tabular-nums leading-none ${filterSuc === String(id) ? 'text-white' : 'text-slate-800'}`}>{total}</span>
+                            </div>
+                        </button>
+                    ))}
                     <div className="ml-auto">
                         <FilterPill isBranch={isBranch} filterSuc={filterSuc} setFilterSuc={setFilterSuc} filterStatus={filterStatus} setFilterStatus={setFilterStatus} filterOptions={filterOptions} filterDate={filterDate} setFilterDate={setFilterDate} />
                     </div>
                 </div>
-
-                {/* Cards por sucursal (solo bodega) */}
-                {!isBranch && sucursalCounts.length > 0 && (
-                    <div className="flex gap-2 flex-wrap mb-3">
-                        {sucursalCounts.map(({ id, name, total }) => (
-                            <button
-                                key={id}
-                                onClick={() => setFilterSuc(v => v === String(id) ? '' : String(id))}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-2xl border text-[11px] font-semibold transition-all duration-200 ${
-                                    filterSuc === String(id)
-                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
-                                        : 'bg-white/80 backdrop-blur-sm text-slate-700 border-slate-200/70 hover:border-indigo-300 hover:shadow-sm hover:-translate-y-0.5'
-                                }`}
-                            >
-                                <Building2 size={11} className={filterSuc === String(id) ? 'text-white/80' : 'text-slate-400'} />
-                                <span>{name}</span>
-                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
-                                    filterSuc === String(id) ? 'bg-white/25 text-white' : 'bg-indigo-50 text-indigo-600'
-                                }`}>{total}</span>
-                            </button>
-                        ))}
-                    </div>
-                )}
 
                 {filteredRows.length === 0 ? (
                     <div className="flex flex-col items-center justify-center min-h-[260px] animate-in fade-in zoom-in-95 duration-700">
@@ -2347,16 +2342,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 ⏸ Pausado
                                             </span>
                                         )}
-                                        {hasObservacion(row) && row.pedido_status !== 'completado' && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-500 text-white shrink-0 shadow-sm">
-                                                <AlertTriangle size={9} />
-                                                {row.pedido_status === 'parcial' && !(row.llegada_tipo && row.llegada_tipo !== 'completa') ? 'Difs. pendientes'
-                                                    : row.llegada_tipo === 'mixto'      ? 'Dañada + Falta'
-                                                    : row.llegada_tipo === 'caja_danada' ? 'Caja dañada'
-                                                    : row.llegada_tipo === 'falta_caja'  ? 'Caja faltante'
-                                                    : 'Con observación'}
-                                            </span>
-                                        )}
                                         <span className="text-[13px] font-black text-slate-800 tabular-nums shrink-0">
                                             {row.codigo ?? `#${row.numero}`}
                                         </span>
@@ -2369,45 +2354,42 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     </div>
                                     {row.notes && <p className="px-3 pb-1.5 text-[11px] text-slate-600 italic">{row.notes}</p>}
 
-                                    {/* Stats pills */}
-                                    {cardStats[cardKey] && (
+                                    {/* Stats pills + observaciones inline */}
+                                    {(cardStats[cardKey] || hasObservacion(row)) && (
                                         <div className="flex items-center gap-1 px-3 pb-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
-                                                {cardStats[cardKey].enviados} enviados
-                                            </span>
-                                            {cardStats[cardKey].sinStock > 0 && (
-                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200">
-                                                    {cardStats[cardKey].sinStock} sin stock
+                                            {cardStats[cardKey] && (<>
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
+                                                    {cardStats[cardKey].enviados} enviados
                                                 </span>
-                                            )}
-                                            {cardStats[cardKey].porRegla > 0 && (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
-                                                    <AlertTriangle size={9} />{cardStats[cardKey].porRegla} por regla
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Observaciones detalle */}
-                                    {hasObservacion(row) && row.pedido_status !== 'completado' && (
-                                        <div className="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
-                                            {(row.cajas_danadas ?? []).length > 0 && (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
-                                                    <AlertTriangle size={8} />
-                                                    Dañada{row.cajas_danadas.length > 1 ? 's' : ''}: {row.cajas_danadas.map(n => `#${n}`).join(', ')}
-                                                </span>
-                                            )}
-                                            {(row.falta_cajas ?? []).length > 0 && (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                                                    <Package size={8} />
-                                                    Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}
-                                                </span>
-                                            )}
-                                            {row.pedido_status === 'parcial' && (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
-                                                    <ClipboardList size={8} /> Diferencias pendientes de resolución
-                                                </span>
-                                            )}
+                                                {cardStats[cardKey].sinStock > 0 && (
+                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200">
+                                                        {cardStats[cardKey].sinStock} sin stock
+                                                    </span>
+                                                )}
+                                                {cardStats[cardKey].porRegla > 0 && (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+                                                        <AlertTriangle size={9} />{cardStats[cardKey].porRegla} por regla
+                                                    </span>
+                                                )}
+                                            </>)}
+                                            {hasObservacion(row) && row.pedido_status !== 'completado' && (<>
+                                                <span className="h-3 w-px bg-slate-200 mx-0.5 shrink-0" />
+                                                {(row.cajas_danadas ?? []).length > 0 && (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-50 text-orange-700 border-orange-200">
+                                                        <AlertTriangle size={8} /> Dañada{row.cajas_danadas.length > 1 ? 's' : ''}: {row.cajas_danadas.map(n => `#${n}`).join(', ')}
+                                                    </span>
+                                                )}
+                                                {(row.falta_cajas ?? []).length > 0 && (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-rose-50 text-rose-700 border-rose-200">
+                                                        <Package size={8} /> Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}
+                                                    </span>
+                                                )}
+                                                {row.pedido_status === 'parcial' && (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-violet-50 text-violet-700 border-violet-200">
+                                                        <ClipboardList size={8} /> Difs. pendientes
+                                                    </span>
+                                                )}
+                                            </>)}
                                         </div>
                                     )}
 

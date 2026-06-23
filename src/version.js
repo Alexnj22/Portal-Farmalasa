@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.304';
+export const APP_VERSION = '2.2.305';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.305 — fix(pedidos): cards glass estándar en misma línea que pill; observaciones inline con divisor
 // v2.2.304 — feat(pedidos): quitar sección EN CURSO; cards por sucursal; detalle observaciones en card
 // v2.2.303 — feat(pedidos/filtros): Completados ocultos por defecto; filtros Con observación + Completados
 // v2.2.302 — feat(pdf): 5 mejoras al PDF de despacho (header, caja, lotes, centrado, footer)

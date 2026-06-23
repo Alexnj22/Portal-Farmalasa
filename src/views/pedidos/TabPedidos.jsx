@@ -2203,6 +2203,18 @@ export default function TabPedidos({ searchTerm = '' }) {
         });
     }, [activeRows, filterSuc, filterStatus, filterDate, searchLower, hasObservacion]); // eslint-disable-line
 
+    const sucursalCounts = useMemo(() => {
+        const [desde, hasta] = (filterDate ?? '').split('|');
+        return ERP_ORDER.map(id => {
+            const rows = activeRows.filter(r => {
+                if (r.erp_sucursal_id !== id) return false;
+                const d = r.created_at?.slice(0, 10);
+                return (!desde || d >= desde) && (!hasta || d <= hasta);
+            });
+            return { id, name: ERP_NAMES[id] ?? `Suc. ${id}`, total: rows.length };
+        }).filter(s => s.total > 0);
+    }, [activeRows, filterDate]);
+
     // ── Render ────────────────────────────────────────────────────────────────
 
     if (loading) {
@@ -2226,33 +2238,37 @@ export default function TabPedidos({ searchTerm = '' }) {
                 )}
             </AnimatePresence>
 
-            {/* ── EN CURSO ──────────────────────────────────────────────── */}
+            {/* ── FILTROS + CARDS SUCURSALES ─────────────────────────── */}
             <div>
+                {/* Fila de filtros */}
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    {filterStatus === 'completado' ? (
-                        <span className="relative flex h-2 w-2 shrink-0">
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                        </span>
-                    ) : (
-                        <span className="relative flex h-2 w-2 shrink-0">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
-                        </span>
-                    )}
-                    <span className="text-[12px] font-bold text-slate-700 uppercase tracking-wide">
-                        {filterStatus === 'completado' ? 'Completados' : filterStatus === 'observacion' ? 'Con observación' : 'En curso'}
-                    </span>
-                    {filteredRows.length > 0 && (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                            filterStatus === 'completado' ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                            : filterStatus === 'observacion' ? 'text-amber-700 bg-amber-50 border-amber-200'
-                            : 'text-blue-600 bg-blue-50 border-blue-200'
-                        }`}>{filteredRows.length}</span>
-                    )}
                     <div className="ml-auto">
                         <FilterPill isBranch={isBranch} filterSuc={filterSuc} setFilterSuc={setFilterSuc} filterStatus={filterStatus} setFilterStatus={setFilterStatus} filterOptions={filterOptions} filterDate={filterDate} setFilterDate={setFilterDate} />
                     </div>
                 </div>
+
+                {/* Cards por sucursal (solo bodega) */}
+                {!isBranch && sucursalCounts.length > 0 && (
+                    <div className="flex gap-2 flex-wrap mb-3">
+                        {sucursalCounts.map(({ id, name, total }) => (
+                            <button
+                                key={id}
+                                onClick={() => setFilterSuc(v => v === String(id) ? '' : String(id))}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-2xl border text-[11px] font-semibold transition-all duration-200 ${
+                                    filterSuc === String(id)
+                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
+                                        : 'bg-white/80 backdrop-blur-sm text-slate-700 border-slate-200/70 hover:border-indigo-300 hover:shadow-sm hover:-translate-y-0.5'
+                                }`}
+                            >
+                                <Building2 size={11} className={filterSuc === String(id) ? 'text-white/80' : 'text-slate-400'} />
+                                <span>{name}</span>
+                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                                    filterSuc === String(id) ? 'bg-white/25 text-white' : 'bg-indigo-50 text-indigo-600'
+                                }`}>{total}</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
 
                 {filteredRows.length === 0 ? (
                     <div className="flex flex-col items-center justify-center min-h-[260px] animate-in fade-in zoom-in-95 duration-700">
@@ -2315,7 +2331,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     className={`${GLASS} cursor-pointer select-none ${
                                         stage === 'pausado'
                                             ? 'ring-2 ring-amber-400 shadow-[0_4px_20px_rgba(251,191,36,0.25)]'
-                                            : row.llegada_tipo === 'caja_danada'
+                                            : hasObservacion(row) && row.pedido_status !== 'completado'
                                                 ? 'ring-2 ring-orange-400 shadow-[0_4px_20px_rgba(249,115,22,0.18)]'
                                                 : isFadedOut
                                                     ? 'opacity-80'
@@ -2331,9 +2347,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 ⏸ Pausado
                                             </span>
                                         )}
-                                        {row.llegada_tipo === 'caja_danada' && (
+                                        {hasObservacion(row) && row.pedido_status !== 'completado' && (
                                             <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-500 text-white shrink-0 shadow-sm">
-                                                <AlertTriangle size={9} /> Caja dañada
+                                                <AlertTriangle size={9} />
+                                                {row.pedido_status === 'parcial' && !(row.llegada_tipo && row.llegada_tipo !== 'completa') ? 'Difs. pendientes'
+                                                    : row.llegada_tipo === 'mixto'      ? 'Dañada + Falta'
+                                                    : row.llegada_tipo === 'caja_danada' ? 'Caja dañada'
+                                                    : row.llegada_tipo === 'falta_caja'  ? 'Caja faltante'
+                                                    : 'Con observación'}
                                             </span>
                                         )}
                                         <span className="text-[13px] font-black text-slate-800 tabular-nums shrink-0">
@@ -2362,6 +2383,29 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {cardStats[cardKey].porRegla > 0 && (
                                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
                                                     <AlertTriangle size={9} />{cardStats[cardKey].porRegla} por regla
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Observaciones detalle */}
+                                    {hasObservacion(row) && row.pedido_status !== 'completado' && (
+                                        <div className="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
+                                            {(row.cajas_danadas ?? []).length > 0 && (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
+                                                    <AlertTriangle size={8} />
+                                                    Dañada{row.cajas_danadas.length > 1 ? 's' : ''}: {row.cajas_danadas.map(n => `#${n}`).join(', ')}
+                                                </span>
+                                            )}
+                                            {(row.falta_cajas ?? []).length > 0 && (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                                    <Package size={8} />
+                                                    Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}
+                                                </span>
+                                            )}
+                                            {row.pedido_status === 'parcial' && (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
+                                                    <ClipboardList size={8} /> Diferencias pendientes de resolución
                                                 </span>
                                             )}
                                         </div>

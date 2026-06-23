@@ -104,7 +104,7 @@ export default function RecepcionModal({
     const [extraSearch,  setExtraSearch]  = useState('');
     const [extraResults, setExtraResults] = useState([]);
     const [extraBusy,    setExtraBusy]    = useState(false);
-    const [extraOpen,    setExtraOpen]    = useState(false);
+    const [prevScreen,   setPrevScreen]   = useState(null);
 
     const searchRef    = useRef(null);
     const extraRef     = useRef(null);
@@ -160,8 +160,8 @@ export default function RecepcionModal({
         setLocalRec([]);
         setAnyHasDiff(false);
         setSaveError(null);
-        setExtras([]); setExtraSearch(''); setExtraResults([]); setExtraOpen(false);
-        setProdSearch(''); setShowSearch(false);
+        setExtras([]); setExtraSearch(''); setExtraResults([]);
+        setProdSearch(''); setShowSearch(false); setPrevScreen(null);
 
         const fQ = {}, fP = {}, sQ = {}, sP = {}, notas = {}, errs = {};
         for (const r of rows) {
@@ -216,7 +216,7 @@ export default function RecepcionModal({
 
     // ── Extras search ────────────────────────────────────────────────────────────
     useEffect(() => {
-        if (!extraOpen || extraSearch.trim().length < 2) { setExtraResults([]); return; }
+        if (screen !== 'extras' || extraSearch.trim().length < 2) { setExtraResults([]); return; }
         const existingIds = [...rows.map(r => r.erp_product_id), ...extras.map(e => e.erp_product_id)];
         const t = setTimeout(async () => {
             setExtraBusy(true);
@@ -228,7 +228,7 @@ export default function RecepcionModal({
             setExtraBusy(false);
         }, 300);
         return () => clearTimeout(t);
-    }, [extraSearch, extraOpen, rows, extras]);
+    }, [extraSearch, screen, rows, extras]);
 
     const addExtra = useCallback(async (prod) => {
         if (extras.some(e => e.erp_product_id === prod.id)) return;
@@ -632,40 +632,12 @@ export default function RecepcionModal({
 
                 {/* Extras section on cajas screen */}
                 <div className="flex-none border-t border-slate-100 px-4 py-3">
-                    {extraOpen ? (
-                        <div className="relative">
-                            <div className="flex items-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50/60 px-3 py-2">
-                                <Search size={13} className="text-indigo-400 shrink-0" />
-                                <input ref={extraRef} type="text" placeholder="Buscar producto extra recibido…"
-                                    value={extraSearch} onChange={e => setExtraSearch(e.target.value)}
-                                    onKeyDown={e => e.key === 'Escape' && (setExtraOpen(false), setExtraSearch(''))}
-                                    className="flex-1 text-[12px] bg-transparent focus:outline-none placeholder-indigo-300 text-slate-700"
-                                />
-                                {extraBusy
-                                    ? <Loader2 size={12} className="animate-spin text-indigo-400 shrink-0" />
-                                    : <button onClick={() => { setExtraOpen(false); setExtraSearch(''); setExtraResults([]); }} className="text-slate-300 hover:text-slate-500 shrink-0"><X size={13} /></button>
-                                }
-                            </div>
-                            {extraResults.length > 0 && (
-                                <div className="absolute bottom-full mb-1 left-0 right-0 rounded-xl border border-indigo-200 bg-white shadow-2xl overflow-hidden z-50">
-                                    {extraResults.map(prod => (
-                                        <button key={prod.id} onMouseDown={() => addExtra(prod)}
-                                            className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-slate-700 hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0">
-                                            <Plus size={12} className="text-indigo-400 shrink-0" />
-                                            {prod.nombre}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <button onClick={() => { setExtraOpen(true); setTimeout(() => extraRef.current?.focus(), 60); }}
-                            className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-500 hover:text-indigo-700 transition-colors py-0.5">
-                            <PackagePlus size={13} />
-                            ¿Llegó un producto extra?
-                            {extras.length > 0 && <span className="ml-1 bg-indigo-100 text-indigo-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
-                        </button>
-                    )}
+                    <button onClick={() => { setPrevScreen('cajas'); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}
+                        className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-500 hover:text-indigo-700 transition-colors py-0.5">
+                        <PackagePlus size={13} />
+                        ¿Llegó un producto extra?
+                        {extras.length > 0 && <span className="ml-1 bg-indigo-100 text-indigo-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
+                    </button>
                 </div>
 
                 {allAccessibleDone && (
@@ -684,6 +656,151 @@ export default function RecepcionModal({
                         </div>
                     </PedidoModal.Footer>
                 )}
+            </PedidoModal>
+        );
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // SCREEN: EXTRAS — dedicated screen for extra products
+    // ════════════════════════════════════════════════════════════════
+    const goBackFromExtras = () => setScreen(prevScreen ?? (hasCajaMap ? 'cajas' : 'items'));
+
+    if (screen === 'extras') {
+        return (
+            <PedidoModal open={open} onClose={saving ? undefined : goBackFromExtras} maxWidth="max-w-md">
+                <PedidoModal.Header className="px-5 py-4">
+                    <div className="flex items-center gap-2">
+                        <button onClick={goBackFromExtras} disabled={saving}
+                            className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all shrink-0 disabled:opacity-40">
+                            <ChevronLeft size={14} />
+                        </button>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-[15px] font-bold text-slate-800 leading-snug">Productos extra</h3>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                                {extras.length === 0
+                                    ? 'Productos recibidos que no estaban en el pedido'
+                                    : `${extras.length} producto${extras.length !== 1 ? 's' : ''} agregado${extras.length !== 1 ? 's' : ''}`}
+                            </p>
+                        </div>
+                        <button onClick={goBackFromExtras} disabled={saving}
+                            className="text-slate-400 hover:text-slate-600 transition-colors p-1 disabled:opacity-40">
+                            <X size={18} />
+                        </button>
+                    </div>
+                </PedidoModal.Header>
+
+                {/* Search bar — always visible */}
+                <div className="relative px-5 pt-3 pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50/60 px-3 py-2.5">
+                        <Search size={14} className="text-indigo-400 shrink-0" />
+                        <input ref={extraRef} type="text" placeholder="Buscar producto extra recibido…"
+                            value={extraSearch} onChange={e => setExtraSearch(e.target.value)}
+                            className="flex-1 text-[12px] bg-transparent focus:outline-none placeholder-indigo-300 text-slate-700"
+                        />
+                        {extraBusy
+                            ? <Loader2 size={12} className="animate-spin text-indigo-400 shrink-0" />
+                            : extraSearch && (
+                                <button onClick={() => setExtraSearch('')} className="text-slate-300 hover:text-slate-500 shrink-0">
+                                    <X size={13} />
+                                </button>
+                            )
+                        }
+                    </div>
+                    {extraResults.length > 0 && (
+                        <div className="absolute left-5 right-5 top-full mt-1 rounded-xl border border-indigo-200 bg-white shadow-2xl overflow-hidden z-50">
+                            {extraResults.map(prod => (
+                                <button key={prod.id} onMouseDown={() => addExtra(prod)}
+                                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-slate-700 hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0">
+                                    <Plus size={12} className="text-indigo-400 shrink-0" />
+                                    {prod.nombre}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <PedidoModal.Body className="px-5 py-4">
+                    {extras.length === 0 ? (
+                        <div className="py-10 text-center">
+                            <PackagePlus size={32} className="text-indigo-200 mx-auto mb-3" />
+                            <p className="text-[13px] font-semibold text-slate-400">Sin productos extra</p>
+                            <p className="text-[11px] text-slate-300 mt-1">Buscá un producto arriba para agregarlo</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {extras.map((e, ei) => {
+                                const eOpts     = presMap[e.erp_product_id] ?? [{ factor: 1, label: 'Unidad' }];
+                                const eDiff     = e.fQty !== e.sQty || e.fPres !== e.sPres;
+                                const eBothZero = e.fQty === 0 && e.sQty === 0;
+                                return (
+                                    <div key={e.erp_product_id}
+                                        className={`p-3.5 rounded-2xl border ${eBothZero ? 'bg-red-50 border-red-200' : eDiff ? 'bg-amber-50/60 border-amber-200' : 'bg-indigo-50/30 border-indigo-200/60'}`}>
+                                        <div className="flex items-start justify-between gap-2 mb-3">
+                                            <div>
+                                                <p className="text-[13px] font-bold text-slate-700 leading-tight">{e.nombre}</p>
+                                                {eBothZero && <p className="text-[10px] text-red-500 font-medium mt-0.5">Al menos uno debe ser mayor a 0</p>}
+                                            </div>
+                                            <button onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))}
+                                                className="text-slate-300 hover:text-red-500 transition-colors p-1 shrink-0 mt-0.5">
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wide w-12 shrink-0">Físico</span>
+                                                <select value={e.fPres}
+                                                    onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fPres: Number(ev.target.value) } : x))}
+                                                    className="flex-1 text-[11px] border border-teal-200 rounded-xl px-2 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-teal-400">
+                                                    {eOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}
+                                                </select>
+                                                <input type="number" min={0} value={e.fQty}
+                                                    onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
+                                                    className="w-16 text-center border border-teal-200 rounded-xl px-2 py-1.5 text-[13px] font-bold tabular-nums bg-white text-teal-700 focus:outline-none focus:border-teal-400"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-bold text-violet-600 uppercase tracking-wide w-12 shrink-0">Sistema</span>
+                                                <select value={e.sPres}
+                                                    onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sPres: Number(ev.target.value) } : x))}
+                                                    className="flex-1 text-[11px] border border-violet-200 rounded-xl px-2 py-1.5 bg-white text-slate-700 focus:outline-none focus:border-violet-400">
+                                                    {eOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}
+                                                </select>
+                                                <input type="number" min={0} value={e.sQty}
+                                                    onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
+                                                    className="w-16 text-center border border-violet-200 rounded-xl px-2 py-1.5 text-[13px] font-bold tabular-nums bg-white text-violet-700 focus:outline-none focus:border-violet-400"
+                                                />
+                                            </div>
+                                            <input type="text" placeholder="Nota (opcional)…" value={e.nota}
+                                                onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, nota: ev.target.value } : x))}
+                                                className="w-full text-[11px] border border-indigo-100 rounded-xl px-3 py-1.5 bg-white focus:outline-none focus:border-indigo-300 placeholder-slate-300"
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            <div ref={extrasEndRef} />
+                        </div>
+                    )}
+                </PedidoModal.Body>
+
+                <PedidoModal.Footer className="space-y-2">
+                    {saveError && (
+                        <div className="flex items-center gap-2 text-red-600 text-[12px] bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                            <AlertTriangle size={13} /> {saveError}
+                        </div>
+                    )}
+                    <div className="flex items-center justify-between gap-2">
+                        <button onClick={goBackFromExtras} disabled={saving}
+                            className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors disabled:opacity-40">
+                            Volver
+                        </button>
+                        <button onClick={goBackFromExtras}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-500 text-white font-bold text-[13px] hover:bg-indigo-600 transition-colors shadow-sm">
+                            <Check size={14} />
+                            {extras.length > 0 ? `Listo · ${extras.length} extra${extras.length !== 1 ? 's' : ''}` : 'Listo'}
+                        </button>
+                    </div>
+                </PedidoModal.Footer>
             </PedidoModal>
         );
     }
@@ -955,98 +1072,19 @@ export default function RecepcionModal({
                         );
                     })}
 
-                    {/* Extras */}
-                    {extras.map((e, ei) => {
-                        const eOpts   = presMap[e.erp_product_id] ?? [{ factor: 1, label: 'Unidad' }];
-                        const eDiff   = e.fQty !== e.sQty || e.fPres !== e.sPres;
-                        const eBothZero = e.fQty === 0 && e.sQty === 0;
-                        return (
-                            <div key={e.erp_product_id} className={`${eBothZero ? 'bg-red-50/70' : 'bg-indigo-50/60'}`}>
-                                <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
-                                    <div className="min-w-0">
-                                        <span className={`inline-flex items-center gap-1 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full mb-0.5 ${eBothZero ? 'text-red-500 bg-red-100' : 'text-indigo-500 bg-indigo-100'}`}>
-                                            <Plus size={8} /> Extra
-                                        </span>
-                                        <p className={`text-[12px] font-semibold leading-snug ${eBothZero ? 'text-red-600' : 'text-indigo-700'}`}>{e.nombre}</p>
-                                        {eBothZero && <p className="text-[10px] text-red-500 font-medium mt-0.5">Al menos uno debe tener valor</p>}
-                                    </div>
-                                    <span className="text-[12px] text-slate-400 text-center">—</span>
-                                    <select value={e.fPres}
-                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fPres: Number(ev.target.value) } : x))}
-                                        className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-indigo-700'}`}
-                                    >{eOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
-                                    <input type="number" min={0} value={e.fQty}
-                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) ?? 0) } : x))}
-                                        className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-indigo-700'}`}
-                                    />
-                                    <select value={e.sPres}
-                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sPres: Number(ev.target.value) } : x))}
-                                        className={`text-[11px] border rounded-lg px-1 py-1 focus:outline-none w-full ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-indigo-700'}`}
-                                    >{eOpts.map(o => <option key={o.factor} value={o.factor}>{o.label}</option>)}</select>
-                                    <input type="number" min={0} value={e.sQty}
-                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(0, parseInt(ev.target.value) ?? 0) } : x))}
-                                        className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-indigo-700'}`}
-                                    />
-                                    <button onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))}
-                                        className="flex justify-center p-1 text-slate-300 hover:text-red-500 transition-colors">
-                                        <Trash2 size={13} />
-                                    </button>
-                                </div>
-                                <div className="px-5 pb-2">
-                                    <input type="text" placeholder="Nota (opcional)…" value={e.nota}
-                                        onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, nota: ev.target.value } : x))}
-                                        className="w-full text-[11px] border border-indigo-200 rounded-lg px-3 py-1 bg-white focus:outline-none focus:border-indigo-400 placeholder-slate-300"
-                                    />
-                                </div>
-                            </div>
-                        );
-                    })}
                     <div ref={extrasEndRef} />
                 </div>
               </div>
             </PedidoModal.Body>
 
-            {/* Extras search bar */}
+            {/* Extras — navigate to dedicated screen */}
             <div className="flex-none border-t border-slate-100 px-5 py-3">
-                <div className="relative">
-                    {extraOpen && (
-                        <>
-                            <div className="flex items-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50/60 px-3 py-2">
-                                <Search size={13} className="text-indigo-400 shrink-0" />
-                                <input ref={extraRef} type="text" placeholder="Buscar producto extra recibido…"
-                                    value={extraSearch} onChange={e => setExtraSearch(e.target.value)}
-                                    onKeyDown={e => e.key === 'Escape' && (setExtraOpen(false), setExtraSearch(''))}
-                                    className="flex-1 text-[12px] bg-transparent focus:outline-none placeholder-indigo-300 text-slate-700"
-                                />
-                                {extraBusy
-                                    ? <Loader2 size={12} className="animate-spin text-indigo-400 shrink-0" />
-                                    : <button onClick={() => { setExtraOpen(false); setExtraSearch(''); setExtraResults([]); }} className="text-slate-300 hover:text-slate-500 shrink-0"><X size={13} /></button>
-                                }
-                            </div>
-                            {extraResults.length > 0 && (
-                                <div className="absolute bottom-full mb-1 left-0 right-0 rounded-xl border border-indigo-200 bg-white shadow-2xl overflow-hidden z-50">
-                                    {extraResults.map(prod => (
-                                        <button key={prod.id} onMouseDown={() => addExtra(prod)}
-                                            className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-slate-700 hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0">
-                                            <Plus size={12} className="text-indigo-400 shrink-0" />
-                                            {prod.nombre}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </>
-                    )}
-                    {!extraOpen && (
-                        <button
-                            onClick={() => { setExtraOpen(true); setTimeout(() => extraRef.current?.focus(), 60); }}
-                            className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-500 hover:text-indigo-700 transition-colors py-0.5"
-                        >
-                            <PackagePlus size={13} />
-                            ¿Llegó un producto extra?
-                            {extras.length > 0 && <span className="ml-1 bg-indigo-100 text-indigo-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
-                        </button>
-                    )}
-                </div>
+                <button onClick={() => { setPrevScreen(screen); setScreen('extras'); setTimeout(() => extraRef.current?.focus(), 80); }}
+                    className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-500 hover:text-indigo-700 transition-colors py-0.5">
+                    <PackagePlus size={13} />
+                    ¿Llegó un producto extra?
+                    {extras.length > 0 && <span className="ml-1 bg-indigo-100 text-indigo-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{extras.length}</span>}
+                </button>
             </div>
 
             {/* Responsables */}

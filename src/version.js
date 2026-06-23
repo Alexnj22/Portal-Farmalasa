@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.295';
+export const APP_VERSION = '2.2.296';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.296 — feat(pedidos/extras): pantalla dedicada 'Productos extra' con búsqueda, presentaciones y cantidades separadas del grid de items
 // v2.2.295 — feat(pedidos/recepcion): auto-open RecepcionModal post-llegada; páginas en picker cajas; botón Confirmar Todo; falta_caja en ITEMS_SELECT
 // v2.2.294 — ux(pedidos/llegada): número de página visible en LlegadaModal y ReenvioLlegadaModal como subtext de cada caja
 // v2.2.293 — ux(pedidos/recepcion): quitar banner llegada confirmada; dañada+faltante como badges compactos inline

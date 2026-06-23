@@ -668,7 +668,7 @@ export default function RecepcionModal({
 
     if (screen === 'extras') {
         return (
-            <PedidoModal open={open} onClose={saving ? undefined : goBackFromExtras} maxWidth="max-w-md">
+            <PedidoModal open={open} onClose={saving ? undefined : goBackFromExtras} maxWidth="max-w-2xl">
                 <PedidoModal.Header className="px-5 py-4">
                     <div className="flex items-center gap-2">
                         <button onClick={goBackFromExtras} disabled={saving}
@@ -690,25 +690,128 @@ export default function RecepcionModal({
                     </div>
                 </PedidoModal.Header>
 
-                {/* Search bar — always visible */}
-                <div className="relative px-5 pt-3 pb-3 border-b border-slate-100">
-                    <div className="flex items-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50/60 px-3 py-2.5">
-                        <Search size={14} className="text-indigo-400 shrink-0" />
+                {/* Item grid — mismo formato que pantalla de items */}
+                <PedidoModal.Body className="px-0 py-0" style={{ overflow: 'hidden', flex: 'none' }}>
+                    <div className="max-h-[48vh] overflow-y-auto">
+                        <div className="sticky top-0 z-10 bg-white/97 backdrop-blur-sm border-b-2 border-slate-200 shadow-sm">
+                            <div className={`grid ${GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
+                                <span /><span />
+                                <span className="col-span-2 text-center text-[10px] font-bold text-teal-600 uppercase tracking-widest border-b-2 border-teal-400 pb-1">Físico</span>
+                                <span className="col-span-2 text-center text-[10px] font-bold text-violet-600 uppercase tracking-widest border-b-2 border-violet-400 pb-1">Sistema</span>
+                                <span />
+                            </div>
+                            <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
+                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Producto</span>
+                                <span className="text-[10px] font-bold text-indigo-400 uppercase text-center">Extra</span>
+                                <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Pres.</span>
+                                <span className="text-[10px] font-bold text-teal-600 uppercase text-center">Qty</span>
+                                <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Pres.</span>
+                                <span className="text-[10px] font-bold text-violet-600 uppercase text-center">Qty</span>
+                                <span />
+                            </div>
+                        </div>
+
+                        {extras.length === 0 && (
+                            <div className="py-12 text-center">
+                                <PackagePlus size={30} className="text-indigo-200 mx-auto mb-2" />
+                                <p className="text-[13px] font-semibold text-slate-400">Sin productos extra</p>
+                                <p className="text-[11px] text-slate-300 mt-1">Buscá un producto abajo para agregarlo</p>
+                            </div>
+                        )}
+
+                        <div className="divide-y divide-slate-100">
+                            {extras.map((e, ei) => {
+                                const eOpts     = presMap[e.erp_product_id] ?? [{ factor: 1, label: 'Unidad' }];
+                                const fRaw      = e.fQty * e.fPres;
+                                const sRaw      = e.sQty * e.sPres;
+                                const eDiff     = fRaw !== sRaw;
+                                const eBothZero = e.fQty === 0 && e.sQty === 0;
+                                const delta     = fRaw - sRaw;
+                                return (
+                                    <div key={e.erp_product_id} className={`transition-colors ${eBothZero ? 'bg-red-50' : eDiff ? 'bg-amber-50' : 'bg-white hover:bg-slate-50/50'}`}>
+                                        <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
+                                            <div className="min-w-0">
+                                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600 mb-0.5">
+                                                    <Plus size={8} /> Extra
+                                                </span>
+                                                <p className={`text-[12px] font-semibold leading-snug ${eBothZero ? 'text-red-600' : 'text-slate-700'}`}>{e.nombre}</p>
+                                                {eBothZero && <p className="text-[10px] text-red-500 font-medium">Al menos uno &gt; 0</p>}
+                                            </div>
+                                            <span className="text-[12px] text-slate-300 text-center">—</span>
+
+                                            <div className={eDiff ? 'ring-2 ring-amber-400 ring-offset-0 rounded-2xl' : ''}>
+                                                <LiquidSelect
+                                                    value={String(e.fPres)}
+                                                    onChange={v => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fPres: Number(v) } : x))}
+                                                    options={eOpts.map(o => ({ value: String(o.factor), label: o.label }))}
+                                                    compact
+                                                    clearable={false}
+                                                />
+                                            </div>
+
+                                            <div className="relative">
+                                                <input type="number" min={0} value={e.fQty}
+                                                    onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
+                                                    className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-teal-700 focus:border-teal-400'}`}
+                                                />
+                                                {eDiff && delta !== 0 && (
+                                                    <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                                                        {delta > 0 ? '+' : ''}{delta}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div className={eDiff ? 'ring-2 ring-amber-400 ring-offset-0 rounded-2xl' : ''}>
+                                                <LiquidSelect
+                                                    value={String(e.sPres)}
+                                                    onChange={v => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sPres: Number(v) } : x))}
+                                                    options={eOpts.map(o => ({ value: String(o.factor), label: o.label }))}
+                                                    compact
+                                                    clearable={false}
+                                                />
+                                            </div>
+
+                                            <input type="number" min={0} value={e.sQty}
+                                                onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
+                                                className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-violet-700 focus:border-violet-400'}`}
+                                            />
+
+                                            <button onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))}
+                                                className="flex justify-center p-1 text-slate-300 hover:text-red-500 transition-colors">
+                                                <Trash2 size={13} />
+                                            </button>
+                                        </div>
+                                        {(eDiff || e.nota) && (
+                                            <div className="px-5 pb-2">
+                                                <input type="text" placeholder="Nota (opcional)…" value={e.nota}
+                                                    onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, nota: ev.target.value } : x))}
+                                                    className="w-full text-[11px] border border-indigo-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-indigo-400 placeholder-slate-300"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                            <div ref={extrasEndRef} />
+                        </div>
+                    </div>
+                </PedidoModal.Body>
+
+                {/* Buscador para agregar productos */}
+                <div className="flex-none border-t border-slate-100 px-5 py-3 relative">
+                    <div className="flex items-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50/60 px-3 py-2">
+                        <Search size={13} className="text-indigo-400 shrink-0" />
                         <input ref={extraRef} type="text" placeholder="Buscar producto extra recibido…"
                             value={extraSearch} onChange={e => setExtraSearch(e.target.value)}
                             className="flex-1 text-[12px] bg-transparent focus:outline-none placeholder-indigo-300 text-slate-700"
                         />
                         {extraBusy
                             ? <Loader2 size={12} className="animate-spin text-indigo-400 shrink-0" />
-                            : extraSearch && (
-                                <button onClick={() => setExtraSearch('')} className="text-slate-300 hover:text-slate-500 shrink-0">
-                                    <X size={13} />
-                                </button>
-                            )
+                            : extraSearch && <button onClick={() => setExtraSearch('')} className="text-slate-300 hover:text-slate-500 shrink-0"><X size={13} /></button>
                         }
                     </div>
                     {extraResults.length > 0 && (
-                        <div className="absolute left-5 right-5 top-full mt-1 rounded-xl border border-indigo-200 bg-white shadow-2xl overflow-hidden z-50">
+                        <div className="absolute bottom-full mb-1 left-5 right-5 rounded-xl border border-indigo-200 bg-white shadow-2xl overflow-hidden z-50">
                             {extraResults.map(prod => (
                                 <button key={prod.id} onMouseDown={() => addExtra(prod)}
                                     className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-slate-700 hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0">
@@ -719,78 +822,6 @@ export default function RecepcionModal({
                         </div>
                     )}
                 </div>
-
-                <PedidoModal.Body className="px-5 py-4">
-                    {extras.length === 0 ? (
-                        <div className="py-10 text-center">
-                            <PackagePlus size={32} className="text-indigo-200 mx-auto mb-3" />
-                            <p className="text-[13px] font-semibold text-slate-400">Sin productos extra</p>
-                            <p className="text-[11px] text-slate-300 mt-1">Buscá un producto arriba para agregarlo</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {extras.map((e, ei) => {
-                                const eOpts     = presMap[e.erp_product_id] ?? [{ factor: 1, label: 'Unidad' }];
-                                const eDiff     = e.fQty !== e.sQty || e.fPres !== e.sPres;
-                                const eBothZero = e.fQty === 0 && e.sQty === 0;
-                                return (
-                                    <div key={e.erp_product_id}
-                                        className={`p-3.5 rounded-2xl border ${eBothZero ? 'bg-red-50 border-red-200' : eDiff ? 'bg-amber-50/60 border-amber-200' : 'bg-indigo-50/30 border-indigo-200/60'}`}>
-                                        <div className="flex items-start justify-between gap-2 mb-3">
-                                            <div>
-                                                <p className="text-[13px] font-bold text-slate-700 leading-tight">{e.nombre}</p>
-                                                {eBothZero && <p className="text-[10px] text-red-500 font-medium mt-0.5">Al menos uno debe ser mayor a 0</p>}
-                                            </div>
-                                            <button onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))}
-                                                className="text-slate-300 hover:text-red-500 transition-colors p-1 shrink-0 mt-0.5">
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wide w-12 shrink-0">Físico</span>
-                                                <div className="flex-1">
-                                                    <LiquidSelect
-                                                        value={String(e.fPres)}
-                                                        onChange={v => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fPres: Number(v) } : x))}
-                                                        options={eOpts.map(o => ({ value: String(o.factor), label: o.label }))}
-                                                        compact
-                                                        clearable={false}
-                                                    />
-                                                </div>
-                                                <input type="number" min={0} value={e.fQty}
-                                                    onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
-                                                    className="w-16 text-center border border-teal-200 rounded-xl px-2 py-1.5 text-[13px] font-bold tabular-nums bg-white text-teal-700 focus:outline-none focus:border-teal-400"
-                                                />
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-bold text-violet-600 uppercase tracking-wide w-12 shrink-0">Sistema</span>
-                                                <div className="flex-1">
-                                                    <LiquidSelect
-                                                        value={String(e.sPres)}
-                                                        onChange={v => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sPres: Number(v) } : x))}
-                                                        options={eOpts.map(o => ({ value: String(o.factor), label: o.label }))}
-                                                        compact
-                                                        clearable={false}
-                                                    />
-                                                </div>
-                                                <input type="number" min={0} value={e.sQty}
-                                                    onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
-                                                    className="w-16 text-center border border-violet-200 rounded-xl px-2 py-1.5 text-[13px] font-bold tabular-nums bg-white text-violet-700 focus:outline-none focus:border-violet-400"
-                                                />
-                                            </div>
-                                            <input type="text" placeholder="Nota (opcional)…" value={e.nota}
-                                                onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, nota: ev.target.value } : x))}
-                                                className="w-full text-[11px] border border-indigo-100 rounded-xl px-3 py-1.5 bg-white focus:outline-none focus:border-indigo-300 placeholder-slate-300"
-                                            />
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            <div ref={extrasEndRef} />
-                        </div>
-                    )}
-                </PedidoModal.Body>
 
                 <PedidoModal.Footer className="space-y-2">
                     {saveError && (

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.294';
+export const APP_VERSION = '2.2.295';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.295 — feat(pedidos/recepcion): auto-open RecepcionModal post-llegada; páginas en picker cajas; botón Confirmar Todo; falta_caja en ITEMS_SELECT
 // v2.2.294 — ux(pedidos/llegada): número de página visible en LlegadaModal y ReenvioLlegadaModal como subtext de cada caja
 // v2.2.293 — ux(pedidos/recepcion): quitar banner llegada confirmada; dañada+faltante como badges compactos inline
 // v2.2.292 — fix(pedidos/electrolit): solo contar dispatch_tipo=CAJA (625ml); excluir Pediátrico (UNIDAD); dividir por dispatch_factor no factor

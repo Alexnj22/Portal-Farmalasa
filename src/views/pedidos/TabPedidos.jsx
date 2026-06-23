@@ -1493,10 +1493,9 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     const loadActive = useCallback(async () => {
         const { data, error } = await supabase.rpc('get_pedidos_en_curso');
-        if (error) return;
+        if (error) return [];
         setActiveRows(data ?? []);
         const rows = data ?? [];
-        // Initialize all cards with zeros (server-side aggregation — no row limit issues)
         const stats = {};
         rows.forEach(row => {
             stats[`act_${row.pedido_id}_${row.erp_sucursal_id}`] = { enviados: 0, sinStock: 0, porRegla: 0 };
@@ -1510,6 +1509,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             });
         }
         setCardStats(stats);
+        return rows;
     }, []);
 
     useEffect(() => {
@@ -1597,7 +1597,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         const ITEMS_SELECT = `
             id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_recibida,
             status, nota_diferencia, error_tipo, received_at, received_by, lotes_asignados,
-            sin_stock, revision_minmax,
+            sin_stock, revision_minmax, falta_caja,
             factor, dispatch_tipo, dispatch_factor,
             max_qty_snapshot, stock_packs_snapshot,
             resolucion_status, resolucion_tipo, resolucion_nota,
@@ -1898,8 +1898,33 @@ export default function TabPedidos({ searchTerm = '' }) {
                     supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
                 }).catch(() => {});
             }
-            await loadActive();
-            await fetchItems(key, pedidoId, sucId);
+            const freshActiveRows = await loadActive();
+            const freshItems      = await fetchItems(key, pedidoId, sucId);
+
+            // Auto-open RecepcionModal immediately after confirming arrival
+            const freshRow = (freshActiveRows ?? []).find(r => r.pedido_id === pedidoId && r.erp_sucursal_id === sucId);
+            if (freshRow) {
+                const recRows = (freshItems ?? []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0 && !r.falta_caja);
+                if (recRows.length > 0) {
+                    const cajaMapFresh = freshRow.caja_map ?? {};
+                    let paginaItems = {}, cajasRecibidas = [];
+                    if (Object.keys(cajaMapFresh).length > 0) {
+                        const { data: pss } = await supabase.from('pedido_sucursal_status')
+                            .select('pagina_items, cajas_recibidas')
+                            .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
+                        paginaItems    = pss?.pagina_items    ?? {};
+                        cajasRecibidas = pss?.cajas_recibidas ?? [];
+                    }
+                    setModal({
+                        pedido:   { id: pedidoId, numero: freshRow.numero, codigo: freshRow.codigo },
+                        sucId, key, rows: recRows,
+                        cajaDanada:  freshRow.cajas_danadas ?? [],
+                        cajaMap:     cajaMapFresh,
+                        paginaItems, cajasRecibidas,
+                        faltaCajas:  freshRow.falta_cajas ?? [],
+                    });
+                }
+            }
         } catch (e) { console.error('llegada confirm:', e); } finally { setBusyAction(null); }
     }, [llegadaModal, user, branchName, loadActive, fetchItems]);
 

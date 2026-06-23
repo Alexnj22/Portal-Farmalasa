@@ -443,6 +443,51 @@ export default function RecepcionModal({
     }, [hasCajaMap, selectedCaja, selectedCajaRows, sortedRows, pedido, sucursalId, user,
         anyHasDiff, allRecibidas, accessibleBoxNums, extras, saveExtras, onConfirmed, onClose]);
 
+    // ── Confirmar TODAS las cajas accesibles de una vez (Todo OK) ──────────────
+    const handleConfirmarTodo = useCallback(async () => {
+        setSaving(true); setSaveError(null);
+        try {
+            let newRec = [...allRecibidas];
+            for (const boxNum of accessibleBoxNums) {
+                if (newRec.includes(boxNum)) continue;
+                const ids = itemIdsByCaja[String(boxNum)];
+                if (!ids) continue;
+                const boxRows = sortedRows.filter(r => ids.has(r.id));
+                if (!boxRows.length) continue;
+                const p_items = boxRows.map(r => {
+                    const erpFactor  = Number(r.factor) || 1;
+                    const dispFactor = Number(r.dispatch_factor) || erpFactor;
+                    const rawQty     = Math.round(toDispatch(r.cantidad_asignada, erpFactor, dispFactor) * dispFactor / erpFactor);
+                    return { pedido_item_id: r.id, cantidad_recibida: rawQty, nota_diferencia: null, error_tipo: null, cantidad_problema: null };
+                });
+                const { error } = await supabase.rpc('receive_pedido_sucursal', {
+                    p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
+                    p_items, p_received_by: user?.id ?? null,
+                });
+                if (error) throw error;
+                newRec = [...new Set([...newRec, boxNum])].sort((a, b) => a - b);
+                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_CAJA', pedido.id, {
+                    sucursal_id: sucursalId, caja: boxNum, items_count: p_items.length, todo_ok: true,
+                });
+            }
+            await supabase.from('pedido_sucursal_status')
+                .update({ cajas_recibidas: newRec })
+                .eq('pedido_id', pedido.id).eq('erp_sucursal_id', sucursalId);
+            setLocalRec(newRec.filter(n => !initCajasRecibidas.includes(n)));
+            await saveExtras();
+            useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
+                sucursal_id: sucursalId, extras_count: extras.length, todo_ok: true, batch: true,
+            });
+            onConfirmed?.({ hasDiff: anyHasDiff, allDone: true });
+            onClose();
+        } catch (e) {
+            setSaveError(e.message);
+        } finally {
+            setSaving(false);
+        }
+    }, [accessibleBoxNums, allRecibidas, itemIdsByCaja, sortedRows, pedido, sucursalId, user,
+        anyHasDiff, initCajasRecibidas, saveExtras, extras, onConfirmed, onClose]);
+
     // ── Finalizar desde la pantalla de cajas (cuando todas ya están recibidas) ──
     const handleFinalizar = useCallback(async () => {
         setSaving(true); setSaveError(null);
@@ -508,6 +553,10 @@ export default function RecepcionModal({
                             const isFalta    = faltaCajas.includes(boxNum);
                             const isDanada   = cajaDanada.includes(boxNum);
                             const itemCount  = itemIdsByCaja[String(boxNum)]?.size ?? 0;
+                            const pages      = cajaMap[String(boxNum)] ?? [];
+                            const pageHint   = pages.length === 0 ? null
+                                : pages.length === 1 ? `pág. ${pages[0]}`
+                                : `págs. ${pages[0]}–${pages[pages.length - 1]}`;
 
                             return (
                                 <button key={boxNum}
@@ -534,6 +583,9 @@ export default function RecepcionModal({
                                         <p className={`text-[12px] font-black leading-none ${
                                             isRecibida ? 'text-emerald-700' : isFalta ? 'text-slate-400' : 'text-slate-700'
                                         }`}>Caja {boxNum}</p>
+                                        {pageHint && (
+                                            <p className="text-[9px] font-semibold text-violet-500 mt-0.5 leading-none">{pageHint}</p>
+                                        )}
                                         <p className={`text-[9px] font-medium mt-0.5 ${
                                             isRecibida ? 'text-emerald-500' : isFalta ? 'text-slate-400' : isDanada ? 'text-amber-600' : 'text-slate-400'
                                         }`}>
@@ -544,6 +596,17 @@ export default function RecepcionModal({
                             );
                         })}
                     </div>
+
+                    {!allAccessibleDone && accessibleBoxNums.length > 0 && (
+                        <button onClick={handleConfirmarTodo} disabled={saving}
+                            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl border-2 border-emerald-300 bg-emerald-50 text-emerald-700 font-bold text-[13px] hover:bg-emerald-100 active:scale-95 transition-all disabled:opacity-40">
+                            {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                            Confirmar todo OK
+                            {faltaCajas.length > 0 && (
+                                <span className="text-[10px] font-medium text-emerald-500">(omite cajas en reenvío)</span>
+                            )}
+                        </button>
+                    )}
 
                     {allAccessibleDone && (
                         <div className="mt-4 flex items-start gap-2.5 px-3 py-3 rounded-2xl bg-emerald-50 border border-emerald-200">

@@ -2242,6 +2242,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             <div>
                 {/* Fila única: cards por sucursal (izq) + FilterPill (der) */}
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    {/* Bodega / alcance todos: card clicable por sucursal */}
                     {!isBranch && sucursalCounts.map(({ id, name, total }) => (
                         <button
                             key={id}
@@ -2260,6 +2261,20 @@ export default function TabPedidos({ searchTerm = '' }) {
                             </div>
                         </button>
                     ))}
+                    {/* Sucursal (BRANCH): card propia, solo informativa */}
+                    {isBranch && sucursalCounts.length > 0 && (() => {
+                        const own = sucursalCounts[0];
+                        return (
+                            <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm"
+                                style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
+                                <Building2 size={13} className="text-slate-400 shrink-0" />
+                                <div className="flex flex-col leading-snug gap-0.5">
+                                    <span className="text-[10px] font-semibold text-slate-500">{own.name}</span>
+                                    <span className="text-[14px] font-black tabular-nums leading-none text-slate-800">{own.total}</span>
+                                </div>
+                            </div>
+                        );
+                    })()}
                     <div className="ml-auto">
                         <FilterPill isBranch={isBranch} filterSuc={filterSuc} setFilterSuc={setFilterSuc} filterStatus={filterStatus} setFilterStatus={setFilterStatus} filterOptions={filterOptions} filterDate={filterDate} setFilterDate={setFilterDate} />
                     </div>

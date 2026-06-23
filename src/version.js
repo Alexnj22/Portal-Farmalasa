@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.301';
+export const APP_VERSION = '2.2.302';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.302 — feat(pdf): 5 mejoras al PDF de despacho (header, caja, lotes, centrado, footer)
 // v2.2.301 — fix(recepcion/extras): EXTRAS_GRID sin columna asig → nombre producto con más espacio (~180px vs ~116px)
 // v2.2.300 — fix(recepcion): LiquidSelect compact con menos padding → más texto visible; dropdown buscador via portal (no clipeado)
 // v2.2.299 — fix(pedidos/timeline): guardar arrived_por en ciclo reenvío + mostrar quien confirmó 2ª llegada; ocultar tiempos elapsed según rol

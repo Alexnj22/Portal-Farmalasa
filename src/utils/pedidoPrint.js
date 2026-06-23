@@ -108,9 +108,9 @@ function loteCellNode(lot, bg) {
     const count = lot.take ?? lot.cantidad ?? lot.packs ?? '?';
     const vence = fmtVence(lot.fecha_vencimiento);
     const parts = [];
-    if (lot.lote) parts.push({ text: lot.lote, bold: true });
-    if (vence)    parts.push({ text: vence, italics: true });
-    parts.push({ text: `${count}`, bold: true });
+    if (lot.lote) parts.push({ text: lot.lote, color: '#222' });
+    if (vence)    parts.push({ text: vence,    color: '#888' });
+    parts.push({ text: `${count}`,             color: '#444' });
     const joined = [];
     parts.forEach((p, i) => { if (i > 0) joined.push({ text: '  ·  ', color: '#999' }); joined.push(p); });
     return { text: joined, fontSize: 7.5, fillColor: bg, margin: [0, 2, 0, 2] };
@@ -161,7 +161,6 @@ function buildProductRows(rows, withRowIds = false) {
 // Fila 2: Origen: Bodega, dirección  →  Destino: Sucursal, dirección
 // Fila 3: Columnas de tabla
 function buildSectionTable(sec, fecha, logo, addrMap) {
-    const totalPacks   = sec.rows.reduce((t, r) => t + r.qty, 0);
     const farmaciaName = getFarmaciaName(sec.sucId);
     const bodegaAddr   = addrMap?.[6] ?? '';
     const sucAddr      = addrMap?.[sec.sucId] ?? '';
@@ -170,48 +169,56 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
         ? { image: logo, width: 22, height: 22, margin: [0, 0, 7, 0] }
         : { text: '', width: 0 };
 
-    // Fila 1 — gris claro, B&W friendly — márgenes reducidos para header más compacto
+    // Fila 1 — gris claro, B&W friendly
     const titleRow = [
         {
-            colSpan: 6, fillColor: '#eeeeee', margin: [6, 2, 6, 2],
-            columns: [
+            colSpan: 6, fillColor: '#eeeeee', margin: [6, 3, 6, 2],
+            stack: [
+                // Título centrado al ancho completo del documento
+                { text: 'ORDEN DE DESPACHO', fontSize: 9, bold: true, color: '#222', alignment: 'center', margin: [0, 0, 0, 3] },
                 {
                     columns: [
-                        logoCell,
-                        { text: farmaciaName, fontSize: 9, bold: true, color: '#111', margin: [0, 2, 0, 0] },
+                        {
+                            columns: [logoCell, { text: farmaciaName, fontSize: 9, bold: true, color: '#111', margin: [0, 1, 0, 0] }],
+                            width: '60%',
+                        },
+                        {
+                            stack: [
+                                { text: sec.codigo ?? '', fontSize: 7.5, bold: true, color: '#111', alignment: 'right' },
+                                { text: fecha, fontSize: 6.5, color: '#666', alignment: 'right' },
+                            ],
+                            width: '40%',
+                        },
                     ],
-                    width: '48%',
-                },
-                { text: 'ORDEN DE DESPACHO', fontSize: 8.5, bold: true, color: '#333', alignment: 'center', width: '28%', margin: [0, 2, 0, 0] },
-                {
-                    stack: [
-                        { text: sec.codigo ?? '', fontSize: 7.5, bold: true, color: '#111', alignment: 'right' },
-                        { text: fecha, fontSize: 6.5, color: '#666', alignment: 'right' },
-                        { text: 'Caja: ______', fontSize: 6, color: '#bbb', alignment: 'right', margin: [0, 1, 0, 0] },
-                    ],
-                    width: '24%',
                 },
             ],
         },
         {}, {}, {}, {}, {},
     ];
 
-    // Fila 2 — blanco, ruta origen→destino
-    const originText = bodegaAddr ? `Origen: Bodega  ·  ${bodegaAddr}` : 'Origen: Bodega';
-    const destText   = sucAddr ? `Destino: ${sec.nombre}  ·  ${sucAddr}` : `Destino: ${sec.nombre}`;
+    // Fila 2 — blanco, ruta origen | N° caja | destino
+    const originText = bodegaAddr ? `Origen: Bodega\n${bodegaAddr}` : 'Origen: Bodega';
+    const destText   = sucAddr ? `Destino: ${sec.nombre}\n${sucAddr}` : `Destino: ${sec.nombre}`;
     const subtitleRow = [
         {
-            colSpan: 6, fillColor: '#ffffff', margin: [6, 2, 6, 2],
+            colSpan: 6, fillColor: '#ffffff', margin: [6, 4, 6, 4],
             columns: [
-                { text: originText, fontSize: 6, color: '#555', width: '48%' },
-                { text: '>>', fontSize: 7, bold: true, color: '#777', alignment: 'center', width: '6%', margin: [0, 0.5, 0, 0] },
+                { text: originText, fontSize: 6, color: '#555', width: '36%', lineHeight: 1.4 },
                 {
+                    width: '28%',
+                    margin: [6, 0, 6, 0],
                     stack: [
-                        { text: destText, fontSize: 6, color: '#555' },
-                        { text: `${sec.rows.length} prod  ·  ${totalPacks} packs`, fontSize: 5.5, color: '#aaa', margin: [0, 1, 0, 0] },
+                        { text: 'N° CAJA', fontSize: 6, bold: true, color: '#333', alignment: 'center', margin: [0, 0, 0, 2] },
+                        {
+                            table: { widths: ['*'], body: [[{ text: ' ', fontSize: 11, margin: [0, 5, 0, 5] }]] },
+                            layout: {
+                                hLineWidth: () => 1, vLineWidth: () => 1,
+                                hLineColor: () => '#444', vLineColor: () => '#444',
+                            },
+                        },
                     ],
-                    width: '46%',
                 },
+                { text: destText, fontSize: 6, color: '#555', width: '36%', alignment: 'right', lineHeight: 1.4 },
             ],
         },
         {}, {}, {}, {}, {},
@@ -259,78 +266,16 @@ function buildSectionFooter(sec) {
     };
 }
 
-// Footer callback: footer original "Revisado por / N/M / Recibido por" en TODAS las páginas.
-// En la ÚLTIMA página se agrega arriba el bloque de firmas compacto (≈20pt).
-// PAGE_MARGINS[3]=44pt — los 44pt acomodan sig(20pt) + sep(6pt) + footer(10pt) = 36pt + 8pt holgura.
-function buildFooterCallback(meta) {
-    const responsable = meta.responsable || meta.generadoPor || null;
-
-    const originalFooterColumns = (currentPage, pageCount) => ({
+// Footer callback: "Revisado por / N/M / Recibido por" en todas las páginas con márgenes uniformes.
+function buildFooterCallback(_meta) {
+    return (currentPage, pageCount) => ({
+        margin: [PAGE_MARGINS[0], 6, PAGE_MARGINS[2], 0],
         columns: [
             { text: 'Revisado por: ________________________', fontSize: 6.5, color: '#555' },
             { text: `${currentPage} / ${pageCount}`, fontSize: 6.5, color: '#555', alignment: 'center' },
             { text: 'Recibido por: ________________________', fontSize: 6.5, color: '#555', alignment: 'right' },
         ],
     });
-
-    return (currentPage, pageCount) => {
-        if (currentPage !== pageCount) {
-            // Páginas no-última: footer original con margen 6pt (igual al original)
-            return {
-                margin: [PAGE_MARGINS[0], 6, PAGE_MARGINS[2], 0],
-                ...originalFooterColumns(currentPage, pageCount),
-            };
-        }
-        // Última página: firma compacta ARRIBA + footer original ABAJO (todo en 44pt)
-        return {
-            margin: [PAGE_MARGINS[0], 3, PAGE_MARGINS[2], 0],
-            stack: [
-                // Bloque de firmas compacto — nombre y etiqueta centrados bajo la línea
-                {
-                    columns: [
-                        {
-                            width: '60%',
-                            table: {
-                                widths: ['*'],
-                                body: [
-                                    [{ text: responsable || ' ', fontSize: 7.5, alignment: 'center',
-                                       border: [false, false, false, true],
-                                       margin: [0, 2, 0, 1] }],
-                                    [{ text: 'RESPONSABLE', fontSize: 6.5, bold: true, color: '#555',
-                                       alignment: 'center', border: [false, false, false, false],
-                                       margin: [0, 1, 0, 0] }],
-                                ],
-                            },
-                            layout: {
-                                hLineWidth: (i) => (i === 1 ? 0.8 : 0),
-                                vLineWidth: () => 0,
-                                hLineColor: () => '#333',
-                                paddingLeft:   () => 0,
-                                paddingRight:  () => 0,
-                                paddingTop:    (i) => (i === 0 ? 2 : 1),
-                                paddingBottom: () => 0,
-                            },
-                        },
-                        {
-                            width: '25%',
-                            table: { widths: ['*'], body: [[
-                                { text: 'SELLO', fontSize: 7, color: '#aaa', alignment: 'center', margin: [0, 3, 0, 3] },
-                            ]] },
-                            layout: {
-                                hLineWidth: () => 0.6, vLineWidth: () => 0.6,
-                                hLineColor: () => '#bbb', vLineColor: () => '#bbb',
-                            },
-                        },
-                        { width: '*', text: '' },
-                    ],
-                },
-                // Línea separadora con más espacio arriba
-                { margin: [0, 5, 0, 3], canvas: [{ type: 'line', x1: 0, y1: 0, x2: CONTENT_WIDTH, y2: 0, lineWidth: 0.5, lineColor: '#ccc' }] },
-                // Footer original
-                originalFooterColumns(currentPage, pageCount),
-            ],
-        };
-    };
 }
 
 function buildDocDefinition(sections, title, meta, logo, addrMap) {

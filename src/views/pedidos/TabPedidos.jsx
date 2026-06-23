@@ -734,7 +734,39 @@ const tlGlow = (i) => TL_GLOW[i] ?? TL_GLOW[TL_GLOW.length - 1];
 
 const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 4, erp: 5 };
 
-function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, reenvioEmp, erpEmp, difsEmp, corrConfEmp, receptionApoyo = [], isBranch = false, empMap = new Map() }) {
+function PauseBadge({ pause, isPaused }) {
+    const mins    = pause ? elapsed(pause.pausado_at, pause.reanudado_at ?? undefined) : null;
+    const isActive = isPaused && !pause?.reanudado_at;
+    return (
+        <div className="group/pb relative">
+            <motion.span
+                className={`inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-px rounded whitespace-nowrap shadow-sm leading-tight cursor-default ${
+                    isActive ? 'bg-amber-400 text-white' : 'bg-white text-amber-600 border border-amber-300'
+                }`}
+                animate={isActive ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
+                transition={isActive ? { duration: 1.2, repeat: Infinity } : undefined}
+            >
+                ⏸ {fmtMin(mins) ?? '—'}
+            </motion.span>
+            {pause && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-[200] hidden group-hover/pb:block pointer-events-none">
+                    <div className="bg-slate-900/90 text-white rounded-xl px-2.5 py-2 shadow-xl flex flex-col gap-0.5 min-w-max">
+                        <div className="text-[9px] font-bold capitalize">{pause.razon ?? 'Pausa'}</div>
+                        <div className="text-[8px] text-slate-300">Inicio: <span className="text-white font-semibold">{fmtHM(pause.pausado_at) || '—'}</span></div>
+                        <div className="text-[8px] text-slate-300">
+                            Fin:{' '}
+                            {pause.reanudado_at
+                                ? <span className="text-white font-semibold">{fmtHM(pause.reanudado_at)}</span>
+                                : <span className="text-amber-300 font-semibold">En curso</span>}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, reenvioEmp, erpEmp, difsEmp, corrConfEmp, receptionApoyo = [], isBranch = false, empMap = new Map(), pauses = [] }) {
     const hasPause  = (row.min_pausado_total ?? 0) > 0;
     const isPaused  = stage === 'pausado';
     const activeIdx = TL_STAGE_IDX[stage] ?? 0;
@@ -895,18 +927,15 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
                                         transition={{ duration: 0.6, ease: 'easeOut', delay: idx * 0.08 }}
                                     />
                                 )}
-                                {/* Pause badge — above the line */}
+                                {/* Pause badges — above the line */}
                                 {node.key === 'iniciado' && hasPause && (
-                                    <div className="absolute left-1/2 -translate-x-1/2 z-10" style={{ top: -14 }}>
-                                        <motion.span
-                                            className={`inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-px rounded whitespace-nowrap shadow-sm leading-tight ${
-                                                isPaused ? 'bg-amber-400 text-white' : 'bg-white text-amber-600 border border-amber-300'
-                                            }`}
-                                            animate={isPaused ? { opacity: [1, 0.35, 1] } : { opacity: 1 }}
-                                            transition={isPaused ? { duration: 1.2, repeat: Infinity } : undefined}
-                                        >
-                                            ⏸ {fmtMin(row.min_pausado_total)}
-                                        </motion.span>
+                                    <div className="absolute left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5" style={{ top: -14 }}>
+                                        {pauses.length > 0
+                                            ? pauses.map((p, i) => (
+                                                <PauseBadge key={i} pause={p} isPaused={isPaused && i === pauses.length - 1} />
+                                            ))
+                                            : <PauseBadge pause={null} isPaused={isPaused} />
+                                        }
                                     </div>
                                 )}
                                 {/* Elapsed time — below the line; hidden for the other side's steps */}
@@ -2413,7 +2442,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     {/* Lifecycle Timeline */}
                                     <div className="border-t border-slate-100 px-3 pt-2 pb-1.5">
-                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} isBranch={isBranch} empMap={empMap} />
+                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} isBranch={isBranch} empMap={empMap} pauses={row.pauses ?? []} />
                                     </div>
 
                                     {/* Actions + status strip */}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
 import {
@@ -46,7 +47,7 @@ const ERROR_TIPOS = [
     { value: 'otro',    label: 'Otro'    },
 ];
 
-const GRID = 'grid-cols-[minmax(0,1fr)_2.75rem_8rem_3.25rem_8rem_3.25rem_2rem]';
+const GRID = 'grid-cols-[minmax(0,1fr)_2.75rem_9rem_3.25rem_9rem_3.25rem_2rem]';
 
 async function fetchPresOpts(productId) {
     const { data } = await supabase.from('product_precios')
@@ -107,9 +108,11 @@ export default function RecepcionModal({
     const [extraBusy,    setExtraBusy]    = useState(false);
     const [prevScreen,   setPrevScreen]   = useState(null);
 
-    const searchRef    = useRef(null);
-    const extraRef     = useRef(null);
-    const extrasEndRef = useRef(null);
+    const searchRef       = useRef(null);
+    const extraRef        = useRef(null);
+    const extrasEndRef    = useRef(null);
+    const extraBuscarRef  = useRef(null);
+    const [extraDropCoords, setExtraDropCoords] = useState({ top: 0, left: 0, width: 0 });
 
     // ── Sorted all rows ─────────────────────────────────────────────────────────
     const sortedRows = useMemo(() => [...rows].sort((a, b) => {
@@ -798,11 +801,19 @@ export default function RecepcionModal({
                 </PedidoModal.Body>
 
                 {/* Buscador para agregar productos */}
-                <div className="flex-none border-t border-slate-100 px-5 py-3 relative">
-                    <div className="flex items-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50/60 px-3 py-2">
+                <div className="flex-none border-t border-slate-100 px-5 py-3">
+                    <div ref={extraBuscarRef}
+                        className="flex items-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50/60 px-3 py-2">
                         <Search size={13} className="text-indigo-400 shrink-0" />
                         <input ref={extraRef} type="text" placeholder="Buscar producto extra recibido…"
-                            value={extraSearch} onChange={e => setExtraSearch(e.target.value)}
+                            value={extraSearch}
+                            onChange={e => {
+                                setExtraSearch(e.target.value);
+                                if (extraBuscarRef.current) {
+                                    const r = extraBuscarRef.current.getBoundingClientRect();
+                                    setExtraDropCoords({ top: r.top, left: r.left, width: r.width });
+                                }
+                            }}
                             className="flex-1 text-[12px] bg-transparent focus:outline-none placeholder-indigo-300 text-slate-700"
                         />
                         {extraBusy
@@ -810,8 +821,14 @@ export default function RecepcionModal({
                             : extraSearch && <button onClick={() => setExtraSearch('')} className="text-slate-300 hover:text-slate-500 shrink-0"><X size={13} /></button>
                         }
                     </div>
-                    {extraResults.length > 0 && (
-                        <div className="absolute bottom-full mb-1 left-5 right-5 rounded-xl border border-indigo-200 bg-white shadow-2xl overflow-hidden z-50">
+                    {extraResults.length > 0 && createPortal(
+                        <div style={{
+                            position: 'fixed',
+                            bottom: window.innerHeight - extraDropCoords.top + 8,
+                            left: extraDropCoords.left,
+                            width: extraDropCoords.width,
+                            zIndex: 99999,
+                        }} className="rounded-xl border border-indigo-200 bg-white/80 backdrop-blur-xl shadow-2xl overflow-hidden">
                             {extraResults.map(prod => (
                                 <button key={prod.id} onMouseDown={() => addExtra(prod)}
                                     className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-[12px] text-slate-700 hover:bg-indigo-50 transition-colors border-b border-slate-50 last:border-0">
@@ -819,7 +836,8 @@ export default function RecepcionModal({
                                     {prod.nombre}
                                 </button>
                             ))}
-                        </div>
+                        </div>,
+                        document.body
                     )}
                 </div>
 

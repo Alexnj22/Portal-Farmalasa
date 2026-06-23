@@ -54,10 +54,10 @@ const LiquidSelect = ({
 
     // --- VARIABLES DINÁMICAS SEGÚN MODO COMPACTO ---
     const textStyle = `${compact ? 'text-[12px]' : 'text-[13px]'} font-bold`;
-    const paddingStyle = compact ? 'pl-10 pr-11 py-2.5' : 'pl-[3.5rem] pr-12 py-3.5';
-    const leftIconPos = compact ? 'left-1.5 w-7 h-7' : 'left-4 w-8 h-8';
-    const rightIconPos = compact ? 'right-1.5 w-6 h-6' : 'right-4 w-6 h-6';
-    const iconSize = compact ? 13 : 14;
+    const paddingStyle = compact ? 'pl-7 pr-6 py-2' : 'pl-[3.5rem] pr-12 py-3.5';
+    const leftIconPos = compact ? 'left-1 w-6 h-6' : 'left-4 w-8 h-8';
+    const rightIconPos = compact ? 'right-1 w-5 h-5' : 'right-4 w-6 h-6';
+    const iconSize = compact ? 11 : 14;
 
     const selectedOption = useMemo(() =>
         options.find(opt => String(opt.value) === String(value)),
@@ -401,7 +401,7 @@ const LiquidSelect = ({
                                 </div>
                             )}
                             <span className="flex-1 min-w-0">
-                                <span className="block leading-tight truncate">{selectedOption.label}</span>
+                                <span className="block leading-tight truncate" title={selectedOption.label}>{selectedOption.label}</span>
                                 {selectedOption.sublabel && (
                                     <span className={`block text-[10px] font-medium leading-tight mt-0.5 truncate ${isDark ? 'opacity-50' : 'text-slate-400'}`}>
                                         {selectedOption.sublabel}

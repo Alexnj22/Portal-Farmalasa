@@ -1357,12 +1357,12 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
     const hasActive   = filterSuc !== '' || filterStatus !== 'all' || dateDirty;
     const clearAll    = () => { setFilterSuc(''); setFilterStatus('all'); setFilterDate(defaultDate); };
 
-    const statusBtn = (key, label) => (
+    const statusBtn = (key, label, activeClass = 'bg-blue-600 text-white border-blue-600') => (
         <button
             onClick={() => setFilterStatus(v => v === key ? 'all' : key)}
             className={`flex items-center gap-1 text-[11px] px-3 py-1 rounded-full border font-medium transition-colors whitespace-nowrap shrink-0 ${
                 filterStatus === key
-                    ? 'bg-blue-600 text-white border-blue-600'
+                    ? activeClass
                     : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
             }`}
         >
@@ -1408,6 +1408,9 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
             <div className="flex items-center gap-1 px-2 py-1.5">
                 {statusBtn('confirmado', 'Pendientes')}
                 {statusBtn('enviado', 'En camino')}
+                <div className="h-3.5 w-px bg-slate-100 mx-0.5 shrink-0" />
+                {statusBtn('observacion', 'Con observación', 'bg-amber-500 text-white border-amber-500')}
+                {statusBtn('completado',  'Completados',     'bg-emerald-600 text-white border-emerald-600')}
             </div>
 
             {hasActive && (
@@ -2148,6 +2151,13 @@ export default function TabPedidos({ searchTerm = '' }) {
     const searchLower   = useMemo(() => searchTerm.toLowerCase(), [searchTerm]);
     const filterOptions = useMemo(() => ERP_ORDER.map(id => ({ value: id, label: ERP_NAMES[id] ?? `Suc. ${id}` })), []);
 
+    const hasObservacion = useCallback((r) =>
+        r.pedido_status === 'parcial' ||
+        (r.llegada_tipo && r.llegada_tipo !== 'completa') ||
+        (r.falta_cajas?.length  > 0) ||
+        (r.cajas_danadas?.length > 0),
+    []);
+
     // Group activeRows by pedido to detect if ALL sucursales for a pedido are preparado
     const pedidoStageMap = useMemo(() => {
         const map = new Map();
@@ -2165,8 +2175,19 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     const filteredRows = useMemo(() => {
         let rows = activeRows;
-        if (filterSuc)              rows = rows.filter(r => r.erp_sucursal_id === Number(filterSuc));
-        if (filterStatus !== 'all') rows = rows.filter(r => r.pedido_status === filterStatus);
+        if (filterSuc) rows = rows.filter(r => r.erp_sucursal_id === Number(filterSuc));
+
+        if (filterStatus === 'completado') {
+            rows = rows.filter(r => r.pedido_status === 'completado');
+        } else if (filterStatus === 'observacion') {
+            rows = rows.filter(r => hasObservacion(r) && r.pedido_status !== 'completado');
+        } else if (filterStatus !== 'all') {
+            rows = rows.filter(r => r.pedido_status === filterStatus);
+        } else {
+            // Por defecto ocultar completados; los con observación siempre visibles
+            rows = rows.filter(r => r.pedido_status !== 'completado');
+        }
+
         if (filterDate) {
             const [desde, hasta] = filterDate.split('|');
             rows = rows.filter(r => {
@@ -2175,16 +2196,12 @@ export default function TabPedidos({ searchTerm = '' }) {
             });
         }
         if (searchLower) rows = rows.filter(r => String(r.numero).includes(searchLower) || (r.notes ?? '').toLowerCase().includes(searchLower));
-        const DONE_SET = new Set(['completado', 'parcial']);
         return [...rows].sort((a, b) => {
-            const aDone = DONE_SET.has(a.pedido_status);
-            const bDone = DONE_SET.has(b.pedido_status);
-            if (aDone !== bDone) return aDone ? 1 : -1;
             const sa = STAGE_ORDER[getBranchStage(a, a.pedido_status)] ?? 5;
             const sb = STAGE_ORDER[getBranchStage(b, b.pedido_status)] ?? 5;
             return sa !== sb ? sa - sb : new Date(b.created_at) - new Date(a.created_at);
         });
-    }, [activeRows, filterSuc, filterStatus, filterDate, searchLower]); // eslint-disable-line
+    }, [activeRows, filterSuc, filterStatus, filterDate, searchLower, hasObservacion]); // eslint-disable-line
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -2212,12 +2229,26 @@ export default function TabPedidos({ searchTerm = '' }) {
             {/* ── EN CURSO ──────────────────────────────────────────────── */}
             <div>
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    <span className="relative flex h-2 w-2 shrink-0">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+                    {filterStatus === 'completado' ? (
+                        <span className="relative flex h-2 w-2 shrink-0">
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                        </span>
+                    ) : (
+                        <span className="relative flex h-2 w-2 shrink-0">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
+                        </span>
+                    )}
+                    <span className="text-[12px] font-bold text-slate-700 uppercase tracking-wide">
+                        {filterStatus === 'completado' ? 'Completados' : filterStatus === 'observacion' ? 'Con observación' : 'En curso'}
                     </span>
-                    <span className="text-[12px] font-bold text-slate-700 uppercase tracking-wide">En curso</span>
-                    {filteredRows.length > 0 && <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">{filteredRows.length}</span>}
+                    {filteredRows.length > 0 && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            filterStatus === 'completado' ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                            : filterStatus === 'observacion' ? 'text-amber-700 bg-amber-50 border-amber-200'
+                            : 'text-blue-600 bg-blue-50 border-blue-200'
+                        }`}>{filteredRows.length}</span>
+                    )}
                     <div className="ml-auto">
                         <FilterPill isBranch={isBranch} filterSuc={filterSuc} setFilterSuc={setFilterSuc} filterStatus={filterStatus} setFilterStatus={setFilterStatus} filterOptions={filterOptions} filterDate={filterDate} setFilterDate={setFilterDate} />
                     </div>

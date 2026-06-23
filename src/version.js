@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.310';
+export const APP_VERSION = '2.2.311';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.311 — fix(pedidos/pill): X limpiar no aparece en branch sin filtro activo
 // v2.2.310 — fix(pedidos): pill h-14 fijo para altura consistente
 // v2.2.309 — fix(pedidos): cards y pill corregidos al estándar real de TabInventario
 // v2.2.308 — fix(pedidos): pill glass idéntico a productos; cards sin translate, border via style

@@ -1354,7 +1354,7 @@ function currentMonthRange() {
 function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilterStatus, filterOptions, filterDate, setFilterDate }) {
     const defaultDate = currentMonthRange();
     const dateDirty   = filterDate !== defaultDate;
-    const hasActive   = filterSuc !== '' || filterStatus !== 'all' || dateDirty;
+    const hasActive   = (!isBranch && filterSuc !== '') || filterStatus !== 'all' || dateDirty;
     const clearAll    = () => { setFilterSuc(''); setFilterStatus('all'); setFilterDate(defaultDate); };
 
     const statusBtn = (key, label, activeClass = 'bg-blue-600 text-white border-blue-600') => (

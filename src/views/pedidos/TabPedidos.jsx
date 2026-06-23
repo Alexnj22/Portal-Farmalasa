@@ -734,7 +734,7 @@ const tlGlow = (i) => TL_GLOW[i] ?? TL_GLOW[TL_GLOW.length - 1];
 
 const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 4, erp: 5 };
 
-function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, reenvioEmp, erpEmp, difsEmp, corrConfEmp, receptionApoyo = [] }) {
+function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, reenvioEmp, erpEmp, difsEmp, corrConfEmp, receptionApoyo = [], isBranch = false, empMap = new Map() }) {
     const hasPause  = (row.min_pausado_total ?? 0) > 0;
     const isPaused  = stage === 'pausado';
     const activeIdx = TL_STAGE_IDX[stage] ?? 0;
@@ -762,8 +762,9 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
                 const lbl = historial.length > 1 ? `Reenvío ${ciclo.ciclo}` : 'Reenvío';
                 nodes.push({ key: `reenvio_${i}`, label: lbl, time: ciclo.sent_at, emp: reenvioEmp });
                 if (ciclo.arrived_at) {
-                    const llegadaLbl = historial.length > 1 ? `Llegada R.${ciclo.ciclo}` : '2ª Llegada';
-                    nodes.push({ key: `seg_llegada_${i}`, label: llegadaLbl, time: ciclo.arrived_at });
+                    const llegadaLbl    = historial.length > 1 ? `Llegada R.${ciclo.ciclo}` : '2ª Llegada';
+                    const segLlegadaEmp = ciclo.arrived_por ? empMap.get(ciclo.arrived_por) ?? null : null;
+                    nodes.push({ key: `seg_llegada_${i}`, label: llegadaLbl, time: ciclo.arrived_at, emp: segLlegadaEmp });
                 }
             });
         } else {
@@ -908,12 +909,17 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
                                         </motion.span>
                                     </div>
                                 )}
-                                {/* Elapsed time — below the line */}
-                                {segElapsed && (
-                                    <div className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap" style={{ top: 4 }}>
-                                        <span className="text-[9px] font-semibold text-slate-600 tabular-nums">{segElapsed}</span>
-                                    </div>
-                                )}
+                                {/* Elapsed time — below the line; hidden for the other side's steps */}
+                                {segElapsed && (() => {
+                                    const isBodegaSrc   = ['confirmado','iniciado','preparado'].includes(node.key);
+                                    const isSucursalSrc = node.key === 'llegada' || node.key.startsWith('seg_llegada');
+                                    const show = isBranch ? !isBodegaSrc : !isSucursalSrc;
+                                    return show ? (
+                                        <div className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap" style={{ top: 4 }}>
+                                            <span className="text-[9px] font-semibold text-slate-600 tabular-nums">{segElapsed}</span>
+                                        </div>
+                                    ) : null;
+                                })()}
                             </div>
                         )}
                     </React.Fragment>
@@ -1996,7 +2002,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             // Actualizar el ciclo correspondiente en el historial
             const nuevoHistorial = historial.map(c =>
                 c.ciclo === ciclo
-                    ? { ...c, arrived_at: now, arrived_tipo, cajas_ok: cajasOk, cajas_danadas: cajasDanadas, cajas_aun_faltantes: cajasFaltantes, nota: nota || null }
+                    ? { ...c, arrived_at: now, arrived_tipo, arrived_por: user?.id ?? null, cajas_ok: cajasOk, cajas_danadas: cajasDanadas, cajas_aun_faltantes: cajasFaltantes, nota: nota || null }
                     : c
             );
 
@@ -2348,7 +2354,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     {/* Lifecycle Timeline */}
                                     <div className="border-t border-slate-100 px-3 pt-2 pb-1.5">
-                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} />
+                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} isBranch={isBranch} empMap={empMap} />
                                     </div>
 
                                     {/* Actions + status strip */}

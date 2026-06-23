@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.298';
+export const APP_VERSION = '2.2.299';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.299 — fix(pedidos/timeline): guardar arrived_por en ciclo reenvío + mostrar quien confirmó 2ª llegada; ocultar tiempos elapsed según rol
 // v2.2.298 — feat(pedidos/extras): pantalla de extras con mismo grid format que items (max-w-2xl, cabeceras Físico/Sistema, fila por producto)
 // v2.2.297 — style(pedidos/recepcion): reemplazar <select> nativos por LiquidSelect en RecepcionModal (extras + items grid)
 // v2.2.296 — feat(pedidos/extras): pantalla dedicada 'Productos extra' con búsqueda, presentaciones y cantidades separadas del grid de items

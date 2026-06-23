@@ -8,7 +8,7 @@ import {
     Database, Activity, TrendingDown,
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
-    UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box,
+    UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box, Zap,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -1846,7 +1846,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         setLlegadaModal({ pedidoId, sucId, key, rows: rows ?? [] });
     }, [busyAction, items, fetchItems]);
 
-    const handleLlegadaConfirm = useCallback(async ({ cajasOk, cajasDanadas, cajasFaltantes, nota, electrolitOk = null }) => {
+    const handleLlegadaConfirm = useCallback(async ({ cajasOk, cajasDanadas, cajasFaltantes, nota, electrolitFaltantes = null }) => {
         if (!llegadaModal) return;
         const { pedidoId, sucId, key, rows } = llegadaModal;
         setLlegadaModal(null);
@@ -1896,13 +1896,16 @@ export default function TabPedidos({ searchTerm = '' }) {
                 falta_cajas:   cajasFaltantes,
                 cajas_danadas: cajasDanadas,
                 ...((hasFalta || hasDanada) ? { falta_caja_at: new Date().toISOString() } : {}),
-                ...(electrolitOk !== null ? { electrolit_ok: electrolitOk } : {}),
+                ...(electrolitFaltantes !== null ? {
+                    electrolit_ok:        electrolitFaltantes === 0,
+                    electrolit_faltantes: electrolitFaltantes,
+                } : {}),
             }).eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
 
             useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { tipo, cajasFaltantes, cajasDanadas });
             setLlegadaStatus(prev => ({ ...prev, [key]: true }));
 
-            // 5. Notificar bodega si hay problema
+            // 5a. Notificar bodega si hay problema en cajas físicas
             if (tipo !== 'completa') {
                 supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
                     if (!b?.branch_id) return;
@@ -1915,6 +1918,19 @@ export default function TabPedidos({ searchTerm = '' }) {
                     supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
                 }).catch(() => {});
             }
+
+            // 5b. Notificar bodega si faltan cajas de Electrolit
+            if ((electrolitFaltantes ?? 0) > 0) {
+                supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
+                    if (!b?.branch_id) return;
+                    const cnt = electrolitFaltantes;
+                    const title   = `Electrolit faltante — ${branchName}`;
+                    const message = `${branchName} reporta ${cnt} caja${cnt > 1 ? 's' : ''} de Electrolit que no llegaron.`;
+                    supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
+                    supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
+                }).catch(() => {});
+            }
+
             await loadActive();
             await fetchItems(key, pedidoId, sucId);
         } catch (e) { console.error('llegada confirm:', e); } finally { setBusyAction(null); }
@@ -2413,6 +2429,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 border border-sky-200 tabular-nums shrink-0">
                                                 <Inbox size={10} className="text-sky-500 shrink-0" />
                                                 {row.cajas_electrolit} Electrolit
+                                            </span>
+                                        )}
+                                        {row.electrolit_ok === false && (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                                                <Zap size={8} className="shrink-0" />
+                                                {(row.electrolit_faltantes ?? 0) > 0
+                                                    ? `${row.electrolit_faltantes} Electrolit faltante${row.electrolit_faltantes > 1 ? 's' : ''}`
+                                                    : 'Electrolit faltante'}
                                             </span>
                                         )}
                                         {hasObservacion(row) && row.pedido_status !== 'completado' && (

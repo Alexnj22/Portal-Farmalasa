@@ -24,10 +24,10 @@ const TOGGLE_CFG = {
 };
 
 export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, totalCajas = 0, cajasElectrolit = 0 }) {
-    const [estados,       setEstados]       = useState({});
-    const [nota,          setNota]          = useState('');
-    const [electrolitOk,  setElectrolitOk]  = useState(null); // null=sin respuesta, true=llegaron, false=no
-    const [submitting,    setSubmitting]    = useState(false);
+    const [estados,              setEstados]              = useState({});
+    const [nota,                 setNota]                 = useState('');
+    const [electrolitFaltantes,  setElectrolitFaltantes]  = useState(null); // null=sin responder, 0=todas ok, N=N faltantes
+    const [submitting,           setSubmitting]           = useState(false);
 
     const cajas = useMemo(() => deriveCajas(cajaMap, items), [cajaMap, items]);
 
@@ -41,12 +41,13 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
     const handleConfirm = () => {
         setSubmitting(true);
-        onConfirm({ cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim(), electrolitOk: cajasElectrolit > 0 ? electrolitOk : null });
+        onConfirm({ cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim(),
+                    electrolitFaltantes: cajasElectrolit > 0 ? electrolitFaltantes : null });
     };
 
     const handleClose = () => {
         if (submitting) return;
-        setEstados({}); setNota(''); setElectrolitOk(null); setSubmitting(false);
+        setEstados({}); setNota(''); setElectrolitFaltantes(null); setSubmitting(false);
         onClose();
     };
 
@@ -116,28 +117,54 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 )}
             </div>
 
-            {/* Electrolit — pregunta no bloqueante */}
+            {/* Electrolit — cuántas no llegaron */}
             {cajasElectrolit > 0 && (
                 <div className="px-5 pb-4">
-                    <div className="flex items-center gap-2 p-3 rounded-2xl border border-amber-100 bg-amber-50/60">
-                        <Zap size={14} className="text-amber-500 shrink-0" />
-                        <span className="text-[11px] font-semibold text-amber-700 flex-1">
-                            ¿Llegaron las {cajasElectrolit} caja{cajasElectrolit > 1 ? 's' : ''} de Electrolit?
-                        </span>
-                        <div className="flex items-center gap-1">
-                            {[true, false].map(val => (
-                                <button key={String(val)} onClick={() => setElectrolitOk(val)}
-                                    className={`text-[10px] font-bold px-3 py-1 rounded-xl border transition-all active:scale-95 ${electrolitOk === val
-                                        ? val ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm' : 'bg-rose-500 text-white border-rose-500 shadow-sm'
-                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}>
-                                    {val ? 'Sí' : 'No'}
-                                </button>
-                            ))}
+                    <div className="p-3 rounded-2xl border border-amber-100 bg-amber-50/60 flex flex-col gap-2.5">
+                        <div className="flex items-center gap-2">
+                            <Zap size={13} className="text-amber-500 shrink-0" />
+                            <span className="text-[11px] font-semibold text-amber-700 flex-1">
+                                ¿Cuántas cajas de Electrolit no llegaron?
+                            </span>
+                            <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wide">
+                                de {cajasElectrolit}
+                            </span>
                         </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setElectrolitFaltantes(0)}
+                                className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95 ${electrolitFaltantes === 0
+                                    ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
+                                    : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
+                                ✓ Todas llegaron
+                            </button>
+                            <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                    onClick={() => setElectrolitFaltantes(f => Math.max(0, (f ?? 0) - 1))}
+                                    disabled={(electrolitFaltantes ?? 0) <= 0}
+                                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 font-black text-[14px] flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all disabled:opacity-30">
+                                    −
+                                </button>
+                                <span className={`w-8 text-center text-[15px] font-black tabular-nums ${
+                                    electrolitFaltantes === null ? 'text-slate-300'
+                                    : electrolitFaltantes === 0  ? 'text-emerald-600'
+                                    :                              'text-rose-600'}`}>
+                                    {electrolitFaltantes ?? '—'}
+                                </span>
+                                <button
+                                    onClick={() => setElectrolitFaltantes(f => Math.min(cajasElectrolit, (f ?? 0) + 1))}
+                                    disabled={(electrolitFaltantes ?? 0) >= cajasElectrolit}
+                                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 font-black text-[14px] flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all disabled:opacity-30">
+                                    +
+                                </button>
+                            </div>
+                        </div>
+                        {(electrolitFaltantes ?? 0) > 0 && (
+                            <p className="text-[10px] text-rose-600 px-0.5">
+                                ⚠ Se notificará a bodega sobre las {electrolitFaltantes} caja{electrolitFaltantes > 1 ? 's' : ''} faltantes.
+                            </p>
+                        )}
                     </div>
-                    {electrolitOk === false && (
-                        <p className="text-[10px] text-rose-600 mt-1.5 px-1">⚠ Se notificará a bodega. La recepción continúa normal.</p>
-                    )}
                 </div>
             )}
 

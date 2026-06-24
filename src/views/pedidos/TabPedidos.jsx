@@ -930,10 +930,20 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
                                 {isPausedDot ? 'Pausado' : node.label}
                             </span>
 
-                            {/* Time */}
-                            <span className="text-[8px] text-slate-500 tabular-nums leading-tight text-center mt-px">
-                                {fmtHM(node.time) || <span className="text-slate-200">——</span>}
-                            </span>
+                            {/* Time — muestra fecha si es de otro día */}
+                            {(() => {
+                                const t = node.time ? new Date(node.time) : null;
+                                const isToday = t && t.toDateString() === new Date().toDateString();
+                                const dateLabel = t && !isToday
+                                    ? t.toLocaleDateString('es-SV', { day: 'numeric', month: 'short' })
+                                    : null;
+                                return (
+                                    <span className="text-[8px] tabular-nums leading-tight text-center mt-px flex flex-col items-center">
+                                        {dateLabel && <span className="text-[7px] text-amber-500 font-semibold leading-none mb-px">{dateLabel}</span>}
+                                        <span className="text-slate-500">{fmtHM(node.time) || <span className="text-slate-200">——</span>}</span>
+                                    </span>
+                                );
+                            })()}
 
                             {/* Responsible person mini-avatar */}
                             {node.emp && (

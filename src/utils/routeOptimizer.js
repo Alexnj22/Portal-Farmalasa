@@ -68,12 +68,22 @@ export function loadGoogleMaps() {
     return _mapsPromise;
   }
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) return Promise.reject(new Error('No Maps API key'));
+
   _mapsPromise = new Promise((resolve, reject) => {
+    // gm_authFailure se dispara cuando la key es inválida o está restringida
+    const prevAuthFailure = window.gm_authFailure;
+    window.gm_authFailure = () => {
+      _mapsPromise = null; // permite reintentar si la key se corrige
+      reject(new Error('InvalidKey'));
+      if (prevAuthFailure) prevAuthFailure();
+    };
+
     const cb = '__gmaps_cb_' + Date.now();
     window[cb] = () => { delete window[cb]; resolve(window.google.maps); };
     const s = document.createElement('script');
     s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=${cb}&libraries=geometry`;
-    s.onerror = reject;
+    s.onerror = (e) => { _mapsPromise = null; reject(e); };
     document.head.appendChild(s);
   });
   return _mapsPromise;

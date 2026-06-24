@@ -43,6 +43,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
 
   // Submit
   const [submitting, setSubmitting] = useState(false);
+  const [mapError,   setMapError]   = useState(false);
 
   // ── Load data on open ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -51,6 +52,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
     setSelected(new Set());
     setParadas([]);
     setReturnLeg(null);
+    setMapError(false);
     setLoadingData(true);
 
     if (user?.id) {
@@ -252,7 +254,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
             });
           });
         });
-      }).catch(() => {/* Maps no disponible — haversine ya fue seteado arriba */});
+      }).catch(() => { if (!cancelled) setMapError(true); });
     }, 80);
 
     return () => { cancelled = true; clearTimeout(timer); };
@@ -492,14 +494,26 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
           <>
             {/* ── Mapa ──────────────────────────────────────────────────── */}
             <div className="relative rounded-2xl overflow-hidden border border-indigo-100 shadow-sm" style={{ height: 220 }}>
-              <div ref={mapRef} className="w-full h-full" />
+              {mapError ? (
+                <div className="w-full h-full bg-slate-50 flex flex-col items-center justify-center gap-2 text-center px-4">
+                  <MapPin size={20} className="text-slate-300" />
+                  <p className="text-[11px] font-semibold text-slate-500">Mapa no disponible</p>
+                  <p className="text-[10px] text-slate-400 max-w-[220px]">
+                    La API key de Google Maps no está habilitada para Maps JavaScript API o tiene restricciones de dominio.
+                  </p>
+                </div>
+              ) : (
+                <div ref={mapRef} className="w-full h-full" />
+              )}
               {/* Badge fuente */}
-              <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-[9px] font-semibold text-slate-600 shadow-sm border border-white/60">
-                {mapsMode
-                  ? <><Navigation size={8} className="text-indigo-500" />Google Maps</>
-                  : <><MapPin size={8} className="text-slate-400" />Línea recta</>
-                }
-              </div>
+              {!mapError && (
+                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-[9px] font-semibold text-slate-600 shadow-sm border border-white/60">
+                  {mapsMode
+                    ? <><Navigation size={8} className="text-indigo-500" />Google Maps</>
+                    : <><MapPin size={8} className="text-slate-400" />Línea recta</>
+                  }
+                </div>
+              )}
             </div>
 
             {/* ── Conductor ─────────────────────────────────────────────── */}

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.323';
+export const APP_VERSION = '2.2.324';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.324 — feat(rutas): mapa Google Maps en confirmar ruta + timeline con tiempos conducir/descarga/vuelta a base (v2.2.324)
 // v2.2.323 — feat(pedidos/pausa): apoyo reanuda explícitamente; reanudado_por registrado en DB + visible en tooltip (v2.2.323)
 // v2.2.322 — fix(pedidos/rutas): 5 bugs — pausado bloquea finalizar, apoyo auto-reanuda, busyAction per-card, FinalizarModal re-apertura bloqueada, CrearRuta sin pedidos (v2.2.322)
 // v2.2.321 — fix(rutas): conductor auto = usuario actual; Google Maps Distance Matrix API; pedidos_tab_rutas en PermissionsView (v2.2.321)

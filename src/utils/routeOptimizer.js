@@ -84,7 +84,7 @@ export function loadGoogleMaps() {
     const cb = '__gmaps_cb_' + Date.now();
     window[cb] = () => { delete window[cb]; resolve(window.google.maps); };
     const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=${cb}&libraries=geometry`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=${cb}&libraries=geometry&loading=async`;
     s.onerror = (e) => { _mapsPromise = null; reject(e); };
     document.head.appendChild(s);
   });

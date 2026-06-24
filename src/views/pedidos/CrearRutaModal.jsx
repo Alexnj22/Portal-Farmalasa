@@ -74,7 +74,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
         .order('numero'),
 
       supabase.from('pedido_sucursal_status')
-        .select('pedido_id, erp_sucursal_id, total_cajas, cajas_electrolit, finalizado_at')
+        .select('pedido_id, erp_sucursal_id, total_cajas, cajas_electrolit, cajas_especiales, finalizado_at')
         .not('finalizado_at', 'is', null),
 
       supabase.from('erp_sucursal_map')
@@ -110,8 +110,9 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
           numero:           p.numero,
           erp_sucursal_id:  pss.erp_sucursal_id,
           suc_name:         sucNameMap[pss.erp_sucursal_id] ?? `Suc. ${pss.erp_sucursal_id}`,
-          total_cajas:      pss.total_cajas     ?? 0,
-          cajas_electrolit: pss.cajas_electrolit ?? 0,
+          total_cajas:      pss.total_cajas      ?? 0,
+          cajas_electrolit: pss.cajas_electrolit  ?? 0,
+          cajas_especiales: pss.cajas_especiales  ?? 0,
         });
       }
       setPedidosDisp(items);
@@ -141,11 +142,13 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
   const timeline = useMemo(() => {
     let cumul = 0;
     return paradas.map(stop => {
-      const cajas = stop.items?.reduce((s, it) => s + (it.total_cajas ?? 0), 0) ?? 0;
+      const cajas      = stop.items?.reduce((s, it) => s + (it.total_cajas      ?? 0), 0) ?? 0;
+      const electrolit = stop.items?.reduce((s, it) => s + (it.cajas_electrolit ?? 0), 0) ?? 0;
+      const especiales = stop.items?.reduce((s, it) => s + (it.cajas_especiales ?? 0), 0) ?? 0;
       const drive = stop.dur_min ?? 0;
       const svc   = svcMin(cajas);
       cumul += drive;
-      return { stop, cajas, drive, svc, cumul };
+      return { stop, cajas, electrolit, especiales, drive, svc, cumul };
     });
   }, [paradas]);
 
@@ -357,6 +360,11 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
       });
       if (error) throw error;
 
+      // Auto-iniciar la ruta inmediatamente al crear
+      await supabase.from('rutas')
+        .update({ status: 'en_ruta', salida_at: new Date().toISOString() })
+        .eq('id', rutaId);
+
       useStaff.getState().appendAuditLog('RUTA_CREADA', rutaId, {
         conductor: conductorNombre,
         paradas:   rpcParadas.length,
@@ -560,7 +568,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
                 </div>
 
                 {/* Paradas */}
-                {timeline.map(({ stop, cajas, drive, svc, cumul }, idx) => (
+                {timeline.map(({ stop, cajas, electrolit, especiales, drive, svc, cumul }, idx) => (
                   <div key={stop.erp_sucursal_id}>
                     {/* Tramo de conducción */}
                     <div className="flex items-center gap-3 my-0.5 ml-3">
@@ -596,12 +604,25 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
                           <div className="min-w-0">
                             <p className="text-[12px] font-bold text-slate-800 truncate">{stop.suc_name}</p>
                             <p className="text-[10px] text-slate-500 mt-px">
-                              {stop.items.map(it => `#${it.numero}`).join(', ')}
-                              {cajas > 0 && <> · {cajas} caja{cajas !== 1 ? 's' : ''}</>}
+                              Pedido{stop.items.length > 1 ? 's' : ''} {stop.items.map(it => `#${it.numero}`).join(', ')}
                             </p>
-                            <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                              Descarga en cálculo
-                            </p>
+                            {cajas > 0 && (
+                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-indigo-100 text-indigo-700">
+                                  📦 {cajas} caja{cajas !== 1 ? 's' : ''}
+                                </span>
+                                {electrolit > 0 && (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-cyan-100 text-cyan-700">
+                                    💧 {electrolit} Electrolit
+                                  </span>
+                                )}
+                                {especiales > 0 && (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-amber-100 text-amber-700">
+                                    ⭐ {especiales} especial{especiales !== 1 ? 'es' : ''}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className="text-right shrink-0">
                             <p className="text-[8px] text-slate-400 uppercase tracking-wider">acumulado</p>

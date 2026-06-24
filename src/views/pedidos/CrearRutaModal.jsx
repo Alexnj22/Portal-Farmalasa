@@ -16,8 +16,8 @@ function fmtMin(min) {
   return `${Math.floor(min / 60)}h ${min % 60}min`;
 }
 
-// Tiempo estimado de descarga por parada (mínimo 10 min + 2 min/caja)
-function svcMin(cajas) { return Math.max(10, Math.round(cajas * 2)); }
+// Tiempo fijo de descarga por parada — se recalibrará con datos reales
+function svcMin() { return 10; }
 
 export default function CrearRutaModal({ open, onClose, onCreated }) {
   const { user } = useAuth();
@@ -560,7 +560,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
                               {cajas > 0 && <> · {cajas} caja{cajas !== 1 ? 's' : ''}</>}
                             </p>
                             <p className="text-[10px] text-amber-600 font-semibold mt-0.5">
-                              ~{svc} min descarga
+                              ~10 min descarga
                             </p>
                           </div>
                           <div className="text-right shrink-0">

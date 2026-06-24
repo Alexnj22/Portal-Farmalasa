@@ -742,25 +742,11 @@ function fmtHM(iso) {
     return new Date(iso).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-// Extra indices (reenvío cycles) repeat the last two colors
-const TL_DOT_BASE    = ['bg-blue-500','bg-blue-500','bg-violet-500','bg-indigo-500','bg-teal-500','bg-emerald-500','bg-amber-500','bg-purple-500'];
-const TL_LINE_BASE   = ['bg-blue-300','bg-blue-300','bg-violet-300','bg-indigo-300','bg-teal-300','bg-emerald-300','bg-amber-300','bg-purple-300'];
-const TL_BORDER_BASE = ['border-blue-400','border-blue-400','border-violet-400','border-indigo-400','border-teal-400','border-emerald-400','border-amber-400','border-purple-400'];
-const tlDot    = (i) => TL_DOT_BASE[i]    ?? TL_DOT_BASE[TL_DOT_BASE.length - 1];
-const tlLine   = (i) => TL_LINE_BASE[i]   ?? TL_LINE_BASE[TL_LINE_BASE.length - 1];
-const tlBorder = (i) => TL_BORDER_BASE[i] ?? TL_BORDER_BASE[TL_BORDER_BASE.length - 1];
-// box-shadow glow colors for active node — stays within dot bounds, no overflow
-const TL_GLOW   = [
-    'rgba(59,130,246',   // blue
-    'rgba(59,130,246',
-    'rgba(139,92,246',   // violet
-    'rgba(99,102,241',   // indigo
-    'rgba(20,184,166',   // teal
-    'rgba(16,185,129',   // emerald
-    'rgba(245,158,11',   // amber
-    'rgba(168,85,247',   // purple
-];
-const tlGlow = (i) => TL_GLOW[i] ?? TL_GLOW[TL_GLOW.length - 1];
+// Todos los nodos activos/completados en un solo color indigo
+const tlDot    = () => 'bg-indigo-500';
+const tlLine   = () => 'bg-indigo-300';
+const tlBorder = () => 'border-indigo-400';
+const tlGlow   = () => 'rgba(99,102,241';
 
 // ruta_entregado se inserta en índice 4; Llegada→5, Finalizado→6, extras→≥7
 const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 5, erp: 6 };
@@ -938,9 +924,9 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
                                     ? t.toLocaleDateString('es-SV', { day: 'numeric', month: 'short' })
                                     : null;
                                 return (
-                                    <span className="text-[8px] tabular-nums leading-tight text-center mt-px flex flex-col items-center">
-                                        {dateLabel && <span className="text-[7px] text-amber-500 font-semibold leading-none mb-px">{dateLabel}</span>}
-                                        <span className="text-slate-500">{fmtHM(node.time) || <span className="text-slate-200">——</span>}</span>
+                                    <span className="tabular-nums leading-tight text-center mt-px flex flex-col items-center">
+                                        {dateLabel && <span className="text-[9px] text-slate-900 font-bold leading-none mb-0.5">{dateLabel}</span>}
+                                        <span className="text-[10px] text-slate-600">{fmtHM(node.time) || <span className="text-slate-200">——</span>}</span>
                                     </span>
                                 );
                             })()}

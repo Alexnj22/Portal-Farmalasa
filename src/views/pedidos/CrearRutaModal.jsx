@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse } from 'lucide-react';
+import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -31,15 +31,17 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
   const [coordsMap,       setCoordsMap]       = useState({});
   const [bodegaCoords,    setBodegaCoords]    = useState(null);
   const [loadingData,     setLoadingData]     = useState(true);
+  const [sucNameMap,      setSucNameMap]      = useState({}); // erp_sucursal_id → nombre
 
   // Step 1
   const [selected, setSelected] = useState(new Set());
 
   // Step 2
-  const [paradas,    setParadas]    = useState([]);
-  const [optimizing, setOptimizing] = useState(false);
-  const [mapsMode,   setMapsMode]   = useState(false);
-  const [returnLeg,  setReturnLeg]  = useState(null); // tramo de vuelta a bodega
+  const [paradas,        setParadas]        = useState([]);
+  const [optimizing,     setOptimizing]     = useState(false);
+  const [mapsMode,       setMapsMode]       = useState(false);
+  const [returnLeg,      setReturnLeg]      = useState(null);
+  const [showAddVisita,  setShowAddVisita]  = useState(false); // picker de encargo extra
   const mapRef = useRef(null);
 
   // Submit
@@ -84,11 +86,11 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
       const pedidoMap = {};
       for (const p of (pedRes.data ?? [])) pedidoMap[p.id] = p;
 
-      const sucNameMap = {};
+      const snm = {};
       const cm = {};
       let bodega = null;
       for (const row of (coordRes.data ?? [])) {
-        sucNameMap[row.erp_sucursal_id] = row.branch?.name ?? `Suc. ${row.erp_sucursal_id}`;
+        snm[row.erp_sucursal_id] = row.branch?.name ?? `Suc. ${row.erp_sucursal_id}`;
         const loc = row.branch?.settings?.location ?? {};
         const lat = parseFloat(loc.lat);
         const lng = parseFloat(loc.lng);
@@ -98,6 +100,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
         }
       }
       setCoordsMap(cm);
+      setSucNameMap(snm);
       setBodegaCoords(bodega);
 
       const items = [];
@@ -109,7 +112,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
           pedido_id:        p.id,
           numero:           p.numero,
           erp_sucursal_id:  pss.erp_sucursal_id,
-          suc_name:         sucNameMap[pss.erp_sucursal_id] ?? `Suc. ${pss.erp_sucursal_id}`,
+          suc_name:         snm[pss.erp_sucursal_id] ?? `Suc. ${pss.erp_sucursal_id}`,
           total_cajas:      pss.total_cajas      ?? 0,
           cajas_electrolit: pss.cajas_electrolit  ?? 0,
           cajas_especiales: pss.cajas_especiales  ?? 0,
@@ -309,12 +312,13 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
       optimized = optimizeRoute(stopsWithCoords, bodega);
     }
 
+    const ts = Date.now();
     const allOrdered = [
       ...optimized,
       ...stopsNoCoords.map((s, i) => ({
         ...s, orden: optimized.length + i + 1, dist_m: null, dur_min: null,
       })),
-    ];
+    ].map((s, i) => ({ ...s, _uid: `stop-${i}-${ts}` }));
 
     setParadas(allOrdered);
     setMapsMode(usedMaps);
@@ -322,7 +326,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
     setStep(2);
   }, [selectedItems, coordsMap, bodegaCoords]);
 
-  // ── Reorder ────────────────────────────────────────────────────────────────
+  // ── Reorder / remove / add encargo ────────────────────────────────────────
   const moveStop = useCallback((idx, dir) => {
     setParadas(prev => {
       const next = [...prev];
@@ -333,20 +337,46 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
     });
   }, []);
 
+  const removeStop = useCallback((uid) => {
+    setParadas(prev => prev.filter(s => s._uid !== uid).map((s, i) => ({ ...s, orden: i + 1 })));
+  }, []);
+
+  const addEncargo = useCallback((sucId) => {
+    const coords = coordsMap[sucId];
+    const name = sucNameMap[sucId] ?? `Suc. ${sucId}`;
+    setParadas(prev => {
+      const prevStop = prev.length > 0 ? coordsMap[prev[prev.length - 1].erp_sucursal_id] : bodegaCoords;
+      let dist_m = null, dur_min = null;
+      if (prevStop && coords) {
+        dist_m  = Math.round(haversineMeters(prevStop.lat, prevStop.lng, coords.lat, coords.lng));
+        dur_min = Math.max(1, Math.round(dist_m / 1000 / 40 * 60));
+      }
+      return [...prev, {
+        erp_sucursal_id: sucId, suc_name: name, lat: coords?.lat, lng: coords?.lng,
+        isEncargo: true, items: [], orden: prev.length + 1,
+        dist_m, dur_min, _uid: `enc-${sucId}-${Date.now()}`,
+      }];
+    });
+    setShowAddVisita(false);
+  }, [coordsMap, sucNameMap, bodegaCoords]);
+
   // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
     if (!paradas.length || submitting) return;
     setSubmitting(true);
     try {
-      const rpcParadas = paradas.flatMap(stop =>
-        stop.items.map(item => ({
-          pedido_id:       item.pedido_id,
-          erp_sucursal_id: item.erp_sucursal_id,
-          orden_entrega:   stop.orden,
-          dist_m:          stop.dist_m  ?? null,
-          dur_min:         stop.dur_min ?? null,
-        }))
-      );
+      // Solo paradas con pedido real (los encargos se guardan en rutas.visitas)
+      const rpcParadas = paradas
+        .filter(stop => !stop.isEncargo)
+        .flatMap(stop =>
+          stop.items.map(item => ({
+            pedido_id:       item.pedido_id,
+            erp_sucursal_id: item.erp_sucursal_id,
+            orden_entrega:   stop.orden,
+            dist_m:          stop.dist_m  ?? null,
+            dur_min:         stop.dur_min ?? null,
+          }))
+        );
 
       const totals = totalRoute(paradas.filter(s => s.dist_m != null));
 
@@ -360,9 +390,12 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
       });
       if (error) throw error;
 
-      // Auto-iniciar la ruta inmediatamente al crear
+      // Auto-iniciar + guardar encargos extra
+      const visitasData = paradas
+        .filter(s => s.isEncargo)
+        .map(s => ({ erp_sucursal_id: s.erp_sucursal_id, suc_name: s.suc_name, orden: s.orden, dist_m: s.dist_m ?? null, dur_min: s.dur_min ?? null }));
       await supabase.from('rutas')
-        .update({ status: 'en_ruta', salida_at: new Date().toISOString() })
+        .update({ status: 'en_ruta', salida_at: new Date().toISOString(), ...(visitasData.length > 0 ? { visitas: visitasData } : {}) })
         .eq('id', rutaId);
 
       useStaff.getState().appendAuditLog('RUTA_CREADA', rutaId, {
@@ -370,7 +403,8 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
         paradas:   rpcParadas.length,
       });
 
-      for (const stop of paradas) {
+      // Notificar solo paradas con pedido real (encargos no tienen pedido que avisar)
+      for (const stop of paradas.filter(s => !s.isEncargo)) {
         const { data: mapa } = await supabase
           .from('erp_sucursal_map')
           .select('branch_id')
@@ -568,71 +602,138 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
                 </div>
 
                 {/* Paradas */}
-                {timeline.map(({ stop, cajas, electrolit, especiales, drive, svc, cumul }, idx) => (
-                  <div key={stop.erp_sucursal_id}>
-                    {/* Tramo de conducción */}
-                    <div className="flex items-center gap-3 my-0.5 ml-3">
-                      <div className="w-px h-5 bg-indigo-200 mx-auto" style={{ marginLeft: 0 }} />
-                      <div className="flex items-center gap-1.5 text-[9px] text-slate-400 font-medium pl-0">
-                        <Clock size={8} className="text-indigo-300" />
-                        {stop.dist_m ? `${fmtDist(stop.dist_m)} · ` : ''}{drive > 0 ? `${drive} min conduciendo` : 'sin datos'}
-                      </div>
-                    </div>
-
-                    {/* Card de la parada */}
-                    <div className="flex items-start gap-3">
-                      {/* Número + flechas */}
-                      <div className="flex flex-col items-center gap-0.5 z-10">
-                        <div className="w-7 h-7 rounded-full bg-indigo-600 border-2 border-white shadow-md flex items-center justify-center text-white text-[10px] font-black shrink-0">
-                          {stop.orden}
-                        </div>
-                        <div className="flex flex-col gap-0">
-                          <button onClick={() => moveStop(idx, -1)} disabled={idx === 0}
-                            className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-0 transition-colors leading-none">
-                            <ChevronUp size={11} />
-                          </button>
-                          <button onClick={() => moveStop(idx, 1)} disabled={idx === paradas.length - 1}
-                            className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-0 transition-colors leading-none">
-                            <ChevronDown size={11} />
-                          </button>
+                {timeline.map(({ stop, cajas, electrolit, especiales, drive, cumul }, idx) => {
+                  const enc = stop.isEncargo;
+                  const dotCls = enc ? 'bg-amber-500' : 'bg-indigo-600';
+                  const cardCls = enc
+                    ? 'bg-amber-50/70 border border-amber-200'
+                    : 'bg-indigo-50/70 border border-indigo-100';
+                  const timeCls = enc ? 'text-amber-700' : 'text-indigo-700';
+                  return (
+                    <div key={stop._uid ?? `${stop.erp_sucursal_id}-${idx}`}>
+                      {/* Tramo de conducción */}
+                      <div className="flex items-center gap-3 my-0.5 ml-3">
+                        <div className="w-px h-5 bg-indigo-200 mx-auto" style={{ marginLeft: 0 }} />
+                        <div className="flex items-center gap-1.5 text-[9px] text-slate-400 font-medium pl-0">
+                          <Clock size={8} className="text-indigo-300" />
+                          {stop.dist_m ? `${fmtDist(stop.dist_m)} · ` : ''}{drive > 0 ? `${drive} min conduciendo` : 'sin datos'}
                         </div>
                       </div>
 
-                      {/* Info de la parada */}
-                      <div className="flex-1 bg-indigo-50/70 border border-indigo-100 rounded-xl px-3 py-2 mb-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="text-[12px] font-bold text-slate-800 truncate">{stop.suc_name}</p>
-                            <p className="text-[10px] text-slate-500 mt-px">
-                              Pedido{stop.items.length > 1 ? 's' : ''} {stop.items.map(it => `#${it.numero}`).join(', ')}
-                            </p>
-                            {cajas > 0 && (
-                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-indigo-100 text-indigo-700">
-                                  📦 {cajas} caja{cajas !== 1 ? 's' : ''}
-                                </span>
-                                {electrolit > 0 && (
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-cyan-100 text-cyan-700">
-                                    💧 {electrolit} Electrolit
-                                  </span>
-                                )}
-                                {especiales > 0 && (
-                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-amber-100 text-amber-700">
-                                    ⭐ {especiales} especial{especiales !== 1 ? 'es' : ''}
+                      {/* Card de la parada */}
+                      <div className="flex items-start gap-3">
+                        {/* Número + flechas */}
+                        <div className="flex flex-col items-center gap-0.5 z-10">
+                          <div className={`w-7 h-7 rounded-full ${dotCls} border-2 border-white shadow-md flex items-center justify-center text-white text-[10px] font-black shrink-0`}>
+                            {stop.orden}
+                          </div>
+                          <div className="flex flex-col gap-0">
+                            <button onClick={() => moveStop(idx, -1)} disabled={idx === 0}
+                              className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-0 transition-colors leading-none">
+                              <ChevronUp size={11} />
+                            </button>
+                            <button onClick={() => moveStop(idx, 1)} disabled={idx === paradas.length - 1}
+                              className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-0 transition-colors leading-none">
+                              <ChevronDown size={11} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Info de la parada */}
+                        <div className={`flex-1 ${cardCls} rounded-xl px-3 py-2 mb-1`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="text-[12px] font-bold text-slate-800 truncate">{stop.suc_name}</p>
+                                {enc && (
+                                  <span className="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-200 text-amber-800">
+                                    Encargo
                                   </span>
                                 )}
                               </div>
-                            )}
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="text-[8px] text-slate-400 uppercase tracking-wider">acumulado</p>
-                            <p className="text-[15px] font-black text-indigo-700 leading-tight">{fmtMin(cumul)}</p>
+                              {!enc && (
+                                <p className="text-[10px] text-slate-500 mt-px">
+                                  Pedido{stop.items.length > 1 ? 's' : ''} {stop.items.map(it => `#${it.numero}`).join(', ')}
+                                </p>
+                              )}
+                              {enc && (
+                                <p className="text-[10px] text-amber-600 mt-px">Visita sin pedido asociado</p>
+                              )}
+                              {!enc && cajas > 0 && (
+                                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-indigo-100 text-indigo-700">
+                                    📦 {cajas} caja{cajas !== 1 ? 's' : ''}
+                                  </span>
+                                  {electrolit > 0 && (
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-cyan-100 text-cyan-700">
+                                      💧 {electrolit} Electrolit
+                                    </span>
+                                  )}
+                                  {especiales > 0 && (
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-amber-100 text-amber-700">
+                                      ⭐ {especiales} especial{especiales !== 1 ? 'es' : ''}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-start gap-2 shrink-0">
+                              <div className="text-right">
+                                <p className="text-[8px] text-slate-400 uppercase tracking-wider">acumulado</p>
+                                <p className={`text-[15px] font-black ${timeCls} leading-tight`}>{fmtMin(cumul)}</p>
+                              </div>
+                              <button
+                                onClick={() => removeStop(stop._uid)}
+                                className="p-1 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors mt-0.5"
+                                title="Quitar parada"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
+                  );
+                })}
+
+                {/* ── Agregar visita extra ─────────────────────────────── */}
+                <div className="flex items-center gap-3 my-1 ml-3">
+                  <div className="w-px h-4 bg-slate-200" style={{ marginLeft: 0 }} />
+                </div>
+                {showAddVisita ? (
+                  <div className="ml-10 p-3 rounded-xl border border-amber-200 bg-amber-50/60 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">¿A qué sucursal?</p>
+                      <button onClick={() => setShowAddVisita(false)} className="text-slate-400 hover:text-slate-600">
+                        <X size={12} />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {Object.entries(sucNameMap)
+                        .filter(([id]) => Number(id) !== 6 && coordsMap[Number(id)])
+                        .map(([id, name]) => (
+                          <button
+                            key={id}
+                            onClick={() => addEncargo(Number(id))}
+                            className="flex items-center gap-2 px-2.5 py-2 rounded-xl border border-amber-200 bg-white hover:bg-amber-50 hover:border-amber-400 text-left transition-all active:scale-95"
+                          >
+                            <Building2 size={11} className="text-amber-500 shrink-0" />
+                            <span className="text-[11px] font-semibold text-slate-700">{name}</span>
+                          </button>
+                        ))}
+                    </div>
                   </div>
-                ))}
+                ) : (
+                  <div className="ml-10">
+                    <button
+                      onClick={() => setShowAddVisita(true)}
+                      className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-xl border border-dashed border-slate-300 text-slate-400 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50/40 transition-all"
+                    >
+                      <Plus size={10} />Agregar visita / encargo extra
+                    </button>
+                  </div>
+                )}
 
                 {/* Tramo de vuelta a bodega */}
                 {returnLeg && (

@@ -4,7 +4,7 @@ import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import PedidoModal from './PedidoModal';
-import { optimizeRoute, optimizeRouteGoogleMaps, totalRoute, haversineMeters, loadGoogleMaps, loadLeaflet } from '../../utils/routeOptimizer';
+import { optimizeRoute, optimizeRouteREST, getDirectionsREST, totalRoute, haversineMeters, loadLeaflet } from '../../utils/routeOptimizer';
 
 function fmtDist(m) {
   if (!m) return null;
@@ -153,46 +153,65 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
   const totalTime     = (timeline[timeline.length - 1]?.cumul ?? 0) + (returnLeg?.dur_min ?? 0);
   const totalDist     = totalRoute(paradas.filter(s => s.dist_m != null)).dist_m + (returnLeg?.dist_m ?? 0);
 
-  // ── Map rendering (Google Maps → Leaflet fallback) ────────────────────────
+  // ── Map rendering (Leaflet + Directions REST polyline) ───────────────────
   useEffect(() => {
     if (step !== 2 || !paradas.length || !bodegaCoords) return;
     let cancelled = false;
 
-    // Vuelta a base: haversine inmediato (se actualiza si Google Maps Directions responde)
+    // Haversine return leg inmediato; se actualiza si Directions REST responde
     const lastCoords = coordsMap[paradas[paradas.length - 1]?.erp_sucursal_id];
     if (lastCoords && !returnLeg) {
       const dm = haversineMeters(lastCoords.lat, lastCoords.lng, bodegaCoords.lat, bodegaCoords.lng);
       setReturnLeg({ dist_m: Math.round(dm), dur_min: Math.max(1, Math.round(dm / 1000 / 40 * 60)) });
     }
 
-    const allLatLngs = [
-      [bodegaCoords.lat, bodegaCoords.lng],
-      ...paradas.map(p => coordsMap[p.erp_sucursal_id]).filter(Boolean).map(c => [c.lat, c.lng]),
-      [bodegaCoords.lat, bodegaCoords.lng],
+    // Todos los puntos: bodega → paradas → bodega (para polyline cerrado)
+    const orderedPoints = [
+      bodegaCoords,
+      ...paradas.map(p => coordsMap[p.erp_sucursal_id]).filter(Boolean),
+      bodegaCoords,
     ];
+    const fallbackLatLngs = orderedPoints.map(p => [p.lat, p.lng]);
 
-    // ── Leaflet (OpenStreetMap) — siempre disponible, sin API key ─────────
-    async function initLeaflet() {
+    ;(async () => {
+      if (cancelled || !mapRef.current) return;
       try {
         const L = await loadLeaflet();
         if (cancelled || !mapRef.current) return;
-        mapRef.current.innerHTML = ''; // limpiar cualquier contenido previo de Google Maps
+
+        mapRef.current.innerHTML = '';
         const lmap = L.map(mapRef.current, { zoomControl: true, attributionControl: true });
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
           maxZoom: 18,
         }).addTo(lmap);
-        L.polyline(allLatLngs, { color: '#6366f1', weight: 5, opacity: 0.85 }).addTo(lmap);
-        // Bodega marker
-        const mkBodega = (pos, title) => L.marker(pos, {
+
+        // Intentar Directions REST para polyline real de carretera
+        let polylineLatLngs = fallbackLatLngs;
+        try {
+          const dirs = await getDirectionsREST(orderedPoints);
+          if (dirs && !cancelled) {
+            polylineLatLngs = dirs.polylinePoints;
+            if (dirs.returnLeg) setReturnLeg(dirs.returnLeg);
+            setMapsMode(true);
+          }
+        } catch { /* usa fallback de línea recta */ }
+
+        if (cancelled) return;
+
+        L.polyline(polylineLatLngs, { color: '#6366f1', weight: 5, opacity: 0.85 }).addTo(lmap);
+
+        // Marker de bodega
+        L.marker([bodegaCoords.lat, bodegaCoords.lng], {
           icon: L.divIcon({
             className: '',
             html: `<div style="width:30px;height:30px;border-radius:50%;background:#1e1b4b;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:13px">🏭</div>`,
             iconSize: [30, 30], iconAnchor: [15, 15],
           }),
-          title,
+          title: 'Bodega',
         }).addTo(lmap);
-        mkBodega([bodegaCoords.lat, bodegaCoords.lng], 'Bodega');
+
+        // Markers de paradas
         paradas.forEach((stop, i) => {
           const c = coordsMap[stop.erp_sucursal_id];
           if (!c) return;
@@ -205,71 +224,12 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
             title: stop.suc_name,
           }).addTo(lmap);
         });
-        lmap.fitBounds(allLatLngs.filter(p => p[0] && p[1]), { padding: [20, 20] });
+
+        lmap.fitBounds(polylineLatLngs.filter(p => p[0] && p[1]), { padding: [20, 20] });
       } catch { if (!cancelled) setMapError(true); }
-    }
+    })();
 
-    const timer = setTimeout(() => {
-      if (cancelled || !mapRef.current) return;
-
-      // Interceptar fallo de auth de Google Maps ANTES de cargar el SDK
-      const prevAuthFailure = window.gm_authFailure;
-      let authFailed = false;
-      window.gm_authFailure = () => {
-        if (!authFailed) { authFailed = true; initLeaflet(); }
-        if (prevAuthFailure) prevAuthFailure();
-      };
-
-      loadGoogleMaps().then(maps => {
-        if (cancelled || !mapRef.current) return;
-
-        const origin = new maps.LatLng(bodegaCoords.lat, bodegaCoords.lng);
-        const mapInst = new maps.Map(mapRef.current, {
-          zoom: 11,
-          center: { lat: bodegaCoords.lat, lng: bodegaCoords.lng },
-          disableDefaultUI: true, zoomControl: true, gestureHandling: 'cooperative',
-          styles: [
-            { featureType: 'poi',     stylers: [{ visibility: 'off' }] },
-            { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-          ],
-        });
-
-        const dr = new maps.DirectionsRenderer({
-          map: mapInst, suppressMarkers: true,
-          polylineOptions: { strokeColor: '#6366f1', strokeWeight: 5, strokeOpacity: 0.85 },
-        });
-
-        new maps.DirectionsService().route({
-          origin, destination: origin,
-          waypoints: paradas.filter(p => coordsMap[p.erp_sucursal_id]).map(p => ({
-            location: new maps.LatLng(coordsMap[p.erp_sucursal_id].lat, coordsMap[p.erp_sucursal_id].lng),
-            stopover: true,
-          })),
-          travelMode: maps.TravelMode.DRIVING, optimizeWaypoints: false,
-        }, (result, status) => {
-          if (cancelled) return;
-          if (status === 'OK') {
-            dr.setDirections(result);
-            const retLeg = result.routes[0].legs.at(-1);
-            if (retLeg) setReturnLeg({ dist_m: retLeg.distance.value, dur_min: Math.max(1, Math.round(retLeg.duration.value / 60)) });
-          } else {
-            // Directions falló pero Maps cargó — polyline directo
-            new maps.Polyline({ path: allLatLngs.map(p => ({ lat: p[0], lng: p[1] })), map: mapInst, strokeColor: '#6366f1', strokeWeight: 4, strokeOpacity: 0.7 });
-          }
-          const mkSvg = (label, fill, size) => encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${size/2-1.5}" fill="${fill}" stroke="white" stroke-width="2.5"/><text x="${size/2}" y="${size/2+4}" text-anchor="middle" fill="white" font-size="${size*0.4}" font-weight="bold">${label}</text></svg>`);
-          new maps.Marker({ position: origin, map: mapInst, zIndex: 100, title: 'Bodega', icon: { url: `data:image/svg+xml;utf8,${mkSvg('🏭','#1e1b4b',34)}`, scaledSize: new maps.Size(34,34), anchor: new maps.Point(17,17) } });
-          paradas.forEach((stop, i) => {
-            const c = coordsMap[stop.erp_sucursal_id]; if (!c) return;
-            new maps.Marker({ position: { lat: c.lat, lng: c.lng }, map: mapInst, zIndex: 90-i, title: stop.suc_name, icon: { url: `data:image/svg+xml;utf8,${mkSvg(i+1,'#6366f1',30)}`, scaledSize: new maps.Size(30,30), anchor: new maps.Point(15,15) } });
-          });
-        });
-      }).catch(() => { if (!cancelled && !authFailed) initLeaflet(); });
-    }, 80);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, bodegaCoords]);
 
@@ -300,7 +260,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
     let optimized;
     let usedMaps = false;
     try {
-      optimized = await optimizeRouteGoogleMaps(stopsWithCoords, bodega);
+      optimized = await optimizeRouteREST(stopsWithCoords, bodega);
       usedMaps  = true;
     } catch {
       optimized = optimizeRoute(stopsWithCoords, bodega);
@@ -522,8 +482,8 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
               {!mapError && (
                 <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-[9px] font-semibold text-slate-600 shadow-sm border border-white/60">
                   {mapsMode
-                    ? <><Navigation size={8} className="text-indigo-500" />Google Maps</>
-                    : <><MapPin size={8} className="text-emerald-500" />OpenStreetMap</>
+                    ? <><Navigation size={8} className="text-emerald-500" />Ruta real · Google</>
+                    : <><MapPin size={8} className="text-amber-400" />Estimado · OpenStreetMap</>
                   }
                 </div>
               )}

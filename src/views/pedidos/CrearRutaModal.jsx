@@ -144,7 +144,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
       const cajas = stop.items?.reduce((s, it) => s + (it.total_cajas ?? 0), 0) ?? 0;
       const drive = stop.dur_min ?? 0;
       const svc   = svcMin(cajas);
-      cumul += drive + svc;
+      cumul += drive;
       return { stop, cajas, drive, svc, cumul };
     });
   }, [paradas]);
@@ -559,8 +559,8 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
                               {stop.items.map(it => `#${it.numero}`).join(', ')}
                               {cajas > 0 && <> · {cajas} caja{cajas !== 1 ? 's' : ''}</>}
                             </p>
-                            <p className="text-[10px] text-amber-600 font-semibold mt-0.5">
-                              ~10 min descarga
+                            <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                              Descarga en cálculo
                             </p>
                           </div>
                           <div className="text-right shrink-0">

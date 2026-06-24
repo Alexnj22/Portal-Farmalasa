@@ -8,7 +8,7 @@ import {
     Database, Activity, TrendingDown,
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
-    UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box, Zap, Map,
+    UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box, Zap, Map as MapIcon,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -2369,6 +2369,36 @@ export default function TabPedidos({ searchTerm = '' }) {
         }).filter(s => s.total > 0);
     }, [activeRows, filterDate]);
 
+    // Rutas únicas derivadas del pedidoRutaMap (para el header de grupo)
+    const uniqueActiveRutas = useMemo(() => {
+        const seen = new Map();
+        pedidoRutaMap.forEach(({ ruta, driverOnline }) => {
+            if (!seen.has(ruta.id)) seen.set(ruta.id, { ...ruta, _driverOnline: driverOnline });
+        });
+        return [...seen.values()];
+    }, [pedidoRutaMap]);
+
+    // Agrupa filteredRows: rutas primero (con sus rows hijas), luego normales
+    const renderGroups = useMemo(() => {
+        const groups = [];
+        const addedRutas = new Set();
+        const normalRows = [];
+        for (const row of filteredRows) {
+            const ri = pedidoRutaMap.get(row.pedido_id);
+            if (ri) {
+                if (!addedRutas.has(ri.ruta.id)) {
+                    addedRutas.add(ri.ruta.id);
+                    const rutaRows = filteredRows.filter(r => pedidoRutaMap.get(r.pedido_id)?.ruta.id === ri.ruta.id);
+                    groups.push({ isRuta: true, ruta: ri.ruta, driverOnline: ri.driverOnline, rows: rutaRows });
+                }
+            } else {
+                normalRows.push(row);
+            }
+        }
+        if (normalRows.length) groups.push({ isRuta: false, ruta: null, rows: normalRows });
+        return groups;
+    }, [filteredRows, pedidoRutaMap]);
+
     // ── Render ────────────────────────────────────────────────────────────────
 
     if (loading) {
@@ -2453,8 +2483,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                         </div>
                     </div>
                 ) : (
-                    <div className="space-y-2.5">
-                        {filteredRows.map(row => {
+                    <div className="space-y-3">
+                    {renderGroups.map((group) => {
+                        const cards = group.rows.map(row => {
                             const stage      = getBranchStage(row, row.pedido_status);
                             const cardKey    = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
                             const isExp      = expanded === cardKey;
@@ -2688,7 +2719,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                         onClick={() => setRutaMapOpen(ruta)}
                                                         className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 active:scale-95 transition-all shadow-sm"
                                                     >
-                                                        <Map size={10} />Ver mapa
+                                                        <MapIcon size={10} />Ver mapa
                                                     </button>
                                                 </div>
                                             </div>
@@ -2748,7 +2779,37 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     </AnimatePresence>
                                 </div>
                             );
-                        })}
+                        });
+                        if (group.isRuta) {
+                            const { ruta, driverOnline: dl } = group;
+                            const entregadas = ruta.ruta_pedidos.filter(rp => rp.entregado_at).length;
+                            const total = ruta.ruta_pedidos.length;
+                            return (
+                                <div key={ruta.id} className="rounded-2xl border-2 border-indigo-200/70 overflow-hidden bg-white/50 shadow-sm">
+                                    {/* Header de la ruta */}
+                                    <div className="flex items-center gap-3 px-4 py-2.5 bg-indigo-50/70 border-b border-indigo-100">
+                                        <div className="relative shrink-0">
+                                            <Truck size={14} className="text-indigo-600" />
+                                            {dl && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse border border-white" />}
+                                        </div>
+                                        <span className="text-[13px] font-black text-indigo-800">Ruta #{ruta.numero}</span>
+                                        <span className="text-[11px] text-indigo-500">· {ruta.conductor_nombre}</span>
+                                        <span className="text-[10px] text-slate-400 tabular-nums">{entregadas}/{total} entregadas</span>
+                                        {dl && <span className="text-[10px] text-emerald-600 font-semibold">🟢 En vivo</span>}
+                                        <button
+                                            onClick={() => setRutaMapOpen(ruta)}
+                                            className="ml-auto flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 active:scale-95 transition-all shadow-sm"
+                                        >
+                                            <MapIcon size={10} />Ver mapa
+                                        </button>
+                                    </div>
+                                    {/* Cards hijas de pedidos */}
+                                    <div className="divide-y divide-slate-100/60">{cards}</div>
+                                </div>
+                            );
+                        }
+                        return <div key="normal" className="space-y-2.5">{cards}</div>;
+                    })}
                     </div>
                 )}
             </div>

@@ -1541,9 +1541,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [crearRutaOpen, setCrearRutaOpen] = useState(false);
     const [modal,         setModal]         = useState(null);
 
-    // ── Sub-tabs Procesando / En Ruta ─────────────────────────────────────────
-    const [subTab,       setSubTab]       = useState('procesando'); // 'procesando' | 'en_ruta'
-    const [subDir,       setSubDir]       = useState(1);            // 1 = right, -1 = left
+    // ── Rutas activas ─────────────────────────────────────────────────────────
     const [activeRutas,  setActiveRutas]  = useState([]);
     const [rutasLoading, setRutasLoading] = useState(false);
     const [driverOnlineMap, setDriverOnlineMap] = useState({});    // rutaId → bool
@@ -1627,11 +1625,6 @@ export default function TabPedidos({ searchTerm = '' }) {
             .subscribe();
         return () => supabase.removeChannel(ch);
     }, [loadActiveRutas]);
-
-    const switchSubTab = useCallback((tab) => {
-        setSubDir(tab === 'en_ruta' ? 1 : -1);
-        setSubTab(tab);
-    }, []);
 
     // ── Branch ERP ────────────────────────────────────────────────────────────
 
@@ -2329,8 +2322,14 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     const STAGE_ORDER = { preparando: 0, transito: 1, contando: 2, pausado: 3, preparado: 4, sin_iniciar: 5, erp: 6 };
 
+    // pedidos que ya están en una ruta activa → no mostrarlos en la lista normal
+    const enRutaPedidoIds = useMemo(
+        () => new Set(activeRutas.flatMap(r => (r.ruta_pedidos ?? []).map(rp => rp.pedido_id))),
+        [activeRutas]
+    );
+
     const filteredRows = useMemo(() => {
-        let rows = activeRows;
+        let rows = activeRows.filter(r => !enRutaPedidoIds.has(r.pedido_id));
         if (filterSuc) rows = rows.filter(r => r.erp_sucursal_id === Number(filterSuc));
 
         if (filterStatus === 'completado') {
@@ -2394,82 +2393,27 @@ export default function TabPedidos({ searchTerm = '' }) {
                 )}
             </AnimatePresence>
 
-            {/* ── Sub-tabs ──────────────────────────────────────────────── */}
-            <div className="flex gap-1 bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-1">
-                <button
-                    onClick={() => switchSubTab('procesando')}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
-                        subTab === 'procesando' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                >
-                    Procesando
-                </button>
-                <button
-                    onClick={() => switchSubTab('en_ruta')}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
-                        subTab === 'en_ruta' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                >
-                    En Ruta
-                    {activeRutas.length > 0 && (
-                        <span className="flex items-center gap-1">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className={`text-[10px] font-bold ${subTab === 'en_ruta' ? 'text-emerald-600' : 'text-emerald-500'}`}>
-                                {activeRutas.length}
-                            </span>
-                        </span>
-                    )}
-                </button>
-            </div>
-
-            {/* ── Contenido con slide ───────────────────────────────────── */}
-            <AnimatePresence mode="wait" custom={subDir}>
-            {subTab === 'en_ruta' ? (
-                <motion.div
-                    key="en_ruta"
-                    custom={subDir}
-                    initial={{ x: subDir * 40, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1, transition: { duration: 0.22, ease: 'easeOut' } }}
-                    exit={{ x: -subDir * 40, opacity: 0, transition: { duration: 0.15 } }}
-                >
-                    {rutasLoading ? (
-                        <div className="flex items-center justify-center py-16 gap-2 text-slate-400">
-                            <Loader2 size={18} className="animate-spin" />
-                        </div>
-                    ) : activeRutas.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 gap-3">
-                            <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center">
-                                <Truck size={24} className="text-slate-400" />
-                            </div>
-                            <div className="text-center">
-                                <p className="text-[14px] font-bold text-slate-700">Sin rutas activas</p>
-                                <p className="text-[12px] text-slate-400 mt-1">Crea una ruta desde un pedido listo para envío.</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {activeRutas.map(ruta => (
-                                <RutaEnCursoCard
-                                    key={ruta.id}
-                                    ruta={ruta}
-                                    currentUserId={user?.id}
-                                    canEdit={canEdit}
-                                    isBranch={isBranch}
-                                    onRefresh={loadActiveRutas}
-                                    driverOnline={driverOnlineMap[ruta.id] ?? false}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </motion.div>
-            ) : (
-                <motion.div
-                    key="procesando"
-                    custom={subDir}
-                    initial={{ x: subDir * 40, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1, transition: { duration: 0.22, ease: 'easeOut' } }}
-                    exit={{ x: -subDir * 40, opacity: 0, transition: { duration: 0.15 } }}
-                >
+            {/* ── Rutas activas — aparece arriba cuando hay despacho ─────── */}
+            {activeRutas.length > 0 && (
+                <div className="space-y-3">
+                    {activeRutas.map(ruta => {
+                        const inRuta = !isBranch || ruta.ruta_pedidos.some(rp => rp.erp_sucursal_id === erpSucursalId);
+                        if (!inRuta) return null;
+                        return (
+                            <RutaEnCursoCard
+                                key={ruta.id}
+                                ruta={ruta}
+                                currentUserId={user?.id}
+                                canEdit={canEdit}
+                                isBranch={isBranch}
+                                onRefresh={loadActiveRutas}
+                                driverOnline={driverOnlineMap[ruta.id] ?? false}
+                                filterSucId={isBranch ? erpSucursalId : null}
+                            />
+                        );
+                    })}
+                </div>
+            )}
 
             {/* ── FILTROS + CARDS SUCURSALES ─────────────────────────── */}
             <div>
@@ -2797,10 +2741,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                 )}
             </div>
 
-                </motion.div>
-            )}
-            </AnimatePresence>
-
             {/* ── Modals ─────────────────────────────────────────────────── */}
 
             <LlegadaModal
@@ -2905,7 +2845,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             <CrearRutaModal
                 open={crearRutaOpen}
                 onClose={() => setCrearRutaOpen(false)}
-                onCreated={() => { setCrearRutaOpen(false); loadActive(); loadActiveRutas(); switchSubTab('en_ruta'); }}
+                onCreated={() => { setCrearRutaOpen(false); loadActive(); loadActiveRutas(); }}
             />
         </div>
     );

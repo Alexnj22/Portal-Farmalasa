@@ -23,16 +23,18 @@ function fmtTime(iso) {
   return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch, onRefresh, driverOnline }) {
+export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch, onRefresh, driverOnline, filterSucId }) {
   const [expanded, setExpanded] = useState(true);
   const [busyStop, setBusyStop] = useState(null);
   const [busyRuta, setBusyRuta] = useState(null);
   const [mapOpen,  setMapOpen]  = useState(false);
 
-  const paradas      = [...(ruta.ruta_pedidos ?? [])].sort((a, b) => a.orden_entrega - b.orden_entrega);
+  const allParadas   = [...(ruta.ruta_pedidos ?? [])].sort((a, b) => a.orden_entrega - b.orden_entrega);
+  // branch: solo ve su parada; mapa siempre muestra la ruta completa
+  const paradas      = filterSucId ? allParadas.filter(p => p.erp_sucursal_id === filterSucId) : allParadas;
   const isConductor  = !!(currentUserId && ruta.conductor_id && currentUserId === ruta.conductor_id);
-  const entregadas   = paradas.filter(p => p.entregado_at).length;
-  const total        = paradas.length;
+  const entregadas   = allParadas.filter(p => p.entregado_at).length;
+  const total        = allParadas.length;
   const badge        = STATUS_BADGE[ruta.status] ?? STATUS_BADGE.pendiente;
   const pct          = total > 0 ? Math.round((entregadas / total) * 100) : 0;
 

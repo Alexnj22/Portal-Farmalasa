@@ -5,10 +5,12 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.339';
+export const APP_VERSION = '2.2.340';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.340 — feat(pedidos): rutas activas como card "En Ruta" al tope de TabPedidos sin sub-tabs; sucursal ve su parada y puede ver mapa del repartidor; pedidos en ruta excluidos de la lista normal (v2.2.340)
+// v2.2.339 — feat(pedidos): sub-tabs Procesando/En Ruta con slide + RutaEnCursoCard integrada (v2.2.339)
 // v2.2.338 — fix(rutas): isConductor null-safe; quitar animate-spin-slow inexistente (v2.2.338)
 // v2.2.337 — feat(rutas): rastreo GPS en vivo conductor↔admin + recálculo ruta c/2min (v2.2.337)
 // v2.2.336 — fix(rutas): .catch→.then en announcements insert; GPS usa getCurrentPosition para forzar permiso (v2.2.336)

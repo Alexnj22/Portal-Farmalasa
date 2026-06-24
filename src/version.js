@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.336';
+export const APP_VERSION = '2.2.337';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.337 — feat(rutas): rastreo GPS en vivo conductor↔admin + recálculo ruta c/2min (v2.2.337)
 // v2.2.336 — fix(rutas): .catch→.then en announcements insert; GPS usa getCurrentPosition para forzar permiso (v2.2.336)
 // v2.2.335 — feat(rutas): RutaMapModal con GPS en vivo + botón en card + CrearRuta más grande (v2.2.335)
 // v2.2.326 — feat(rutas): mapa usa Leaflet+OSM cuando Google Maps falla; foto conductor en chips (v2.2.326)

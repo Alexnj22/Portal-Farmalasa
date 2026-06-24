@@ -265,7 +265,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
           )}
         </div>
       )}
-      <RutaMapModal ruta={ruta} open={mapOpen} onClose={() => setMapOpen(false)} />
+      <RutaMapModal ruta={ruta} open={mapOpen} onClose={() => setMapOpen(false)} currentUserId={currentUserId} />
     </div>
   );
 }

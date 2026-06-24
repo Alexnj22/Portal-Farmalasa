@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.318';
+export const APP_VERSION = '2.2.319';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.319 — feat(sucursales): campos lat/lng GPS en edición de sucursal para sistema de rutas (v2.2.319)
 // v2.2.318 — feat(pedidos): PDF und. base en regla PDF; motivo+stock en sin-stock/regla; caja_especial E1/E2; cajas de más (v2.2.318)
 // v2.2.317 — feat(pedidos/pausa): tooltip motivo/inicio/fin + multi-badge para 2+ pausas (v2.2.317)
 // v2.2.316 — feat(pedidos/electrolit): contador faltantes + notif bodega + badge en card (v2.2.316)

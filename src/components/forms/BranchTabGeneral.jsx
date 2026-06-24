@@ -131,6 +131,42 @@ const BranchTabGeneral = ({
                             className={`!bg-white border-slate-200/80 shadow-sm h-[40px] text-[13px] ${inputHoverClass}`}
                         />
                     </div>
+
+                    {/* Coordenadas GPS */}
+                    <div className="md:col-span-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center gap-2">
+                            <Navigation size={10} />
+                            Coordenadas GPS
+                            <span className="normal-case tracking-normal font-medium text-slate-400 text-[9px]">
+                                · Google Maps → click derecho → "¿Qué hay aquí?" → copiar lat, lng
+                            </span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="text-[9px] font-semibold text-slate-400 ml-1 mb-1 block uppercase tracking-widest">Latitud</label>
+                                <LazyInput
+                                    placeholder="14.0123456"
+                                    value={String(location.lat || '')}
+                                    onChange={(val) => updateNestedSetting('location', 'lat', val ? Number(val) : null)}
+                                    className={`!bg-white border-slate-200/80 shadow-sm h-[40px] text-[13px] font-mono ${inputHoverClass}`}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[9px] font-semibold text-slate-400 ml-1 mb-1 block uppercase tracking-widest">Longitud</label>
+                                <LazyInput
+                                    placeholder="-89.1234567"
+                                    value={String(location.lng || '')}
+                                    onChange={(val) => updateNestedSetting('location', 'lng', val ? Number(val) : null)}
+                                    className={`!bg-white border-slate-200/80 shadow-sm h-[40px] text-[13px] font-mono ${inputHoverClass}`}
+                                />
+                            </div>
+                        </div>
+                        {location.lat && location.lng && (
+                            <p className="text-[9px] text-emerald-600 font-semibold mt-1.5 ml-1">
+                                ✓ {Number(location.lat).toFixed(6)}, {Number(location.lng).toFixed(6)}
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
 

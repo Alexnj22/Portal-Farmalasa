@@ -554,7 +554,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
         ) : (
           <>
             {/* ── Mapa ──────────────────────────────────────────────────── */}
-            <div className="relative rounded-2xl overflow-hidden border border-indigo-100 shadow-sm" style={{ height: 360 }}>
+            <div className="relative rounded-2xl overflow-hidden border border-indigo-100 shadow-sm" style={{ height: 260 }}>
               {mapError ? (
                 <div className="w-full h-full bg-slate-50 flex flex-col items-center justify-center gap-2 text-center px-4">
                   <MapPin size={20} className="text-slate-300" />
@@ -593,6 +593,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
                 <Clock size={10} />Orden y tiempos estimados
               </p>
 
+              <div className="max-h-[42vh] overflow-y-auto pr-1 -mr-1">
               <div className="relative">
                 {/* Línea vertical de fondo */}
                 <div className="absolute left-[13px] top-7 bottom-7 w-px bg-gradient-to-b from-slate-300 via-indigo-200 to-slate-300" />
@@ -768,6 +769,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
                   </>
                 )}
               </div>
+              </div>{/* fin scroll */}
 
               {/* Resumen total */}
               {totalDist > 0 && (

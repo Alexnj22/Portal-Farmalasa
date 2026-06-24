@@ -20,7 +20,7 @@ export default function RutaMapModal({ ruta, open, onClose }) {
   const [coordsMap,    setCoordsMap]    = useState({});
   const [bodegaCoords, setBodegaCoords] = useState(null);
   const [gpsPos,       setGpsPos]       = useState(null);
-  const [gpsStatus,    setGpsStatus]    = useState('idle'); // idle | loading | ok | denied
+  const [gpsStatus,    setGpsStatus]    = useState('idle'); // idle | loading | ok | denied | timeout
   const [mapsMode,     setMapsMode]     = useState(false);  // true = Google Maps, false = Leaflet
 
   // ── Reset on close ──────────────────────────────────────────────────────────
@@ -61,24 +61,40 @@ export default function RutaMapModal({ ruta, open, onClose }) {
   }, [open]);
 
   // ── GPS tracking ────────────────────────────────────────────────────────────
+  const watchIdRef = useRef(null);
+
   const startGps = useCallback(() => {
     if (!navigator.geolocation) { setGpsStatus('denied'); return; }
     setGpsStatus('loading');
-    const watchId = navigator.geolocation.watchPosition(
+    // getCurrentPosition fuerza el diálogo de permiso inmediatamente
+    navigator.geolocation.getCurrentPosition(
       (pos) => {
         setGpsStatus('ok');
         setGpsPos({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy });
+        // watchPosition para actualizaciones continuas
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (p) => setGpsPos({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }),
+          (err) => console.warn('[GPS] watch error:', err.code, err.message),
+          { enableHighAccuracy: true, maximumAge: 5000 },
+        );
       },
-      () => setGpsStatus('denied'),
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
+      (err) => {
+        console.warn('[GPS] error:', err.code, err.message);
+        setGpsStatus(err.code === 1 ? 'denied' : 'timeout');
+      },
+      { enableHighAccuracy: true, timeout: 15000 },
     );
-    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
   useEffect(() => {
     if (!open) return;
-    const cleanup = startGps();
-    return cleanup;
+    startGps();
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
   }, [open, startGps]);
 
   // ── Update GPS marker when position changes ─────────────────────────────────
@@ -296,13 +312,20 @@ export default function RutaMapModal({ ruta, open, onClose }) {
 
           {/* Botón centrar en GPS */}
           <button
-            onClick={centerOnGps}
-            disabled={!gpsPos}
-            title={gpsPos ? 'Centrar en mi posición' : 'Esperando GPS…'}
+            onClick={gpsStatus === 'denied' || gpsStatus === 'timeout' ? startGps : centerOnGps}
+            disabled={gpsStatus === 'loading' || gpsStatus === 'denied'}
+            title={
+              gpsStatus === 'ok' ? 'Centrar en mi posición' :
+              gpsStatus === 'denied' ? 'Permiso de ubicación bloqueado en el browser' :
+              gpsStatus === 'timeout' ? 'Sin señal GPS — reintentar' : 'Esperando GPS…'
+            }
             className="absolute top-2 right-2 z-10 flex items-center gap-1.5 bg-white shadow-md border border-slate-200 rounded-xl px-2.5 py-1.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
-            <Crosshair size={11} className={gpsStatus === 'ok' ? 'text-blue-500' : 'text-slate-400'} />
-            {gpsStatus === 'loading' ? 'Buscando GPS…' : gpsStatus === 'denied' ? 'GPS bloqueado' : gpsStatus === 'ok' ? 'Centrar en mí' : 'GPS'}
+            <Crosshair size={11} className={gpsStatus === 'ok' ? 'text-blue-500' : gpsStatus === 'denied' ? 'text-red-400' : 'text-slate-400'} />
+            {gpsStatus === 'loading' ? 'Buscando GPS…' :
+             gpsStatus === 'denied'  ? 'GPS bloqueado' :
+             gpsStatus === 'timeout' ? 'Sin señal — reintentar' :
+             gpsStatus === 'ok'      ? 'Centrar en mí' : 'Activar GPS'}
           </button>
 
           {/* Badge mapa */}

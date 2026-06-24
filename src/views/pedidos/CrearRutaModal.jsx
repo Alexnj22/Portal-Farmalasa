@@ -380,7 +380,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
           target_type:  'BRANCH', target_value: [mapa.branch_id],
           read_by: [], is_archived: false,
           created_by: user?.id ?? null, priority: 'NORMAL',
-        }).catch(() => {});
+        }).then(() => {}, () => {});
 
         supabase.functions.invoke('send-push-notification', {
           body: {

@@ -4,7 +4,7 @@ import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import PedidoModal from './PedidoModal';
-import { optimizeRoute, optimizeRouteREST, getDirectionsREST, totalRoute, haversineMeters, loadGoogleMaps, loadLeaflet } from '../../utils/routeOptimizer';
+import { optimizeRoute, optimizeRouteGoogleMaps, totalRoute, haversineMeters, loadGoogleMaps, loadLeaflet } from '../../utils/routeOptimizer';
 
 function fmtDist(m) {
   if (!m) return null;
@@ -300,7 +300,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
     let optimized;
     let usedMaps = false;
     try {
-      optimized = await optimizeRouteREST(stopsWithCoords, bodega);
+      optimized = await optimizeRouteGoogleMaps(stopsWithCoords, bodega);
       usedMaps  = true;
     } catch {
       optimized = optimizeRoute(stopsWithCoords, bodega);

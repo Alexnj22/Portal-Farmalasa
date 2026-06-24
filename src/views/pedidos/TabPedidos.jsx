@@ -764,9 +764,10 @@ const tlGlow = (i) => TL_GLOW[i] ?? TL_GLOW[TL_GLOW.length - 1];
 
 const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 4, erp: 5 };
 
-function PauseBadge({ pause, isPaused }) {
-    const mins    = pause ? elapsed(pause.pausado_at, pause.reanudado_at ?? undefined) : null;
+function PauseBadge({ pause, isPaused, empMap = new Map() }) {
+    const mins     = pause ? elapsed(pause.pausado_at, pause.reanudado_at ?? undefined) : null;
     const isActive = isPaused && !pause?.reanudado_at;
+    const empName  = (id) => { const e = empMap.get(id); return e ? `${e.first_names} ${e.last_names}`.trim() : null; };
     return (
         <div className="group/pb relative">
             <motion.span
@@ -782,11 +783,17 @@ function PauseBadge({ pause, isPaused }) {
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-[200] hidden group-hover/pb:block pointer-events-none">
                     <div className="bg-slate-900/90 text-white rounded-xl px-2.5 py-2 shadow-xl flex flex-col gap-0.5 min-w-max">
                         <div className="text-[9px] font-bold capitalize">{pause.razon ?? 'Pausa'}</div>
-                        <div className="text-[8px] text-slate-300">Inicio: <span className="text-white font-semibold">{fmtHM(pause.pausado_at) || '—'}</span></div>
                         <div className="text-[8px] text-slate-300">
-                            Fin:{' '}
+                            Pausó: <span className="text-white font-semibold">{fmtHM(pause.pausado_at) || '—'}</span>
+                            {empName(pause.pausado_por) && <span className="text-slate-400"> · {empName(pause.pausado_por)}</span>}
+                        </div>
+                        <div className="text-[8px] text-slate-300">
+                            Reanudó:{' '}
                             {pause.reanudado_at
-                                ? <span className="text-white font-semibold">{fmtHM(pause.reanudado_at)}</span>
+                                ? <>
+                                    <span className="text-white font-semibold">{fmtHM(pause.reanudado_at)}</span>
+                                    {empName(pause.reanudado_por) && <span className="text-slate-400"> · {empName(pause.reanudado_por)}</span>}
+                                  </>
                                 : <span className="text-amber-300 font-semibold">En curso</span>}
                         </div>
                     </div>
@@ -962,9 +969,9 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
                                     <div className="absolute left-1/2 -translate-x-1/2 z-10 flex items-center gap-0.5" style={{ top: -14 }}>
                                         {pauses.length > 0
                                             ? pauses.map((p, i) => (
-                                                <PauseBadge key={i} pause={p} isPaused={isPaused && i === pauses.length - 1} />
+                                                <PauseBadge key={i} pause={p} isPaused={isPaused && i === pauses.length - 1} empMap={empMap} />
                                             ))
-                                            : <PauseBadge pause={null} isPaused={isPaused} />
+                                            : <PauseBadge pause={null} isPaused={isPaused} empMap={empMap} />
                                         }
                                     </div>
                                 )}
@@ -1873,12 +1880,6 @@ export default function TabPedidos({ searchTerm = '' }) {
         setFinalizarModal(null);
         setBusyAction('finalizar');
         try {
-            // Si hay una pausa activa (ej: apoyo finalizando mientras el principal almuerza),
-            // auto-reanudar primero — idempotente si no hay pausa activa
-            await supabase.rpc('update_pedido_sucursal_lifecycle', {
-                p_pedido_id: pedidoId, p_sucursal_id: sucId,
-                p_stage: 'reanudar', p_user_id: user?.id ?? null,
-            }).catch(() => {});
             await supabase.rpc('update_pedido_sucursal_lifecycle', {
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
                 p_stage: 'finalizar', p_user_id: user?.id ?? null,
@@ -2416,9 +2417,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const recepApoyo   = apoyoBucket.recepcion   ?? [];
                             const isApoyoBodega = prepApoyo.some(a => a.id === user?.id);
 
-                            // Apoyo puede finalizar incluso si el principal pausó (auto-reanuda en handleFinalizarConCajas)
-                            const canFinalizar = canActuar && !isBranch
-                                && (stage === 'preparando' || (stage === 'pausado' && isApoyoBodega));
+                            const canFinalizar = canActuar && !isBranch && stage === 'preparando';
 
                             const canApoyo = !isBranch && ['sin_iniciar','preparando','pausado'].includes(stage);
 

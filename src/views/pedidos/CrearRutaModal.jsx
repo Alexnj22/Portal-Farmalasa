@@ -59,45 +59,32 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
     }
 
     Promise.all([
-      // Pedidos confirmados disponibles
+      // Pedidos confirmados (tabla principal, sin join PSS anidado)
       supabase.from('pedidos')
-        .select(`
-          id, numero,
-          pedido_sucursal_status (
-            erp_sucursal_id, total_cajas, cajas_electrolit,
-            erp_sucursal_map!inner ( branch:branches!inner ( name ) )
-          )
-        `)
+        .select('id, numero')
         .eq('status', 'confirmado')
         .order('numero'),
 
-      // Coordenadas de todas las sucursales
-      supabase.from('erp_sucursal_map')
-        .select('erp_sucursal_id, es_bodega, branch:branches!inner(settings)')
-        .order('erp_sucursal_id'),
-    ]).then(([pedRes, coordRes]) => {
-      // Pedidos disponibles — aplanar (pedido × sucursal)
-      const items = [];
-      for (const p of (pedRes.data ?? [])) {
-        for (const pss of (p.pedido_sucursal_status ?? [])) {
-          const sucName = pss.erp_sucursal_map?.branch?.name ?? `Suc. ${pss.erp_sucursal_id}`;
-          items.push({
-            key:             `${p.id}__${pss.erp_sucursal_id}`,
-            pedido_id:       p.id,
-            numero:          p.numero,
-            erp_sucursal_id: pss.erp_sucursal_id,
-            suc_name:        sucName,
-            total_cajas:     pss.total_cajas     ?? 0,
-            cajas_electrolit: pss.cajas_electrolit ?? 0,
-          });
-        }
-      }
-      setPedidosDisp(items);
+      // PSS con finalizado_at (stage 'preparado') — evitar join anidado erp_sucursal_map dentro de PSS
+      supabase.from('pedido_sucursal_status')
+        .select('pedido_id, erp_sucursal_id, total_cajas, cajas_electrolit, finalizado_at')
+        .not('finalizado_at', 'is', null),
 
-      // Coordenadas
+      // Sucursales: coordenadas + nombre (query separada)
+      supabase.from('erp_sucursal_map')
+        .select('erp_sucursal_id, es_bodega, branch:branches!inner(settings, name)')
+        .order('erp_sucursal_id'),
+    ]).then(([pedRes, pssRes, coordRes]) => {
+      // Mapa de pedidos confirmados
+      const pedidoMap = {};
+      for (const p of (pedRes.data ?? [])) pedidoMap[p.id] = p;
+
+      // Mapa de sucursal → nombre
+      const sucNameMap = {};
       const cm = {};
       let bodega = null;
       for (const row of (coordRes.data ?? [])) {
+        sucNameMap[row.erp_sucursal_id] = row.branch?.name ?? `Suc. ${row.erp_sucursal_id}`;
         const loc = row.branch?.settings?.location ?? {};
         const lat = parseFloat(loc.lat);
         const lng = parseFloat(loc.lng);
@@ -108,6 +95,23 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
       }
       setCoordsMap(cm);
       setBodegaCoords(bodega);
+
+      // Aplanar: PSS preparado cuyo pedido sigue confirmado
+      const items = [];
+      for (const pss of (pssRes.data ?? [])) {
+        const p = pedidoMap[pss.pedido_id];
+        if (!p) continue; // pedido ya no está confirmado
+        items.push({
+          key:              `${p.id}__${pss.erp_sucursal_id}`,
+          pedido_id:        p.id,
+          numero:           p.numero,
+          erp_sucursal_id:  pss.erp_sucursal_id,
+          suc_name:         sucNameMap[pss.erp_sucursal_id] ?? `Suc. ${pss.erp_sucursal_id}`,
+          total_cajas:      pss.total_cajas     ?? 0,
+          cajas_electrolit: pss.cajas_electrolit ?? 0,
+        });
+      }
+      setPedidosDisp(items);
       setLoadingData(false);
     });
   }, [open, user?.id]);

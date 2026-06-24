@@ -110,7 +110,9 @@ function getBranchStage(row, pedidoStatus) {
     if (row.llegada_fisica_at)                           return 'contando';
     if (row.finalizado_at && pedidoStatus === 'enviado') return 'transito';
     if (row.finalizado_at)                               return 'preparado';
-    if (row.pausado_at && !row.reanudado_at)             return 'pausado';
+    // Usar pauses (historial) como fuente primaria — más confiable que los campos de PSS
+    const hasActivePause = (row.pauses ?? []).some(p => !p.reanudado_at);
+    if (hasActivePause || (row.pausado_at && !row.reanudado_at)) return 'pausado';
     if (row.iniciado_at)                                 return 'preparando';
     return 'sin_iniciar';
 }
@@ -1831,7 +1833,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     const openFinalizarModal = useCallback(async (pedidoId, sucId, numero, key) => {
         if (busyAction) return;
-        setBusyAction('finalizar_load');
+        setBusyAction(`finalizar_load_${key}`);
         const [rowsResult, pssResult] = await Promise.all([
             items[key] ? Promise.resolve(items[key]) : fetchItems(key, pedidoId, sucId),
             supabase.from('pedido_sucursal_status').select('paginas')
@@ -1871,6 +1873,12 @@ export default function TabPedidos({ searchTerm = '' }) {
         setFinalizarModal(null);
         setBusyAction('finalizar');
         try {
+            // Si hay una pausa activa (ej: apoyo finalizando mientras el principal almuerza),
+            // auto-reanudar primero — idempotente si no hay pausa activa
+            await supabase.rpc('update_pedido_sucursal_lifecycle', {
+                p_pedido_id: pedidoId, p_sucursal_id: sucId,
+                p_stage: 'reanudar', p_user_id: user?.id ?? null,
+            }).catch(() => {});
             await supabase.rpc('update_pedido_sucursal_lifecycle', {
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
                 p_stage: 'finalizar', p_user_id: user?.id ?? null,
@@ -2385,7 +2393,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const canIniciar       = canActuar && !isBranch && stage === 'sin_iniciar' && row.pedido_status === 'confirmado';
                             const canPausar        = canActuar && !isBranch && stage === 'preparando';
                             const canReanudar      = canActuar && !isBranch && stage === 'pausado';
-                            const canFinalizar     = canActuar && !isBranch && stage === 'preparando';
                             // Botón aparece por sucursal cuando esa ya está lista (preparado), sin esperar a las demás
                             const canMarcarEnRuta  = canActuar && !isBranch && stage === 'preparado' && row.pedido_status === 'confirmado';
 
@@ -2404,9 +2411,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const elapsedPause = stage === 'pausado'    ? fmtMin(elapsed(row.pausado_at)) : null;
                             const elapsedTrans = stage === 'transito'   ? fmtMin(elapsed(row.finalizado_at)) : null;
 
-                            const apoyoBucket = apoyoMap[cardKey] ?? { preparacion: [], recepcion: [] };
-                            const prepApoyo   = apoyoBucket.preparacion ?? [];
-                            const recepApoyo  = apoyoBucket.recepcion   ?? [];
+                            const apoyoBucket  = apoyoMap[cardKey] ?? { preparacion: [], recepcion: [] };
+                            const prepApoyo    = apoyoBucket.preparacion ?? [];
+                            const recepApoyo   = apoyoBucket.recepcion   ?? [];
+                            const isApoyoBodega = prepApoyo.some(a => a.id === user?.id);
+
+                            // Apoyo puede finalizar incluso si el principal pausó (auto-reanuda en handleFinalizarConCajas)
+                            const canFinalizar = canActuar && !isBranch
+                                && (stage === 'preparando' || (stage === 'pausado' && isApoyoBodega));
 
                             const canApoyo = !isBranch && ['sin_iniciar','preparando','pausado'].includes(stage);
 
@@ -2564,7 +2576,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             )}
                                             {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
                                             {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
-                                            {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === 'finalizar_load'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === 'finalizar_load') ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
+                                            {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
                                             {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
                                             {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen(true)} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
                                             {canActuar && !isBranch && (row.falta_cajas ?? []).length > 0 && !(row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at) && (

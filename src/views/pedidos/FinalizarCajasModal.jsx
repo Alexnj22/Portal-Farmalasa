@@ -12,7 +12,14 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
     const [loadingPages,    setLoadingPages]    = useState(false);
 
     useEffect(() => {
-        if (!open) return;
+        if (!open) {
+            // Resetear estado al cerrar para que la próxima apertura empiece limpio
+            setSubmitting(false);
+            setScreen(1);
+            setTotalCajasInput('');
+            setPageAssignments([]);
+            return;
+        }
         if (paginas) {
             setPageGroups(paginas);
             setLoadingPages(false);

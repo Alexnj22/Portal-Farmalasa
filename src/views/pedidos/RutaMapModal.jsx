@@ -10,7 +10,7 @@ function fmtTime(iso) {
 }
 
 export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
-  const isConductor = currentUserId === ruta?.conductor_id;
+  const isConductor = !!(currentUserId && ruta?.conductor_id && currentUserId === ruta.conductor_id);
 
   // ── DOM / Maps refs ─────────────────────────────────────────────────────────
   const mapRef          = useRef(null);
@@ -472,7 +472,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           {/* Info recálculo automático — conductor */}
           {isConductor && gpsStatus === 'ok' && (
             <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-blue-600/90 backdrop-blur-sm rounded-lg px-2 py-1 text-[9px] font-semibold text-white shadow-sm">
-              <RefreshCw size={8} className="animate-spin-slow" /> Recalcula c/2 min
+              <RefreshCw size={8} /> Recalcula c/2 min
             </div>
           )}
         </div>

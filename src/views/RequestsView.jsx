@@ -262,7 +262,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     <CheckCircle2 size={12} className="text-emerald-500 mt-0.5 flex-shrink-0" strokeWidth={2.5} />
                                     <div className="min-w-0">
                                         <p className="text-[11px] font-black text-emerald-700">{getApproverLabel(ap)}</p>
-                                        <p className="text-[9px] text-slate-400 mt-0.5">{new Date(ap.approvedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                                        <p className="text-[9px] text-slate-400 mt-0.5">{new Date(ap.approvedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                                         {ap.approverNote && <p className="text-[10px] text-slate-600 mt-0.5 italic">"{ap.approverNote}"</p>}
                                     </div>
                                 </div>

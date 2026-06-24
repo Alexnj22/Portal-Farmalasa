@@ -407,7 +407,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                     </button>
                 )}
                 <div className="flex items-center gap-2 ml-auto">
-                    {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
+                    {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Act. {lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>}
                     <button onClick={() => setPaused(p => !p)} title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
                         className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${
                             paused
@@ -887,7 +887,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                     </button>
                 )}
                 <div className="flex items-center gap-2 ml-auto">
-                    {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}</span>}
+                    {lastRefresh && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{lastRefresh.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}</span>}
                     <button onClick={() => setPaused(p => !p)} title={paused ? 'Reanudar actualización automática' : 'Pausar actualización automática'}
                         className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all ${
                             paused

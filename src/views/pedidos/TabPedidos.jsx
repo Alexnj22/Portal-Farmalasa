@@ -80,7 +80,7 @@ const PAUSE_REASONS = [
 
 function fmtDate(iso) {
     if (!iso) return '—';
-    return new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
 }
 function fmtMin(min) {
     if (min == null || isNaN(min) || min < 0) return null;
@@ -1678,7 +1678,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             })
             .subscribe();
         return () => supabase.removeChannel(ch);
-    }, [loadActive, loadActiveRutas, isBranch, erpSucursalId]); // eslint-disable-line
+    }, [loadActive, isBranch, erpSucursalId]); // eslint-disable-line (loadActiveRutas es estable [])
 
     // ── Rutas activas: mapa pedidoId → { ruta, stop, driverOnline } ──────────
     const loadActiveRutas = useCallback(async () => {
@@ -2714,7 +2714,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
                                             <span className="text-[10px] font-bold text-emerald-700">Entregado en sucursal</span>
                                             <span className="text-[10px] text-emerald-500 tabular-nums">
-                                                · {new Date(pedidoRutaMap.get(row.pedido_id).stop.entregado_at).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}
+                                                · {new Date(pedidoRutaMap.get(row.pedido_id).stop.entregado_at).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}
                                             </span>
                                         </div>
                                     )}

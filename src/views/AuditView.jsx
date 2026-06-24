@@ -54,7 +54,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                     {logDate.toLocaleDateString()}
                 </div>
                 <div className="text-[9px] md:text-[10px] font-bold text-slate-500 mt-1 flex flex-col md:flex-row md:items-center gap-1 md:gap-1.5 font-mono">
-                    <span className="flex items-center gap-1"><Clock size={10} className="md:w-3 md:h-3" /> {logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="flex items-center gap-1"><Clock size={10} className="md:w-3 md:h-3" /> {logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
                     <span className="hidden md:inline mx-1 text-slate-400/50">|</span>
                     {/* 🚨 MEJORA: Muestra si fue Kiosco o Panel */}
                     <span className="flex items-center gap-1">

@@ -59,7 +59,7 @@ function fmtDate(iso) {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('es-SV', {
         day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: true,
     });
 }
 
@@ -77,7 +77,7 @@ function fmtElapsed(fromIso, toIso) {
 
 function fmtTime(iso) {
     if (!iso) return null;
-    return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' });
+    return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 function fmtMes(iso) {

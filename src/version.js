@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.350';
+export const APP_VERSION = '2.2.351';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.351 — fix(rutas): TDZ crash loadActiveRutas en deps array; hour12:true en toda la app
 // v2.2.344 — fix(pedidos): quitar barra duplicada de ruta; botones Iniciar/Vuelta+Entregué en header ruta; fix sucursalCounts branch; Realtime rutas↔activeRows (v2.2.344)
 // v2.2.343 — fix+feat(pedidos): fix crash Map constructor; ruta-card agrupa pedidos hijos; header ruta con mapa + GPS dot (v2.2.343)
 // v2.2.342 — feat(pedidos): barra de ruta en card (Ruta#N, conductor, GPS dot, Ver mapa, Entregué); fix filtro branch client-side (v2.2.342)

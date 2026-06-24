@@ -394,7 +394,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       <div className="hidden md:flex items-center gap-2 bg-white/50 backdrop-blur-sm border border-white/70 px-4 py-2 rounded-2xl">
         <Clock size={15} className="text-[#0052CC]" />
         <span className="text-[14px] font-black tracking-[0.12em] font-mono text-slate-900">
-          {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+          {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
         </span>
       </div>
       {getScope('monitor') !== 'BRANCH' && <BranchChips branches={branches || []} selectedBranch={filterBranch} onSelect={setFilterBranch} allowAll />}
@@ -471,7 +471,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             </div>
             <p className="hidden md:block text-[10px] font-black tracking-[0.12em] font-mono mt-0.5"
               style={{ color: "rgba(255,255,255,0.30)" }}>
-              {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+              {currentTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -661,7 +661,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                         style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                         {punches.slice(-4).reverse().map((p, idx) => {
                           const PIcon = punchIcon(p.type);
-                          const t = new Date(p.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                          const t = new Date(p.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
                           const isLatest = idx === 0;
                           return (
                             <div key={`${p.timestamp}-${idx}`}

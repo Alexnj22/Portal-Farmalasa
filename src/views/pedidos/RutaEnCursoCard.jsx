@@ -20,7 +20,7 @@ function fmtDist(m) {
 }
 function fmtTime(iso) {
   if (!iso) return null;
-  return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch, onRefresh, driverOnline, filterSucId }) {

@@ -3932,7 +3932,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 const fieldLabel = d.field_label || (d.field?.includes('min') ? 'MIN' : d.field?.includes('max') ? 'MAX' : d.field || '');
                                 const dt = new Date(log.created_at);
                                 const dateStr = dt.toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
-                                const timeStr = dt.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' });
+                                const timeStr = dt.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
                                 return (
                                     <div key={log.id} className="flex items-start gap-3 bg-white/70 border border-white/80 rounded-2xl px-3.5 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
                                         {/* Employee avatar */}

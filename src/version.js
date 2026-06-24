@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.325';
+export const APP_VERSION = '2.2.326';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.326 — feat(rutas): mapa usa Leaflet+OSM cuando Google Maps falla; foto conductor en chips (v2.2.326)
 // v2.2.325 — fix: pedido_apoyo 400 (drop índice 3col redundante); Maps InvalidKey → gm_authFailure + placeholder (v2.2.325)
 // v2.2.324 — feat(rutas): mapa Google Maps en confirmar ruta + timeline con tiempos conducir/descarga/vuelta a base (v2.2.324)
 // v2.2.323 — feat(pedidos/pausa): apoyo reanuda explícitamente; reanudado_por registrado en DB + visible en tooltip (v2.2.323)

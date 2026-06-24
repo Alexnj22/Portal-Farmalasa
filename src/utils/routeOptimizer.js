@@ -149,4 +149,25 @@ export function totalRoute(orderedStops) {
   };
 }
 
+// ── Leaflet loader (fallback map — no API key needed) ─────────────────────
+let _leafletPromise = null;
+export function loadLeaflet() {
+  if (_leafletPromise) return _leafletPromise;
+  if (window.L?.map) { _leafletPromise = Promise.resolve(window.L); return _leafletPromise; }
+  _leafletPromise = new Promise((resolve, reject) => {
+    if (!document.querySelector('link[href*="leaflet"]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    s.onload = () => resolve(window.L);
+    s.onerror = (e) => { _leafletPromise = null; reject(e); };
+    document.head.appendChild(s);
+  });
+  return _leafletPromise;
+}
+
 export { BODEGA_SUC_ID };

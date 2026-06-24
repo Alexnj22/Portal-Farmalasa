@@ -4,7 +4,7 @@ import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import PedidoModal from './PedidoModal';
-import { optimizeRoute, optimizeRouteGoogleMaps, totalRoute, haversineMeters, loadGoogleMaps } from '../../utils/routeOptimizer';
+import { optimizeRoute, optimizeRouteGoogleMaps, totalRoute, haversineMeters, loadGoogleMaps, loadLeaflet } from '../../utils/routeOptimizer';
 
 function fmtDist(m) {
   if (!m) return null;
@@ -26,6 +26,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
 
   // Data
   const [conductorNombre, setConductorNombre] = useState('');
+  const [conductorPhoto,  setConductorPhoto]  = useState(null);
   const [pedidosDisp,     setPedidosDisp]     = useState([]);
   const [coordsMap,       setCoordsMap]       = useState({});
   const [bodegaCoords,    setBodegaCoords]    = useState(null);
@@ -57,11 +58,12 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
 
     if (user?.id) {
       supabase.from('employees')
-        .select('first_names, last_names')
+        .select('first_names, last_names, photo_url')
         .eq('id', user.id)
         .maybeSingle()
         .then(({ data }) => {
           setConductorNombre(data ? `${data.first_names} ${data.last_names}`.trim() : (user.email ?? 'Usuario'));
+          setConductorPhoto(data?.photo_url ?? null);
         });
     }
 
@@ -151,115 +153,125 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
   const totalTime     = (timeline[timeline.length - 1]?.cumul ?? 0) + (returnLeg?.dur_min ?? 0);
   const totalDist     = totalRoute(paradas.filter(s => s.dist_m != null)).dist_m + (returnLeg?.dist_m ?? 0);
 
-  // ── Google Maps rendering ──────────────────────────────────────────────────
+  // ── Map rendering (Google Maps → Leaflet fallback) ────────────────────────
   useEffect(() => {
     if (step !== 2 || !paradas.length || !bodegaCoords) return;
     let cancelled = false;
 
-    // Calcular vuelta a base con haversine como fallback inmediato
+    // Vuelta a base: haversine inmediato (se actualiza si Google Maps Directions responde)
     const lastCoords = coordsMap[paradas[paradas.length - 1]?.erp_sucursal_id];
     if (lastCoords && !returnLeg) {
       const dm = haversineMeters(lastCoords.lat, lastCoords.lng, bodegaCoords.lat, bodegaCoords.lng);
       setReturnLeg({ dist_m: Math.round(dm), dur_min: Math.max(1, Math.round(dm / 1000 / 40 * 60)) });
     }
 
-    // Esperamos que el DOM esté listo antes de inicializar el mapa
+    const allLatLngs = [
+      [bodegaCoords.lat, bodegaCoords.lng],
+      ...paradas.map(p => coordsMap[p.erp_sucursal_id]).filter(Boolean).map(c => [c.lat, c.lng]),
+      [bodegaCoords.lat, bodegaCoords.lng],
+    ];
+
+    // ── Leaflet (OpenStreetMap) — siempre disponible, sin API key ─────────
+    async function initLeaflet() {
+      try {
+        const L = await loadLeaflet();
+        if (cancelled || !mapRef.current) return;
+        mapRef.current.innerHTML = ''; // limpiar cualquier contenido previo de Google Maps
+        const lmap = L.map(mapRef.current, { zoomControl: true, attributionControl: true });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          maxZoom: 18,
+        }).addTo(lmap);
+        L.polyline(allLatLngs, { color: '#6366f1', weight: 5, opacity: 0.85 }).addTo(lmap);
+        // Bodega marker
+        const mkBodega = (pos, title) => L.marker(pos, {
+          icon: L.divIcon({
+            className: '',
+            html: `<div style="width:30px;height:30px;border-radius:50%;background:#1e1b4b;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:13px">🏭</div>`,
+            iconSize: [30, 30], iconAnchor: [15, 15],
+          }),
+          title,
+        }).addTo(lmap);
+        mkBodega([bodegaCoords.lat, bodegaCoords.lng], 'Bodega');
+        paradas.forEach((stop, i) => {
+          const c = coordsMap[stop.erp_sucursal_id];
+          if (!c) return;
+          L.marker([c.lat, c.lng], {
+            icon: L.divIcon({
+              className: '',
+              html: `<div style="width:26px;height:26px;border-radius:50%;background:#6366f1;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:bold">${i + 1}</div>`,
+              iconSize: [26, 26], iconAnchor: [13, 13],
+            }),
+            title: stop.suc_name,
+          }).addTo(lmap);
+        });
+        lmap.fitBounds(allLatLngs.filter(p => p[0] && p[1]), { padding: [20, 20] });
+      } catch { if (!cancelled) setMapError(true); }
+    }
+
     const timer = setTimeout(() => {
       if (cancelled || !mapRef.current) return;
+
+      // Interceptar fallo de auth de Google Maps ANTES de cargar el SDK
+      const prevAuthFailure = window.gm_authFailure;
+      let authFailed = false;
+      window.gm_authFailure = () => {
+        if (!authFailed) { authFailed = true; initLeaflet(); }
+        if (prevAuthFailure) prevAuthFailure();
+      };
 
       loadGoogleMaps().then(maps => {
         if (cancelled || !mapRef.current) return;
 
         const origin = new maps.LatLng(bodegaCoords.lat, bodegaCoords.lng);
-
-        const map = new maps.Map(mapRef.current, {
+        const mapInst = new maps.Map(mapRef.current, {
           zoom: 11,
           center: { lat: bodegaCoords.lat, lng: bodegaCoords.lng },
-          disableDefaultUI: true,
-          zoomControl: true,
-          gestureHandling: 'cooperative',
+          disableDefaultUI: true, zoomControl: true, gestureHandling: 'cooperative',
           styles: [
-            { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+            { featureType: 'poi',     stylers: [{ visibility: 'off' }] },
             { featureType: 'transit', stylers: [{ visibility: 'off' }] },
           ],
         });
 
-        const waypoints = paradas
-          .filter(p => coordsMap[p.erp_sucursal_id])
-          .map(p => ({
-            location: new maps.LatLng(coordsMap[p.erp_sucursal_id].lat, coordsMap[p.erp_sucursal_id].lng),
-            stopover: true,
-          }));
-
-        const directionsRenderer = new maps.DirectionsRenderer({
-          map,
-          suppressMarkers: true,
-          polylineOptions: {
-            strokeColor: '#6366f1',
-            strokeWeight: 5,
-            strokeOpacity: 0.85,
-          },
+        const dr = new maps.DirectionsRenderer({
+          map: mapInst, suppressMarkers: true,
+          polylineOptions: { strokeColor: '#6366f1', strokeWeight: 5, strokeOpacity: 0.85 },
         });
 
         new maps.DirectionsService().route({
-          origin,
-          destination: origin,
-          waypoints,
-          travelMode: maps.TravelMode.DRIVING,
-          optimizeWaypoints: false,
+          origin, destination: origin,
+          waypoints: paradas.filter(p => coordsMap[p.erp_sucursal_id]).map(p => ({
+            location: new maps.LatLng(coordsMap[p.erp_sucursal_id].lat, coordsMap[p.erp_sucursal_id].lng),
+            stopover: true,
+          })),
+          travelMode: maps.TravelMode.DRIVING, optimizeWaypoints: false,
         }, (result, status) => {
           if (cancelled) return;
-
           if (status === 'OK') {
-            directionsRenderer.setDirections(result);
-            // Actualizar vuelta a base con dato real de Directions API
-            const legs   = result.routes[0].legs;
-            const retLeg = legs[legs.length - 1];
-            if (retLeg && !cancelled) {
-              setReturnLeg({
-                dist_m:  retLeg.distance.value,
-                dur_min: Math.max(1, Math.round(retLeg.duration.value / 60)),
-              });
-            }
+            dr.setDirections(result);
+            const retLeg = result.routes[0].legs.at(-1);
+            if (retLeg) setReturnLeg({ dist_m: retLeg.distance.value, dur_min: Math.max(1, Math.round(retLeg.duration.value / 60)) });
           } else {
-            // Fallback: dibujar polyline directo entre puntos
-            const pts = [
-              origin,
-              ...paradas.map(p => coordsMap[p.erp_sucursal_id]).filter(Boolean)
-                        .map(c => new maps.LatLng(c.lat, c.lng)),
-              origin,
-            ];
-            new maps.Polyline({ path: pts, map, strokeColor: '#6366f1', strokeWeight: 4, strokeOpacity: 0.7 });
+            // Directions falló pero Maps cargó — polyline directo
+            new maps.Polyline({ path: allLatLngs.map(p => ({ lat: p[0], lng: p[1] })), map: mapInst, strokeColor: '#6366f1', strokeWeight: 4, strokeOpacity: 0.7 });
           }
-
-          // Bodega marker (start & end)
-          const bodegaSvg = encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="15" fill="#1e1b4b" stroke="white" stroke-width="2.5"/><text x="17" y="23" text-anchor="middle" fill="white" font-size="15">🏭</text></svg>`);
-          new maps.Marker({
-            position: origin, map,
-            icon: { url: `data:image/svg+xml;utf8,${bodegaSvg}`, scaledSize: new maps.Size(34, 34), anchor: new maps.Point(17, 17) },
-            title: 'Bodega',
-            zIndex: 100,
-          });
-
-          // Stop markers (numbered)
+          const mkSvg = (label, fill, size) => encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${size/2-1.5}" fill="${fill}" stroke="white" stroke-width="2.5"/><text x="${size/2}" y="${size/2+4}" text-anchor="middle" fill="white" font-size="${size*0.4}" font-weight="bold">${label}</text></svg>`);
+          new maps.Marker({ position: origin, map: mapInst, zIndex: 100, title: 'Bodega', icon: { url: `data:image/svg+xml;utf8,${mkSvg('🏭','#1e1b4b',34)}`, scaledSize: new maps.Size(34,34), anchor: new maps.Point(17,17) } });
           paradas.forEach((stop, i) => {
-            const c = coordsMap[stop.erp_sucursal_id];
-            if (!c) return;
-            const stopSvg = encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="13" fill="#6366f1" stroke="white" stroke-width="2.5"/><text x="15" y="20" text-anchor="middle" fill="white" font-size="13" font-weight="bold">${i + 1}</text></svg>`);
-            new maps.Marker({
-              position: { lat: c.lat, lng: c.lng }, map,
-              icon: { url: `data:image/svg+xml;utf8,${stopSvg}`, scaledSize: new maps.Size(30, 30), anchor: new maps.Point(15, 15) },
-              title: stop.suc_name,
-              zIndex: 90 - i,
-            });
+            const c = coordsMap[stop.erp_sucursal_id]; if (!c) return;
+            new maps.Marker({ position: { lat: c.lat, lng: c.lng }, map: mapInst, zIndex: 90-i, title: stop.suc_name, icon: { url: `data:image/svg+xml;utf8,${mkSvg(i+1,'#6366f1',30)}`, scaledSize: new maps.Size(30,30), anchor: new maps.Point(15,15) } });
           });
         });
-      }).catch(() => { if (!cancelled) setMapError(true); });
+      }).catch(() => { if (!cancelled && !authFailed) initLeaflet(); });
     }, 80);
 
-    return () => { cancelled = true; clearTimeout(timer); };
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, bodegaCoords]); // Mapa solo se inicializa al entrar al step 2
+  }, [step, bodegaCoords]);
 
   // ── Step 1 → 2: optimize ──────────────────────────────────────────────────
   const handleOptimize = useCallback(async () => {
@@ -423,9 +435,10 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
           <>
             {/* Conductor (auto = usuario actual) */}
             <div className="flex items-center gap-2.5 px-3 py-2.5 bg-indigo-50 rounded-xl border border-indigo-100">
-              <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
-                <User size={13} className="text-white" />
-              </div>
+              {conductorPhoto
+                ? <img src={conductorPhoto} className="w-7 h-7 rounded-full object-cover border-2 border-indigo-200 shrink-0" />
+                : <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center shrink-0"><User size={13} className="text-white" /></div>
+              }
               <div>
                 <p className="text-[9px] font-semibold text-indigo-400 uppercase tracking-wider">Conductor (tú)</p>
                 <p className="text-[12px] font-bold text-indigo-800">{conductorNombre || '…'}</p>
@@ -510,7 +523,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
                 <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-[9px] font-semibold text-slate-600 shadow-sm border border-white/60">
                   {mapsMode
                     ? <><Navigation size={8} className="text-indigo-500" />Google Maps</>
-                    : <><MapPin size={8} className="text-slate-400" />Línea recta</>
+                    : <><MapPin size={8} className="text-emerald-500" />OpenStreetMap</>
                   }
                 </div>
               )}
@@ -518,7 +531,10 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
 
             {/* ── Conductor ─────────────────────────────────────────────── */}
             <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
-              <User size={13} className="text-indigo-500 shrink-0" />
+              {conductorPhoto
+                ? <img src={conductorPhoto} className="w-6 h-6 rounded-full object-cover border border-slate-200 shrink-0" />
+                : <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center shrink-0"><User size={11} className="text-white" /></div>
+              }
               <span className="text-[12px] text-slate-600 font-medium">Conductor:</span>
               <span className="text-[12px] font-bold text-slate-800">{conductorNombre}</span>
             </div>

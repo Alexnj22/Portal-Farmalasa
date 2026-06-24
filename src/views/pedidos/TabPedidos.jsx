@@ -2695,25 +2695,33 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     </div>
 
-                                    {/* Entregué — solo visible para conductor dentro del grupo de ruta */}
+                                    {/* Estado de entrega de la parada (visible para todos) */}
                                     {pedidoRutaMap.has(row.pedido_id) && (() => {
                                         const { ruta, stop } = pedidoRutaMap.get(row.pedido_id);
                                         const isConductorHere = !!(user?.id && ruta.conductor_id && user.id === ruta.conductor_id);
                                         const done = !!stop?.entregado_at;
+                                        const fmtHr = (iso) => new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' });
+                                        if (done) {
+                                            return (
+                                                <div className="flex items-center gap-2 px-3 py-2 border-t border-emerald-100 bg-emerald-50/60" onClick={e => e.stopPropagation()}>
+                                                    <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+                                                    <span className="text-[11px] font-bold text-emerald-700">Entregado en sucursal</span>
+                                                    <span className="text-[10px] text-emerald-500 tabular-nums">· {fmtHr(stop.entregado_at)}</span>
+                                                </div>
+                                            );
+                                        }
                                         if (!isConductorHere) return null;
                                         return (
-                                            <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-emerald-100 bg-emerald-50/30" onClick={e => e.stopPropagation()}>
-                                                {!done && ruta.status === 'en_ruta' && (
+                                            <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-indigo-100 bg-indigo-50/30" onClick={e => e.stopPropagation()}>
+                                                {ruta.status === 'en_ruta' ? (
                                                     <button
                                                         onClick={() => handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id)}
                                                         className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all shadow-sm"
                                                     >
                                                         <CheckCircle2 size={12} />Entregué en esta sucursal
                                                     </button>
-                                                )}
-                                                {done && <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1.5"><CheckCircle2 size={12} />Entregado ✓</span>}
-                                                {!done && ruta.status !== 'en_ruta' && (
-                                                    <span className="text-[10px] text-slate-400 italic">Inicia la ruta para poder marcar entrega</span>
+                                                ) : (
+                                                    <span className="text-[10px] text-slate-400 italic">Inicia la ruta para marcar entrega</span>
                                                 )}
                                             </div>
                                         );

@@ -1,7 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { PackageCheck, PackageX, Package, AlertTriangle, X, Loader2, Zap } from 'lucide-react';
+import { PackageCheck, PackageX, Package, AlertTriangle, X, Loader2, Zap, HelpCircle } from 'lucide-react';
 import PedidoModal from './PedidoModal';
+import LiquidSelect from '../../components/common/LiquidSelect';
 import { getPageGroups } from '../../utils/pedidoPrint';
+import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
+
+// Opciones de sucursal para selector de caja extra (excluye bodega)
+const SUC_OPTIONS = SUCURSALES.map(id => ({ value: String(id), label: ERP_NAMES[id] ?? `Suc. ${id}` }));
 
 function deriveCajas(cajaMap, items) {
     if (cajaMap && Object.keys(cajaMap).length > 0) {
@@ -29,7 +34,8 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     const [electrolitFaltantes,  setElectrolitFaltantes]  = useState(null); // null=sin responder, 0=todas ok, N=N faltantes
     const [espEstados,           setEspEstados]           = useState({});   // label → 'ok' | 'faltante'
     const [cajasExtra,           setCajasExtra]           = useState(0);
-    const [cajasExtraNotas,      setCajasExtraNotas]      = useState({});   // idx → texto
+    // idx → { sucursalId: string|null, pedidoNum: string, sinRotulacion: bool }
+    const [cajasExtraData,       setCajasExtraData]       = useState({});
     const [submitting,           setSubmitting]           = useState(false);
 
     const cajas = useMemo(() => deriveCajas(cajaMap, items), [cajaMap, items]);
@@ -57,10 +63,30 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
         });
     };
 
+    // Serializar cajasExtraData a notas de texto para el handler existente
+    const cajasExtraNotas = useMemo(() => {
+        if (cajasExtra === 0) return null;
+        const out = {};
+        for (let i = 0; i < cajasExtra; i++) {
+            const d = cajasExtraData[i] ?? {};
+            if (d.sinRotulacion) {
+                out[i] = 'Sin rotulación';
+            } else {
+                const suc = d.sucursalId ? (ERP_NAMES[Number(d.sucursalId)] ?? `Suc. ${d.sucursalId}`) : null;
+                const num = d.pedidoNum?.trim();
+                out[i] = [suc, num ? `Pedido #${num}` : null].filter(Boolean).join(' · ') || 'Sin identificar';
+            }
+        }
+        return out;
+    }, [cajasExtra, cajasExtraData]);
+
+    const setExtraField = (idx, field, val) =>
+        setCajasExtraData(prev => ({ ...prev, [idx]: { ...(prev[idx] ?? {}), [field]: val } }));
+
     const handleClose = () => {
         if (submitting) return;
         setEstados({}); setNota(''); setElectrolitFaltantes(null);
-        setEspEstados({}); setCajasExtra(0); setCajasExtraNotas({});
+        setEspEstados({}); setCajasExtra(0); setCajasExtraData({});
         setSubmitting(false);
         onClose();
     };
@@ -223,29 +249,61 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
             {/* Cajas de más */}
             <div className="px-5 pb-4">
-                <div className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60">
-                    <span className="text-[11px] text-slate-600 flex-1">¿Llegaron cajas de más?</span>
+                <div className="flex items-center gap-2 p-2.5 rounded-xl border border-amber-100/80 bg-amber-50/40">
+                    <HelpCircle size={13} className="text-amber-500 shrink-0" />
+                    <span className="text-[11px] text-slate-600 flex-1">¿Llegaron cajas de más (no esperadas)?</span>
                     <div className="flex items-center gap-1.5 shrink-0">
                         <button onClick={() => setCajasExtra(n => Math.max(0, n - 1))} disabled={cajasExtra === 0}
-                            className="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-slate-100 active:scale-95 transition-all disabled:opacity-30">−</button>
+                            className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-95 transition-all disabled:opacity-30">−</button>
                         <span className={`w-6 text-center text-[13px] font-black tabular-nums ${cajasExtra > 0 ? 'text-amber-600' : 'text-slate-300'}`}>{cajasExtra}</span>
                         <button onClick={() => setCajasExtra(n => n + 1)}
-                            className="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-slate-100 active:scale-95 transition-all">+</button>
+                            className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-95 transition-all">+</button>
                     </div>
                 </div>
                 {cajasExtra > 0 && (
-                    <div className="mt-2 space-y-1.5">
-                        {Array.from({ length: cajasExtra }, (_, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-amber-600 shrink-0">Extra {i + 1}:</span>
-                                <input
-                                    value={cajasExtraNotas[i] ?? ''}
-                                    onChange={e => setCajasExtraNotas(p => ({ ...p, [i]: e.target.value }))}
-                                    placeholder="Etiqueta o 'sin etiqueta'"
-                                    className="flex-1 text-[10px] rounded-lg border border-slate-200 px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-300 bg-white"
-                                />
-                            </div>
-                        ))}
+                    <div className="mt-2 space-y-2">
+                        {Array.from({ length: cajasExtra }, (_, i) => {
+                            const d = cajasExtraData[i] ?? {};
+                            return (
+                                <div key={i} className="p-3 rounded-xl border border-amber-100 bg-white space-y-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[10px] font-bold text-amber-700">Caja extra {i + 1}</span>
+                                        <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!d.sinRotulacion}
+                                                onChange={e => setExtraField(i, 'sinRotulacion', e.target.checked)}
+                                                className="w-3.5 h-3.5 rounded accent-amber-500"
+                                            />
+                                            <span className="text-[10px] text-slate-500">Sin rotulación</span>
+                                        </label>
+                                    </div>
+                                    {!d.sinRotulacion && (
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1">
+                                                <LiquidSelect
+                                                    value={d.sucursalId ?? ''}
+                                                    onChange={v => setExtraField(i, 'sucursalId', v)}
+                                                    options={[{ value: '', label: '¿De qué sucursal?' }, ...SUC_OPTIONS]}
+                                                    compact
+                                                    clearable={false}
+                                                    placeholder="¿De qué sucursal?"
+                                                />
+                                            </div>
+                                            <input
+                                                value={d.pedidoNum ?? ''}
+                                                onChange={e => setExtraField(i, 'pedidoNum', e.target.value)}
+                                                placeholder="# Pedido (si visible)"
+                                                className="w-36 text-[10px] rounded-lg border border-slate-200 px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-300 bg-white"
+                                            />
+                                        </div>
+                                    )}
+                                    {d.sinRotulacion && (
+                                        <p className="text-[10px] text-amber-600 italic">Se reportará a bodega como caja sin identificar.</p>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>

@@ -739,8 +739,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
 
 function fmtHM(iso) {
     if (!iso) return '';
-    const d = new Date(iso);
-    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    return new Date(iso).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
 // Extra indices (reenvío cycles) repeat the last two colors
@@ -1682,10 +1681,11 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     // ── Rutas activas: mapa pedidoId → { ruta, stop, driverOnline } ──────────
     const loadActiveRutas = useCallback(async () => {
+        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
         const { data } = await supabase.from('rutas')
-            .select(`id, numero, conductor_id, conductor_nombre, status, salida_at,
+            .select(`id, numero, conductor_id, conductor_nombre, status, salida_at, vuelta_base_at,
                      ruta_pedidos(id, pedido_id, erp_sucursal_id, orden_entrega, entregado_at, entregado_por)`)
-            .in('status', ['pendiente', 'en_ruta'])
+            .or(`status.in.(pendiente,en_ruta),and(status.eq.completada,created_at.gte.${todayStart.toISOString()})`)
             .order('created_at', { ascending: false });
         if (!data?.length) { setPedidoRutaMap(new Map()); return; }
 
@@ -2334,8 +2334,8 @@ export default function TabPedidos({ searchTerm = '' }) {
         } else if (filterStatus !== 'all') {
             rows = rows.filter(r => r.pedido_status === filterStatus);
         } else {
-            // Por defecto ocultar completados; los con observación siempre visibles
-            rows = rows.filter(r => r.pedido_status !== 'completado');
+            // Ocultar completados sin problemas; mantener los que tienen diferencias/observación
+            rows = rows.filter(r => r.pedido_status !== 'completado' || hasObservacion(r));
         }
 
         if (filterDate) {
@@ -2490,7 +2490,18 @@ export default function TabPedidos({ searchTerm = '' }) {
                 ) : (
                     <div className="space-y-3">
                     {renderGroups.map((group) => {
-                        const cards = group.rows.map(row => {
+                        // Dentro de una ruta: no-entregadas primero (por orden), entregadas al fondo
+                        const displayRows = group.isRuta
+                            ? [...group.rows].sort((a, b) => {
+                                const sa = pedidoRutaMap.get(a.pedido_id)?.stop;
+                                const sb = pedidoRutaMap.get(b.pedido_id)?.stop;
+                                const doneA = sa?.entregado_at ? 1 : 0;
+                                const doneB = sb?.entregado_at ? 1 : 0;
+                                if (doneA !== doneB) return doneA - doneB;
+                                return (sa?.orden_entrega ?? 99) - (sb?.orden_entrega ?? 99);
+                            })
+                            : group.rows;
+                        const cards = displayRows.map(row => {
                             const stage      = getBranchStage(row, row.pedido_status);
                             const cardKey    = `act_${row.pedido_id}_${row.erp_sucursal_id}`;
                             const isExp      = expanded === cardKey;
@@ -2779,10 +2790,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const total = ruta.ruta_pedidos.length;
                             const isConductorRuta = !!(user?.id && ruta.conductor_id && user.id === ruta.conductor_id);
                             const pct = total > 0 ? Math.round((entregadas / total) * 100) : 0;
+                            const isCompletada = ruta.status === 'completada';
+                            const headerBg = isCompletada ? 'bg-slate-600' : 'bg-indigo-600';
+                            const fmtT = (iso) => iso ? new Date(iso).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true }) : null;
                             return (
-                                <div key={ruta.id} className="rounded-2xl border border-indigo-200/80 overflow-hidden bg-white/60 shadow-[0_2px_16px_rgba(99,102,241,0.10)]">
+                                <div key={ruta.id} className={`rounded-2xl border overflow-hidden bg-white/60 shadow-[0_2px_16px_rgba(99,102,241,0.08)] ${isCompletada ? 'border-slate-200/80' : 'border-indigo-200/80'}`}>
                                     {/* Header de la ruta */}
-                                    <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 px-4 pt-3 pb-0" onClick={e => e.stopPropagation()}>
+                                    <div className={`${headerBg} px-4 pt-3 pb-0`} onClick={e => e.stopPropagation()}>
                                         <div className="flex items-center gap-2.5 mb-2.5">
                                             {/* Icono conductor */}
                                             <div className="relative shrink-0">
@@ -2795,11 +2809,16 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-[13px] font-black text-white">Ruta #{ruta.numero}</span>
-                                                    {dl && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-400/30 text-emerald-100 border border-emerald-400/40">🟢 En vivo</span>}
+                                                    {isCompletada
+                                                        ? <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/20 text-white/90 border border-white/30">
+                                                            ✓ Completada{ruta.vuelta_base_at ? ` · ${fmtT(ruta.vuelta_base_at)}` : ''}
+                                                          </span>
+                                                        : dl && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-400/30 text-emerald-100 border border-emerald-400/40">🟢 En vivo</span>
+                                                    }
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className="text-[11px] text-indigo-200">{ruta.conductor_nombre}</span>
-                                                    <span className="text-[10px] text-indigo-300 tabular-nums">{entregadas}/{total} entregadas</span>
+                                                    <span className="text-[11px] text-white/80">{ruta.conductor_nombre}</span>
+                                                    <span className="text-[10px] text-white/60 tabular-nums">{entregadas}/{total} entregadas</span>
                                                 </div>
                                             </div>
                                             {/* Acciones */}
@@ -2828,21 +2847,25 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                         <Home size={9} />Base
                                                     </button>
                                                 )}
-                                                <button
-                                                    onClick={() => setRutaMapOpen(ruta)}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-white/20 border border-white/30 text-white hover:bg-white/30 active:scale-95 transition-all"
-                                                >
-                                                    <MapIcon size={9} />Mapa
-                                                </button>
+                                                {!isCompletada && (
+                                                    <button
+                                                        onClick={() => setRutaMapOpen(ruta)}
+                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-white/20 border border-white/30 text-white hover:bg-white/30 active:scale-95 transition-all"
+                                                    >
+                                                        <MapIcon size={9} />Mapa
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                         {/* Barra de progreso pegada al borde inferior del header */}
-                                        <div className="h-1 bg-white/20 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-emerald-400 rounded-full transition-all duration-500"
-                                                style={{ width: `${pct}%` }}
-                                            />
-                                        </div>
+                                        {!isCompletada && (
+                                            <div className="h-1 bg-white/20 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                                                    style={{ width: `${pct}%` }}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                     {/* Cards hijas — con espaciado */}
                                     <div className="p-2.5 space-y-2">{cards}</div>

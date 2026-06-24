@@ -159,15 +159,21 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
   const totalTime     = (timeline[timeline.length - 1]?.cumul ?? 0) + (returnLeg?.dur_min ?? 0);
   const totalDist     = totalRoute(paradas.filter(s => s.dist_m != null)).dist_m + (returnLeg?.dist_m ?? 0);
 
+  // Clave estable que cambia cuando el orden o composición de paradas cambia
+  const paradasKey = paradas.map(p => `${p._uid ?? p.erp_sucursal_id}-${p.orden}`).join('|');
+
   // ── Map rendering (Google Maps JS → Leaflet + proxy fallback) ───────────
   useEffect(() => {
     if (step !== 2 || !paradas.length || !bodegaCoords) return;
     let cancelled = false;
     let authFailed = false;
 
-    // Haversine return leg inmediato; se actualiza si Directions API responde
+    // Limpiar mapa anterior antes de re-renderizar
+    if (mapRef.current) mapRef.current.innerHTML = '';
+
+    // Haversine return leg — siempre recalcular al cambiar paradas
     const lastCoords = coordsMap[paradas[paradas.length - 1]?.erp_sucursal_id];
-    if (lastCoords && !returnLeg) {
+    if (lastCoords) {
       const dm = haversineMeters(lastCoords.lat, lastCoords.lng, bodegaCoords.lat, bodegaCoords.lng);
       setReturnLeg({ dist_m: Math.round(dm), dur_min: Math.max(1, Math.round(dm / 1000 / 40 * 60)) });
     }
@@ -277,7 +283,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
       window.gm_authFailure = prevAuthFailure;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, bodegaCoords]);
+  }, [step, bodegaCoords, paradasKey]);
 
   // ── Step 1 → 2: optimize ──────────────────────────────────────────────────
   const handleOptimize = useCallback(async () => {
@@ -627,14 +633,14 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
                           <div className={`w-7 h-7 rounded-full ${dotCls} border-2 border-white shadow-md flex items-center justify-center text-white text-[10px] font-black shrink-0`}>
                             {stop.orden}
                           </div>
-                          <div className="flex flex-col gap-0">
+                          <div className="flex flex-col gap-0.5 mt-0.5">
                             <button onClick={() => moveStop(idx, -1)} disabled={idx === 0}
-                              className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-0 transition-colors leading-none">
-                              <ChevronUp size={11} />
+                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 disabled:opacity-0 active:scale-90 transition-all shadow-sm">
+                              <ChevronUp size={13} strokeWidth={2.5} />
                             </button>
                             <button onClick={() => moveStop(idx, 1)} disabled={idx === paradas.length - 1}
-                              className="p-0 text-slate-300 hover:text-slate-600 disabled:opacity-0 transition-colors leading-none">
-                              <ChevronDown size={11} />
+                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 disabled:opacity-0 active:scale-90 transition-all shadow-sm">
+                              <ChevronDown size={13} strokeWidth={2.5} />
                             </button>
                           </div>
                         </div>

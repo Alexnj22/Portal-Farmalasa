@@ -2546,8 +2546,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const isFadedOut = row.pedido_status === 'completado' && !!row.recibido_erp_at;  // sutil: solo baja un poco la opacidad
 
                             return (
-                                <div
+                                <motion.div
                                     key={cardKey}
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.97 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                     className={`${GLASS} cursor-pointer select-none ${
                                         stage === 'pausado'
                                             ? 'ring-2 ring-amber-400 shadow-[0_4px_20px_rgba(251,191,36,0.25)]'
@@ -2781,7 +2786,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
-                                </div>
+                                </motion.div>
                             );
                         });
                         if (group.isRuta) {
@@ -2791,84 +2796,82 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const isConductorRuta = !!(user?.id && ruta.conductor_id && user.id === ruta.conductor_id);
                             const pct = total > 0 ? Math.round((entregadas / total) * 100) : 0;
                             const isCompletada = ruta.status === 'completada';
-                            const headerBg = isCompletada ? 'bg-slate-600' : 'bg-indigo-600';
                             const fmtT = (iso) => iso ? new Date(iso).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true }) : null;
                             return (
-                                <div key={ruta.id} className={`rounded-2xl border overflow-hidden bg-white/60 shadow-[0_2px_16px_rgba(99,102,241,0.08)] ${isCompletada ? 'border-slate-200/80' : 'border-indigo-200/80'}`}>
-                                    {/* Header de la ruta */}
-                                    <div className={`${headerBg} px-4 pt-3 pb-0`} onClick={e => e.stopPropagation()}>
-                                        <div className="flex items-center gap-2.5 mb-2.5">
-                                            {/* Icono conductor */}
-                                            <div className="relative shrink-0">
-                                                <div className="w-7 h-7 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center">
-                                                    <Truck size={13} className="text-white" />
-                                                </div>
-                                                {dl && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-indigo-600 animate-pulse" />}
+                                <div key={ruta.id} className={`rounded-2xl border overflow-hidden bg-white/70 shadow-[0_2px_16px_rgba(99,102,241,0.08)] ${isCompletada ? 'border-slate-200/80' : 'border-indigo-200/80'}`}>
+                                    {/* Header sin color — glass */}
+                                    <div className="flex items-center gap-3 px-4 py-2.5 border-b border-slate-100/80 bg-white/60" onClick={e => e.stopPropagation()}>
+                                        {/* Icono conductor */}
+                                        <div className="relative shrink-0">
+                                            <div className={`w-7 h-7 rounded-xl flex items-center justify-center border ${isCompletada ? 'bg-slate-100 border-slate-200' : 'bg-indigo-50 border-indigo-100'}`}>
+                                                <Truck size={13} className={isCompletada ? 'text-slate-500' : 'text-indigo-600'} />
                                             </div>
-                                            {/* Info */}
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[13px] font-black text-white">Ruta #{ruta.numero}</span>
-                                                    {isCompletada
-                                                        ? <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/20 text-white/90 border border-white/30">
-                                                            ✓ Completada{ruta.vuelta_base_at ? ` · ${fmtT(ruta.vuelta_base_at)}` : ''}
-                                                          </span>
-                                                        : dl && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-400/30 text-emerald-100 border border-emerald-400/40">🟢 En vivo</span>
-                                                    }
-                                                </div>
-                                                <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className="text-[11px] text-white/80">{ruta.conductor_nombre}</span>
-                                                    <span className="text-[10px] text-white/60 tabular-nums">{entregadas}/{total} entregadas</span>
-                                                </div>
+                                            {dl && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white animate-pulse" />}
+                                        </div>
+                                        {/* Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[13px] font-black ${isCompletada ? 'text-slate-600' : 'text-indigo-800'}`}>Ruta #{ruta.numero}</span>
+                                                {isCompletada
+                                                    ? <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                                        ✓ Completada{ruta.vuelta_base_at ? ` · ${fmtT(ruta.vuelta_base_at)}` : ''}
+                                                      </span>
+                                                    : dl && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">🟢 En vivo</span>
+                                                }
                                             </div>
-                                            {/* Acciones */}
-                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                {isConductorRuta && ruta.status === 'pendiente' && (
-                                                    <button
-                                                        onClick={async () => {
-                                                            await supabase.from('rutas').update({ status: 'en_ruta', salida_at: new Date().toISOString() }).eq('id', ruta.id);
-                                                            useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
-                                                            loadActiveRutas();
-                                                        }}
-                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-white/20 border border-white/30 text-white hover:bg-white/30 active:scale-95 transition-all"
-                                                    >
-                                                        <Play size={9} fill="currentColor" />Iniciar
-                                                    </button>
-                                                )}
-                                                {isConductorRuta && ruta.status === 'en_ruta' && entregadas === total && total > 0 && (
-                                                    <button
-                                                        onClick={async () => {
-                                                            await supabase.from('rutas').update({ status: 'completada', vuelta_base_at: new Date().toISOString() }).eq('id', ruta.id);
-                                                            useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
-                                                            loadActiveRutas(); loadActive();
-                                                        }}
-                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-white/20 border border-white/30 text-white hover:bg-white/30 active:scale-95 transition-all"
-                                                    >
-                                                        <Home size={9} />Base
-                                                    </button>
-                                                )}
-                                                {!isCompletada && (
-                                                    <button
-                                                        onClick={() => setRutaMapOpen(ruta)}
-                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-white/20 border border-white/30 text-white hover:bg-white/30 active:scale-95 transition-all"
-                                                    >
-                                                        <MapIcon size={9} />Mapa
-                                                    </button>
-                                                )}
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <span className="text-[11px] text-slate-500">{ruta.conductor_nombre}</span>
+                                                <span className="text-[10px] text-slate-400 tabular-nums">{entregadas}/{total} entregas</span>
                                             </div>
                                         </div>
-                                        {/* Barra de progreso pegada al borde inferior del header */}
+                                        {/* Acciones */}
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            {isConductorRuta && ruta.status === 'pendiente' && (
+                                                <button
+                                                    onClick={async () => {
+                                                        await supabase.from('rutas').update({ status: 'en_ruta', salida_at: new Date().toISOString() }).eq('id', ruta.id);
+                                                        useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
+                                                        loadActiveRutas();
+                                                    }}
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 transition-all shadow-sm"
+                                                >
+                                                    <Play size={9} fill="currentColor" />Iniciar
+                                                </button>
+                                            )}
+                                            {isConductorRuta && ruta.status === 'en_ruta' && entregadas === total && total > 0 && (
+                                                <button
+                                                    onClick={async () => {
+                                                        await supabase.from('rutas').update({ status: 'completada', vuelta_base_at: new Date().toISOString() }).eq('id', ruta.id);
+                                                        useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
+                                                        loadActiveRutas(); loadActive();
+                                                    }}
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-700 text-white hover:bg-slate-800 active:scale-95 transition-all shadow-sm"
+                                                >
+                                                    <Home size={9} />Base
+                                                </button>
+                                            )}
+                                            {!isCompletada && (
+                                                <button
+                                                    onClick={() => setRutaMapOpen(ruta)}
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200 active:scale-95 transition-all"
+                                                >
+                                                    <MapIcon size={9} />Mapa
+                                                </button>
+                                            )}
+                                        </div>
+                                        {/* Barra de progreso solo cuando activa */}
                                         {!isCompletada && (
-                                            <div className="h-1 bg-white/20 rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full bg-emerald-400 rounded-full transition-all duration-500"
-                                                    style={{ width: `${pct}%` }}
-                                                />
+                                            <div className="w-16 h-1.5 rounded-full bg-slate-200 overflow-hidden shrink-0">
+                                                <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
                                             </div>
                                         )}
                                     </div>
-                                    {/* Cards hijas — con espaciado */}
-                                    <div className="p-2.5 space-y-2">{cards}</div>
+                                    {/* Cards hijas — con layout animation */}
+                                    <div className="p-2.5 flex flex-col gap-2">
+                                        <AnimatePresence initial={false} mode="popLayout">
+                                            {cards}
+                                        </AnimatePresence>
+                                    </div>
                                 </div>
                             );
                         }

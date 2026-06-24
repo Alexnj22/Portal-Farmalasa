@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.340';
+export const APP_VERSION = '2.2.341';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.341 — feat(pedidos): pedidos en ruta van al tope de la lista (sort en_ruta→procesando→con_obs); eliminar RutaEnCursoCard; "En camino"→"En ruta" (v2.2.341)
 // v2.2.340 — feat(pedidos): rutas activas como card "En Ruta" al tope de TabPedidos sin sub-tabs; sucursal ve su parada y puede ver mapa del repartidor; pedidos en ruta excluidos de la lista normal (v2.2.340)
 // v2.2.339 — feat(pedidos): sub-tabs Procesando/En Ruta con slide + RutaEnCursoCard integrada (v2.2.339)
 // v2.2.338 — fix(rutas): isConductor null-safe; quitar animate-spin-slow inexistente (v2.2.338)

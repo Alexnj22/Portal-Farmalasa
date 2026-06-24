@@ -21,7 +21,6 @@ import LlegadaModal from './LlegadaModal';
 import ReenvioLlegadaModal from './ReenvioLlegadaModal';
 import FinalizarCajasModal from './FinalizarCajasModal';
 import CrearRutaModal    from './CrearRutaModal';
-import RutaEnCursoCard  from './RutaEnCursoCard';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
@@ -66,7 +65,7 @@ const COLOR_CLS = {
 };
 
 const PEDIDO_PILL  = { confirmado: 'bg-blue-100 text-blue-700 border-blue-200', enviado: 'bg-indigo-100 text-indigo-700 border-indigo-200', parcial: 'bg-amber-100 text-amber-700 border-amber-200', completado: 'bg-emerald-100 text-emerald-700 border-emerald-200', anulado: 'bg-red-100 text-red-600 border-red-200' };
-const PEDIDO_LABEL = { confirmado: 'Por despachar', enviado: 'En camino', parcial: 'Con diferencias', completado: 'Completado', anulado: 'Anulado' };
+const PEDIDO_LABEL = { confirmado: 'Por despachar', enviado: 'En ruta', parcial: 'Con diferencias', completado: 'Completado', anulado: 'Anulado' };
 
 const PAUSE_REASONS = [
     { key: 'almuerzo',     label: 'Almuerzo',             icon: Coffee,        maxUses: 1    },
@@ -1484,7 +1483,7 @@ function FilterPill({ isBranch, filterSuc, setFilterSuc, filterStatus, setFilter
             {/* Estado */}
             <div className="flex items-center gap-1 px-2 py-1.5">
                 {statusBtn('confirmado', 'Pendientes')}
-                {statusBtn('enviado',    'En camino')}
+                {statusBtn('enviado',    'En ruta')}
                 <div className="h-3.5 w-px bg-slate-100 mx-0.5 shrink-0" />
                 {statusBtn('observacion','Con observación', 'bg-amber-500 text-white border-amber-500')}
                 {statusBtn('completado', 'Completados',     'bg-emerald-600 text-white border-emerald-600')}
@@ -1541,10 +1540,6 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [crearRutaOpen, setCrearRutaOpen] = useState(false);
     const [modal,         setModal]         = useState(null);
 
-    // ── Rutas activas ─────────────────────────────────────────────────────────
-    const [activeRutas,  setActiveRutas]  = useState([]);
-    const [rutasLoading, setRutasLoading] = useState(false);
-    const [driverOnlineMap, setDriverOnlineMap] = useState({});    // rutaId → bool
     const [llegadaModal,       setLlegadaModal]       = useState(null); // { pedidoId, sucId, key, rows }
     const [reenvioLlegadaModal,setReenvioLlegadaModal] = useState(null); // { pedidoId, sucId, key, ciclo, cajasCiclo }
     const [finalizarModal,     setFinalizarModal]      = useState(null); // { pedidoId, sucId, numero, key, rows }
@@ -1565,66 +1560,6 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [cardStats,  setCardStats]  = useState({}); // cardKey → { enviados, sinStock, porRegla }
 
     // ── Cargar rutas activas ──────────────────────────────────────────────────
-    const loadActiveRutas = useCallback(async () => {
-        setRutasLoading(true);
-        const { data } = await supabase.from('rutas')
-            .select(`id, numero, conductor_id, conductor_nombre, status,
-                     salida_at, vuelta_base_at, distancia_total_m, duracion_estimada_min, created_at,
-                     ruta_pedidos (id, pedido_id, erp_sucursal_id, orden_entrega,
-                       distancia_desde_anterior_m, duracion_desde_anterior_min,
-                       entregado_at, entregado_por)`)
-            .in('status', ['pendiente', 'en_ruta'])
-            .order('created_at', { ascending: false });
-
-        if (!data?.length) { setActiveRutas([]); setRutasLoading(false); return; }
-
-        const sucIds    = [...new Set(data.flatMap(r => r.ruta_pedidos.map(rp => rp.erp_sucursal_id)))];
-        const pedIds    = [...new Set(data.flatMap(r => r.ruta_pedidos.map(rp => rp.pedido_id)))];
-        const rutaIds   = data.map(r => r.id);
-
-        const [{ data: sucData }, { data: pedData }, { data: locData }] = await Promise.all([
-            supabase.from('erp_sucursal_map').select('erp_sucursal_id, branch:branches!inner(name)').in('erp_sucursal_id', sucIds.length ? sucIds : [-1]),
-            supabase.from('pedidos').select('id, numero').in('id', pedIds.length ? pedIds : ['00000000-0000-0000-0000-000000000000']),
-            supabase.from('ruta_locations').select('ruta_id, updated_at').in('ruta_id', rutaIds),
-        ]);
-
-        const sucNameMap = Object.fromEntries((sucData ?? []).map(s => [s.erp_sucursal_id, s.branch?.name]));
-        const pedNumMap  = Object.fromEntries((pedData ?? []).map(p => [p.id, p.numero]));
-
-        const onlineMap = {};
-        for (const loc of locData ?? []) {
-            const ageMin = (Date.now() - new Date(loc.updated_at).getTime()) / 60000;
-            onlineMap[loc.ruta_id] = ageMin < 3;
-        }
-        setDriverOnlineMap(onlineMap);
-
-        setActiveRutas(data.map(ruta => ({
-            ...ruta,
-            ruta_pedidos: ruta.ruta_pedidos.map(rp => ({
-                ...rp,
-                suc_name: sucNameMap[rp.erp_sucursal_id] ?? `Suc. ${rp.erp_sucursal_id}`,
-                numeros:  [pedNumMap[rp.pedido_id]].filter(Boolean),
-            })),
-        })));
-        setRutasLoading(false);
-    }, []);
-
-    useEffect(() => { loadActiveRutas(); }, [loadActiveRutas]);
-
-    // Realtime: actualizar cards al entregar parada o cambiar status
-    useEffect(() => {
-        const ch = supabase.channel('rutas-activas-rt')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'rutas' },        loadActiveRutas)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'ruta_pedidos' }, loadActiveRutas)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'ruta_locations' }, ({ new: row }) => {
-                if (row?.ruta_id) {
-                    const ageMin = (Date.now() - new Date(row.updated_at).getTime()) / 60000;
-                    setDriverOnlineMap(prev => ({ ...prev, [row.ruta_id]: ageMin < 3 }));
-                }
-            })
-            .subscribe();
-        return () => supabase.removeChannel(ch);
-    }, [loadActiveRutas]);
 
     // ── Branch ERP ────────────────────────────────────────────────────────────
 
@@ -2320,16 +2255,11 @@ export default function TabPedidos({ searchTerm = '' }) {
         return map;
     }, [activeRows]);
 
-    const STAGE_ORDER = { preparando: 0, transito: 1, contando: 2, pausado: 3, preparado: 4, sin_iniciar: 5, erp: 6 };
-
-    // pedidos que ya están en una ruta activa → no mostrarlos en la lista normal
-    const enRutaPedidoIds = useMemo(
-        () => new Set(activeRutas.flatMap(r => (r.ruta_pedidos ?? []).map(rp => rp.pedido_id))),
-        [activeRutas]
-    );
+    // En ruta (transito) → procesando → con observación → erp
+    const STAGE_ORDER = { transito: 0, preparando: 1, contando: 2, pausado: 3, preparado: 4, sin_iniciar: 5, erp: 7 };
 
     const filteredRows = useMemo(() => {
-        let rows = activeRows.filter(r => !enRutaPedidoIds.has(r.pedido_id));
+        let rows = activeRows;
         if (filterSuc) rows = rows.filter(r => r.erp_sucursal_id === Number(filterSuc));
 
         if (filterStatus === 'completado') {
@@ -2352,8 +2282,13 @@ export default function TabPedidos({ searchTerm = '' }) {
         }
         if (searchLower) rows = rows.filter(r => String(r.numero).includes(searchLower) || (r.notes ?? '').toLowerCase().includes(searchLower));
         return [...rows].sort((a, b) => {
-            const sa = STAGE_ORDER[getBranchStage(a, a.pedido_status)] ?? 5;
-            const sb = STAGE_ORDER[getBranchStage(b, b.pedido_status)] ?? 5;
+            const stageA = getBranchStage(a, a.pedido_status);
+            const stageB = getBranchStage(b, b.pedido_status);
+            const baseA = STAGE_ORDER[stageA] ?? 5;
+            const baseB = STAGE_ORDER[stageB] ?? 5;
+            // con observación va después de procesando (6), antes de erp (7)
+            const sa = (hasObservacion(a) && baseA > 0 && baseA < 7) ? 6 : baseA;
+            const sb = (hasObservacion(b) && baseB > 0 && baseB < 7) ? 6 : baseB;
             return sa !== sb ? sa - sb : new Date(b.created_at) - new Date(a.created_at);
         });
     }, [activeRows, filterSuc, filterStatus, filterDate, searchLower, hasObservacion]); // eslint-disable-line
@@ -2392,28 +2327,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                     </motion.div>
                 )}
             </AnimatePresence>
-
-            {/* ── Rutas activas — aparece arriba cuando hay despacho ─────── */}
-            {activeRutas.length > 0 && (
-                <div className="space-y-3">
-                    {activeRutas.map(ruta => {
-                        const inRuta = !isBranch || ruta.ruta_pedidos.some(rp => rp.erp_sucursal_id === erpSucursalId);
-                        if (!inRuta) return null;
-                        return (
-                            <RutaEnCursoCard
-                                key={ruta.id}
-                                ruta={ruta}
-                                currentUserId={user?.id}
-                                canEdit={canEdit}
-                                isBranch={isBranch}
-                                onRefresh={loadActiveRutas}
-                                driverOnline={driverOnlineMap[ruta.id] ?? false}
-                                filterSucId={isBranch ? erpSucursalId : null}
-                            />
-                        );
-                    })}
-                </div>
-            )}
 
             {/* ── FILTROS + CARDS SUCURSALES ─────────────────────────── */}
             <div>
@@ -2845,7 +2758,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             <CrearRutaModal
                 open={crearRutaOpen}
                 onClose={() => setCrearRutaOpen(false)}
-                onCreated={() => { setCrearRutaOpen(false); loadActive(); loadActiveRutas(); }}
+                onCreated={() => { setCrearRutaOpen(false); loadActive(); }}
             />
         </div>
     );

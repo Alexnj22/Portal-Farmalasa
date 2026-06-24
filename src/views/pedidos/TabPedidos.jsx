@@ -762,7 +762,8 @@ const TL_GLOW   = [
 ];
 const tlGlow = (i) => TL_GLOW[i] ?? TL_GLOW[TL_GLOW.length - 1];
 
-const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 4, erp: 5 };
+// ruta_entregado se inserta en índice 4; Llegada→5, Finalizado→6, extras→≥7
+const TL_STAGE_IDX = { sin_iniciar: 0, preparando: 1, pausado: 1, preparado: 2, transito: 3, contando: 5, erp: 6 };
 
 function PauseBadge({ pause, isPaused, empMap = new Map() }) {
     const mins     = pause ? elapsed(pause.pausado_at, pause.reanudado_at ?? undefined) : null;
@@ -803,19 +804,24 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
     );
 }
 
-function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, reenvioEmp, erpEmp, difsEmp, corrConfEmp, receptionApoyo = [], isBranch = false, empMap = new Map(), pauses = [] }) {
+function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, reenvioEmp, erpEmp, difsEmp, corrConfEmp, receptionApoyo = [], isBranch = false, empMap = new Map(), pauses = [], rutaStop = null, rutaCondEmp = null }) {
     const hasPause  = (row.min_pausado_total ?? 0) > 0;
     const isPaused  = stage === 'pausado';
     const activeIdx = TL_STAGE_IDX[stage] ?? 0;
     const hasDif    = !!row.diferencias_reportadas_at;
 
+    // Quién entregó: preferir entregado_por lookup, fallback al conductor
+    const entregadorEmp = rutaStop?.entregado_por
+        ? (empMap.get(rutaStop.entregado_por) ?? rutaCondEmp)
+        : rutaCondEmp;
     const nodes = [
-        { key: 'confirmado', label: 'Confirmado', time: row.created_at,        emp: creatorEmp    },
-        { key: 'iniciado',   label: 'Inicio',     time: row.iniciado_at,       emp: iniciadorEmp  },
-        { key: 'preparado',  label: 'Listo',      time: row.finalizado_at,     emp: finalizadorEmp },
-        { key: 'enviado',    label: 'En Ruta',    time: row.enviado_at,        emp: enviadorEmp    },
-        { key: 'llegada',    label: 'Llegada',    time: row.llegada_fisica_at, emp: llegadaEmp,    apoyo: receptionApoyo },
-        { key: 'erp',        label: 'Finalizado', time: row.recibido_erp_at,   emp: erpEmp,        apoyo: receptionApoyo },
+        { key: 'confirmado',     label: 'Confirmado', time: row.created_at,           emp: creatorEmp    },
+        { key: 'iniciado',       label: 'Inicio',     time: row.iniciado_at,          emp: iniciadorEmp  },
+        { key: 'preparado',      label: 'Listo',      time: row.finalizado_at,        emp: finalizadorEmp },
+        { key: 'enviado',        label: 'En Ruta',    time: row.enviado_at,           emp: enviadorEmp    },
+        { key: 'ruta_entregado', label: 'Entregado',  time: rutaStop?.entregado_at ?? null, emp: entregadorEmp, isRutaNode: true },
+        { key: 'llegada',        label: 'Llegada',    time: row.llegada_fisica_at,    emp: llegadaEmp,    apoyo: receptionApoyo },
+        { key: 'erp',            label: 'Finalizado', time: row.recibido_erp_at,      emp: erpEmp,        apoyo: receptionApoyo },
     ];
     if (row.falta_caja_at) {
         // Label descriptivo según tipo
@@ -853,9 +859,10 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
             {nodes.map((node, idx) => {
                 // Nodes appended after the main sequence (Diferencias, Corregido) are "done"
                 // purely based on whether they have a timestamp, regardless of activeIdx
-                const isExtraNode = idx >= 6;
-                const isDone      = node.time != null && (isExtraNode || idx < activeIdx);
-                const isActive    = !isExtraNode && idx === activeIdx;
+                const isExtraNode  = idx >= 7;
+                // ruta_entregado es "done" cuando tiene timestamp, sin depender de activeIdx
+                const isDone       = node.time != null && (isExtraNode || node.isRutaNode || idx < activeIdx);
+                const isActive     = !isExtraNode && !node.isRutaNode && idx === activeIdx;
                 const isPausedDot = isActive && isPaused;
                 const isFuture    = !isDone && !isActive;
                 const nextNode    = nodes[idx + 1];
@@ -2621,7 +2628,14 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     {/* Lifecycle Timeline */}
                                     <div className="border-t border-slate-100 px-3 pt-2 pb-1.5">
-                                        <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} isBranch={isBranch} empMap={empMap} pauses={row.pauses ?? []} />
+                                        {(() => {
+                                            const rutaInfo = pedidoRutaMap.get(row.pedido_id);
+                                            const rtStop   = rutaInfo?.stop ?? null;
+                                            const rtCond   = rutaInfo?.ruta?.conductor_id ? empMap.get(rutaInfo.ruta.conductor_id) ?? null : null;
+                                            return (
+                                                <LifecycleTimeline row={row} stage={stage} creatorEmp={creator} iniciadorEmp={iniciador} finalizadorEmp={finalizador} enviadorEmp={enviador} llegadaEmp={llegadaEmp} conteoEmp={conteoEmp} reenvioEmp={reenvioEmp} erpEmp={erpEmp} difsEmp={difsEmp} corrConfEmp={corrConfEmp} receptionApoyo={recepApoyo} isBranch={isBranch} empMap={empMap} pauses={row.pauses ?? []} rutaStop={rtStop} rutaCondEmp={rtCond} />
+                                            );
+                                        })()}
                                     </div>
 
                                     {/* Actions + status strip */}

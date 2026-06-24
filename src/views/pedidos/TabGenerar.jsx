@@ -160,6 +160,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 factor:                row.factor,
                 dispatch_tipo:         row.dispatch_tipo,
                 dispatch_factor:       row.dispatch_factor,
+                caja_especial:         row.caja_especial ?? false,
             }));
             const esEmpleado = employees.some(e => e.id === user?.id);
             const { data: pedidoId, error: confErr } = await supabase.rpc('confirm_pedido', {
@@ -224,7 +225,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                     for (const sid of sucIds) {
                         const { data: rawItems } = await supabase
                             .from('pedido_items')
-                            .select('id, factor, dispatch_factor, dispatch_tipo, cantidad_asignada, lotes_asignados, sin_stock, products(nombre, es_antibiotico, laboratorios(nombre))')
+                            .select('id, factor, dispatch_factor, dispatch_tipo, cantidad_asignada, lotes_asignados, sin_stock, caja_especial, products(nombre, es_antibiotico, laboratorios(nombre))')
                             .eq('pedido_id', pedidoId)
                             .eq('erp_sucursal_id', sid)
                             .gt('cantidad_asignada', 0);

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Zap } from 'lucide-react';
+import { PackageCheck, PackageX, Package, AlertTriangle, X, Loader2, Zap } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import { getPageGroups } from '../../utils/pedidoPrint';
 
@@ -23,10 +23,13 @@ const TOGGLE_CFG = {
     faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-rose-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200' },
 };
 
-export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, totalCajas = 0, cajasElectrolit = 0 }) {
+export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, totalCajas = 0, cajasElectrolit = 0, cajasEspeciales = [] }) {
     const [estados,              setEstados]              = useState({});
     const [nota,                 setNota]                 = useState('');
     const [electrolitFaltantes,  setElectrolitFaltantes]  = useState(null); // null=sin responder, 0=todas ok, N=N faltantes
+    const [espEstados,           setEspEstados]           = useState({});   // label → 'ok' | 'faltante'
+    const [cajasExtra,           setCajasExtra]           = useState(0);
+    const [cajasExtraNotas,      setCajasExtraNotas]      = useState({});   // idx → texto
     const [submitting,           setSubmitting]           = useState(false);
 
     const cajas = useMemo(() => deriveCajas(cajaMap, items), [cajaMap, items]);
@@ -39,15 +42,26 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     const cajasFaltantes = cajas.filter(c => getEst(c.num) === 'faltante').map(c => c.num);
     const hayProblemas   = cajasDanadas.length > 0 || cajasFaltantes.length > 0;
 
+    const espFaltantes = cajasEspeciales.filter(e => espEstados[e.label] === 'faltante').map(e => e.label);
+
     const handleConfirm = () => {
         setSubmitting(true);
-        onConfirm({ cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim(),
-                    electrolitFaltantes: cajasElectrolit > 0 ? electrolitFaltantes : null });
+        onConfirm({
+            cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim(),
+            electrolitFaltantes:    cajasElectrolit > 0 ? electrolitFaltantes : null,
+            especialesLlegadas:     cajasEspeciales.length > 0
+                ? Object.fromEntries(cajasEspeciales.map(e => [e.label, espEstados[e.label] ?? 'ok']))
+                : null,
+            cajasExtra:             cajasExtra > 0 ? cajasExtra : 0,
+            cajasExtraNotas:        cajasExtra > 0 ? cajasExtraNotas : null,
+        });
     };
 
     const handleClose = () => {
         if (submitting) return;
-        setEstados({}); setNota(''); setElectrolitFaltantes(null); setSubmitting(false);
+        setEstados({}); setNota(''); setElectrolitFaltantes(null);
+        setEspEstados({}); setCajasExtra(0); setCajasExtraNotas({});
+        setSubmitting(false);
         onClose();
     };
 
@@ -167,6 +181,74 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     </div>
                 </div>
             )}
+
+            {/* Cajas especiales — E1, E2… */}
+            {cajasEspeciales.length > 0 && (
+                <div className="px-5 pb-4">
+                    <div className="p-3 rounded-2xl border border-violet-100 bg-violet-50/60 flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                            <Package size={13} className="text-violet-500 shrink-0" />
+                            <span className="text-[11px] font-semibold text-violet-700 flex-1">Cajas especiales</span>
+                            <span className="text-[9px] font-bold text-violet-400 uppercase tracking-wide">
+                                {cajasEspeciales.length} caja{cajasEspeciales.length !== 1 ? 's' : ''}
+                            </span>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            {cajasEspeciales.map(e => {
+                                const est = espEstados[e.label] ?? 'ok';
+                                return (
+                                    <div key={e.label} className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border transition-all ${est === 'ok' ? 'bg-emerald-50/80 border-emerald-200/70' : 'bg-rose-50/80 border-rose-200/70'}`}>
+                                        <span className={`text-[11px] font-black w-7 shrink-0 ${est === 'ok' ? 'text-emerald-600' : 'text-rose-600'}`}>{e.label}</span>
+                                        <span className="flex-1 text-[10px] text-slate-600 leading-tight">{e.product_name}</span>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <button onClick={() => setEspEstados(p => ({ ...p, [e.label]: 'ok' }))}
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-95 ${est === 'ok' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-400 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
+                                                ✓ OK
+                                            </button>
+                                            <button onClick={() => setEspEstados(p => ({ ...p, [e.label]: 'faltante' }))}
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-95 ${est === 'faltante' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-400 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
+                                                ✗ Falta
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        {espFaltantes.length > 0 && (
+                            <p className="text-[10px] text-rose-600 px-0.5">⚠ Faltante{espFaltantes.length > 1 ? 's' : ''}: {espFaltantes.join(', ')}</p>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Cajas de más */}
+            <div className="px-5 pb-4">
+                <div className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60">
+                    <span className="text-[11px] text-slate-600 flex-1">¿Llegaron cajas de más?</span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        <button onClick={() => setCajasExtra(n => Math.max(0, n - 1))} disabled={cajasExtra === 0}
+                            className="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-slate-100 active:scale-95 transition-all disabled:opacity-30">−</button>
+                        <span className={`w-6 text-center text-[13px] font-black tabular-nums ${cajasExtra > 0 ? 'text-amber-600' : 'text-slate-300'}`}>{cajasExtra}</span>
+                        <button onClick={() => setCajasExtra(n => n + 1)}
+                            className="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-slate-100 active:scale-95 transition-all">+</button>
+                    </div>
+                </div>
+                {cajasExtra > 0 && (
+                    <div className="mt-2 space-y-1.5">
+                        {Array.from({ length: cajasExtra }, (_, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-amber-600 shrink-0">Extra {i + 1}:</span>
+                                <input
+                                    value={cajasExtraNotas[i] ?? ''}
+                                    onChange={e => setCajasExtraNotas(p => ({ ...p, [i]: e.target.value }))}
+                                    placeholder="Etiqueta o 'sin etiqueta'"
+                                    className="flex-1 text-[10px] rounded-lg border border-slate-200 px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-300 bg-white"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
 
             {/* Footer */}
             <div className="px-5 pb-5 pt-3 border-t border-slate-100 space-y-3">

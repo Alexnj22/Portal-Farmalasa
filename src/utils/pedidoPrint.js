@@ -16,6 +16,7 @@ const ERP_NAMES_DEFAULT = {
 const SUCURSALES_ORDER = [5, 1, 2, 3, 4, 7];
 const SUCURSAL_CODES  = { 1: 'S1', 2: 'S2', 3: 'S3', 4: 'S4', 5: 'PO', 6: 'BO', 7: 'S5' };
 const TOTAL_NON_BODEGA = 6;
+const CUSTOM_LABELS    = ['CAJA', 'ESTUCHE', 'BOLSA'];
 
 // Nombre de farmacia según destino
 function getFarmaciaName(sucId) {
@@ -147,7 +148,9 @@ function buildProductRows(rows, withRowIds = false) {
             labCell,
             { stack: productStack, fillColor: bg, margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
             { text: r.presentacion_tipo || '—', fillColor: bg, fontSize: 7, color: '#333', margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
-            { text: String(r.qty), fillColor: bg, fontSize: 9.5, bold: true, alignment: 'center', margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
+            r.qty_base
+                ? { stack: [{ text: String(r.qty), fontSize: 9.5, bold: true, alignment: 'center' }, { text: `(${r.qty_base} und.)`, fontSize: 6, color: '#666', alignment: 'center', margin: [0, 1, 0, 0] }], fillColor: bg, margin: [0, 2, 0, 2], verticalAlignment: 'middle' }
+                : { text: String(r.qty), fillColor: bg, fontSize: 9.5, bold: true, alignment: 'center', margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
             loteStackNode(lts, bg),
             { fillColor: bg, alignment: 'center', margin: [0, 0, 0, 0], verticalAlignment: 'middle',
               canvas: [{ type: 'rect', x: 0, y: 0, w: 8, h: 8, lineWidth: 1, lineColor: '#555' }] },
@@ -270,6 +273,32 @@ function buildFooterCallback(_meta) {
     });
 }
 
+function buildEspecialesBlock(especiales) {
+    if (!especiales?.length) return null;
+    return {
+        margin: [0, 4, 0, 0],
+        table: {
+            widths: [28, '*', 16],
+            body: [
+                [{ text: 'CAJAS ESPECIALES', colSpan: 3, fillColor: '#ede9fe', bold: true, fontSize: 7, color: '#5b21b6', margin: [4, 3, 4, 3], alignment: 'center' }, {}, {}],
+                ...especiales.map(e => [
+                    { text: e.label, fontSize: 8, bold: true, color: '#7c3aed', margin: [3, 2, 4, 2] },
+                    { text: e.product_name, fontSize: 7.5, color: '#333', margin: [0, 2, 3, 2] },
+                    { canvas: [{ type: 'rect', x: 0, y: 0, w: 8, h: 8, lineWidth: 1, lineColor: '#888' }], margin: [3, 0, 3, 0], alignment: 'center', verticalAlignment: 'middle' },
+                ]),
+            ],
+        },
+        layout: {
+            hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 0.8 : 0.5),
+            vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),
+            hLineColor: () => '#c4b5fd',
+            vLineColor: () => '#c4b5fd',
+            paddingLeft: () => 0, paddingRight: () => 0,
+            paddingTop: () => 0,  paddingBottom: () => 0,
+        },
+    };
+}
+
 function buildDocDefinition(sections, title, meta, logo, addrMap) {
     const fecha   = fmtFechaLarga(new Date());
     const content = [];
@@ -280,6 +309,8 @@ function buildDocDefinition(sections, title, meta, logo, addrMap) {
         content.push(table);
         const secFooter = buildSectionFooter(sec);
         if (secFooter) content.push(secFooter);
+        const espBlock = buildEspecialesBlock(sec.especiales);
+        if (espBlock) content.push(espBlock);
     });
 
     // "Generado por + fecha/hora" va en el contenido (no en el footer) —
@@ -375,16 +406,19 @@ export function getPageGroups(rows) {
 export async function getExactPageGroups(sucId, rawItems) {
     const [logo, addrMap] = await Promise.all([getLogoBase64(), getAddressMap()]);
 
-    const printRows = rawItems.filter(r => !r.sin_stock).map(r => {
+    const printRows = rawItems.filter(r => !r.sin_stock && !r.caja_especial).map(r => {
         const erpFactor  = r.factor ?? 1;
         const dispFactor = r.dispatch_factor ?? erpFactor;
+        const qty        = toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor);
+        const isLabel    = CUSTOM_LABELS.includes((r.dispatch_tipo ?? '').toUpperCase()) && dispFactor > erpFactor;
         return {
             _rawId:          r.id,
             product_name:    r.products?.nombre ?? '?',
             laboratorio:     r.products?.laboratorios?.nombre ?? '',
             presentacion_tipo: r.dispatch_tipo ?? r.presentaciones?.tipo ?? '',
             es_antibiotico:  r.products?.es_antibiotico ?? false,
-            qty:   toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor),
+            qty,
+            qty_base: isLabel ? qty * dispFactor : null,
             lotes: lotesAsignadosToDispatch(
                 Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
                 erpFactor, dispFactor,
@@ -482,19 +516,30 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
 
     const pdfs = sortedSucIds.map(sucId => {
         const g    = grouped[sucId] || { normal: [], revision: [], sinStock: [] };
-        const rows = [...g.normal, ...g.revision].map(row => {
+        const rows = [...g.normal, ...g.revision].filter(row => !row.caja_especial).map(row => {
             const erpFactor  = row.factor ?? 1;
             const dispFactor = row.dispatch_factor ?? erpFactor;
             const qty        = toDispatch(getAdjusted(row), erpFactor, dispFactor);
+            const isLabel    = CUSTOM_LABELS.includes((row.dispatch_tipo ?? '').toUpperCase()) && dispFactor > erpFactor;
             return {
                 product_name:      row.product_name,
                 laboratorio:       row.laboratorio ?? '',
                 presentacion_tipo: row.dispatch_tipo ?? row.presentacion_tipo,
                 es_antibiotico:    row.es_antibiotico,
                 qty,
+                qty_base: isLabel ? qty * dispFactor : null,
                 lotes: fefoProject(lotesToDispatch(row.lotes_bodega, erpFactor, dispFactor), qty),
             };
         }).filter(r => r.qty > 0);
+
+        let eCounter = 1;
+        const especiales = [...g.normal, ...g.revision]
+            .filter(row => row.caja_especial && (getAdjusted(row) ?? 0) > 0)
+            .sort((a, b) => (a.product_name ?? '').localeCompare(b.product_name ?? '', 'es'))
+            .flatMap(row => {
+                const qty = getAdjusted(row) ?? 1;
+                return Array.from({ length: qty }, () => ({ label: `E${eCounter++}`, product_name: row.product_name ?? '?' }));
+            });
 
         const codigo = codigoFn ? codigoFn(sucId) : null;
         const section = {
@@ -502,6 +547,7 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
             nombre:   ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
             codigo,
             rows,
+            especiales,
             sinCount: g.sinStock.length,
             revCount: g.revision.length,
         };
@@ -525,16 +571,18 @@ export async function printFromPreview(grouped, sortedSucIds, getAdjusted, title
     const [logo, addrMap] = await Promise.all([getLogoBase64(), getAddressMap()]);
     const sections = sortedSucIds.map(sucId => {
         const g      = grouped[sucId] || { normal: [], revision: [], sinStock: [] };
-        const mapped = [...g.normal, ...g.revision].map(row => {
+        const mapped = [...g.normal, ...g.revision].filter(row => !row.caja_especial).map(row => {
             const erpFactor  = row.factor ?? 1;
             const dispFactor = row.dispatch_factor ?? erpFactor;
             const qty        = toDispatch(getAdjusted(row), erpFactor, dispFactor);
+            const isLabel    = CUSTOM_LABELS.includes((row.dispatch_tipo ?? '').toUpperCase()) && dispFactor > erpFactor;
             return {
                 product_name:      row.product_name,
                 laboratorio:       row.laboratorio ?? '',
                 presentacion_tipo: row.dispatch_tipo ?? row.presentacion_tipo,
                 es_antibiotico:    row.es_antibiotico,
                 qty,
+                qty_base: isLabel ? qty * dispFactor : null,
                 lotes: fefoProject(lotesToDispatch(row.lotes_bodega, erpFactor, dispFactor), qty),
             };
         });
@@ -592,29 +640,42 @@ export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, t
     const ds = dateSuffix();
 
     const sections = sucGroups.map(([sucId, rows]) => {
-        const printRows = rows.filter(r => !r.sin_stock).map(r => {
+        const printRows = rows.filter(r => !r.sin_stock && !r.caja_especial).map(r => {
             const erpFactor  = r.factor ?? 1;
             const dispFactor = r.dispatch_factor ?? erpFactor;
             const dispTipo   = r.dispatch_tipo ?? r.presentaciones?.tipo ?? '';
             const qty        = toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor);
+            const isLabel    = CUSTOM_LABELS.includes(dispTipo.toUpperCase()) && dispFactor > erpFactor;
             return {
                 product_name:      r.products?.nombre ?? '?',
                 laboratorio:       r.products?.laboratorios?.nombre ?? '',
                 presentacion_tipo: dispTipo,
                 es_antibiotico:    r.products?.es_antibiotico ?? false,
                 qty,
+                qty_base: isLabel ? qty * dispFactor : null,
                 lotes: lotesAsignadosToDispatch(
                     Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
                     erpFactor, dispFactor,
                 ),
             };
         }).filter(r => r.qty > 0);
+
+        let eCounter = 1;
+        const especiales = rows
+            .filter(r => !r.sin_stock && r.caja_especial && (r.cantidad_asignada ?? 0) > 0)
+            .sort((a, b) => (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es'))
+            .flatMap(r => {
+                const qty = r.cantidad_asignada ?? 1;
+                return Array.from({ length: qty }, () => ({ label: `E${eCounter++}`, product_name: r.products?.nombre ?? '?' }));
+            });
+
         return {
             sucId, nombre: ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
             codigo: sucGroups.length === 1 ? (titleOverride ?? null) : null,
             rows:     printRows,
+            especiales,
             sinCount: rows.filter(r => r.sin_stock).length,
-            revCount: rows.filter(r => r.revision_minmax && !r.sin_stock).length,
+            revCount: rows.filter(r => r.revision_minmax && !r.sin_stock && !r.caja_especial).length,
         };
     });
 

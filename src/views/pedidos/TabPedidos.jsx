@@ -637,7 +637,17 @@ const COLS_SIN_STOCK = [
     { key: 'prod',       label: 'Producto',     render: renderProd },
     { key: 'pres',       label: 'Presentación', render: renderPresentacion },
     { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
-    { key: 'motivo',     label: 'Motivo', render: () => <span className="text-amber-600 text-[11px]">Sin stock en bodega</span> },
+    { key: 'stock_suc',  label: 'Stock sucursal', align: 'center', render: r => (
+        <span className={`tabular-nums text-[11px] font-semibold ${(r.stock_packs_snapshot ?? 0) === 0 ? 'text-rose-500' : 'text-slate-600'}`}>
+            {r.stock_packs_snapshot ?? '—'}
+        </span>
+    )},
+    { key: 'motivo', label: 'Motivo', render: r => (
+        <div className="flex flex-col gap-0.5">
+            <span className="text-amber-600 text-[10px] font-semibold">Sin stock en bodega</span>
+            <span className="text-slate-400 text-[9px]">Esperar reabastecimiento o generar un pedido manual</span>
+        </div>
+    )},
 ];
 
 const COLS_REGLA = [
@@ -645,8 +655,25 @@ const COLS_REGLA = [
     { key: 'prod',       label: 'Producto',      render: renderProd },
     { key: 'pres',       label: 'Presentación',  render: renderPresStock },
     { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
-    { key: 'regla',      label: 'Regla',         render: fmtRegla },
-    { key: 'motivo',     label: 'Motivo', render: () => <span className="text-rose-600 text-[11px]">Necesidad &lt; 40% de la unidad mínima de despacho</span> },
+    { key: 'stock_suc',  label: 'Stock sucursal', align: 'center', render: r => (
+        <span className={`tabular-nums text-[11px] font-semibold ${(r.stock_packs_snapshot ?? 0) === 0 ? 'text-rose-500' : 'text-slate-600'}`}>
+            {r.stock_packs_snapshot ?? '—'}
+        </span>
+    )},
+    { key: 'regla',  label: 'Regla', render: fmtRegla },
+    { key: 'motivo', label: 'Motivo', render: r => {
+        const needed = r.max_qty_snapshot != null && r.stock_packs_snapshot != null
+            ? Math.max(0, r.max_qty_snapshot - r.stock_packs_snapshot) : null;
+        return (
+            <div className="flex flex-col gap-0.5">
+                <span className="text-rose-600 text-[10px] font-semibold">Necesidad baja</span>
+                <span className="text-slate-400 text-[9px]">
+                    {needed != null ? `Reponer ${needed} und. no alcanza el mín. de despacho` : 'Necesidad < 40% de la unidad mínima de despacho'}
+                </span>
+                <span className="text-slate-300 text-[9px]">Ajustar MAX o reducir el múltiplo en la regla</span>
+            </div>
+        );
+    }},
 ];
 
 function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
@@ -1645,7 +1672,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         const ITEMS_SELECT = `
             id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_recibida,
             status, nota_diferencia, error_tipo, received_at, received_by, lotes_asignados,
-            sin_stock, revision_minmax, falta_caja,
+            sin_stock, revision_minmax, falta_caja, caja_especial,
             factor, dispatch_tipo, dispatch_factor,
             max_qty_snapshot, stock_packs_snapshot,
             resolucion_status, resolucion_tipo, resolucion_nota,
@@ -1841,14 +1868,26 @@ export default function TabPedidos({ searchTerm = '' }) {
     const handleFinalizarConCajas = useCallback(async ({ totalCajas, cajaMap, paginaItems }) => {
         if (!finalizarModal) return;
         const { pedidoId, sucId } = finalizarModal;
+        const allRows = finalizarModal.rows ?? [];
         // Contar cajas Electrolit: solo los que despachan por CAJA (625ml)
-        // Pediátrico tiene dispatch_tipo=UNIDAD → excluido
-        const cajasElectrolit = (finalizarModal.rows ?? [])
+        const cajasElectrolit = allRows
             .filter(r =>
                 (r.products?.nombre ?? '').toLowerCase().includes('electrolit') &&
                 (r.dispatch_tipo ?? '').toUpperCase() === 'CAJA'
             )
             .reduce((sum, r) => sum + Math.round((r.cantidad_asignada ?? 0) / (Number(r.dispatch_factor) || 1)), 0);
+
+        // Cajas especiales: E1, E2… por unidad
+        let eCounter = 1;
+        const cajasEspeciales = allRows
+            .filter(r => r.caja_especial === true && (r.cantidad_asignada ?? 0) > 0)
+            .sort((a, b) => (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es'))
+            .flatMap(r => Array.from({ length: r.cantidad_asignada }, () => ({
+                label: `E${eCounter++}`,
+                erp_product_id: r.erp_product_id,
+                product_name:   r.products?.nombre ?? '',
+            })));
+
         setFinalizarModal(null);
         setBusyAction('finalizar');
         try {
@@ -1857,9 +1896,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                 p_stage: 'finalizar', p_user_id: user?.id ?? null,
             });
             await supabase.from('pedido_sucursal_status')
-                .update({ total_cajas: totalCajas, caja_map: cajaMap, pagina_items: paginaItems, cajas_electrolit: cajasElectrolit })
+                .update({ total_cajas: totalCajas, caja_map: cajaMap, pagina_items: paginaItems, cajas_electrolit: cajasElectrolit, cajas_especiales: cajasEspeciales })
                 .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
-            useStaff.getState().appendAuditLog('PEDIDO_FINALIZADO', pedidoId, { totalCajas, cajasElectrolit, cajas: Object.keys(cajaMap).length });
+            useStaff.getState().appendAuditLog('PEDIDO_FINALIZADO', pedidoId, { totalCajas, cajasElectrolit, cajasEspeciales: cajasEspeciales.length, cajas: Object.keys(cajaMap).length });
             await loadActive();
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [finalizarModal, user, loadActive]);
@@ -1875,7 +1914,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         setLlegadaModal({ pedidoId, sucId, key, rows: rows ?? [] });
     }, [busyAction, items, fetchItems]);
 
-    const handleLlegadaConfirm = useCallback(async ({ cajasOk, cajasDanadas, cajasFaltantes, nota, electrolitFaltantes = null }) => {
+    const handleLlegadaConfirm = useCallback(async ({ cajasOk, cajasDanadas, cajasFaltantes, nota, electrolitFaltantes = null, especialesLlegadas = null, cajasExtra = 0, cajasExtraNotas = null }) => {
         if (!llegadaModal) return;
         const { pedidoId, sucId, key, rows } = llegadaModal;
         setLlegadaModal(null);
@@ -1929,9 +1968,10 @@ export default function TabPedidos({ searchTerm = '' }) {
                     electrolit_ok:        electrolitFaltantes === 0,
                     electrolit_faltantes: electrolitFaltantes,
                 } : {}),
+                ...(especialesLlegadas !== null ? { cajas_especiales_llegadas: especialesLlegadas } : {}),
             }).eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
 
-            useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { tipo, cajasFaltantes, cajasDanadas });
+            useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { tipo, cajasFaltantes, cajasDanadas, cajasExtra, cajasExtraNotas });
             setLlegadaStatus(prev => ({ ...prev, [key]: true }));
 
             // 5a. Notificar bodega si hay problema en cajas físicas
@@ -1955,6 +1995,30 @@ export default function TabPedidos({ searchTerm = '' }) {
                     const cnt = electrolitFaltantes;
                     const title   = `Electrolit faltante — ${branchName}`;
                     const message = `${branchName} reporta ${cnt} caja${cnt > 1 ? 's' : ''} de Electrolit que no llegaron.`;
+                    supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
+                    supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
+                }).catch(() => {});
+            }
+
+            // 5c. Notificar si cajas de más
+            if (cajasExtra > 0) {
+                supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
+                    if (!b?.branch_id) return;
+                    const notas = cajasExtraNotas ? Object.values(cajasExtraNotas).filter(Boolean) : [];
+                    const title   = `Cajas de más — ${branchName}`;
+                    const message = `${branchName} reporta ${cajasExtra} caja${cajasExtra > 1 ? 's' : ''} extra no esperada${cajasExtra > 1 ? 's' : ''}.${notas.length ? ' ' + notas.join(', ') : ''}`;
+                    supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'MEDIUM' }).catch(() => {});
+                    supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
+                }).catch(() => {});
+            }
+
+            // 5d. Notificar si faltan cajas especiales
+            if (especialesLlegadas && Object.values(especialesLlegadas).some(v => v === 'faltante')) {
+                supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
+                    if (!b?.branch_id) return;
+                    const faltanE = Object.entries(especialesLlegadas).filter(([, v]) => v === 'faltante').map(([k]) => k);
+                    const title   = `Caja especial faltante — ${branchName}`;
+                    const message = `${branchName} reporta caja${faltanE.length > 1 ? 's' : ''} especial${faltanE.length > 1 ? 'es' : ''} no recibida${faltanE.length > 1 ? 's' : ''}: ${faltanE.join(', ')}.`;
                     supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
                     supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
                 }).catch(() => {});
@@ -2468,6 +2532,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     : 'Electrolit faltante'}
                                             </span>
                                         )}
+                                        {(row.cajas_especiales ?? []).length > 0 && (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200 shrink-0">
+                                                {row.cajas_especiales.length} caja{row.cajas_especiales.length > 1 ? 's' : ''} especial{row.cajas_especiales.length > 1 ? 'es' : ''}
+                                            </span>
+                                        )}
                                         {hasObservacion(row) && row.pedido_status !== 'completado' && (
                                             (row.cajas_danadas?.length > 0 || row.falta_cajas?.length > 0 || row.pedido_status === 'parcial') && (<>
                                                 <span className="h-3.5 w-px bg-slate-200 mx-0.5 shrink-0" />
@@ -2597,7 +2666,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                 pedidoNumero={llegadaModal ? activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.numero : null}
                 cajaMap={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.caja_map ?? {}) : {}}
                 totalCajas={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.total_cajas ?? 0) : 0}
-                cajasElectrolit={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.cajas_electrolit ?? 0) : 0}
+                cajasElectrolit={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId && r.erp_sucursal_id === llegadaModal.sucId)?.cajas_electrolit ?? 0) : 0}
+                cajasEspeciales={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId && r.erp_sucursal_id === llegadaModal.sucId)?.cajas_especiales ?? []) : []}
             />
 
             <ReenvioLlegadaModal

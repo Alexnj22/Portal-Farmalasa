@@ -15,7 +15,7 @@ const EASE           = [0.16, 1, 0.3, 1];
 const EXPAND_BG     = 'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/30';
 const EXPAND_BORDER = 'border-blue-100/60';
 
-const EMPTY_VALS = { dispatch_id_presentacion: null, dispatch_multiplo: '1', notes: '', dispatch_label: '' };
+const EMPTY_VALS = { dispatch_id_presentacion: null, dispatch_multiplo: '1', notes: '', dispatch_label: '', caja_especial: false };
 
 const COLS = [
     { key: 'laboratorio_nombre', label: 'Laboratorio',     align: 'left',   sortable: true },
@@ -312,6 +312,34 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                 )}
             </AnimatePresence>
 
+            {/* Caja especial — aplica siempre que haya presentación */}
+            {vals.dispatch_id_presentacion && (
+                <div>
+                    <p className="text-[9px] text-slate-600 uppercase tracking-widest mb-2 font-bold">
+                        Caja especial
+                        <span className="normal-case tracking-normal font-medium text-slate-500"> · producto va fuera de cajas normales</span>
+                    </p>
+                    <button type="button"
+                        onClick={() => {
+                            const next = { ...vals, caja_especial: !vals.caja_especial };
+                            setVals(next); onApply(next);
+                        }}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 transition-all text-[12px] font-semibold ${
+                            vals.caja_especial
+                                ? 'bg-violet-600 border-violet-500 text-white shadow-md'
+                                : 'bg-white border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600'
+                        }`}>
+                        <Package size={13} />
+                        {vals.caja_especial ? 'Caja especial activa — E1, E2…' : 'Activar caja especial'}
+                    </button>
+                    {vals.caja_especial && (
+                        <p className="text-[10px] text-violet-600 mt-1.5 px-0.5">
+                            Cada unidad en el pedido recibe una etiqueta E1, E2… independiente.
+                        </p>
+                    )}
+                </div>
+            )}
+
             {/* Botón quitar regla — rojo por defecto */}
             {vals.dispatch_id_presentacion && (
                 <button onClick={clearRule} disabled={saving}
@@ -394,7 +422,7 @@ export default function TabReglas({ searchTerm = '' }) {
         // JOIN presentaciones directamente — elimina la query serial extra
         const [rulesRes, totalRes, newRes] = await Promise.all([
             supabase.from('dispatch_rules')
-                .select('id, erp_product_id, solo_cajas, multiplo, blister, multiplo_unidades, notes, dispatch_id_presentacion, dispatch_multiplo, dispatch_label, presentaciones(tipo)')
+                .select('id, erp_product_id, solo_cajas, multiplo, blister, multiplo_unidades, notes, dispatch_id_presentacion, dispatch_multiplo, dispatch_label, caja_especial, presentaciones(tipo)')
                 .range(0, 9999),
             supabase.from('products').select('id', { count: 'exact', head: true }).eq('activo', true),
             supabase.from('products').select('id', { count: 'exact' }).eq('activo', true).gte('created_at', startOfMonth),
@@ -476,6 +504,7 @@ export default function TabReglas({ searchTerm = '' }) {
             dispatch_multiplo:        String(rule?.dispatch_multiplo ?? 1),
             notes:                    rule?.notes ?? '',
             dispatch_label:           rule?.dispatch_label ?? '',
+            caja_especial:            rule?.caja_especial ?? false,
         });
     }, []);
 
@@ -507,6 +536,7 @@ export default function TabReglas({ searchTerm = '' }) {
                     dispatch_id_presentacion: v.dispatch_id_presentacion,
                     dispatch_multiplo:        Number(v.dispatch_multiplo) || 1,
                     dispatch_label:           v.dispatch_label || null,
+                    caja_especial:            v.caja_especial ?? false,
                     solo_cajas:               false,   // NOT NULL en DB
                     multiplo:                 null,
                     blister:                  null,

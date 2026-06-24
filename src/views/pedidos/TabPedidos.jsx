@@ -20,6 +20,7 @@ import PedidoModal from './PedidoModal';
 import LlegadaModal from './LlegadaModal';
 import ReenvioLlegadaModal from './ReenvioLlegadaModal';
 import FinalizarCajasModal from './FinalizarCajasModal';
+import CrearRutaModal from './CrearRutaModal';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
@@ -1527,8 +1528,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [erpStatus,     setErpStatus]     = useState({});
     const [busyAction,    setBusyAction]    = useState(null);
     const [busyLifecycle, setBusyLifecycle] = useState(null);
-    const [busyEnvio,     setBusyEnvio]     = useState(null);
-    const [enRutaConfirm, setEnRutaConfirm] = useState(null); // { pedidoId, sucId, numero, totalCajas }
+    const [crearRutaOpen, setCrearRutaOpen] = useState(false);
     const [modal,         setModal]         = useState(null);
     const [llegadaModal,       setLlegadaModal]       = useState(null); // { pedidoId, sucId, key, rows }
     const [reenvioLlegadaModal,setReenvioLlegadaModal] = useState(null); // { pedidoId, sucId, key, ciclo, cajasCiclo }
@@ -1774,26 +1774,6 @@ export default function TabPedidos({ searchTerm = '' }) {
             await printFromPedidoItems(pedidoNumero, [[sucId, rows ?? []]], {}, codigo ?? `${pedidoNumero}`);
         } catch (e) { console.error('PDF error:', e); } finally { setPrintingPdf(null); }
     }, [items, fetchItems]);
-
-    const handleMarcarEnRuta = useCallback(async (pedidoId, sucId, numero) => {
-        setBusyEnvio(pedidoId);
-        try {
-            const { error } = await supabase.rpc('marcar_pedido_enviado', { p_pedido_id: pedidoId, p_enviado_por: user?.id ?? null });
-            if (error) throw error;
-            useStaff.getState().appendAuditLog('PEDIDO_MARCAR_EN_RUTA', pedidoId, {});
-            loadActive();
-            // Obtener total_cajas para incluirlo en la notificación
-            supabase.from('pedido_sucursal_status').select('total_cajas').eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: pss }) => {
-                const cajas = pss?.total_cajas;
-                const cajasStr = cajas ? ` en ${cajas} caja${cajas !== 1 ? 's' : ''}` : '';
-                supabase.from('erp_sucursal_map').select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
-                    if (!m?.branch_id) return;
-                    supabase.from('announcements').insert({ title: `Pedido #${numero} en camino`, message: `Tu pedido #${numero} salió de bodega${cajasStr} y va en camino. Prepárate para recibirlo.`, target_type: 'BRANCH', target_value: [m.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'NORMAL' }).catch(() => {});
-                    supabase.functions.invoke('send-push-notification', { body: { title: `Pedido #${numero} en camino`, message: `Tu pedido ya salió de bodega${cajasStr}. Prepárate para recibirlo.`, url: '/pedidos', target_type: 'BRANCH', target_value: [m.branch_id] } }).catch(() => {});
-                }).catch(() => {});
-            }).catch(() => {});
-        } catch (e) { console.error('Envío error:', e); } finally { setBusyEnvio(null); }
-    }, [user, loadActive]);
 
     const openPauseModal = useCallback(async (pedidoId, sucId) => {
         try {
@@ -2398,7 +2378,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const isExp      = expanded === cardKey;
                             const lcKey      = `lc_${row.pedido_id}_${row.erp_sucursal_id}`;
                             const isLCBusy   = busyLifecycle === lcKey;
-                            const isEnvioBusy = busyEnvio === row.pedido_id;
 
                             const pedidoStages = pedidoStageMap.get(row.pedido_id) ?? {};
                             const canActuar = canEdit && !isBranch; // GESTIONAR + Alcance TODOS
@@ -2587,7 +2566,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
                                             {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === 'finalizar_load'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === 'finalizar_load') ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
                                             {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
-                                            {canMarcarEnRuta && <button onClick={() => setEnRutaConfirm({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, totalCajas: row.total_cajas ?? 0, cajasElectrolit: row.cajas_electrolit ?? 0 })} disabled={isEnvioBusy} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isEnvioBusy ? <Loader2 size={11} className="animate-spin" /> : <><Truck size={10} />En Ruta</>}</button>}
+                                            {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen(true)} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
                                             {canActuar && !isBranch && (row.falta_cajas ?? []).length > 0 && !(row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at) && (
                                                 // Mostrar "Reenviar caja" cuando hay cajas faltantes y no hay un ciclo en camino sin confirmar
                                                 <button onClick={() => handleReenviarCaja(row.pedido_id, row.erp_sucursal_id, row.numero, row.falta_cajas ?? [])} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">
@@ -2756,70 +2735,12 @@ export default function TabPedidos({ searchTerm = '' }) {
                 />
             )}
 
-            {/* ── En Ruta confirmation modal ──────────────────────────────────────── */}
-            {enRutaConfirm && (
-                <PedidoModal open onClose={() => setEnRutaConfirm(null)} maxWidth="max-w-xs">
-                    <PedidoModal.Header className="px-5 pt-5 pb-4">
-                        <div className="flex items-start justify-between gap-3">
-                            <div>
-                                <p className="text-[10px] font-semibold text-indigo-500 uppercase tracking-wider mb-1">Pedido #{enRutaConfirm.numero}</p>
-                                <h3 className="text-[16px] font-black text-slate-800 leading-tight">Marcar en ruta</h3>
-                            </div>
-                            <button onClick={() => setEnRutaConfirm(null)} className="text-slate-400 hover:text-slate-600 p-1 transition-colors mt-0.5">
-                                <X size={16} />
-                            </button>
-                        </div>
-                    </PedidoModal.Header>
-                    <PedidoModal.Body className="px-5 py-5">
-                        {enRutaConfirm.totalCajas > 0 ? (
-                            <div className="flex flex-col items-center gap-2 py-2">
-                                <div className="w-16 h-16 rounded-2xl bg-indigo-500 shadow-[0_6px_20px_rgba(99,102,241,0.4)] flex items-center justify-center">
-                                    <Box size={28} className="text-white" />
-                                </div>
-                                <p className="text-[52px] font-black text-slate-800 tabular-nums leading-none mt-1">
-                                    {enRutaConfirm.totalCajas}
-                                </p>
-                                <p className="text-[14px] font-semibold text-slate-500">
-                                    {enRutaConfirm.totalCajas === 1 ? 'caja en este pedido' : 'cajas en este pedido'}
-                                </p>
-                                {enRutaConfirm.cajasElectrolit > 0 && (
-                                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-sky-50 border border-sky-200 mt-1">
-                                        <Inbox size={14} className="text-sky-500 shrink-0" />
-                                        <span className="text-[13px] font-black text-sky-700 tabular-nums">
-                                            {enRutaConfirm.cajasElectrolit}
-                                        </span>
-                                        <span className="text-[12px] font-semibold text-sky-600">
-                                            {enRutaConfirm.cajasElectrolit === 1 ? 'caja Electrolit' : 'cajas Electrolit'}
-                                        </span>
-                                    </div>
-                                )}
-                                <p className="text-[11px] text-slate-400 text-center mt-1">
-                                    Verificá que tenés todas las cajas antes de salir.
-                                </p>
-                            </div>
-                        ) : (
-                            <p className="text-[13px] text-slate-600 text-center py-3">
-                                ¿Confirmar que el pedido #{enRutaConfirm.numero} salió de bodega?
-                            </p>
-                        )}
-                    </PedidoModal.Body>
-                    <PedidoModal.Footer className="flex justify-between gap-2">
-                        <button onClick={() => setEnRutaConfirm(null)}
-                            className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors">
-                            Cancelar
-                        </button>
-                        <button
-                            onClick={() => {
-                                const { pedidoId, sucId, numero } = enRutaConfirm;
-                                setEnRutaConfirm(null);
-                                handleMarcarEnRuta(pedidoId, sucId, numero);
-                            }}
-                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold text-[13px] hover:bg-indigo-700 transition-colors shadow-sm">
-                            <Truck size={14} /> Confirmar salida
-                        </button>
-                    </PedidoModal.Footer>
-                </PedidoModal>
-            )}
+            {/* ── Crear Ruta modal ───────────────────────────────────────────────── */}
+            <CrearRutaModal
+                open={crearRutaOpen}
+                onClose={() => setCrearRutaOpen(false)}
+                onCreated={() => { setCrearRutaOpen(false); loadActive(); }}
+            />
         </div>
     );
 }

@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ClipboardList, Settings2, BarChart2, Package } from 'lucide-react';
+import { ClipboardList, Settings2, BarChart2, Package, Truck } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import TabGenerar      from './pedidos/TabGenerar';
 import TabPedidos      from './pedidos/TabPedidos';
 import TabReglas       from './pedidos/TabReglas';
 import TabMetricas     from './pedidos/TabMetricas';
+import TabRutas        from './pedidos/TabRutas';
 import { useAuth }     from '../context/AuthContext';
 
 const TABS = [
     { key: 'generar',  label: 'Generar',           icon: ClipboardList, permKey: 'pedidos_tab_generar'   },
     { key: 'pedidos',  label: 'Pedidos',            icon: Package,       permKey: 'pedidos_tab_historial' },
+    { key: 'rutas',    label: 'Rutas',              icon: Truck,         permKey: 'pedidos_tab_rutas'     },
     { key: 'metricas', label: 'Métricas',           icon: BarChart2,     permKey: 'pedidos_tab_metricas'  },
     { key: 'reglas',   label: 'Reglas de despacho', icon: Settings2,     permKey: 'pedidos_tab_reglas'    },
 ];
@@ -21,6 +23,7 @@ const VALID = new Set(TABS.map(t => t.key));
 const SEARCH_PLACEHOLDER = {
     generar:  'Buscar producto en el pedido…',
     pedidos:  'Buscar pedido…',
+    rutas:    'Buscar conductor o ruta…',
     metricas: 'Buscar sucursal…',
     reglas:   'Buscar producto en reglas…',
 };
@@ -62,6 +65,7 @@ export default function PedidosView() {
         <GlassViewLayout icon={ClipboardList} title="Pedidos a Sucursales" filtersContent={filtersContent}>
             {activeTab === 'generar'  && <TabGenerar  searchTerm={debouncedSearch} />}
             {activeTab === 'pedidos'  && <TabPedidos  searchTerm={debouncedSearch} />}
+            {activeTab === 'rutas'    && <TabRutas    searchTerm={debouncedSearch} />}
             {activeTab === 'metricas' && <TabMetricas searchTerm={debouncedSearch} />}
             {activeTab === 'reglas'   && <TabReglas   searchTerm={debouncedSearch} />}
         </GlassViewLayout>

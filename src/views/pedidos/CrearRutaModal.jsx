@@ -404,7 +404,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
   if (!open) return null;
 
   return (
-    <PedidoModal open onClose={onClose} maxWidth="max-w-xl">
+    <PedidoModal open onClose={onClose} maxWidth="max-w-3xl">
       <PedidoModal.Header className="px-5 pt-5 pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -506,7 +506,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
         ) : (
           <>
             {/* ── Mapa ──────────────────────────────────────────────────── */}
-            <div className="relative rounded-2xl overflow-hidden border border-indigo-100 shadow-sm" style={{ height: 220 }}>
+            <div className="relative rounded-2xl overflow-hidden border border-indigo-100 shadow-sm" style={{ height: 360 }}>
               {mapError ? (
                 <div className="w-full h-full bg-slate-50 flex flex-col items-center justify-center gap-2 text-center px-4">
                   <MapPin size={20} className="text-slate-300" />

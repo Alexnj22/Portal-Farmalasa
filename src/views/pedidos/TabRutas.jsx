@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Truck, MapPin, CheckCircle2, Clock, AlertTriangle, Home, Play, Plus, Loader2, ChevronDown, ChevronUp, Navigation } from 'lucide-react';
+import { Truck, MapPin, CheckCircle2, Clock, AlertTriangle, Home, Play, Plus, Loader2, ChevronDown, ChevronUp, Navigation, Map } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import CrearRutaModal from './CrearRutaModal';
+import RutaMapModal   from './RutaMapModal';
 
 const STATUS_BADGE = {
   pendiente:    { label: 'Pendiente',     cls: 'bg-amber-100  text-amber-700  border-amber-200'  },
@@ -33,8 +34,9 @@ function fmtDate(iso) {
 // ── Individual ruta card ────────────────────────────────────────────────────
 function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
   const [expanded,  setExpanded]  = useState(true);
-  const [busyStop,  setBusyStop]  = useState(null); // stop id being updated
-  const [busyRuta,  setBusyRuta]  = useState(null); // 'iniciar' | 'vuelta'
+  const [busyStop,  setBusyStop]  = useState(null);
+  const [busyRuta,  setBusyRuta]  = useState(null);
+  const [mapOpen,   setMapOpen]   = useState(false);
 
   const paradas = [...(ruta.ruta_pedidos ?? [])].sort((a, b) => a.orden_entrega - b.orden_entrega);
   const isCondcutor = ruta.conductor_id === currentUserId;
@@ -158,6 +160,14 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
               />
             </div>
           )}
+          {/* Ver mapa */}
+          <button
+            onClick={e => { e.stopPropagation(); setMapOpen(true); }}
+            className="p-1.5 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors"
+            title="Ver mapa de ruta"
+          >
+            <Map size={14} />
+          </button>
           {expanded ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
         </div>
       </div>
@@ -255,6 +265,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
           )}
         </div>
       )}
+      <RutaMapModal ruta={ruta} open={mapOpen} onClose={() => setMapOpen(false)} />
     </div>
   );
 }

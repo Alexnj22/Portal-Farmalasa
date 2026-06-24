@@ -1,3 +1,5 @@
+import { supabase } from '../supabaseClient';
+
 const BODEGA_SUC_ID = 6;
 const AVG_SPEED_KMH = 40;
 
@@ -165,18 +167,25 @@ export function decodePolyline(str) {
   return pts;
 }
 
-// ── REST Distance Matrix optimization (no Maps JS SDK needed) ────────────
+// ── Supabase proxy helper (bypasses browser CORS restriction) ─────────────
+async function mapsProxy(type, params) {
+  const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const { data, error } = await supabase.functions.invoke('maps-proxy', {
+    body: { type, params, key },
+  });
+  if (error) throw error;
+  return data;
+}
+
+// ── REST Distance Matrix optimization (via proxy — no CORS issues) ────────
 export async function optimizeRouteREST(stops, bodega) {
   if (!stops.length) return [];
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  if (!apiKey) throw new Error('No key');
+  if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) throw new Error('No key');
 
   const allPoints = [bodega, ...stops];
   const coords    = allPoints.map(p => `${p.lat},${p.lng}`).join('|');
-  const url = `https://maps.googleapis.com/maps/api/distancematrix/json` +
-              `?origins=${coords}&destinations=${coords}&key=${apiKey}`;
 
-  const data = await fetch(url).then(r => r.json());
+  const data = await mapsProxy('distancematrix', { origins: coords, destinations: coords });
   if (data.status !== 'OK') throw new Error(`DM:${data.status}`);
 
   const n = allPoints.length;
@@ -208,22 +217,17 @@ export async function optimizeRouteREST(stops, bodega) {
   });
 }
 
-// ── REST Directions — real-road polyline + return leg ────────────────────
+// ── REST Directions — real-road polyline + return leg (via proxy) ─────────
 // points: [bodega, ...orderedStops, bodega] — bodega is both origin and destination
 export async function getDirectionsREST(points) {
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  if (!apiKey || points.length < 2) return null;
+  if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY || points.length < 2) return null;
 
   const fmt    = p => `${p.lat},${p.lng}`;
   const origin = fmt(points[0]);
   const dest   = fmt(points[points.length - 1]);
   const middle = points.slice(1, -1).map(fmt).join('|');
 
-  let url = `https://maps.googleapis.com/maps/api/directions/json` +
-            `?origin=${origin}&destination=${dest}&key=${apiKey}`;
-  if (middle) url += `&waypoints=${middle}`;
-
-  const data = await fetch(url).then(r => r.json());
+  const data = await mapsProxy('directions', { origin, destination: dest, waypoints: middle || undefined });
   if (data.status !== 'OK' || !data.routes?.length) return null;
 
   const route   = data.routes[0];

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.343';
+export const APP_VERSION = '2.2.344';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.344 — fix(pedidos): quitar barra duplicada de ruta; botones Iniciar/Vuelta+Entregué en header ruta; fix sucursalCounts branch; Realtime rutas↔activeRows (v2.2.344)
 // v2.2.343 — fix+feat(pedidos): fix crash Map constructor; ruta-card agrupa pedidos hijos; header ruta con mapa + GPS dot (v2.2.343)
 // v2.2.342 — feat(pedidos): barra de ruta en card (Ruta#N, conductor, GPS dot, Ver mapa, Entregué); fix filtro branch client-side (v2.2.342)
 // v2.2.341 — feat(pedidos): pedidos en ruta van al tope de la lista (sort en_ruta→procesando→con_obs); eliminar RutaEnCursoCard; "En camino"→"En ruta" (v2.2.341)

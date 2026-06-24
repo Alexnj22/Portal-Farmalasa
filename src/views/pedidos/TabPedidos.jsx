@@ -1655,6 +1655,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         const ch = supabase.channel('tab-pedidos-rt')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, (payload) => {
                 loadActive();
+                loadActiveRutas(); // rutas/ruta_pedidos pueden no estar en la pub; pedidos sí
                 const s = payload.new?.status;
                 if (isBranch && s === 'enviado') {
                     const ids = payload.new?.sucursal_ids ?? [];
@@ -1677,7 +1678,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             })
             .subscribe();
         return () => supabase.removeChannel(ch);
-    }, [loadActive, isBranch, erpSucursalId]); // eslint-disable-line
+    }, [loadActive, loadActiveRutas, isBranch, erpSucursalId]); // eslint-disable-line
 
     // ── Rutas activas: mapa pedidoId → { ruta, stop, driverOnline } ──────────
     const loadActiveRutas = useCallback(async () => {
@@ -1713,7 +1714,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'ruta_locations' }, loadActiveRutas)
             .subscribe();
         return () => supabase.removeChannel(ch);
-    }, [loadActiveRutas]);
+    }, [loadActiveRutas, loadActive]); // eslint-disable-line
 
     // ── Fetch items ───────────────────────────────────────────────────────────
 
@@ -2681,6 +2682,18 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     {printingPdf === row.pedido_id ? <Loader2 size={10} className="animate-spin" /> : <FileDown size={10} />}PDF
                                                 </button>
                                             )}
+                                            {/* Entregué — conductor, junto a PDF para ahorrar espacio */}
+                                            {pedidoRutaMap.has(row.pedido_id) && (() => {
+                                                const { ruta, stop } = pedidoRutaMap.get(row.pedido_id);
+                                                const isConductorHere = !!(user?.id && ruta.conductor_id && user.id === ruta.conductor_id);
+                                                if (!isConductorHere || !!stop?.entregado_at || ruta.status !== 'en_ruta') return null;
+                                                return (
+                                                    <button onClick={e => { e.stopPropagation(); handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}
+                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all shadow-sm">
+                                                        <CheckCircle2 size={10} />Entregué
+                                                    </button>
+                                                );
+                                            })()}
                                             {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
                                             {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
                                             {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
@@ -2695,37 +2708,16 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     </div>
 
-                                    {/* Estado de entrega de la parada (visible para todos) */}
-                                    {pedidoRutaMap.has(row.pedido_id) && (() => {
-                                        const { ruta, stop } = pedidoRutaMap.get(row.pedido_id);
-                                        const isConductorHere = !!(user?.id && ruta.conductor_id && user.id === ruta.conductor_id);
-                                        const done = !!stop?.entregado_at;
-                                        const fmtHr = (iso) => new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' });
-                                        if (done) {
-                                            return (
-                                                <div className="flex items-center gap-2 px-3 py-2 border-t border-emerald-100 bg-emerald-50/60" onClick={e => e.stopPropagation()}>
-                                                    <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
-                                                    <span className="text-[11px] font-bold text-emerald-700">Entregado en sucursal</span>
-                                                    <span className="text-[10px] text-emerald-500 tabular-nums">· {fmtHr(stop.entregado_at)}</span>
-                                                </div>
-                                            );
-                                        }
-                                        if (!isConductorHere) return null;
-                                        return (
-                                            <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-indigo-100 bg-indigo-50/30" onClick={e => e.stopPropagation()}>
-                                                {ruta.status === 'en_ruta' ? (
-                                                    <button
-                                                        onClick={() => handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id)}
-                                                        className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all shadow-sm"
-                                                    >
-                                                        <CheckCircle2 size={12} />Entregué en esta sucursal
-                                                    </button>
-                                                ) : (
-                                                    <span className="text-[10px] text-slate-400 italic">Inicia la ruta para marcar entrega</span>
-                                                )}
-                                            </div>
-                                        );
-                                    })()}
+                                    {/* Badge de entregado (solo cuando ya fue confirmado) */}
+                                    {pedidoRutaMap.has(row.pedido_id) && !!pedidoRutaMap.get(row.pedido_id)?.stop?.entregado_at && (
+                                        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-emerald-100 bg-emerald-50/70" onClick={e => e.stopPropagation()}>
+                                            <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                                            <span className="text-[10px] font-bold text-emerald-700">Entregado en sucursal</span>
+                                            <span className="text-[10px] text-emerald-500 tabular-nums">
+                                                · {new Date(pedidoRutaMap.get(row.pedido_id).stop.entregado_at).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                    )}
 
                                     {/* Recepción — enviado, o parcial con reenvío aún en camino */}
                                     {isBranch && erpSucursalId && (row.pedido_status === 'enviado' || (row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at)) && stage !== 'erp' && (
@@ -2786,54 +2778,74 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const entregadas = ruta.ruta_pedidos.filter(rp => rp.entregado_at).length;
                             const total = ruta.ruta_pedidos.length;
                             const isConductorRuta = !!(user?.id && ruta.conductor_id && user.id === ruta.conductor_id);
+                            const pct = total > 0 ? Math.round((entregadas / total) * 100) : 0;
                             return (
-                                <div key={ruta.id} className="rounded-2xl border-2 border-indigo-200/70 overflow-hidden bg-white/50 shadow-sm">
+                                <div key={ruta.id} className="rounded-2xl border border-indigo-200/80 overflow-hidden bg-white/60 shadow-[0_2px_16px_rgba(99,102,241,0.10)]">
                                     {/* Header de la ruta */}
-                                    <div className="flex items-center gap-3 px-4 py-2.5 bg-indigo-50/70 border-b border-indigo-100" onClick={e => e.stopPropagation()}>
-                                        <div className="relative shrink-0">
-                                            <Truck size={14} className="text-indigo-600" />
-                                            {dl && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 animate-pulse border border-white" />}
+                                    <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 px-4 pt-3 pb-0" onClick={e => e.stopPropagation()}>
+                                        <div className="flex items-center gap-2.5 mb-2.5">
+                                            {/* Icono conductor */}
+                                            <div className="relative shrink-0">
+                                                <div className="w-7 h-7 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center">
+                                                    <Truck size={13} className="text-white" />
+                                                </div>
+                                                {dl && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-indigo-600 animate-pulse" />}
+                                            </div>
+                                            {/* Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[13px] font-black text-white">Ruta #{ruta.numero}</span>
+                                                    {dl && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-400/30 text-emerald-100 border border-emerald-400/40">🟢 En vivo</span>}
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className="text-[11px] text-indigo-200">{ruta.conductor_nombre}</span>
+                                                    <span className="text-[10px] text-indigo-300 tabular-nums">{entregadas}/{total} entregadas</span>
+                                                </div>
+                                            </div>
+                                            {/* Acciones */}
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                {isConductorRuta && ruta.status === 'pendiente' && (
+                                                    <button
+                                                        onClick={async () => {
+                                                            await supabase.from('rutas').update({ status: 'en_ruta', salida_at: new Date().toISOString() }).eq('id', ruta.id);
+                                                            useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
+                                                            loadActiveRutas();
+                                                        }}
+                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-white/20 border border-white/30 text-white hover:bg-white/30 active:scale-95 transition-all"
+                                                    >
+                                                        <Play size={9} fill="currentColor" />Iniciar
+                                                    </button>
+                                                )}
+                                                {isConductorRuta && ruta.status === 'en_ruta' && entregadas === total && total > 0 && (
+                                                    <button
+                                                        onClick={async () => {
+                                                            await supabase.from('rutas').update({ status: 'completada', vuelta_base_at: new Date().toISOString() }).eq('id', ruta.id);
+                                                            useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
+                                                            loadActiveRutas(); loadActive();
+                                                        }}
+                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-white/20 border border-white/30 text-white hover:bg-white/30 active:scale-95 transition-all"
+                                                    >
+                                                        <Home size={9} />Base
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => setRutaMapOpen(ruta)}
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-white/20 border border-white/30 text-white hover:bg-white/30 active:scale-95 transition-all"
+                                                >
+                                                    <MapIcon size={9} />Mapa
+                                                </button>
+                                            </div>
                                         </div>
-                                        <span className="text-[13px] font-black text-indigo-800">Ruta #{ruta.numero}</span>
-                                        <span className="text-[11px] text-indigo-500">· {ruta.conductor_nombre}</span>
-                                        <span className="text-[10px] text-slate-400 tabular-nums">{entregadas}/{total} entregadas</span>
-                                        {dl && <span className="text-[10px] text-emerald-600 font-semibold">🟢 En vivo</span>}
-                                        <div className="ml-auto flex items-center gap-2">
-                                            {/* Acciones del conductor */}
-                                            {isConductorRuta && ruta.status === 'pendiente' && (
-                                                <button
-                                                    onClick={async () => {
-                                                        await supabase.from('rutas').update({ status: 'en_ruta', salida_at: new Date().toISOString() }).eq('id', ruta.id);
-                                                        useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
-                                                        loadActiveRutas();
-                                                    }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 transition-all shadow-sm"
-                                                >
-                                                    <Play size={10} fill="currentColor" />Iniciar ruta
-                                                </button>
-                                            )}
-                                            {isConductorRuta && ruta.status === 'en_ruta' && entregadas === total && total > 0 && (
-                                                <button
-                                                    onClick={async () => {
-                                                        await supabase.from('rutas').update({ status: 'completada', vuelta_base_at: new Date().toISOString() }).eq('id', ruta.id);
-                                                        useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
-                                                        loadActiveRutas(); loadActive();
-                                                    }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-700 text-white hover:bg-slate-800 active:scale-95 transition-all shadow-sm"
-                                                >
-                                                    <Home size={10} />Vuelta en base
-                                                </button>
-                                            )}
-                                            <button
-                                                onClick={() => setRutaMapOpen(ruta)}
-                                                className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 active:scale-95 transition-all shadow-sm"
-                                            >
-                                                <MapIcon size={10} />Ver mapa
-                                            </button>
+                                        {/* Barra de progreso pegada al borde inferior del header */}
+                                        <div className="h-1 bg-white/20 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                                                style={{ width: `${pct}%` }}
+                                            />
                                         </div>
                                     </div>
-                                    {/* Cards hijas de pedidos */}
-                                    <div className="divide-y divide-slate-100/60">{cards}</div>
+                                    {/* Cards hijas — con espaciado */}
+                                    <div className="p-2.5 space-y-2">{cards}</div>
                                 </div>
                             );
                         }

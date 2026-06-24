@@ -12,30 +12,21 @@ export function haversineMeters(lat1, lng1, lat2, lng2) {
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
-function minsFromMeters(m) {
-  return Math.max(1, Math.round((m / 1000 / AVG_SPEED_KMH) * 60));
-}
+function minsFromSeconds(s) { return Math.max(1, Math.round(s / 60)); }
+function minsFromMeters(m)   { return Math.max(1, Math.round((m / 1000 / AVG_SPEED_KMH) * 60)); }
 
-// stops: [{erp_sucursal_id, suc_name, lat, lng, ...extra}]
-// bodega: {lat, lng}
-// Returns stops ordered optimally, each with {orden, dist_m, dur_min} added
-export function optimizeRoute(stops, bodega) {
-  if (!stops.length) return [];
-
-  if (stops.length === 1) {
-    const d = haversineMeters(bodega.lat, bodega.lng, stops[0].lat, stops[0].lng);
-    return [{ ...stops[0], orden: 1, dist_m: Math.round(d), dur_min: minsFromMeters(d) }];
-  }
-
-  // Brute-force TSP — works well for ≤ 8 stops
-  let bestOrder = stops.map((_, i) => i);
-  let bestDist = Infinity;
+// ── TSP brute-force (≤ 8 stops) ───────────────────────────────────────────
+// distFn(i, j): index of origin → index of destination (0 = bodega, 1..n = stops)
+function tspBrute(n, distFn) {
+  const indices = Array.from({ length: n }, (_, i) => i);
+  let bestOrder = [...indices];
+  let bestDist  = Infinity;
 
   function permute(arr, l) {
     if (l === arr.length) {
-      let d = haversineMeters(bodega.lat, bodega.lng, stops[arr[0]].lat, stops[arr[0]].lng);
+      let d = distFn(0, arr[0] + 1);          // bodega → first stop
       for (let i = 0; i < arr.length - 1; i++) {
-        d += haversineMeters(stops[arr[i]].lat, stops[arr[i]].lng, stops[arr[i + 1]].lat, stops[arr[i + 1]].lng);
+        d += distFn(arr[i] + 1, arr[i + 1] + 1); // stop → next stop
       }
       if (d < bestDist) { bestDist = d; bestOrder = [...arr]; }
       return;
@@ -46,12 +37,98 @@ export function optimizeRoute(stops, bodega) {
       [arr[l], arr[i]] = [arr[i], arr[l]];
     }
   }
-  permute(stops.map((_, i) => i), 0);
+  permute([...indices], 0);
+  return bestOrder;
+}
 
-  return bestOrder.map((si, pos) => {
-    const prev = pos === 0 ? bodega : stops[bestOrder[pos - 1]];
-    const d = haversineMeters(prev.lat, prev.lng, stops[si].lat, stops[si].lng);
+// ── Haversine optimization (sync) ─────────────────────────────────────────
+// stops: [{erp_sucursal_id, suc_name, lat, lng, items:[]}]
+// bodega: {lat, lng}
+export function optimizeRoute(stops, bodega) {
+  if (!stops.length) return [];
+
+  const nodes = [bodega, ...stops]; // index 0=bodega, 1..n=stops
+  const distFn = (i, j) => haversineMeters(nodes[i].lat, nodes[i].lng, nodes[j].lat, nodes[j].lng);
+
+  const order = stops.length === 1 ? [0] : tspBrute(stops.length, distFn);
+
+  return order.map((si, pos) => {
+    const prevIdx = pos === 0 ? 0 : order[pos - 1] + 1;
+    const d = haversineMeters(nodes[prevIdx].lat, nodes[prevIdx].lng, stops[si].lat, stops[si].lng);
     return { ...stops[si], orden: pos + 1, dist_m: Math.round(d), dur_min: minsFromMeters(d) };
+  });
+}
+
+// ── Google Maps loader (singleton) ────────────────────────────────────────
+let _mapsPromise = null;
+export function loadGoogleMaps() {
+  if (_mapsPromise) return _mapsPromise;
+  if (window.google?.maps?.DistanceMatrixService) {
+    _mapsPromise = Promise.resolve(window.google.maps);
+    return _mapsPromise;
+  }
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  _mapsPromise = new Promise((resolve, reject) => {
+    const cb = '__gmaps_cb_' + Date.now();
+    window[cb] = () => { delete window[cb]; resolve(window.google.maps); };
+    const s = document.createElement('script');
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=${cb}&libraries=geometry`;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+  return _mapsPromise;
+}
+
+// ── Google Maps Distance Matrix optimization (async, called once) ─────────
+// Returns same shape as optimizeRoute but with real road distances/durations.
+export async function optimizeRouteGoogleMaps(stops, bodega) {
+  if (!stops.length) return [];
+  if (!import.meta.env.VITE_GOOGLE_MAPS_API_KEY) return optimizeRoute(stops, bodega);
+
+  const maps = await loadGoogleMaps();
+  const svc  = new maps.DistanceMatrixService();
+
+  // All points: bodega first, then each unique stop
+  const allPoints = [
+    { lat: bodega.lat, lng: bodega.lng },
+    ...stops.map(s => ({ lat: s.lat, lng: s.lng })),
+  ];
+
+  const result = await svc.getDistanceMatrix({
+    origins:      allPoints,
+    destinations: allPoints,
+    travelMode:   maps.TravelMode.DRIVING,
+    unitSystem:   maps.UnitSystem.METRIC,
+  });
+
+  // Build distance matrix [i][j] = meters, [i][j]_dur = seconds
+  const n = allPoints.length;
+  const distMatrix = Array.from({ length: n }, () => new Array(n).fill(Infinity));
+  const durMatrix  = Array.from({ length: n }, () => new Array(n).fill(0));
+
+  result.rows.forEach((row, i) => {
+    row.elements.forEach((el, j) => {
+      if (el.status === 'OK') {
+        distMatrix[i][j] = el.distance.value;
+        durMatrix[i][j]  = el.duration.value;
+      } else {
+        // Fallback to haversine for this pair
+        distMatrix[i][j] = haversineMeters(allPoints[i].lat, allPoints[i].lng, allPoints[j].lat, allPoints[j].lng);
+        durMatrix[i][j]  = distMatrix[i][j] / 1000 / AVG_SPEED_KMH * 3600;
+      }
+    });
+  });
+
+  const order = stops.length === 1 ? [0] : tspBrute(stops.length, (i, j) => distMatrix[i][j]);
+
+  return order.map((si, pos) => {
+    const prevIdx = pos === 0 ? 0 : order[pos - 1] + 1;
+    return {
+      ...stops[si],
+      orden:   pos + 1,
+      dist_m:  Math.round(distMatrix[prevIdx][si + 1]),
+      dur_min: minsFromSeconds(durMatrix[prevIdx][si + 1]),
+    };
   });
 }
 

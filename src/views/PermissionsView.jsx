@@ -104,6 +104,7 @@ const MODULE_GROUPS = [
             { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, seguimiento en tiempo real y recepción por sucursal', icon: Package, hasApprove: false, hasScope: true, tabs: [
                 { key: 'pedidos_tab_generar',   label: 'Generar'              },
                 { key: 'pedidos_tab_historial', label: 'Pedidos (unificado)'  },
+                { key: 'pedidos_tab_rutas',     label: 'Rutas de entrega'     },
                 { key: 'pedidos_tab_metricas',  label: 'Métricas'             },
                 { key: 'pedidos_tab_reglas',    label: 'Reglas de despacho'   },
             ]},

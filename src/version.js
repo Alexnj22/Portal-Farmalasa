@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.320';
+export const APP_VERSION = '2.2.321';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.321 — fix(rutas): conductor auto = usuario actual; Google Maps Distance Matrix API; pedidos_tab_rutas en PermissionsView (v2.2.321)
 // v2.2.320 — feat(pedidos/rutas): Sistema de Rutas completo — TabRutas, CrearRutaModal, optimización TSP, DB rutas+ruta_pedidos (v2.2.320)
 // v2.2.319 — feat(sucursales): campos lat/lng GPS en edición de sucursal para sistema de rutas (v2.2.319)
 // v2.2.318 — feat(pedidos): PDF und. base en regla PDF; motivo+stock en sin-stock/regla; caja_especial E1/E2; cajas de más (v2.2.318)

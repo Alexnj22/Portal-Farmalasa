@@ -84,7 +84,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
           is_archived:  false,
           created_by:   currentUserId,
           priority:     'HIGH',
-        }).catch(() => {});
+        }).then(() => {}, () => {});
         supabase.functions.invoke('send-push-notification', {
           body: {
             title:        'El conductor llegó',
@@ -292,7 +292,7 @@ export default function TabRutas({ searchTerm = '' }) {
           entregado_at, entregado_por, confirmado_suc_at, discrepancia
         )
       `)
-      .in('status', ['pendiente', 'en_ruta'])
+      .in('status', ['completada'])
       .order('created_at', { ascending: false })
       .limit(50);
 

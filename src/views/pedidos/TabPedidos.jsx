@@ -20,7 +20,8 @@ import PedidoModal from './PedidoModal';
 import LlegadaModal from './LlegadaModal';
 import ReenvioLlegadaModal from './ReenvioLlegadaModal';
 import FinalizarCajasModal from './FinalizarCajasModal';
-import CrearRutaModal from './CrearRutaModal';
+import CrearRutaModal    from './CrearRutaModal';
+import RutaEnCursoCard  from './RutaEnCursoCard';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
@@ -1539,6 +1540,13 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [busyLifecycle, setBusyLifecycle] = useState(null);
     const [crearRutaOpen, setCrearRutaOpen] = useState(false);
     const [modal,         setModal]         = useState(null);
+
+    // ── Sub-tabs Procesando / En Ruta ─────────────────────────────────────────
+    const [subTab,       setSubTab]       = useState('procesando'); // 'procesando' | 'en_ruta'
+    const [subDir,       setSubDir]       = useState(1);            // 1 = right, -1 = left
+    const [activeRutas,  setActiveRutas]  = useState([]);
+    const [rutasLoading, setRutasLoading] = useState(false);
+    const [driverOnlineMap, setDriverOnlineMap] = useState({});    // rutaId → bool
     const [llegadaModal,       setLlegadaModal]       = useState(null); // { pedidoId, sucId, key, rows }
     const [reenvioLlegadaModal,setReenvioLlegadaModal] = useState(null); // { pedidoId, sucId, key, ciclo, cajasCiclo }
     const [finalizarModal,     setFinalizarModal]      = useState(null); // { pedidoId, sucId, numero, key, rows }
@@ -1557,6 +1565,73 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     // Card stats (for collapsed pill display)
     const [cardStats,  setCardStats]  = useState({}); // cardKey → { enviados, sinStock, porRegla }
+
+    // ── Cargar rutas activas ──────────────────────────────────────────────────
+    const loadActiveRutas = useCallback(async () => {
+        setRutasLoading(true);
+        const { data } = await supabase.from('rutas')
+            .select(`id, numero, conductor_id, conductor_nombre, status,
+                     salida_at, vuelta_base_at, distancia_total_m, duracion_estimada_min, created_at,
+                     ruta_pedidos (id, pedido_id, erp_sucursal_id, orden_entrega,
+                       distancia_desde_anterior_m, duracion_desde_anterior_min,
+                       entregado_at, entregado_por)`)
+            .in('status', ['pendiente', 'en_ruta'])
+            .order('created_at', { ascending: false });
+
+        if (!data?.length) { setActiveRutas([]); setRutasLoading(false); return; }
+
+        const sucIds    = [...new Set(data.flatMap(r => r.ruta_pedidos.map(rp => rp.erp_sucursal_id)))];
+        const pedIds    = [...new Set(data.flatMap(r => r.ruta_pedidos.map(rp => rp.pedido_id)))];
+        const rutaIds   = data.map(r => r.id);
+
+        const [{ data: sucData }, { data: pedData }, { data: locData }] = await Promise.all([
+            supabase.from('erp_sucursal_map').select('erp_sucursal_id, branch:branches!inner(name)').in('erp_sucursal_id', sucIds.length ? sucIds : [-1]),
+            supabase.from('pedidos').select('id, numero').in('id', pedIds.length ? pedIds : ['00000000-0000-0000-0000-000000000000']),
+            supabase.from('ruta_locations').select('ruta_id, updated_at').in('ruta_id', rutaIds),
+        ]);
+
+        const sucNameMap = Object.fromEntries((sucData ?? []).map(s => [s.erp_sucursal_id, s.branch?.name]));
+        const pedNumMap  = Object.fromEntries((pedData ?? []).map(p => [p.id, p.numero]));
+
+        const onlineMap = {};
+        for (const loc of locData ?? []) {
+            const ageMin = (Date.now() - new Date(loc.updated_at).getTime()) / 60000;
+            onlineMap[loc.ruta_id] = ageMin < 3;
+        }
+        setDriverOnlineMap(onlineMap);
+
+        setActiveRutas(data.map(ruta => ({
+            ...ruta,
+            ruta_pedidos: ruta.ruta_pedidos.map(rp => ({
+                ...rp,
+                suc_name: sucNameMap[rp.erp_sucursal_id] ?? `Suc. ${rp.erp_sucursal_id}`,
+                numeros:  [pedNumMap[rp.pedido_id]].filter(Boolean),
+            })),
+        })));
+        setRutasLoading(false);
+    }, []);
+
+    useEffect(() => { loadActiveRutas(); }, [loadActiveRutas]);
+
+    // Realtime: actualizar cards al entregar parada o cambiar status
+    useEffect(() => {
+        const ch = supabase.channel('rutas-activas-rt')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'rutas' },        loadActiveRutas)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'ruta_pedidos' }, loadActiveRutas)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'ruta_locations' }, ({ new: row }) => {
+                if (row?.ruta_id) {
+                    const ageMin = (Date.now() - new Date(row.updated_at).getTime()) / 60000;
+                    setDriverOnlineMap(prev => ({ ...prev, [row.ruta_id]: ageMin < 3 }));
+                }
+            })
+            .subscribe();
+        return () => supabase.removeChannel(ch);
+    }, [loadActiveRutas]);
+
+    const switchSubTab = useCallback((tab) => {
+        setSubDir(tab === 'en_ruta' ? 1 : -1);
+        setSubTab(tab);
+    }, []);
 
     // ── Branch ERP ────────────────────────────────────────────────────────────
 
@@ -2319,6 +2394,83 @@ export default function TabPedidos({ searchTerm = '' }) {
                 )}
             </AnimatePresence>
 
+            {/* ── Sub-tabs ──────────────────────────────────────────────── */}
+            <div className="flex gap-1 bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-1">
+                <button
+                    onClick={() => switchSubTab('procesando')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
+                        subTab === 'procesando' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                >
+                    Procesando
+                </button>
+                <button
+                    onClick={() => switchSubTab('en_ruta')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
+                        subTab === 'en_ruta' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                >
+                    En Ruta
+                    {activeRutas.length > 0 && (
+                        <span className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className={`text-[10px] font-bold ${subTab === 'en_ruta' ? 'text-emerald-600' : 'text-emerald-500'}`}>
+                                {activeRutas.length}
+                            </span>
+                        </span>
+                    )}
+                </button>
+            </div>
+
+            {/* ── Contenido con slide ───────────────────────────────────── */}
+            <AnimatePresence mode="wait" custom={subDir}>
+            {subTab === 'en_ruta' ? (
+                <motion.div
+                    key="en_ruta"
+                    custom={subDir}
+                    initial={{ x: subDir * 40, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1, transition: { duration: 0.22, ease: 'easeOut' } }}
+                    exit={{ x: -subDir * 40, opacity: 0, transition: { duration: 0.15 } }}
+                >
+                    {rutasLoading ? (
+                        <div className="flex items-center justify-center py-16 gap-2 text-slate-400">
+                            <Loader2 size={18} className="animate-spin" />
+                        </div>
+                    ) : activeRutas.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 gap-3">
+                            <div className="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center">
+                                <Truck size={24} className="text-slate-400" />
+                            </div>
+                            <div className="text-center">
+                                <p className="text-[14px] font-bold text-slate-700">Sin rutas activas</p>
+                                <p className="text-[12px] text-slate-400 mt-1">Crea una ruta desde un pedido listo para envío.</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {activeRutas.map(ruta => (
+                                <RutaEnCursoCard
+                                    key={ruta.id}
+                                    ruta={ruta}
+                                    currentUserId={user?.id}
+                                    canEdit={canEdit}
+                                    isBranch={isBranch}
+                                    onRefresh={loadActiveRutas}
+                                    driverOnline={driverOnlineMap[ruta.id] ?? false}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </motion.div>
+            ) : (
+                <motion.div
+                    key="procesando"
+                    custom={subDir}
+                    initial={{ x: subDir * 40, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1, transition: { duration: 0.22, ease: 'easeOut' } }}
+                    exit={{ x: -subDir * 40, opacity: 0, transition: { duration: 0.15 } }}
+                >
+
             {/* ── FILTROS + CARDS SUCURSALES ─────────────────────────── */}
             <div>
                 {/* Fila única: cards por sucursal (izq) + FilterPill (der) */}
@@ -2645,6 +2797,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                 )}
             </div>
 
+                </motion.div>
+            )}
+            </AnimatePresence>
 
             {/* ── Modals ─────────────────────────────────────────────────── */}
 
@@ -2750,7 +2905,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             <CrearRutaModal
                 open={crearRutaOpen}
                 onClose={() => setCrearRutaOpen(false)}
-                onCreated={() => { setCrearRutaOpen(false); loadActive(); }}
+                onCreated={() => { setCrearRutaOpen(false); loadActive(); loadActiveRutas(); switchSubTab('en_ruta'); }}
             />
         </div>
     );

@@ -13,7 +13,7 @@ import { useAuth }     from '../context/AuthContext';
 const TABS = [
     { key: 'generar',  label: 'Generar',           icon: ClipboardList, permKey: 'pedidos_tab_generar'   },
     { key: 'pedidos',  label: 'Pedidos',            icon: Package,       permKey: 'pedidos_tab_historial' },
-    { key: 'rutas',    label: 'Rutas',              icon: Truck,         permKey: 'pedidos_tab_rutas'     },
+    { key: 'rutas',    label: 'Historial Rutas',    icon: Truck,         permKey: 'pedidos_tab_rutas'     },
     { key: 'metricas', label: 'Métricas',           icon: BarChart2,     permKey: 'pedidos_tab_metricas'  },
     { key: 'reglas',   label: 'Reglas de despacho', icon: Settings2,     permKey: 'pedidos_tab_reglas'    },
 ];

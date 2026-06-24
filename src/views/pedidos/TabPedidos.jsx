@@ -8,7 +8,7 @@ import {
     Database, Activity, TrendingDown,
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
-    UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box, Zap,
+    UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box, Zap, Map,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -21,6 +21,7 @@ import LlegadaModal from './LlegadaModal';
 import ReenvioLlegadaModal from './ReenvioLlegadaModal';
 import FinalizarCajasModal from './FinalizarCajasModal';
 import CrearRutaModal    from './CrearRutaModal';
+import RutaMapModal      from './RutaMapModal';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
@@ -1539,6 +1540,10 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [busyLifecycle, setBusyLifecycle] = useState(null);
     const [crearRutaOpen, setCrearRutaOpen] = useState(false);
     const [modal,         setModal]         = useState(null);
+    const [rutaMapOpen,   setRutaMapOpen]   = useState(null); // ruta obj para RutaMapModal
+
+    // Rutas activas: mapa pedidoId → { ruta, stop, driverOnline }
+    const [pedidoRutaMap, setPedidoRutaMap] = useState(new Map());
 
     const [llegadaModal,       setLlegadaModal]       = useState(null); // { pedidoId, sucId, key, rows }
     const [reenvioLlegadaModal,setReenvioLlegadaModal] = useState(null); // { pedidoId, sucId, key, ciclo, cajasCiclo }
@@ -1673,6 +1678,42 @@ export default function TabPedidos({ searchTerm = '' }) {
             .subscribe();
         return () => supabase.removeChannel(ch);
     }, [loadActive, isBranch, erpSucursalId]); // eslint-disable-line
+
+    // ── Rutas activas: mapa pedidoId → { ruta, stop, driverOnline } ──────────
+    const loadActiveRutas = useCallback(async () => {
+        const { data } = await supabase.from('rutas')
+            .select(`id, numero, conductor_id, conductor_nombre, status, salida_at,
+                     ruta_pedidos(id, pedido_id, erp_sucursal_id, orden_entrega, entregado_at, entregado_por)`)
+            .in('status', ['pendiente', 'en_ruta'])
+            .order('created_at', { ascending: false });
+        if (!data?.length) { setPedidoRutaMap(new Map()); return; }
+
+        const rutaIds = data.map(r => r.id);
+        const { data: locs } = await supabase.from('ruta_locations')
+            .select('ruta_id, updated_at').in('ruta_id', rutaIds);
+        const onlineMap = Object.fromEntries((locs ?? []).map(l => {
+            const ageMin = (Date.now() - new Date(l.updated_at).getTime()) / 60000;
+            return [l.ruta_id, ageMin < 3];
+        }));
+
+        const map = new Map();
+        data.forEach(ruta => {
+            (ruta.ruta_pedidos ?? []).forEach(stop => {
+                map.set(stop.pedido_id, { ruta, stop, driverOnline: onlineMap[ruta.id] ?? false });
+            });
+        });
+        setPedidoRutaMap(map);
+    }, []);
+
+    useEffect(() => { loadActiveRutas(); }, [loadActiveRutas]);
+    useEffect(() => {
+        const ch = supabase.channel('pedido-rutas-rt')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'rutas' },        loadActiveRutas)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'ruta_pedidos' }, loadActiveRutas)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'ruta_locations' }, loadActiveRutas)
+            .subscribe();
+        return () => supabase.removeChannel(ch);
+    }, [loadActiveRutas]);
 
     // ── Fetch items ───────────────────────────────────────────────────────────
 
@@ -2141,6 +2182,27 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [reenvioLlegadaModal, user, branchName, loadActive, fetchItems]);
 
+    const handleEntregarStop = useCallback(async (stopId, rutaId, sucId) => {
+        try {
+            const { error } = await supabase.from('ruta_pedidos')
+                .update({ entregado_at: new Date().toISOString(), entregado_por: user?.id })
+                .eq('id', stopId);
+            if (error) throw error;
+            useStaff.getState().appendAuditLog('RUTA_PARADA_ENTREGADA', stopId, { sucursal_id: sucId });
+            const { data: mapa } = await supabase.from('erp_sucursal_map')
+                .select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle();
+            if (mapa?.branch_id) {
+                supabase.from('announcements').insert({
+                    title: 'Conductor llegó a tu sucursal',
+                    message: 'Confirma la recepción de tu pedido.',
+                    target_type: 'BRANCH', target_value: [mapa.branch_id],
+                    read_by: [], is_archived: false, created_by: user?.id, priority: 'HIGH',
+                }).then(() => {}, () => {});
+            }
+            loadActiveRutas();
+        } catch (e) { console.error(e); }
+    }, [user, loadActiveRutas]);
+
     const handleMarkErp = useCallback(async (pedidoId, sucId, key) => {
         if (busyAction) return;
         setBusyAction('erp');
@@ -2260,6 +2322,8 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     const filteredRows = useMemo(() => {
         let rows = activeRows;
+        // guard cliente para branch: nunca mostrar datos de otra sucursal aunque la query DB llegue tarde
+        if (isBranch && erpSucursalId) rows = rows.filter(r => r.erp_sucursal_id === erpSucursalId);
         if (filterSuc) rows = rows.filter(r => r.erp_sucursal_id === Number(filterSuc));
 
         if (filterStatus === 'completado') {
@@ -2596,6 +2660,41 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     </div>
 
+                                    {/* Ruta activa — mapa + Entregué ───────────────────────── */}
+                                    {pedidoRutaMap.has(row.pedido_id) && (() => {
+                                        const { ruta, stop, driverOnline } = pedidoRutaMap.get(row.pedido_id);
+                                        const isConductorHere = !!(user?.id && ruta.conductor_id && user.id === ruta.conductor_id);
+                                        const done = !!stop?.entregado_at;
+                                        return (
+                                            <div className="flex items-center gap-2 px-3 py-2 border-t border-indigo-100 bg-indigo-50/40" onClick={e => e.stopPropagation()}>
+                                                <div className="relative shrink-0">
+                                                    <Truck size={12} className="text-indigo-500" />
+                                                    {driverOnline && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse border border-white" />}
+                                                </div>
+                                                <span className="text-[11px] font-semibold text-indigo-700">Ruta #{ruta.numero}</span>
+                                                <span className="text-[10px] text-indigo-500">· {ruta.conductor_nombre}</span>
+                                                {driverOnline && <span className="text-[10px] text-emerald-600 font-semibold">🟢 En vivo</span>}
+                                                <div className="ml-auto flex items-center gap-1.5">
+                                                    {isConductorHere && !done && ruta.status === 'en_ruta' && (
+                                                        <button
+                                                            onClick={() => handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id)}
+                                                            className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all shadow-sm"
+                                                        >
+                                                            <CheckCircle2 size={10} />Entregué
+                                                        </button>
+                                                    )}
+                                                    {done && <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1"><CheckCircle2 size={10} />Entregado</span>}
+                                                    <button
+                                                        onClick={() => setRutaMapOpen(ruta)}
+                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 active:scale-95 transition-all shadow-sm"
+                                                    >
+                                                        <Map size={10} />Ver mapa
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
                                     {/* Recepción — enviado, o parcial con reenvío aún en camino */}
                                     {isBranch && erpSucursalId && (row.pedido_status === 'enviado' || (row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at)) && stage !== 'erp' && (
                                         <div onClick={e => e.stopPropagation()}>
@@ -2760,6 +2859,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                 onClose={() => setCrearRutaOpen(false)}
                 onCreated={() => { setCrearRutaOpen(false); loadActive(); }}
             />
+
+            {rutaMapOpen && (
+                <RutaMapModal
+                    ruta={rutaMapOpen}
+                    open={!!rutaMapOpen}
+                    onClose={() => setRutaMapOpen(null)}
+                    currentUserId={user?.id}
+                />
+            )}
         </div>
     );
 }

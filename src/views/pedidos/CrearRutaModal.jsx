@@ -4,7 +4,7 @@ import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import PedidoModal from './PedidoModal';
-import { optimizeRoute, optimizeRouteREST, getDirectionsREST, totalRoute, haversineMeters, loadLeaflet } from '../../utils/routeOptimizer';
+import { optimizeRoute, optimizeRouteREST, getDirectionsREST, totalRoute, haversineMeters, loadGoogleMaps, loadLeaflet } from '../../utils/routeOptimizer';
 
 function fmtDist(m) {
   if (!m) return null;
@@ -153,19 +153,19 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
   const totalTime     = (timeline[timeline.length - 1]?.cumul ?? 0) + (returnLeg?.dur_min ?? 0);
   const totalDist     = totalRoute(paradas.filter(s => s.dist_m != null)).dist_m + (returnLeg?.dist_m ?? 0);
 
-  // ── Map rendering (Leaflet + Directions REST polyline) ───────────────────
+  // ── Map rendering (Google Maps JS → Leaflet + proxy fallback) ───────────
   useEffect(() => {
     if (step !== 2 || !paradas.length || !bodegaCoords) return;
     let cancelled = false;
+    let authFailed = false;
 
-    // Haversine return leg inmediato; se actualiza si Directions REST responde
+    // Haversine return leg inmediato; se actualiza si Directions API responde
     const lastCoords = coordsMap[paradas[paradas.length - 1]?.erp_sucursal_id];
     if (lastCoords && !returnLeg) {
       const dm = haversineMeters(lastCoords.lat, lastCoords.lng, bodegaCoords.lat, bodegaCoords.lng);
       setReturnLeg({ dist_m: Math.round(dm), dur_min: Math.max(1, Math.round(dm / 1000 / 40 * 60)) });
     }
 
-    // Todos los puntos: bodega → paradas → bodega (para polyline cerrado)
     const orderedPoints = [
       bodegaCoords,
       ...paradas.map(p => coordsMap[p.erp_sucursal_id]).filter(Boolean),
@@ -173,12 +173,11 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
     ];
     const fallbackLatLngs = orderedPoints.map(p => [p.lat, p.lng]);
 
-    ;(async () => {
-      if (cancelled || !mapRef.current) return;
+    // Leaflet con polyline (real vía proxy o recta como último recurso)
+    async function initLeaflet(useProxyPolyline = true) {
       try {
         const L = await loadLeaflet();
         if (cancelled || !mapRef.current) return;
-
         mapRef.current.innerHTML = '';
         const lmap = L.map(mapRef.current, { zoomControl: true, attributionControl: true });
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -186,50 +185,91 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
           maxZoom: 18,
         }).addTo(lmap);
 
-        // Intentar Directions REST para polyline real de carretera
         let polylineLatLngs = fallbackLatLngs;
-        try {
-          const dirs = await getDirectionsREST(orderedPoints);
-          if (dirs && !cancelled) {
-            polylineLatLngs = dirs.polylinePoints;
-            if (dirs.returnLeg) setReturnLeg(dirs.returnLeg);
-            setMapsMode(true);
+        if (useProxyPolyline) {
+          try {
+            const dirs = await getDirectionsREST(orderedPoints);
+            if (dirs && !cancelled) {
+              polylineLatLngs = dirs.polylinePoints;
+              if (dirs.returnLeg) setReturnLeg(dirs.returnLeg);
+              setMapsMode(true);
+              console.log('[maps] Directions proxy OK — ruta real dibujada');
+            }
+          } catch (e) {
+            console.warn('[maps] Directions proxy falló:', e?.message ?? e);
           }
-        } catch { /* usa fallback de línea recta */ }
+        }
 
         if (cancelled) return;
-
         L.polyline(polylineLatLngs, { color: '#6366f1', weight: 5, opacity: 0.85 }).addTo(lmap);
-
-        // Marker de bodega
         L.marker([bodegaCoords.lat, bodegaCoords.lng], {
-          icon: L.divIcon({
-            className: '',
-            html: `<div style="width:30px;height:30px;border-radius:50%;background:#1e1b4b;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:13px">🏭</div>`,
-            iconSize: [30, 30], iconAnchor: [15, 15],
-          }),
+          icon: L.divIcon({ className: '', html: `<div style="width:30px;height:30px;border-radius:50%;background:#1e1b4b;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:13px">🏭</div>`, iconSize: [30,30], iconAnchor: [15,15] }),
           title: 'Bodega',
         }).addTo(lmap);
-
-        // Markers de paradas
         paradas.forEach((stop, i) => {
-          const c = coordsMap[stop.erp_sucursal_id];
-          if (!c) return;
+          const c = coordsMap[stop.erp_sucursal_id]; if (!c) return;
           L.marker([c.lat, c.lng], {
-            icon: L.divIcon({
-              className: '',
-              html: `<div style="width:26px;height:26px;border-radius:50%;background:#6366f1;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:bold">${i + 1}</div>`,
-              iconSize: [26, 26], iconAnchor: [13, 13],
-            }),
+            icon: L.divIcon({ className: '', html: `<div style="width:26px;height:26px;border-radius:50%;background:#6366f1;border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:bold">${i+1}</div>`, iconSize: [26,26], iconAnchor: [13,13] }),
             title: stop.suc_name,
           }).addTo(lmap);
         });
-
         lmap.fitBounds(polylineLatLngs.filter(p => p[0] && p[1]), { padding: [20, 20] });
-      } catch { if (!cancelled) setMapError(true); }
-    })();
+      } catch (e) {
+        console.error('[maps] Leaflet init error:', e);
+        if (!cancelled) setMapError(true);
+      }
+    }
 
-    return () => { cancelled = true; };
+    // Intentar Google Maps JS SDK primero
+    const prevAuthFailure = window.gm_authFailure;
+    window.gm_authFailure = () => {
+      console.warn('[maps] gm_authFailure — Maps JS key inválida, usando Leaflet');
+      if (!authFailed) { authFailed = true; initLeaflet(); }
+      if (prevAuthFailure) prevAuthFailure();
+    };
+
+    loadGoogleMaps().then(maps => {
+      if (cancelled || !mapRef.current) return;
+      console.log('[maps] Google Maps JS cargado OK');
+      const origin  = new maps.LatLng(bodegaCoords.lat, bodegaCoords.lng);
+      const mapInst = new maps.Map(mapRef.current, {
+        zoom: 11, center: { lat: bodegaCoords.lat, lng: bodegaCoords.lng },
+        disableDefaultUI: true, zoomControl: true, gestureHandling: 'cooperative',
+        styles: [{ featureType:'poi', stylers:[{visibility:'off'}] }, { featureType:'transit', stylers:[{visibility:'off'}] }],
+      });
+      if (authFailed) return;
+      const dr = new maps.DirectionsRenderer({ map: mapInst, suppressMarkers: true, polylineOptions: { strokeColor: '#6366f1', strokeWeight: 5, strokeOpacity: 0.85 } });
+      new maps.DirectionsService().route({
+        origin, destination: origin,
+        waypoints: paradas.filter(p => coordsMap[p.erp_sucursal_id]).map(p => ({ location: new maps.LatLng(coordsMap[p.erp_sucursal_id].lat, coordsMap[p.erp_sucursal_id].lng), stopover: true })),
+        travelMode: maps.TravelMode.DRIVING, optimizeWaypoints: false,
+      }, (result, status) => {
+        if (cancelled || authFailed) return;
+        console.log('[maps] DirectionsService status:', status);
+        if (status === 'OK') {
+          dr.setDirections(result);
+          const retLeg = result.routes[0].legs.at(-1);
+          if (retLeg) setReturnLeg({ dist_m: retLeg.distance.value, dur_min: Math.max(1, Math.round(retLeg.duration.value / 60)) });
+          setMapsMode(true);
+        } else {
+          new maps.Polyline({ path: fallbackLatLngs.map(p => ({ lat: p[0], lng: p[1] })), map: mapInst, strokeColor: '#6366f1', strokeWeight: 4, strokeOpacity: 0.7 });
+        }
+        const mkSvg = (label, fill, size) => encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${size/2-1.5}" fill="${fill}" stroke="white" stroke-width="2.5"/><text x="${size/2}" y="${size/2+4}" text-anchor="middle" fill="white" font-size="${size*0.4}" font-weight="bold">${label}</text></svg>`);
+        new maps.Marker({ position: origin, map: mapInst, zIndex: 100, title: 'Bodega', icon: { url: `data:image/svg+xml;utf8,${mkSvg('🏭','#1e1b4b',34)}`, scaledSize: new maps.Size(34,34), anchor: new maps.Point(17,17) } });
+        paradas.forEach((stop, i) => {
+          const c = coordsMap[stop.erp_sucursal_id]; if (!c) return;
+          new maps.Marker({ position: { lat: c.lat, lng: c.lng }, map: mapInst, zIndex: 90-i, title: stop.suc_name, icon: { url: `data:image/svg+xml;utf8,${mkSvg(i+1,'#6366f1',30)}`, scaledSize: new maps.Size(30,30), anchor: new maps.Point(15,15) } });
+        });
+      });
+    }).catch(err => {
+      console.warn('[maps] loadGoogleMaps error:', err?.message ?? err);
+      if (!cancelled && !authFailed) initLeaflet();
+    });
+
+    return () => {
+      cancelled = true;
+      window.gm_authFailure = prevAuthFailure;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, bodegaCoords]);
 

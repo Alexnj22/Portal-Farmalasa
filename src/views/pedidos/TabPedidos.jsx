@@ -25,7 +25,7 @@ import RutaMapModal      from './RutaMapModal';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
-import { printFromPedidoItems, buildPedidoCodigo, getPageGroups } from '../../utils/pedidoPrint';
+import { printFromPedidoItems, buildPedidoCodigo, getExactPageGroups } from '../../utils/pedidoPrint';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -2062,9 +2062,22 @@ export default function TabPedidos({ searchTerm = '' }) {
                 if (Object.keys(paginaItemsDb).length > 0) {
                     const missingPages = cajasFaltantes.flatMap(n => cajaMapDb[String(n)] ?? []);
                     missingIds = missingPages.flatMap(p => paginaItemsDb[String(p)] ?? []);
+                } else if (Object.keys(cajaMapDb).length > 0) {
+                    // pagina_items vacío (pedido legacy) — recomputar con el mismo método del PDF y persistir
+                    const pageGroups = await getExactPageGroups(sucId, rows);
+                    const recomputed = {};
+                    pageGroups.forEach((pg, idx) => { recomputed[String(idx + 1)] = pg.ids; });
+                    await supabase.from('pedido_sucursal_status')
+                        .update({ pagina_items: recomputed })
+                        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+                    const missingPages = cajasFaltantes.flatMap(n => cajaMapDb[String(n)] ?? []);
+                    missingIds = missingPages.flatMap(p => recomputed[String(p)] ?? []);
                 } else {
-                    const pageGroups = getPageGroups(rows);
-                    missingIds = cajasFaltantes.flatMap(n => pageGroups[n - 1]?.ids ?? []);
+                    // Sin caja_map ni pagina_items — conservador: bloquear todos los ítems pendientes
+                    const { data: allPending } = await supabase
+                        .from('pedido_items').select('id')
+                        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).eq('status', 'pendiente');
+                    missingIds = (allPending || []).map(r => r.id);
                 }
                 if (missingIds.length > 0) {
                     await supabase.from('pedido_items').update({ falta_caja: true }).in('id', missingIds);
@@ -2232,7 +2245,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             // Cargar mapa de páginas → ítems una sola vez
             const { data: pss } = await supabase.from('pedido_sucursal_status')
-                .select('caja_map, pagina_items')
+                .select('caja_map, pagina_items, cajas_recibidas, cajas_danadas')
                 .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
             const cajaMapDb     = pss?.caja_map    ?? {};
             const paginaItemsDb = pss?.pagina_items ?? {};
@@ -2265,9 +2278,25 @@ export default function TabPedidos({ searchTerm = '' }) {
             }
 
             await loadActive();
-            await fetchItems(key, pedidoId, sucId);
+            const freshItems = await fetchItems(key, pedidoId, sucId);
+
+            // Auto-abrir RecepcionModal para los ítems de las cajas que sí llegaron
+            const pendingArrived = (freshItems || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0 && !r.falta_caja);
+            if (pendingArrived.length > 0) {
+                const pedidoRow = activeRows.find(r => r.pedido_id === pedidoId && r.erp_sucursal_id === sucId);
+                setModal({
+                    pedido: { id: pedidoId, numero: pedidoRow?.numero ?? null, codigo: pedidoRow?.codigo ?? null },
+                    sucId, key,
+                    rows:           pendingArrived,
+                    cajaDanada:     pss?.cajas_danadas   ?? [],
+                    cajaMap:        cajaMapDb,
+                    paginaItems:    paginaItemsDb,
+                    cajasRecibidas: pss?.cajas_recibidas ?? [],
+                    faltaCajas:     hasFalta ? cajasFaltantes : [],
+                });
+            }
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
-    }, [reenvioLlegadaModal, user, branchName, loadActive, fetchItems]);
+    }, [reenvioLlegadaModal, user, branchName, loadActive, fetchItems, activeRows]);
 
     const handleEntregarStop = useCallback(async (stopId, rutaId, sucId) => {
         try {
@@ -2302,7 +2331,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     }, [busyAction, user, loadActive]);
 
     const openModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
-        const loaded = items[key] ?? await fetchItems(key, pedidoId, sucId);
+        const loaded = await fetchItems(key, pedidoId, sucId);
         const rows = (loaded || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0 && !r.falta_caja);
         if (!rows.length) return;
         const activeRow  = activeRows.find(r => r.pedido_id === pedidoId && r.erp_sucursal_id === sucId);
@@ -2322,14 +2351,14 @@ export default function TabPedidos({ searchTerm = '' }) {
         }
 
         setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada, cajaMap, paginaItems, cajasRecibidas, faltaCajas });
-    }, [items, fetchItems, activeRows]);
+    }, [fetchItems, activeRows]);
 
     const openReenvioModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
-        const loaded = items[key] ?? await fetchItems(key, pedidoId, sucId);
+        const loaded = await fetchItems(key, pedidoId, sucId);
         const rows = (loaded || []).filter(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0);
         if (!rows.length) return;
         setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada: [] });
-    }, [items, fetchItems]);
+    }, [fetchItems]);
 
     const handleReportarDiferencias = useCallback(async (pedidoId, sucId) => {
         supabase.rpc('update_pedido_sucursal_lifecycle', {

@@ -4,6 +4,17 @@ import { supabase } from '../../supabaseClient';
 import PedidoModal from './PedidoModal';
 import { loadGoogleMaps, loadLeaflet } from '../../utils/routeOptimizer';
 
+// Capacitor geolocation nativa — solo disponible en app nativa (Android/iOS)
+const isNative = !!(window.Capacitor?.isNativePlatform?.());
+let CapGeo = null;
+let BgGeo  = null;
+if (isNative) {
+  // eslint-disable-next-line
+  import(/* @vite-ignore */ '@capacitor/geolocation').then(m => { CapGeo = m.Geolocation; }).catch(() => {});
+  // eslint-disable-next-line
+  import(/* @vite-ignore */ '@capacitor-community/background-geolocation').then(m => { BgGeo = m.BackgroundGeolocation; }).catch(() => {});
+}
+
 function fmtTime(iso) {
   if (!iso) return null;
   return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -110,37 +121,76 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
   }, [open]);
 
   // ── GPS propio — solo conductor ─────────────────────────────────────────────
-  const startGps = useCallback(() => {
-    if (!navigator.geolocation) { setGpsStatus('denied'); return; }
+  const startGps = useCallback(async () => {
     setGpsStatus('loading');
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setGpsStatus('ok');
-        setGpsPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        watchIdRef.current = navigator.geolocation.watchPosition(
-          (p) => setGpsPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
-          (err) => console.warn('[GPS] watch:', err.code, err.message),
-          { enableHighAccuracy: true, maximumAge: 5000 },
+    try {
+      if (isNative && BgGeo) {
+        // App nativa: background geolocation — funciona con pantalla apagada
+        const id = await BgGeo.addWatcher(
+          { backgroundTitle: 'Ruta activa', backgroundMessage: 'Rastreando tu posición para la entrega.', requestPermissions: true, stale: false, distanceFilter: 20 },
+          (loc, err) => {
+            if (err) { console.warn('[BgGeo]', err); return; }
+            setGpsPos({ lat: loc.latitude, lng: loc.longitude });
+            setGpsStatus('ok');
+          }
         );
-      },
-      (err) => {
-        console.warn('[GPS] error:', err.code, err.message);
-        setGpsStatus(err.code === 1 ? 'denied' : 'timeout');
-      },
-      { enableHighAccuracy: true, timeout: 15000 },
-    );
+        watchIdRef.current = id;
+      } else if (isNative && CapGeo) {
+        // App nativa sin BgGeo — usar @capacitor/geolocation (solo foreground)
+        await CapGeo.requestPermissions({ permissions: ['location'] });
+        const pos = await CapGeo.getCurrentPosition({ enableHighAccuracy: true });
+        setGpsPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setGpsStatus('ok');
+        const id = await CapGeo.watchPosition({ enableHighAccuracy: true, timeout: 10000 },
+          (p, err) => {
+            if (err) return;
+            setGpsPos({ lat: p.coords.latitude, lng: p.coords.longitude });
+          }
+        );
+        watchIdRef.current = id;
+      } else if (navigator.geolocation) {
+        // Web — watchPosition estándar
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setGpsStatus('ok');
+            setGpsPos({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            watchIdRef.current = navigator.geolocation.watchPosition(
+              (p) => setGpsPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
+              (err) => console.warn('[GPS] watch:', err.code),
+              { enableHighAccuracy: true, maximumAge: 5000 },
+            );
+          },
+          (err) => { setGpsStatus(err.code === 1 ? 'denied' : 'timeout'); },
+          { enableHighAccuracy: true, timeout: 15000 },
+        );
+      } else {
+        setGpsStatus('denied');
+      }
+    } catch (err) {
+      console.warn('[GPS] startGps error:', err);
+      setGpsStatus('denied');
+    }
+  }, []);
+
+  const stopGps = useCallback(async () => {
+    if (watchIdRef.current === null) return;
+    try {
+      if (isNative && BgGeo) {
+        await BgGeo.removeWatcher({ id: watchIdRef.current });
+      } else if (isNative && CapGeo) {
+        await CapGeo.clearWatch({ id: watchIdRef.current });
+      } else {
+        navigator.geolocation?.clearWatch(watchIdRef.current);
+      }
+    } catch { /* ignore cleanup errors */ }
+    watchIdRef.current = null;
   }, []);
 
   useEffect(() => {
     if (!open || !isConductor) return;
     startGps();
-    return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation?.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-    };
-  }, [open, isConductor, startGps]);
+    return () => { stopGps(); };
+  }, [open, isConductor, startGps, stopGps]);
 
   // ── Admin: posición inicial + suscripción Realtime ──────────────────────────
   useEffect(() => {

@@ -47,5 +47,15 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Portal Farmalasa necesita tu ubicación para mostrar tu posición en la ruta activa.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Portal Farmalasa necesita tu ubicación en segundo plano para rastrear la ruta aunque cierres la app.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Portal Farmalasa necesita tu ubicación para rastrear la ruta de entrega.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 </dict>
 </plist>

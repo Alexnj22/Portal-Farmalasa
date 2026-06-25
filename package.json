@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor-community/background-geolocation": "^1.2.26",
     "@capacitor/android": "^8.2.0",
     "@capacitor/core": "^8.2.0",
+    "@capacitor/geolocation": "^8.2.0",
     "@capacitor/ios": "^8.2.0",
     "@imgly/background-removal": "^1.7.0",
     "@supabase/supabase-js": "^2.97.0",

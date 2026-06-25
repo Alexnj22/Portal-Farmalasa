@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.358';
+export const APP_VERSION = '2.2.359';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.359 — feat(gps): background GPS nativo via Capacitor (@capacitor/geolocation + @capacitor-community/background-geolocation); permisos Android/iOS; GPS persistente en TabPedidos independiente del modal
 // v2.2.358 — fix(rutas): paradas live en RutaMapModal (suscripción ruta_pedidos); foto conductor en grupo; race condition loadActiveRutas; loop notif batch; isConductor String(); lat/lng != null
 // v2.2.357 — feat(pedidos): badges neutros (sin color) en cards; toast en sucursal al recibir "en camino"; suc_name enriquecido en paradas de ruta activa
 // v2.2.351 — fix(rutas): TDZ crash loadActiveRutas en deps array; hour12:true en toda la app

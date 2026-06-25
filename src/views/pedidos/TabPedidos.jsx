@@ -1735,6 +1735,73 @@ export default function TabPedidos({ searchTerm = '' }) {
         return () => supabase.removeChannel(ch);
     }, [loadActiveRutas, loadActive]); // eslint-disable-line
 
+    // ── GPS background persistente — conductor con ruta en_ruta ──────────────
+    // Corre independiente del RutaMapModal: pantalla apagada o modal cerrado
+    const bgGpsWatchRef    = useRef(null);
+    const bgGpsIntervalRef = useRef(null);
+    const bgGpsPosRef      = useRef(null);
+    useEffect(() => {
+        // Solo activo si el usuario es conductor de una ruta en_ruta hoy
+        const entry = [...pedidoRutaMap.values()]
+            .find(v => v.ruta.conductor_id && String(v.ruta.conductor_id) === String(user?.id) && v.ruta.status === 'en_ruta');
+
+        if (!entry) {
+            // Limpiar si ya no hay ruta activa
+            if (bgGpsWatchRef.current !== null) {
+                navigator.geolocation?.clearWatch(bgGpsWatchRef.current);
+                bgGpsWatchRef.current = null;
+            }
+            if (bgGpsIntervalRef.current) { clearInterval(bgGpsIntervalRef.current); bgGpsIntervalRef.current = null; }
+            return;
+        }
+
+        const rutaId = entry.ruta.id;
+        const isNative = !!(window.Capacitor?.isNativePlatform?.());
+
+        const startBg = async () => {
+            try {
+                if (isNative) {
+                    // eslint-disable-next-line
+                    const { BackgroundGeolocation } = await import(/* @vite-ignore */ '@capacitor-community/background-geolocation');
+                    bgGpsWatchRef.current = await BackgroundGeolocation.addWatcher(
+                        { backgroundTitle: 'Ruta activa', backgroundMessage: 'Rastreando tu posición.', requestPermissions: true, stale: false, distanceFilter: 20 },
+                        (loc) => { if (loc) bgGpsPosRef.current = { lat: loc.latitude, lng: loc.longitude }; }
+                    );
+                } else if (navigator.geolocation) {
+                    bgGpsWatchRef.current = navigator.geolocation.watchPosition(
+                        (p) => { bgGpsPosRef.current = { lat: p.coords.latitude, lng: p.coords.longitude }; },
+                        (err) => console.warn('[BG-GPS]', err.code),
+                        { enableHighAccuracy: true, maximumAge: 10000 },
+                    );
+                }
+                // Escribir a DB cada 30s
+                bgGpsIntervalRef.current = setInterval(async () => {
+                    const pos = bgGpsPosRef.current;
+                    if (!pos) return;
+                    await supabase.from('ruta_locations')
+                        .upsert({ ruta_id: rutaId, lat: pos.lat, lng: pos.lng, updated_at: new Date().toISOString() }, { onConflict: 'ruta_id' })
+                        .then(() => {}, () => {});
+                }, 30_000);
+            } catch (e) { console.warn('[BG-GPS] start error:', e); }
+        };
+
+        startBg();
+        return () => {
+            if (bgGpsWatchRef.current !== null) {
+                if (isNative) {
+                    // eslint-disable-next-line
+                    import(/* @vite-ignore */ '@capacitor-community/background-geolocation')
+                        .then(({ BackgroundGeolocation }) => BackgroundGeolocation.removeWatcher({ id: bgGpsWatchRef.current }))
+                        .catch(() => {});
+                } else {
+                    navigator.geolocation?.clearWatch(bgGpsWatchRef.current);
+                }
+                bgGpsWatchRef.current = null;
+            }
+            if (bgGpsIntervalRef.current) { clearInterval(bgGpsIntervalRef.current); bgGpsIntervalRef.current = null; }
+        };
+    }, [pedidoRutaMap, user?.id]); // eslint-disable-line
+
     // ── Fetch items ───────────────────────────────────────────────────────────
 
     const fetchItems = useCallback(async (key, pedidoId, sucId) => {

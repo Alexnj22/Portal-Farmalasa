@@ -1,7 +1,7 @@
 import { Loader2, X } from 'lucide-react';
 
 /**
- * StatCard — tarjeta de métrica reutilizable.
+ * StatCard -- tarjeta de metrica reutilizable.
  *
  * USO en el padre:
  *   <div className="flex items-stretch gap-3 flex-wrap">
@@ -14,25 +14,19 @@ import { Loader2, X } from 'lucide-react';
  * largo del texto (fix del problema de anchos disparejos).
  * El padre DEBE usar items-stretch para igualar alturas entre cards.
  *
- * ⚠️  THEMING PENDIENTE — fondo no tokenizado:
- * El default de `inactiveBg` usa bg-white border-slate-200 hardcodeado.
- * Cuando se agregue el token [data-surface="card-flat"] a index.css,
- * reemplazar ese default por el atributo selector. Hasta entonces el fondo
- * solo funciona correctamente en tema claro.
- *
  * Props:
- *   icon       (component, obligatorio) — ícono Lucide
- *   iconBg     (string)                 — clases Tailwind para el squircle, ej. 'bg-red-50'
- *   iconCls    (string)                 — clases para el ícono, ej. 'text-red-500'
- *   label      (string, obligatorio)    — etiqueta superior
- *   value      (string|number, oblig.)  — número/valor principal
- *   valueCls   (string)                 — color del número, ej. 'text-red-600'
- *   sub        (string, opcional)       — texto terciario; espacio SIEMPRE reservado
- *   active     (boolean)               — estado seleccionado
- *   onClick    (fn, opcional)           — si se pasa → card clickable con hover lift
- *   activeBg   (string)                 — clases de fondo activo
- *   inactiveBg (string)                 — clases de fondo inactivo
- *   loading    (boolean)               — muestra skeleton en número y label
+ *   icon       (component, obligatorio) -- icono Lucide
+ *   iconBg     (string)                 -- clases Tailwind para el squircle, ej. 'bg-red-50'
+ *   iconCls    (string)                 -- clases para el icono, ej. 'text-red-500'
+ *   label      (string, obligatorio)    -- etiqueta superior
+ *   value      (string|number, oblig.)  -- numero/valor principal
+ *   valueCls   (string)                 -- color del numero, ej. 'text-red-600'
+ *   sub        (string, opcional)       -- texto terciario; altura SIEMPRE reservada
+ *   active     (boolean)               -- estado seleccionado
+ *   onClick    (fn, opcional)           -- si se pasa: card clickable con hover lift
+ *   activeBg   (string)                 -- clases de fondo activo
+ *   inactiveBg (string)                 -- clases de fondo inactivo
+ *   loading    (boolean)               -- muestra skeleton en numero y label
  */
 export default function StatCard({
     icon: Icon,
@@ -45,17 +39,18 @@ export default function StatCard({
     active     = false,
     onClick,
     activeBg   = 'bg-[#0052CC]/5 border-[#0052CC]/30 shadow-md',
-    inactiveBg = 'bg-white border-slate-200', // ⚠️ TODO: [data-surface="card-flat"]
+    /* TODO: reemplazar por [data-surface="card-flat"] en pase de dark mode */
+    inactiveBg = 'bg-white border-slate-200',
     loading    = false,
 }) {
     const isClickable = !!onClick;
     const Tag = isClickable ? 'button' : 'div';
 
-    // Estado de color: active > inactive
     const colorCls = active ? `${activeBg} -translate-y-px` : inactiveBg;
 
-    // Hover (solo clickable, solo en dispositivos pointer — nota: el scope
-    // @media (hover:hover) es trabajo transversal pendiente B2)
+    // Hover solo en clickable. Nota: el scope @media (hover:hover) es
+    // trabajo transversal pendiente (B2); las clases hover: de Tailwind
+    // se disparan en todos los dispositivos por ahora.
     const hoverCls = isClickable && !active ? 'hover:shadow-md hover:-translate-y-px' : '';
 
     return (
@@ -73,7 +68,7 @@ export default function StatCard({
                 ${hoverCls}
             `.replace(/\s+/g, ' ').trim()}
         >
-            {/* ── Squircle de ícono ─────────────────────────────────────── */}
+            {/* Squircle de icono */}
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
                 {loading
                     ? <Loader2 size={14} strokeWidth={2} className="animate-spin text-slate-300" />
@@ -81,10 +76,10 @@ export default function StatCard({
                 }
             </div>
 
-            {/* ── Bloque de texto ───────────────────────────────────────── */}
+            {/* Bloque de texto */}
             <div className="flex flex-col min-w-0 flex-1 text-left">
 
-                {/* Label — arriba del número */}
+                {/* Label -- arriba del numero */}
                 {loading
                     ? <div className="skeleton h-[9px] w-14 mb-1.5 rounded" />
                     : <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 leading-none mb-1 truncate">
@@ -92,7 +87,7 @@ export default function StatCard({
                       </span>
                 }
 
-                {/* Valor / número principal */}
+                {/* Valor / numero principal */}
                 {loading
                     ? <div className="skeleton h-[22px] w-12 rounded" />
                     : <span className={`text-[22px] font-black tabular-nums leading-none ${valueCls}`}>
@@ -102,16 +97,16 @@ export default function StatCard({
 
                 {/*
                     Sub-texto terciario.
-                    min-h-[13px] se reserva SIEMPRE — aunque `sub` sea undefined —
-                    para que cards con y sin sub tengan exactamente la misma altura
-                    y el bloque no colapse ni desplace el número.
+                    La altura se reserva con min-h-[13px] puro -- no se
+                    renderiza ningun caracter de relleno. Cards con y sin
+                    `sub` tienen exactamente la misma altura total.
                 */}
                 <span className="block text-[9px] text-slate-400 font-medium leading-none mt-0.5 min-h-[13px] truncate">
-                    {!loading ? (sub ?? ' ') : ''}
+                    {!loading ? sub : ''}
                 </span>
             </div>
 
-            {/* ── X al activar (solo en clickable) ─────────────────────── */}
+            {/* X al activar -- solo en clickable */}
             {active && isClickable && (
                 <X size={11} className="text-slate-400 ml-auto shrink-0" />
             )}

@@ -1693,17 +1693,29 @@ export default function TabPedidos({ searchTerm = '' }) {
         if (!data?.length) { setPedidoRutaMap(new Map()); return; }
 
         const rutaIds = data.map(r => r.id);
-        const { data: locs } = await supabase.from('ruta_locations')
-            .select('ruta_id, updated_at').in('ruta_id', rutaIds);
-        const onlineMap = Object.fromEntries((locs ?? []).map(l => {
+        const allStops = data.flatMap(r => r.ruta_pedidos ?? []);
+        const sucIds   = [...new Set(allStops.map(s => s.erp_sucursal_id))];
+
+        const [{ data: locs }, { data: sucData }] = await Promise.all([
+            supabase.from('ruta_locations').select('ruta_id, updated_at').in('ruta_id', rutaIds),
+            sucIds.length
+                ? supabase.from('erp_sucursal_map').select('erp_sucursal_id, branch:branches!inner(name)').in('erp_sucursal_id', sucIds)
+                : Promise.resolve({ data: [] }),
+        ]);
+
+        const onlineMap  = Object.fromEntries((locs ?? []).map(l => {
             const ageMin = (Date.now() - new Date(l.updated_at).getTime()) / 60000;
             return [l.ruta_id, ageMin < 3];
         }));
+        const sucNameMap = Object.fromEntries((sucData ?? []).map(s => [s.erp_sucursal_id, s.branch?.name]));
 
         const map = new Map();
         data.forEach(ruta => {
-            (ruta.ruta_pedidos ?? []).forEach(stop => {
-                map.set(stop.pedido_id, { ruta, stop, driverOnline: onlineMap[ruta.id] ?? false });
+            const enriched = (ruta.ruta_pedidos ?? []).map(s => ({
+                ...s, suc_name: sucNameMap[s.erp_sucursal_id] ?? `Suc. ${s.erp_sucursal_id}`,
+            }));
+            enriched.forEach(stop => {
+                map.set(stop.pedido_id, { ruta: { ...ruta, ruta_pedidos: enriched }, stop, driverOnline: onlineMap[ruta.id] ?? false });
             });
         });
         setPedidoRutaMap(map);
@@ -2590,16 +2602,16 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Stats pills */}
                                     {cardStats[cardKey] && (
                                         <div className="flex items-center gap-1 px-3 pb-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600 border-slate-200">
                                                 {cardStats[cardKey].enviados} enviados
                                             </span>
                                             {cardStats[cardKey].sinStock > 0 && (
-                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200">
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600 border-slate-200">
                                                     {cardStats[cardKey].sinStock} sin stock
                                                 </span>
                                             )}
                                             {cardStats[cardKey].porRegla > 0 && (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600 border-slate-200">
                                                     <AlertTriangle size={9} />{cardStats[cardKey].porRegla} por regla
                                                 </span>
                                             )}
@@ -2644,13 +2656,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             </span>
                                         )}
                                         {(row.cajas_electrolit ?? 0) > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 border border-sky-200 tabular-nums shrink-0">
-                                                <Inbox size={10} className="text-sky-500 shrink-0" />
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 tabular-nums shrink-0">
+                                                <Inbox size={10} className="text-slate-400 shrink-0" />
                                                 {row.cajas_electrolit} Electrolit
                                             </span>
                                         )}
                                         {row.electrolit_ok === false && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
                                                 <Zap size={8} className="shrink-0" />
                                                 {(row.electrolit_faltantes ?? 0) > 0
                                                     ? `${row.electrolit_faltantes} Electrolit faltante${row.electrolit_faltantes > 1 ? 's' : ''}`
@@ -2658,7 +2670,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             </span>
                                         )}
                                         {(row.cajas_especiales ?? []).length > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200 shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
                                                 {row.cajas_especiales.length} caja{row.cajas_especiales.length > 1 ? 's' : ''} especial{row.cajas_especiales.length > 1 ? 'es' : ''}
                                             </span>
                                         )}
@@ -2666,17 +2678,17 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             (row.cajas_danadas?.length > 0 || row.falta_cajas?.length > 0 || row.pedido_status === 'parcial') && (<>
                                                 <span className="h-3.5 w-px bg-slate-200 mx-0.5 shrink-0" />
                                                 {(row.cajas_danadas ?? []).length > 0 && (
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200 shrink-0">
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
                                                         <AlertTriangle size={8} /> Dañada{row.cajas_danadas.length > 1 ? 's' : ''}: {row.cajas_danadas.map(n => `#${n}`).join(', ')}
                                                     </span>
                                                 )}
                                                 {(row.falta_cajas ?? []).length > 0 && (
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 shrink-0">
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
                                                         <Package size={8} /> Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}
                                                     </span>
                                                 )}
                                                 {row.pedido_status === 'parcial' && !(row.cajas_danadas?.length > 0 || row.falta_cajas?.length > 0) && (
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200 shrink-0">
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
                                                         <ClipboardList size={8} /> Difs. pendientes
                                                     </span>
                                                 )}

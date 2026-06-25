@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.377';
+export const APP_VERSION = '2.2.378';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.378 — fix(db): get_pedido_preview — box-fill best-first: cuando bodega tiene >= 1 caja completa pero proporción no alcanza, redistribuye cajas por orden de urgencia (reponer DESC); unidades huérfanas (bodega < 1 caja total) se envían proporcional raw en pedido siguiente
 // v2.2.377 — fix(db): get_pedido_preview — regla despacho respeta max_asignable: WHEN unit_base IS NOT NULL THEN 0 antes del ELSE asignado_raw; sin regla disponible pero max < 1 caja → asigna 0 (no bypass)
 // v2.2.376 — fix(generar): código pedido en modo distribución global usa SUCURSALES.length → dist='3'; fix(db): get_pedido_preview VOLATILE+SECURITY DEFINER+SET LOCAL timeout=0; ALTER ROLE authenticated timeout 30s
 // v2.2.375 — feat(pedidos): anular pedido desde TabPedidos — botón "Anular" visible a bodega en pedidos confirmados no finalizados; si ninguna sucursal inició → confirma directo sin motivo; si alguna inició pero sin finalizar → exige motivo (mín. 5 chars); si cualquier sucursal finalizó → botón oculto; llama anular_pedido RPC (p_anulado_por + p_motivo); toast éxito/error + audit log PEDIDO_ANULADO

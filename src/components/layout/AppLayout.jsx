@@ -17,6 +17,7 @@ import { useSyncMonitor } from '../../hooks/useSyncMonitor';
 import SidebarSyncStatus from '../common/SidebarSyncStatus';
 import { APP_VERSION } from '../../version';
 import PushPromptBanner from '../common/PushPromptBanner';
+import OfflineBanner from '../common/OfflineBanner';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
 const MODULE_MAP = {
@@ -1102,6 +1103,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             </div>
 
             <PushPromptBanner />
+            <OfflineBanner />
 
         </LayoutGroup>
     );

@@ -461,6 +461,55 @@ a:focus-visible,
 
 
 /* ═══════════════════════════════════════════════════════════════
+   REDUCED MOTION
+   Desactiva animaciones de bucle / gran desplazamiento.
+   Reduce entradas a fade corto (120ms, solo opacity).
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  /* — Deshabilitar por completo ——————————————————————————————— */
+  .animate-ambient-drift,
+  .animate-ambient-drift-reverse,
+  .animate-shimmer,
+  .glow-danger,
+  .glow-warning,
+  .badge-pulse,
+  .animate-wiggle,
+  .animate-tab-enter-right,
+  .animate-tab-enter-left,
+  .animate-tab-exit-right,
+  .animate-tab-exit-left,
+  .animate-stagger-child,
+  .animate-input-reveal,
+  .animate-route-enter,
+  .animate-view-enter {
+    animation: none !important;
+    will-change: auto !important;
+  }
+
+  /* — Reducir a fade 120ms (sin transform ni filter) ————————— */
+  .animate-kpi-enter,
+  .animate-widget-enter,
+  .animate-widget-settle,
+  .animate-cosmos-in,
+  .animate-cosmos-panel,
+  .animate-table-row-enter {
+    animation: rm-fade-in 120ms ease both !important;
+  }
+
+  /* — Detener el skeleton sweep (dejar color sólido) ————————— */
+  .skeleton {
+    animation: none !important;
+    background: rgba(148,163,184,0.15) !important;
+  }
+
+  @keyframes rm-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
    PRINT STYLES
    ═══════════════════════════════════════════════════════════════ */
 

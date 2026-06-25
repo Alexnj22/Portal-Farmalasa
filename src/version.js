@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.360';
+export const APP_VERSION = '2.2.361';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.361 — feat(a11y/perf): ErrorBoundary glass (catch+audit+reload); OfflineBanner wifi (online/offline events); @media prefers-reduced-motion (desactiva orbes/shimmer/glow/wiggle, reduce entradas a fade 120ms); design.md v1.0 completo (31 secciones)
 // v2.2.360 — refactor(design): arquitectura de temas — 4 variantes (liquid/dark/solid/solid-dark); tokens CSS var() en todos los [data-surface]; hover solo en puntero real (@media hover:hover); dark mode + Solid theme tokens; renombra aurora→glow-danger/warning, badge-pulse, compat-row→table-row-enter; ThemeContext funcional con cycleTheme; unifica scrollbar-hide
 // v2.2.359 — feat(gps): background GPS nativo via Capacitor (@capacitor/geolocation + @capacitor-community/background-geolocation); permisos Android/iOS; GPS persistente en TabPedidos independiente del modal
 // v2.2.358 — fix(rutas): paradas live en RutaMapModal (suscripción ruta_pedidos); foto conductor en grupo; race condition loadActiveRutas; loop notif batch; isConductor String(); lat/lng != null

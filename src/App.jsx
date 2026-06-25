@@ -8,6 +8,7 @@ import { useStaffStore as useStaff } from "./store/staffStore";
 import { useToastStore } from "./store/toastStore";
 import { isMobileOrApp } from './utils/helpers';
 import AlertModal from "./components/common/AlertModal";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 
 // Layouts y Vistas
 import AppLayout from "./components/layout/AppLayout";
@@ -517,6 +518,7 @@ function MainApp() {
                                 isOverlayActive={modalOpen || isAuditOverlayActive}
                                 handleLogout={handleLogout}
                             >
+                                <ErrorBoundary>
                                 <Routes>
                                     {/* ── Self-service ── */}
                                     <Route path="home" element={<PermissionGuard moduleKey="emp_home"><EmployeeHomeView /></PermissionGuard>} />
@@ -604,6 +606,7 @@ function MainApp() {
                                     <Route path="staff" element={<Navigate to="/dashboard" replace />} />
                                     <Route path="*" element={<Navigate to={defaultRedirect} replace />} />
                                 </Routes>
+                                </ErrorBoundary>
                             </AppLayout>
                         </div>
 

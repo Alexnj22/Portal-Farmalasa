@@ -275,25 +275,47 @@ function buildFooterCallback(_meta) {
 
 function buildEspecialesBlock(especiales) {
     if (!especiales?.length) return null;
+
+    const hasLotes = especiales.some(e => e.lotes?.length > 0);
+    // Mirror main table column structure; Caja replaces Laboratorio
+    const widths  = hasLotes ? ['10%', '33%', '13%', '8%', '30%', '6%'] : ['10%', '60%', '13%', '9%', '8%'];
+    const nCols   = widths.length;
+    const hLabels = hasLotes
+        ? ['Caja', 'Producto', 'Presentación', 'Cant.', 'Lote / Vence', 'OK']
+        : ['Caja', 'Producto', 'Presentación', 'Cant.', 'OK'];
+
+    const titleRow = [
+        { text: 'CAJAS ESPECIALES', colSpan: nCols, fillColor: '#ede9fe', bold: true, fontSize: 7, color: '#5b21b6', margin: [4, 3, 4, 3], alignment: 'center' },
+        ...Array(nCols - 1).fill({}),
+    ];
+    const headerRow = hLabels.map((label, i) => ({
+        text: label, fillColor: '#ede9fe', bold: true, fontSize: 6.5, color: '#5b21b6',
+        alignment: (i === 3 || i === nCols - 1) ? 'center' : 'left',
+        margin: [i === 0 ? 4 : 0, 2, 3, 2],
+    }));
+
+    const bodyRows = especiales.map((e, idx) => {
+        const bg     = idx % 2 === 1 ? '#f5f3ff' : '#ffffff';
+        const boxCell     = { text: e.label ?? '—', fontSize: 8, bold: true, color: '#7c3aed', fillColor: bg, alignment: 'center', margin: [2, 2, 2, 2], verticalAlignment: 'middle' };
+        const productCell = { text: e.product_name ?? '—', fontSize: 8, color: '#333', fillColor: bg, margin: [0, 2, 3, 2], verticalAlignment: 'middle' };
+        const presCell    = { text: e.presentacion_tipo || '—', fontSize: 7, color: '#333', fillColor: bg, margin: [0, 2, 3, 2], verticalAlignment: 'middle' };
+        const qtyCell     = { text: '1', fontSize: 9.5, bold: true, alignment: 'center', fillColor: bg, margin: [0, 2, 0, 2], verticalAlignment: 'middle' };
+        const checkCell   = { fillColor: bg, alignment: 'center', margin: [0, 0, 0, 0], verticalAlignment: 'middle', canvas: [{ type: 'rect', x: 0, y: 0, w: 8, h: 8, lineWidth: 1, lineColor: '#555' }] };
+        if (hasLotes) {
+            return [boxCell, productCell, presCell, qtyCell, loteStackNode(e.lotes ?? [], bg), checkCell];
+        }
+        return [boxCell, productCell, presCell, qtyCell, checkCell];
+    });
+
     return {
-        margin: [0, 4, 0, 0],
-        table: {
-            widths: [28, '*', 16],
-            body: [
-                [{ text: 'CAJAS ESPECIALES', colSpan: 3, fillColor: '#ede9fe', bold: true, fontSize: 7, color: '#5b21b6', margin: [4, 3, 4, 3], alignment: 'center' }, {}, {}],
-                ...especiales.map(e => [
-                    { text: e.label, fontSize: 8, bold: true, color: '#7c3aed', margin: [3, 2, 4, 2] },
-                    { text: e.product_name, fontSize: 7.5, color: '#333', margin: [0, 2, 3, 2] },
-                    { canvas: [{ type: 'rect', x: 0, y: 0, w: 8, h: 8, lineWidth: 1, lineColor: '#888' }], margin: [3, 0, 3, 0], alignment: 'center', verticalAlignment: 'middle' },
-                ]),
-            ],
-        },
+        margin: [0, 6, 0, 0],
+        table: { widths, body: [titleRow, headerRow, ...bodyRows] },
         layout: {
-            hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 0.8 : 0.5),
+            hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 0.8 : i === 2 ? 1.2 : 0.5),
             vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),
-            hLineColor: () => '#c4b5fd',
+            hLineColor: (i) => (i === 2 ? '#a78bfa' : '#c4b5fd'),
             vLineColor: () => '#c4b5fd',
-            paddingLeft: () => 0, paddingRight: () => 0,
+            paddingLeft: () => 5, paddingRight: () => 5,
             paddingTop: () => 0,  paddingBottom: () => 0,
         },
     };
@@ -537,8 +559,20 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
             .filter(row => row.caja_especial && (getAdjusted(row) ?? 0) > 0)
             .sort((a, b) => (a.product_name ?? '').localeCompare(b.product_name ?? '', 'es'))
             .flatMap(row => {
-                const qty = getAdjusted(row) ?? 1;
-                return Array.from({ length: qty }, () => ({ label: `E${eCounter++}`, product_name: row.product_name ?? '?' }));
+                const qty      = getAdjusted(row) ?? 1;
+                const dispTipo = row.dispatch_tipo ?? row.presentacion_tipo ?? '';
+                const rawLotes = fefoProject(
+                    lotesToDispatch(row.lotes_bodega ?? [], row.factor ?? 1, row.dispatch_factor ?? row.factor ?? 1),
+                    qty,
+                ).filter(l => l.lote || l.fecha_vencimiento);
+                const lotPool  = rawLotes.map(l => ({ ...l, _rem: l.take ?? l.cantidad ?? l.packs ?? 0 }));
+                return Array.from({ length: qty }, () => {
+                    let boxLot = null;
+                    for (const lot of lotPool) {
+                        if (lot._rem > 0) { boxLot = { lote: lot.lote, fecha_vencimiento: lot.fecha_vencimiento, take: 1 }; lot._rem--; break; }
+                    }
+                    return { label: `E${eCounter++}`, product_name: row.product_name ?? '?', presentacion_tipo: dispTipo, lotes: boxLot ? [boxLot] : [] };
+                });
             });
 
         const codigo = codigoFn ? codigoFn(sucId) : null;
@@ -665,8 +699,20 @@ export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, t
             .filter(r => !r.sin_stock && r.caja_especial && (r.cantidad_asignada ?? 0) > 0)
             .sort((a, b) => (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es'))
             .flatMap(r => {
-                const qty = r.cantidad_asignada ?? 1;
-                return Array.from({ length: qty }, () => ({ label: `E${eCounter++}`, product_name: r.products?.nombre ?? '?' }));
+                const qty      = r.cantidad_asignada ?? 1;
+                const dispTipo = r.dispatch_tipo ?? r.presentaciones?.tipo ?? '';
+                const rawLotes = lotesAsignadosToDispatch(
+                    Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
+                    r.factor ?? 1, r.dispatch_factor ?? r.factor ?? 1,
+                ).filter(l => l.lote || l.fecha_vencimiento);
+                const lotPool  = rawLotes.map(l => ({ ...l, _rem: l.take ?? l.cantidad ?? l.packs ?? 0 }));
+                return Array.from({ length: qty }, () => {
+                    let boxLot = null;
+                    for (const lot of lotPool) {
+                        if (lot._rem > 0) { boxLot = { lote: lot.lote, fecha_vencimiento: lot.fecha_vencimiento, take: 1 }; lot._rem--; break; }
+                    }
+                    return { label: `E${eCounter++}`, product_name: r.products?.nombre ?? '?', presentacion_tipo: dispTipo, lotes: boxLot ? [boxLot] : [] };
+                });
             });
 
         return {

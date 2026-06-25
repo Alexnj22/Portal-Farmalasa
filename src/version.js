@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.369';
+export const APP_VERSION = '2.2.370';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.370 — fix(pdf): cajas especiales — mismo formato que productos normales (Caja/Producto/Presentación/Cant./Lote); lote distribuido por caja vía FEFO solo si el producto tiene lote+vence; columna Lote omitida si ningún especial tiene lote
 // v2.2.369 — feat(pedidos): programar entrega — botón junto a PDF en stage preparado; modal con historial de cambios; badge "Entrega estimada" en sucursal; DB: entrega_programada_at + entrega_programada_historial en pedido_sucursal_status
 // v2.2.368 — fix(pedidos): recepción con cajas faltantes — getExactPageGroups como fallback cuando pagina_items vacío; auto-abrir RecepcionModal tras reenvío-llegada; openModal/openReenvioModal siempre fetch fresco; RPC receive_pedido_sucursal guarda AND NOT falta_caja en SELECT y UPDATE
 // v2.2.367 — fix(pedidos): scrollbar-hide en LlegadaModal y RecepcionModal — scroll funciona pero la barra queda oculta

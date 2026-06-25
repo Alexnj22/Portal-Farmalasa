@@ -529,7 +529,7 @@ export default function RecepcionModal({
         const receivedAccessible = accessibleBoxNums.filter(n => allRecibidas.includes(n)).length;
 
         return (
-            <PedidoModal open={open} onClose={saving ? undefined : onClose} maxWidth="max-w-md">
+            <PedidoModal open={open} onClose={saving ? undefined : onClose} maxWidth="max-w-md" className="max-h-[90vh]">
                 <PedidoModal.Header className="px-5 py-4">
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
@@ -674,7 +674,7 @@ export default function RecepcionModal({
 
     if (screen === 'extras') {
         return (
-            <PedidoModal open={open} onClose={saving ? undefined : goBackFromExtras} maxWidth="max-w-2xl">
+            <PedidoModal open={open} onClose={saving ? undefined : goBackFromExtras} maxWidth="max-w-2xl" className="max-h-[90vh]">
                 <PedidoModal.Header className="px-5 py-4">
                     <div className="flex items-center gap-2">
                         <button onClick={goBackFromExtras} disabled={saving}
@@ -871,7 +871,7 @@ export default function RecepcionModal({
     const isDanadaBox = cajaDanada.includes(selectedCaja);
 
     return (
-        <PedidoModal open={open} onClose={saving ? undefined : (hasCajaMap ? goBack : onClose)} maxWidth="max-w-2xl">
+        <PedidoModal open={open} onClose={saving ? undefined : (hasCajaMap ? goBack : onClose)} maxWidth="max-w-2xl" className="max-h-[90vh]">
 
             {/* Header */}
             <PedidoModal.Header className="px-5 py-4">

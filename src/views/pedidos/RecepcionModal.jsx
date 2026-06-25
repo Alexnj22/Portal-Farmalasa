@@ -553,7 +553,7 @@ export default function RecepcionModal({
                     </div>
                 </PedidoModal.Header>
 
-                <PedidoModal.Body className="px-4 py-4">
+                <PedidoModal.Body className="px-4 py-4 scrollbar-hide">
                     <div className={`grid gap-2 ${allBoxNums.length <= 4 ? 'grid-cols-2' : allBoxNums.length <= 9 ? 'grid-cols-3' : 'grid-cols-4'}`}>
                         {allBoxNums.map(boxNum => {
                             const isRecibida = allRecibidas.includes(boxNum);
@@ -698,7 +698,7 @@ export default function RecepcionModal({
 
                 {/* Item grid — mismo formato que pantalla de items */}
                 <PedidoModal.Body className="px-0 py-0" style={{ overflow: 'hidden', flex: 'none' }}>
-                    <div className="max-h-[48vh] overflow-y-auto">
+                    <div className="max-h-[48vh] overflow-y-auto scrollbar-hide">
                         <div className="sticky top-0 z-10 bg-white/97 backdrop-blur-sm border-b-2 border-slate-200 shadow-sm">
                             <div className={`grid ${EXTRAS_GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                                 <span />

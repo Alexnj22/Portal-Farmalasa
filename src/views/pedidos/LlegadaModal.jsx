@@ -107,7 +107,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             </div>
 
             {/* Body — todo el contenido variable va aquí, scrollea cuando no cabe */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-3">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-3">
                 <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold">
                     {cajas.length} caja{cajas.length !== 1 ? 's' : ''} en el pedido
                 </p>

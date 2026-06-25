@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.366';
+export const APP_VERSION = '2.2.367';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.367 — fix(pedidos): scrollbar-hide en LlegadaModal y RecepcionModal — scroll funciona pero la barra queda oculta
 // v2.2.366 — fix(pedidos): LlegadaModal — max-h-[90vh] + flex-1 min-h-0 overflow-y-auto; todas las secciones (cajas, electrolit, especiales, extras) dentro del div scrolleable; footer shrink-0
 // v2.2.365 — fix(pedidos): RecepcionModal — max-h-[90vh] en las 3 pantallas (cajas/items/extras) para evitar que el modal crezca fuera de pantalla al agregar muchas cajas
 // v2.2.364 — fix(StatCard): sub usa min-h-[13px] puro sin caracter relleno; inactiveBg marcado con TODO comentario para [data-surface="card-flat"] en pase de dark mode

@@ -94,9 +94,9 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     if (!open) return null;
 
     return (
-        <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-sm">
+        <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-sm" className="max-h-[90vh]">
             {/* Header */}
-            <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-100 shrink-0">
                 <div className="flex-1">
                     <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Pedido #{pedidoNumero}</p>
                     <h3 className="text-[14px] font-bold text-slate-800 leading-tight">¿Cómo llegó cada caja?</h3>
@@ -106,47 +106,49 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 </button>
             </div>
 
-            {/* Body */}
-            <div className="px-5 py-4 space-y-2 max-h-[55vh] overflow-y-auto">
-                <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold mb-3">
+            {/* Body — todo el contenido variable va aquí, scrollea cuando no cabe */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-3">
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold">
                     {cajas.length} caja{cajas.length !== 1 ? 's' : ''} en el pedido
                 </p>
 
-                {cajas.map(c => {
-                    const est = getEst(c.num);
-                    const rowBg = est === 'ok'      ? 'bg-emerald-50/60 border-emerald-200/70'
-                                : est === 'danada'  ? 'bg-amber-50/60 border-amber-200/70'
-                                :                     'bg-rose-50/60 border-rose-200/70';
-                    const numBg = est === 'ok'      ? 'bg-emerald-500 shadow-[0_2px_8px_rgba(16,185,129,0.4)]'
-                                : est === 'danada'  ? 'bg-amber-500 shadow-[0_2px_8px_rgba(245,158,11,0.4)]'
-                                :                     'bg-rose-500 shadow-[0_2px_8px_rgba(239,68,68,0.4)]';
-                    return (
-                        <div key={c.num} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all ${rowBg}`}>
-                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-[14px] tabular-nums text-white transition-all ${numBg}`}>
-                                {c.num}
+                <div className="space-y-2">
+                    {cajas.map(c => {
+                        const est = getEst(c.num);
+                        const rowBg = est === 'ok'      ? 'bg-emerald-50/60 border-emerald-200/70'
+                                    : est === 'danada'  ? 'bg-amber-50/60 border-amber-200/70'
+                                    :                     'bg-rose-50/60 border-rose-200/70';
+                        const numBg = est === 'ok'      ? 'bg-emerald-500 shadow-[0_2px_8px_rgba(16,185,129,0.4)]'
+                                    : est === 'danada'  ? 'bg-amber-500 shadow-[0_2px_8px_rgba(245,158,11,0.4)]'
+                                    :                     'bg-rose-500 shadow-[0_2px_8px_rgba(239,68,68,0.4)]';
+                        return (
+                            <div key={c.num} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all ${rowBg}`}>
+                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-black text-[14px] tabular-nums text-white transition-all ${numBg}`}>
+                                    {c.num}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[12px] font-bold text-slate-700 leading-tight">{c.label}</p>
+                                    <p className="text-[10px] font-medium text-slate-400 mt-0.5">{c.hint}</p>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    {(['ok', 'danada', 'faltante']).map(e => {
+                                        const { Icon, label, active, idle } = TOGGLE_CFG[e];
+                                        return (
+                                            <button key={e} onClick={() => setEst(c.num, e)}
+                                                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl border transition-all active:scale-95 ${est === e ? active : idle}`}>
+                                                <Icon size={14} />
+                                                <span className="text-[9px] font-bold leading-none">{label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-[12px] font-bold text-slate-700 leading-tight">{c.label}</p>
-                                <p className="text-[10px] font-medium text-slate-400 mt-0.5">{c.hint}</p>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                                {(['ok', 'danada', 'faltante']).map(e => {
-                                    const { Icon, label, active, idle } = TOGGLE_CFG[e];
-                                    return (
-                                        <button key={e} onClick={() => setEst(c.num, e)}
-                                            className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl border transition-all active:scale-95 ${est === e ? active : idle}`}>
-                                            <Icon size={14} />
-                                            <span className="text-[9px] font-bold leading-none">{label}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
 
                 {hayProblemas && (
-                    <div className="pt-2">
+                    <div>
                         <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Nota (opcional)</label>
                         <textarea
                             value={nota} onChange={e => setNota(e.target.value)} rows={2}
@@ -155,11 +157,9 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         />
                     </div>
                 )}
-            </div>
 
-            {/* Electrolit — cuántas no llegaron */}
-            {cajasElectrolit > 0 && (
-                <div className="px-5 pb-4">
+                {/* Electrolit — cuántas no llegaron */}
+                {cajasElectrolit > 0 && (
                     <div className="p-3 rounded-2xl border border-amber-100 bg-amber-50/60 flex flex-col gap-2.5">
                         <div className="flex items-center gap-2">
                             <Zap size={13} className="text-amber-500 shrink-0" />
@@ -205,12 +205,10 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             </p>
                         )}
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Cajas especiales — E1, E2… */}
-            {cajasEspeciales.length > 0 && (
-                <div className="px-5 pb-4">
+                {/* Cajas especiales — E1, E2… */}
+                {cajasEspeciales.length > 0 && (
                     <div className="p-3 rounded-2xl border border-violet-100 bg-violet-50/60 flex flex-col gap-2">
                         <div className="flex items-center gap-2">
                             <Package size={13} className="text-violet-500 shrink-0" />
@@ -244,72 +242,72 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             <p className="text-[10px] text-rose-600 px-0.5">⚠ Faltante{espFaltantes.length > 1 ? 's' : ''}: {espFaltantes.join(', ')}</p>
                         )}
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Cajas de más */}
-            <div className="px-5 pb-4">
-                <div className="flex items-center gap-2 p-2.5 rounded-xl border border-amber-100/80 bg-amber-50/40">
-                    <HelpCircle size={13} className="text-amber-500 shrink-0" />
-                    <span className="text-[11px] text-slate-600 flex-1">¿Llegaron cajas de más (no esperadas)?</span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                        <button onClick={() => setCajasExtra(n => Math.max(0, n - 1))} disabled={cajasExtra === 0}
-                            className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-95 transition-all disabled:opacity-30">−</button>
-                        <span className={`w-6 text-center text-[13px] font-black tabular-nums ${cajasExtra > 0 ? 'text-amber-600' : 'text-slate-300'}`}>{cajasExtra}</span>
-                        <button onClick={() => setCajasExtra(n => n + 1)}
-                            className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-95 transition-all">+</button>
+                {/* Cajas de más */}
+                <div>
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl border border-amber-100/80 bg-amber-50/40">
+                        <HelpCircle size={13} className="text-amber-500 shrink-0" />
+                        <span className="text-[11px] text-slate-600 flex-1">¿Llegaron cajas de más (no esperadas)?</span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <button onClick={() => setCajasExtra(n => Math.max(0, n - 1))} disabled={cajasExtra === 0}
+                                className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-95 transition-all disabled:opacity-30">−</button>
+                            <span className={`w-6 text-center text-[13px] font-black tabular-nums ${cajasExtra > 0 ? 'text-amber-600' : 'text-slate-300'}`}>{cajasExtra}</span>
+                            <button onClick={() => setCajasExtra(n => n + 1)}
+                                className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-95 transition-all">+</button>
+                        </div>
                     </div>
-                </div>
-                {cajasExtra > 0 && (
-                    <div className="mt-2 space-y-2">
-                        {Array.from({ length: cajasExtra }, (_, i) => {
-                            const d = cajasExtraData[i] ?? {};
-                            return (
-                                <div key={i} className="p-3 rounded-xl border border-amber-100 bg-white space-y-2">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <span className="text-[10px] font-bold text-amber-700">Caja extra {i + 1}</span>
-                                        <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                                            <input
-                                                type="checkbox"
-                                                checked={!!d.sinRotulacion}
-                                                onChange={e => setExtraField(i, 'sinRotulacion', e.target.checked)}
-                                                className="w-3.5 h-3.5 rounded accent-amber-500"
-                                            />
-                                            <span className="text-[10px] text-slate-500">Sin rotulación</span>
-                                        </label>
-                                    </div>
-                                    {!d.sinRotulacion && (
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex-1">
-                                                <LiquidSelect
-                                                    value={d.sucursalId ?? ''}
-                                                    onChange={v => setExtraField(i, 'sucursalId', v)}
-                                                    options={[{ value: '', label: '¿De qué sucursal?' }, ...SUC_OPTIONS]}
-                                                    compact
-                                                    clearable={false}
-                                                    placeholder="¿De qué sucursal?"
+                    {cajasExtra > 0 && (
+                        <div className="mt-2 space-y-2">
+                            {Array.from({ length: cajasExtra }, (_, i) => {
+                                const d = cajasExtraData[i] ?? {};
+                                return (
+                                    <div key={i} className="p-3 rounded-xl border border-amber-100 bg-white space-y-2">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-[10px] font-bold text-amber-700">Caja extra {i + 1}</span>
+                                            <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!!d.sinRotulacion}
+                                                    onChange={e => setExtraField(i, 'sinRotulacion', e.target.checked)}
+                                                    className="w-3.5 h-3.5 rounded accent-amber-500"
+                                                />
+                                                <span className="text-[10px] text-slate-500">Sin rotulación</span>
+                                            </label>
+                                        </div>
+                                        {!d.sinRotulacion && (
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1">
+                                                    <LiquidSelect
+                                                        value={d.sucursalId ?? ''}
+                                                        onChange={v => setExtraField(i, 'sucursalId', v)}
+                                                        options={[{ value: '', label: '¿De qué sucursal?' }, ...SUC_OPTIONS]}
+                                                        compact
+                                                        clearable={false}
+                                                        placeholder="¿De qué sucursal?"
+                                                    />
+                                                </div>
+                                                <input
+                                                    value={d.pedidoNum ?? ''}
+                                                    onChange={e => setExtraField(i, 'pedidoNum', e.target.value)}
+                                                    placeholder="# Pedido (si visible)"
+                                                    className="w-36 text-[10px] rounded-lg border border-slate-200 px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-300 bg-white"
                                                 />
                                             </div>
-                                            <input
-                                                value={d.pedidoNum ?? ''}
-                                                onChange={e => setExtraField(i, 'pedidoNum', e.target.value)}
-                                                placeholder="# Pedido (si visible)"
-                                                className="w-36 text-[10px] rounded-lg border border-slate-200 px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-300 bg-white"
-                                            />
-                                        </div>
-                                    )}
-                                    {d.sinRotulacion && (
-                                        <p className="text-[10px] text-amber-600 italic">Se reportará a bodega como caja sin identificar.</p>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                                        )}
+                                        {d.sinRotulacion && (
+                                            <p className="text-[10px] text-amber-600 italic">Se reportará a bodega como caja sin identificar.</p>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Footer */}
-            <div className="px-5 pb-5 pt-3 border-t border-slate-100 space-y-3">
+            <div className="px-5 pb-5 pt-3 border-t border-slate-100 space-y-3 shrink-0">
                 {hayProblemas && (
                     <div className="flex flex-wrap gap-1.5">
                         {cajasDanadas.length > 0 && (

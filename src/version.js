@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.365';
+export const APP_VERSION = '2.2.366';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.366 — fix(pedidos): LlegadaModal — max-h-[90vh] + flex-1 min-h-0 overflow-y-auto; todas las secciones (cajas, electrolit, especiales, extras) dentro del div scrolleable; footer shrink-0
 // v2.2.365 — fix(pedidos): RecepcionModal — max-h-[90vh] en las 3 pantallas (cajas/items/extras) para evitar que el modal crezca fuera de pantalla al agregar muchas cajas
 // v2.2.364 — fix(StatCard): sub usa min-h-[13px] puro sin caracter relleno; inactiveBg marcado con TODO comentario para [data-surface="card-flat"] en pase de dark mode
 // v2.2.363 — feat(components): StatCard.jsx — componente reutilizable de metrica; flex-1 basis-0 min-w-[150px] iguala anchos; sub reserva min-h-[13px]; props icon/iconBg/iconCls/label/value/valueCls/sub/active/activeBg/inactiveBg/loading/onClick

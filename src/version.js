@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.362';
+export const APP_VERSION = '2.2.363';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.363 — feat(components): StatCard.jsx — componente reutilizable de métrica; flex-1 basis-0 min-w-[150px] iguala anchos; sub reserva min-h-[13px]; props icon/iconBg/iconCls/label/value/valueCls/sub/active/activeBg/inactiveBg/loading/onClick; ⚠️ bg-white pendiente de tokenizar con [data-surface="card-flat"]
 // v2.2.362 — refactor(design): VentasView A1-A6 — transition-all→específico (9 sitios), font-normal→medium (×2), bg-blue-500→#0052CC en drill pills, rounded→rounded-md badge presentación, <img>→LiquidAvatar en drill-down, hover:scale-110→sin lift en botones ✕; DESIGN.md excepción transition-all para multi-propiedad
 // v2.2.361 — feat(a11y/perf): ErrorBoundary glass (catch+audit+reload); OfflineBanner wifi (online/offline events); @media prefers-reduced-motion (desactiva orbes/shimmer/glow/wiggle, reduce entradas a fade 120ms); design.md v1.0 completo (31 secciones)
 // v2.2.360 — refactor(design): arquitectura de temas — 4 variantes (liquid/dark/solid/solid-dark); tokens CSS var() en todos los [data-surface]; hover solo en puntero real (@media hover:hover); dark mode + Solid theme tokens; renombra aurora→glow-danger/warning, badge-pulse, compat-row→table-row-enter; ThemeContext funcional con cycleTheme; unifica scrollbar-hide

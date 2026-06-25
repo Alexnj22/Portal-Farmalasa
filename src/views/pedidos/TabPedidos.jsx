@@ -9,6 +9,7 @@ import {
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
     UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box, Zap, Map as MapIcon,
+    CalendarClock,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -22,6 +23,7 @@ import ReenvioLlegadaModal from './ReenvioLlegadaModal';
 import FinalizarCajasModal from './FinalizarCajasModal';
 import CrearRutaModal    from './CrearRutaModal';
 import RutaMapModal      from './RutaMapModal';
+import ProgramarEntregaModal from './ProgramarEntregaModal';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
@@ -94,6 +96,16 @@ function elapsed(isoFrom, isoTo = null) {
     const to   = isoTo ? new Date(isoTo) : new Date();
     if (isNaN(from) || isNaN(to)) return null;
     return Math.floor((to - from) / 60_000);
+}
+function fmtEntrega(iso) {
+    if (!iso) return null;
+    const d   = new Date(iso);
+    const hoy = new Date();
+    const man = new Date(hoy); man.setDate(hoy.getDate() + 1);
+    const time = d.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
+    if (d.toDateString() === hoy.toDateString()) return `Hoy ${time}`;
+    if (d.toDateString() === man.toDateString()) return `Mañana ${time}`;
+    return d.toLocaleDateString('es-SV', { weekday: 'short', day: 'numeric', month: 'short' }) + ` ${time}`;
 }
 function fmtRelative(iso) {
     if (!iso) return '—';
@@ -1905,7 +1917,28 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error('Lifecycle error:', e); } finally { setBusyLifecycle(null); }
     }, [user, loadActive]);
 
-    const [printingPdf, setPrintingPdf] = useState(null);
+    const [printingPdf,      setPrintingPdf]      = useState(null);
+    const [programarModal,   setProgramarModal]   = useState(null); // { pedidoId, sucId, numero, currentAt, historial }
+    const [savingProgramar,  setSavingProgramar]  = useState(false);
+
+    const handleProgramarEntrega = useCallback(async (newIso) => {
+        if (!programarModal) return;
+        const { pedidoId, sucId, historial } = programarModal;
+        setSavingProgramar(true);
+        try {
+            const emp    = empMap.get(user?.id);
+            const entry  = { programada_at: newIso, registrado_at: new Date().toISOString(), por: user?.id ?? null, nombre: emp?.name ?? null };
+            const newHist = [...(historial ?? []), entry];
+            const { error } = await supabase.from('pedido_sucursal_status')
+                .update({ entrega_programada_at: newIso, entrega_programada_historial: newHist })
+                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+            if (error) throw error;
+            useStaff.getState().appendAuditLog('PEDIDO_ENTREGA_PROGRAMADA', pedidoId, { sucursal_id: sucId, entrega_at: newIso });
+            setProgramarModal(null);
+            await loadActive();
+        } catch (e) { console.error(e); } finally { setSavingProgramar(false); }
+    }, [programarModal, user, empMap, loadActive]);
+
     const handlePrintPdf = useCallback(async (pedidoId, pedidoNumero, sucId, cardKey, codigo) => {
         setPrintingPdf(pedidoId);
         try {
@@ -2820,6 +2853,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     {printingPdf === row.pedido_id ? <Loader2 size={10} className="animate-spin" /> : <FileDown size={10} />}PDF
                                                 </button>
                                             )}
+                                            {canActuar && !isBranch && stage === 'preparado' && (
+                                                <button
+                                                    onClick={e => { e.stopPropagation(); setProgramarModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, currentAt: row.entrega_programada_at ?? null, historial: row.entrega_programada_historial ?? [] }); }}
+                                                    className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl active:scale-95 transition-all shadow-sm ${row.entrega_programada_at ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200' : 'bg-indigo-500 text-white hover:bg-indigo-600'}`}
+                                                >
+                                                    <CalendarClock size={10} />
+                                                    {row.entrega_programada_at ? fmtEntrega(row.entrega_programada_at) : 'Programar'}
+                                                </button>
+                                            )}
                                             {/* Entregué — conductor, junto a PDF para ahorrar espacio */}
                                             {pedidoRutaMap.has(row.pedido_id) && (() => {
                                                 const { ruta, stop } = pedidoRutaMap.get(row.pedido_id);
@@ -2854,6 +2896,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             <span className="text-[10px] text-emerald-500 tabular-nums">
                                                 · {new Date(pedidoRutaMap.get(row.pedido_id).stop.entregado_at).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}
                                             </span>
+                                        </div>
+                                    )}
+
+                                    {/* Entrega estimada — visible en sucursal cuando hay programación y el pedido no ha llegado */}
+                                    {isBranch && row.entrega_programada_at && stage !== 'erp' && stage !== 'contando' && (
+                                        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-indigo-100 bg-indigo-50/60">
+                                            <CalendarClock size={11} className="text-indigo-500 shrink-0" />
+                                            <span className="text-[10px] font-semibold text-indigo-700">Entrega estimada:</span>
+                                            <span className="text-[10px] font-bold text-indigo-600">{fmtEntrega(row.entrega_programada_at)}</span>
                                         </div>
                                     )}
 
@@ -3122,6 +3173,17 @@ export default function TabPedidos({ searchTerm = '' }) {
                     currentUserId={user?.id}
                 />
             )}
+
+            <ProgramarEntregaModal
+                open={!!programarModal}
+                onClose={() => setProgramarModal(null)}
+                numero={programarModal?.numero}
+                currentAt={programarModal?.currentAt}
+                historial={programarModal?.historial ?? []}
+                empMap={empMap}
+                onConfirm={handleProgramarEntrega}
+                saving={savingProgramar}
+            />
         </div>
     );
 }

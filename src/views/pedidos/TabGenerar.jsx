@@ -208,7 +208,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 }
             }
 
-            const codigoFn   = buildPedidoCodigo(countsBySuc, new Date(), sucIds.length);
+            const codigoFn   = buildPedidoCodigo(countsBySuc, new Date(), globalMode ? SUCURSALES.length : sucIds.length);
             const codigosMap = {};
             for (const id of sucIds) codigosMap[id] = codigoFn(id);
 

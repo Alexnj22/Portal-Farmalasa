@@ -9,7 +9,7 @@ import {
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
     UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box, Zap, Map as MapIcon,
-    CalendarClock,
+    CalendarClock, Ban,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -354,6 +354,81 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
                         </button>
                     </div>
                 </PedidoModal.Footer>
+        </PedidoModal>
+    );
+}
+
+// ─── Anular Modal ────────────────────────────────────────────────────────────
+
+function AnularModal({ modal, onCancel, onConfirm, busy }) {
+    const [motivo, setMotivo] = useState('');
+    const canConfirm = !modal?.requiresReason || motivo.trim().length >= 5;
+
+    return (
+        <PedidoModal onClose={onCancel}>
+            <PedidoModal.Header>
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center shadow-sm shrink-0">
+                        <Ban size={20} className="text-white" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-slate-800 text-[15px]">Anular pedido</h3>
+                        <p className="text-[12px] text-slate-600 mt-0.5">#{modal?.numero}</p>
+                    </div>
+                </div>
+            </PedidoModal.Header>
+
+            <PedidoModal.Body className="space-y-4">
+                {modal?.requiresReason ? (
+                    <>
+                        <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-200">
+                            <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                            <p className="text-[12px] text-amber-800">
+                                Este pedido ya fue iniciado. Se anulará la preparación en curso y todos los ítems pendientes.
+                            </p>
+                        </div>
+                        <div>
+                            <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide mb-1.5 block">
+                                Motivo de anulación *
+                            </label>
+                            <textarea
+                                value={motivo}
+                                onChange={e => setMotivo(e.target.value)}
+                                placeholder="Describe el motivo de la anulación…"
+                                rows={3}
+                                className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-red-400 bg-white resize-none transition-colors text-slate-700"
+                            />
+                            {motivo.trim().length > 0 && motivo.trim().length < 5 && (
+                                <p className="text-[10px] text-red-500 mt-1">Mínimo 5 caracteres.</p>
+                            )}
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-red-50 border border-red-200">
+                        <AlertTriangle size={14} className="text-red-500 shrink-0 mt-0.5" />
+                        <p className="text-[12px] text-red-800">
+                            ¿Confirmas que deseas anular el pedido <strong>#{modal?.numero}</strong>?<br />
+                            Esta acción no se puede deshacer.
+                        </p>
+                    </div>
+                )}
+            </PedidoModal.Body>
+
+            <PedidoModal.Footer>
+                <div className="flex justify-end gap-2">
+                    <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 text-[13px] font-medium transition-colors">
+                        Cancelar
+                    </button>
+                    <button
+                        disabled={!canConfirm || busy}
+                        onClick={() => onConfirm(modal?.requiresReason ? motivo.trim() : null)}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 text-[13px] transition-colors disabled:opacity-50 shadow-sm"
+                    >
+                        {busy ? <Loader2 size={13} className="animate-spin" /> : <Ban size={13} />}
+                        Anular pedido
+                    </button>
+                </div>
+            </PedidoModal.Footer>
         </PedidoModal>
     );
 }
@@ -1924,6 +1999,9 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error('Lifecycle error:', e); } finally { setBusyLifecycle(null); }
     }, [user, loadActive]);
 
+    const [anularModal,      setAnularModal]      = useState(null); // { pedidoId, numero, requiresReason }
+    const [busyAnular,       setBusyAnular]       = useState(false);
+
     const [printingPdf,      setPrintingPdf]      = useState(null);
     const [programarModal,   setProgramarModal]   = useState(null); // { pedidoId, sucId, numero, currentAt, historial }
     const [savingProgramar,  setSavingProgramar]  = useState(false);
@@ -2006,6 +2084,27 @@ export default function TabPedidos({ searchTerm = '' }) {
         });
         loadActive();
     }, [loadActive]);
+
+    const handleAnular = useCallback(async (motivo = null) => {
+        if (!anularModal) return;
+        setBusyAnular(true);
+        try {
+            const { error } = await supabase.rpc('anular_pedido', {
+                p_pedido_id:  anularModal.pedidoId,
+                p_anulado_por: user?.id ?? null,
+                p_motivo:     motivo || null,
+            });
+            if (error) throw error;
+            useStaff.getState().appendAuditLog('PEDIDO_ANULADO', anularModal.pedidoId, { numero: anularModal.numero, motivo });
+            useToastStore.getState().showToast(`Pedido #${anularModal.numero} anulado`, motivo ? `Motivo: ${motivo}` : 'El pedido fue anulado correctamente.', 'success');
+            setAnularModal(null);
+            await loadActive();
+        } catch (e) {
+            useToastStore.getState().showToast('Error al anular', e.message ?? 'Ocurrió un error.', 'error');
+        } finally {
+            setBusyAnular(false);
+        }
+    }, [anularModal, user, loadActive]);
 
     // ── Reception ─────────────────────────────────────────────────────────────
 
@@ -2529,10 +2628,11 @@ export default function TabPedidos({ searchTerm = '' }) {
     const pedidoStageMap = useMemo(() => {
         const map = new Map();
         activeRows.forEach(row => {
-            const prev = map.get(row.pedido_id) ?? { allFinalized: true, anyActive: false };
+            const prev = map.get(row.pedido_id) ?? { allFinalized: true, anyActive: false, anyFinalized: false };
             map.set(row.pedido_id, {
-                allFinalized: prev.allFinalized && !!row.finalizado_at,
-                anyActive:    prev.anyActive || (!!row.iniciado_at && !row.finalizado_at),
+                allFinalized:  prev.allFinalized  && !!row.finalizado_at,
+                anyActive:     prev.anyActive     || (!!row.iniciado_at && !row.finalizado_at),
+                anyFinalized:  prev.anyFinalized  || !!row.finalizado_at,
             });
         });
         return map;
@@ -2761,6 +2861,10 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                             const canApoyo = !isBranch && ['sin_iniciar','preparando','pausado'].includes(stage);
 
+                            const canAnular = canActuar && !isBranch
+                                && row.pedido_status === 'confirmado'
+                                && !(pedidoStageMap.get(row.pedido_id)?.anyFinalized);
+
                             const isDone     = row.pedido_status === 'completado' || row.pedido_status === 'parcial';
                             // Solo fade cuando completado: parcial queda visible (pendiente corrección)
                             const isFadedOut = row.pedido_status === 'completado' && !!row.recibido_erp_at;  // sutil: solo baja un poco la opacidad
@@ -2945,6 +3049,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
                                             {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
                                             {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
+                                            {canAnular && (
+                                                <button
+                                                    onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-red-100 text-red-600 hover:bg-red-500 hover:text-white border border-red-200 hover:border-red-500 active:scale-95 transition-all shadow-sm"
+                                                >
+                                                    <Ban size={10} />Anular
+                                                </button>
+                                            )}
                                             {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen(true)} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
                                             {(() => {
                                                 const hasElecFaltantes = (row.electrolit_faltantes ?? 0) > 0 && row.electrolit_ok === false;
@@ -3167,6 +3279,15 @@ export default function TabPedidos({ searchTerm = '' }) {
                 pedidoNumero={finalizarModal?.numero}
                 paginas={finalizarModal?.paginas ?? null}
             />
+
+            {anularModal && (
+                <AnularModal
+                    modal={anularModal}
+                    onCancel={() => setAnularModal(null)}
+                    onConfirm={handleAnular}
+                    busy={busyAnular}
+                />
+            )}
 
             {pauseModal && (
                 <PauseModal

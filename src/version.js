@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.374';
+export const APP_VERSION = '2.2.375';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.375 — feat(pedidos): anular pedido desde TabPedidos — botón "Anular" visible a bodega en pedidos confirmados no finalizados; si ninguna sucursal inició → confirma directo sin motivo; si alguna inició pero sin finalizar → exige motivo (mín. 5 chars); si cualquier sucursal finalizó → botón oculto; llama anular_pedido RPC (p_anulado_por + p_motivo); toast éxito/error + audit log PEDIDO_ANULADO
 // v2.2.374 — chore(pedidos): eliminar TabRecepcion/TabHistorial/TabDiferencias (código huérfano ~1500 líneas); fix busyAction silencioso → toast "Hay una operación en curso" en openFinalizarModal/handleLlegada/handleMarkErp; fix cajaDanada en auto-open RecepcionModal post-reenvío usa cajasDanadas del ciclo actual en vez de pss.cajas_danadas del primer envío
 // v2.2.373 — fix(pedidos): flujo recepción completo — electrolit/especial marcan falta_caja:true si no llegan; botón "Reenviar" se muestra para electrolit+especial faltantes; ReenvioLlegadaModal muestra secciones electrolit y especiales pendientes; handleConfirmarTodo/Finalizar solo pone allDone:true cuando no quedan falta_caja items; pills Dañada/Faltante inline sin separador
 // v2.2.372 — fix(generar): badge prioridad y % más grandes (text-[10px] h-5 vs text-[8px] h-4)

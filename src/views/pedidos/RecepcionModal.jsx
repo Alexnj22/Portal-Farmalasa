@@ -76,6 +76,7 @@ export default function RecepcionModal({
     paginaItems  = {},   // {"1":[itemId,...],...} → page → pedido_item IDs
     cajasRecibidas: initCajasRecibidas = [], // already confirmed box numbers (from DB)
     faltaCajas   = [],   // box numbers physically missing (items excluded)
+    hasFaltaItems = false, // hay items falta_caja:true en otros grupos (electrolit/especial/caja pendiente)
 }) {
     const { user } = useAuth();
 
@@ -485,7 +486,8 @@ export default function RecepcionModal({
             useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
                 sucursal_id: sucursalId, extras_count: extras.length, todo_ok: true, batch: true,
             });
-            onConfirmed?.({ hasDiff: anyHasDiff, allDone: true });
+            // Solo marcar allDone si no hay cajas ni items pendientes de reenvío
+            onConfirmed?.({ hasDiff: anyHasDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems });
             onClose();
         } catch (e) {
             setSaveError(e.message);
@@ -505,14 +507,14 @@ export default function RecepcionModal({
                     sucursal_id: sucursalId, extras_count: extras.length,
                 });
             }
-            onConfirmed?.({ hasDiff: anyHasDiff, allDone: true });
+            onConfirmed?.({ hasDiff: anyHasDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems });
             onClose();
         } catch (e) {
             setSaveError(e.message);
         } finally {
             setSaving(false);
         }
-    }, [saveExtras, extras, pedido?.id, sucursalId, anyHasDiff, onConfirmed, onClose]);
+    }, [saveExtras, extras, pedido?.id, sucursalId, anyHasDiff, faltaCajas, hasFaltaItems, onConfirmed, onClose]);
 
     if (!open) return null;
 
@@ -616,12 +618,14 @@ export default function RecepcionModal({
                     )}
 
                     {allAccessibleDone && (
-                        <div className="mt-4 flex items-start gap-2.5 px-3 py-3 rounded-2xl bg-emerald-50 border border-emerald-200">
-                            <PackageCheck size={15} className="text-emerald-500 shrink-0 mt-0.5" />
-                            <p className="text-[12px] text-emerald-700 font-medium leading-snug">
+                        <div className={`mt-4 flex items-start gap-2.5 px-3 py-3 rounded-2xl border ${faltaCajas.length > 0 || hasFaltaItems ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                            <PackageCheck size={15} className={`shrink-0 mt-0.5 ${faltaCajas.length > 0 || hasFaltaItems ? 'text-amber-500' : 'text-emerald-500'}`} />
+                            <p className={`text-[12px] font-medium leading-snug ${faltaCajas.length > 0 || hasFaltaItems ? 'text-amber-700' : 'text-emerald-700'}`}>
                                 {faltaCajas.length > 0
-                                    ? `Todas las cajas disponibles confirmadas. Caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map(n => `#${n}`).join(', ')} pendiente${faltaCajas.length > 1 ? 's' : ''} de reenvío.`
-                                    : '¡Todas las cajas recibidas!'
+                                    ? `Cajas disponibles confirmadas. Caja${faltaCajas.length > 1 ? 's' : ''} ${faltaCajas.map(n => `#${n}`).join(', ')} pendiente${faltaCajas.length > 1 ? 's' : ''} de reenvío.`
+                                    : hasFaltaItems
+                                        ? 'Cajas disponibles confirmadas. Aún hay electrolit o cajas especiales pendientes de reenvío. Finaliza cuando lleguen.'
+                                        : '¡Todas las cajas recibidas!'
                                 }
                             </p>
                         </div>

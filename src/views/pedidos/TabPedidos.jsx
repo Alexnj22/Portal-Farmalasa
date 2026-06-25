@@ -2124,6 +2124,35 @@ export default function TabPedidos({ searchTerm = '' }) {
                 }
             }
 
+            // 2b. Marcar items de Electrolit faltantes como falta_caja: true
+            if ((electrolitFaltantes ?? 0) > 0 && rows.length > 0) {
+                const faltaElecItems = rows
+                    .filter(r => (r.products?.nombre ?? '').toLowerCase().includes('electrolit') && !r.falta_caja && r.status !== 'recibido')
+                    .slice(0, electrolitFaltantes);
+                if (faltaElecItems.length > 0) {
+                    await supabase.from('pedido_items').update({ falta_caja: true }).in('id', faltaElecItems.map(r => r.id));
+                }
+            }
+
+            // 2c. Marcar items de cajas especiales faltantes como falta_caja: true
+            if (especialesLlegadas && Object.values(especialesLlegadas).some(v => v === 'faltante') && rows.length > 0) {
+                const faltaLabels = new Set(Object.entries(especialesLlegadas).filter(([, v]) => v === 'faltante').map(([k]) => k));
+                let ec = 1;
+                const faltaIds = new Set();
+                [...rows]
+                    .filter(r => r.caja_especial && (r.cantidad_asignada ?? 0) > 0 && r.status !== 'recibido')
+                    .sort((a, b) => (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es'))
+                    .forEach(r => {
+                        for (let i = 0; i < (r.cantidad_asignada ?? 1); i++) {
+                            if (faltaLabels.has(`E${ec}`)) faltaIds.add(r.id);
+                            ec++;
+                        }
+                    });
+                if (faltaIds.size > 0) {
+                    await supabase.from('pedido_items').update({ falta_caja: true }).in('id', [...faltaIds]);
+                }
+            }
+
             // 3. Confirmar llegada física
             await supabase.rpc('update_pedido_sucursal_lifecycle', {
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
@@ -2202,7 +2231,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error('llegada confirm:', e); } finally { setBusyAction(null); }
     }, [llegadaModal, user, branchName, loadActive, fetchItems]);
 
-    const handleReenviarCaja = useCallback(async (pedidoId, sucId, numero, cajasFaltantes) => {
+    const handleReenviarCaja = useCallback(async (pedidoId, sucId, numero, cajasFaltantes, electrolitsFaltantes = 0, especialesFaltantes = []) => {
         setBusyAction('reenvio');
         try {
             const now = new Date().toISOString();
@@ -2212,7 +2241,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
             const historial = pss?.reenvios_historial ?? [];
             const ciclo     = historial.length + 1;
-            const nuevoCiclo = { ciclo, cajas: cajasFaltantes, sent_at: now, sent_by: user?.id ?? null, arrived_at: null, arrived_tipo: null, cajas_ok: [], cajas_danadas: [], cajas_aun_faltantes: [] };
+            const nuevoCiclo = { ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesFaltantes, sent_at: now, sent_by: user?.id ?? null, arrived_at: null, arrived_tipo: null, cajas_ok: [], cajas_danadas: [], cajas_aun_faltantes: [] };
 
             await supabase.from('pedido_sucursal_status')
                 .update({
@@ -2241,22 +2270,24 @@ export default function TabPedidos({ searchTerm = '' }) {
         const ciclo     = cicloIdx >= 0 ? historial[cicloIdx] : historial[historial.length - 1];
         if (!ciclo) {
             if (faltaCajasLegacy.length > 0) {
-                setReenvioLlegadaModal({ pedidoId, sucId, key, ciclo: 1, cajasCiclo: faltaCajasLegacy, historial: [], cajaMap });
+                setReenvioLlegadaModal({ pedidoId, sucId, key, ciclo: 1, cajasCiclo: faltaCajasLegacy, electrolitCount: 0, especialesList: [], historial: [], cajaMap });
             }
             return;
         }
         setReenvioLlegadaModal({
             pedidoId, sucId, key,
-            ciclo:      ciclo.ciclo,
-            cajasCiclo: ciclo.cajas ?? [],
+            ciclo:           ciclo.ciclo,
+            cajasCiclo:      ciclo.cajas       ?? [],
+            electrolitCount: ciclo.electrolits ?? 0,
+            especialesList:  ciclo.especiales  ?? [],
             historial,
             cajaMap,
         });
     }, []);
 
-    const handleReenvioLlegadaConfirm = useCallback(async ({ cajasOk, cajasDanadas, cajasFaltantes, nota }) => {
+    const handleReenvioLlegadaConfirm = useCallback(async ({ cajasOk, cajasDanadas, cajasFaltantes, nota, electrolitOk = true, especialesAun = [] }) => {
         if (!reenvioLlegadaModal) return;
-        const { pedidoId, sucId, key, ciclo, historial } = reenvioLlegadaModal;
+        const { pedidoId, sucId, key, ciclo, historial, electrolitCount = 0, especialesList = [] } = reenvioLlegadaModal;
         setReenvioLlegadaModal(null);
         setBusyAction('segunda_llegada');
         try {
@@ -2308,20 +2339,52 @@ export default function TabPedidos({ searchTerm = '' }) {
             if (hasFalta) {
                 const mIds = getItemIds(cajasFaltantes);
                 if (mIds.length > 0) await supabase.from('pedido_items').update({ falta_caja: true }).in('id', mIds);
+            }
 
-                // Notificar bodega para nuevo reenvío
+            // Limpiar falta_caja en electrolits si llegaron en este reenvío
+            if (electrolitCount > 0 && electrolitOk) {
+                const { data: faltaElec } = await supabase.from('pedido_items')
+                    .select('id, products(nombre)')
+                    .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
+                    .eq('falta_caja', true).eq('status', 'pendiente');
+                const elecIds = (faltaElec || []).filter(r => (r.products?.nombre ?? '').toLowerCase().includes('electrolit')).map(r => r.id);
+                if (elecIds.length > 0) await supabase.from('pedido_items').update({ falta_caja: false }).in('id', elecIds);
+            }
+
+            // Limpiar falta_caja en especiales que llegaron en este reenvío
+            const espLlegaron = (especialesList ?? []).filter(l => !especialesAun.includes(l));
+            if (espLlegaron.length > 0) {
+                // Los especiales que llegaron: limpiar falta_caja en sus items correspondientes
+                const { data: faltaEsp } = await supabase.from('pedido_items')
+                    .select('id')
+                    .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
+                    .eq('falta_caja', true).eq('status', 'pendiente').eq('caja_especial', true);
+                // Calcular cuáles items corresponden a las especiales que llegaron
+                // Por simplicidad limpiar todos los especiales con falta si todos llegaron; si aún hay faltantes dejar falta_caja
+                if (especialesAun.length === 0 && (faltaEsp ?? []).length > 0) {
+                    await supabase.from('pedido_items').update({ falta_caja: false }).in('id', faltaEsp.map(r => r.id));
+                }
+            }
+
+            // Notificar bodega si aún hay pendientes de reenvío
+            const hayAunPendiente = hasFalta || !electrolitOk || especialesAun.length > 0;
+            if (hayAunPendiente) {
                 supabase.from('erp_sucursal_map').select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
                     if (!m?.branch_id) return;
-                    const cajasStr = cajasFaltantes.map(n => `#${n}`).join(', ');
-                    supabase.from('announcements').insert({ title: `Aún falta caja — reenvío ${ciclo}`, message: `${branchName} reporta que la caja ${cajasStr} aún no llegó en el reenvío ${ciclo}. Se requiere otro envío.`, target_type: 'BRANCH', target_value: [m.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
+                    const partes = [];
+                    if (hasFalta) partes.push(`Cajas: ${cajasFaltantes.map(n => `#${n}`).join(', ')}`);
+                    if (!electrolitOk) partes.push('Electrolit aún pendiente');
+                    if (especialesAun.length > 0) partes.push(`Especiales: ${especialesAun.join(', ')}`);
+                    supabase.from('announcements').insert({ title: `Aún hay pendientes — reenvío ${ciclo}`, message: `${branchName} reporta que aún no llegó: ${partes.join(' | ')}. Se requiere otro envío.`, target_type: 'BRANCH', target_value: [m.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
                 }).catch(() => {});
             }
 
             await loadActive();
             const freshItems = await fetchItems(key, pedidoId, sucId);
 
-            // Auto-abrir RecepcionModal para los ítems de las cajas que sí llegaron
-            const pendingArrived = (freshItems || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0 && !r.falta_caja);
+            // Auto-abrir RecepcionModal para los ítems de las cajas/especiales/electrolits que sí llegaron
+            const pendingArrived  = (freshItems || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0 && !r.falta_caja);
+            const hasFaltaItemsNow = (freshItems || []).some(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0);
             if (pendingArrived.length > 0) {
                 const pedidoRow = activeRows.find(r => r.pedido_id === pedidoId && r.erp_sucursal_id === sucId);
                 setModal({
@@ -2333,6 +2396,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     paginaItems:    paginaItemsDb,
                     cajasRecibidas: pss?.cajas_recibidas ?? [],
                     faltaCajas:     hasFalta ? cajasFaltantes : [],
+                    hasFaltaItems:  hasFaltaItemsNow,
                 });
             }
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
@@ -2374,6 +2438,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         const loaded = await fetchItems(key, pedidoId, sucId);
         const rows = (loaded || []).filter(r => r.status === 'pendiente' && r.cantidad_asignada > 0 && !r.falta_caja);
         if (!rows.length) return;
+        const hasFaltaItems = (loaded || []).some(r => r.falta_caja && r.status === 'pendiente' && r.cantidad_asignada > 0);
         const activeRow  = activeRows.find(r => r.pedido_id === pedidoId && r.erp_sucursal_id === sucId);
         // cajas_danadas y falta_cajas son ahora arrays independientes (soporta 'mixto')
         const cajaDanada = activeRow?.cajas_danadas ?? [];
@@ -2390,7 +2455,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             cajasRecibidas = pss?.cajas_recibidas ?? [];
         }
 
-        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada, cajaMap, paginaItems, cajasRecibidas, faltaCajas });
+        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada, cajaMap, paginaItems, cajasRecibidas, faltaCajas, hasFaltaItems });
     }, [fetchItems, activeRows]);
 
     const openReenvioModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
@@ -2814,25 +2879,20 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 {row.cajas_especiales.length} caja{row.cajas_especiales.length > 1 ? 's' : ''} especial{row.cajas_especiales.length > 1 ? 'es' : ''}
                                             </span>
                                         )}
-                                        {hasObservacion(row) && row.pedido_status !== 'completado' && (
-                                            (row.cajas_danadas?.length > 0 || row.falta_cajas?.length > 0 || row.pedido_status === 'parcial') && (<>
-                                                <span className="h-3.5 w-px bg-slate-200 mx-0.5 shrink-0" />
-                                                {(row.cajas_danadas ?? []).length > 0 && (
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
-                                                        <AlertTriangle size={8} /> Dañada{row.cajas_danadas.length > 1 ? 's' : ''}: {row.cajas_danadas.map(n => `#${n}`).join(', ')}
-                                                    </span>
-                                                )}
-                                                {(row.falta_cajas ?? []).length > 0 && (
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
-                                                        <Package size={8} /> Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}
-                                                    </span>
-                                                )}
-                                                {row.pedido_status === 'parcial' && !(row.cajas_danadas?.length > 0 || row.falta_cajas?.length > 0) && (
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
-                                                        <ClipboardList size={8} /> Difs. pendientes
-                                                    </span>
-                                                )}
-                                            </>)
+                                        {(row.cajas_danadas ?? []).length > 0 && (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 shrink-0">
+                                                <AlertTriangle size={8} /> Dañada{row.cajas_danadas.length > 1 ? 's' : ''}: {row.cajas_danadas.map(n => `#${n}`).join(', ')}
+                                            </span>
+                                        )}
+                                        {(row.falta_cajas ?? []).length > 0 && (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 shrink-0">
+                                                <Package size={8} /> Faltante{row.falta_cajas.length > 1 ? 's' : ''}: {row.falta_cajas.map(n => `#${n}`).join(', ')}
+                                            </span>
+                                        )}
+                                        {row.pedido_status === 'parcial' && !(row.cajas_danadas?.length > 0 || row.falta_cajas?.length > 0) && row.pedido_status !== 'completado' && (
+                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                                                <ClipboardList size={8} /> Difs. pendientes
+                                            </span>
                                         )}
                                         {elapsedPrep  && <span className="text-[10px] text-slate-600 tabular-nums">{elapsedPrep}</span>}
                                         {elapsedPause && (
@@ -2886,12 +2946,19 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
                                             {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
                                             {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen(true)} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
-                                            {canActuar && !isBranch && (row.falta_cajas ?? []).length > 0 && !(row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at) && (
-                                                // Mostrar "Reenviar caja" cuando hay cajas faltantes y no hay un ciclo en camino sin confirmar
-                                                <button onClick={() => handleReenviarCaja(row.pedido_id, row.erp_sucursal_id, row.numero, row.falta_cajas ?? [])} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">
-                                                    {busyAction === 'reenvio' ? <Loader2 size={10} className="animate-spin" /> : <><Truck size={10} />Reenviar caja</>}
-                                                </button>
-                                            )}
+                                            {(() => {
+                                                const hasElecFaltantes = (row.electrolit_faltantes ?? 0) > 0 && row.electrolit_ok === false;
+                                                const hasEspFaltantes  = Object.values(row.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante');
+                                                const hasPendingFalta  = (row.falta_cajas ?? []).length > 0 || hasElecFaltantes || hasEspFaltantes;
+                                                const reenvioEnCamino  = (row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at);
+                                                if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino) return null;
+                                                const espFaltList = Object.entries(row.cajas_especiales_llegadas ?? {}).filter(([, v]) => v === 'faltante').map(([k]) => k);
+                                                return (
+                                                    <button onClick={() => handleReenviarCaja(row.pedido_id, row.erp_sucursal_id, row.numero, row.falta_cajas ?? [], hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, espFaltList)} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">
+                                                        {busyAction === 'reenvio' ? <Loader2 size={10} className="animate-spin" /> : <><Truck size={10} />Reenviar caja</>}
+                                                    </button>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
 
@@ -3084,7 +3151,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                 onClose={() => setReenvioLlegadaModal(null)}
                 onConfirm={handleReenvioLlegadaConfirm}
                 pedidoNumero={reenvioLlegadaModal ? activeRows.find(r => r.pedido_id === reenvioLlegadaModal.pedidoId)?.numero : null}
-                cajasCiclo={reenvioLlegadaModal?.cajasCiclo ?? []}
+                cajasCiclo={reenvioLlegadaModal?.cajasCiclo      ?? []}
+                electrolitCount={reenvioLlegadaModal?.electrolitCount ?? 0}
+                especialesList={reenvioLlegadaModal?.especialesList   ?? []}
                 cicloNum={reenvioLlegadaModal?.ciclo ?? 1}
                 cajaMap={reenvioLlegadaModal?.cajaMap ?? {}}
             />
@@ -3135,7 +3204,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                     cajaMap={modal.cajaMap         ?? {}}
                     paginaItems={modal.paginaItems  ?? {}}
                     cajasRecibidas={modal.cajasRecibidas ?? []}
-                    faltaCajas={modal.faltaCajas   ?? []}
+                    faltaCajas={modal.faltaCajas     ?? []}
+                    hasFaltaItems={modal.hasFaltaItems ?? false}
                     onConfirmed={async ({ hasDiff, allDone }) => {
                         const { pedido, sucId, key } = modal;
                         setModal(null);

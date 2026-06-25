@@ -1683,14 +1683,17 @@ export default function TabPedidos({ searchTerm = '' }) {
     }, [loadActive, isBranch, erpSucursalId]); // eslint-disable-line (loadActiveRutas es estable [])
 
     // ── Rutas activas: mapa pedidoId → { ruta, stop, driverOnline } ──────────
+    const loadingRutasRef = useRef(false);
     const loadActiveRutas = useCallback(async () => {
+        if (loadingRutasRef.current) return;
+        loadingRutasRef.current = true;
         const todayStart = new Date(); todayStart.setHours(0,0,0,0);
         const { data } = await supabase.from('rutas')
             .select(`id, numero, conductor_id, conductor_nombre, status, salida_at, vuelta_base_at,
                      ruta_pedidos(id, pedido_id, erp_sucursal_id, orden_entrega, entregado_at, entregado_por)`)
             .or(`status.in.(pendiente,en_ruta),and(status.eq.completada,created_at.gte.${todayStart.toISOString()})`)
             .order('created_at', { ascending: false });
-        if (!data?.length) { setPedidoRutaMap(new Map()); return; }
+        if (!data?.length) { setPedidoRutaMap(new Map()); loadingRutasRef.current = false; return; }
 
         const rutaIds = data.map(r => r.id);
         const allStops = data.flatMap(r => r.ruta_pedidos ?? []);
@@ -1719,6 +1722,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             });
         });
         setPedidoRutaMap(map);
+        loadingRutasRef.current = false;
     }, []);
 
     useEffect(() => { loadActiveRutas(); }, [loadActiveRutas]);
@@ -2815,19 +2819,23 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const { ruta, driverOnline: dl } = group;
                             const entregadas = ruta.ruta_pedidos.filter(rp => rp.entregado_at).length;
                             const total = ruta.ruta_pedidos.length;
-                            const isConductorRuta = !!(user?.id && ruta.conductor_id && user.id === ruta.conductor_id);
+                            const isConductorRuta = !!(user?.id && ruta.conductor_id && String(user.id) === String(ruta.conductor_id));
                             const pct = total > 0 ? Math.round((entregadas / total) * 100) : 0;
                             const isCompletada = ruta.status === 'completada';
                             const fmtT = (iso) => iso ? new Date(iso).toLocaleTimeString('es-SV', { hour: 'numeric', minute: '2-digit', hour12: true }) : null;
+                            const conductorEmp = ruta.conductor_id ? empMap.get(ruta.conductor_id) : null;
                             return (
                                 <div key={ruta.id} className={`rounded-2xl border overflow-hidden bg-white/70 shadow-[0_2px_16px_rgba(99,102,241,0.08)] ${isCompletada ? 'border-slate-200/80' : 'border-indigo-200/80'}`}>
                                     {/* Header sin color — glass */}
                                     <div className="flex items-center gap-3 px-4 py-2.5 border-b border-slate-100/80 bg-white/60" onClick={e => e.stopPropagation()}>
-                                        {/* Icono conductor */}
+                                        {/* Foto/icono conductor */}
                                         <div className="relative shrink-0">
-                                            <div className={`w-7 h-7 rounded-xl flex items-center justify-center border ${isCompletada ? 'bg-slate-100 border-slate-200' : 'bg-indigo-50 border-indigo-100'}`}>
-                                                <Truck size={13} className={isCompletada ? 'text-slate-500' : 'text-indigo-600'} />
-                                            </div>
+                                            {conductorEmp?.photo
+                                                ? <img src={conductorEmp.photo} alt={conductorEmp.name} className="w-7 h-7 rounded-xl object-cover border border-slate-200" />
+                                                : <div className={`w-7 h-7 rounded-xl flex items-center justify-center border ${isCompletada ? 'bg-slate-100 border-slate-200' : 'bg-indigo-50 border-indigo-100'}`}>
+                                                    <Truck size={13} className={isCompletada ? 'text-slate-500' : 'text-indigo-600'} />
+                                                  </div>
+                                            }
                                             {dl && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white animate-pulse" />}
                                         </div>
                                         {/* Info */}

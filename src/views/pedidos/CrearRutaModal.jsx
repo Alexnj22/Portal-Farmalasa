@@ -409,35 +409,31 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
         paradas:   rpcParadas.length,
       });
 
-      // Notificar solo paradas con pedido real (encargos no tienen pedido que avisar)
-      for (const stop of paradas.filter(s => !s.isEncargo)) {
-        const { data: mapa } = await supabase
-          .from('erp_sucursal_map')
-          .select('branch_id')
-          .eq('erp_sucursal_id', stop.erp_sucursal_id)
-          .maybeSingle();
-        if (!mapa?.branch_id) continue;
+      // Notificar paradas con pedido real — batch lookup de branch_ids
+      const realStops = paradas.filter(s => !s.isEncargo);
+      if (realStops.length > 0) {
+        const sucIds = [...new Set(realStops.map(s => s.erp_sucursal_id))];
+        const { data: mapas } = await supabase
+          .from('erp_sucursal_map').select('erp_sucursal_id, branch_id').in('erp_sucursal_id', sucIds);
+        const branchMap = Object.fromEntries((mapas ?? []).map(m => [m.erp_sucursal_id, m.branch_id]));
 
-        const numeros    = stop.items.map(i => `#${i.numero}`).join(', ');
-        const totalCajas = stop.items.reduce((s, i) => s + (i.total_cajas ?? 0), 0);
-        const cajasStr   = totalCajas ? ` en ${totalCajas} caja${totalCajas !== 1 ? 's' : ''}` : '';
-
-        supabase.from('announcements').insert({
-          title:        `Pedido ${numeros} en camino`,
-          message:      `Tu pedido ${numeros} salió de bodega${cajasStr} con ${conductorNombre}.`,
-          target_type:  'BRANCH', target_value: [mapa.branch_id],
-          read_by: [], is_archived: false,
-          created_by: user?.id ?? null, priority: 'NORMAL',
-        }).then(() => {}, () => {});
-
-        supabase.functions.invoke('send-push-notification', {
-          body: {
+        for (const stop of realStops) {
+          const bid = branchMap[stop.erp_sucursal_id];
+          if (!bid) continue;
+          const numeros    = stop.items.map(i => `#${i.numero}`).join(', ');
+          const totalCajas = stop.items.reduce((s, i) => s + (i.total_cajas ?? 0), 0);
+          const cajasStr   = totalCajas ? ` en ${totalCajas} caja${totalCajas !== 1 ? 's' : ''}` : '';
+          supabase.from('announcements').insert({
             title:        `Pedido ${numeros} en camino`,
-            message:      `Tu pedido ya salió de bodega${cajasStr}. Prepárate para recibirlo.`,
-            url:          '/pedidos',
-            target_type:  'BRANCH', target_value: [mapa.branch_id],
-          },
-        }).catch(() => {});
+            message:      `Tu pedido ${numeros} salió de bodega${cajasStr} con ${conductorNombre}.`,
+            target_type:  'BRANCH', target_value: [bid],
+            read_by: [], is_archived: false,
+            created_by: user?.id ?? null, priority: 'NORMAL',
+          }).then(() => {}, () => {});
+          supabase.functions.invoke('send-push-notification', {
+            body: { title: `Pedido ${numeros} en camino`, message: `Tu pedido ya salió de bodega${cajasStr}. Prepárate para recibirlo.`, url: '/pedidos', target_type: 'BRANCH', target_value: [bid] },
+          }).catch(() => {});
+        }
       }
 
       onCreated?.();

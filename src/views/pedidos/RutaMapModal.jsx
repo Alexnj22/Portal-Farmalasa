@@ -10,7 +10,7 @@ function fmtTime(iso) {
 }
 
 export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
-  const isConductor = !!(currentUserId && ruta?.conductor_id && currentUserId === ruta.conductor_id);
+  const isConductor = !!(currentUserId && ruta?.conductor_id && String(currentUserId) === String(ruta.conductor_id));
 
   // ── DOM / Maps refs ─────────────────────────────────────────────────────────
   const mapRef          = useRef(null);
@@ -37,15 +37,32 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
   const [mapsMode,     setMapsMode]     = useState(false);
   const [recalcCount,  setRecalcCount]  = useState(0);
 
-  const paradas = [...(ruta?.ruta_pedidos ?? [])].sort((a, b) => a.orden_entrega - b.orden_entrega);
+  const [localParadas, setLocalParadas] = useState(null);
+  const paradas = (localParadas ?? [...(ruta?.ruta_pedidos ?? [])]).sort((a, b) => a.orden_entrega - b.orden_entrega);
   const entregadas = paradas.filter(p => p.entregado_at).length;
 
   // ── Sync GPS pos → ref (evita stale closures en intervalos) ────────────────
   useEffect(() => { latestGpsPosRef.current = gpsPos; }, [gpsPos]);
 
+  // ── Suscripción live a ruta_pedidos (actualiza marcadores sin reabrir modal) ─
+  useEffect(() => {
+    if (!open || !ruta?.id) return;
+    const ch = supabase.channel(`ruta-stops-live-${ruta.id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'ruta_pedidos',
+        filter: `ruta_id=eq.${ruta.id}` }, (payload) => {
+        setLocalParadas(prev => {
+          const base = prev ?? [...(ruta?.ruta_pedidos ?? [])];
+          return base.map(s => s.id === payload.new.id ? { ...s, ...payload.new } : s);
+        });
+      })
+      .subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [open, ruta?.id]); // eslint-disable-line
+
   // ── Reset al cerrar ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (open) return;
+    setLocalParadas(null);
     setCoordsMap({});
     setBodegaCoords(null);
     setGpsPos(null);
@@ -143,7 +160,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
         event: '*', schema: 'public', table: 'ruta_locations',
         filter: `ruta_id=eq.${ruta.id}`,
       }, ({ new: row }) => {
-        if (row?.lat && row?.lng) {
+        if (row?.lat != null && row?.lng != null) {
           setDriverPos({ lat: parseFloat(row.lat), lng: parseFloat(row.lng) });
           setDriverOnline(true);
         }

@@ -2010,7 +2010,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     // ── Reception ─────────────────────────────────────────────────────────────
 
     const openFinalizarModal = useCallback(async (pedidoId, sucId, numero, key) => {
-        if (busyAction) return;
+        if (busyAction) { useToastStore.getState().showToast('Espera', 'Hay una operación en curso, intenta de nuevo.', 'info'); return; }
         setBusyAction(`finalizar_load_${key}`);
         const [rowsResult, pssResult] = await Promise.all([
             items[key] ? Promise.resolve(items[key]) : fetchItems(key, pedidoId, sucId),
@@ -2064,7 +2064,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     }, [finalizarModal, user, loadActive]);
 
     const handleLlegada = useCallback(async (pedidoId, sucId, key) => {
-        if (busyAction) return;
+        if (busyAction) { useToastStore.getState().showToast('Espera', 'Hay una operación en curso, intenta de nuevo.', 'info'); return; }
         let rows = items[key];
         if (!rows) {
             setBusyAction('llegada');
@@ -2391,7 +2391,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     pedido: { id: pedidoId, numero: pedidoRow?.numero ?? null, codigo: pedidoRow?.codigo ?? null },
                     sucId, key,
                     rows:           pendingArrived,
-                    cajaDanada:     pss?.cajas_danadas   ?? [],
+                    cajaDanada:     cajasDanadas,
                     cajaMap:        cajaMapDb,
                     paginaItems:    paginaItemsDb,
                     cajasRecibidas: pss?.cajas_recibidas ?? [],
@@ -2424,7 +2424,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     }, [user, loadActiveRutas]);
 
     const handleMarkErp = useCallback(async (pedidoId, sucId, key) => {
-        if (busyAction) return;
+        if (busyAction) { useToastStore.getState().showToast('Espera', 'Hay una operación en curso, intenta de nuevo.', 'info'); return; }
         setBusyAction('erp');
         try {
             await supabase.rpc('update_pedido_sucursal_lifecycle', { p_pedido_id: pedidoId, p_sucursal_id: sucId, p_stage: 'recibir_erp', p_user_id: user?.id ?? null });

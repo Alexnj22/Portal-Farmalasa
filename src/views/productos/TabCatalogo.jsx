@@ -1414,7 +1414,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                         : 'bg-amber-500/[0.15] border-amber-500/[0.30] text-amber-300'
                 }`}>
                     {worstOverall < 0
-                        ? <ShieldAlert size={14} className="shrink-0 text-red-400 aurora-badge-pulse" />
+                        ? <ShieldAlert size={14} className="shrink-0 text-red-400 badge-pulse" />
                         : <AlertTriangle size={13} className="shrink-0 text-amber-400" />}
                     {worstOverall < 0
                         ? <><strong>Pérdida detectada</strong> — algún precio está por debajo del costo.</>
@@ -1471,7 +1471,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
                 <div className="min-w-0">
                     <SL icon={null}>
                         Presentaciones y precios
-                        {hasChanges && <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-500/[0.18] text-amber-300 border border-amber-400/[0.28] px-1.5 py-0.5 rounded-full aurora-badge-pulse">⚡ cambios</span>}
+                        {hasChanges && <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-500/[0.18] text-amber-300 border border-amber-400/[0.28] px-1.5 py-0.5 rounded-full badge-pulse">⚡ cambios</span>}
                     </SL>
                     {precios.length === 0 ? (
                         <div className="flex items-center gap-2 text-[11px] text-white/35 py-3 px-3 rounded-xl bg-white/[0.04] border border-white/[0.08]">
@@ -1706,7 +1706,7 @@ function AuroraView({ products, expandedId, expandedCache, loadingExpandedId, ch
                     const isInactive    = !p.activo && filterActivo === 'todos';
                     const specLoss      = specialLossMap?.[p.id];
 
-                    const cardGlow = hasLoss ? 'aurora-loss-glow' : hasWarn ? 'aurora-warn-glow' : '';
+                    const cardGlow = hasLoss ? 'glow-danger' : hasWarn ? 'glow-warning' : '';
                     const cardBorder = isExpanded
                         ? 'border-blue-400/[0.38] bg-[#0c1a30]'
                         : 'border-white/[0.07] bg-[#070d1a] hover:border-blue-400/[0.20] hover:bg-[#0a1525]';
@@ -1743,7 +1743,7 @@ function AuroraView({ products, expandedId, expandedCache, loadingExpandedId, ch
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
                                         <span className={`text-[14px] font-semibold leading-snug ${isInactive ? 'text-white/30 line-through' : 'text-white/90'}`}>{p.nombre}</span>
-                                        {hasLoss && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-red-500/[0.22] text-red-300 border border-red-500/[0.32] px-1.5 py-0.5 rounded-full aurora-badge-pulse"><ShieldAlert size={7} /> Pérdida</span>}
+                                        {hasLoss && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-red-500/[0.22] text-red-300 border border-red-500/[0.32] px-1.5 py-0.5 rounded-full badge-pulse"><ShieldAlert size={7} /> Pérdida</span>}
                                         {!hasLoss && hasWarn && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-500/[0.20] text-amber-300 border border-amber-400/[0.30] px-1.5 py-0.5 rounded-full"><TrendingDown size={7} /> Margen bajo</span>}
                                         {specLoss && [...specLoss].map(k => (
                                             <span key={k} className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-orange-500/[0.18] text-orange-300 border border-orange-400/[0.28] px-1.5 py-0.5 rounded-full">
@@ -2266,7 +2266,7 @@ function CompatView({ products, expandedId, expandedCache, loadingExpandedId, ch
                                     onClick={() => toggleRow(p.id)}
                                     onMouseEnter={() => prefetchRow(p.id)}
                                     onMouseLeave={cancelPrefetch}
-                                    className={`animate-compat-row cursor-pointer transition-colors duration-100 border-l-[3px] ${
+                                    className={`animate-table-row-enter cursor-pointer transition-colors duration-100 border-l-[3px] ${
                                         isExpanded
                                             ? 'bg-blue-50 border-l-[#1B3A6B]'
                                             : `${isEven ? 'bg-white' : 'bg-gray-50/70'} border-l-transparent hover:bg-blue-50/70 ${isInactive ? 'opacity-50' : ''}`

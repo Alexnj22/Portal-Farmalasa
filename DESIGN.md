@@ -1,350 +1,1154 @@
-# Design System — Portal Farmalasa
+# Portal Farmalasa — Design System
 
-## Visual Register
+> **v1.0 — 2026-06-24**
 
-**product** — La UI sirve al flujo de trabajo; el diseño desaparece dentro de la tarea.
+## Cómo usar este doc
 
----
-
-## Themes
-
-El portal soporta dos temas seleccionables por el usuario, persistidos en `localStorage`.
-
-### Tema 1: LiquidGlass (`data-theme="liquid"`, default)
-Inspirado en visionOS / iOS 18. Profundidad real a través de capas, blur y refracción. Las superficies flotan sobre un fondo vivo de orbes degradados.
-
-### Tema 2: Compat (`data-theme="compat"`)
-Diseño corporativo sin transparencias. Para navegadores / computadoras que no soportan `backdrop-filter` o donde la fluidez importa más que la estética. Mismo lenguaje visual pero plano y predecible.
+1. **Empieza por §3 (Tokens)** — todo valor visual nace ahí. Si quieres cambiar un color o blur, cámbialo en `:root` de `src/index.css`, no en el componente.
+2. **Antes de crear un componente nuevo**, revisa §13–§14 (Componentes). Si uno existente puede extenderse, extiéndelo. Prohibido duplicar modales fuera de ModalShell/UnifiedModal ni selects fuera de LiquidSelect.
+3. **Toda UI nueva debe pasar §24 Anti-Patterns** antes de mergearse.
+4. **Los tokens viven en `src/index.css`**; los keyframes en `src/index.css` y `tailwind.config.js`; la lógica de tema en `src/context/ThemeContext.jsx`.
 
 ---
 
-## Color Palette
-
-### Marca — Cobalt
-| Token | Valor | Uso |
-|-------|-------|-----|
-| `--brand` | `#0052CC` | Acciones primarias, selección activa, CTA |
-| `--brand-dark` | `#003D99` | Hover sobre brand |
-| `--brand-purple` | `#6929C4` | Gradiente del logo / icono de app |
-| Sidebar accent | `#4D94FF` | Texto/icono activo en sidebar oscuro |
-
-### Semánticos
-| Token | Valor | Uso |
-|-------|-------|-----|
-| `--success` | `#12B76A` | Confirmación, presente, activo |
-| `--warning` | `#F79009` | Alerta, pendiente, atención |
-| `--danger` | `#F04438` | Error, ausente, crítico |
-| `--info` | `#0052CC` | Mismo que brand |
-
-### Superficies — LiquidGlass
-| Token | Valor | Uso |
-|-------|-------|-----|
-| `--surface-page` | `#E6F0FF` | Fondo de página — azul cobalto muy suave |
-| `--surface-card` | `rgba(230,245,255,0.52)` | Cards de contenido — glass azul-tinted |
-| `--surface-card-hover` | `rgba(230,245,255,0.70)` | Cards on hover |
-| `--surface-header` | `rgba(210,235,255,0.18)` | Header flotante — glass translúcido |
-| `--surface-modal` | `rgba(240,248,255,0.90)` | Modales y drawers |
-| `--surface-input` | `rgba(230,245,255,0.60)` | Inputs, selects |
-| `--surface-sidebar` | Gradient `from-[#030B1C] via-[#071528] to-[#010610]` | Barra lateral |
-
-### Superficies — Compat
-| Token | Valor | Uso |
-|-------|-------|-----|
-| `--surface-page` | `#C8DCED` | Azul-pizarra con peso de color real — no blanco |
-| `--surface-card` | `#FFFFFF` | Card blanca con sombra dimensional |
-| `--surface-header` | `#FFFFFF` | Header sólido, `border-radius: 1.25rem` |
-| `--surface-modal` | `#FFFFFF` | Modal sólido |
-| `--surface-input` | `#F0F6FF` | Input levemente azulado |
-| `--surface-sidebar` | `#03080F` | Sidebar near-black — máximo contraste |
-| `--surface-tab-track` | `#B3D0E8` | Track de tabs — azul-slate |
-| `--border-card` | `#8BAEC8` | Bordes con crispness para monitores no-retina |
-
-**Nota compat:** Sin animaciones de entrada, sin hover lifts (evita blurriness en monitores no-retina). Se usa `subpixel-antialiased` para texto más nítido en monitores viejos.
-
-### Neutros
-| Token | Valor | Uso |
-|-------|-------|-----|
-| `text-slate-900` | `#0F172A` | Títulos, valores numéricos |
-| `text-slate-700` | `#334155` | Cuerpo de texto |
-| `text-slate-500` | `#64748B` | Labels, metadata |
-| `text-slate-400` | `#94A3B8` | Placeholders, iconos inactivos |
+> Source of truth for all visual and interaction patterns.
+> Stack: React 18 + Vite + Tailwind CSS v3 + custom Liquid Glass CSS.
+> Platform: Web (desktop/mobile) + native iOS/Android via Capacitor v8.2.0.
 
 ---
 
-## Typography
+## 1. Philosophy — Liquid Glass
 
-**Fuente:** System font stack — `system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`
+Portal uses a single design language called **Liquid Glass**: frosted translucent surfaces, radial-gradient ambient backgrounds, white micro-borders, and multi-layer shadows. Every surface floats over the gradient background rather than being painted on a flat canvas. On Solid themes the blur is removed, but the same token architecture drives everything.
 
-No se usa ninguna fuente externa de display. Inter es el fallback en plataformas sin system-ui.
-
-### Escala de tamaños
-| Token | Tamaño | Peso | Uso |
-|-------|--------|------|-----|
-| `text-[28px]` | 28px | 900 | Valor KPI principal |
-| `text-[20px]` | 20px | 800 | Título de sección |
-| `text-[16px]` | 16px | 700 | Título de card / widget |
-| `text-[13px]` | 13px | 600 | Cuerpo principal |
-| `text-[12px]` | 12px | 500 | Texto secundario |
-| `text-[11px]` | 11px | 700 | Labels uppercase, badges |
-| `text-[10px]` | 10px | 700 | Metadatos, timestamps |
-| `text-[9px]`  |  9px | 700 | Tags compactos |
-
-**Ratio de escala:** ~1.15 (tighter que brand, más opciones de densidad)
-
-### Convenciones
-- Labels en uppercase van con `tracking-widest` y `font-bold/black` mínimo
-- Nunca `font-normal` en UI interactiva — mínimo `font-medium`
-- Evitar `font-thin`/`font-light` en texto pequeño (legibilidad en pantallas de tienda)
+**Rules that never bend:**
+- No left-border color indicators on rows, cards, or lists (ever).
+- Text on glass always ≥ `text-slate-600` (labels) / `text-slate-500` (sub-text). Never `text-slate-300/400` over a light surface.
+- Hover effects only fire on pointer devices — all hover CSS lives inside `@media (hover: hover)`.
+- One icon library: Lucide React (`strokeWidth={1.5}` at rest, `2` when active).
+- No `<select>` elements — use `LiquidSelect` everywhere.
+- Audit log call required on every user-triggered mutation (`appendAuditLog` from `staffStore`).
 
 ---
 
-## Spacing & Layout
+## 2. Themes
 
-### Grid
-- **Desktop:** Sidebar fijo + área de contenido scroll
-- **Tablet:** Sidebar colapsable, contenido fluido
-- **Móvil:** Sidebar drawer over content
+Four named themes, controlled by `data-theme` on `<html>`. The default (Liquid Light) has no attribute.
 
-### Gaps habituales
-| Contexto | Gap |
-|----------|-----|
-| Dentro de card | `gap-3` / `gap-4` |
-| Entre cards en grid | `gap-4` |
-| Padding de card | `p-4` / `p-5` |
-| Padding de header flotante | `px-5 py-3` |
+| Theme key | `data-theme` | Description |
+|---|---|---|
+| `liquid` | *(none)* | LiquidGlass Light — default |
+| `dark` | `dark` | LiquidGlass Dark |
+| `solid` | `solid` | Solid Light — no blur |
+| `solid-dark` | `solid-dark` | Solid Dark — no blur |
 
-### Contenedor máximo
-Views: sin `max-w` — crecen con el viewport. Las vistas densas (tablas) usan el ancho completo.
+**ThemeContext** (`src/context/ThemeContext.jsx`) persists choice to `localStorage` under key `portal-theme`.
+Exposes `{ theme, setTheme, cycleTheme, isDark, isSolid, isLiquid, themes }`.
+`cycleTheme` rotates through all four in order: liquid → dark → solid → solid-dark → liquid.
 
----
+**ThemeToggle** (`src/components/common/ThemeToggle.jsx`) has two variants:
+- `'sidebar'` — full label + sub-label row inside sidebar footer
+- `'compact'` — icon-only square button
 
-## Border Radius
-
-| Token | LiquidGlass | Compat | Uso |
-|-------|-------------|--------|-----|
-| `--radius-xl` | `1.75rem` | `0.75rem` | Cards de contenido |
-| `--radius-2xl` | `2rem` | `1rem` | Modales |
-| `--radius-header` | `2.5rem` | `0` | Header flotante |
-| `--radius-btn` | `9999px` | `0.5rem` | Botones principales |
-| `--radius-badge` | `9999px` | `0.375rem` | Badges y pills |
-| `--radius-input` | `0.75rem` | `0.5rem` | Inputs, selects |
+Icons: Layers (liquid) · Moon (dark) · Sun (solid) · Monitor (solid-dark).
 
 ---
 
-## Motion System
+## 3. Design Tokens (CSS Custom Properties)
 
-### Principios
-1. **El movimiento comunica estado, no decoración.** Si el efecto no aclara qué cambió, no existe.
-2. **Timing:** 150ms para respuesta de click; 200-250ms para expansión/entrada; 300ms para transiciones de página.
-3. **Ease estándar:** `cubic-bezier(0.23, 1, 0.32, 1)` — ease-out rápido, sensación de respuesta física.
-4. **Sin bounce.** `cubic-bezier(0.34, 1.56, 0.64, 1)` solo para toggles físicos (switch thumb).
-5. **Press state:** `active:scale-[0.97]` — sutil, nunca `scale-90`.
-6. **Hover lift:** `-translate-y-0.5` + shadow upgrade. Solo en elementos clickeables.
-7. **Entrance:** `animate-in fade-in slide-in-from-bottom-2` — 200-280ms.
+All tokens live in `:root` in `src/index.css` and are overridden by `[data-theme]` blocks. Every surface and backdrop value is consumed via `var()` — no component should hardcode backdrop-filter or surface background values.
 
-### Tokens de animación
+### Page background
+```
+--bg-page: radial-gradient(ellipse 80% 60% at 20% 10%, #7c3cf8 0%, #4a1fdb 35%, #1e0a72 65%, #060416 100%)
+```
+
+### Text (light theme)
+```
+--text-primary   : #1e293b   (slate-800)
+--text-secondary : #475569   (slate-600)
+--text-tertiary  : #64748b   (slate-500)
+```
+
+### Surface backdrops
+```
+--backdrop-card    : blur(44px) saturate(200%)
+--backdrop-header  : blur(32px) saturate(280%)
+--backdrop-modal   : blur(48px) saturate(160%)
+--backdrop-input   : blur(16px) saturate(180%)
+--backdrop-dropdown: blur(32px) saturate(200%)
+```
+
+### Surface backgrounds
+```
+--surface-card     : rgba(255,255,255,0.12)
+--surface-header   : rgba(255,255,255,0.14)
+--surface-modal    : rgba(255,255,255,0.18)
+--surface-input    : rgba(255,255,255,0.22)
+--surface-dropdown : rgba(255,255,255,0.90)
+```
+
+### Borders
+```
+--border-card    : rgba(255,255,255,0.60)
+--border-header  : rgba(255,255,255,0.80)
+--border-modal   : rgba(255,255,255,0.70)
+--border-input   : rgba(255,255,255,0.65)
+--border-dropdown: rgba(255,255,255,0.90)
+```
+
+### Radii tokens
+```
+--radius-card    : 1.75rem
+--radius-header  : 2.5rem
+--radius-modal   : 2.5rem
+--radius-input   : 0.875rem
+--radius-dropdown: 1.25rem
+```
+
+### Shadow tokens
+```
+--shadow-card  : inset 0 1px 0 rgba(255,255,255,0.80), 0 14px 40px rgba(0,0,0,0.05)
+--shadow-header: 0 24px 50px -12px rgba(0,0,0,0.18)
+--shadow-modal : 0 40px 100px rgba(0,0,0,0.30), inset 0 2px 15px rgba(255,255,255,0.80)
+```
+
+### Semantic color tokens (index.css `:root`)
+```
+--success: #12B76A   ← used as KpiCard color prop in DashboardView; NOT a Tailwind emerald shade
+--warning: #F79009
+--danger:  #F04438
+--info:    #0052CC   (same as brand)
+```
+These are defined but consumed mostly as inline hex strings (e.g. `color="#12B76A"` on KpiCard). For badges and text, prefer the Tailwind semantic classes (`text-emerald-600`, `text-amber-600`, `text-red-600`) which visually match these values.
+
+### Dark theme overrides — `[data-theme="dark"]`
+- `--bg-page`: deep navy `#030B1C`
+- `--surface-card`: `rgba(255,255,255,0.05)`, `--surface-modal`: `rgba(10,15,28,0.90)`
+- `--text-primary`: `rgba(255,255,255,0.92)`, secondary/tertiary: white at lower opacity
+
+### Solid Light — `[data-theme="solid"]`
+- `--backdrop-*`: all `none` — disables all blur for performance
+- `--surface-card`: `rgba(255,255,255,0.95)` (opaque), `--surface-header`: `rgba(255,255,255,0.98)`
+- `--bg-page`: `#f1f5f9` (slate-100)
+- Tighter radii: card `1.25rem`, header `1.5rem`, modal `2rem`
+
+### Solid Dark — `[data-theme="solid-dark"]`
+- `--backdrop-*`: `none`
+- `--surface-card`: `rgba(30,41,59,0.95)` (slate-800), `--surface-modal`: `rgba(15,23,42,0.98)`
+- `--bg-page`: `#0f172a` (slate-900)
+- `--text-primary/secondary/tertiary`: white variants
+
+---
+
+## 4. Ambient Background
+
+The full-screen radial gradient background is set on `html, body, #root` via `background: var(--bg-page)`.
+
+On top, **AppLayout** (`src/components/layout/AppLayout.jsx:593–599`) renders 5 fixed `div` elements — `position: fixed`, `pointer-events-none`, `z-index: 1` — each a large `rounded-full` with radial-gradient fill:
+
+```
+Orb 1: 70vw × 70vw  top:-15% left:-15%  purple rgba(110,70,230,0.45)  blur(35px)  animate-ambient-drift
+Orb 2: 55vw × 55vw  top:-5%  right:-20% blue   rgba(60,100,240,0.38)  blur(30px)  animate-ambient-drift-reverse
+Orb 3: 80vw × 80vw  bottom:-35% left:-10% lavender rgba(150,80,240,0.35) blur(40px) animate-ambient-drift 18s delay 4s
+Orb 4: 45vw × 45vw  top:25%  right:5%   sky    rgba(90,150,255,0.32)  blur(28px)  animate-ambient-drift-reverse 14s delay 2s
+Orb 5: 30vw × 30vw  top:50%  left:38%   violet rgba(200,120,255,0.28) blur(22px)  animate-ambient-drift 11s delay 6s
+```
+
+The sidebar has its own 3 internal orbs following the same pattern. LoginView has its own `AmbientBG` sub-component plus 6 small floating glass particles (`rounded-full`, `backdropFilter: blur(8px)`, `border: 1px solid rgba(255,255,255,0.88)`).
+
+---
+
+## 5. Surface System
+
+The `[data-surface]` attribute is the canonical way to apply Liquid Glass styling. CSS in `src/index.css` selects on it and applies the CSS var tokens. No component should hardcode backdrop-filter or surface color for the main structural surfaces.
+
+| Value | Used on | Tokens applied |
+|---|---|---|
+| `card` | Content containers, DataTable wrapper, widget cards | `--surface-card`, `--backdrop-card`, `--border-card`, `--shadow-card`, `--radius-card` |
+| `page-header` | GlassViewLayout sticky desktop header | `--surface-header`, `--backdrop-header`, `--border-header`, `--shadow-header`, `--radius-header` |
+| `modal` | ModalShell inner div | `--surface-modal`, `--backdrop-modal`, `--border-modal`, `--shadow-modal`, `--radius-modal` |
+| `input` | LiquidSelect trigger | `--surface-input`, `--backdrop-input`, `--border-input`, `--radius-input` |
+| `dropdown` | LiquidSelect portal dropdown | `--surface-dropdown`, `--backdrop-dropdown`, `--border-dropdown`, `--radius-dropdown` |
+| `sidebar` | AppLayout `<aside>` glass div | Always dark — `bg-[#07031a]/80 backdrop-blur-2xl`. Intentionally ignores theme CSS vars. |
+
+Card hover (desktop only, `@media (hover: hover)`):
 ```css
---ease-spring:  cubic-bezier(0.23, 1, 0.32, 1);
---ease-out:     cubic-bezier(0.25, 0.46, 0.45, 0.94);
---dur-fast:     150ms;
---dur-base:     200ms;
---dur-slow:     300ms;
-```
-
-### Animaciones definidas (tailwind.config.js)
-- `animate-kpi-enter` — 280ms, para KPI cards al montar
-- `animate-widget-enter` — 250ms, para widgets
-- `animate-widget-settle` — bounce sutil para drop de drag
-
-### Patrones de interacción
-```jsx
-// Botón primario
-"transition-[transform,box-shadow,background-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]"
-
-// Card clickeable  
-"hover:-translate-y-0.5 hover:shadow-lg transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]"
-
-// Ítem de lista
-"hover:translate-x-1 transition-[transform,background-color] duration-150"
-
-// Sliding tab pill
-"transition-[left,width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
-
-// Ícono en hover de card
-"transition-[transform] duration-200 group-hover:scale-[1.08]"
-```
-
-### Compat — ajuste de motion
-En `data-theme="compat"`, las animaciones de entrada se conservan pero se reducen:
-- Hover lift: `hover:-translate-y-px` (solo 1px)
-- No `hover:-translate-y-0.5` (4px)
-- El timing es igual — la respuesta rápida es importante para todos los temas
-
----
-
-## Shadows — LiquidGlass
-
-```css
-/* Card en reposo */
-inset 0 1px 0 rgba(255,255,255,0.9), 0 8px 32px rgba(0,0,0,0.06)
-
-/* Card en hover */
-inset 0 1px 0 rgba(255,255,255,0.95), 0 16px 40px rgba(0,0,0,0.09)
-
-/* Header flotante */
-inset 0 1px 0 rgba(255,255,255,0.9), 0 4px 24px rgba(0,0,0,0.06)
-
-/* Modal */
-0 32px 80px rgba(0,0,0,0.18), inset 0 2px 0 rgba(255,255,255,0.95)
-
-/* Botón brand */
-0 4px 14px rgba(0,122,255,0.25)
-
-/* Botón brand hover */
-0 8px 20px rgba(0,122,255,0.35)
-```
-
-## Shadows — Compat
-
-```css
-/* Card */
-0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06)
-
-/* Card hover */
-0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06)
-
-/* Modal */
-0 20px 50px rgba(0,0,0,0.15)
-```
-
----
-
-## Components
-
-### Card de contenido (WidgetCard)
-**LiquidGlass:**
-```jsx
-<div data-surface="card"
-  className="bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%]
-             border border-white/75 rounded-[1.75rem]
-             shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)]">
-```
-
-**Compat (via CSS override):**
-```css
-[data-theme="compat"] [data-surface="card"] {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  border-radius: 0.75rem;
-  backdrop-filter: none;
+[data-surface="card"]:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
 }
 ```
 
-### KPI Card
-Icono + label arriba, valor numérico grande abajo. Sub-context en la esquina.
-Nunca: número grande solo, label pequeño abajo (hero metric ban).
+---
 
-### Sliding Tab Indicator
-Un pill CSS que se traslada entre tabs vía `left: calc(index * 100% / N)`.
-Nunca: N botones con background propio que se togglean.
+## 6. Color System
 
-### Botón primario
-```jsx
-className="px-5 py-2.5 bg-[#0052CC] hover:bg-[#003D99] text-white
-           rounded-full font-black text-[11px] uppercase tracking-widest
-           shadow-[0_4px_14px_rgba(0,82,204,0.28)]
-           hover:shadow-[0_8px_20px_rgba(0,82,204,0.40)]
-           hover:-translate-y-0.5
-           transition-[transform,box-shadow,background-color] duration-150
-           ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97]"
+### Brand
+| Name | Value | Usage |
+|---|---|---|
+| Primary blue | `#0052CC` | CTA buttons, active states, brand accents |
+| Dark blue | `#003D99` | Button hover |
+| Violet-indigo gradient | `from-[#0052CC] to-[#6929C4]` | Icon squircles, accent elements |
+| Active nav glow | `from-violet-500/22 via-indigo-400/14 to-blue-500/8` | Sidebar active pill |
+| Sidebar accent bar | `from-violet-300 via-indigo-400 to-blue-400` | Active nav item accent |
+
+### Semantic (applied as text / icon colors — never as card/row backgrounds)
+| Role | Colors | Usage |
+|---|---|---|
+| Success | `text-emerald-500/600/700` | Confirmed, paid, positive delta |
+| Error / Danger | `text-red-500/600/700` | Lost sales, errors, critical |
+| Warning | `text-amber-500/600/700` | Pending, approaching threshold |
+| Info | `text-blue-500/600/700` or `text-[#0052CC]` | Secondary brand info |
+| Indigo accent | `text-indigo-400/500/600/700` | Charts, secondary accents |
+
+### Sidebar palette (always dark regardless of theme)
+- Background: `bg-[#07031a]/80`
+- Nav text inactive: `text-white/60`
+- Nav text active: `text-white`
+- Group icon active: `text-violet-200 scale-110`
+- Group icon inactive: `text-white/42`
+- Accent bar gradient: `from-violet-300 via-indigo-400 to-blue-400`
+
+---
+
+## 7. Typography
+
+Font stack: `system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`. No web fonts loaded. Set on `html` and via Tailwind `font-sans`.
+
+### Scale
+
+| Role | Size | Weight | Example |
+|---|---|---|---|
+| View title (desktop) | 24–28px | `font-semibold` | `text-[24px] xl:text-[26px] 2xl:text-[28px] font-semibold tracking-tight` |
+| View title (mobile) | 16px | `font-bold` | `text-[16px] font-bold tracking-tight truncate` |
+| Section heading / modal title | 18–20px | `font-black` | `text-[18px] sm:text-[20px] font-black uppercase tracking-tight` |
+| Nav label | 12–13px | `font-medium` / `font-semibold` (active) | `text-[12px] xl:text-[13px]` |
+| Table cell / body | 13px | `font-medium` | `text-[13px] font-medium` |
+| Label / caption | 11–12px | `font-semibold` | `text-[11px] font-semibold` |
+| Badge / pill | 9–11px | `font-black uppercase tracking-widest` | `text-[10px] font-black uppercase tracking-widest` |
+| PIN / code | 12px | `font-black tracking-widest font-mono` | `text-[12px] font-black tracking-widest font-mono` |
+| Button label | 11–13px | `font-black uppercase tracking-widest` | `text-[11px] font-black uppercase tracking-widest` |
+
+**Conventions:**
+- All-caps labels always use `uppercase tracking-widest font-black`.
+- Never `font-normal` in interactive UI — minimum `font-medium`.
+- Minimum contrast on glass: `text-slate-600` for labels, `text-slate-500` for secondary text.
+
+---
+
+## 8. Border Radius Scale
+
+Values in use across the codebase (pixel-equivalent approximate):
+
+| ~px | Value | Used on |
+|---|---|---|
+| ~11px | `rounded-[0.7rem]` | Icon inner containers (ThemeToggle) |
+| ~14px | `rounded-[0.875rem]` | Nav item buttons, small controls |
+| ~16px | `rounded-[1rem]` | Nav group headers |
+| ~19px | `rounded-[1.2rem]` | Modal icon squircles (ConfirmModal) |
+| ~20px | `rounded-[1.25rem]` | Logo container, filter pills, dropdown |
+| ~24px | `rounded-[1.5rem]` | GlassViewLayout body, buttons in login |
+| ~28px | `rounded-[1.75rem]` | Stat cards, widget cards |
+| ~32px | `rounded-[2rem]` | AlertModal, ConfirmModal |
+| ~40px | `rounded-[2.5rem]` | Sidebar, page header, UnifiedModal |
+| pill | `rounded-full` | Badges, dot indicators, ambient orbs |
+
+Tailwind config shortcuts: `rounded-glass` = `2rem`, `rounded-glassMd` = `1.25rem`.
+
+---
+
+## 9. Z-Index Scale
+
 ```
-
-### Botón secundario
-```jsx
-className="px-4 py-2 bg-white/70 backdrop-blur-sm border border-white/90
-           text-slate-700 rounded-full font-bold text-[11px]
-           hover:bg-white hover:shadow-sm
-           transition-[background-color,box-shadow] duration-150 active:scale-[0.97]"
-```
-
-### Badge de estado
-```jsx
-// Activo / success
-"px-2.5 py-0.5 bg-[#34C759]/10 text-[#1A7A35] border border-[#34C759]/25 rounded-full text-[10px] font-bold"
-// Pendiente / warning
-"px-2.5 py-0.5 bg-[#FF9500]/10 text-amber-700 border border-[#FF9500]/25 rounded-full text-[10px] font-bold"
-// Error / danger
-"px-2.5 py-0.5 bg-[#FF3B30]/10 text-red-700 border border-[#FF3B30]/25 rounded-full text-[10px] font-bold"
-// Info / neutro
-"px-2.5 py-0.5 bg-[#007AFF]/10 text-[#007AFF] border border-[#007AFF]/25 rounded-full text-[10px] font-bold"
-```
-
-### Input / Select
-```jsx
-className="w-full bg-white/60 backdrop-blur-sm border border-white/80
-           rounded-[0.75rem] px-3 py-2.5 text-[13px] text-slate-700
-           focus:outline-none focus:ring-2 focus:ring-[#007AFF]/30 focus:border-[#007AFF]/50
-           shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)]
-           transition-[border-color,box-shadow] duration-150"
-```
-
-### Ícono badge en header de widget
-```jsx
-className="w-8 h-8 rounded-[0.875rem] bg-gradient-to-tr from-[#0052CC] to-[#6929C4]
-           flex items-center justify-center shadow-[0_4px_12px_rgba(0,82,204,0.3)]"
+z-[1]     — Ambient background orbs (fixed, behind all content)
+z-[40]    — GlassViewLayout sticky desktop header
+z-[50]    — Sidebar (mobile: fixed overlay)
+z-[60]    — Sidebar (desktop: lg:z-[60])
+z-[100]   — ModalShell default (most overlays, modals)
+z-[9999]  — LiquidTooltip, LiquidToast
+z-[99999] — ConfirmModal (highest — never covered by toasts)
 ```
 
 ---
 
-## Loading States
+## 10. Spacing & Layout
 
-- **Skeleton:** `animate-pulse bg-slate-100` para contenido que carga — nunca spinner en el centro de contenido
-- **Inline spinner:** Solo en botones de acción (submit, fetch de un elemento)
-- **Typing indicator:** 3 dots con `animate-bounce` y delays escalonados — único uso permitido de bounce
+### Page shell
+
+`AppLayout` (`src/components/layout/AppLayout.jsx`) wraps everything in `flex w-full lg:h-[100dvh] lg:overflow-hidden`.
+
+- **Mobile (< 1024px):** Natural document scroll. Sidebar slides over content as `fixed` overlay. `AppLayout` forces `overflow: auto !important` on `html/body/#root` via `useEffect`.
+- **Desktop (≥ 1024px):** Full-viewport height. Scroll lives inside `GlassViewLayout`'s inner scroll container. Sidebar is `relative` in the flex row.
+
+Safe-area insets on sidebar:
+```
+my-[max(env(safe-area-inset-top,8px),8px)]
+mb-[max(env(safe-area-inset-bottom,8px),8px)]
+ml-[max(env(safe-area-inset-left,8px),8px)]
+```
+
+### Content area
+
+`GlassViewLayout` (`src/components/GlassViewLayout.jsx`) is the standard view wrapper for all admin/manager views.
+
+Props:
+| Prop | Type | Effect |
+|---|---|---|
+| `icon` | Lucide component | Shown in header icon squircle |
+| `title` | string | View heading |
+| `liveIndicator` | boolean | Red ping dot on icon |
+| `filtersContent` | JSX | Rendered in header right slot |
+| `headerLeft` | JSX | Override for entire left slot |
+| `subContent` | JSX | Between header and body (charts, filter pills) |
+| `transparentBody` | boolean | Body card is transparent (DashboardView) |
+| `fixedScrollMode` | boolean | Disables y-scroll on container |
+
+### Max widths
+Content area: `max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto`.
+
+### Padding scale
+| Context | Value |
+|---|---|
+| View body horizontal | `px-2 lg:px-6 xl:px-8` |
+| View body vertical top | `pt-4 xl:pt-5` |
+| Desktop page header | `py-6 px-10 xl:py-7 xl:px-12` |
+| Modal body | `p-6 sm:p-8` |
+| Modal footer | `p-4 sm:p-5` |
+| Card inner | `p-4` / `p-5` / `p-6` |
+| Nav item (top-level) | `px-3 py-3 xl:px-4 xl:py-3.5` |
+| Nav item (indented) | `px-2.5 py-2 ml-2 xl:px-3 xl:py-2.5` |
 
 ---
 
-## Iconography
+## 11. Animation & Motion
 
-**Librería:** Lucide React, `strokeWidth={2}` por defecto, `strokeWidth={1.5}` en íconos grandes (>20px).
+### Principles
 
-Tamaños en contexto:
-- Nav sidebar: `size={20}`
-- Header de widget: `size={16}`
-- Botón: `size={14}`
-- Badge/chip: `size={10}` – `size={12}`
-- KPI: `size={14}` en badge de icono (w-7 h-7)
+1. Movement communicates state, not decoration. If the effect doesn't clarify what changed, it doesn't exist.
+2. Standard ease: `cubic-bezier(0.23,1,0.32,1)` — fast ease-out, physical response feel.
+3. Spring bounce: `cubic-bezier(0.34,1.56,0.64,1)` — only for widget-settle, never layout.
+4. Press state: `active:scale-[0.97]` or `active:scale-[0.99]`. Never `scale-90/95`.
+5. Hover lift: only inside `@media (hover: hover)` — never on touch devices.
+
+### CSS keyframes (tailwind.config.js)
+
+| Class | Duration | Easing | Usage |
+|---|---|---|---|
+| `animate-table-row-enter` | 0.12s | ease | Row appear in tables/TabCatalogo |
+| `animate-kpi-enter` | 280ms | `cubic-bezier(0.23,1,0.32,1)` | KPI / stat card entrance |
+| `animate-widget-enter` | 250ms | `cubic-bezier(0.23,1,0.32,1)` | Widget cards |
+| `animate-widget-settle` | 550ms | `cubic-bezier(0.34,1.56,0.64,1)` | Spring settle |
+| `animate-cosmos-in` | 450ms | `cubic-bezier(0.23,1,0.32,1)` | Cosmos panel entrance |
+| `animate-cosmos-panel` | 300ms | `cubic-bezier(0.23,1,0.32,1)` | Panel slide-down |
+| `animate-wiggle` | 400ms infinite | ease-in-out | Icon wiggle |
+
+### CSS keyframes (index.css)
+
+| Class | Usage |
+|---|---|
+| `glow-danger` | Red glow pulse on loss/danger indicators (TabCatalogo) |
+| `glow-warning` | Amber glow pulse on warning indicators |
+| `badge-pulse` | Badge scale pulse |
+| `animate-ambient-drift` | Slow ambient orb float (primary) |
+| `animate-ambient-drift-reverse` | Slow ambient orb float (reverse) |
+| `animate-shimmer` | Linear sweep on sidebar borders / top edge |
+| `animate-ping` *(Tailwind)* | Live indicator dot, alert dot |
+| `animate-spin` *(Tailwind)* | Loader2 spinner |
+
+### Shimmer sweep (hover on buttons)
+
+All primary CTA buttons include an inner `<span>` shimmer overlay:
+```jsx
+<span className="absolute inset-0 overflow-hidden rounded-[1.5rem] pointer-events-none">
+  <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.16] to-transparent
+                   -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
+</span>
+```
+
+### Framer-motion (inconsistency — do not add more)
+
+`framer-motion` v12 is installed but designated as an architectural inconsistency. The correct standard is CSS keyframes + Tailwind transitions. **Do not add new framer-motion usage.**
+
+Current files using framer-motion:
+- `GlassViewLayout.jsx` — floating scroll-nav (AnimatePresence + motion.div/button)
+- `LiquidSelect.jsx` — dropdown open/close (AnimatePresence + motion.div)
+- `TablePagination.jsx` — page indicator (layoutId) + whileHover/whileTap
+- `AppLayout.jsx` — LayoutGroup wrapper
+- `SchedulesView.jsx`, `RecepcionModal.jsx`, `RutaEnCursoCard.jsx`, `TabPedidos.jsx`, `TabReglas.jsx`
+- `TabLaboratorios.jsx`, `TabMinMax.jsx`
+- `InlineDayEditor.jsx`, `ScheduleCalendar.jsx`
 
 ---
 
-## Anti-patterns (NUNCA hacer)
+## 12. Icon System
 
-- `transition-all` — usar propiedades específicas
-- `active:scale-90` o `active:scale-95` — mínimo `active:scale-[0.97]`
-- `border-l-4` como decoración de card — usar background highlight
-- Gradiente como text (`bg-clip-text text-transparent`) en títulos de UI
-- `animate-bounce` en elementos decorativos
-- `cubic-bezier(0.34, 1.56, 0.64, 1)` (spring) en elementos de layout
-- Paleta indigo/violet/purple fuera de contextos de IA intencionalmente marcados
-- Hero metric: número grande + label pequeño sin contexto
-- Cards idénticas en grid (mismo peso visual, sin jerarquía)
-- Glassmorphism como decoración (solo como capa funcional)
-- Fuentes externas de display en UI de producto
+**Library:** Lucide React v0.575.0 — sole icon library. No other sets.
+
+**Default props:**
+- Rest: `size={20}` `strokeWidth={1.5}`
+- Active/emphasized: `size={20}` `strokeWidth={2}`
+- Inline / compact: `size={16}` or `size={14}`
+- Badge / chip: `size={12}` or `size={10}`
+
+**Icon squircle** (standard container for view/module icons):
+```jsx
+// Desktop
+<div className="bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-2xl
+                shadow-[0_4px_12px_rgba(0,82,204,0.25)] p-2.5
+                flex items-center justify-center">
+  <Icon className="text-white" size={20} strokeWidth={1.5} />
+</div>
+
+// Mobile
+<div className="bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-xl
+                shadow-[0_4px_12px_rgba(0,82,204,0.3)] p-2 flex-shrink-0
+                flex items-center justify-center">
+  <Icon className="text-white" size={16} strokeWidth={1.5} />
+</div>
+```
+
+Modal icon squircle (AlertModal): `w-20 h-20 rounded-[1.5rem]`
+Modal icon squircle (ConfirmModal): `w-14 h-14 rounded-[1.2rem]`
+Color comes from `type` prop semantic color, not from gradient.
 
 ---
 
-## Checklist para nueva vista
+## 13. Layout Components
 
-Al construir una nueva vista, verificar:
-- [ ] Usa `GlassViewLayout` (o wrapper equivalente) con `data-surface="page-header"`
-- [ ] Cards usan `data-surface="card"` para theming automático
-- [ ] Tabs usan el patrón sliding pill (no toggle de background por botón)
-- [ ] Loading state tiene skeleton, no spinner centrado
-- [ ] Empty state tiene ilustración + acción + texto instructivo
-- [ ] Error state tiene mensaje + retry
-- [ ] Botones usan `active:scale-[0.97]` y `transition-[specific-props]`
-- [ ] Tablas tienen hover de fila (solo `hover:bg-*` sin border-l)
-- [ ] Fuentes: nunca `font-normal` en labels, mínimo `font-medium`
-- [ ] Íconos de widget usan el badge azul-degradado estándar
-- [ ] El tema Compat funciona (sin backdrop-blur, sin transparencias)
+### AppLayout
+
+File: `src/components/layout/AppLayout.jsx`
+
+Root shell for authenticated views. Renders in this order (z-index ascending):
+1. **Ambient background** — 5 fixed radial orbs (z-1, see §4)
+2. **Mobile backdrop** — `bg-[#030B1C]/40 backdrop-blur-sm` overlay behind open sidebar
+3. **Sidebar** — always dark glass, always visible on desktop, drawer on mobile
+
+Sidebar sizes:
+- Collapsed: `w-[4.5rem] xl:w-[5rem]`
+- Expanded: `w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem]`
+- Mobile: `w-[85%] max-w-[280px]`
+
+Sidebar surface: `data-surface="sidebar"` → `bg-[#07031a]/80 backdrop-blur-2xl border-white/[0.10]`
+
+**Active nav pill:** Absolutely-positioned `div` that tracks the active item's `getBoundingClientRect()` position via `useLayoutEffect`. Runs a 320ms animation loop on route change. Pure CSS transform, no framer-motion. Gradient: `from-violet-500/22 via-indigo-400/14 to-blue-500/8`. Left accent stripe: `bg-gradient-to-b from-violet-300 via-indigo-400 to-blue-400 shadow-[0_0_10px_rgba(139,92,246,0.8)]`.
+
+**Flyout menus:** Appear to the right of collapsed sidebar on mouse hover. State: `flyout = { type:'item'|'group', label, x, y, ... }`. 80ms close delay on `onMouseLeave`.
+
+**Collapse toggle:** `ChevronLeft` button in logo header. Mobile: dispatched externally via `window.dispatchEvent(new CustomEvent('set-sidebar', { detail: true/false }))`.
+
+**Navigation structure** (14 groups in `MENU_GROUPS`):
+
+| Group | Modules |
+|---|---|
+| Dashboard | overview |
+| Inicio | emp_home, emp_schedule |
+| Personal | staff_list, payroll |
+| Horarios y Turnos | schedules |
+| Solicitudes | emp_requests, requests |
+| Avisos | emp_announcements, announcements |
+| Documentos | emp_documents |
+| Asistencia | monitor, time_audit |
+| Planificación | vacation_plan |
+| Estructura | branches, roles |
+| Sistema | permissions, auditview, ios_test |
+| Comercial | ventas, metas, facturacion, cotizaciones, promociones, bonificaciones |
+| RRHH | entrevistas, encuesta_admin |
+| Inventario | productos, laboratorios, pedidos, minmax, ventas_perdidas, compras |
+
+Groups with 1 visible module render directly. Groups with ≥ 2 render as collapsible accordion (CSS `grid-rows` animation, no framer-motion). RBAC: `hasPermission(moduleKey, 'can_view')` gates each item. Items with `comingSoon: true` render as greyed non-interactive with "Próximamente" badge.
+
+**Sidebar footer (expanded):**
+- PIN display (kiosk hourly code, copies on click) + SU code (if `su_pin` permission)
+- `SidebarSyncStatus` widget
+- User avatar + name row → navigates to `/profile`
+- Logout button
+- `ThemeToggle variant='sidebar'`
+
+### GlassViewLayout
+
+File: `src/components/GlassViewLayout.jsx`
+
+Standard content wrapper for all admin/manager views (not employee-facing). Provides:
+- Sticky desktop `[data-surface="page-header"]` with icon squircle + title + filters slot
+- Internal scroll container (desktop only)
+- Body `[data-surface="card"]` (or transparent with `transparentBody`)
+- Floating scroll nav (framer-motion, appears after 150px scroll)
+
+Note: body card uses hardcoded Tailwind classes, not the `[data-surface="card"]` CSS var system — known dark mode blindspot.
+
+---
+
+## 14. Components
+
+### ViewTabBar
+
+File: `src/components/common/ViewTabBar.jsx`
+
+Floating header for views with tabs and/or search. Always rendered above the view body.
+
+**Pill surface:** `bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%]` — **hardcoded, dark mode blindspot.**
+
+**Tab states:** Active: `bg-white text-slate-800`. Inactive: `bg-transparent text-slate-500`.
+
+**Search pattern:** Search button (hardcoded `bg-[#0052CC]`) expands an input via `isSearchMode` state. Close via `ChevronRight`. Never add local search inputs inside tab components — search lives here only.
+
+**Usage:**
+```jsx
+<ViewTabBar
+  tabs={[{ key: 'todos', label: 'Todos' }, ...]}
+  activeTab={activeTab}
+  onTabChange={setActiveTab}
+  searchTerm={searchTerm}
+  onSearchChange={setSearchTerm}
+  showSearch={true}          // false for tab-only bars
+  placeholder="Buscar..."
+/>
+```
+Pass `searchTerm` down as prop to tab components. Never duplicate local search state.
+
+### DataTable
+
+File: `src/components/common/DataTable.jsx`
+
+Standard table for all list views. Has own `useTokens()` hook — **all values hardcoded** (dark mode blindspot).
+
+Hardcoded values:
+- `cardBg: 'bg-white/55 backdrop-blur-xl'`
+- `rowHover: 'hover:bg-[#0052CC]/[0.032]'`
+- `headerBg: 'bg-white/[0.15] backdrop-blur-sm'`
+
+Props: `data`, `columns`, `loading`, `skeletonRows`, `empty` (`{ icon, message }`), `onSort`, `sortKey`, `sortDir`, pagination props.
+
+**Sort pattern:** Client-side. Column headers with `sortable: true` are clickable. Numeric columns always `align: 'center'`.
+
+**Empty state:** Rendered inline in table body using `empty.icon` squircle + `empty.message`. Must always be provided.
+
+### LiquidSelect
+
+File: `src/components/common/LiquidSelect.jsx`
+
+Full-featured select. Keyboard navigation (↑↓ Enter Esc). Smart flip positioning (opens up when near viewport bottom). Dropdown via `createPortal` to body.
+
+- Trigger: `data-surface="input"`
+- Dropdown: `data-surface="dropdown"`
+- Dropdown animation: framer-motion AnimatePresence (inconsistency)
+- Has own `isDark` prop (not ThemeContext) — **dark mode blindspot**
+
+**Props:**
+| Prop | Type | Notes |
+|---|---|---|
+| `value` | string | Must be string. Use `String(val)`. |
+| `onChange` | fn(value) | Called with selected string value |
+| `options` | `[{value: string, label: string}]` | value must be string |
+| `compact` | boolean | Smaller height |
+| `clearable` | boolean | Shows X to clear. Use `false` for required fields. |
+| `bare` | boolean | Minimal styling |
+| `creatable` | boolean | Allows typing new values |
+| `serverSearch` | boolean | Disables client-side filtering |
+| `onSearchChange` | fn(q) | Called on input change when serverSearch |
+| `isLoading` | boolean | Shows spinner in dropdown |
+
+**Standard usage for required field:** `compact + clearable={false}`.
+
+### ModalShell
+
+File: `src/components/common/ModalShell.jsx`
+
+Base portal wrapper. `createPortal` to body. Default `z-[100]`. ESC key closes. Scroll-locks via `document.documentElement.style.overflow = "hidden"`. Has `data-surface="modal"` on inner container.
+
+Props: `open`, `onClose`, `maxWidthClass` (`'max-w-sm'` etc.), `zClass`.
+
+### LiquidModal
+
+File: `src/components/common/LiquidModal.jsx`
+
+Wraps ModalShell. Adds inner glass layer:
+- **Hardcoded:** `bg-white/50 backdrop-blur-[15px] backdrop-saturate-[300%]` — **dark mode blindspot**
+- **Hardcoded shadow:** `shadow-[0_40px_100px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.8)]`
+
+### UnifiedModal
+
+File: `src/components/UnifiedModal.jsx`
+
+Large orchestrator with 30+ type variants controlled by `type` string prop. `getModalSize()` maps type → `max-w-*`. All form modals use this component. Wraps ModalShell.
+
+### ConfirmModal
+
+File: `src/components/common/ConfirmModal.jsx`
+
+Destructive / non-destructive confirmation. `createPortal` to body directly (bypasses ModalShell). `z-[99999]`. CSS transitions (no ModalShell). Reads `theme` prop — **dark mode blindspot**.
+
+Props: `isOpen`, `onClose`, `onConfirm`, `title`, `message`, `confirmText`, `cancelText`, `isDestructive` (default `true`), `isProcessing`, `theme` (`'light'|'dark'`).
+
+Processing state: replaces text with spinner, hides cancel button.
+
+### AlertModal
+
+File: `src/components/common/AlertModal.jsx`
+
+Single-button info/success/error. Uses ModalShell. `z-[9999]`. Reads `theme` prop — **dark mode blindspot**.
+
+Props: `isOpen`, `onClose`, `title`, `message`, `type` (`'success'|'error'|'info'`), `buttonText`, `theme`.
+
+Type determines icon (CheckCircle2 / AlertCircle / Info), glow color, button color.
+
+### LiquidTooltip
+
+File: `src/components/common/LiquidTooltip.jsx`
+
+Hover-only tooltip (mouse, not touch). `createPortal` to body. `z-[9999]`. Positions via `getBoundingClientRect()`. Clamps to prevent viewport edge clipping.
+
+Props: `content` (JSX or string), `side` (`'top'|'bottom'`), `children`, `className`.
+
+Glass style: `bg-white/85 backdrop-blur-2xl backdrop-saturate-[180%] border-white/90 rounded-2xl px-5 py-3.5`.
+
+### TablePagination
+
+File: `src/components/common/TablePagination.jsx`
+
+Pagination bar used under DataTable. Uses framer-motion `motion.button` + `layoutId="activePage"` (inconsistency).
+
+### LiquidToast
+
+File: `src/components/common/LiquidToast.jsx`
+
+Toast notifications. `createPortal` to body. `z-[9999]`. Reads `theme` from `useToastStore` (separate from ThemeContext) — **dark mode blindspot**.
+
+### BranchChips
+
+File: `src/components/common/BranchChips.jsx`
+
+Horizontal scrolling branch selector. Container uses `.glass-surface` CSS class. ResizeObserver for responsive overflow.
+
+### LiquidAvatar
+
+File: `src/components/common/LiquidAvatar.jsx`
+
+User avatar with skeleton shimmer preloader, lazy image load, fallback to initials or `User` Lucide icon.
+
+---
+
+## 15. Buttons
+
+No shared button component — patterns are inline.
+
+### Primary CTA (blue gradient)
+```jsx
+className={`relative overflow-hidden group
+  bg-gradient-to-b from-[#0052CC]/72 to-[#003D99]/78
+  backdrop-blur-xl
+  border border-white/22 hover:border-white/36
+  text-white rounded-[1.5rem]
+  font-black text-[13px] uppercase tracking-widest
+  shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)]
+  hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)]
+  flex items-center justify-center gap-2
+  transition-all duration-200 active:scale-[0.97]
+  disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed`}
+```
+Always include the shimmer `<span>` overlay (see §11 Shimmer sweep).
+
+### Secondary / ghost
+```
+text-slate-600 bg-white border-slate-200 hover:bg-slate-50 hover:-translate-y-0.5 shadow-sm rounded-xl
+font-black text-[11px] uppercase tracking-widest
+```
+
+### Destructive
+```
+bg-red-500 hover:bg-red-600 shadow-[0_4px_15px_rgba(239,68,68,0.3)] text-white rounded-2xl
+font-black text-[11px] uppercase tracking-widest
+```
+
+### Nav item (inactive state)
+```
+text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px]
+hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]
+active:scale-[0.99] active:translate-y-0
+```
+
+All interactive elements: `transition-all duration-200` or `transition-[specific,props] duration-150/200`.
+
+---
+
+## 16. Badges & Notification Indicators
+
+### Notification count badge
+```jsx
+<span className="min-w-[20px] h-5 px-1.5 bg-red-500 text-white text-[10px] font-black
+                 rounded-full flex items-center justify-center">
+  {count > 9 ? '9+' : count}
+</span>
+```
+
+### Alert dot (pulsing)
+```jsx
+<span className="relative flex h-2 w-2">
+  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+</span>
+```
+
+### Live indicator (on view icon, larger)
+```jsx
+<span className="absolute -top-1 -right-1 flex h-3 w-3">
+  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white" />
+</span>
+```
+
+### "Próximamente" badge (nav items)
+```
+text-[9px] font-black uppercase tracking-wider text-amber-600/70
+bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full
+```
+
+### Semantic status badge
+```jsx
+// Success
+"px-2.5 py-0.5 bg-emerald-500/10 text-emerald-700 border border-emerald-500/25 rounded-full text-[10px] font-bold"
+// Warning
+"px-2.5 py-0.5 bg-amber-500/10 text-amber-700 border border-amber-500/25 rounded-full text-[10px] font-bold"
+// Error
+"px-2.5 py-0.5 bg-red-500/10 text-red-700 border border-red-500/25 rounded-full text-[10px] font-bold"
+// Info / brand
+"px-2.5 py-0.5 bg-[#0052CC]/10 text-[#0052CC] border border-[#0052CC]/25 rounded-full text-[10px] font-bold"
+```
+
+---
+
+## 17. Filter Pills
+
+All view-level filters live in a pill container, never inline in the content body.
+
+**Standard pill anatomy:**
+```
+rounded-2xl bg-white/80 border border-slate-200/70
+```
+Dividers between filter controls: `h-5 w-px bg-slate-100`.
+
+Filters are placed in `GlassViewLayout`'s `filtersContent` prop (renders in page header right slot on desktop, below mobile title on mobile).
+
+Reference implementation: `VentasView` FilterControls component.
+
+---
+
+## 18. Empty States
+
+Required on every view or tab that can have zero data. Standard Glassmorphism pattern:
+
+```
+glass squircle icon + bold title + sub-title
+```
+
+**Glass squircle:**
+```
+w-16 h-16 rounded-[1.5rem] bg-white/50 border border-white/80
+shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.9)]
+flex items-center justify-center mb-6
+```
+Icon inside: `size={32}` Lucide icon in semantic color.
+
+**Title:** `font-black text-slate-700 text-[20px] uppercase tracking-tight mb-2`
+**Subtitle:** `text-slate-500 text-[13px] font-medium leading-relaxed text-center`
+
+Optional action button below subtitle.
+
+DataTable provides `empty` prop: `{ icon: LucideIcon, message: string }` — renders inline in table body.
+
+---
+
+## 19. Loading & Skeleton States
+
+**Skeleton shimmer:** CSS class `.skeleton` defined in `src/index.css`. Applied to placeholder `div` with estimated dimensions. Used in stat cards, table rows.
+
+```jsx
+// Stat card skeleton
+<div className="w-6 h-6 rounded-lg skeleton shrink-0" />
+<div className="h-3 skeleton" style={{ width: estimatedWidth * 0.45 }} />
+```
+
+**Inline spinner (action buttons):**
+```jsx
+<Loader2 size={16} strokeWidth={2.5} className="animate-spin shrink-0" />
+```
+Use only inside buttons during async processing. Never center a full-page spinner.
+
+DataTable: `loading` prop + `skeletonRows` prop renders shimmer rows in table body.
+
+---
+
+## 20. Scrollbar
+
+Hidden everywhere. Authoritative definition in `src/index.css`:
+```css
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+```
+(Removed duplicate that was in `App.css`.)
+
+Applied to: sidebar nav (`<nav>`), all `overflow-y-auto` containers, GlassViewLayout scroll container.
+
+Never expose the browser scrollbar. If a custom scrollbar is ever needed, it must match the Liquid Glass aesthetic.
+
+---
+
+## 21. Platform & Native (Capacitor)
+
+App ID: `lat.farmasalud.portal`. Web dir: `dist`. Capacitor v8.2.0.
+
+Native-only plugins (no web bundle):
+- `@capacitor/geolocation` v8.2.0 — foreground GPS
+- `@capacitor-community/background-geolocation` v1.2.26 — background GPS
+
+Both excluded from Vite bundling via `optimizeDeps.exclude` + `rollupOptions.external` in `vite.config.js`. All imports use `/* @vite-ignore */` dynamic import inside an `isNative` guard:
+
+```js
+if (isNative) {
+  import(/* @vite-ignore */ '@capacitor/geolocation').then(m => { CapGeo = m.Geolocation; }).catch(() => {});
+  import(/* @vite-ignore */ '@capacitor-community/background-geolocation').then(m => { BgGeo = m.BackgroundGeolocation; }).catch(() => {});
+}
+```
+
+Platform detection: `isMobileOrApp()` in `src/utils/helpers.js` — checks `Capacitor.isNativePlatform()`, mobile UA, modern iPad. Gates camera, GPS, and touch-specific UI behaviors.
+
+Before first APK build: update `versionCode` and `versionName` in `android/app/build.gradle`.
+
+---
+
+## 22. Known Dark Mode Blindspots
+
+Components that hardcode light-only values or read a manually-passed `theme` prop instead of consuming CSS vars from ThemeContext. These do not automatically respond to `[data-theme="dark"]`:
+
+| Component | Blindspot |
+|---|---|
+| `LiquidModal` inner glass layer | `bg-white/50 backdrop-blur-[15px] backdrop-saturate-[300%]` hardcoded |
+| `LiquidModal` shadow | Hardcoded light shadow |
+| `DataTable` `useTokens()` hook | All values hardcoded — entire table ignores theme |
+| `LiquidToast` | Reads `theme` from `toastStore`, not ThemeContext |
+| `LiquidSelect` | `isDark` is caller-provided via `theme` prop |
+| `AlertModal` | `theme` prop → manual `isDark = theme === 'dark'` |
+| `ConfirmModal` | `theme` prop → manual `isDark = theme === 'dark'` |
+| `ViewTabBar` pill | `bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%]` hardcoded |
+| `GlassViewLayout` body card | Hardcoded Tailwind classes, not `[data-surface="card"]` CSS var |
+
+These are the next wave of work to complete dark mode coverage.
+
+---
+
+## 23. Known Inconsistencies
+
+1. **Framer-motion** — present in 14 files. Standard is CSS keyframes + Tailwind transitions. No new framer-motion usage. Existing usages are noted per-component above.
+
+2. **Dark mode blindspots** — listed in §22. Migration path: replace `theme` prop logic with CSS custom property consumption everywhere.
+
+3. **GlassViewLayout body card** — uses hardcoded `bg-white/[0.12] backdrop-blur-[44px]` instead of `[data-surface="card"]`. Should adopt the attribute selector.
+
+4. **ConfirmModal / AlertModal scroll lock** — both have own `document.body.style.overflow = 'hidden'` logic separate from ModalShell's scroll lock. Two scroll-lock paths exist. Acceptable given their `z-[99999]` requirement but worth unifying.
+
+5. **Sidebar always dark** — `data-surface="sidebar"` intentionally deviates from the theme system. The sidebar is always dark glass regardless of app theme. By design.
+
+6. **Hardcoded `#0052CC`** — brand blue appears as literal hex throughout. Should eventually become `--color-brand` CSS variable.
+
+7. **Three validation error patterns coexist** — inline text (FormSetPassword), "Requerido" glow badge next to label (BranchTabInmueble), and banner with AlertCircle (FormRegisterPayment). The standard defined in §28 is: inline text under the field + global banner. The glow badge is deprecated.
+
+---
+
+## 25. Accessibility
+
+### Focus visible
+
+Global rule exists in `src/index.css:430–437`:
+
+```css
+button:focus-visible,
+input:not(.outline-none):focus-visible,
+select:not(.outline-none):focus-visible,
+textarea:not(.outline-none):focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid rgba(0,82,204,0.55);
+  outline-offset: 2px;
+}
+```
+
+Coverage gap: glass inputs carry `outline-none` in their className, which excludes them from this rule. Those inputs implement their own visual ring via `focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)]` — they have a visible indicator but it is not `focus-visible`-gated (fires on mouse click too). `.virtual-caret-blue/orange` inputs suppress the ring entirely via `:focus { outline: none }`.
+
+### Touch targets
+
+| Element | Padding | Computed height | Status |
+|---|---|---|---|
+| Nav top-level button | `px-3 py-3` + icon 20px | ≈ 44px | ✅ |
+| Nav group header | `px-3 py-2.5` + icon 20px | ≈ 40px | ⚠️ borderline |
+| Nav indented button | `px-2.5 py-2` + icon 16px | ≈ 36px | ❌ below 44px |
+| Mobile bottom tab | `px-3 py-2` + icon 20px + label 9px | ≈ 45px | ✅ |
+| Sidebar collapsed buttons | `w-11 h-11` = 44px | 44px | ✅ |
+
+The 44px minimum follows WCAG 2.5.8 (AA, WCAG 2.2). Nav indented items do not meet it.
+
+### ARIA
+
+**Implemented:**
+- `ModalShell` (`src/components/common/ModalShell.jsx:48–53`): `role="dialog"`, `aria-modal="true"`, `aria-label="Cerrar modal"` on close button ✅
+- `BranchHelpers` toggle (`src/components/forms/BranchHelpers.jsx:54`): `aria-pressed={on}` ✅
+
+**Missing:**
+- `ModalShell`: no `aria-labelledby` pointing to the modal title — screen readers announce the dialog without a label.
+- Sidebar collapsible groups: no `aria-expanded` on group header buttons, no `aria-controls` on the submenu container.
+- `LiquidSelect` trigger: no `aria-haspopup="listbox"`, `aria-expanded`, or `aria-activedescendant` on the trigger button.
+- All form inputs: no `aria-required`, `aria-invalid`, or `aria-describedby` linking to inline error text.
+
+### prefers-reduced-motion
+
+**Implemented** — `src/index.css` (block added before `@media print`).
+
+**Disabled entirely** (infinite loops / large displacement):
+`animate-ambient-drift`, `animate-ambient-drift-reverse`, `animate-shimmer`, `glow-danger`, `glow-warning`, `badge-pulse`, `animate-wiggle`, `animate-tab-enter-right/left`, `animate-tab-exit-right/left`, `animate-stagger-child`, `animate-input-reveal`, `animate-route-enter`, `animate-view-enter`. `will-change` also reset to `auto` for disabled classes.
+
+**Reduced to `rm-fade-in` 120ms opacity-only:**
+`animate-kpi-enter`, `animate-widget-enter`, `animate-widget-settle`, `animate-cosmos-in`, `animate-cosmos-panel`, `animate-table-row-enter`.
+
+**Skeleton** — animation stopped; background becomes a solid `rgba(148,163,184,0.15)`.
+
+Hover lifts (`hover:-translate-y-*`) remain unaffected — they are already scoped to `@media (hover: hover)` which only fires on pointer devices.
+
+---
+
+## 26. Performance
+
+### Backdrop-filter layers — typical admin view
+
+A standard admin view (e.g. VentasView) stacks the following compositor layers simultaneously:
+
+| Layer | Source | Blur radius |
+|---|---|---|
+| 5 ambient orbs | `AppLayout` fixed divs | `filter: blur(35–40px)` each |
+| Sidebar surface | `data-surface="sidebar"` | `backdrop-blur-2xl` ≈ 40px |
+| Page header | `GlassViewLayout` `data-surface="page-header"` | `blur(32px) saturate(280%)` |
+| Body card | `data-surface="card"` | `blur(44px) saturate(200%)` |
+
+= **4 stacked compositor layers** before any modal, dropdown, or tooltip opens. Each open `LiquidModal` adds `blur(48px)` and an inner `blur(15px)` layer.
+
+On flagship mobile hardware (iPhone 12+) this is manageable. On mid-range Android or older iPads, compositing cost is the primary source of jank.
+
+**Solid theme (`[data-theme="solid"]`) mitigates this completely:** sets `--backdrop-*: none` across all surface tokens, removing every backdrop-filter at once. No code changes needed in components.
+
+### Ambient orbs
+
+5 orbs in `AppLayout` + 3 inside the sidebar + 6 glass particles in `LoginView`. All are `position: fixed`, which means they are painted outside the scroll container and do not cause scroll-triggered repaints. They do however create persistent GPU layers for the lifetime of the app.
+
+### Animation compositing
+
+All animations run on `transform` and/or `opacity` only — compositable without layout or paint — **except**:
+
+| Animation | Property | Cost |
+|---|---|---|
+| `glow-danger-anim`, `glow-warning-anim` | `box-shadow` | **Paint** — not compositable; triggers repaint on every frame in Chromium |
+| Sidebar active pill | `top` (inline style via JS) | **Layout recalc** — `top` is not compositable; runs for 320ms on route change |
+| `TabMinMax` accordion | `willChange: 'height'` (`src/views/productos/TabMinMax.jsx:3812`) | **Layout** — height animation always triggers reflow |
+
+The standard rule: **only animate `transform` and `opacity`**. Exceptions above are documented and accepted; do not add new ones.
+
+### `will-change` usage
+
+| Location | Value | Purpose |
+|---|---|---|
+| `.animate-ambient-drift/reverse` (`index.css:356–357`) | `transform` | Pre-promote orb layers ✅ |
+| `GlassViewLayout` header (`src/components/GlassViewLayout.jsx:68`) | `backdrop-filter` | Compositor hint for sticky blur ✅ |
+| `LiquidModal` (`src/components/common/LiquidModal.jsx:43`) | `transform` + `translateZ(0)` | Force composited layer ✅ |
+| `TabMinMax` expand (`src/views/productos/TabMinMax.jsx:3812`) | `height` | ⚠️ Triggers layout — consider `transform: scaleY` alternative |
+
+### Lazy loading
+
+- `LiquidAvatar` — lazy-loads images with a skeleton shimmer placeholder ✅
+- `BranchesView` branch cards — `contentVisibility: 'auto'` + `containIntrinsicSize: '350px'` for CSS-level virtualization of off-screen cards ✅
+- No other explicit lazy loading found. Heavy views (TabMinMax, TabCatalogo) load all rows eagerly.
+
+---
+
+## 27. Cross-Browser
+
+### -webkit-backdrop-filter (Safari)
+
+All `[data-surface]` rules in `src/index.css` include the `-webkit-` prefix alongside `backdrop-filter` (lines 206, 223, 240, 249, 258, 266). Inline `style` objects in components use `WebkitBackdropFilter` alongside `backdropFilter` (GlassViewLayout, AppLayout, TabMinMax, AttendanceMonitorView). **Safari coverage is complete.**
+
+### Reset / normalize baseline
+
+`src/index.css` opens with `@import "tailwindcss"`, which applies Tailwind Preflight (a Normalize.css derivative). `:root` sets `color-scheme: light`. No additional normalize layer.
+
+### @supports fallback
+
+⚠️ **No automatic fallback exists.** There is no `@supports (backdrop-filter: ...)` block anywhere in the stylesheet. Browsers that do not support `backdrop-filter` (e.g. Firefox < 103) render surfaces with no blur — surfaces become semi-transparent colored boxes without the frosted effect.
+
+The Solid theme (`[data-theme="solid"]`) is the **manual fallback**: setting `--backdrop-*: none` removes all blur and makes surfaces opaque. Users must activate it through ThemeToggle.
+
+**Proposed addition to `src/index.css`** (automatic opacity fallback — does not force Solid theme, preserves translucency):
+
+```css
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --surface-card    : rgba(255,255,255,0.95);
+    --surface-header  : rgba(255,255,255,0.97);
+    --surface-modal   : rgba(255,255,255,0.98);
+    --surface-input   : rgba(255,255,255,0.92);
+    --surface-dropdown: rgba(255,255,255,0.98);
+  }
+}
+```
+
+This block would only fire on browsers without any backdrop-filter support, making surfaces fully opaque while keeping the rest of the design intact.
+
+---
+
+## 28. Page States
+
+### Offline / no connection
+
+**Implemented** — `src/components/common/OfflineBanner.jsx`. Mounted once in `AppLayout` (`src/components/layout/AppLayout.jsx`), just before `</LayoutGroup>`.
+
+Listens to `navigator.onLine` + `window` events `'online'`/`'offline'`. Shows a fixed top-center banner (`z-[500]`, below toasts at `z-[9999]`):
+- **Offline:** amber palette (`bg-amber-50/90 border-amber-200/80 text-amber-700`) + `WifiOff` icon + "Sin conexión"
+- **Restored:** emerald palette + `Wifi` icon + "Conexión restaurada" (auto-disappears after 3 s)
+
+Does not block the UI. Banner has `role="status"` + `aria-live="polite"` for screen readers.
+
+### 404 / route not found
+
+**Current behavior** (`src/App.jsx:605`): catch-all route `path="*"` redirects to `defaultRedirect` (the user's first allowed route). No dedicated not-found page exists.
+
+Two access-denial views exist:
+- `AccessDeniedView` — rendered when a known route guard fails (`hasPermission` returns false, `src/App.jsx:142`)
+- `NoAccessView` — rendered at `/no-access` for authenticated users with no accessible modules (`src/App.jsx:506`)
+
+**Optional improvement:** replace `<Navigate to={defaultRedirect} replace />` with a `NotFoundView` that shows the empty-state pattern (§18) with a "Volver al inicio" button. Reduces silent redirect confusion.
+
+### Error boundary
+
+**Implemented** — `src/components/common/ErrorBoundary.jsx`. Wraps `<Routes>` inside `AppLayout` in `src/App.jsx` (authenticated tree only; login and `/no-access` routes are outside the boundary).
+
+Class component with `getDerivedStateFromError` + `componentDidCatch`. On error:
+- Logs to `console.error`.
+- Calls `appendAuditLog('ERROR_RENDER', null, { message, stack })` via `useStaffStore.getState()` (store-singleton pattern, safe from class component).
+- Renders a Liquid Glass fallback card (`[data-surface="modal"]` style: `bg-white/[0.18] backdrop-blur-[48px]`) with `AlertTriangle` squircle, "Algo salió mal" title, and a primary CTA "Recargar" → `window.location.reload()`.
+
+Fallback uses only existing CSS tokens — respects active theme (transparent background, no hardcoded light color).
+
+---
+
+## 29. Forms & Validation
+
+### Input patterns
+
+Two distinct input styles exist in the codebase depending on context:
+
+**Glass input** — used inside `LiquidModal` / glass card contexts:
+```jsx
+// Reference: src/components/forms/BranchHelpers.jsx:155
+className="w-full py-3.5
+  bg-white/50 border border-white/60 rounded-[1.25rem]
+  text-[13px] font-bold text-slate-700 placeholder-slate-400
+  outline-none transition-all duration-300
+  shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)]
+  focus:bg-white focus:border-[#0052CC]/30
+  focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)]"
+```
+
+**Solid input** — used in standalone forms or white-background contexts:
+```jsx
+// Reference: src/components/forms/FormSetPassword.jsx:78
+className="w-full h-[44px] pl-10 pr-4
+  bg-white border border-slate-200/80 rounded-[1rem]
+  text-[13px] font-bold text-slate-700 outline-none
+  transition-all hover:border-[#0052CC]/30
+  focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
+```
+
+Both patterns:
+- Minimum height 44px (solid) / `py-3.5` ≈ 44px (glass)
+- `font-bold text-[13px]` on value text
+- `placeholder-slate-400` on placeholder
+- `outline-none` with custom focus ring
+
+### Disabled state
+
+Buttons: `disabled:bg-slate-300 disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed`
+Inputs: `disabled:bg-slate-50 disabled:opacity-50`
+
+### Validation error standard
+
+Three patterns coexist in the codebase today (inconsistency documented in §23 item 7). The defined standard going forward:
+
+**(a) Inline field error** — appears below the field, shown when a field-level rule fails:
+```jsx
+<p className="text-[11px] font-black text-red-600 mt-1">
+  {fieldError}
+</p>
+```
+Must be paired with `aria-invalid="true"` on the input and `aria-describedby` pointing to the error element's `id`.
+
+**(b) Global / submit banner** — appears above the submit button, shown for server errors or cross-field validation failures:
+```jsx
+// Reference: src/components/forms/FormRegisterPayment.jsx:185
+<div className="flex items-center gap-3 text-red-700
+  bg-red-50/80 backdrop-blur-sm px-4 py-3 rounded-2xl
+  border border-red-200 shadow-[0_4px_15px_rgba(239,68,68,0.1)]
+  animate-in fade-in slide-in-from-top-2">
+  <AlertCircle size={18} className="shrink-0 text-red-500" strokeWidth={2.5} />
+  <span className="text-[12px] font-bold">{globalError}</span>
+</div>
+```
+
+**(c) Required field indicator** — asterisk `*` in the label, never a glow badge:
+```jsx
+<label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+  Nombre del Arrendador *
+</label>
+```
+
+**Deprecated:** the inline "Requerido" badge with `shadow-[0_0_8px_rgba(239,68,68,0.5)]` next to labels (currently in `src/components/forms/BranchTabInmueble.jsx:75–133`). Use asterisk in label + inline error text instead.
+
+---
+
+## 30. Governance & Changelog
+
+### Extend-vs-create rule
+
+Before creating a new component, verify:
+
+| Need | Check first |
+|---|---|
+| Any overlay / modal | `ModalShell`, `UnifiedModal`, `LiquidModal`, `ConfirmModal`, `AlertModal` |
+| Any select / dropdown | `LiquidSelect` |
+| Any tooltip | `LiquidTooltip` |
+| Any data table | `DataTable` |
+| Any view wrapper | `GlassViewLayout` + `ViewTabBar` |
+| Any avatar | `LiquidAvatar` |
+| Any toast | `useToastStore` (via `LiquidToast`) |
+
+Creating a parallel component that duplicates functionality is prohibited. Extend the existing one or open a design discussion first.
+
+### Changelog
+
+| Version | Date | Notes |
+|---|---|---|
+| v1.0 | 2026-06-24 | Initial audit — Phases A, B, C complete. 4-theme architecture, full component inventory, accessibility/performance/cross-browser audit. |
+
+---
+
+## 31. Anti-Patterns (Never Do)
+
+- Left-border color indicators (`border-l-4 border-red-500`) on rows, cards, or lists.
+- `transition-all` — use specific property transitions. Excepción válida: animaciones multi-propiedad sin shorthand CSS (ej. search expand en ViewTabBar) pueden usar `transition-all`.
+- `active:scale-90/95` — minimum `active:scale-[0.97]`.
+- `font-normal` or `font-light` on interactive UI elements.
+- `text-slate-300/400` as text color over light surfaces.
+- `animate-bounce` on decorative elements.
+- New framer-motion imports.
+- `<select>` native element — use LiquidSelect.
+- Hero metric: large number alone with tiny label and no context.
+- Cards with identical visual weight in a grid (no hierarchy).
+- `backdrop-filter` or surface background hardcoded in component when `[data-surface]` covers the case.
+- Web fonts loaded via `@import` or `<link>` — system font stack only.

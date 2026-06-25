@@ -154,7 +154,7 @@ function FilterControls({
                 </div>
                 {filterBranch && (
                     <button onClick={() => setFilterBranch('')} title="Quitar sucursal"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
@@ -169,7 +169,7 @@ function FilterControls({
                 </div>
                 {dateDirty && (
                     <button onClick={() => setMonthRange(defaultRange)} title="Quitar fecha"
-                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-all shrink-0 hover:scale-110">
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
                         <X size={9} strokeWidth={3} />
                     </button>
                 )}
@@ -180,7 +180,7 @@ function FilterControls({
             {/* Toggle filters */}
             <div className="flex items-center gap-1 px-2">
                 <button onClick={() => setFilterAnuladas(v => !v)}
-                    className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 whitespace-nowrap shrink-0 ${
+                    className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                         filterAnuladas
                             ? 'bg-red-100 border-red-200 text-red-700 shadow-sm'
                             : 'bg-transparent text-slate-400 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
@@ -191,7 +191,7 @@ function FilterControls({
 
                 {showAntibiotico && (
                     <button onClick={() => setFilterAntibiotico(v => !v)}
-                        className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-200 whitespace-nowrap shrink-0 ${
+                        className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                             filterAntibiotico
                                 ? 'bg-rose-100 border-rose-200 text-rose-700 shadow-sm'
                                 : 'bg-transparent text-slate-400 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
@@ -207,7 +207,7 @@ function FilterControls({
                 <>
                     <div className="h-5 w-px bg-slate-100 shrink-0" />
                     <button onClick={resetAll} title="Limpiar todos los filtros"
-                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all duration-200 shrink-0 hover:scale-110">
+                        className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-colors duration-200 shrink-0">
                         <X size={11} strokeWidth={3} />
                     </button>
                 </>
@@ -223,7 +223,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
     return (
         <div
             onClick={onClick}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl border select-none transition-all
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl border select-none transition-[box-shadow,border-color,background-color]
                 ${isFilter ? 'cursor-pointer hover:shadow-md' : 'cursor-default bg-white'}
                 ${active
                     ? 'border-amber-400 ring-2 ring-amber-200 shadow-md bg-amber-50'
@@ -237,7 +237,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
             </div>
             <div className="flex flex-col min-w-0">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-0.5">{label}</span>
-                <div className={`flex items-baseline gap-1.5 flex-wrap transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>
+                <div className={`flex items-baseline gap-1.5 flex-wrap transition-[filter] duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>
                     <span className={`text-[15px] font-black leading-none ${text}`}>{blurred ? '••••••' : value}</span>
                     {!blurred && pct !== null && pct !== undefined && (
                         <span className={`flex items-center gap-0.5 text-[10px] font-black ${pct >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
@@ -763,7 +763,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                             {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
                                                                                 <div className="flex flex-wrap gap-1 mt-0.5">
                                                                                     {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>}
-                                                                                    {it.presentacion && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-400">{it.presentacion}</span>}
+                                                                                    {it.presentacion && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-400">{it.presentacion}</span>}
                                                                                     {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
                                                                                     {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono bg-slate-100 text-slate-500">Vence {it.fecha_vencimiento}</span>}
                                                                                 </div>
@@ -1868,7 +1868,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 const active = drillFilters[field] === val;
                                                                 return (
                                                                     <button key={val} onClick={() => setDrillFilters(f => ({ ...f, [field]: active ? '' : val }))}
-                                                                        className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-all ${active ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300 hover:text-blue-600'}`}>
+                                                                        className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] ${active ? 'bg-[#0052CC] text-white border-[#0052CC]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300 hover:text-blue-600'}`}>
                                                                         {label ?? val}
                                                                     </button>
                                                                 );
@@ -1886,14 +1886,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     <>
                                                                                         {docOpts.length > 1 && <span className="text-slate-200">|</span>}
                                                                                         <button onClick={() => setDrillFilters(f => ({ ...f, changed: !f.changed }))}
-                                                                                            className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-all flex items-center gap-1 ${drillFilters.changed ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-600 border-amber-300 hover:border-amber-500'}`}>
+                                                                                            className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] flex items-center gap-1 ${drillFilters.changed ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-600 border-amber-300 hover:border-amber-500'}`}>
                                                                                             ⚠ precio cambió ({changedCount})
                                                                                         </button>
                                                                                     </>
                                                                                 )}
                                                                                 {hasAnyFilter && (
                                                                                     <button onClick={() => setDrillFilters({ tipodoc: '', changed: false })}
-                                                                                        className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-red-50 text-red-400 hover:bg-red-500 hover:text-white border border-red-200 transition-all">
+                                                                                        className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-red-50 text-red-400 hover:bg-red-500 hover:text-white border border-red-200 transition-colors">
                                                                                         ✕ limpiar
                                                                                     </button>
                                                                                 )}
@@ -1907,9 +1907,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                             {filteredDrill.length} venta{filteredDrill.length !== 1 ? 's' : ''}{drillData.length >= 300 ? '+' : ''}
                                                                         </p>
                                                                         <span className="text-slate-200">·</span>
-                                                                        <p className="text-[10px] font-black text-slate-600">{fmtQty(totCant)} <span className="font-normal text-slate-400">unidades</span></p>
+                                                                        <p className="text-[10px] font-black text-slate-600">{fmtQty(totCant)} <span className="font-medium text-slate-400">unidades</span></p>
                                                                         <span className="text-slate-200">·</span>
-                                                                        <p className="text-[11px] font-black text-emerald-700">{fmt(totNeto)} <span className="text-[9px] font-normal text-slate-400">total s/IVA</span></p>
+                                                                        <p className="text-[11px] font-black text-emerald-700">{fmt(totNeto)} <span className="text-[9px] font-medium text-slate-400">total s/IVA</span></p>
                                                                     </div>
 
                                                                     {/* Table */}
@@ -1960,10 +1960,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                             </td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 <div className="flex items-center gap-1.5">
-                                                                                                    {emp?.photo_url
-                                                                                                        ? <img src={emp.photo_url} alt={empShort} className="w-5 h-5 rounded-full object-cover shrink-0" />
-                                                                                                        : <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[8px] font-black text-slate-500 shrink-0">{empInit}</div>
-                                                                                                    }
+                                                                                                    <LiquidAvatar src={emp?.photo_url || emp?.photo} fallbackText={emp?.first_names} className="w-5 h-5 rounded-full shrink-0" />
                                                                                                     <span className="text-slate-600 text-[11px]">{empShort}</span>
                                                                                                 </div>
                                                                                             </td>
@@ -2113,7 +2110,7 @@ export default function VentasView() {
                     className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-slate-400 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && (
-                    <button onClick={() => setRawSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all shrink-0">
+                    <button onClick={() => setRawSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-colors shrink-0">
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}

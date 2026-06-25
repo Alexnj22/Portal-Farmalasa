@@ -671,20 +671,27 @@ const COLS_REGLA = [
     { key: 'prod',       label: 'Producto',      render: renderProd },
     { key: 'pres',       label: 'Presentación',  render: renderPresStock },
     { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
-    { key: 'stock_suc',  label: 'Stock sucursal', align: 'center', render: r => (
-        <span className={`tabular-nums text-[11px] font-semibold ${(r.stock_packs_snapshot ?? 0) === 0 ? 'text-rose-500' : 'text-slate-600'}`}>
-            {r.stock_packs_snapshot ?? '—'}
-        </span>
-    )},
+    { key: 'stock_suc',  label: 'Stock sucursal', align: 'center', render: r => {
+        const packs  = r.stock_packs_snapshot ?? null;
+        const factor = Number(r.factor) || 1;
+        const units  = packs != null ? Math.round(packs * factor) : null;
+        return (
+            <span className={`tabular-nums text-[11px] font-semibold ${(units ?? 0) === 0 ? 'text-rose-500' : 'text-slate-600'}`}>
+                {units != null ? `${units} und` : '—'}
+            </span>
+        );
+    }},
     { key: 'regla',  label: 'Regla', render: fmtRegla },
     { key: 'motivo', label: 'Motivo', render: r => {
-        const needed = r.max_qty_snapshot != null && r.stock_packs_snapshot != null
+        const factor  = Number(r.factor) || 1;
+        const needed  = r.max_qty_snapshot != null && r.stock_packs_snapshot != null
             ? Math.max(0, r.max_qty_snapshot - r.stock_packs_snapshot) : null;
+        const needUnd = needed != null ? Math.ceil(needed * factor) : null;
         return (
             <div className="flex flex-col gap-0.5">
                 <span className="text-rose-600 text-[10px] font-semibold">Necesidad baja</span>
                 <span className="text-slate-400 text-[9px]">
-                    {needed != null ? `Reponer ${needed} und. no alcanza el mín. de despacho` : 'Necesidad < 40% de la unidad mínima de despacho'}
+                    {needUnd != null ? `Reponer ${needUnd} und. no alcanza el mín. de despacho` : 'Necesidad < 40% de la unidad mínima de despacho'}
                 </span>
                 <span className="text-slate-300 text-[9px]">Ajustar MAX o reducir el múltiplo en la regla</span>
             </div>

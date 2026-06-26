@@ -2666,17 +2666,23 @@ export default function TabPedidos({ searchTerm = '' }) {
             });
         }
         if (searchLower) rows = rows.filter(r => String(r.numero).includes(searchLower) || (r.notes ?? '').toLowerCase().includes(searchLower));
+        const uid = String(user?.id ?? '');
         return [...rows].sort((a, b) => {
+            // 1. Mío primero — lo inicié o lo creé yo
+            const mineA = uid && (String(a.iniciado_por) === uid || String(a.created_by) === uid);
+            const mineB = uid && (String(b.iniciado_por) === uid || String(b.created_by) === uid);
+            if (mineA !== mineB) return mineA ? -1 : 1;
+            // 2. Stage
             const stageA = getBranchStage(a, a.pedido_status);
             const stageB = getBranchStage(b, b.pedido_status);
             const baseA = STAGE_ORDER[stageA] ?? 5;
             const baseB = STAGE_ORDER[stageB] ?? 5;
-            // con observación va después de procesando (6), antes de erp (7)
             const sa = (hasObservacion(a) && baseA > 0 && baseA < 7) ? 6 : baseA;
             const sb = (hasObservacion(b) && baseB > 0 && baseB < 7) ? 6 : baseB;
+            // 3. Fecha más reciente
             return sa !== sb ? sa - sb : new Date(b.created_at) - new Date(a.created_at);
         });
-    }, [activeRows, filterSuc, filterStatus, filterDate, searchLower, hasObservacion]); // eslint-disable-line
+    }, [activeRows, filterSuc, filterStatus, filterDate, searchLower, hasObservacion, user]); // eslint-disable-line
 
     const sucursalCounts = useMemo(() => {
         const [desde, hasta] = (filterDate ?? '').split('|');
@@ -2721,8 +2727,16 @@ export default function TabPedidos({ searchTerm = '' }) {
             }
         }
         if (normalRows.length) groups.push({ isRuta: false, ruta: null, rows: normalRows });
+        // Ruta donde soy conductor va al tope
+        const uid = String(user?.id ?? '');
+        groups.sort((a, b) => {
+            if (!a.isRuta || !b.isRuta) return 0;
+            const aMe = uid && String(a.ruta?.conductor_id) === uid;
+            const bMe = uid && String(b.ruta?.conductor_id) === uid;
+            return aMe === bMe ? 0 : aMe ? -1 : 1;
+        });
         return groups;
-    }, [filteredRows, pedidoRutaMap]);
+    }, [filteredRows, pedidoRutaMap, user]);
 
     // ── Render ────────────────────────────────────────────────────────────────
 

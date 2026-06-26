@@ -1965,7 +1965,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         const rid = ++loadRef.current;
         setLoading(true); setError(null); setInlineDraftEdit(null); setExpandedId(null);
         try {
-            const CHUNK = 5000;
+            const CHUNK = 1000; // PostgREST cap: máx 1000 filas por request — 5 llamadas paralelas cubre ~5000 productos
             // Phase 1: exact count (via MV index) + metadata — all in parallel
             const [countRes, costRes, draftRes, cfgRes] = await Promise.all([
                 supabase.rpc('get_stock_analysis_count', { p_erp_sucursal_id: erpId }),

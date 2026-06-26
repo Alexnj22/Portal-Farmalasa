@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.407';
+export const APP_VERSION = '2.2.408';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.408 — fix(minmax): CHUNK 5000→1000 — PostgREST corta a 1000 filas/request; revertir garantiza los ~4200 productos completos en 5 llamadas paralelas
 // v2.2.407 — fix(minmax): búsqueda 100% fiable — cuando filtro de categoría oculta resultados, mensaje claro + botón "Quitar filtros y ver resultado"
 // v2.2.406 — fix(search): superpoderes en 100% del codebase — FormLeadership, EmployeeDetailView, TabExpediente, EmployeeDocumentsView, EmployeeProfileView, TabLaboratorios, TabMinMax lab filter, TabMinMaxNetwork, ScheduleCalendar
 // v2.2.405 — feat(search): estandarización completa §24 DESIGN.md — smartFilter/tokenMatch en VentasView TabProductos, SchedulesView, TabPedidos, TabMinMaxRequests, RecepcionModal, EncuestaAdminView picker, AttendanceMonitor, TabShifts

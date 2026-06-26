@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.386';
+export const APP_VERSION = '2.2.387';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.387 — fix(pdf): header — fusiona título+origen→destino en 1 fila (headerRows 3→2); logo margen derecho 7→10; nombre farmacia margin-top para centrado vertical con logo
 // v2.2.386 — feat(pdf): Cajas Adicionales agrupadas por producto — una fila con rango E1–E5 + total cajas + lotes sumados; mismo ancho de columnas que tabla principal
 // v2.2.385 — fix(pdf): isAdicional restringe adicionales a dispatch_label='CAJA' — ESTUCHE/BOLSA permanecen en tabla principal; caja_especial siempre a adicionales
 // v2.2.384 — fix(pdf): isAdicional usa tiene_dispatch_label (DB) en vez de CUSTOM_LABELS+dispF>erpF — elimina falsos positivos en productos normales con presentacion CAJA; DB expone tiene_dispatch_label en get_pedido_preview; mejora texto "Mostrar en PDF como" en TabReglas

@@ -175,50 +175,45 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
     const sucAddr      = addrMap?.[sec.sucId] ?? '';
 
     const logoCell = logo
-        ? { image: logo, width: 22, height: 22, margin: [0, 0, 7, 0] }
+        ? { image: logo, width: 22, height: 22, margin: [0, 0, 10, 0] }
         : { text: '', width: 0 };
 
-    // Fila 1 — gris claro, B&W friendly
+    // Fila 1 — gris claro: logo+farmacia | origen→destino | código+caja+fecha (todo en una sola fila)
+    const originLabel = bodegaAddr
+        ? [{ text: 'Origen: ', fontSize: 6, color: '#999' }, { text: `Bodega · ${bodegaAddr}`, fontSize: 6, color: '#555' }]
+        : [{ text: 'Origen: ', fontSize: 6, color: '#999' }, { text: 'Bodega', fontSize: 6, color: '#555' }];
+    const destLabel = sucAddr
+        ? [{ text: '   →   Destino: ', fontSize: 6, color: '#999' }, { text: `${sec.nombre} · ${sucAddr}`, fontSize: 6, color: '#555' }]
+        : [{ text: '   →   Destino: ', fontSize: 6, color: '#999' }, { text: sec.nombre, fontSize: 6, bold: true, color: '#333' }];
+
     const titleRow = [
         {
-            colSpan: 6, fillColor: '#eeeeee', margin: [6, 3, 6, 2],
-            stack: [
-                // Título centrado al ancho completo del documento
-                { text: 'ORDEN DE DESPACHO', fontSize: 9, bold: true, color: '#222', alignment: 'center', margin: [0, 0, 0, 3] },
+            colSpan: 6, fillColor: '#eeeeee', margin: [6, 4, 6, 4],
+            columns: [
+                // Logo + nombre farmacia
                 {
                     columns: [
-                        {
-                            columns: [logoCell, { text: farmaciaName, fontSize: 9, bold: true, color: '#111', margin: [0, 1, 0, 0] }],
-                            width: '60%',
-                        },
-                        {
-                            stack: [
-                                { text: sec.codigo ?? '', fontSize: 7.5, bold: true, color: '#111', alignment: 'right' },
-                                { text: fecha, fontSize: 6.5, color: '#666', alignment: 'right' },
-                            ],
-                            width: '40%',
-                        },
+                        logoCell,
+                        { text: farmaciaName, fontSize: 9, bold: true, color: '#111', margin: [0, 6, 0, 0] },
                     ],
+                    width: '32%',
                 },
-            ],
-        },
-        {}, {}, {}, {}, {},
-    ];
-
-    // Fila 2 — blanco, 3 columnas: Origen | Destino | Caja:___
-    const originText = bodegaAddr ? `Origen: Bodega\n${bodegaAddr}` : 'Origen: Bodega';
-    const destText   = sucAddr ? `Destino: ${sec.nombre}\n${sucAddr}` : `Destino: ${sec.nombre}`;
-    const subtitleRow = [
-        {
-            colSpan: 6, fillColor: '#ffffff', margin: [6, 5, 6, 8],
-            columns: [
-                { text: originText, fontSize: 6, color: '#555', width: '36%', lineHeight: 1.5 },
-                { text: destText,   fontSize: 6, color: '#555', width: '40%', alignment: 'center', lineHeight: 1.5 },
+                // Título centrado + origen→destino debajo
                 {
-                    width: '24%',
                     stack: [
-                        { text: 'Caja: ___________', fontSize: 6.5, color: '#333', alignment: 'right', margin: [0, 4, 0, 0] },
+                        { text: 'ORDEN DE DESPACHO', fontSize: 9, bold: true, color: '#222', alignment: 'center' },
+                        { text: [...originLabel, ...destLabel], fontSize: 6, alignment: 'center', margin: [0, 3, 0, 0] },
                     ],
+                    width: '*',
+                },
+                // Código + caja + fecha
+                {
+                    stack: [
+                        { text: sec.codigo ?? '', fontSize: 7.5, bold: true, color: '#111', alignment: 'right' },
+                        { text: 'Caja: ___________', fontSize: 6.5, color: '#333', alignment: 'right', margin: [0, 2, 0, 0] },
+                        { text: fecha, fontSize: 6.5, color: '#666', alignment: 'right', margin: [0, 2, 0, 0] },
+                    ],
+                    width: '28%',
                 },
             ],
         },
@@ -239,7 +234,7 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
         ]];
 
     return {
-        table: { headerRows: 3, dontBreakRows: true, widths: COL_WIDTHS, body: [titleRow, subtitleRow, headerRow, ...bodyRows] },
+        table: { headerRows: 2, dontBreakRows: true, widths: COL_WIDTHS, body: [titleRow, headerRow, ...bodyRows] },
         layout: {
             hLineWidth:  (i, node) => (i === 0 ? 0 : i === 3 ? 1.5 : i === node.table.body.length ? 0.8 : 0.5),
             vLineWidth:  (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),

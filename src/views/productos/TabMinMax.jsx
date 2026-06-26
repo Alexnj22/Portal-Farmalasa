@@ -1931,6 +1931,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     const [historyLoading,  setHistoryLoading]  = useState(false);
     const [empPhotoMap,     setEmpPhotoMap]     = useState({});
     const [bodegaTooltip,   setBodegaTooltip]   = useState(null); // { productId, pending:[{erp_sucursal_id,draft_min,draft_max}], rect }
+    const tooltipCancelRef = useRef(null); // cancela async in-flight si el mouse se va antes de que resuelva
     const loadRef = useRef(0);
 
     useEffect(() => {
@@ -3626,12 +3627,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 cursor-help select-none"
                                                         onMouseEnter={async (e) => {
                                                             if (bodegaTooltip?.productId === row.erp_product_id) return;
+                                                            tooltipCancelRef.current?.();
+                                                            let cancelled = false;
+                                                            tooltipCancelRef.current = () => { cancelled = true; };
                                                             const rect = e.currentTarget.getBoundingClientRect();
                                                             const { data: branches } = await supabase.rpc('get_product_branch_summary', { p_erp_product_id: row.erp_product_id });
+                                                            if (cancelled) return;
                                                             const pending = (branches || []).filter(b => b.erp_sucursal_id !== 6 && b.draft_status === 'pending');
                                                             setBodegaTooltip({ productId: row.erp_product_id, pending, rect });
                                                         }}
-                                                        onMouseLeave={() => setBodegaTooltip(null)}
+                                                        onMouseLeave={() => { tooltipCancelRef.current?.(); setBodegaTooltip(null); }}
                                                     >
                                                         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block shrink-0" />
                                                         {(row.draft_min ?? 0).toLocaleString()}·{(row.draft_max ?? 0).toLocaleString()}
@@ -3673,12 +3678,16 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-amber-700 bg-amber-50 border border-amber-200/80 cursor-help select-none"
                                                     onMouseEnter={async (e) => {
                                                         if (bodegaTooltip?.productId === row.erp_product_id) return;
+                                                        tooltipCancelRef.current?.();
+                                                        let cancelled = false;
+                                                        tooltipCancelRef.current = () => { cancelled = true; };
                                                         const rect = e.currentTarget.getBoundingClientRect();
                                                         const { data: branches } = await supabase.rpc('get_product_branch_summary', { p_erp_product_id: row.erp_product_id });
+                                                        if (cancelled) return;
                                                         const pending = (branches || []).filter(b => b.erp_sucursal_id !== 6 && b.draft_status === 'pending');
                                                         setBodegaTooltip({ productId: row.erp_product_id, pending, rect });
                                                     }}
-                                                    onMouseLeave={() => setBodegaTooltip(null)}
+                                                    onMouseLeave={() => { tooltipCancelRef.current?.(); setBodegaTooltip(null); }}
                                                 >
                                                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse inline-block shrink-0" />
                                                     Suc. pendientes

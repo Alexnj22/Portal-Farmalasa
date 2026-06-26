@@ -1965,7 +1965,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         const rid = ++loadRef.current;
         setLoading(true); setError(null); setInlineDraftEdit(null); setExpandedId(null);
         try {
-            const CHUNK = 1000;
+            const CHUNK = 5000;
             // Phase 1: exact count (via MV index) + metadata — all in parallel
             const [countRes, costRes, draftRes, cfgRes] = await Promise.all([
                 supabase.rpc('get_stock_analysis_count', { p_erp_sucursal_id: erpId }),
@@ -3382,7 +3382,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                                     ? `${Number(row.units_sold_6m).toLocaleString()} uds. 6m`
                                                                     : 'Sin ventas'
                                                             }
-                                                            {row.last_sale_date && <span className="text-orange-400 ml-0.5">· {new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>}
+                                                            {row.last_sale_date && <span className="text-orange-400 ml-0.5">· {isBodega && row.last_sale_sucursal_id ? `${ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} ` : ''}{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>}
                                                         </span>
                                                     )}
                                                     {!dead && !noHistory && !isSparse && (
@@ -3396,7 +3396,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                             {Number(row.units_sold_6m) > 0 && <><span className="text-slate-300 mx-0.5">·</span>{Number(row.units_sold_6m).toLocaleString()} vend.</>}
                                                             <span className="text-slate-300 mx-0.5">·</span>
                                                             {row.last_sale_date
-                                                                ? <span className="font-semibold text-slate-600">{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                                                                ? <span className="font-semibold text-slate-600">{isBodega && row.last_sale_sucursal_id ? <span className="font-normal text-slate-500">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
                                                                 : <span className="text-slate-400 italic">sin venta</span>
                                                             }
                                                         </span>
@@ -3404,7 +3404,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     {(dead || noHistory) && (
                                                         <span className="text-[10px] font-semibold text-slate-500">
                                                             {row.last_sale_date
-                                                                ? <><span className="text-slate-400">Últ.</span> {new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</>
+                                                                ? <><span className="text-slate-400">Últ.</span> {isBodega && row.last_sale_sucursal_id ? <span className="text-slate-500">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</>
                                                                 : <span className="text-slate-400 italic">sin ventas</span>
                                                             }
                                                         </span>

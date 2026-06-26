@@ -282,40 +282,55 @@ function buildFooterCallback(_meta) {
 function buildEspecialesBlock(especiales) {
     if (!especiales?.length) return null;
 
-    const hasLotes = especiales.some(e => e.lotes?.length > 0);
-    // Mirror main table column structure; Caja replaces Laboratorio
-    const widths  = hasLotes ? ['10%', '33%', '13%', '8%', '30%', '6%'] : ['10%', '60%', '13%', '9%', '8%'];
-    const nCols   = widths.length;
-    const hLabels = hasLotes
-        ? ['Caja', 'Producto', 'Presentación', 'Cant.', 'Lote / Vence', 'OK']
-        : ['Caja', 'Producto', 'Presentación', 'Cant.', 'OK'];
+    // Agrupar por producto: una fila por producto con rango E1–E5 y lotes sumados
+    const groups = [];
+    const groupMap = new Map();
+    especiales.forEach(e => {
+        const key = e.product_name ?? '?';
+        if (!groupMap.has(key)) {
+            const g = { product_name: key, presentacion_tipo: e.presentacion_tipo, labels: [], lotsAgg: new Map() };
+            groupMap.set(key, g);
+            groups.push(g);
+        }
+        const g = groupMap.get(key);
+        g.labels.push(e.label ?? '');
+        const lot = e.lotes?.[0];
+        if (lot) {
+            const lotKey = lot.lote ?? '__nolote__';
+            const prev = g.lotsAgg.get(lotKey);
+            if (prev) prev.take = (prev.take ?? 0) + 1;
+            else g.lotsAgg.set(lotKey, { lote: lot.lote, fecha_vencimiento: lot.fecha_vencimiento, take: 1 });
+        }
+    });
 
+    // Mismo formato exacto que la tabla principal — solo "Caja" reemplaza "Laboratorio"
     const titleRow = [
-        { text: 'CAJAS ADICIONALES', colSpan: nCols, fillColor: '#ede9fe', bold: true, fontSize: 7, color: '#5b21b6', margin: [4, 3, 4, 3], alignment: 'center' },
-        ...Array(nCols - 1).fill({}),
+        { text: 'CAJAS ADICIONALES', colSpan: 6, fillColor: '#ede9fe', bold: true, fontSize: 7, color: '#5b21b6', margin: [4, 3, 4, 3], alignment: 'center' },
+        {}, {}, {}, {}, {},
     ];
-    const headerRow = hLabels.map((label, i) => ({
+    const headerRow = ['Caja', 'Producto', 'Presentación', 'Cant.', 'Lote', 'OK'].map((label, i) => ({
         text: label, fillColor: '#ede9fe', bold: true, fontSize: 6.5, color: '#5b21b6',
-        alignment: (i === 3 || i === nCols - 1) ? 'center' : 'left',
-        margin: [i === 0 ? 4 : 0, 2, 3, 2],
+        alignment: (i === 3 || i === 5) ? 'center' : 'left',
+        margin: [0, 2, 0, 2],
     }));
 
-    const bodyRows = especiales.map((e, idx) => {
-        const bg     = idx % 2 === 1 ? '#f5f3ff' : '#ffffff';
-        const boxCell     = { text: e.label ?? '—', fontSize: 8, bold: true, color: '#7c3aed', fillColor: bg, alignment: 'center', margin: [2, 2, 2, 2], verticalAlignment: 'middle' };
-        const productCell = { text: e.product_name ?? '—', fontSize: 8, color: '#333', fillColor: bg, margin: [0, 2, 3, 2], verticalAlignment: 'middle' };
-        const presCell    = { text: e.presentacion_tipo || '—', fontSize: 7, color: '#333', fillColor: bg, margin: [0, 2, 3, 2], verticalAlignment: 'middle' };
-        const qtyCell     = { text: '1', fontSize: 9.5, bold: true, alignment: 'center', fillColor: bg, margin: [0, 2, 0, 2], verticalAlignment: 'middle' };
-        const checkCell   = { fillColor: bg, alignment: 'center', margin: [0, 0, 0, 0], verticalAlignment: 'middle', canvas: [{ type: 'rect', x: 0, y: 0, w: 8, h: 8, lineWidth: 1, lineColor: '#555' }] };
-        if (hasLotes) {
-            return [boxCell, productCell, presCell, qtyCell, loteStackNode(e.lotes ?? [], bg), checkCell];
-        }
-        return [boxCell, productCell, presCell, qtyCell, checkCell];
+    const bodyRows = groups.map((g, idx) => {
+        const bg    = idx % 2 === 1 ? '#f5f3ff' : '#ffffff';
+        const qty   = g.labels.length;
+        const range = qty === 1 ? g.labels[0] : `${g.labels[0]}–${g.labels[qty - 1]}`;
+        return [
+            { text: range, fontSize: 7.5, bold: true, color: '#7c3aed', fillColor: bg, alignment: 'center', margin: [2, 2, 2, 2], verticalAlignment: 'middle' },
+            { text: g.product_name, fontSize: 8.5, fillColor: bg, margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
+            { text: g.presentacion_tipo || '—', fontSize: 7, color: '#333', fillColor: bg, margin: [0, 2, 3, 2], verticalAlignment: 'middle' },
+            { text: String(qty), fontSize: 9.5, bold: true, alignment: 'center', fillColor: bg, margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
+            loteStackNode([...g.lotsAgg.values()], bg),
+            { fillColor: bg, alignment: 'center', margin: [0, 0, 0, 0], verticalAlignment: 'middle', canvas: [{ type: 'rect', x: 0, y: 0, w: 8, h: 8, lineWidth: 1, lineColor: '#555' }] },
+        ];
     });
 
     return {
         margin: [0, 6, 0, 0],
-        table: { widths, body: [titleRow, headerRow, ...bodyRows] },
+        table: { widths: COL_WIDTHS, body: [titleRow, headerRow, ...bodyRows] },
         layout: {
             hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 0.8 : i === 2 ? 1.2 : 0.5),
             vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),

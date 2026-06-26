@@ -10,6 +10,7 @@ import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
+import { tokenMatch } from '../utils/searchUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 
@@ -306,9 +307,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
     const currentMonthStr = now.toISOString().slice(0, 7); // YYYY-MM
 
     const resolvedMatchesTerm = useCallback((r, s) =>
-        String(r.invoice?.erp_invoice_id || '').includes(s) ||
-        r.invoice?.correlativo?.toLowerCase().includes(s) ||
-        r.invoice?.cliente?.toLowerCase().includes(s),
+        tokenMatch(s, String(r.invoice?.erp_invoice_id || ''), r.invoice?.correlativo, r.invoice?.cliente),
     []);
 
     const resolvedThisMonth = useMemo(() =>
@@ -318,17 +317,15 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
     const resolvedDisplay = useMemo(() => {
         const base = showAllResolved ? resolved : resolvedThisMonth;
         if (!searchTerm) return base;
-        const s = searchTerm.toLowerCase();
-        return base.filter(r => resolvedMatchesTerm(r, s));
+        return base.filter(r => resolvedMatchesTerm(r, searchTerm));
     }, [resolved, resolvedThisMonth, showAllResolved, searchTerm, resolvedMatchesTerm]);
 
     useEffect(() => {
         if (!searchTerm) return;
-        const s = searchTerm.toLowerCase();
-        const matchesAny = resolved.some(r => resolvedMatchesTerm(r, s));
+        const matchesAny = resolved.some(r => resolvedMatchesTerm(r, searchTerm));
         if (!matchesAny) return;
         setShowHistorial(true);
-        const inMonth = resolvedThisMonth.some(r => resolvedMatchesTerm(r, s));
+        const inMonth = resolvedThisMonth.some(r => resolvedMatchesTerm(r, searchTerm));
         if (!inMonth) setShowAllResolved(true);
         setTimeout(() => resolvedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
     }, [searchTerm]);
@@ -355,12 +352,9 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
 
     const filtered = useMemo(() => {
         const active = rows.filter(r => !resolvedIds.has(r.id));
-        const list = !searchTerm ? active : active.filter(r => {
-            const s = searchTerm.toLowerCase();
-            return r.correlativo?.toLowerCase().includes(s) ||
-                r.cliente?.toLowerCase().includes(s) ||
-                r.codigo_generacion?.toLowerCase().includes(s);
-        });
+        const list = !searchTerm ? active : active.filter(r =>
+            tokenMatch(searchTerm, r.correlativo, r.cliente, r.codigo_generacion)
+        );
         const ccf  = list.filter(r => r.tipo_documento === 'CCF').sort((a, b) => a.fecha.localeCompare(b.fecha));
         const rest = list.filter(r => r.tipo_documento !== 'CCF').sort((a, b) => a.fecha.localeCompare(b.fecha));
         return [...ccf, ...rest];
@@ -696,9 +690,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const currentMonthStr = svNow().toISOString().slice(0, 7);
 
     const resolvedMatchesTerm = useCallback((r, s) =>
-        String(r.erp_invoice_id || '').includes(s) ||
-        r.correlativo?.toLowerCase().includes(s) ||
-        r.cliente?.toLowerCase().includes(s),
+        tokenMatch(s, String(r.erp_invoice_id || ''), r.correlativo, r.cliente),
     []);
 
     const resolvedThisMonth = useMemo(() =>
@@ -711,17 +703,15 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const resolvedDisplay = useMemo(() => {
         const base = showAllResolved ? resolved : resolvedThisMonth;
         if (!searchTerm) return base;
-        const s = searchTerm.toLowerCase();
-        return base.filter(r => resolvedMatchesTerm(r, s));
+        return base.filter(r => resolvedMatchesTerm(r, searchTerm));
     }, [resolved, resolvedThisMonth, showAllResolved, searchTerm, resolvedMatchesTerm]);
 
     useEffect(() => {
         if (!searchTerm) return;
-        const s = searchTerm.toLowerCase();
-        const matchesAny = resolved.some(r => resolvedMatchesTerm(r, s));
+        const matchesAny = resolved.some(r => resolvedMatchesTerm(r, searchTerm));
         if (!matchesAny) return;
         setShowResolved(true);
-        const inMonth = resolvedThisMonth.some(r => resolvedMatchesTerm(r, s));
+        const inMonth = resolvedThisMonth.some(r => resolvedMatchesTerm(r, searchTerm));
         if (!inMonth) setShowAllResolved(true);
         setTimeout(() => resolvedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
     }, [searchTerm]);
@@ -828,11 +818,8 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const filtered = useMemo(() => {
         let list = rows;
         if (searchTerm) {
-            const s = searchTerm.toLowerCase();
             list = list.filter(r =>
-                r.correlativo?.toLowerCase().includes(s) ||
-                r.cliente?.toLowerCase().includes(s) ||
-                r.erp_invoice_id?.toString().includes(s)
+                tokenMatch(searchTerm, r.correlativo, r.cliente, String(r.erp_invoice_id || ''))
             );
         }
         // CCF first, then by branch + fecha
@@ -1634,12 +1621,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
     const pendingFiltered = useMemo(() => {
         const base = pending.filter(r => !confirmedIds.has(r.id));
         if (!searchTerm) return base;
-        const s = searchTerm.toLowerCase();
-        return base.filter(r =>
-            r.correlativo?.toLowerCase().includes(s) ||
-            r.cliente?.toLowerCase().includes(s) ||
-            r.tipo_pago?.toLowerCase().includes(s)
-        );
+        return base.filter(r => tokenMatch(searchTerm, r.correlativo, r.cliente, r.tipo_pago));
     }, [pending, confirmedIds, searchTerm]);
 
     const byTipo = useMemo(() => {

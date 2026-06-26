@@ -14,6 +14,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import PhotoEditorModal from '../../components/common/PhotoEditorModal';
+import { normSearch } from '../../utils/searchUtils';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
 import SrsEnriquecerModal from '../../components/srs/SrsEnriquecerModal';
 
@@ -2541,8 +2542,7 @@ export default function TabCatalogo({
                 .range((pg - 1) * ps, pg * ps - 1);
 
             if (q.trim()) {
-                // PostgREST uses comma as OR separator — strip it to avoid parse error
-                const term = q.trim().replace(/,/g, ' ');
+                const term = (normSearch(q) || q.trim()).replace(/,/g, ' ');
                 qb = qb.or(`nombre.ilike.%${term}%,principio_activo.ilike.%${term}%`);
             }
             if (fa === 'activos') qb = qb.eq('activo', true);

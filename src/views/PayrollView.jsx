@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore } from '../store/staffStore';
+import { tokenMatch } from '../utils/searchUtils';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -423,7 +424,7 @@ const PayrollView = ({ openModal }) => {
         payrollEntries.filter(e => {
             const emp = e.employee || {};
             if (filterBranch && String(emp.branchId || emp.branch_id) !== filterBranch) return false;
-            if (searchTerm && !(emp.name || '').toLowerCase().includes(searchTerm.toLowerCase())) return false;
+            if (searchTerm && !tokenMatch(searchTerm, emp.name)) return false;
             return true;
         }),
     [payrollEntries, filterBranch, searchTerm]);

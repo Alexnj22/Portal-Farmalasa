@@ -3,6 +3,7 @@ import { Search, Loader2, AlertTriangle, CheckCircle2, X, Receipt, Clock, Eye, A
 import { supabase } from '../../supabaseClient';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
+import { tokenMatch } from '../../utils/searchUtils';
 
 const GRACE_DAYS = 3;
 
@@ -340,14 +341,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
 
   const filtered = invoices.filter(inv => {
     if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (
-      String(inv.correlativo || '').toLowerCase().includes(q) ||
-      String(inv.cliente || '').toLowerCase().includes(q) ||
-      String(fmtDate(inv.fecha)).toLowerCase().includes(q) ||
-      String(inv.fecha || '').includes(q) ||
-      String(Number(inv.total || 0).toFixed(2)).includes(q)
-    );
+    return tokenMatch(search, inv.correlativo, inv.cliente, fmtDate(inv.fecha), inv.fecha, String(Number(inv.total || 0).toFixed(2)));
   });
 
   if (!activeBranchId) {

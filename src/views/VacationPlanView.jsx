@@ -11,6 +11,7 @@ import { useToastStore } from '../store/toastStore';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import RangeDatePicker from '../components/common/RangeDatePicker';
+import { tokenMatch } from '../utils/searchUtils';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate  = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -612,10 +613,9 @@ const VacationPlanView = () => {
 
     // Sort filtered plans by branch → role → start_date
     const filtered = useMemo(() => {
-        const q = searchTerm.trim().toLowerCase();
         return vacationPlans
             .filter(p => statusFilter === 'ALL' || p.status === statusFilter)
-            .filter(p => !q || (p.employee?.name || '').toLowerCase().includes(q) || (p.branch?.name || '').toLowerCase().includes(q))
+            .filter(p => !searchTerm.trim() || tokenMatch(searchTerm, p.employee?.name, p.branch?.name))
             .slice()
             .sort((a, b) => {
                 const brA = a.branch?.name || '';

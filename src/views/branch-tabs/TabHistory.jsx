@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Filter, X, Search, Download, Clock, FileText, Users, Eye, FileOutput, Printer, CheckCircle2, AlertTriangle, Settings, Building2, Wallet, Calendar, ChevronRight, Sparkles, Activity, ArrowLeft } from 'lucide-react';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import { tokenMatch } from '../../utils/searchUtils';
 // 🚨 IMPORTACIÓN ESTANDARIZADA
 import { supabase } from '../../supabaseClient'; 
 
@@ -123,14 +124,11 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
         }
 
         if (searchQuery.trim() !== '') {
-            const query = searchQuery.toLowerCase();
             result = result.filter(item => {
-                const actionLabel = getActionLabel(item).toLowerCase();
-                let itemName = (item.name || '').toLowerCase();
                 const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
-                if (parsedDetails.timeline_title) itemName = parsedDetails.timeline_title.toLowerCase();
-                const actorName = (item.user_name || item.user_email || item.actor_name || 'Sistema').toLowerCase();
-                return actionLabel.includes(query) || itemName.includes(query) || actorName.includes(query);
+                const itemName = parsedDetails.timeline_title || item.name || '';
+                const actorName = item.user_name || item.user_email || item.actor_name || 'Sistema';
+                return tokenMatch(searchQuery, getActionLabel(item), itemName, actorName);
             });
         }
         return result;

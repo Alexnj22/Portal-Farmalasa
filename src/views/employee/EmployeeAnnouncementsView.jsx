@@ -3,6 +3,7 @@ import { Bell, Globe, Building2, User, CheckCircle2, Flame, Clock, Search, X, Ch
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import GlassViewLayout from '../../components/GlassViewLayout';
+import { tokenMatch } from '../../utils/searchUtils';
 
 const TABS = [
     { key: 'UNREAD', label: 'Sin Leer' },
@@ -666,10 +667,7 @@ const EmployeeAnnouncementsView = () => {
         if (typeFilter === 'URGENT') list = list.filter(a => a.priority === 'URGENT');
         else if (typeFilter !== 'ALL') list = list.filter(a => a.targetType === typeFilter);
         if (searchQuery.trim()) {
-            const q = searchQuery.toLowerCase();
-            list = list.filter(a =>
-                a.title?.toLowerCase().includes(q) || a.message?.toLowerCase().includes(q)
-            );
+            list = list.filter(a => tokenMatch(searchQuery, a.title, a.message));
         }
         return list;
     }, [byTab, typeFilter, searchQuery]);

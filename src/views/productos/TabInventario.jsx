@@ -7,6 +7,7 @@ import {
 import LiquidSelect from '../../components/common/LiquidSelect';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import { normSearch } from '../../utils/searchUtils';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4',
@@ -122,7 +123,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     p_proximos:  fSix,
                     p_lab_id:    labId,
                     p_categoria: catId,
-                    p_search:    q.trim() || null,
+                    p_search:    normSearch(q) || null,
                     p_sort:      sf,
                     p_sort_dir:  sd,
                     p_limit:     ps,
@@ -132,13 +133,13 @@ export default function TabInventario({ searchTerm = '' }) {
                     p_erp_id:    erpId,
                     p_lab_id:    labId,
                     p_categoria: catId,
-                    p_search:    q.trim() || null,
+                    p_search:    normSearch(q) || null,
                 }),
                 supabase.rpc('inventory_inversion', {
                     p_erp_id:    erpId,
                     p_lab_id:    labId,
                     p_categoria: catId,
-                    p_search:    q.trim() || null,
+                    p_search:    normSearch(q) || null,
                 }),
             ]);
             if (rid !== loadRef.current) return;

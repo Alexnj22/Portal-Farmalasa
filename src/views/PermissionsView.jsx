@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ConfirmModal from '../components/common/ConfirmModal';
+import { tokenMatch } from '../utils/searchUtils';
 
 // ─── Módulos del sistema agrupados por función ─────────────────────────────
 const MODULE_GROUPS = [
@@ -683,7 +684,7 @@ const PermissionsView = () => {
     }, [selectedRoleId, permissions]);
 
     const filteredRoles = useMemo(() =>
-        orgRoles.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase())),
+        orgRoles.filter(r => tokenMatch(searchQuery, r.name)),
     [orgRoles, searchQuery]);
 
     const copyOptions = orgRoles

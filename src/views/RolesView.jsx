@@ -13,6 +13,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { useToastStore } from '../store/toastStore';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { useAuth } from '../context/AuthContext';
+import { tokenMatch } from '../utils/searchUtils';
 
 const SCOPE_OPTIONS = [
     { value: 'BRANCH', label: 'Por Sucursal' },
@@ -161,7 +162,7 @@ const RolesView = ({ openModal }) => {
     };
 
     const filteredAndSortedRoles = useMemo(() => {
-        const filtered = roles.filter(role => role.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        const filtered = roles.filter(role => tokenMatch(searchQuery, role.name));
         return filtered.sort((a, b) => {
             const depthA = getRoleDepth(a.id);
             const depthB = getRoleDepth(b.id);

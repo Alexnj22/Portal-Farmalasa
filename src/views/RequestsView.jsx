@@ -10,6 +10,7 @@ import {
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
+import { tokenMatch } from '../utils/searchUtils';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
 
@@ -354,7 +355,7 @@ const RequestsView = () => {
         if (statusFilter === 'PENDING'  && !(r.status === 'PENDING'  && assignedToMe))  return false;
         if (statusFilter === 'APPROVED' && !(r.status === 'APPROVED' && processedByMe)) return false;
         if (statusFilter === 'REJECTED' && !(r.status === 'REJECTED' && processedByMe)) return false;
-        if (rawSearch.trim() && !(r.employee?.name || '').toLowerCase().includes(rawSearch.trim().toLowerCase())) return false;
+        if (rawSearch.trim() && !tokenMatch(rawSearch, r.employee?.name)) return false;
         return true;
     });
 

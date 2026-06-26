@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import ConfirmModal from '../components/common/ConfirmModal';
+import { tokenMatch } from '../utils/searchUtils';
 import AlertModal from '../components/common/AlertModal';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
@@ -508,12 +509,10 @@ const AnnouncementsView = ({ openModal }) => {
         : baseList;
 
     if (!debouncedSearchTerm.trim()) return branchFiltered;
-    const query = debouncedSearchTerm.toLowerCase();
 
     return branchFiltered.filter(a => {
-      const matchesBasic = a.title.toLowerCase().includes(query) || a.message.toLowerCase().includes(query) || (a.badgeText && a.badgeText.toLowerCase().includes(query));
-      if (matchesBasic) return true;
-      if (Array.isArray(a.audience)) return a.audience.some(emp => emp.name && emp.name.toLowerCase().includes(query));
+      if (tokenMatch(debouncedSearchTerm, a.title, a.message, a.badgeText)) return true;
+      if (Array.isArray(a.audience)) return a.audience.some(emp => emp.name && tokenMatch(debouncedSearchTerm, emp.name));
       return false;
     });
   }, [processedAnnouncements, listTab, debouncedSearchTerm, isBranchScoped, user?.branchId]);
@@ -527,10 +526,9 @@ const AnnouncementsView = ({ openModal }) => {
   }, [currentList, currentPage]);
 
   const filteredEmployeeSearch = useMemo(() => {
-    const q = empSearch.trim().toLowerCase();
-    if (!q) return [];
+    if (!empSearch.trim()) return [];
     return (employees || [])
-      .filter((e) => e?.name?.toLowerCase().includes(q))
+      .filter((e) => e?.name && tokenMatch(empSearch, e.name))
       .filter((e) => !selectedEmployees.includes(String(e.id)))
       .slice(0, 30);
   }, [empSearch, employees, selectedEmployees]);

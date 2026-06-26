@@ -16,7 +16,7 @@ import LiquidAvatar from '../components/common/LiquidAvatar';
 import PeriodPicker from '../components/common/PeriodPicker';
 import { DataTable, DataRow, DataCell, useExpandStyle } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
-import { tokenMatch } from '../utils/searchUtils';
+import { tokenMatch, normSearch } from '../utils/searchUtils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -1371,7 +1371,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 p_fini:      fini,
                 p_ffin:      ffin,
                 p_branch_id: filterBranch ? Number(filterBranch) : null,
-                ...(searchTerm ? { p_search: searchTerm } : {}),
+                ...(searchTerm ? { p_search: normSearch(searchTerm) || searchTerm } : {}),
             };
             const { data: presData, error: fetchErr } = await supabase
                 .rpc('get_product_sales_agg', rpcParams)

@@ -5,10 +5,12 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.397';
+export const APP_VERSION = '2.2.398';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.398 — fix(pdf): Cajas Adicionales muestra subtexto und. cuando tiene_dispatch_label=true; propaga dispF a buildEspecialesBlock
+// v2.2.397 — fix(pdf): isLabel usa tiene_dispatch_label=true en vez de CUSTOM_LABELS; agrega dispatch_rules al ITEMS_SELECT
 // v2.2.388 — fix(pdf): revierte header a 3 filas; origen+destino en 1 línea sin salto (·); logo margin-right 10; farmacia margin-top 5 para centrado vertical
 // v2.2.387 — fix(pdf): header — fusiona título+origen→destino en 1 fila (headerRows 3→2); logo margen derecho 7→10; nombre farmacia margin-top para centrado vertical con logo
 // v2.2.386 — feat(pdf): Cajas Adicionales agrupadas por producto — una fila con rango E1–E5 + total cajas + lotes sumados; mismo ancho de columnas que tabla principal

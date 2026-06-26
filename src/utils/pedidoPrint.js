@@ -292,7 +292,7 @@ function buildEspecialesBlock(especiales) {
     especiales.forEach(e => {
         const key = e.product_name ?? '?';
         if (!groupMap.has(key)) {
-            const g = { product_name: key, presentacion_tipo: e.presentacion_tipo, labels: [], lotsAgg: new Map() };
+            const g = { product_name: key, presentacion_tipo: e.presentacion_tipo, labels: [], lotsAgg: new Map(), dispF: e.dispF ?? 1, tiene_dispatch_label: e.tiene_dispatch_label === true };
             groupMap.set(key, g);
             groups.push(g);
         }
@@ -326,7 +326,9 @@ function buildEspecialesBlock(especiales) {
             { text: range, fontSize: 7.5, bold: true, color: '#7c3aed', fillColor: bg, alignment: 'center', margin: [2, 2, 2, 2], verticalAlignment: 'middle' },
             { text: g.product_name, fontSize: 8.5, fillColor: bg, margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
             { text: g.presentacion_tipo || '—', fontSize: 7, color: '#333', fillColor: bg, margin: [0, 2, 3, 2], verticalAlignment: 'middle' },
-            { text: String(qty), fontSize: 9.5, bold: true, alignment: 'center', fillColor: bg, margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
+            g.tiene_dispatch_label
+                ? { stack: [{ text: String(qty), fontSize: 9.5, bold: true, alignment: 'center' }, { text: `(${qty * g.dispF} und.)`, fontSize: 6, color: '#666', alignment: 'center', margin: [0, 1, 0, 0] }], fillColor: bg, margin: [0, 2, 0, 2], verticalAlignment: 'middle' }
+                : { text: String(qty), fontSize: 9.5, bold: true, alignment: 'center', fillColor: bg, margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
             loteStackNode([...g.lotsAgg.values()], bg),
             { fillColor: bg, alignment: 'center', margin: [0, 0, 0, 0], verticalAlignment: 'middle', canvas: [{ type: 'rect', x: 0, y: 0, w: 8, h: 8, lineWidth: 1, lineColor: '#555' }] },
         ];
@@ -598,7 +600,7 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
                     for (const lot of lotPool) {
                         if (lot._rem > 0) { boxLot = { lote: lot.lote, fecha_vencimiento: lot.fecha_vencimiento, take: 1 }; lot._rem--; break; }
                     }
-                    return { label: `E${eCounter++}`, product_name: row.product_name ?? '?', presentacion_tipo: dispTipo, lotes: boxLot ? [boxLot] : [] };
+                    return { label: `E${eCounter++}`, product_name: row.product_name ?? '?', presentacion_tipo: dispTipo, dispF, tiene_dispatch_label: row.tiene_dispatch_label === true, lotes: boxLot ? [boxLot] : [] };
                 });
             });
 
@@ -740,7 +742,7 @@ export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, t
                     for (const lot of lotPool) {
                         if (lot._rem > 0) { boxLot = { lote: lot.lote, fecha_vencimiento: lot.fecha_vencimiento, take: 1 }; lot._rem--; break; }
                     }
-                    return { label: `E${eCounter++}`, product_name: r.products?.nombre ?? '?', presentacion_tipo: dispTipo, lotes: boxLot ? [boxLot] : [] };
+                    return { label: `E${eCounter++}`, product_name: r.products?.nombre ?? '?', presentacion_tipo: dispTipo, dispF, tiene_dispatch_label: r.tiene_dispatch_label === true, lotes: boxLot ? [boxLot] : [] };
                 });
             });
 

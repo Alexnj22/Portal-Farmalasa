@@ -774,7 +774,10 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                         <td className="py-1 text-right text-[10px] whitespace-nowrap hidden sm:table-cell text-slate-400">{fmt(it.precio_unitario)}</td>
                                                                         <td className="py-1 text-right whitespace-nowrap">
                                                                             {tier ? (
-                                                                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${tier.color}`}>{tier.label}</span>
+                                                                                <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 ${tier.color}`}>
+                                                                                    {tier.label}
+                                                                                    {tier.num != null && <span className="opacity-50 font-bold">{tier.num}</span>}
+                                                                                </span>
                                                                             ) : noPrice ? (
                                                                                 <span className="text-[9px] text-slate-300">—</span>
                                                                             ) : null}
@@ -1146,13 +1149,13 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 
 // ─── Tab: Productos ───────────────────────────────────────────────────────────
 const DRILL_TIERS = [
-    { key: 'vip',         label: 'VIP',     color: 'bg-violet-100 text-violet-700' },
-    { key: 'clinica',     label: 'Clínica', color: 'bg-sky-100 text-sky-700' },
-    { key: 'mayoreo',     label: 'Mayoreo', color: 'bg-orange-100 text-orange-700' },
-    { key: 'premium',     label: 'Premium', color: 'bg-amber-100 text-amber-700' },
-    { key: 'descuento_1', label: 'Desc.',   color: 'bg-emerald-100 text-emerald-700' },
-    { key: 'precio_7',    label: 'P7',      color: 'bg-teal-100 text-teal-700' },
-    { key: 'vineta',      label: 'Vineta',  color: 'bg-slate-100 text-slate-600' },
+    { key: 'vip',         label: 'VIP',     color: 'bg-violet-100 text-violet-700',   num: 3 },
+    { key: 'clinica',     label: 'Clínica', color: 'bg-sky-100 text-sky-700',         num: 4 },
+    { key: 'mayoreo',     label: 'Mayoreo', color: 'bg-orange-100 text-orange-700',   num: 5 },
+    { key: 'premium',     label: 'Premium', color: 'bg-amber-100 text-amber-700',     num: 6 },
+    { key: 'descuento_1', label: 'Desc.',   color: 'bg-emerald-100 text-emerald-700', num: 2 },
+    { key: 'precio_7',    label: 'P7',      color: 'bg-teal-100 text-teal-700',       num: 7 },
+    { key: 'vineta',      label: 'Viñeta',  color: 'bg-slate-100 text-slate-600',     num: 1 },
 ];
 const DRILL_TIER_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];
 const PAGO_STYLE = {
@@ -1291,8 +1294,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const [page, setPage]           = useState(1);
     const [pageSize, setPageSize]   = useState(50);
     const [expandedKey, setExpandedKey]   = useState(null);
-    const [drillData,   setDrillData]     = useState([]);
-    const [drillPage,   setDrillPage]     = useState(1);
+    const [drillData,     setDrillData]     = useState([]);
+    const [drillPage,     setDrillPage]     = useState(1);
+    const [drillPageSize, setDrillPageSize] = useState(25);
 
     useEffect(() => { if (privacyMode) setExpandedKey(null); }, [privacyMode]);
     const [drillLoading, setDrillLoading] = useState(false);
@@ -1497,8 +1501,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 const resolvedHistId = histById ? idPres
                     : histByName ? (histNameMap.get(saleKey) || [])[0]?.id_presentacion
                     : idPres;
-                // RPC normalizes everything to s/IVA; multiply back for non-CCF display
-                const isCCFLike      = row.tipo_documento === 'CCF' || row.tipo_documento === 'COF';
+                // RPC normalizes everything to s/IVA; multiply back for non-CCF display (COF carries IVA)
+                const isCCFLike      = row.tipo_documento === 'CCF';
                 const precio_display = isCCFLike ? parseFloat(row.precio_unitario) : parseFloat(row.precio_unitario) * 1.13;
                 const neto_display   = isCCFLike ? parseFloat(row.neto)           : parseFloat(row.neto)           * 1.13;
                 const tier        = detectTier(precio_display, histPrices ?? currPrices, allowedDrillTiers);
@@ -1855,13 +1859,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
                                                         {/* Individual sales table */}
                                                         {drillData.length > 0 && (() => {
-                                                            const DPSIZE   = 20;
                                                             const docOpts  = [...new Set(drillData.map(l => l.tipo_documento).filter(Boolean))];
                                                             const drillFactorMap = Object.fromEntries((r.presentaciones || []).map(p => [p.presentacion, p.factor || 1]));
                                                             const totCant  = filteredDrill.reduce((s, l) => s + parseFloat(l.cantidad || 0) * (drillFactorMap[l.presentacion] || 1), 0);
                                                             const totNeto  = filteredDrill.reduce((s, l) => s + parseFloat(l.neto_display ?? l.neto ?? 0), 0);
-                                                            const drillTotalPages = Math.max(1, Math.ceil(filteredDrill.length / DPSIZE));
-                                                            const paginatedDrill  = filteredDrill.slice((drillPage - 1) * DPSIZE, drillPage * DPSIZE);
+                                                            const drillTotalPages = Math.max(1, Math.ceil(filteredDrill.length / drillPageSize));
+                                                            const paginatedDrill  = filteredDrill.slice((drillPage - 1) * drillPageSize, drillPage * drillPageSize);
                                                             const DH = ({ col, label, right }) => {
                                                                 const active = drillSortCol === col;
                                                                 return (
@@ -1994,7 +1997,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                     <span className="text-[11px] font-semibold text-slate-700">{fmt(line.precio_display)}</span>
                                                                                                     {line.tier && (
                                                                                                         <div className="relative group/tier inline-flex items-center gap-1">
-                                                                                                            <span className={`text-[9px] font-black px-1.5 py-[2px] rounded-md ${line.tier.color}`}>{line.tier.label}</span>
+                                                                                                            <span className={`text-[9px] font-black px-1.5 py-[2px] rounded-md inline-flex items-center gap-1 ${line.tier.color}`}>
+                                                                                                                {line.tier.label}
+                                                                                                                {line.tier.num != null && <span className="opacity-50 font-bold">{line.tier.num}</span>}
+                                                                                                            </span>
                                                                                                             {line.tierChanged && (
                                                                                                                 <>
                                                                                                                     <span className="text-amber-500 text-[11px] cursor-help leading-none">⚠</span>
@@ -2032,14 +2038,17 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                         </table>
                                                                     </div>
                                                                     {drillTotalPages > 1 && (
-                                                                        <TablePagination
-                                                                            pageSize={DPSIZE}
-                                                                            page={drillPage}
-                                                                            totalPages={drillTotalPages}
-                                                                            onPageChange={setDrillPage}
-                                                                            total={filteredDrill.length}
-                                                                            unit="ventas"
-                                                                        />
+                                                                        <div className="px-2 pt-2">
+                                                                            <TablePagination
+                                                                                pageSize={drillPageSize}
+                                                                                onPageSizeChange={s => { setDrillPageSize(s); setDrillPage(1); }}
+                                                                                page={drillPage}
+                                                                                totalPages={drillTotalPages}
+                                                                                onPageChange={setDrillPage}
+                                                                                total={filteredDrill.length}
+                                                                                unit="ventas"
+                                                                            />
+                                                                        </div>
                                                                     )}
                                                                 </div>
                                                             );

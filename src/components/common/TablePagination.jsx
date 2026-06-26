@@ -155,6 +155,7 @@ export default function TablePagination({
         <div ref={rootRef} className="flex items-center justify-between gap-3 flex-wrap">
 
             {/* Page-size pills */}
+            {onPageSizeChange && (
             <div className="flex items-center gap-0.5 p-1 rounded-2xl bg-white/60 backdrop-blur-md border border-white/80 shadow-[0_2px_8px_rgba(0,82,204,0.07)]">
                 {PAGE_SIZE_OPTIONS.map(size => (
                     <motion.button
@@ -173,6 +174,7 @@ export default function TablePagination({
                     </motion.button>
                 ))}
             </div>
+            )}
 
             {/* Navigation */}
             <SmartPagination page={page} total={totalPages} onChange={(p) => navigate(() => onPageChange(p))} />

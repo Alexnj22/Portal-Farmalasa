@@ -1292,6 +1292,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const [pageSize, setPageSize]   = useState(50);
     const [expandedKey, setExpandedKey]   = useState(null);
     const [drillData,   setDrillData]     = useState([]);
+    const [drillPage,   setDrillPage]     = useState(1);
 
     useEffect(() => { if (privacyMode) setExpandedKey(null); }, [privacyMode]);
     const [drillLoading, setDrillLoading] = useState(false);
@@ -1311,6 +1312,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const handleDrillSort = (col) => {
         if (drillSortCol === col) setDrillSortDir(d => d === 'asc' ? 'desc' : 'asc');
         else { setDrillSortCol(col); setDrillSortDir('desc'); }
+        setDrillPage(1);
     };
 
     useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, searchTerm, pageSize]);
@@ -1322,11 +1324,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         drillCache.current.clear();
     }, [fini, ffin, filterBranch]);
 
-    // Reset drill sort/filter when a new product is expanded
+    // Reset drill sort/filter/page when a new product is expanded
     useEffect(() => {
         setDrillSortCol('fecha'); setDrillSortDir('desc');
         setDrillFilters({ tipodoc: '', changed: false });
         setDrillMonthly([]);
+        setDrillPage(1);
     }, [expandedKey]);
 
     const fetchProductos = useCallback(async (isRetry = false) => {
@@ -1494,8 +1497,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 const resolvedHistId = histById ? idPres
                     : histByName ? (histNameMap.get(saleKey) || [])[0]?.id_presentacion
                     : idPres;
-                const tier        = detectTier(row.precio_unitario, histPrices ?? currPrices, allowedDrillTiers);
-                const currentTier = detectTier(row.precio_unitario, currPrices, allowedDrillTiers);
+                // RPC normalizes everything to s/IVA; multiply back for non-CCF display
+                const isCCFLike      = row.tipo_documento === 'CCF' || row.tipo_documento === 'COF';
+                const precio_display = isCCFLike ? parseFloat(row.precio_unitario) : parseFloat(row.precio_unitario) * 1.13;
+                const neto_display   = isCCFLike ? parseFloat(row.neto)           : parseFloat(row.neto)           * 1.13;
+                const tier        = detectTier(precio_display, histPrices ?? currPrices, allowedDrillTiers);
+                const currentTier = detectTier(precio_display, currPrices, allowedDrillTiers);
                 const tierChanged   = !!(histPrices && currPrices && tier?.label !== currentTier?.label);
                 const tierChangedAt = tierChanged
                     ? findFirstChangeSince(history || [], [idPres, resolvedHistId], row.fecha)
@@ -1509,7 +1516,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     id_presentacion:  idPres,
                     cantidad:         row.cantidad,
                     precio_unitario:  row.precio_unitario,
+                    precio_display,
                     neto:             row.neto,
+                    neto_display,
                     cliente:          row.cliente,
                     branch_id:        row.branch_id,
                     tipo_documento:   row.tipo_documento,
@@ -1846,10 +1855,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
                                                         {/* Individual sales table */}
                                                         {drillData.length > 0 && (() => {
+                                                            const DPSIZE   = 20;
                                                             const docOpts  = [...new Set(drillData.map(l => l.tipo_documento).filter(Boolean))];
                                                             const drillFactorMap = Object.fromEntries((r.presentaciones || []).map(p => [p.presentacion, p.factor || 1]));
                                                             const totCant  = filteredDrill.reduce((s, l) => s + parseFloat(l.cantidad || 0) * (drillFactorMap[l.presentacion] || 1), 0);
-                                                            const totNeto  = filteredDrill.reduce((s, l) => s + parseFloat(l.neto || 0), 0);
+                                                            const totNeto  = filteredDrill.reduce((s, l) => s + parseFloat(l.neto_display ?? l.neto ?? 0), 0);
+                                                            const drillTotalPages = Math.max(1, Math.ceil(filteredDrill.length / DPSIZE));
+                                                            const paginatedDrill  = filteredDrill.slice((drillPage - 1) * DPSIZE, drillPage * DPSIZE);
                                                             const DH = ({ col, label, right }) => {
                                                                 const active = drillSortCol === col;
                                                                 return (
@@ -1867,7 +1879,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                             const pill = (val, field, label) => {
                                                                 const active = drillFilters[field] === val;
                                                                 return (
-                                                                    <button key={val} onClick={() => setDrillFilters(f => ({ ...f, [field]: active ? '' : val }))}
+                                                                    <button key={val} onClick={() => { setDrillFilters(f => ({ ...f, [field]: active ? '' : val })); setDrillPage(1); }}
                                                                         className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] ${active ? 'bg-[#0052CC] text-white border-[#0052CC]' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300 hover:text-blue-600'}`}>
                                                                         {label ?? val}
                                                                     </button>
@@ -1885,14 +1897,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                 {changedCount > 0 && (
                                                                                     <>
                                                                                         {docOpts.length > 1 && <span className="text-slate-200">|</span>}
-                                                                                        <button onClick={() => setDrillFilters(f => ({ ...f, changed: !f.changed }))}
+                                                                                        <button onClick={() => { setDrillFilters(f => ({ ...f, changed: !f.changed })); setDrillPage(1); }}
                                                                                             className={`px-2 py-0.5 rounded-full text-[9px] font-black border transition-[background-color,border-color,color] flex items-center gap-1 ${drillFilters.changed ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-600 border-amber-300 hover:border-amber-500'}`}>
                                                                                             ⚠ precio cambió ({changedCount})
                                                                                         </button>
                                                                                     </>
                                                                                 )}
                                                                                 {hasAnyFilter && (
-                                                                                    <button onClick={() => setDrillFilters({ tipodoc: '', changed: false })}
+                                                                                    <button onClick={() => { setDrillFilters({ tipodoc: '', changed: false }); setDrillPage(1); }}
                                                                                         className="ml-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-red-50 text-red-400 hover:bg-red-500 hover:text-white border border-red-200 transition-colors">
                                                                                         ✕ limpiar
                                                                                     </button>
@@ -1909,7 +1921,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                         <span className="text-slate-200">·</span>
                                                                         <p className="text-[10px] font-black text-slate-600">{fmtQty(totCant)} <span className="font-medium text-slate-400">unidades</span></p>
                                                                         <span className="text-slate-200">·</span>
-                                                                        <p className="text-[11px] font-black text-emerald-700">{fmt(totNeto)} <span className="text-[9px] font-medium text-slate-400">total s/IVA</span></p>
+                                                                        <p className="text-[11px] font-black text-emerald-700">{fmt(totNeto)} <span className="text-[9px] font-medium text-slate-400">total</span></p>
                                                                     </div>
 
                                                                     {/* Table */}
@@ -1927,13 +1939,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     <DH col="presentacion"     label="Presentación" />
                                                                                     <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-slate-400 text-left whitespace-nowrap">Lote</th>
                                                                                     <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-slate-400 text-left whitespace-nowrap hidden lg:table-cell">Vence</th>
-                                                                                    <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-slate-400 text-left whitespace-nowrap">Precio</th>
+                                                                                    <DH col="precio_display"   label="P. Unit." right />
                                                                                     <DH col="cantidad"         label="Cant." right />
-                                                                                    <DH col="neto"             label="Total s/IVA" right />
+                                                                                    <DH col="neto_display"     label="Total" right />
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody className="divide-y divide-slate-100">
-                                                                                {filteredDrill.map((line, li) => {
+                                                                                {paginatedDrill.map((line, li) => {
                                                                                     const emp        = employees?.find(e => e.code === line.cod_vendedor);
                                                                                     const empName    = emp ? (emp.name || `${emp.first_names ?? ''} ${emp.last_names ?? ''}`.trim()) : (line.cod_vendedor || '—');
                                                                                     const empShort   = empName.split(' ').filter(Boolean).slice(0, 2).join(' ');
@@ -1977,30 +1989,33 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                     ? <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-600">{line.fecha_vencimiento}</span>
                                                                                                     : <span className="text-slate-300">—</span>}
                                                                                             </td>
-                                                                                            <td className="px-3 py-2 whitespace-nowrap">
-                                                                                                {line.tier && (
-                                                                                                    <div className="relative group/tier inline-flex items-center gap-1">
-                                                                                                        <span className={`text-[9px] font-black px-1.5 py-[2px] rounded-md ${line.tier.color}`}>{line.tier.label}</span>
-                                                                                                        {line.tierChanged && (
-                                                                                                            <>
-                                                                                                                <span className="text-amber-500 text-[11px] cursor-help leading-none">⚠</span>
-                                                                                                                <div className="absolute bottom-full left-0 mb-1.5 z-50 hidden group-hover/tier:block w-max max-w-[220px] bg-slate-800 text-white text-[10px] leading-relaxed rounded-xl px-3 py-2 shadow-xl pointer-events-none">
-                                                                                                                    <p className="font-black text-amber-300 mb-0.5">Precio cambió</p>
-                                                                                                                    {line.tierChangedAt && (
-                                                                                                                        <p className="text-slate-300">
-                                                                                                                            {new Date(line.tierChangedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                                                                                        </p>
-                                                                                                                    )}
-                                                                                                                    <p className="mt-1">Al vender: <strong className="text-white">{line.tier.label}</strong></p>
-                                                                                                                    <p>Hoy: <strong className="text-white">{line.currentTier?.label ?? '—'}</strong></p>
-                                                                                                                </div>
-                                                                                                            </>
-                                                                                                        )}
-                                                                                                    </div>
-                                                                                                )}
+                                                                                            <td className="px-3 py-2 text-right whitespace-nowrap">
+                                                                                                <div className="flex flex-col items-end gap-0.5">
+                                                                                                    <span className="text-[11px] font-semibold text-slate-700">{fmt(line.precio_display)}</span>
+                                                                                                    {line.tier && (
+                                                                                                        <div className="relative group/tier inline-flex items-center gap-1">
+                                                                                                            <span className={`text-[9px] font-black px-1.5 py-[2px] rounded-md ${line.tier.color}`}>{line.tier.label}</span>
+                                                                                                            {line.tierChanged && (
+                                                                                                                <>
+                                                                                                                    <span className="text-amber-500 text-[11px] cursor-help leading-none">⚠</span>
+                                                                                                                    <div className="absolute bottom-full right-0 mb-1.5 z-50 hidden group-hover/tier:block w-max max-w-[220px] bg-slate-800 text-white text-[10px] leading-relaxed rounded-xl px-3 py-2 shadow-xl pointer-events-none">
+                                                                                                                        <p className="font-black text-amber-300 mb-0.5">Precio cambió</p>
+                                                                                                                        {line.tierChangedAt && (
+                                                                                                                            <p className="text-slate-300">
+                                                                                                                                {new Date(line.tierChangedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                                                                                            </p>
+                                                                                                                        )}
+                                                                                                                        <p className="mt-1">Al vender: <strong className="text-white">{line.tier.label}</strong></p>
+                                                                                                                        <p>Hoy: <strong className="text-white">{line.currentTier?.label ?? '—'}</strong></p>
+                                                                                                                    </div>
+                                                                                                                </>
+                                                                                                            )}
+                                                                                                        </div>
+                                                                                                    )}
+                                                                                                </div>
                                                                                             </td>
                                                                                             <td className="px-3 py-2 text-right font-semibold text-slate-700 whitespace-nowrap">{fmtQty(line.cantidad)}</td>
-                                                                                            <td className="px-3 py-2 text-right font-black text-slate-800 whitespace-nowrap">{fmt(line.neto)}</td>
+                                                                                            <td className="px-3 py-2 text-right font-black text-slate-800 whitespace-nowrap">{fmt(line.neto_display)}</td>
                                                                                         </tr>
                                                                                     );
                                                                                 })}
@@ -2016,6 +2031,16 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                             </tfoot>
                                                                         </table>
                                                                     </div>
+                                                                    {drillTotalPages > 1 && (
+                                                                        <TablePagination
+                                                                            pageSize={DPSIZE}
+                                                                            page={drillPage}
+                                                                            totalPages={drillTotalPages}
+                                                                            onPageChange={setDrillPage}
+                                                                            total={filteredDrill.length}
+                                                                            unit="ventas"
+                                                                        />
+                                                                    )}
                                                                 </div>
                                                             );
                                                         })()}

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.409';
+export const APP_VERSION = '2.2.410';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.410 — feat(ventas/productos): drill-down tabla individual — (1) paginación de 20 filas con TablePagination; (2) precios c/IVA: precio unitario y total muestran valor con IVA para FAC/FCF, sin IVA para CCF/COF; (3) P. Unit. muestra número + badge de tier debajo; col "Total s/IVA"→"Total"; TablePagination oculta selector de tamaño cuando no hay onPageSizeChange
 // v2.2.409 — fix(minmax): tooltip "Suc. pendientes" quedaba pegado — race condition async: onMouseLeave limpiaba pero el await supabase.rpc() resolvía después y re-seteaba; fix con tooltipCancelRef que aborta el resultado si el mouse ya salió; crea CLAUDE.md con regla 1000 filas PostgREST siempre cargada
 // v2.2.408 — fix(minmax): CHUNK 5000→1000 — PostgREST corta a 1000 filas/request; revertir garantiza los ~4200 productos completos en 5 llamadas paralelas
 // v2.2.407 — fix(minmax): búsqueda 100% fiable — cuando filtro de categoría oculta resultados, mensaje claro + botón "Quitar filtros y ver resultado"

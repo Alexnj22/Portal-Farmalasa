@@ -178,22 +178,29 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
         ? { image: logo, width: 22, height: 22, margin: [0, 0, 10, 0] }
         : { text: '', width: 0 };
 
-    // Fila 1 — Logo+Farmacia | ORDEN DE DESPACHO | Código/Fecha — todo en UNA línea
+    // Fila 1 — Logo+Farmacia | ORDEN DE DESPACHO | Código/Fecha — todo en UNA línea, sin fila separada para el título
     const titleRow = [
         {
-            colSpan: 6, fillColor: '#eeeeee', margin: [6, 5, 6, 5],
+            colSpan: 6, fillColor: '#eeeeee', margin: [6, 6, 6, 6],
             columns: [
                 {
-                    columns: [logoCell, { text: farmaciaName, fontSize: 9, bold: true, color: '#111', margin: [0, 5, 0, 0] }],
-                    width: '38%',
+                    columns: [
+                        logoCell,
+                        { text: farmaciaName, fontSize: 9, bold: true, color: '#111', margin: [0, 5, 0, 0] },
+                    ],
+                    width: '36%',
                 },
-                { text: 'ORDEN DE DESPACHO', fontSize: 9, bold: true, color: '#222', alignment: 'center', margin: [0, 6, 0, 0], width: '*' },
                 {
+                    text: 'ORDEN DE DESPACHO',
+                    fontSize: 9, bold: true, color: '#222', alignment: 'center', margin: [0, 5, 0, 0],
+                    width: '*',
+                },
+                {
+                    width: '26%',
                     stack: [
                         { text: sec.codigo ?? '', fontSize: 7.5, bold: true, color: '#111', alignment: 'right' },
-                        { text: fecha, fontSize: 6.5, color: '#666', alignment: 'right' },
+                        { text: fecha, fontSize: 6.5, color: '#666', alignment: 'right', margin: [0, 1, 0, 0] },
                     ],
-                    width: '28%',
                 },
             ],
         },

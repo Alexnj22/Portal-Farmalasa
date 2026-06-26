@@ -1741,8 +1741,7 @@ function LabsPanel({ onClose, onChanged }) {
         setSaving(null);
     };
 
-    const q = search.trim().toLowerCase();
-    const visible = q ? labs.filter(l => l.nombre.toLowerCase().includes(q)) : labs;
+    const visible = search.trim() ? smartFilter(search, labs, l => [l.nombre]).results : labs;
     const hiddenCount = labs.filter(l => l.ocultar_en_minmax).length;
 
     // Glassmorphism tokens shared across elements

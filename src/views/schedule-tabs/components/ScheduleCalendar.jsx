@@ -1,6 +1,7 @@
 import React, { memo, useMemo, useEffect, useState } from 'react';
 import { CircleUserRound, Clock, Pencil, Flame, AlertTriangle, Building2, Plus, X as XIcon, Search } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { tokenMatch } from '../../../utils/searchUtils';
 
 import { getRoleTheme, getDayConflictLocal, getTimeBlocks, calculateEmployeeWeeklyHoursLocal, timeToMins } from '../../../utils/scheduleHelpers'; 
 
@@ -684,7 +685,7 @@ const ScheduleCalendar = memo(({
             if (String(e.branchId || e.branch_id) === String(currentBranchId)) return false;
             if (alreadyAdded.has(e.id)) return false;
             if ((e.status || '').toUpperCase() === 'INACTIVO') return false;
-            return (e.name || '').toLowerCase().includes(term);
+            return tokenMatch(coverageSearchTerm, e.name);
         }).slice(0, 8);
     }, [coverageSearchTerm, coverageEmpIds, allEmployees, currentBranchId]);
 

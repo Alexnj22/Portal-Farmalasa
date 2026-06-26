@@ -4,6 +4,7 @@ import {
     Calendar, ShieldCheck, Building2, Users, Clock, AlertCircle, Plus, Tags, Search, X, Edit3, Trash2, Layers, Sparkles
 } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
+import { tokenMatch } from '../../utils/searchUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 
 // ============================================================================
@@ -308,7 +309,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
         }
         if (searchTerm) {
             const lowerTerm = searchTerm.toLowerCase();
-            filtered = filtered.filter(doc => doc.title.toLowerCase().includes(lowerTerm));
+            filtered = filtered.filter(doc => tokenMatch(searchTerm, doc.title));
         }
         return filtered;
     };

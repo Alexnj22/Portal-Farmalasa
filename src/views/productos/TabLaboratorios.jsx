@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { tokenMatch } from '../../utils/searchUtils';
 import { useToastStore } from '../../store/toastStore';
 import {
     FlaskConical, MapPin, Check, X, Pencil, Loader2,
@@ -105,11 +106,10 @@ export default function TabLaboratorios({ searchTerm = '' }) {
 
     const filtered = searchTerm.trim()
         ? labs.filter(l => {
-            const q = searchTerm.toLowerCase();
-            if (l.nombre.toLowerCase().includes(q)) return true;
+            if (tokenMatch(searchTerm, l.nombre)) return true;
             const labLocs = locations[l.id] || {};
             return Object.values(labLocs).some(loc =>
-                Object.values(loc).some(v => (v || '').toLowerCase().includes(q))
+                Object.values(loc).some(v => tokenMatch(searchTerm, v))
             );
           })
         : labs;

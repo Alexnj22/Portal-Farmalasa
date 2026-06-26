@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { tokenMatch } from '../utils/searchUtils';
 import {
     Edit, Mail, Phone, Shield,
     Clock, FileText, Paperclip,
@@ -175,7 +176,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         }
         if (ausenciasSearch.trim()) {
             const q = ausenciasSearch.toLowerCase();
-            list = list.filter(ev => (ev.note || '').toLowerCase().includes(q) || (ev.type || '').toLowerCase().includes(q));
+            list = list.filter(ev => tokenMatch(ausenciasSearch, ev.note, ev.type));
         }
         return list;
     }, [timeline, ausenciasSelectedDay, ausenciasCalMonth, ausenciasSearch]);

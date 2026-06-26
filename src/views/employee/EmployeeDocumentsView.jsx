@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { tokenMatch } from '../../utils/searchUtils';
 import {
     FolderOpen, Search, X, ExternalLink, FileCheck, Stethoscope,
     FileText, Palmtree, RefreshCw, Filter, Calendar, ChevronDown, ChevronRight,
@@ -221,13 +222,12 @@ const EmployeeDocumentsView = () => {
         if (filterFrom)   list = list.filter(d => d.created_at.slice(0,10) >= filterFrom);
         if (filterTo)     list = list.filter(d => d.created_at.slice(0,10) <= filterTo);
         if (search.trim()) {
-            const q = search.trim().toLowerCase();
-            list = list.filter(d =>
-                (d.note || '').toLowerCase().includes(q) ||
-                (DOC_CFG[d.type]?.label || '').toLowerCase().includes(q) ||
-                (d.meta?.docName || '').toLowerCase().includes(q) ||
-                (CERT_LABELS[d.meta?.certificateType] || '').toLowerCase().includes(q)
-            );
+            list = list.filter(d => tokenMatch(search,
+                d.note,
+                DOC_CFG[d.type]?.label,
+                d.meta?.docName,
+                CERT_LABELS[d.meta?.certificateType]
+            ));
         }
         return list;
     }, [allDocs, tab, filterStatus, filterFrom, filterTo, search]);

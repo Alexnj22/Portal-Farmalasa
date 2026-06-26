@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.405';
+export const APP_VERSION = '2.2.406';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.406 — fix(search): superpoderes en 100% del codebase — FormLeadership, EmployeeDetailView, TabExpediente, EmployeeDocumentsView, EmployeeProfileView, TabLaboratorios, TabMinMax lab filter, TabMinMaxNetwork, ScheduleCalendar
 // v2.2.405 — feat(search): estandarización completa §24 DESIGN.md — smartFilter/tokenMatch en VentasView TabProductos, SchedulesView, TabPedidos, TabMinMaxRequests, RecepcionModal, EncuestaAdminView picker, AttendanceMonitor, TabShifts
 // v2.2.404 — fix(search): superpoderes en todos los tabs de Pedidos — TabGenerar sinBodega smartFilter+banner, TabReglas normSearch server-side, TabMetricas smartFilter, TabRutas/TabEnCurso tokenMatch
 // v2.2.403 — feat(search): fuzzy fallback en TODOS los buscadores — smartFilter reemplaza tokenMatch en 14 vistas; banner "Resultados similares" en todas las listas; graovl→GRAVOL, S.S.N→SSN con tolerancia a errores

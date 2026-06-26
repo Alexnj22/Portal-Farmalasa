@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { tokenMatch } from '../../utils/searchUtils';
 import {
     User, Phone, HeartPulse, Briefcase, KeyRound,
     Clock, Edit3, Calendar, ArrowRightLeft, Sparkles, Palmtree,
@@ -152,11 +153,11 @@ const EmployeeProfileView = ({ openModal }) => {
         if (filterTo)   list = list.filter(ev => ev.date <= filterTo);
         if (filterType) list = list.filter(ev => ev.type === filterType);
         if (searchQuery.trim()) {
-            const q = searchQuery.trim().toLowerCase();
-            list = list.filter(ev =>
-                (ev.note || '').toLowerCase().includes(q) ||
-                (EVENT_TYPES[ev.type]?.label || ev.type || '').toLowerCase().includes(q)
-            );
+            list = list.filter(ev => tokenMatch(searchQuery,
+                ev.note,
+                EVENT_TYPES[ev.type]?.label,
+                ev.type
+            ));
         }
         const hasFilter = filterFrom || filterTo || filterType || searchQuery.trim();
         if (!hasFilter && timelineLimit !== null) list = list.slice(0, timelineLimit);

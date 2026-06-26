@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import { Loader2, Package, X, AlertTriangle, ArrowRight } from 'lucide-react';
+import { tokenMatch } from '../../utils/searchUtils';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 
@@ -98,7 +99,6 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
     }, [data]);
 
     const filtered = useMemo(() => {
-        const q = searchTerm.toLowerCase();
         return data.filter(r => {
             if (!showAll && r.alert_severity === 0) return false;
             if (filterAbc !== 'all' && r.abc_class !== filterAbc) return false;
@@ -106,7 +106,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                 const bs = Object.values(r.branches || {});
                 if (!bs.some(b => b.alr === filterAlert)) return false;
             }
-            if (q && !r.product_name?.toLowerCase().includes(q)) return false;
+            if (searchTerm.trim() && !tokenMatch(searchTerm, r.product_name)) return false;
             return true;
         });
     }, [data, showAll, filterAbc, filterAlert, searchTerm]);

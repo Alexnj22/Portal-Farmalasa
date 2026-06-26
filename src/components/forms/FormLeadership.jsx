@@ -1,6 +1,7 @@
 import React, { useMemo, useEffect } from 'react';
 import { Search, User, MapPin, Briefcase, ArrowRightLeft, TrendingUp, Clock, ShieldCheck, CheckCircle2, FileText, AlertCircle, UserMinus, Award, Phone, CalendarDays } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { tokenMatch } from '../../utils/searchUtils';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect'; 
 
@@ -44,12 +45,9 @@ const FormLeadership = ({ formData, setFormData }) => {
 
     // 3. Buscador
     const filteredEmployees = useMemo(() => {
-        const query = (formData.searchQuery || '').toLowerCase().trim();
+        const query = (formData.searchQuery || '').trim();
         if (!query) return employees;
-        return employees.filter(emp => 
-            emp.name.toLowerCase().includes(query) ||
-            (emp.role && emp.role.toLowerCase().includes(query))
-        );
+        return employees.filter(emp => tokenMatch(query, emp.name, emp.role));
     }, [employees, formData.searchQuery]);
 
     const selectedEmp = useMemo(() => employees.find(e => e.id === formData.selectedEmpId), [employees, formData.selectedEmpId]);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
+import { tokenMatch } from '../../utils/searchUtils';
 import {
     Loader2, RefreshCw, Truck, Package, CheckCircle2,
     AlertTriangle, Clock, Pause, Play, Building2,
@@ -154,8 +155,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
 
     const filtered = pedidos.filter(p => {
         if (!searchTerm.trim()) return true;
-        const q = searchTerm.toLowerCase();
-        return String(p.numero).includes(q) || (p.notes ?? '').toLowerCase().includes(q);
+        return String(p.numero).includes(searchTerm.trim()) || tokenMatch(searchTerm, p.notes);
     });
 
     if (loading) {

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Truck, MapPin, CheckCircle2, Clock, AlertTriangle, Home, Play, Plus, Loader2, ChevronDown, ChevronUp, Navigation, Map } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import { tokenMatch } from '../../utils/searchUtils';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import CrearRutaModal from './CrearRutaModal';
@@ -334,11 +335,13 @@ export default function TabRutas({ searchTerm = '' }) {
   useEffect(() => { loadRutas(); }, [loadRutas]);
 
   // Search filter
-  const filtered = rutas.filter(r =>
-    !searchTerm ||
-    r.conductor_nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    String(r.numero).includes(searchTerm)
-  );
+  const filtered = useMemo(() => {
+    if (!searchTerm.trim()) return rutas;
+    return rutas.filter(r =>
+        String(r.numero).includes(searchTerm.trim()) ||
+        tokenMatch(searchTerm, r.conductor_nombre)
+    );
+  }, [rutas, searchTerm]);
 
   const active    = filtered.filter(r => r.status !== 'completada');
   const completed = filtered.filter(r => r.status === 'completada');

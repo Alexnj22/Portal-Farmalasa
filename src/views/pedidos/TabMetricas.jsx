@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { smartFilter } from '../../utils/searchUtils';
 import {
     Loader2, BarChart2, Clock, Truck, PackageCheck,
     Pause, TrendingUp, Building2, RefreshCw,
@@ -114,10 +115,10 @@ export default function TabMetricas({ searchTerm = '' }) {
         }))
         .sort((a, b) => b.pedidos - a.pedidos);
 
-    const filteredSucs = sucursalStats.filter(s => {
-        if (!searchTerm.trim()) return true;
-        return s.nombre.toLowerCase().includes(searchTerm.toLowerCase());
-    });
+    const filteredSucs = useMemo(() => {
+        if (!searchTerm.trim()) return sucursalStats;
+        return smartFilter(searchTerm, sucursalStats, s => [s.nombre]).results;
+    }, [sucursalStats, searchTerm]);
 
     if (loading) {
         return (

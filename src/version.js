@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.403';
+export const APP_VERSION = '2.2.404';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.404 — fix(search): superpoderes en todos los tabs de Pedidos — TabGenerar sinBodega smartFilter+banner, TabReglas normSearch server-side, TabMetricas smartFilter, TabRutas/TabEnCurso tokenMatch
 // v2.2.403 — feat(search): fuzzy fallback en TODOS los buscadores — smartFilter reemplaza tokenMatch en 14 vistas; banner "Resultados similares" en todas las listas; graovl→GRAVOL, S.S.N→SSN con tolerancia a errores
 // v2.2.402 — feat(search): búsqueda inteligente en TODOS los buscadores — server-side normSearch antes de p_search (TabProductos/Inventario/Catálogo); tokenMatch en Facturación/Payroll/Announcements/Requests/Widget/TabHistory/Roles/Permissions/VacationPlan/EmpAnnouncements; S.S.N=SSN resuelto
 // v2.2.401 — feat(search): searchUtils (normSearch+tokenMatch+fuzzyScore+smartFilter) + SearchInput component; MinMax/SinVenta/AuditView/StaffManagement/Branches/VentasVendedores con búsqueda inteligente; banner fuzzy en MinMax; S.S.N=SSN con puntuación stripping

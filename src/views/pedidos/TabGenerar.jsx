@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { smartFilter } from '../../utils/searchUtils';
 import {
     Loader2, Building2, ClipboardList, CheckCircle2,
     Package, AlertTriangle, Info,
     TriangleAlert, TrendingUp,
-    Check, X,
+    Check, X, Search,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -301,22 +302,18 @@ export default function TabGenerar({ searchTerm = '' }) {
     };
 
     // ── Sin-bodega — client-side filter + sort + paginate ─────
-    const sinFiltered = useMemo(() => {
-        let rows = sinBodega;
-        if (searchTerm.trim()) {
-            const q = searchTerm.toLowerCase();
-            rows = rows.filter(r =>
-                r.product_name?.toLowerCase().includes(q) ||
-                r.laboratorio?.toLowerCase().includes(q)
-            );
-        }
+    const { results: sinFiltered, isFuzzy: isSinFuzzy } = useMemo(() => {
+        const { results, isFuzzy } = !searchTerm.trim()
+            ? { results: sinBodega, isFuzzy: false }
+            : smartFilter(searchTerm, sinBodega, r => [r.product_name, r.laboratorio]);
         const dir = sinSortDir === 'asc' ? 1 : -1;
-        return [...rows].sort((a, b) => {
+        const sorted = [...results].sort((a, b) => {
             if (sinSortKey === 'product_name' || sinSortKey === 'laboratorio') {
                 return (a[sinSortKey] || '').localeCompare(b[sinSortKey] || '', 'es') * dir;
             }
             return (Number(a[sinSortKey] || 0) - Number(b[sinSortKey] || 0)) * dir;
         });
+        return { results: sorted, isFuzzy };
     }, [sinBodega, searchTerm, sinSortKey, sinSortDir]);
 
     const sinTotalPages     = Math.max(1, Math.ceil(sinFiltered.length / sinPageSize));
@@ -541,6 +538,12 @@ export default function TabGenerar({ searchTerm = '' }) {
                 )}
             </div>
 
+            {isSinFuzzy && searchTerm && (
+                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                    <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                    Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                </div>
+            )}
             {/* ── Sin-bodega table (DataTable estándar) ────── */}
             <DataTable
                 columns={SIN_BODEGA_COLS}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { normSearch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, Check, X, Ban, AlertTriangle, Package,
@@ -467,7 +468,7 @@ export default function TabReglas({ searchTerm = '' }) {
         q = q.order(dbSk, { ascending: asc });
         if (dbSk !== 'nombre') q = q.order('nombre', { ascending: true });
 
-        if (term.length >= 2) q = q.ilike('nombre', `%${term}%`);
+        if (term.length >= 2) q = q.ilike('nombre', `%${normSearch(term) || term}%`);
 
         if (ruleFilter === 'con') {
             q = ruleIds.length > 0 ? q.in('id', ruleIds) : q.in('id', [0]);

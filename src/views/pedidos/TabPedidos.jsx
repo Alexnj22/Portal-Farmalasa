@@ -9,7 +9,7 @@ import {
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
     UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box, Zap, Map as MapIcon,
-    CalendarClock, Ban,
+    CalendarClock, Ban, Star,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -1020,7 +1020,7 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
                                 return (
                                     <span className="tabular-nums leading-tight text-center mt-px flex flex-col items-center">
                                         {dateLabel && <span className="text-[9px] text-slate-900 font-bold leading-none mb-0.5">{dateLabel}</span>}
-                                        <span className="text-[10px] text-slate-600">{fmtHM(node.time) || <span className="text-slate-200">——</span>}</span>
+                                        <span className="text-[10px] text-slate-600 whitespace-nowrap">{fmtHM(node.time) || <span className="text-slate-200">——</span>}</span>
                                     </span>
                                 );
                             })()}
@@ -2993,7 +2993,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             </span>
                                         )}
                                         {(row.cajas_especiales ?? []).length > 0 && (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 tabular-nums shrink-0">
+                                                <Star size={10} className="text-slate-500 shrink-0" />
                                                 {row.cajas_especiales.length} caja{row.cajas_especiales.length > 1 ? 's' : ''} especial{row.cajas_especiales.length > 1 ? 'es' : ''}
                                             </span>
                                         )}

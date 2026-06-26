@@ -10,7 +10,7 @@ import {
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
-import { tokenMatch } from '../utils/searchUtils';
+import { smartFilter } from '../utils/searchUtils';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
 
@@ -347,7 +347,7 @@ const RequestsView = () => {
         return r.status === 'PENDING' && (!r.approver || String(r.approver?.id) === myId);
     }).length;
 
-    const baseFiltered = requests.filter(r => {
+    const statusFiltered = requests.filter(r => {
         const myId = String(user?.id);
         if (r.type === 'SHIFT_CHANGE' && r.status === 'PENDING' && String(r.approver_id) !== myId) return false;
         const assignedToMe  = !r.approver || String(r.approver?.id) === myId;
@@ -355,9 +355,12 @@ const RequestsView = () => {
         if (statusFilter === 'PENDING'  && !(r.status === 'PENDING'  && assignedToMe))  return false;
         if (statusFilter === 'APPROVED' && !(r.status === 'APPROVED' && processedByMe)) return false;
         if (statusFilter === 'REJECTED' && !(r.status === 'REJECTED' && processedByMe)) return false;
-        if (rawSearch.trim() && !tokenMatch(rawSearch, r.employee?.name)) return false;
         return true;
     });
+
+    const { results: baseFiltered, isFuzzy: isReqSearchFuzzy } = !rawSearch.trim()
+        ? { results: statusFiltered, isFuzzy: false }
+        : smartFilter(rawSearch, statusFiltered, r => [r.employee?.name]);
 
     const groupedByType = Object.entries(
         baseFiltered.reduce((acc, r) => {
@@ -497,7 +500,14 @@ const RequestsView = () => {
                         </div>
                     </div>
                 ) : (
-                    groupedByType.map(([type, cards]) => {
+                    <>
+                    {isReqSearchFuzzy && rawSearch.trim() && (
+                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                            <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                            Resultados similares para &ldquo;{rawSearch.trim()}&rdquo; — no se encontraron coincidencias exactas
+                        </div>
+                    )}
+                    {groupedByType.map(([type, cards]) => {
                         const TypeIcon  = TYPE_ICONS[type] || FileText;
                         const typeConf  = REQUEST_TYPES[type] || { label: type };
                         const tc        = TYPE_COLORS[type] || { sectionIcon: 'text-slate-600 bg-slate-50 border-slate-200', section: 'text-slate-700' };
@@ -530,7 +540,8 @@ const RequestsView = () => {
                                 </div>
                             </section>
                         );
-                    })
+                    })}
+                    </>
                 )}
             </div>
 

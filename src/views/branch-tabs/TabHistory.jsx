@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Filter, X, Search, Download, Clock, FileText, Users, Eye, FileOutput, Printer, CheckCircle2, AlertTriangle, Settings, Building2, Wallet, Calendar, ChevronRight, Sparkles, Activity, ArrowLeft } from 'lucide-react';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import LiquidSelect from '../../components/common/LiquidSelect';
-import { tokenMatch } from '../../utils/searchUtils';
+import { smartFilter } from '../../utils/searchUtils';
 // 🚨 IMPORTACIÓN ESTANDARIZADA
 import { supabase } from '../../supabaseClient'; 
 
@@ -93,7 +93,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
     };
 
     // FILTRADO MULTIPLE
-    const filteredHistory = useMemo(() => {
+    const filteredHistoryRaw = useMemo(() => {
         let result = syntheticHistory;
         if (typeFilter !== 'ALL') {
             result = result.filter(item => {
@@ -123,16 +123,15 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
             result = result.filter(item => item.sortDate >= oneYearAgo);
         }
 
-        if (searchQuery.trim() !== '') {
-            result = result.filter(item => {
-                const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
-                const itemName = parsedDetails.timeline_title || item.name || '';
-                const actorName = item.user_name || item.user_email || item.actor_name || 'Sistema';
-                return tokenMatch(searchQuery, getActionLabel(item), itemName, actorName);
-            });
-        }
-        return result;
+        if (!searchQuery.trim()) return { results: result, isFuzzy: false };
+        return smartFilter(searchQuery, result, item => {
+            const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
+            const itemName = parsedDetails.timeline_title || item.name || '';
+            const actorName = item.user_name || item.user_email || item.actor_name || 'Sistema';
+            return [getActionLabel(item), itemName, actorName];
+        });
     }, [syntheticHistory, typeFilter, dateFilter, searchQuery, showAllHistory]);
+    const { results: filteredHistory, isFuzzy: isHistorySearchFuzzy } = filteredHistoryRaw;
 
     // AGRUPACIÓN PARA EL ACORDEÓN
     const groupedHistory = useMemo(() => {
@@ -471,6 +470,12 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                         <div className="text-center py-20 opacity-60 relative z-10"><FileText className="text-slate-300 mx-auto mb-4" size={48} /> Sin registros en esta sucursal</div>
                     ) : (
                         <div className="relative z-10 w-full pt-2">
+                            {isHistorySearchFuzzy && searchQuery && (
+                                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                                    <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                                    Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
+                                </div>
+                            )}
                             {groupedHistory.map((yearGroup) => {
                                 const isYearCollapsed = collapsedYears[yearGroup.year] || false;
                                 const isYearOpen = !isYearCollapsed;

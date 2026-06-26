@@ -10,7 +10,7 @@ import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
-import { tokenMatch } from '../utils/searchUtils';
+import { tokenMatch, smartFilter } from '../utils/searchUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 
@@ -350,14 +350,14 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
         return `hace ${diff}d`;
     };
 
-    const filtered = useMemo(() => {
+    const { filtered, isAnuladasFuzzy } = useMemo(() => {
         const active = rows.filter(r => !resolvedIds.has(r.id));
-        const list = !searchTerm ? active : active.filter(r =>
-            tokenMatch(searchTerm, r.correlativo, r.cliente, r.codigo_generacion)
-        );
+        const { results: list, isFuzzy } = !searchTerm
+            ? { results: active, isFuzzy: false }
+            : smartFilter(searchTerm, active, r => [r.correlativo, r.cliente, r.codigo_generacion]);
         const ccf  = list.filter(r => r.tipo_documento === 'CCF').sort((a, b) => a.fecha.localeCompare(b.fecha));
         const rest = list.filter(r => r.tipo_documento !== 'CCF').sort((a, b) => a.fecha.localeCompare(b.fecha));
-        return [...ccf, ...rest];
+        return { filtered: [...ccf, ...rest], isAnuladasFuzzy: isFuzzy };
     }, [rows, resolvedIds, searchTerm]);
 
     const activeVisitedCount = useMemo(() => {
@@ -434,6 +434,12 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                     title="Todo está al día" subtitle="No hay anulaciones pendientes por atender en este momento." />
             ) : (
                 <div className="space-y-3">
+                    {isAnuladasFuzzy && searchTerm && (
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                            <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                            Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                        </div>
+                    )}
                     <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-700 font-medium">
                         <Info size={13} className="text-blue-400 shrink-0" />
                         Al resolverse la anulación en sistema, el estado se actualiza automáticamente en el portal.
@@ -815,17 +821,13 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         setExpandedId(null); setSolvingId(null); setComment(''); setSaving(false);
     };
 
-    const filtered = useMemo(() => {
-        let list = rows;
-        if (searchTerm) {
-            list = list.filter(r =>
-                tokenMatch(searchTerm, r.correlativo, r.cliente, String(r.erp_invoice_id || ''))
-            );
-        }
-        // CCF first, then by branch + fecha
+    const { filtered, isPendienteFuzzy } = useMemo(() => {
+        const { results: list, isFuzzy } = !searchTerm
+            ? { results: rows, isFuzzy: false }
+            : smartFilter(searchTerm, rows, r => [r.correlativo, r.cliente, String(r.erp_invoice_id || '')]);
         const ccf  = list.filter(r => r.tipo_documento === 'CCF');
         const rest = list.filter(r => r.tipo_documento !== 'CCF');
-        return [...ccf, ...rest];
+        return { filtered: [...ccf, ...rest], isPendienteFuzzy: isFuzzy };
     }, [rows, searchTerm]);
 
     const activeVisitedCount = useMemo(() =>
@@ -908,6 +910,12 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                     title="Sin pendientes de MH" subtitle="Todos los documentos han sido recibidos y confirmados por el Ministerio de Hacienda." />
             ) : (
                 <div className="space-y-3">
+                    {isPendienteFuzzy && searchTerm && (
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                            <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                            Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                        </div>
+                    )}
                     <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] text-blue-700 font-medium">
                         <Info size={13} className="text-blue-400 shrink-0" />
                         Al corregirse en sistema se confirman automáticamente en el portal.
@@ -1618,10 +1626,12 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
 
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
 
-    const pendingFiltered = useMemo(() => {
+    const { pendingFiltered, isNoEfectivoFuzzy } = useMemo(() => {
         const base = pending.filter(r => !confirmedIds.has(r.id));
-        if (!searchTerm) return base;
-        return base.filter(r => tokenMatch(searchTerm, r.correlativo, r.cliente, r.tipo_pago));
+        const { results, isFuzzy } = !searchTerm
+            ? { results: base, isFuzzy: false }
+            : smartFilter(searchTerm, base, r => [r.correlativo, r.cliente, r.tipo_pago]);
+        return { pendingFiltered: results, isNoEfectivoFuzzy: isFuzzy };
     }, [pending, confirmedIds, searchTerm]);
 
     const byTipo = useMemo(() => {
@@ -1766,6 +1776,12 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                     title="Sin pagos no-efectivo" subtitle="No hay transacciones pendientes de confirmar en este período." />
             ) : (
                 <div className="p-4 md:p-6 space-y-5">
+                    {isNoEfectivoFuzzy && searchTerm && (
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                            <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                            Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                        </div>
+                    )}
                     {/* ── Pagos inmediatos ── */}
                     {IMMEDIATE_TIPOS.filter(t => byTipo[t]?.length > 0).map(tipo => {
                         const theme = TIPO_PAGO_THEME[tipo] || TIPO_PAGO_THEME.tarjeta;

@@ -16,7 +16,7 @@ import LiquidAvatar from '../components/common/LiquidAvatar';
 import PeriodPicker from '../components/common/PeriodPicker';
 import { DataTable, DataRow, DataCell, useExpandStyle } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
-import { tokenMatch, normSearch } from '../utils/searchUtils';
+import { smartFilter, normSearch } from '../utils/searchUtils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -941,7 +941,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
     const getBranchName = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
     const SPECIAL_CODES = { '1000': 'Administración', '125': 'Domicilio' };
 
-    const { knownRows, unknownByBranch } = useMemo(() => {
+    const { knownRows, unknownByBranch, isVendSearchFuzzy } = useMemo(() => {
         const s = searchTerm;
         const consolidatedMap = new Map();
         const unknownMap = new Map();
@@ -964,14 +964,11 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                 unknownMap.set(r.branch_id, cur);
             }
         }
-        const known = [...consolidatedMap.values()]
-            .sort((a, b) => b.total - a.total)
-            .filter(r => {
-                if (!s) return true;
-                const fullName = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : '');
-                return tokenMatch(s, fullName, r.cod_vendedor);
-            });
-        return { knownRows: known, unknownByBranch: unknownMap };
+        const allKnown = [...consolidatedMap.values()].sort((a, b) => b.total - a.total);
+        const { results: known, isFuzzy: isVendFuzzy } = !s.trim()
+            ? { results: allKnown, isFuzzy: false }
+            : smartFilter(s, allKnown, r => [r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : ''), r.cod_vendedor]);
+        return { knownRows: known, unknownByBranch: unknownMap, isVendSearchFuzzy: isVendFuzzy };
     }, [rows, searchTerm, empMap]);
 
     const totalVentas   = rows.reduce((s, r) => s + r.total, 0);

@@ -11,7 +11,7 @@ import { useToastStore } from '../store/toastStore';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import RangeDatePicker from '../components/common/RangeDatePicker';
-import { tokenMatch } from '../utils/searchUtils';
+import { smartFilter } from '../utils/searchUtils';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate  = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -611,22 +611,24 @@ const VacationPlanView = () => {
         return map;
     }, [vacationPlans, year]);
 
-    // Sort filtered plans by branch → role → start_date
-    const filtered = useMemo(() => {
-        return vacationPlans
-            .filter(p => statusFilter === 'ALL' || p.status === statusFilter)
-            .filter(p => !searchTerm.trim() || tokenMatch(searchTerm, p.employee?.name, p.branch?.name))
-            .slice()
-            .sort((a, b) => {
-                const brA = a.branch?.name || '';
-                const brB = b.branch?.name || '';
-                if (brA !== brB) return brA.localeCompare(brB);
-                const roA = a.employee?.role || a.employee?.position || '';
-                const roB = b.employee?.role || b.employee?.position || '';
-                if (roA !== roB) return roA.localeCompare(roB);
-                return a.start_date.localeCompare(b.start_date);
-            });
-    }, [vacationPlans, statusFilter, searchTerm]);
+    const vacStatusFiltered = useMemo(() =>
+        vacationPlans.filter(p => statusFilter === 'ALL' || p.status === statusFilter),
+    [vacationPlans, statusFilter]);
+
+    const { results: filtered, isFuzzy: isVacSearchFuzzy } = useMemo(() => {
+        const sortFn = (a, b) => {
+            const brA = a.branch?.name || '';
+            const brB = b.branch?.name || '';
+            if (brA !== brB) return brA.localeCompare(brB);
+            const roA = a.employee?.role || a.employee?.position || '';
+            const roB = b.employee?.role || b.employee?.position || '';
+            if (roA !== roB) return roA.localeCompare(roB);
+            return a.start_date.localeCompare(b.start_date);
+        };
+        if (!searchTerm.trim()) return { results: vacStatusFiltered.slice().sort(sortFn), isFuzzy: false };
+        const { results, isFuzzy } = smartFilter(searchTerm, vacStatusFiltered, p => [p.employee?.name, p.branch?.name]);
+        return { results: results.slice().sort(sortFn), isFuzzy };
+    }, [vacStatusFiltered, searchTerm]);
 
     const filtersContent = (
         <div className="flex items-center bg-white/20 backdrop-blur-2xl backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.4),0_4px_20px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_1px_5px_rgba(255,255,255,0.6),0_8px_25px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden w-max max-w-full">
@@ -963,6 +965,13 @@ const VacationPlanView = () => {
                                     <p className="text-[13px] font-bold text-slate-500">Sin asignaciones en este período</p>
                                 </div>
                             ) : (
+                                <>
+                                {isVacSearchFuzzy && searchTerm && (
+                                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                                        <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                                        Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                                    </div>
+                                )}
                                 <div className="overflow-x-auto">
                                     <table className="w-full min-w-[600px] text-[12px]">
                                         <thead>
@@ -1059,6 +1068,7 @@ const VacationPlanView = () => {
                                         </tbody>
                                     </table>
                                 </div>
+                                </>
                             )}
                         </div>
 

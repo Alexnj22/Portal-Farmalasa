@@ -3,7 +3,7 @@ import { Bell, Globe, Building2, User, CheckCircle2, Flame, Clock, Search, X, Ch
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import GlassViewLayout from '../../components/GlassViewLayout';
-import { tokenMatch } from '../../utils/searchUtils';
+import { smartFilter } from '../../utils/searchUtils';
 
 const TABS = [
     { key: 'UNREAD', label: 'Sin Leer' },
@@ -662,15 +662,15 @@ const EmployeeAnnouncementsView = () => {
         ].filter(f => f.key === 'ALL' || f.count > 0);
     }, [tab, byTab]);
 
-    const filtered = useMemo(() => {
+    const filteredRaw = useMemo(() => {
         let list = byTab;
         if (typeFilter === 'URGENT') list = list.filter(a => a.priority === 'URGENT');
         else if (typeFilter !== 'ALL') list = list.filter(a => a.targetType === typeFilter);
-        if (searchQuery.trim()) {
-            list = list.filter(a => tokenMatch(searchQuery, a.title, a.message));
-        }
-        return list;
+        if (!searchQuery.trim()) return { filtered: list, isAnnFuzzy: false };
+        const { results, isFuzzy } = smartFilter(searchQuery, list, a => [a.title, a.message]);
+        return { filtered: results, isAnnFuzzy: isFuzzy };
     }, [byTab, typeFilter, searchQuery]);
+    const { filtered, isAnnFuzzy } = filteredRaw;
 
     const hasOldRead = useMemo(() =>
         myAnnouncements.some(a => readCheck(a) && (a.date || '').slice(0, 7) !== currentYM)
@@ -784,7 +784,14 @@ const EmployeeAnnouncementsView = () => {
 
                 ) : tab === 'UNREAD' ? (
                     /* ── Mazo interactivo para Sin Leer ── */
-                    filtered.length === 0 ? (
+                    <>
+                    {isAnnFuzzy && searchQuery && (
+                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                            <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                            Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
+                        </div>
+                    )}
+                    {filtered.length === 0 ? (
                         <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700">
                             <div className="relative flex flex-col items-center text-center">
                                 <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-emerald-400" />
@@ -797,7 +804,8 @@ const EmployeeAnnouncementsView = () => {
                         </div>
                     ) : (
                         <UnreadStack list={filtered} userId={user?.id} onRead={handleRead} />
-                    )
+                    )}
+                    </>
 
                 ) : (
                     <>

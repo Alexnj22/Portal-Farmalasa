@@ -41,7 +41,7 @@ import { getEffectiveStatus } from '../utils/helpers';
 import { getRoleTheme } from '../utils/scheduleHelpers';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
-import { tokenMatch } from '../utils/searchUtils';
+import { smartFilter } from '../utils/searchUtils';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
 
@@ -381,25 +381,20 @@ const StaffManagementView = ({
     return m;
   }, [branches]);
 
-  const searchFilteredEmployees = useMemo(() => {
+  const staffBranchFiltered = useMemo(() => {
     const baseEmployees = getScope('staff_list') === 'BRANCH'
         ? (employees || []).filter(e => String(e.branch_id || e.branchId) === String(user?.branchId))
         : (employees || []);
-    return baseEmployees.filter((emp) => {
-      const safeName = (emp?.name || '').toLowerCase();
-      const safeCode = (emp?.code || '').toLowerCase();
-      const safeRole = (emp?.role || '').toLowerCase();
-      const branchNameStr = (branchMap.get(Number(emp.branchId || emp.branch_id)) || '').toLowerCase();
-
-      const matchesSearch = !normalizedSearch ||
-        tokenMatch(normalizedSearch, emp?.name, emp?.code, emp?.role, branchMap.get(Number(emp.branchId || emp.branch_id)));
-
-      const matchesBranch =
-        selectedBranch === 'ALL' || String(emp?.branchId ?? emp?.branch_id ?? '') === String(selectedBranch);
-
-      return matchesSearch && matchesBranch;
+    return baseEmployees.filter(emp => {
+      const matchesBranch = selectedBranch === 'ALL' || String(emp?.branchId ?? emp?.branch_id ?? '') === String(selectedBranch);
+      return matchesBranch;
     });
-  }, [employees, normalizedSearch, selectedBranch, branchMap, getScope, user?.branchId]);
+  }, [employees, selectedBranch, branchMap, getScope, user?.branchId]);
+
+  const { results: searchFilteredEmployees, isFuzzy: isStaffSearchFuzzy } = useMemo(() => {
+    if (!normalizedSearch.trim()) return { results: staffBranchFiltered, isFuzzy: false };
+    return smartFilter(normalizedSearch, staffBranchFiltered, emp => [emp?.name, emp?.code, emp?.role, branchMap.get(Number(emp.branchId || emp.branch_id))]);
+  }, [staffBranchFiltered, normalizedSearch, branchMap]);
 
   const stats = useMemo(() => {
     const total = searchFilteredEmployees.length;
@@ -709,6 +704,12 @@ const StaffManagementView = ({
               }
               minWidth="700px"
             >
+              {isStaffSearchFuzzy && normalizedSearch && (
+                <div className="col-span-full mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                  <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                  Resultados similares para &ldquo;{normalizedSearch}&rdquo; — no se encontraron coincidencias exactas
+                </div>
+              )}
               {paginatedEmployees.map((emp, i) => (
                 <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit} />
               ))}

@@ -10,7 +10,7 @@ import {
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
-import { tokenMatch } from '../utils/searchUtils';
+import { smartFilter } from '../utils/searchUtils';
 
 const ACTION_OPTIONS = [
     { value: "ALL", label: "Todas" },
@@ -184,26 +184,22 @@ const AuditView = ({ openModal }) => {
         setStartDate(''); setEndDate(''); setActionFilter('ALL');
     }, []);
 
-    // 🚨 MEJORA: Búsqueda avanzada que incluye dispositivos y sucursales
-    const processedLogs = useMemo(() => {
+    const processedLogsBase = useMemo(() => {
         if (!Array.isArray(auditLog)) return [];
-
-        let result = auditLog.filter(log => {
-            const matchesSearch = !debouncedSearchTerm ||
-                tokenMatch(debouncedSearchTerm, log.user_name, log.action, log.branch_name, log.device_name);
-
+        return auditLog.filter(log => {
             const matchesType = actionFilter === 'ALL' || log.action === actionFilter;
-
             let matchesDate = true;
             if (startDate || endDate) {
                 const logDateStr = new Date(log.created_at).toISOString().split('T')[0];
                 if (startDate && logDateStr < startDate) matchesDate = false;
                 if (endDate && logDateStr > endDate) matchesDate = false;
             }
-            return matchesSearch && matchesType && matchesDate;
+            return matchesType && matchesDate;
         });
+    }, [auditLog, actionFilter, startDate, endDate]);
 
-        result.sort((a, b) => {
+    const { results: processedLogs, isFuzzy: isLogSearchFuzzy } = useMemo(() => {
+        const base = processedLogsBase.slice().sort((a, b) => {
             let aValue = a[sortConfig.key] || '';
             let bValue = b[sortConfig.key] || '';
             if (sortConfig.key === 'created_at') {
@@ -217,8 +213,9 @@ const AuditView = ({ openModal }) => {
             if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
             return 0;
         });
-        return result;
-    }, [auditLog, debouncedSearchTerm, actionFilter, startDate, endDate, sortConfig]);
+        if (!debouncedSearchTerm.trim()) return { results: base, isFuzzy: false };
+        return smartFilter(debouncedSearchTerm, base, log => [log.user_name, log.action, log.branch_name, log.device_name]);
+    }, [processedLogsBase, debouncedSearchTerm, sortConfig]);
 
     // 🚨 MEJORA: Exportación CSV con TODAS las columnas nuevas
     const exportToCSV = useCallback(() => {
@@ -510,6 +507,12 @@ const filtersContent = (
                     </div>
                 ) : null}
             >
+                {isLogSearchFuzzy && debouncedSearchTerm && (
+                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                        <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                        Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo; — no se encontraron coincidencias exactas
+                    </div>
+                )}
                 {paginatedLogs.map((log) => {
                     const foundPhoto = employeePhotoMap[log.user_id] || employeePhotoMap[log.target_id];
                     return (

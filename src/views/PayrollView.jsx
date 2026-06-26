@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore } from '../store/staffStore';
-import { tokenMatch } from '../utils/searchUtils';
+import { smartFilter } from '../utils/searchUtils';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -420,14 +420,18 @@ const PayrollView = ({ openModal }) => {
         payrollPeriods.filter(p => filterStatus === 'ALL' || (p.status || 'DRAFT') === filterStatus),
     [payrollPeriods, filterStatus]);
 
-    const filteredEntries = useMemo(() =>
+    const payrollBranchFiltered = useMemo(() =>
         payrollEntries.filter(e => {
             const emp = e.employee || {};
             if (filterBranch && String(emp.branchId || emp.branch_id) !== filterBranch) return false;
-            if (searchTerm && !tokenMatch(searchTerm, emp.name)) return false;
             return true;
         }),
-    [payrollEntries, filterBranch, searchTerm]);
+    [payrollEntries, filterBranch]);
+
+    const { results: filteredEntries, isFuzzy: isPayrollSearchFuzzy } = useMemo(() => {
+        if (!searchTerm.trim()) return { results: payrollBranchFiltered, isFuzzy: false };
+        return smartFilter(searchTerm, payrollBranchFiltered, e => [(e.employee || {}).name]);
+    }, [payrollBranchFiltered, searchTerm]);
 
     const totals = useMemo(() => ({
         grossA:  filteredEntries.reduce((s, e) => s + round2(e.subtotal_a), 0),
@@ -697,6 +701,13 @@ const PayrollView = ({ openModal }) => {
                                         {payrollEntries.length === 0 ? 'Genera la planilla para ver los datos.' : 'Sin resultados para los filtros actuales.'}
                                     </div>
                                 ) : (
+                                    <>
+                                    {isPayrollSearchFuzzy && searchTerm && (
+                                        <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                                            <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                                            Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                                        </div>
+                                    )}
                                     <BranchGroupedTable
                                         entries={filteredEntries}
                                         branches={branches}
@@ -705,6 +716,7 @@ const PayrollView = ({ openModal }) => {
                                         onPrint={(e) => printBoleta(e, activePeriod, branches)}
                                         onEdit={(e) => openModal?.('editPayrollEntry', e)}
                                     />
+                                    </>
                                 )}
                             </>
                         )}

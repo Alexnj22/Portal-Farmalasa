@@ -15,7 +15,7 @@ import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 
 import { supabase } from '../supabaseClient';
-import { tokenMatch } from '../utils/searchUtils';
+import { smartFilter } from '../utils/searchUtils';
 
 const FILTER_OPTIONS = [
     { value: "ALL", label: "Todas" },
@@ -623,29 +623,27 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
         return m;
     }, [employees]);
 
-    const filteredBranches = useMemo(() => {
+    const filteredBranchesBase = useMemo(() => {
         return branches.filter(b => {
             if ((b.type || 'FARMACIA') === 'EXTERNA') return false;
-
-            const matchesSearch = !searchTerm || tokenMatch(searchTerm, b.name, b.address);
-            if (!matchesSearch) return false;
-
             const branchEmps = employeesMap.get(String(b.id)) || [];
             const count = branchEmps.length;
             const activeK = kiosksCount[b.id] || 0;
             const isInactive = count === 0 && activeK === 0;
-            
             const alert = getAlertStatus(b, currentTime.timestamp, branchEmps);
             const pType = b.propertyType || safeParse(b.settings)?.propertyType;
-
             if (filterStatus === 'ALERTS' && !alert.hasAlerts) return false;
             if (filterStatus === 'INACTIVE' && !isInactive) return false;
             if (filterStatus === 'RENTED' && pType !== 'RENTED') return false;
             if (filterStatus === 'OWNED' && pType !== 'OWNED') return false;
-
             return true;
         });
-    }, [branches, searchTerm, filterStatus, employeesMap, kiosksCount, currentTime.timestamp]);
+    }, [branches, filterStatus, employeesMap, kiosksCount, currentTime.timestamp]);
+
+    const { results: filteredBranches, isFuzzy: isBranchSearchFuzzy } = useMemo(() => {
+        if (!searchTerm.trim()) return { results: filteredBranchesBase, isFuzzy: false };
+        return smartFilter(searchTerm, filteredBranchesBase, b => [b.name, b.address]);
+    }, [filteredBranchesBase, searchTerm]);
 
     const handleViewProfile = useCallback((branch) => {
         if (setActiveBranch) setActiveBranch(branch);
@@ -769,6 +767,12 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                         }, []);
                         return (
                             <div className="space-y-8 pt-4 px-2 pb-12">
+                                {isBranchSearchFuzzy && searchTerm && (
+                                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                                        <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                                        Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                                    </div>
+                                )}
                                 {grouped.map(({ type, branches: groupBranches }) => (
                                     <div key={type}>
                                         {grouped.length > 1 && (

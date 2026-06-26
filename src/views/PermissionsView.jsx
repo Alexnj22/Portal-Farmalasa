@@ -13,7 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ConfirmModal from '../components/common/ConfirmModal';
-import { tokenMatch } from '../utils/searchUtils';
+import { smartFilter } from '../utils/searchUtils';
 
 // ─── Módulos del sistema agrupados por función ─────────────────────────────
 const MODULE_GROUPS = [
@@ -683,9 +683,11 @@ const PermissionsView = () => {
         return { total, withView, withEdit, withApprove };
     }, [selectedRoleId, permissions]);
 
-    const filteredRoles = useMemo(() =>
-        orgRoles.filter(r => tokenMatch(searchQuery, r.name)),
-    [orgRoles, searchQuery]);
+    const { filteredRoles, isPermRoleFuzzy } = useMemo(() => {
+        if (!searchQuery.trim()) return { filteredRoles: orgRoles, isPermRoleFuzzy: false };
+        const { results, isFuzzy } = smartFilter(searchQuery, orgRoles, r => [r.name]);
+        return { filteredRoles: results, isPermRoleFuzzy: isFuzzy };
+    }, [orgRoles, searchQuery]);
 
     const copyOptions = orgRoles
         .filter(r => r.id !== selectedRoleId)
@@ -823,6 +825,12 @@ const PermissionsView = () => {
                             <ShieldCheck size={10} /> Cargos
                         </p>
                         <div className="space-y-2">
+                        {isPermRoleFuzzy && searchQuery && (
+                            <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[10px] text-amber-700 font-semibold">
+                                <Search size={11} strokeWidth={2.5} className="shrink-0" />
+                                Similares a &ldquo;{searchQuery}&rdquo;
+                            </div>
+                        )}
                         {filteredRoles.map((r, idx) => {
                             const isActive = selectedRoleId === r.id;
                             const cs = ROLE_COLORS[idx % ROLE_COLORS.length];

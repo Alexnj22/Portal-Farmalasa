@@ -13,7 +13,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { useToastStore } from '../store/toastStore';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { useAuth } from '../context/AuthContext';
-import { tokenMatch } from '../utils/searchUtils';
+import { smartFilter } from '../utils/searchUtils';
 
 const SCOPE_OPTIONS = [
     { value: 'BRANCH', label: 'Por Sucursal' },
@@ -161,14 +161,19 @@ const RolesView = ({ openModal }) => {
         return depth;
     };
 
-    const filteredAndSortedRoles = useMemo(() => {
-        const filtered = roles.filter(role => tokenMatch(searchQuery, role.name));
-        return filtered.sort((a, b) => {
-            const depthA = getRoleDepth(a.id);
-            const depthB = getRoleDepth(b.id);
-            if (depthA !== depthB) return depthA - depthB;
-            return a.name.localeCompare(b.name);
-        });
+    const { filteredAndSortedRoles, isRoleSearchFuzzy } = useMemo(() => {
+        const { results, isFuzzy } = !searchQuery.trim()
+            ? { results: roles, isFuzzy: false }
+            : smartFilter(searchQuery, roles, r => [r.name]);
+        return {
+            filteredAndSortedRoles: results.slice().sort((a, b) => {
+                const depthA = getRoleDepth(a.id);
+                const depthB = getRoleDepth(b.id);
+                if (depthA !== depthB) return depthA - depthB;
+                return a.name.localeCompare(b.name);
+            }),
+            isRoleSearchFuzzy: isFuzzy,
+        };
     }, [roles, searchQuery]);
 
     const sortedRolesForDropdown = useMemo(() => {
@@ -694,6 +699,12 @@ const RolesView = ({ openModal }) => {
                         {/* PANEL DERECHO: GRID DE TARJETAS */}
                         <div className="flex-1 flex flex-col min-w-0 w-full overflow-y-auto overscroll-contain pb-32 pr-2 scrollbar-hide lg:h-[100dvh] lg:-mt-[180px] xl:-mt-[200px] lg:pt-[180px] xl:pt-[200px] pointer-events-auto relative z-10">
                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-5 pb-12 pt-4 px-2 md:px-4">
+                                {isRoleSearchFuzzy && searchQuery && (
+                                    <div className="col-span-full mb-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                                        <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                                        Resultados similares para &ldquo;{searchQuery}&rdquo; — no se encontraron coincidencias exactas
+                                    </div>
+                                )}
                                 {filteredAndSortedRoles.map((role) => {
                                     const isRoot = !role.parent_role_id;
                                     const roleEmps = getEmployeesInRole(role.id);

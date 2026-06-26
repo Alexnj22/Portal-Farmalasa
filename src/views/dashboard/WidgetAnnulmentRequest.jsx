@@ -3,7 +3,7 @@ import { Search, Loader2, AlertTriangle, CheckCircle2, X, Receipt, Clock, Eye, A
 import { supabase } from '../../supabaseClient';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
-import { tokenMatch } from '../../utils/searchUtils';
+import { smartFilter } from '../../utils/searchUtils';
 
 const GRACE_DAYS = 3;
 
@@ -339,10 +339,9 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   // Reset to list when branch changes from parent
   useEffect(() => { setView('list'); setFocused(null); setSearch(''); }, [propBranchId]);
 
-  const filtered = invoices.filter(inv => {
-    if (!search.trim()) return true;
-    return tokenMatch(search, inv.correlativo, inv.cliente, fmtDate(inv.fecha), inv.fecha, String(Number(inv.total || 0).toFixed(2)));
-  });
+  const { results: filtered, isFuzzy: isWidgetSearchFuzzy } = !search.trim()
+    ? { results: invoices, isFuzzy: false }
+    : smartFilter(search, invoices, inv => [inv.correlativo, inv.cliente, fmtDate(inv.fecha), inv.fecha, String(Number(inv.total || 0).toFixed(2))]);
 
   if (!activeBranchId) {
     return (
@@ -426,6 +425,13 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
         {!loading && filtered.length === 0 && (
           <div className="py-8 text-center text-[12px] text-slate-400 font-medium">
             {search ? `Sin resultados para "${search}"` : 'No hay facturas este mes'}
+          </div>
+        )}
+
+        {!loading && isWidgetSearchFuzzy && search && (
+          <div className="mb-2 mx-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[10px] text-amber-700 font-semibold">
+            <Search size={11} strokeWidth={2.5} className="shrink-0" />
+            Similares a &ldquo;{search}&rdquo;
           </div>
         )}
 

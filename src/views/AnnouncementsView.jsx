@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import ConfirmModal from '../components/common/ConfirmModal';
-import { tokenMatch } from '../utils/searchUtils';
+import { tokenMatch, smartFilter } from '../utils/searchUtils';
 import AlertModal from '../components/common/AlertModal';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
@@ -489,7 +489,7 @@ const AnnouncementsView = ({ openModal }) => {
   }, [announcements, employees, getTargetAudience, branchNameById]);
 
   // 🚨 LÓGICA DE SEPARACIÓN EN PESTAÑAS MEJORADA
-  const currentList = useMemo(() => {
+  const currentListRaw = useMemo(() => {
     const now = new Date();
 
     const baseList = processedAnnouncements.filter((a) => {
@@ -508,14 +508,15 @@ const AnnouncementsView = ({ openModal }) => {
           )
         : baseList;
 
-    if (!debouncedSearchTerm.trim()) return branchFiltered;
+    if (!debouncedSearchTerm.trim()) return { list: branchFiltered, isAnnFuzzy: false };
 
-    return branchFiltered.filter(a => {
-      if (tokenMatch(debouncedSearchTerm, a.title, a.message, a.badgeText)) return true;
-      if (Array.isArray(a.audience)) return a.audience.some(emp => emp.name && tokenMatch(debouncedSearchTerm, emp.name));
-      return false;
-    });
+    const { results, isFuzzy } = smartFilter(debouncedSearchTerm, branchFiltered, a => [
+        a.title, a.message, a.badgeText,
+        ...(Array.isArray(a.audience) ? a.audience.map(e => e.name) : []),
+    ]);
+    return { list: results, isAnnFuzzy: isFuzzy };
   }, [processedAnnouncements, listTab, debouncedSearchTerm, isBranchScoped, user?.branchId]);
+  const { list: currentList, isAnnFuzzy } = currentListRaw;
 
   const totalItems = currentList.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
@@ -725,11 +726,19 @@ const AnnouncementsView = ({ openModal }) => {
                   </div>
                 </div>
               ) : (
-                paginatedList.map((ann, i) => (
+                <>
+                {isAnnFuzzy && debouncedSearchTerm && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                    <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                    Resultados similares para &ldquo;{debouncedSearchTerm}&rdquo; — no se encontraron coincidencias exactas
+                  </div>
+                )}
+                {paginatedList.map((ann, i) => (
                   <div key={ann.id} className="animate-stagger-child" style={{ '--stagger-delay': `${Math.min(i, 7) * 45}ms` }}>
                     <AnnouncementCard ann={ann} onArchive={handleArchiveCallback} onDelete={handleDeleteCallback} onViewDetail={handleViewDetailCallback} onEdit={() => editingAnnId === ann.id ? handleCancelEdit() : handleEditClick(ann)} isEditingThis={editingAnnId === ann.id} canEdit={canEdit} />
                   </div>
-                ))
+                ))}
+                </>
               )}
             </div>
 

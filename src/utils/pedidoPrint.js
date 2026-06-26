@@ -18,9 +18,10 @@ const SUCURSAL_CODES  = { 1: 'S1', 2: 'S2', 3: 'S3', 4: 'S4', 5: 'PO', 6: 'BO', 
 const TOTAL_NON_BODEGA = 6;
 const CUSTOM_LABELS    = ['CAJA', 'ESTUCHE', 'BOLSA'];
 
-// Va a "Cajas Adicionales" solo si el usuario activó dispatch_label en reglas (Electrolit, etc.) o caja_especial
+// Va a "Cajas Adicionales" solo si dispatch_label='CAJA' (Electrolit) o caja_especial. ESTUCHE/BOLSA van en tabla normal.
 function isAdicional(row) {
-    return row.caja_especial === true || row.tiene_dispatch_label === true;
+    return row.caja_especial === true ||
+           (row.tiene_dispatch_label === true && (row.dispatch_tipo ?? '').toUpperCase() === 'CAJA');
 }
 
 // Nombre de farmacia según destino

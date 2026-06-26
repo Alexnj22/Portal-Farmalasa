@@ -178,46 +178,44 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
         ? { image: logo, width: 22, height: 22, margin: [0, 0, 10, 0] }
         : { text: '', width: 0 };
 
-    // Fila 1 — gris claro, B&W friendly
+    // Fila 1 — Logo+Farmacia | ORDEN DE DESPACHO | Código/Fecha — todo en UNA línea
     const titleRow = [
         {
-            colSpan: 6, fillColor: '#eeeeee', margin: [6, 3, 6, 2],
-            stack: [
-                { text: 'ORDEN DE DESPACHO', fontSize: 9, bold: true, color: '#222', alignment: 'center', margin: [0, 0, 0, 3] },
+            colSpan: 6, fillColor: '#eeeeee', margin: [6, 5, 6, 5],
+            columns: [
                 {
-                    columns: [
-                        {
-                            columns: [logoCell, { text: farmaciaName, fontSize: 9, bold: true, color: '#111', margin: [0, 5, 0, 0] }],
-                            width: '60%',
-                        },
-                        {
-                            stack: [
-                                { text: sec.codigo ?? '', fontSize: 7.5, bold: true, color: '#111', alignment: 'right' },
-                                { text: fecha, fontSize: 6.5, color: '#666', alignment: 'right' },
-                            ],
-                            width: '40%',
-                        },
+                    columns: [logoCell, { text: farmaciaName, fontSize: 9, bold: true, color: '#111', margin: [0, 5, 0, 0] }],
+                    width: '38%',
+                },
+                { text: 'ORDEN DE DESPACHO', fontSize: 9, bold: true, color: '#222', alignment: 'center', margin: [0, 6, 0, 0], width: '*' },
+                {
+                    stack: [
+                        { text: sec.codigo ?? '', fontSize: 7.5, bold: true, color: '#111', alignment: 'right' },
+                        { text: fecha, fontSize: 6.5, color: '#666', alignment: 'right' },
                     ],
+                    width: '28%',
                 },
             ],
         },
         {}, {}, {}, {}, {},
     ];
 
-    // Fila 2 — origen → destino en UNA sola línea + caja a la derecha
+    // Fila 2 — origen → destino en UNA sola línea + Caja más grande a la derecha
     const originText = bodegaAddr ? `Origen: Bodega · ${bodegaAddr}` : 'Origen: Bodega';
     const destText   = sucAddr    ? `Destino: ${sec.nombre} · ${sucAddr}` : `Destino: ${sec.nombre}`;
     const subtitleRow = [
         {
-            colSpan: 6, fillColor: '#ffffff', margin: [6, 5, 6, 8],
+            colSpan: 6, fillColor: '#ffffff', margin: [6, 6, 6, 6],
             columns: [
                 { text: originText, fontSize: 6, color: '#555', width: '36%' },
-                { text: destText,   fontSize: 6, color: '#555', width: '40%', alignment: 'center' },
+                { text: destText,   fontSize: 6, color: '#555', width: '38%', alignment: 'center' },
                 {
-                    width: '24%',
-                    stack: [
-                        { text: 'Caja: ___________', fontSize: 6.5, color: '#333', alignment: 'right', margin: [0, 0, 0, 0] },
+                    width: '26%',
+                    text: [
+                        { text: 'Caja: ', fontSize: 8, bold: true, color: '#222' },
+                        { text: '___________________', fontSize: 8, color: '#444' },
                     ],
+                    alignment: 'right',
                 },
             ],
         },

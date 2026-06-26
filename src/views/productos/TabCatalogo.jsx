@@ -1763,7 +1763,7 @@ function AuroraView({ products, expandedId, expandedCache, loadingExpandedId, ch
                                     </div>
                                     <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                                         {p.tipo_medicamento && <span className="text-[9px] bg-blue-500/[0.14] text-blue-300 border border-blue-400/[0.22] px-1.5 py-0.5 rounded-full">{p.tipo_medicamento}</span>}
-                                        {p.es_antibiotico   && <span className="text-[9px] bg-orange-500/[0.14] text-orange-300 border border-orange-400/[0.22] px-1.5 py-0.5 rounded-full">Antibiótico</span>}
+                                        {p.es_antibiotico   && <span className="text-[9px] bg-orange-500/[0.14] text-orange-300 border border-orange-400/[0.22] px-1.5 py-0.5 rounded-full">Bajo Receta</span>}
                                         {p.requiere_receta  && <span className="text-[9px] bg-red-500/[0.14] text-red-300 border border-red-400/[0.22] px-1.5 py-0.5 rounded-full">Receta</span>}
                                     </div>
                                 </div>
@@ -2883,7 +2883,7 @@ export default function TabCatalogo({
                                     <DataCell hideBelow="lg">
                                         <div className="flex flex-wrap gap-1">
                                             {p.tipo_medicamento && <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border bg-blue-50 text-blue-600 border-blue-100">{p.tipo_medicamento}</span>}
-                                            {p.es_antibiotico   && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-orange-50 text-orange-600 border-orange-100">Antibiótico</span>}
+                                            {p.es_antibiotico   && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-orange-50 text-orange-600 border-orange-100">Bajo Receta</span>}
                                             {p.requiere_receta  && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-100">Receta</span>}
                                             {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && <span className="text-[11px] text-slate-300">—</span>}
                                         </div>

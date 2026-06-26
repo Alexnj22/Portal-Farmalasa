@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.398';
+export const APP_VERSION = '2.2.399';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.399 — fix(ui): "Abx"/"Antibiótico" → "Bajo Receta" en TabPedidos y TabCatalogo
 // v2.2.398 — fix(pdf): Cajas Adicionales muestra subtexto und. cuando tiene_dispatch_label=true; propaga dispF a buildEspecialesBlock
 // v2.2.397 — fix(pdf): isLabel usa tiene_dispatch_label=true en vez de CUSTOM_LABELS; agrega dispatch_rules al ITEMS_SELECT
 // v2.2.388 — fix(pdf): revierte header a 3 filas; origen+destino en 1 línea sin salto (·); logo margin-right 10; farmacia margin-top 5 para centrado vertical

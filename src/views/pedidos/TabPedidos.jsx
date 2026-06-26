@@ -657,7 +657,7 @@ function renderProd(row) {
     return (
         <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-medium text-slate-700">{row.products?.nombre ?? `Prod. ${row.erp_product_id}`}</span>
-            {row.products?.es_antibiotico && <span className="text-[9px] px-1.5 rounded-full bg-red-50 border border-red-200 text-red-500 font-semibold shrink-0">Abx</span>}
+            {row.products?.es_antibiotico && <span className="text-[9px] px-1.5 rounded-full bg-red-50 border border-red-200 text-red-500 font-semibold shrink-0">Bajo Receta</span>}
         </div>
     );
 }

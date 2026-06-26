@@ -2971,7 +2971,6 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                                     {/* Actions + status strip */}
                                     <div className="flex items-center gap-2 px-3 pb-2 flex-wrap" onClick={e => e.stopPropagation()}>
-                                        <StagePill stage={stage} />
                                         {row.total_cajas > 0 && (
                                             <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 tabular-nums shrink-0">
                                                 <Box size={10} className="text-slate-500 shrink-0" />
@@ -3042,7 +3041,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canActuar && !isBranch && stage === 'preparado' && (
                                                 <button
                                                     onClick={e => { e.stopPropagation(); setProgramarModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, currentAt: row.entrega_programada_at ?? null, historial: row.entrega_programada_historial ?? [] }); }}
-                                                    className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl active:scale-95 transition-all shadow-sm ${row.entrega_programada_at ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200' : 'bg-indigo-500 text-white hover:bg-indigo-600'}`}
+                                                    className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl active:scale-95 transition-all ${row.entrega_programada_at ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'}`}
                                                 >
                                                     <CalendarClock size={10} />
                                                     {row.entrega_programada_at ? fmtEntrega(row.entrega_programada_at) : 'Programar'}

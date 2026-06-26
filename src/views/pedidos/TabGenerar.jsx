@@ -4,7 +4,7 @@ import {
     Loader2, Building2, ClipboardList, CheckCircle2,
     Package, AlertTriangle, Info,
     TriangleAlert, TrendingUp,
-    Download, Check, X,
+    Check, X,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -66,7 +66,6 @@ export default function TabGenerar({ searchTerm = '' }) {
     const [globalMode, setGlobalMode] = useState(false);
 
     const [confirming, setConfirming] = useState(false);
-    const [confirmed,  setConfirmed]  = useState(null);
     const [error,      setError]      = useState(null);
 
     const [dashStats,   setDashStats]   = useState([]);
@@ -130,7 +129,7 @@ export default function TabGenerar({ searchTerm = '' }) {
     // ── Generar directo: calcula + confirma final + imprime ────
     const handleGenerarDirecto = useCallback(async () => {
         if (selected.size === 0) return;
-        setConfirming(true); setError(null); setConfirmed(null);
+        setConfirming(true); setError(null);
         try {
             const rpcParams = globalMode
                 ? { p_sucursal_ids: SUCURSALES, p_target_ids: [...selected] }
@@ -246,10 +245,6 @@ export default function TabGenerar({ searchTerm = '' }) {
                 `${pItems.length} productos en ${sucIds.length} sucursal${sucIds.length > 1 ? 'es' : ''}. PDF listo para imprimir.`,
                 'success',
             );
-            setConfirmed({
-                id: pedidoId, numero: ped?.numero,
-                frozenGrouped: map, frozenSucIds: sucIds, codigosMap, printMeta: meta,
-            });
             setSelected(new Set());
             refreshStats();
         } catch (e) {
@@ -341,33 +336,6 @@ export default function TabGenerar({ searchTerm = '' }) {
     return (
         <div className="space-y-5 p-4">
 
-            {/* ── Pedido generado — banner de éxito ──────────── */}
-            {confirmed && (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center gap-3 flex-wrap">
-                    <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle2 size={18} className="text-emerald-500" />
-                    </div>
-                    <div className="flex-1 min-w-[180px]">
-                        <p className="font-semibold text-emerald-700 text-[14px]">Pedido #{confirmed.numero} confirmado</p>
-                        <p className="text-[11px] text-emerald-600/70">PDF generado. Puedes descargarlo de nuevo si es necesario. Visible en Historial.</p>
-                    </div>
-                    <button
-                        onClick={() => printPerSucursal(
-                            confirmed.frozenGrouped, confirmed.frozenSucIds,
-                            r => r.cantidad_asignada,
-                            (id) => confirmed.codigosMap?.[id],
-                            confirmed.printMeta,
-                        )}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-emerald-300 text-emerald-700 hover:bg-emerald-100 transition-colors"
-                    >
-                        <Download size={12} /> Descargar pedido
-                    </button>
-                    <button onClick={() => setConfirmed(null)}
-                        className="p-1.5 rounded-lg text-emerald-400 hover:text-emerald-600 transition-colors">
-                        <X size={14} />
-                    </button>
-                </div>
-            )}
 
             {/* ── Sucursal selector ──────────────────────────── */}
             <div className={GLASS + ' p-4'}>

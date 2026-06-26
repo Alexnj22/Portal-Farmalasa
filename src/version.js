@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.382';
+export const APP_VERSION = '2.2.383';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.383 — fix(generar): elimina banner verde "Pedido confirmado" con botón Descargar; el toast ya notifica el éxito
 // v2.2.382 — feat(pdf): sección "Cajas Adicionales" — renombrada desde "Cajas Especiales"; incluye Electrolit (dispatch_tipo CAJA/ESTUCHE/BOLSA con dispFactor>erpFactor) junto con cajas especiales; ambos tipos excluidos de tabla principal; helper isAdicional() centraliza la clasificación; printPerSucursal + printFromPedidoItems + getExactPageGroups actualizados
 // v2.2.381 — perf(db): get_pedido_preview reescritura TEMP TABLE — elimina query monolítica 22 CTEs (planner tardaba 25s+); convierte a 12 TEMP TABLEs secuenciales con índices intermedios; cada paso planifica en <5ms; 1 sucursal: ~270ms, 6 sucursales: <1s; diagnóstico: create mv_product_factor + debug_pedido_timings
 // v2.2.380 — perf(db): get_pedido_preview reescritura — elimina DISTINCT ON de inv_suc (→ GROUP BY); fusiona inv_suc+inv_agg, bodega_raw+bodega, bodega_lotes_raw+bodega_lotes_pres, lote_intersect+lotes_por_sucursal; MATERIALIZED en 9 CTEs claves (inv_agg, inv_bodega, necesidades, pres_units_needed, pres_units_total, ventas_suc, ventas_total, bodega, distribucion, con_reglas_uncapped, con_reglas, bodega_lotes); elimina suc_map redundante; reduce 31→22 CTEs

@@ -246,9 +246,12 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     >
                         {/* Etiqueta en PDF — pills preset, junto a la presentación */}
                         <div>
-                            <p className="text-[9px] text-slate-600 uppercase tracking-widest mb-2 font-bold">
+                            <p className="text-[9px] text-slate-600 uppercase tracking-widest mb-1 font-bold">
                                 Mostrar en PDF como
                                 <span className="normal-case tracking-normal font-medium text-slate-500"> · opcional</span>
+                            </p>
+                            <p className="text-[10px] text-slate-400 mb-2 leading-snug">
+                                Activa solo para productos en <strong className="text-slate-500">cajas físicas grandes</strong> (Electrolit, sueros, etc.). El PDF los lista en una sección separada «Cajas Adicionales», una caja por fila con lote.
                             </p>
                             <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                                 {['CAJA', 'ESTUCHE', 'BOLSA'].map(label => (

@@ -18,11 +18,9 @@ const SUCURSAL_CODES  = { 1: 'S1', 2: 'S2', 3: 'S3', 4: 'S4', 5: 'PO', 6: 'BO', 
 const TOTAL_NON_BODEGA = 6;
 const CUSTOM_LABELS    = ['CAJA', 'ESTUCHE', 'BOLSA'];
 
-// Electrolit u otro producto con dispatch_label personalizado → va en sección Adicionales
+// Va a "Cajas Adicionales" solo si el usuario activó dispatch_label en reglas (Electrolit, etc.) o caja_especial
 function isAdicional(row) {
-    const erpF  = row.factor ?? 1;
-    const dispF = row.dispatch_factor ?? erpF;
-    return row.caja_especial || (CUSTOM_LABELS.includes((row.dispatch_tipo ?? '').toUpperCase()) && dispF > erpF);
+    return row.caja_especial === true || row.tiene_dispatch_label === true;
 }
 
 // Nombre de farmacia según destino

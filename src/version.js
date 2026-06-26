@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.383';
+export const APP_VERSION = '2.2.384';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.384 — fix(pdf): isAdicional usa tiene_dispatch_label (DB) en vez de CUSTOM_LABELS+dispF>erpF — elimina falsos positivos en productos normales con presentacion CAJA; DB expone tiene_dispatch_label en get_pedido_preview; mejora texto "Mostrar en PDF como" en TabReglas
 // v2.2.383 — fix(generar): elimina banner verde "Pedido confirmado" con botón Descargar; el toast ya notifica el éxito
 // v2.2.382 — feat(pdf): sección "Cajas Adicionales" — renombrada desde "Cajas Especiales"; incluye Electrolit (dispatch_tipo CAJA/ESTUCHE/BOLSA con dispFactor>erpFactor) junto con cajas especiales; ambos tipos excluidos de tabla principal; helper isAdicional() centraliza la clasificación; printPerSucursal + printFromPedidoItems + getExactPageGroups actualizados
 // v2.2.381 — perf(db): get_pedido_preview reescritura TEMP TABLE — elimina query monolítica 22 CTEs (planner tardaba 25s+); convierte a 12 TEMP TABLEs secuenciales con índices intermedios; cada paso planifica en <5ms; 1 sucursal: ~270ms, 6 sucursales: <1s; diagnóstico: create mv_product_factor + debug_pedido_timings

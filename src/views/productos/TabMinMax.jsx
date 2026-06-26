@@ -2652,14 +2652,18 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         });
     }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, filterSparse, filterChangesOnly, hiddenIds, filterHidden]);
 
-    const { filtered, isSearchFuzzy } = useMemo(() => {
-        if (!searchTerm) return { filtered: filteredBase, isSearchFuzzy: false };
+    const { filtered, isSearchFuzzy, searchHiddenByFilter } = useMemo(() => {
+        if (!searchTerm) return { filtered: filteredBase, isSearchFuzzy: false, searchHiddenByFilter: false };
         const { results, isFuzzy } = smartFilter(
             searchTerm, filteredBase,
             r => [r.product_name, r.laboratorio_nombre]
         );
-        return { filtered: results, isSearchFuzzy: isFuzzy };
-    }, [filteredBase, searchTerm]);
+        // Si 0 resultados Y hay filtro de categoría activo, verificar si existen fuera del filtro
+        const hasCategoryFilter = filterAbc !== 'all' || filterXyz !== 'all' || filterAlert !== 'all';
+        const hiddenByFilter = hasCategoryFilter && results.length === 0 &&
+            smartFilter(searchTerm, data.filter(r => !hiddenIds.has(r.erp_product_id)), r => [r.product_name, r.laboratorio_nombre]).results.length > 0;
+        return { filtered: results, isSearchFuzzy: isFuzzy, searchHiddenByFilter: hiddenByFilter };
+    }, [filteredBase, searchTerm, filterAbc, filterXyz, filterAlert, data, hiddenIds]);
 
     const filteredDraftIds = useMemo(
         () => hasActiveFilter ? filtered.filter(r => r.draft_status === 'pending').map(r => r.erp_product_id) : [],
@@ -3299,8 +3303,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     loading={loading}
                     empty={{
                         icon: Package,
-                        message: 'Sin productos con ese filtro',
-                        action: { label: 'Quitar filtros', onClick: () => { setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); } },
+                        message: searchHiddenByFilter
+                            ? `"${searchTerm}" existe pero está fuera del filtro activo`
+                            : 'Sin productos con ese filtro',
+                        action: searchHiddenByFilter
+                            ? { label: 'Quitar filtros y ver resultado', onClick: () => { setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); } }
+                            : { label: 'Quitar filtros', onClick: () => { setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all'); } },
                     }}
                     minWidth="860px"
                 >

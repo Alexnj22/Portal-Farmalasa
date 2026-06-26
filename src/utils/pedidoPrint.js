@@ -18,6 +18,13 @@ const SUCURSAL_CODES  = { 1: 'S1', 2: 'S2', 3: 'S3', 4: 'S4', 5: 'PO', 6: 'BO', 
 const TOTAL_NON_BODEGA = 6;
 const CUSTOM_LABELS    = ['CAJA', 'ESTUCHE', 'BOLSA'];
 
+// Electrolit u otro producto con dispatch_label personalizado → va en sección Adicionales
+function isAdicional(row) {
+    const erpF  = row.factor ?? 1;
+    const dispF = row.dispatch_factor ?? erpF;
+    return row.caja_especial || (CUSTOM_LABELS.includes((row.dispatch_tipo ?? '').toUpperCase()) && dispF > erpF);
+}
+
 // Nombre de farmacia según destino
 function getFarmaciaName(sucId) {
     if (sucId === 5) return 'FARMACIA LA POPULAR';
@@ -285,7 +292,7 @@ function buildEspecialesBlock(especiales) {
         : ['Caja', 'Producto', 'Presentación', 'Cant.', 'OK'];
 
     const titleRow = [
-        { text: 'CAJAS ESPECIALES', colSpan: nCols, fillColor: '#ede9fe', bold: true, fontSize: 7, color: '#5b21b6', margin: [4, 3, 4, 3], alignment: 'center' },
+        { text: 'CAJAS ADICIONALES', colSpan: nCols, fillColor: '#ede9fe', bold: true, fontSize: 7, color: '#5b21b6', margin: [4, 3, 4, 3], alignment: 'center' },
         ...Array(nCols - 1).fill({}),
     ];
     const headerRow = hLabels.map((label, i) => ({
@@ -428,7 +435,7 @@ export function getPageGroups(rows) {
 export async function getExactPageGroups(sucId, rawItems) {
     const [logo, addrMap] = await Promise.all([getLogoBase64(), getAddressMap()]);
 
-    const printRows = rawItems.filter(r => !r.sin_stock && !r.caja_especial).map(r => {
+    const printRows = rawItems.filter(r => !r.sin_stock && !isAdicional(r)).map(r => {
         const erpFactor  = r.factor ?? 1;
         const dispFactor = r.dispatch_factor ?? erpFactor;
         const qty        = toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor);
@@ -538,7 +545,7 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
 
     const pdfs = sortedSucIds.map(sucId => {
         const g    = grouped[sucId] || { normal: [], revision: [], sinStock: [] };
-        const rows = [...g.normal, ...g.revision].filter(row => !row.caja_especial).map(row => {
+        const rows = [...g.normal, ...g.revision].filter(row => !isAdicional(row)).map(row => {
             const erpFactor  = row.factor ?? 1;
             const dispFactor = row.dispatch_factor ?? erpFactor;
             const qty        = toDispatch(getAdjusted(row), erpFactor, dispFactor);
@@ -556,13 +563,15 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
 
         let eCounter = 1;
         const especiales = [...g.normal, ...g.revision]
-            .filter(row => row.caja_especial && (getAdjusted(row) ?? 0) > 0)
+            .filter(row => isAdicional(row) && (getAdjusted(row) ?? 0) > 0)
             .sort((a, b) => (a.product_name ?? '').localeCompare(b.product_name ?? '', 'es'))
             .flatMap(row => {
-                const qty      = getAdjusted(row) ?? 1;
+                const erpF     = row.factor ?? 1;
+                const dispF    = row.dispatch_factor ?? erpF;
+                const qty      = toDispatch(getAdjusted(row) ?? 1, erpF, dispF);
                 const dispTipo = row.dispatch_tipo ?? row.presentacion_tipo ?? '';
                 const rawLotes = fefoProject(
-                    lotesToDispatch(row.lotes_bodega ?? [], row.factor ?? 1, row.dispatch_factor ?? row.factor ?? 1),
+                    lotesToDispatch(row.lotes_bodega ?? [], erpF, dispF),
                     qty,
                 ).filter(l => l.lote || l.fecha_vencimiento);
                 const lotPool  = rawLotes.map(l => ({ ...l, _rem: l.take ?? l.cantidad ?? l.packs ?? 0 }));
@@ -674,7 +683,7 @@ export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, t
     const ds = dateSuffix();
 
     const sections = sucGroups.map(([sucId, rows]) => {
-        const printRows = rows.filter(r => !r.sin_stock && !r.caja_especial).map(r => {
+        const printRows = rows.filter(r => !r.sin_stock && !isAdicional(r)).map(r => {
             const erpFactor  = r.factor ?? 1;
             const dispFactor = r.dispatch_factor ?? erpFactor;
             const dispTipo   = r.dispatch_tipo ?? r.presentaciones?.tipo ?? '';
@@ -696,14 +705,16 @@ export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, t
 
         let eCounter = 1;
         const especiales = rows
-            .filter(r => !r.sin_stock && r.caja_especial && (r.cantidad_asignada ?? 0) > 0)
+            .filter(r => !r.sin_stock && isAdicional(r) && (r.cantidad_asignada ?? 0) > 0)
             .sort((a, b) => (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es'))
             .flatMap(r => {
-                const qty      = r.cantidad_asignada ?? 1;
+                const erpF     = r.factor ?? 1;
+                const dispF    = r.dispatch_factor ?? erpF;
+                const qty      = toDispatch(r.cantidad_asignada ?? 1, erpF, dispF);
                 const dispTipo = r.dispatch_tipo ?? r.presentaciones?.tipo ?? '';
                 const rawLotes = lotesAsignadosToDispatch(
                     Array.isArray(r.lotes_asignados) ? r.lotes_asignados : [],
-                    r.factor ?? 1, r.dispatch_factor ?? r.factor ?? 1,
+                    erpF, dispF,
                 ).filter(l => l.lote || l.fecha_vencimiento);
                 const lotPool  = rawLotes.map(l => ({ ...l, _rem: l.take ?? l.cantidad ?? l.packs ?? 0 }));
                 return Array.from({ length: qty }, () => {

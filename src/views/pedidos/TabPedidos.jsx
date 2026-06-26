@@ -749,10 +749,15 @@ const COLS_REGLA = [
     { key: 'stock_suc',  label: 'Stock sucursal', align: 'center', render: r => {
         const packs  = r.stock_packs_snapshot ?? null;
         const factor = Number(r.factor) || 1;
-        const units  = packs != null ? Math.round(packs * factor) : null;
+        if (packs == null) return <span className="text-slate-300">—</span>;
+        // factor>1 → stock en packs de presentación (ej. 0.2 caja); factor=1 → unidades base
+        const isZero = packs === 0;
+        const display = factor > 1
+            ? `${+(packs.toFixed(1))} ${(r.presentacion_tipo ?? 'caja').toLowerCase()}`
+            : `${Math.round(packs)} und`;
         return (
-            <span className={`tabular-nums text-[11px] font-semibold ${(units ?? 0) === 0 ? 'text-rose-500' : 'text-slate-600'}`}>
-                {units != null ? `${units} und` : '—'}
+            <span className={`tabular-nums text-[11px] font-semibold ${isZero ? 'text-rose-500' : 'text-slate-600'}`}>
+                {display}
             </span>
         );
     }},

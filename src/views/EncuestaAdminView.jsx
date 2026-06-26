@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { tokenMatch } from '../utils/searchUtils';
 import {
     PenLine, Plus, Trash2, Users, UserCheck, Save, ChevronDown, ChevronUp,
     Check, X, Building2, Loader2, BarChart2, ClipboardList,
@@ -641,11 +642,11 @@ export default function EncuestaAdminView() {
                                     )}
 
                                     {sfScope === 'employees' && (() => {
-                                        const q = sfEmpSearch.trim().toLowerCase();
+                                        const q = sfEmpSearch.trim();
                                         const empResults = q
                                             ? employees.filter(e => {
-                                                const fn = `${e.first_names || ''} ${e.last_names || ''}`.toLowerCase();
-                                                return fn.includes(q) && !sfScopeIds.includes(e.id);
+                                                const fn = `${e.first_names || ''} ${e.last_names || ''}`;
+                                                return tokenMatch(q, fn) && !sfScopeIds.includes(e.id);
                                             }).slice(0, 8)
                                             : [];
                                         const selectedEmps = employees.filter(e => sfScopeIds.includes(e.id));

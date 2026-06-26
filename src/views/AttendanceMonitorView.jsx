@@ -24,6 +24,7 @@ import {
 
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { getTodayScheduleConfig, normalizeText } from "../utils/helpers";
+import { tokenMatch } from '../utils/searchUtils';
 import GlassViewLayout from "../components/GlassViewLayout";
 import { toLocalISODate } from "../utils/timeClock.helpers";
 import BranchChips from "../components/common/BranchChips";
@@ -221,9 +222,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
         const matchesSearch =
           !q ||
-          normalizeText(emp.name).includes(q) ||
-          normalizeText(emp.code).includes(q) ||
-          normalizeText(emp.role).includes(q);
+          tokenMatch(searchTerm, emp.name, emp.code, emp.role);
 
         if (!matchesBranch || !matchesSearch) return null;
 

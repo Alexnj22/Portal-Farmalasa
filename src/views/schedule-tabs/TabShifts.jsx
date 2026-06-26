@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
+import { tokenMatch } from '../../utils/searchUtils';
 import {
     X, Loader2, Archive, Target, Edit3, Copy,
     AlertTriangle, Search, RotateCcw, Save, Send, Globe, AlertCircle,
@@ -333,7 +334,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
             .filter(s => {
                 const isActive    = s.is_active !== false && s.isActive !== false;
                 const matchesTab  = (shiftTab === 'ACTIVE' && isActive) || (shiftTab === 'ARCHIVED' && !isActive);
-                const matchesSearch = !searchTerm || (s.name || '').toLowerCase().includes(searchTerm);
+                const matchesSearch = !searchTerm || tokenMatch(searchTerm, s.name);
                 return matchesTab && matchesSearch;
             })
             .reduce((map, s) => {

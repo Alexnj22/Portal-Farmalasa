@@ -856,6 +856,104 @@ These are the next wave of work to complete dark mode coverage.
 
 ---
 
+## 24. Search Patterns
+
+Tres tipos de buscador en el Portal. Toda búsqueda debe mapearse a uno de estos — nunca crear un cuarto patrón.
+
+---
+
+### Tipo 1 — Header de vista (ViewTabBar)
+
+**Dónde:** todas las vistas GlassViewLayout con tabs.
+
+Cubierto en §14 ViewTabBar. El `searchTerm` vive en la vista y se pasa como prop a los tabs. Nunca agregar un input local dentro de un tab — el search siempre vive en el header.
+
+---
+
+### Tipo 2 — Inline / Widget (SearchInput)
+
+**Dónde:** cards de dashboard, cuerpo de modales, RecepcionModal, widgets internos, y cualquier search fuera del header de vista.
+
+**Componente:** `SearchInput` — `src/components/common/SearchInput.jsx`
+
+**Visual spec:**
+```
+Input:  rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm
+        text-slate-700 placeholder:text-slate-400
+        focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 focus:bg-white
+Ícono:  <Search> text-[#0052CC] strokeWidth={2.5}  — izquierda
+Clear:  <X>     hover:text-red-500 strokeWidth={2.5} — aparece solo cuando value truthy
+```
+
+**Sizes:**
+
+| `size` | Altura | Usar en |
+|--------|--------|---------|
+| `"sm"` | ~32px | Cabecera compacta dentro de cards, listas picker |
+| `"md"` | ~40px | Search principal de widget o modal |
+
+**Uso mínimo:**
+```jsx
+import SearchInput from '../components/common/SearchInput';
+
+<SearchInput
+  value={search}
+  onChange={setSearch}
+  placeholder="Buscar producto..."
+  size="sm"
+/>
+```
+
+**Reglas:**
+- Nunca usar `<input type="text">` crudo para búsquedas inline — siempre `SearchInput`.
+- Siempre emparejar con `smartFilter` o `tokenMatch` (ver §24 Lógica de búsqueda).
+- Siempre mostrar el banner fuzzy cuando `isFuzzy && searchTerm` (solo con `smartFilter`).
+
+---
+
+### Tipo 3 — Picker / Selección
+
+**Dónde:** selección de destinatarios (AnnouncementsView), selección de productos en modales.
+
+| Tamaño lista | Componente | Patrón |
+|---|---|---|
+| > 100 ítems (DB) | `LiquidSelect` con `serverSearch={true}` + `onSearchChange` | `normSearch()` antes de enviar a `ilike` |
+| ≤ 100 ítems (memoria) | `SearchInput size="sm"` al tope de `div` scrollable | Filtrar con `tokenMatch` client-side |
+
+Nunca usar `<input>` crudo para pickers.
+
+---
+
+### Lógica de búsqueda estándar
+
+Todas las búsquedas usan `src/utils/searchUtils.js`:
+
+| Función | Usar cuando |
+|---------|-------------|
+| `normSearch(str)` | Normalizar antes de DB `ilike` — quita acentos, puntuación, lowercase |
+| `tokenMatch(query, ...fields)` | Listas pequeñas en memoria (pickers, < 200 items) |
+| `smartFilter(query, data, getFields)` | Cuerpos de tabs y widgets — incluye fallback fuzzy automático |
+
+**Patrón two-pass con smartFilter:**
+```js
+const { results, isFuzzy } = !searchTerm.trim()
+    ? { results: base, isFuzzy: false }
+    : smartFilter(searchTerm, base, r => [r.campo1, r.campo2]);
+```
+
+**Banner fuzzy estándar** — inmediatamente antes de la tabla/lista, cuando `isFuzzy && searchTerm`:
+```jsx
+{isFuzzy && searchTerm && (
+    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl
+                    bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+        <Search size={12} strokeWidth={2.5} className="shrink-0" />
+        Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+    </div>
+)}
+```
+
+---
+
 ## 25. Accessibility
 
 ### Focus visible

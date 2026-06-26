@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { tokenMatch } from '../utils/searchUtils';
 import {
     CalendarDays, ChevronLeft, ArrowRight, Building2, BookOpen,
     X, Save, Loader2,
@@ -54,7 +55,7 @@ const HolidaysPanel = ({
 }) => {
     const yearHolidays = (holidays || []).filter(h => {
         const yearMatch = h.holiday_date?.startsWith(String(holidayYear));
-        const nameMatch = !searchTerm || (h.name || '').toLowerCase().includes(searchTerm);
+        const nameMatch = !searchTerm || tokenMatch(searchTerm, h.name);
         return yearMatch && nameMatch;
     });
     const byMonth = MONTHS_ES.map((month, idx) => ({
@@ -536,7 +537,7 @@ const SchedulesView = ({ openModal, setView }) => {
 
     const filteredEmployees = useMemo(() => {
         if (!searchTerm) return employeesInView;
-        return employeesInView.filter(e => (e.name || '').toLowerCase().includes(searchTerm));
+        return employeesInView.filter(e => tokenMatch(searchTerm, e.name));
     }, [employeesInView, searchTerm]);
 
     const weekIsPublished = useMemo(() => {

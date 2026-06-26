@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Loader2, Check, X, Clock, Package, ArrowRight, Inbox, CheckCheck, TrendingUp, Building2 } from 'lucide-react';
+import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -235,10 +236,9 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
   }, [tabRows]);
 
   const filtered = useMemo(() => {
-    const q = searchTerm.toLowerCase();
     return tabRows.filter(r => {
       if (sucFilter !== 'all' && String(r.erp_sucursal_id) !== String(sucFilter)) return false;
-      if (q && !r.product_name?.toLowerCase().includes(q) && !r.requested_by_name?.toLowerCase().includes(q)) return false;
+      if (searchTerm.trim() && !tokenMatch(searchTerm, r.product_name, r.requested_by_name)) return false;
       return true;
     });
   }, [tabRows, sucFilter, searchTerm]);

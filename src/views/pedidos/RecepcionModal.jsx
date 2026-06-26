@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, X, PackageCheck, AlertTriangle, Search,
@@ -521,7 +522,7 @@ export default function RecepcionModal({
     // Visible rows for the items grid
     const gridRows = selectedCaja !== null ? selectedCajaRows : sortedRows;
     const visibleRows = prodSearch.trim()
-        ? gridRows.filter(r => r.products?.nombre?.toLowerCase().includes(prodSearch.trim().toLowerCase()))
+        ? gridRows.filter(r => tokenMatch(prodSearch, r.products?.nombre))
         : gridRows;
 
     // ════════════════════════════════════════════════════════════════

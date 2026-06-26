@@ -1574,24 +1574,20 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     }, [fini, ffin, filterBranch]);
 
     // filtered + sorted — busca en TODO el dataset, no solo en la página visible
-    const filtered = useMemo(() => {
-        let list = rows;
-        if (searchTerm) {
-            const s = searchTerm.toLowerCase();
-            list = list.filter(r =>
-                r.descripcion?.toLowerCase().includes(s) ||
-                (r.presentaciones || []).some(p => p.presentacion?.toLowerCase().includes(s))
-            );
-        }
-        return [...list].sort((a, b) => {
+    const { results: filtered, isFuzzy: isProdFuzzy } = useMemo(() => {
+        const { results, isFuzzy } = !searchTerm
+            ? { results: rows, isFuzzy: false }
+            : smartFilter(searchTerm, rows, r => [r.descripcion, ...(r.presentaciones || []).map(p => p.presentacion)]);
+        const sorted = [...results].sort((a, b) => {
             const asc = sortDir === 'asc' ? 1 : -1;
             const av = a[sortCol];
             const bv = b[sortCol];
             if (av == null && bv == null) return 0;
-            if (av == null) return 1;   // nulos siempre al fondo
+            if (av == null) return 1;
             if (bv == null) return -1;
             return typeof av === 'string' ? av.localeCompare(bv) * asc : (av - bv) * asc;
         });
+        return { results: sorted, isFuzzy };
     }, [rows, searchTerm, sortCol, sortDir]);
 
     // KPIs sobre el período completo (no afectados por búsqueda)
@@ -1630,6 +1626,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     <Package size={40} className="mx-auto mb-3 opacity-40" />
                     <p className="font-medium">{error}</p>
                     <button onClick={fetchProductos} className="mt-3 text-[11px] font-bold text-blue-500 hover:underline">Reintentar</button>
+                </div>
+            )}
+            {isProdFuzzy && searchTerm && (
+                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                    <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                    Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
                 </div>
             )}
             {!error && (

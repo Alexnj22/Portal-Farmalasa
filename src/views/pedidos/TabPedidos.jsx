@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, ChevronDown, ChevronRight, CheckCircle2,
@@ -2691,7 +2692,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 return (!desde || d >= desde) && (!hasta || d <= hasta);
             });
         }
-        if (searchLower) rows = rows.filter(r => String(r.numero).includes(searchLower) || (r.notes ?? '').toLowerCase().includes(searchLower));
+        if (searchLower) rows = rows.filter(r => String(r.numero).includes(searchLower) || tokenMatch(searchLower, r.notes));
         const uid = String(user?.id ?? '');
         return [...rows].sort((a, b) => {
             // 1. Mío primero — lo inicié o lo creé yo

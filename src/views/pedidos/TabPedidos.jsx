@@ -741,6 +741,24 @@ const COLS_SIN_STOCK = [
     )},
 ];
 
+function sortedPresRegla(presentations) {
+    return [...new Map((presentations || []).map(p => [p.factor, p])).values()]
+        .filter(p => p.factor > 1).sort((a, b) => b.factor - a.factor);
+}
+function formatUnitsRegla(units, presentations) {
+    const n = Math.round(Number(units));
+    if (n === 0) return '0 und';
+    const pres = sortedPresRegla(presentations);
+    if (!pres.length) return `${n} und`;
+    let rem = n;
+    const parts = [];
+    for (const { tipo, factor } of pres) {
+        if (rem >= factor) { parts.push(`${Math.floor(rem / factor)} ${tipo.trim()}`); rem %= factor; }
+    }
+    if (rem > 0) parts.push(`${rem} und`);
+    return parts.length ? parts.join(' + ') : `${n} und`;
+}
+
 const COLS_REGLA = [
     { key: 'lab',        label: 'Laboratorio',   render: renderLab },
     { key: 'prod',       label: 'Producto',      render: renderProd },
@@ -749,15 +767,11 @@ const COLS_REGLA = [
     { key: 'stock_suc',  label: 'Stock sucursal', align: 'center', render: r => {
         const packs  = r.stock_packs_snapshot ?? null;
         const factor = Number(r.factor) || 1;
-        if (packs == null) return <span className="text-slate-300">—</span>;
-        // factor>1 → stock en packs de presentación (ej. 0.2 caja); factor=1 → unidades base
-        const isZero = packs === 0;
-        const display = factor > 1
-            ? `${+(packs.toFixed(1))} ${(r.presentacion_tipo ?? 'caja').toLowerCase()}`
-            : `${Math.round(packs)} und`;
+        const units  = packs != null ? Math.round(packs * factor) : null;
+        const txt    = units != null ? formatUnitsRegla(units, r.presentations) : null;
         return (
-            <span className={`tabular-nums text-[11px] font-semibold ${isZero ? 'text-rose-500' : 'text-slate-600'}`}>
-                {display}
+            <span className={`tabular-nums text-[11px] font-semibold ${(units ?? 0) === 0 ? 'text-rose-500' : 'text-slate-600'}`}>
+                {txt ?? '—'}
             </span>
         );
     }},
@@ -1917,7 +1931,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             resolucion_status, resolucion_tipo, resolucion_nota,
             resuelto_por, resuelto_at, confirmado_suc_por, confirmado_suc_at,
             rechazado_por, rechazado_at, nota_rechazo,
-            products ( nombre, es_antibiotico, laboratorios ( nombre ) ),
+            products ( nombre, es_antibiotico, laboratorios ( nombre ), product_precios ( factor, activo, presentaciones!id_presentacion ( tipo ) ) ),
             presentaciones!erp_presentacion_id ( tipo )
         `;
 
@@ -1959,7 +1973,13 @@ export default function TabPedidos({ searchTerm = '' }) {
         }
 
         const [{ data: lcRow }, { data: apoyoRows }] = await Promise.all([lcPromise, apoyoQ]);
-        const resolved = allItemRows;
+        const resolved = allItemRows.map(row => ({
+            ...row,
+            presentations: (row.products?.product_precios || [])
+                .filter(pp => pp.activo !== false)
+                .map(pp => ({ factor: pp.factor, tipo: pp.presentaciones?.tipo }))
+                .filter(p => p.tipo && p.factor >= 1),
+        }));
         setItems(prev => ({ ...prev, [key]: resolved }));
         setEventosMap(prev => ({ ...prev, [key]: allEvRows }));
         const apoyoByTipo = { preparacion: [], recepcion: [] };

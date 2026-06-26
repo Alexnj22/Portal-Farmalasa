@@ -175,7 +175,7 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
     const sucAddr      = addrMap?.[sec.sucId] ?? '';
 
     const logoCell = logo
-        ? { image: logo, width: 22, height: 22, margin: [0, 0, 10, 0] }
+        ? { image: logo, width: 22, height: 22, margin: [0, 0, 16, 0] }
         : { text: '', width: 0 };
 
     // Fila 1 — Logo+Farmacia | ORDEN DE DESPACHO | Código/Fecha — todo en UNA línea, sin fila separada para el título

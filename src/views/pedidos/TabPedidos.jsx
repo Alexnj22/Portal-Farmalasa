@@ -1931,7 +1931,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             resolucion_status, resolucion_tipo, resolucion_nota,
             resuelto_por, resuelto_at, confirmado_suc_por, confirmado_suc_at,
             rechazado_por, rechazado_at, nota_rechazo,
-            products ( nombre, es_antibiotico, laboratorios ( nombre ), product_precios ( factor, activo, presentaciones!id_presentacion ( tipo ) ) ),
+            products ( nombre, es_antibiotico, laboratorios ( nombre ), product_precios ( factor, activo, presentaciones!id_presentacion ( tipo ) ), dispatch_rules ( dispatch_label ) ),
             presentaciones!erp_presentacion_id ( tipo )
         `;
 
@@ -1979,6 +1979,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 .filter(pp => pp.activo !== false)
                 .map(pp => ({ factor: pp.factor, tipo: pp.presentaciones?.tipo }))
                 .filter(p => p.tipo && p.factor >= 1),
+            tiene_dispatch_label: !!(row.products?.dispatch_rules?.[0]?.dispatch_label),
         }));
         setItems(prev => ({ ...prev, [key]: resolved }));
         setEventosMap(prev => ({ ...prev, [key]: allEvRows }));

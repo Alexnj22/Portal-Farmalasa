@@ -457,7 +457,7 @@ export async function getExactPageGroups(sucId, rawItems) {
         const erpFactor  = r.factor ?? 1;
         const dispFactor = r.dispatch_factor ?? erpFactor;
         const qty        = toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor);
-        const isLabel    = CUSTOM_LABELS.includes((r.dispatch_tipo ?? '').toUpperCase()) && dispFactor > erpFactor;
+        const isLabel    = r.tiene_dispatch_label === true;
         return {
             _rawId:          r.id,
             product_name:    r.products?.nombre ?? '?',
@@ -567,7 +567,7 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
             const erpFactor  = row.factor ?? 1;
             const dispFactor = row.dispatch_factor ?? erpFactor;
             const qty        = toDispatch(getAdjusted(row), erpFactor, dispFactor);
-            const isLabel    = CUSTOM_LABELS.includes((row.dispatch_tipo ?? '').toUpperCase()) && dispFactor > erpFactor;
+            const isLabel    = row.tiene_dispatch_label === true;
             return {
                 product_name:      row.product_name,
                 laboratorio:       row.laboratorio ?? '',
@@ -636,7 +636,7 @@ export async function printFromPreview(grouped, sortedSucIds, getAdjusted, title
             const erpFactor  = row.factor ?? 1;
             const dispFactor = row.dispatch_factor ?? erpFactor;
             const qty        = toDispatch(getAdjusted(row), erpFactor, dispFactor);
-            const isLabel    = CUSTOM_LABELS.includes((row.dispatch_tipo ?? '').toUpperCase()) && dispFactor > erpFactor;
+            const isLabel    = row.tiene_dispatch_label === true;
             return {
                 product_name:      row.product_name,
                 laboratorio:       row.laboratorio ?? '',
@@ -706,7 +706,7 @@ export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, t
             const dispFactor = r.dispatch_factor ?? erpFactor;
             const dispTipo   = r.dispatch_tipo ?? r.presentaciones?.tipo ?? '';
             const qty        = toDispatch(r.cantidad_asignada ?? 0, erpFactor, dispFactor);
-            const isLabel    = CUSTOM_LABELS.includes(dispTipo.toUpperCase()) && dispFactor > erpFactor;
+            const isLabel    = r.tiene_dispatch_label === true;
             return {
                 product_name:      r.products?.nombre ?? '?',
                 laboratorio:       r.products?.laboratorios?.nombre ?? '',

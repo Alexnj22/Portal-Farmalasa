@@ -10,6 +10,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import TablePagination from '../../components/common/TablePagination';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import { smartFilter } from '../../utils/searchUtils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -526,11 +527,10 @@ export default function TabGestionStock({ searchTerm = '' }) {
             else if (filterMode === 'sin_minmax')       rows = rows.filter(r => !r.in_minmax);
         }
 
-        const q = (searchTerm || '').toLowerCase();
-        if (q) rows = rows.filter(r =>
-            r.product_name?.toLowerCase().includes(q) ||
-            r.laboratorio?.toLowerCase().includes(q)
-        );
+        if (searchTerm) {
+            const { results } = smartFilter(searchTerm, rows, r => [r.product_name, r.laboratorio]);
+            rows = results;
+        }
 
         return [...rows].sort((a, b) => {
             if (sortField === 'product_name' || sortField === 'laboratorio') {

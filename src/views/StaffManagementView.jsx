@@ -41,6 +41,7 @@ import { getEffectiveStatus } from '../utils/helpers';
 import { getRoleTheme } from '../utils/scheduleHelpers';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
+import { tokenMatch } from '../utils/searchUtils';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
 
@@ -355,7 +356,7 @@ const StaffManagementView = ({
   const [activeStatFilter, setActiveStatFilter] = useState('ALL');
 
   const searchInputRef = useRef(null);
-  const normalizedSearch = (searchTerm || '').trim().toLowerCase();
+  const normalizedSearch = (searchTerm || '').trim();
 
   useEffect(() => {
     setCurrentPage(1);
@@ -390,12 +391,8 @@ const StaffManagementView = ({
       const safeRole = (emp?.role || '').toLowerCase();
       const branchNameStr = (branchMap.get(Number(emp.branchId || emp.branch_id)) || '').toLowerCase();
 
-      const matchesSearch =
-        !normalizedSearch ||
-        safeName.includes(normalizedSearch) ||
-        safeCode.includes(normalizedSearch) ||
-        safeRole.includes(normalizedSearch) ||
-        branchNameStr.includes(normalizedSearch);
+      const matchesSearch = !normalizedSearch ||
+        tokenMatch(normalizedSearch, emp?.name, emp?.code, emp?.role, branchMap.get(Number(emp.branchId || emp.branch_id)));
 
       const matchesBranch =
         selectedBranch === 'ALL' || String(emp?.branchId ?? emp?.branch_id ?? '') === String(selectedBranch);

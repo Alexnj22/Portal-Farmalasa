@@ -16,6 +16,7 @@ import LiquidAvatar from '../components/common/LiquidAvatar';
 import PeriodPicker from '../components/common/PeriodPicker';
 import { DataTable, DataRow, DataCell, useExpandStyle } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
+import { tokenMatch } from '../utils/searchUtils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -941,7 +942,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
     const SPECIAL_CODES = { '1000': 'Administración', '125': 'Domicilio' };
 
     const { knownRows, unknownByBranch } = useMemo(() => {
-        const s = searchTerm.toLowerCase();
+        const s = searchTerm;
         const consolidatedMap = new Map();
         const unknownMap = new Map();
         for (const r of rows) {
@@ -967,8 +968,8 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
             .sort((a, b) => b.total - a.total)
             .filter(r => {
                 if (!s) return true;
-                const name = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : '');
-                return name.toLowerCase().includes(s) || r.cod_vendedor?.toLowerCase().includes(s);
+                const fullName = r.specialName || (r.emp ? `${r.emp.first_names} ${r.emp.last_names}` : '');
+                return tokenMatch(s, fullName, r.cod_vendedor);
             });
         return { knownRows: known, unknownByBranch: unknownMap };
     }, [rows, searchTerm, empMap]);

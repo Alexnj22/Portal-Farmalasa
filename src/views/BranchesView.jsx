@@ -15,6 +15,7 @@ import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 
 import { supabase } from '../supabaseClient';
+import { tokenMatch } from '../utils/searchUtils';
 
 const FILTER_OPTIONS = [
     { value: "ALL", label: "Todas" },
@@ -626,7 +627,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
         return branches.filter(b => {
             if ((b.type || 'FARMACIA') === 'EXTERNA') return false;
 
-            const matchesSearch = b.name.toLowerCase().includes(searchTerm.toLowerCase()) || (b.address && b.address.toLowerCase().includes(searchTerm.toLowerCase()));
+            const matchesSearch = !searchTerm || tokenMatch(searchTerm, b.name, b.address);
             if (!matchesSearch) return false;
 
             const branchEmps = employeesMap.get(String(b.id)) || [];

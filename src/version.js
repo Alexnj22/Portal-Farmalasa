@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.400';
+export const APP_VERSION = '2.2.401';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.401 — feat(search): searchUtils (normSearch+tokenMatch+fuzzyScore+smartFilter) + SearchInput component; MinMax/SinVenta/AuditView/StaffManagement/Branches/VentasVendedores con búsqueda inteligente; banner fuzzy en MinMax; S.S.N=SSN con puntuación stripping
 // v2.2.400 — perf(minmax): 5 fixes carga — product_last_sale tabla+trigger elimina scan 548K, remueve d2 dead join, CHUNK 1K→5K, inv_all_pres filtrada por sucursal, índice parcial pending_drafts; bodega muestra sucursal de última venta
 // v2.2.399 — fix(ui): "Abx"/"Antibiótico" → "Bajo Receta" en TabPedidos y TabCatalogo
 // v2.2.398 — fix(pdf): Cajas Adicionales muestra subtexto und. cuando tiene_dispatch_label=true; propaga dispF a buildEspecialesBlock

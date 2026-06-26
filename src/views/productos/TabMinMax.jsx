@@ -15,6 +15,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useAuth } from '../../context/AuthContext';
+import { smartFilter } from '../../utils/searchUtils';
 
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
@@ -2637,24 +2638,29 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     const neverCalc     = data.length > 0 && data.filter(d => !d.is_catalog_only).every(d => d.is_dead_stock || d.alert_status === 'no_data');
     const hasActiveData = data.some(d => !d.is_dead_stock && d.alert_status !== 'no_data' && !d.is_catalog_only);
 
-    const filtered = useMemo(() => {
-        if (filterHidden) {
-            return data.filter(r => hiddenIds.has(r.erp_product_id));
-        }
-        const q = searchTerm.toLowerCase();
+    const filteredBase = useMemo(() => {
+        if (filterHidden) return data.filter(r => hiddenIds.has(r.erp_product_id));
         return data.filter(r => {
-            if (hiddenIds.has(r.erp_product_id))                                           return false;
-            if (filterSparse && r.draft_status !== 'sparse_data') return false;
-            if (filterDraft && r.draft_status !== 'pending') return false;
+            if (hiddenIds.has(r.erp_product_id))                                                                             return false;
+            if (filterSparse && r.draft_status !== 'sparse_data')                                                            return false;
+            if (filterDraft && r.draft_status !== 'pending')                                                                 return false;
             if (filterChangesOnly && !(r.draft_status === 'pending' && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max))) return false;
-            if (r.is_catalog_only && filterAlert !== 'no_data' && !q)                       return false;
-            if (filterAbc !== 'all' && (r.draft_abc_class || r.abc_class) !== filterAbc)  return false;
-            if (filterXyz !== 'all' && normXyz(r.draft_demand_variability || r.demand_variability) !== filterXyz) return false;
-            if (filterAlert !== 'all' && r.alert_status !== filterAlert)                   return false;
-            if (q && !r.product_name?.toLowerCase().includes(q) && !r.laboratorio_nombre?.toLowerCase().includes(q)) return false;
+            if (r.is_catalog_only && filterAlert !== 'no_data' && !searchTerm)                                               return false;
+            if (filterAbc !== 'all' && (r.draft_abc_class || r.abc_class) !== filterAbc)                                    return false;
+            if (filterXyz !== 'all' && normXyz(r.draft_demand_variability || r.demand_variability) !== filterXyz)           return false;
+            if (filterAlert !== 'all' && r.alert_status !== filterAlert)                                                     return false;
             return true;
         });
     }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, filterSparse, filterChangesOnly, hiddenIds, filterHidden]);
+
+    const { filtered, isSearchFuzzy } = useMemo(() => {
+        if (!searchTerm) return { filtered: filteredBase, isSearchFuzzy: false };
+        const { results, isFuzzy } = smartFilter(
+            searchTerm, filteredBase,
+            r => [r.product_name, r.laboratorio_nombre]
+        );
+        return { filtered: results, isSearchFuzzy: isFuzzy };
+    }, [filteredBase, searchTerm]);
 
     const filteredDraftIds = useMemo(
         () => hasActiveFilter ? filtered.filter(r => r.draft_status === 'pending').map(r => r.erp_product_id) : [],
@@ -3280,6 +3286,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0, transition: { duration: 0.28, ease: EASE_OUT_EXPO } }}
                 >
+                {isSearchFuzzy && searchTerm && (
+                    <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                        <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                        Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                    </div>
+                )}
                 <DataTable
                     columns={COLS}
                     sortKey={sortBy}

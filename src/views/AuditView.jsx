@@ -10,6 +10,7 @@ import {
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
+import { tokenMatch } from '../utils/searchUtils';
 
 const ACTION_OPTIONS = [
     { value: "ALL", label: "Todas" },
@@ -188,12 +189,8 @@ const AuditView = ({ openModal }) => {
         if (!Array.isArray(auditLog)) return [];
 
         let result = auditLog.filter(log => {
-            const searchLower = debouncedSearchTerm.toLowerCase();
-            const matchesSearch =
-                (log.user_name?.toLowerCase() || '').includes(searchLower) ||
-                (log.action?.toLowerCase() || '').includes(searchLower) ||
-                (log.branch_name?.toLowerCase() || '').includes(searchLower) ||
-                (log.device_name?.toLowerCase() || '').includes(searchLower);
+            const matchesSearch = !debouncedSearchTerm ||
+                tokenMatch(debouncedSearchTerm, log.user_name, log.action, log.branch_name, log.device_name);
 
             const matchesType = actionFilter === 'ALL' || log.action === actionFilter;
 

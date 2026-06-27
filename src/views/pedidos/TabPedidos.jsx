@@ -3037,7 +3037,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 {cardStats[cardKey].enviados} enviados
                                             </span>
                                             {(cardStats[cardKey].agotamiento ?? 0) > 0 && (
-                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-50 text-orange-700 border-orange-200">
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600 border-slate-200">
                                                     {cardStats[cardKey].agotamiento} stock insuf.
                                                 </span>
                                             )}

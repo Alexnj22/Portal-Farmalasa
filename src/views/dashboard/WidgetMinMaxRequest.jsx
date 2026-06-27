@@ -3,6 +3,7 @@ import { Search, Loader2, X, ArrowLeft, CheckCircle2, Package, TrendingUp, Build
 import { supabase } from '../../supabaseClient';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
+import { smartFilter } from '../../utils/searchUtils';
 
 // ERP sucursal ids ↔ nombre (igual que TabMinMax). product_stock_params usa erp_sucursal_id.
 const ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
@@ -235,28 +236,48 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [picked, setPicked]   = useState(null);
-  const debRef = useRef();
+  const allProdsRef = useRef([]);
+  const catalogReady = useRef(false);
 
-  const runSearch = useCallback((q) => {
-    if (!q || q.trim().length < 2) { setResults([]); setLoading(false); return; }
-    setLoading(true);
-    supabase.from('products')
-      .select('id, nombre, laboratorio_id, foto_url, principio_activo, laboratorios(nombre)')
-      .eq('activo', true)
-      .ilike('nombre', `%${q.trim()}%`)
-      .order('nombre')
-      .limit(20)
-      .then(({ data }) => {
-        setResults((data || []).map(p => ({ ...p, laboratorio_nombre: p.laboratorios?.nombre ?? null })));
-        setLoading(false);
-      });
+  // Preload full product catalog on mount (paginated — products > 1000)
+  useEffect(() => {
+    async function loadCatalog() {
+      setLoading(true);
+      const CHUNK = 1000;
+      const { count } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('activo', true);
+      const numChunks = Math.max(1, Math.ceil((count || 0) / CHUNK));
+      const chunks = await Promise.all(
+        Array.from({ length: numChunks }, (_, i) =>
+          supabase.from('products')
+            .select('id, nombre, laboratorio_id, foto_url, principio_activo, laboratorios(nombre)')
+            .eq('activo', true)
+            .order('nombre')
+            .range(i * CHUNK, (i + 1) * CHUNK - 1)
+        )
+      );
+      allProdsRef.current = chunks
+        .flatMap(r => r.data || [])
+        .map(p => ({ ...p, laboratorio_nombre: p.laboratorios?.nombre ?? null }));
+      catalogReady.current = true;
+      setLoading(false);
+    }
+    loadCatalog();
   }, []);
 
   useEffect(() => {
-    clearTimeout(debRef.current);
-    debRef.current = setTimeout(() => runSearch(search), 300);
-    return () => clearTimeout(debRef.current);
-  }, [search, runSearch]);
+    if (!catalogReady.current) return;
+    const q = search.trim();
+    if (q.length < 2) { setResults([]); return; }
+    const { results: matched } = smartFilter(q, allProdsRef.current, p => [
+      p.nombre,
+      p.principio_activo ?? '',
+      p.laboratorio_nombre ?? '',
+    ]);
+    setResults(matched.slice(0, 20));
+  }, [search]);
 
   if (view === 'success') {
     return (

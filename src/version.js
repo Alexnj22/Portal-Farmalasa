@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.411';
+export const APP_VERSION = '2.2.412';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.412 — feat(inventario/bodega): dual stock display — "7 und / 1 V" inline en Und. (ámbar, solo si tiene vencidos); expand muestra "Inventario regular" y "Ubicación vencidos" en secciones separadas; solo activo al filtrar por Bodega
 // v2.2.411 — fix(ventas/productos): 3 fixes drill-down — (1) paginación estándar con selector de tamaño (25/50/100); (2) COF es c/IVA (solo CCF es sin IVA); (3) badges de tier con número (Viñeta=1 Desc=2 VIP=3 Clínica=4 Mayoreo=5 Premium=6 P7=7) en TabProductos y TabVentas
 // v2.2.410 — feat(ventas/productos): drill-down tabla individual — (1) paginación de 20 filas con TablePagination; (2) precios c/IVA: precio unitario y total muestran valor con IVA para FAC/FCF, sin IVA para CCF/COF; (3) P. Unit. muestra número + badge de tier debajo; col "Total s/IVA"→"Total"; TablePagination oculta selector de tamaño cuando no hay onPageSizeChange
 // v2.2.409 — fix(minmax): tooltip "Suc. pendientes" quedaba pegado — race condition async: onMouseLeave limpiaba pero el await supabase.rpc() resolvía después y re-seteaba; fix con tooltipCancelRef que aborta el resultado si el mouse ya salió; crea CLAUDE.md con regla 1000 filas PostgREST siempre cargada

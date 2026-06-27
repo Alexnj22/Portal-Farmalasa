@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch, smartFilter } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, ChevronDown, ChevronRight, CheckCircle2,
@@ -724,6 +724,21 @@ const COLS_ENVIADOS = [
     )},
 ];
 
+const COLS_AGOTAMIENTO = [
+    { key: 'lab',        label: 'Laboratorio',   render: renderLab },
+    { key: 'prod',       label: 'Producto',      render: renderProd },
+    { key: 'pres',       label: 'Presentación',  render: renderPresentacion },
+    { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
+    { key: 'enviado',    label: 'Enviado',    align: 'center', render: r => <span className="font-bold tabular-nums text-slate-700">{r.cantidad_asignada}</span> },
+    { key: 'falto',      label: 'Faltó',      align: 'center', render: r => {
+        const sol = calcSolicitado(r);
+        const falto = sol != null ? Math.max(0, sol - (r.cantidad_asignada ?? 0)) : null;
+        return falto != null
+            ? <span className="font-bold tabular-nums text-orange-600">{falto}</span>
+            : <span className="text-slate-400">—</span>;
+    }},
+];
+
 const COLS_SIN_STOCK = [
     { key: 'lab',        label: 'Laboratorio',  render: renderLab },
     { key: 'prod',       label: 'Producto',     render: renderProd },
@@ -803,13 +818,12 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
     const searchRef = useRef(null);
 
     const filteredRows = useMemo(() => {
-        const q = search.trim().toLowerCase();
-        if (!q) return rows;
-        return rows.filter(r => {
-            const name = (r.products?.nombre ?? r.product_name ?? '').toLowerCase();
-            const lab  = (r.products?.laboratorios?.nombre ?? '').toLowerCase();
-            return name.includes(q) || lab.includes(q) || tokenMatch(q, name);
-        });
+        if (!search.trim()) return rows;
+        const { results } = smartFilter(search, rows, r => [
+            r.products?.nombre ?? r.product_name ?? '',
+            r.products?.laboratorios?.nombre ?? '',
+        ]);
+        return results;
     }, [rows, search]);
 
     const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
@@ -819,8 +833,9 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
 
     const openSearch = (e) => {
         e.stopPropagation();
+        if (!open) setOpen(true);
         setSearchOpen(true);
-        setTimeout(() => searchRef.current?.focus(), 60);
+        setTimeout(() => searchRef.current?.focus(), 80);
     };
     const closeSearch = (e) => {
         e?.stopPropagation();
@@ -838,32 +853,30 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
                         {search ? `${filteredRows.length}/${count}` : count}
                     </span>
                 </button>
-                {open && (
-                    <AnimatePresence mode="wait">
-                        {searchOpen ? (
-                            <motion.div key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: 160, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0">
-                                <div className="relative flex items-center">
-                                    <Search size={10} className="absolute left-2 text-slate-400 pointer-events-none" />
-                                    <input
-                                        ref={searchRef}
-                                        value={search}
-                                        onChange={e => { setSearch(e.target.value); setPage(1); }}
-                                        onKeyDown={e => e.key === 'Escape' && closeSearch()}
-                                        placeholder="Buscar…"
-                                        className="w-full pl-6 pr-5 py-1 text-[10px] bg-white border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-400 text-slate-700 placeholder:text-slate-400 shadow-sm"
-                                    />
-                                    <button onClick={closeSearch} className="absolute right-1.5 text-slate-400 hover:text-slate-600">
-                                        <X size={9} />
-                                    </button>
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors shrink-0">
-                                <Search size={12} />
-                            </motion.button>
-                        )}
-                    </AnimatePresence>
-                )}
+                <AnimatePresence mode="wait">
+                    {searchOpen ? (
+                        <motion.div key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: 160, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0">
+                            <div className="relative flex items-center">
+                                <Search size={10} className="absolute left-2 text-slate-400 pointer-events-none" />
+                                <input
+                                    ref={searchRef}
+                                    value={search}
+                                    onChange={e => { setSearch(e.target.value); setPage(1); }}
+                                    onKeyDown={e => e.key === 'Escape' && closeSearch()}
+                                    placeholder="Buscar…"
+                                    className="w-full pl-6 pr-5 py-1 text-[10px] bg-white border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-400 text-slate-700 placeholder:text-slate-400 shadow-sm"
+                                />
+                                <button onClick={closeSearch} className="absolute right-1.5 text-slate-400 hover:text-slate-600">
+                                    <X size={9} />
+                                </button>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors shrink-0">
+                            <Search size={12} />
+                        </motion.button>
+                    )}
+                </AnimatePresence>
                 <button onClick={() => setOpen(v => !v)} className="p-1.5 shrink-0">
                     {open ? <ChevronDown size={12} className="text-slate-400" /> : <ChevronRight size={12} className="text-slate-400" />}
                 </button>
@@ -1175,11 +1188,11 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
 function ItemSections({ allItems, loading }) {
     if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-slate-300" /></div>;
 
-    const enviados    = allItems.filter(i => i.cantidad_asignada > 0 && !i.agotamiento);
+    const enviados    = allItems.filter(i => i.cantidad_asignada > 0);
     const agotamiento = allItems.filter(i => i.agotamiento);
     const sinStock    = allItems.filter(i => i.sin_stock);
     const porRegla    = allItems.filter(i => i.revision_minmax);
-    const total       = enviados.length + agotamiento.length + sinStock.length + porRegla.length;
+    const total       = allItems.length;
 
     if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-slate-400">Sin ítems.</div>;
 
@@ -1194,7 +1207,7 @@ function ItemSections({ allItems, loading }) {
             </div>
             <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-emerald-50 text-emerald-700 border-emerald-200" rows={enviados} columns={COLS_ENVIADOS} />
             <ItemSection
-                label="Stock insuficiente en bodega" count={agotamiento.length} badgeCls="bg-orange-50 text-orange-700 border-orange-200" rows={agotamiento} columns={COLS_ENVIADOS}
+                label="Stock insuficiente en bodega" count={agotamiento.length} badgeCls="bg-orange-50 text-orange-700 border-orange-200" rows={agotamiento} columns={COLS_AGOTAMIENTO}
                 noteEl={<p className="text-[10px] text-orange-600/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad completa. Se envió lo disponible; el faltante quedará pendiente para el próximo pedido.</p>}
             />
             <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-amber-50 text-amber-700 border-amber-200" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-[10px] text-amber-600/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />

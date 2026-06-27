@@ -795,10 +795,11 @@ const COLS_REGLA = [
 ];
 
 function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
-    const [open,     setOpen]     = useState(false);
-    const [page,     setPage]     = useState(1);
-    const [pageSize, setPageSize] = useState(MINI_PAGE);
-    const [search,   setSearch]   = useState('');
+    const [open,        setOpen]        = useState(false);
+    const [page,        setPage]        = useState(1);
+    const [pageSize,    setPageSize]    = useState(MINI_PAGE);
+    const [search,      setSearch]      = useState('');
+    const [searchOpen,  setSearchOpen]  = useState(false);
     const searchRef = useRef(null);
 
     const filteredRows = useMemo(() => {
@@ -816,33 +817,62 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
 
     if (!count) return null;
 
+    const openSearch = (e) => {
+        e.stopPropagation();
+        setSearchOpen(true);
+        setTimeout(() => searchRef.current?.focus(), 60);
+    };
+    const closeSearch = (e) => {
+        e?.stopPropagation();
+        setSearchOpen(false);
+        setSearch('');
+        setPage(1);
+    };
+
     return (
         <div className="border-t border-slate-100">
-            <button onClick={() => { setOpen(v => !v); if (!open) setTimeout(() => searchRef.current?.focus(), 200); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-slate-50/50 transition-colors">
-                <span className="text-[11px] font-semibold text-slate-700 flex-1">{label}</span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${badgeCls}`}>{search ? `${filteredRows.length}/${count}` : count}</span>
-                {open ? <ChevronDown size={12} className="text-slate-400 shrink-0" /> : <ChevronRight size={12} className="text-slate-400 shrink-0" />}
-            </button>
+            <div className="flex items-center gap-1 pr-2 hover:bg-slate-50/50 transition-colors">
+                <button onClick={() => setOpen(v => !v)} className="flex-1 flex items-center gap-2 px-4 py-2.5 text-left">
+                    <span className="text-[11px] font-semibold text-slate-700 flex-1">{label}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${search ? 'bg-blue-50 text-blue-700 border-blue-200' : badgeCls}`}>
+                        {search ? `${filteredRows.length}/${count}` : count}
+                    </span>
+                </button>
+                {open && (
+                    <AnimatePresence mode="wait">
+                        {searchOpen ? (
+                            <motion.div key="input" initial={{ width: 0, opacity: 0 }} animate={{ width: 160, opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.15 }} className="overflow-hidden shrink-0">
+                                <div className="relative flex items-center">
+                                    <Search size={10} className="absolute left-2 text-slate-400 pointer-events-none" />
+                                    <input
+                                        ref={searchRef}
+                                        value={search}
+                                        onChange={e => { setSearch(e.target.value); setPage(1); }}
+                                        onKeyDown={e => e.key === 'Escape' && closeSearch()}
+                                        placeholder="Buscar…"
+                                        className="w-full pl-6 pr-5 py-1 text-[10px] bg-white border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-400 text-slate-700 placeholder:text-slate-400 shadow-sm"
+                                    />
+                                    <button onClick={closeSearch} className="absolute right-1.5 text-slate-400 hover:text-slate-600">
+                                        <X size={9} />
+                                    </button>
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors shrink-0">
+                                <Search size={12} />
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
+                )}
+                <button onClick={() => setOpen(v => !v)} className="p-1.5 shrink-0">
+                    {open ? <ChevronDown size={12} className="text-slate-400" /> : <ChevronRight size={12} className="text-slate-400" />}
+                </button>
+            </div>
             <AnimatePresence>
                 {open && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
                         <div className="px-4 pb-4 space-y-3">
                             {noteEl}
-                            <div className="relative">
-                                <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                <input
-                                    ref={searchRef}
-                                    value={search}
-                                    onChange={e => { setSearch(e.target.value); setPage(1); }}
-                                    placeholder="Buscar producto o laboratorio…"
-                                    className="w-full pl-7 pr-7 py-1.5 text-[11px] bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 text-slate-700 placeholder:text-slate-400"
-                                />
-                                {search && (
-                                    <button onClick={() => { setSearch(''); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                                        <X size={11} />
-                                    </button>
-                                )}
-                            </div>
                             <DataTable
                                 columns={columns}
                                 minWidth="400px"

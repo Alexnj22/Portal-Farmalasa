@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.415';
+export const APP_VERSION = '2.2.416';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.416 — fix(pedidos): PDF incluye items agotamiento; búsqueda rediseñada (icono derecha → expande compacto, Escape cierra); sinCount+agotamientoCount en pie de PDF
 // v2.2.415 — feat(pedidos): búsqueda dentro de cada sección del detalle de pedido (Productos enviados, Sin inventario, Stock insuficiente, Revisar regla)
 // v2.2.414 — feat(pedidos): agotamiento de stock — nuevo flag cuando bodega tenía stock pero insuficiente para cubrir necesidad completa; RPC get_pedido_preview + get_pedido_item_stats actualizados; badge naranja "stock insuf." en cards y sección separada en detalle de pedido
 // v2.2.413 — fix(inventario): "X und / Y V" global — rose-600 en lugar de amber, visible en todas las sucursales (no solo Bodega); expand vencidos en rose para todas las ramas

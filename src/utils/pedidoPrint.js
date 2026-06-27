@@ -259,6 +259,7 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
 
 function buildSectionFooter(sec) {
     const parts = [];
+    if (sec.agotamientoCount > 0) parts.push(`Stock insuficiente en Bodega: ${sec.agotamientoCount} producto(s)`);
     if (sec.sinCount > 0) parts.push(`Sin stock en Bodega: ${sec.sinCount} producto(s)`);
     if (sec.revCount  > 0) parts.push(`Sin asignación (revisar): ${sec.revCount}`);
     if (!parts.length) return null;
@@ -564,8 +565,8 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
     const [logo, addrMap] = await Promise.all([getLogoBase64(), getAddressMap()]);
 
     const pdfs = sortedSucIds.map(sucId => {
-        const g    = grouped[sucId] || { normal: [], revision: [], sinStock: [] };
-        const rows = [...g.normal, ...g.revision].filter(row => !isAdicional(row)).map(row => {
+        const g    = grouped[sucId] || { normal: [], revision: [], sinStock: [], agotamiento: [] };
+        const rows = [...g.normal, ...g.agotamiento, ...g.revision].filter(row => !isAdicional(row)).map(row => {
             const erpFactor  = row.factor ?? 1;
             const dispFactor = row.dispatch_factor ?? erpFactor;
             const qty        = toDispatch(getAdjusted(row), erpFactor, dispFactor);
@@ -582,7 +583,7 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
         }).filter(r => r.qty > 0);
 
         let eCounter = 1;
-        const especiales = [...g.normal, ...g.revision]
+        const especiales = [...g.normal, ...g.agotamiento, ...g.revision]
             .filter(row => isAdicional(row) && (getAdjusted(row) ?? 0) > 0)
             .sort((a, b) => (a.product_name ?? '').localeCompare(b.product_name ?? '', 'es'))
             .flatMap(row => {
@@ -611,8 +612,9 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
             codigo,
             rows,
             especiales,
-            sinCount: g.sinStock.length,
-            revCount: g.revision.length,
+            sinCount:         g.sinStock.length,
+            revCount:         g.revision.length,
+            agotamientoCount: (g.agotamiento ?? []).length,
         };
         // Nombre del archivo = código del pedido (ej. 01-170617-3-PO.pdf)
         const filename = codigo
@@ -633,8 +635,8 @@ export async function printPerSucursal(grouped, sortedSucIds, getAdjusted, codig
 export async function printFromPreview(grouped, sortedSucIds, getAdjusted, title, meta = {}) {
     const [logo, addrMap] = await Promise.all([getLogoBase64(), getAddressMap()]);
     const sections = sortedSucIds.map(sucId => {
-        const g      = grouped[sucId] || { normal: [], revision: [], sinStock: [] };
-        const mapped = [...g.normal, ...g.revision].filter(row => !row.caja_especial).map(row => {
+        const g      = grouped[sucId] || { normal: [], revision: [], sinStock: [], agotamiento: [] };
+        const mapped = [...g.normal, ...g.agotamiento, ...g.revision].filter(row => !row.caja_especial).map(row => {
             const erpFactor  = row.factor ?? 1;
             const dispFactor = row.dispatch_factor ?? erpFactor;
             const qty        = toDispatch(getAdjusted(row), erpFactor, dispFactor);
@@ -652,9 +654,10 @@ export async function printFromPreview(grouped, sortedSucIds, getAdjusted, title
         return {
             sucId, nombre: ERP_NAMES_DEFAULT[sucId] ?? `Sucursal ${sucId}`,
             codigo: null,
-            rows:     mapped.filter(r => r.qty > 0),
-            sinCount: g.sinStock.length,
-            revCount: mapped.filter(r => r.qty === 0).length,
+            rows:             mapped.filter(r => r.qty > 0),
+            sinCount:         g.sinStock.length,
+            revCount:         mapped.filter(r => r.qty === 0).length,
+            agotamientoCount: (g.agotamiento ?? []).length,
         };
     });
     const filename = `${(title ?? 'Vista_previa').replace(/[^a-zA-Z0-9_\-]/g,'_')}.pdf`;

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.423';
+export const APP_VERSION = '2.2.424';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.424 — feat(alertas-dte): check-sales-alerts edge fn + cron 5min — 3 ventas consecutivas pendientes MH → push a Supervisor; CCF pendiente/anulada → push urgente; sales_alert_log evita duplicados
 // v2.2.423 — fix(widget-inventario): quita colores por sucursal — todas neutral slate, solo vencidos rose
 // v2.2.422 — fix(widget-inventario): bodega en ERP_BRANCH_MAP + vencidos en drill-down (AlertTriangle + rose)
 // v2.2.421 — feat(widget-minmax): superpoderes en búsqueda — precarga catálogo completo paginado, smartFilter encuentra "GRVOL"→"GRAVOL"

@@ -12,8 +12,11 @@ export const REQUEST_TYPES = {
     OVERTIME:     { label: 'Horas Extra',        color: 'bg-orange-100 text-orange-800',  border: 'border-orange-200' },
     ADVANCE:      { label: 'Anticipo Salarial',  color: 'bg-emerald-100 text-emerald-800', border: 'border-emerald-200' },
     CERTIFICATE:  { label: 'Constancia Laboral', color: 'bg-blue-100 text-blue-800',      border: 'border-blue-200' },
-    DISABILITY:      { label: 'Incapacidad',             color: 'bg-red-100 text-red-800',        border: 'border-red-200' },
-    SHIFT_EXCEPTION: { label: 'Excepción Turno (Kiosk)', color: 'bg-violet-100 text-violet-800',  border: 'border-violet-200' },
+    DISABILITY:             { label: 'Incapacidad',             color: 'bg-red-100 text-red-800',        border: 'border-red-200' },
+    SHIFT_EXCEPTION:        { label: 'Excepción Turno (Kiosk)', color: 'bg-violet-100 text-violet-800',  border: 'border-violet-200' },
+    ANNULMENT_REQUEST:      { label: 'Anulación de Factura',    color: 'bg-rose-100 text-rose-800',      border: 'border-rose-200' },
+    PAYMENT_CHANGE_REQUEST: { label: 'Cambio de Forma de Pago', color: 'bg-sky-100 text-sky-800',        border: 'border-sky-200' },
+    VENDOR_CHANGE_REQUEST:  { label: 'Cambio de Vendedor',      color: 'bg-purple-100 text-purple-800',  border: 'border-purple-200' },
 };
 
 export const REQUEST_STATUS = {

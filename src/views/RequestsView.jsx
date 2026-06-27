@@ -6,6 +6,7 @@ import {
     Palmtree, FileText, RefreshCw, DollarSign, FileCheck, Coffee,
     CheckCircle2, XCircle, Stethoscope, FileImage, AlertTriangle,
     Search, ArrowLeftRight, CalendarDays, Banknote, FileCheck2,
+    Ban, CreditCard, UserCog, Receipt,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -15,13 +16,16 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
 
 const TYPE_ICONS = {
-    VACATION:     Palmtree,
-    PERMIT:       FileText,
-    SHIFT_CHANGE: RefreshCw,
-    OVERTIME:     Coffee,
-    ADVANCE:      DollarSign,
-    CERTIFICATE:  FileCheck,
-    DISABILITY:   Stethoscope,
+    VACATION:               Palmtree,
+    PERMIT:                 FileText,
+    SHIFT_CHANGE:           RefreshCw,
+    OVERTIME:               Coffee,
+    ADVANCE:                DollarSign,
+    CERTIFICATE:            FileCheck,
+    DISABILITY:             Stethoscope,
+    ANNULMENT_REQUEST:      Ban,
+    PAYMENT_CHANGE_REQUEST: CreditCard,
+    VENDOR_CHANGE_REQUEST:  UserCog,
 };
 
 // circle = card colored avatar; section = section label color
@@ -32,7 +36,10 @@ const TYPE_COLORS = {
     OVERTIME:     { circle: 'bg-amber-500',    ring: 'ring-amber-200',   section: 'text-amber-700',   border: 'border-amber-200/50',   hover: 'hover:shadow-[0_8px_28px_rgba(245,158,11,0.12)]',   sectionIcon: 'text-amber-600 bg-amber-50 border-amber-200/50'        },
     ADVANCE:      { circle: 'bg-violet-500',   ring: 'ring-violet-200',  section: 'text-violet-700',  border: 'border-violet-200/50',  hover: 'hover:shadow-[0_8px_28px_rgba(139,92,246,0.12)]',   sectionIcon: 'text-violet-600 bg-violet-50 border-violet-200/50'     },
     CERTIFICATE:  { circle: 'bg-indigo-500',   ring: 'ring-indigo-200',  section: 'text-indigo-700',  border: 'border-indigo-200/50',  hover: 'hover:shadow-[0_8px_28px_rgba(99,102,241,0.12)]',   sectionIcon: 'text-indigo-600 bg-indigo-50 border-indigo-200/50'     },
-    DISABILITY:   { circle: 'bg-red-500',      ring: 'ring-red-200',     section: 'text-red-700',     border: 'border-red-200/60',     hover: 'hover:shadow-[0_8px_28px_rgba(239,68,68,0.14)]',    sectionIcon: 'text-red-600 bg-red-50 border-red-200/50'              },
+    DISABILITY:             { circle: 'bg-red-500',      ring: 'ring-red-200',      section: 'text-red-700',      border: 'border-red-200/60',      hover: 'hover:shadow-[0_8px_28px_rgba(239,68,68,0.14)]',     sectionIcon: 'text-red-600 bg-red-50 border-red-200/50'              },
+    ANNULMENT_REQUEST:      { circle: 'bg-rose-500',     ring: 'ring-rose-200',     section: 'text-rose-700',     border: 'border-rose-200/60',     hover: 'hover:shadow-[0_8px_28px_rgba(244,63,94,0.14)]',     sectionIcon: 'text-rose-600 bg-rose-50 border-rose-200/50'           },
+    PAYMENT_CHANGE_REQUEST: { circle: 'bg-sky-500',      ring: 'ring-sky-200',      section: 'text-sky-700',      border: 'border-sky-200/50',      hover: 'hover:shadow-[0_8px_28px_rgba(14,165,233,0.12)]',    sectionIcon: 'text-sky-600 bg-sky-50 border-sky-200/50'              },
+    VENDOR_CHANGE_REQUEST:  { circle: 'bg-purple-500',   ring: 'ring-purple-200',   section: 'text-purple-700',   border: 'border-purple-200/50',   hover: 'hover:shadow-[0_8px_28px_rgba(168,85,247,0.12)]',    sectionIcon: 'text-purple-600 bg-purple-50 border-purple-200/50'     },
 };
 
 const fmtDate = (iso) => !iso ? '—' : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
@@ -59,6 +66,12 @@ const CompactSummary = ({ req }) => {
         const labels = { LABORAL: 'Laboral', SALARIO: 'Salario', BANCARIA: 'Bancaria' };
         return <span className="text-[10px] text-slate-500">{labels[meta.certificateType] || meta.certificateType}</span>;
     }
+    if (req.type === 'ANNULMENT_REQUEST' && meta.correlativo)
+        return <span className="text-[10px] text-slate-500">{meta.correlativo}{meta.reason ? ` · ${meta.reason}` : ''}</span>;
+    if (req.type === 'PAYMENT_CHANGE_REQUEST' && meta.correlativo)
+        return <span className="text-[10px] text-slate-500">{meta.correlativo} · {meta.current_pago} → {meta.new_pago}</span>;
+    if (req.type === 'VENDOR_CHANGE_REQUEST' && meta.correlativo)
+        return <span className="text-[10px] text-slate-500">{meta.correlativo} · vendedor #{meta.current_vendor_code} → #{meta.new_vendor_code}</span>;
     if (req.note) return <span className="text-[10px] text-slate-400 italic truncate max-w-[160px]">"{req.note}"</span>;
     return null;
 };
@@ -226,6 +239,83 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                 <p className="text-[12px] font-bold text-indigo-700">
                                     {{ LABORAL: 'Constancia Laboral', SALARIO: 'Constancia de Salario', BANCARIA: 'Constancia Bancaria' }[meta.certificateType] || meta.certificateType}
                                 </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ANNULMENT_REQUEST */}
+                    {req.type === 'ANNULMENT_REQUEST' && meta.correlativo && (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-rose-50/80 border border-rose-200/70">
+                                <Ban size={13} className="text-rose-500 flex-shrink-0" strokeWidth={2} />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-rose-400 mb-0.5">Factura a anular</p>
+                                    <p className="text-[12px] font-bold text-rose-700">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                    {meta.fecha && <p className="text-[10px] text-rose-500">{new Date(meta.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'long', year: 'numeric' })}</p>}
+                                </div>
+                                {meta.tipo_documento && (
+                                    <span className={`shrink-0 text-[9px] font-black uppercase px-2 py-1 rounded-lg ${meta.tipo_documento === 'CCF' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>{meta.tipo_documento}</span>
+                                )}
+                            </div>
+                            {meta.reason && (
+                                <div className="px-3 py-2 rounded-2xl bg-white/70 border border-white/80">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Motivo de anulación</p>
+                                    <p className="text-[11px] font-bold text-slate-700">{meta.reason}</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* PAYMENT_CHANGE_REQUEST */}
+                    {req.type === 'PAYMENT_CHANGE_REQUEST' && meta.correlativo && (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-sky-50/80 border border-sky-200/60">
+                                <CreditCard size={13} className="text-sky-500 flex-shrink-0" strokeWidth={2} />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-sky-400 mb-0.5">Factura</p>
+                                    <p className="text-[12px] font-bold text-sky-700">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-white/70 border border-white/80 rounded-2xl p-2.5">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Actual</p>
+                                    <p className="text-[12px] font-black text-slate-700 capitalize">{meta.current_pago || '—'}</p>
+                                </div>
+                                <div className="bg-sky-50/80 border border-sky-100 rounded-2xl p-2.5">
+                                    <p className="text-[8px] font-black text-sky-500 uppercase tracking-widest mb-0.5">Cambiar a</p>
+                                    <p className="text-[12px] font-black text-slate-700 capitalize">{meta.new_pago || '—'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* VENDOR_CHANGE_REQUEST */}
+                    {req.type === 'VENDOR_CHANGE_REQUEST' && meta.correlativo && (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-purple-50/80 border border-purple-200/60">
+                                <Receipt size={13} className="text-purple-500 flex-shrink-0" strokeWidth={2} />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-purple-400 mb-0.5">Factura</p>
+                                    <p className="text-[12px] font-bold text-purple-700">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-white/70 border border-white/80 rounded-2xl p-2.5">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Vendedor actual</p>
+                                    {meta.current_vendor_photo && (
+                                        <img src={meta.current_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
+                                    )}
+                                    <p className="text-[11px] font-black text-slate-700">{meta.current_vendor_name || `#${meta.current_vendor_code}`}</p>
+                                    {meta.current_vendor_code && <p className="text-[9px] text-slate-400 font-mono">#{meta.current_vendor_code}</p>}
+                                </div>
+                                <div className="bg-purple-50/80 border border-purple-100 rounded-2xl p-2.5">
+                                    <p className="text-[8px] font-black text-purple-500 uppercase tracking-widest mb-0.5">Asignar a</p>
+                                    {meta.new_vendor_photo && (
+                                        <img src={meta.new_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
+                                    )}
+                                    <p className="text-[11px] font-black text-slate-700">{meta.new_vendor_name || `#${meta.new_vendor_code}`}</p>
+                                    {meta.new_vendor_code && <p className="text-[9px] text-slate-400 font-mono">#{meta.new_vendor_code}</p>}
+                                </div>
                             </div>
                         </div>
                     )}

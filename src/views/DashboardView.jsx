@@ -1879,7 +1879,7 @@ const DashboardView = ({ openModal }) => {
       const isAnnAllScope = getScope('dash_annulment_req') === 'ALL';
       const annBranchOpts = branches.filter(b => b.id).map(b => ({ value: String(b.id), label: b.name }));
       return wrapWidget('annulment_req',
-        <WidgetCard title="Solicitud de Anulación" icon={Receipt} category="ventas"
+        <WidgetCard title="Solicitar Modificación a Facturación" icon={Receipt} category="ventas"
           action={isAnnAllScope && annBranchOpts.length > 0 && (
             <LiquidSelect
               value={annulmentBranch}

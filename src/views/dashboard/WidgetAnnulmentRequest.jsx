@@ -71,7 +71,57 @@ function PayBadge({ tipo }) {
   );
 }
 
-/* ─── findTarget: busca supervisor disponible ──────────────────────────────── */
+/* Avatar pequeño */
+function VendorAvatar({ employee, size = 6 }) {
+  const cls = `w-${size} h-${size} rounded-full overflow-hidden flex-shrink-0 border border-slate-200 flex items-center justify-center bg-slate-100`;
+  if (!employee) return <div className={cls}><User size={size === 6 ? 12 : 14} className="text-slate-400" /></div>;
+  if (employee.photo || employee.photo_url)
+    return <div className={cls}><img src={employee.photo || employee.photo_url} className="w-full h-full object-cover" alt="" /></div>;
+  return (
+    <div className={cls + ' bg-gradient-to-br from-slate-200 to-slate-300'}>
+      <span className={`text-slate-600 font-black text-[${size === 6 ? '9' : '11'}px] leading-none`}>{employee.name?.charAt(0)}</span>
+    </div>
+  );
+}
+
+/* Header reutilizable de factura */
+function InvoiceHeader({ inv, onBack, vendor }) {
+  return (
+    <div className="flex flex-col gap-2 shrink-0">
+      <div className="flex items-start gap-2">
+        <button onClick={onBack}
+          className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors shrink-0 mt-0.5">
+          <ArrowLeft size={13} strokeWidth={2.5} />
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-black text-slate-800 truncate">{inv.cliente || 'Sin nombre'}</p>
+          <p className="text-[10px] text-slate-400 font-mono">{inv.correlativo}</p>
+        </div>
+        <p className="text-[14px] font-black text-slate-800 shrink-0">{fmtCurrency(inv.total)}</p>
+      </div>
+
+      {/* Info pill */}
+      <div className="flex items-center gap-2 pl-9 flex-wrap">
+        <span className="inline-flex items-center gap-1 text-[10px] text-slate-500 font-medium">
+          <span className="font-mono text-slate-400">ID #{inv.id}</span>
+        </span>
+        <span className="text-slate-200 text-[10px]">·</span>
+        <span className="text-[10px] font-semibold text-slate-600">{fmtDate(inv.fecha)}</span>
+        {vendor && (
+          <>
+            <span className="text-slate-200 text-[10px]">·</span>
+            <span className="inline-flex items-center gap-1">
+              <VendorAvatar employee={vendor} size={5} />
+              <span className="text-[10px] text-slate-500">{vendor.name?.split(' ')[0]}</span>
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* findTarget */
 function findTargetEmployee(employees, activeBranchId) {
   const branchEmps = employees.filter(e => String(e.branchId ?? e.branch_id) === String(activeBranchId));
   const supervisors = branchEmps.filter(e => ['JEFE', 'SUBJEFE'].includes(String(e.system_role ?? '').toUpperCase()));
@@ -83,14 +133,16 @@ function findTargetEmployee(employees, activeBranchId) {
   return employees.find(e => ['ADMIN', 'SUPERADMIN'].includes(String(e.system_role ?? '').toUpperCase()));
 }
 
-/* ─── Invoice detail ────────────────────────────────────────────────────────── */
-function InvoiceDetail({ inv, onBack, onModify }) {
+/* ─── Invoice detail ─────────────────────────────────────────────────────────── */
+function InvoiceDetail({ inv, onBack, onModify, employees }) {
   const age           = daysAgo(inv.fecha);
   const graceDaysLeft = GRACE_DAYS - age;
   const withinGrace   = graceDaysLeft >= 0;
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const vendor = employees.find(e => String(e.code) === String(inv.cod_vendedor));
 
   useEffect(() => {
     let cancelled = false;
@@ -105,34 +157,52 @@ function InvoiceDetail({ inv, onBack, onModify }) {
 
   return (
     <div className="flex flex-col gap-3 h-full animate-in slide-in-from-right-3 duration-200">
-      <div className="flex items-center gap-2 shrink-0">
-        <button onClick={onBack}
-          className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors shrink-0">
-          <ArrowLeft size={13} strokeWidth={2.5} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-black text-slate-800 truncate">{inv.cliente || inv.correlativo}</p>
-          <p className="text-[10px] text-slate-400">{inv.correlativo} · {fmtDate(inv.fecha)}</p>
-        </div>
-        <span className="text-[13px] font-black text-slate-700">{fmtCurrency(inv.total)}</span>
-      </div>
+      <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
       <div className="flex-1 overflow-y-auto flex flex-col gap-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+
+        {/* Info 2 columnas */}
         <div className="rounded-2xl border border-slate-100 bg-white overflow-hidden shrink-0">
-          {[
-            { label: 'Tipo',     value: inv.tipo_documento || '—' },
-            { label: 'Pago',     value: inv.tipo_pago      || '—' },
-            { label: 'Vendedor', value: inv.cod_vendedor   ? `#${inv.cod_vendedor}` : '—' },
-            { label: 'Fecha',    value: fmtDate(inv.fecha)        },
-            { label: 'Total',    value: fmtCurrency(inv.total)    },
-          ].map(({ label, value }, i) => (
-            <div key={i} className={`flex items-center justify-between px-3.5 py-2 ${i > 0 ? 'border-t border-slate-50' : ''}`}>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{label}</span>
-              <span className="text-[11px] font-bold text-slate-700">{value}</span>
+          <div className="grid grid-cols-2 divide-x divide-slate-50">
+            {/* Columna izquierda */}
+            <div>
+              <div className="px-3.5 py-2.5 border-b border-slate-50">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Tipo Doc.</p>
+                <p className="text-[12px] font-bold text-slate-700">{inv.tipo_documento || '—'}</p>
+              </div>
+              <div className="px-3.5 py-2.5 border-b border-slate-50">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Forma de Pago</p>
+                <p className="text-[12px] font-bold text-slate-700 capitalize">{PAYMENT_LABELS[(inv.tipo_pago || '').toLowerCase()] || inv.tipo_pago || '—'}</p>
+              </div>
+              <div className="px-3.5 py-2.5">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">ID Venta</p>
+                <p className="text-[12px] font-bold text-slate-700 font-mono">#{inv.id}</p>
+              </div>
             </div>
-          ))}
+            {/* Columna derecha */}
+            <div>
+              <div className="px-3.5 py-2.5 border-b border-slate-50">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Vendedor</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <VendorAvatar employee={vendor} size={5} />
+                  <p className="text-[12px] font-bold text-slate-700 truncate">
+                    {vendor ? vendor.name.split(' ').slice(0, 2).join(' ') : (inv.cod_vendedor ? `#${inv.cod_vendedor}` : '—')}
+                  </p>
+                </div>
+              </div>
+              <div className="px-3.5 py-2.5 border-b border-slate-50">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Fecha</p>
+                <p className="text-[13px] font-black text-slate-800">{fmtDate(inv.fecha)}</p>
+              </div>
+              <div className="px-3.5 py-2.5">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Total</p>
+                <p className="text-[14px] font-black text-slate-800">{fmtCurrency(inv.total)}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
+        {/* Productos */}
         <div className="shrink-0">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-1.5">
             Productos ({items.length})
@@ -159,14 +229,15 @@ function InvoiceDetail({ inv, onBack, onModify }) {
           )}
         </div>
 
+        {/* Período de gracia */}
         <div className={`rounded-2xl px-3.5 py-2.5 flex items-center gap-2 shrink-0 ${
           withinGrace ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200'
         }`}>
           <Clock size={13} className={withinGrace ? 'text-amber-500' : 'text-red-500'} strokeWidth={2.5} />
           <p className={`text-[11px] font-bold ${withinGrace ? 'text-amber-700' : 'text-red-600'}`}>
             {withinGrace
-              ? `${graceDaysLeft} día${graceDaysLeft !== 1 ? 's' : ''} restante${graceDaysLeft !== 1 ? 's' : ''} de gracia`
-              : `Fuera del período de gracia — ${age} días desde la venta`}
+              ? `${graceDaysLeft} día${graceDaysLeft !== 1 ? 's' : ''} restante${graceDaysLeft !== 1 ? 's' : ''} para solicitar anulación`
+              : `Anulación fuera de plazo — ${age} días desde la venta`}
           </p>
         </div>
 
@@ -181,8 +252,9 @@ function InvoiceDetail({ inv, onBack, onModify }) {
 }
 
 /* ─── Type selector ─────────────────────────────────────────────────────────── */
-function TypeSelector({ inv, onSelect, onBack }) {
+function TypeSelector({ inv, onSelect, onBack, employees }) {
   const isCCF = inv.tipo_documento === 'CCF';
+  const vendor = employees.find(e => String(e.code) === String(inv.cod_vendedor));
 
   const types = [
     {
@@ -198,7 +270,7 @@ function TypeSelector({ inv, onSelect, onBack }) {
       key: 'pay_change',
       icon: CreditCard,
       label: 'Cambio de Forma de Pago',
-      desc: `Actual: ${inv.tipo_pago || 'N/A'}`,
+      desc: `Actual: ${PAYMENT_LABELS[(inv.tipo_pago || '').toLowerCase()] || inv.tipo_pago || 'N/A'}`,
       color: 'text-sky-600',
       bg: 'bg-sky-50 border-sky-200/70',
       iconBg: 'bg-sky-100',
@@ -206,8 +278,8 @@ function TypeSelector({ inv, onSelect, onBack }) {
     {
       key: 'vendor_change',
       icon: UserCog,
-      label: 'Cambio de Código Vendedor',
-      desc: `Vendedor actual: #${inv.cod_vendedor || 'N/A'}`,
+      label: 'Cambio de Vendedor',
+      desc: vendor ? vendor.name.split(' ')[0] : `Vendedor: #${inv.cod_vendedor || 'N/A'}`,
       color: 'text-purple-600',
       bg: 'bg-purple-50 border-purple-200/70',
       iconBg: 'bg-purple-100',
@@ -216,16 +288,7 @@ function TypeSelector({ inv, onSelect, onBack }) {
 
   return (
     <div className="flex flex-col gap-3 h-full animate-in slide-in-from-right-3 duration-200">
-      <div className="flex items-center gap-2 shrink-0">
-        <button onClick={onBack}
-          className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors shrink-0">
-          <ArrowLeft size={13} strokeWidth={2.5} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-black text-slate-800">Solicitar Modificación</p>
-          <p className="text-[10px] text-slate-400">{inv.correlativo} · {fmtCurrency(inv.total)}</p>
-        </div>
-      </div>
+      <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Tipo de solicitud</p>
 
@@ -256,15 +319,16 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
   const [submitting,  setSubmitting]  = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  const age          = daysAgo(inv.fecha);
-  const withinGrace  = age <= GRACE_DAYS;
-  const isCCF        = inv.tipo_documento === 'CCF';
-  const ccfSameDay   = isCCF && isSameDay(inv.fecha);
+  const age           = daysAgo(inv.fecha);
+  const withinGrace   = age <= GRACE_DAYS;
+  const isCCF         = inv.tipo_documento === 'CCF';
   const ccfNotSameDay = isCCF && !isSameDay(inv.fecha);
-  const isCreditPay  = (inv.tipo_pago || '').toLowerCase() === 'credito';
+  const ccfSameDay    = isCCF && isSameDay(inv.fecha);
+  const isCreditPay   = (inv.tipo_pago || '').toLowerCase() === 'credito';
   const commentRequired = !withinGrace || ccfNotSameDay;
-
   const canSubmit = reason && (!commentRequired || comment.trim()) && (!ccfNotSameDay || ccfAck);
+
+  const vendor = employees.find(e => String(e.code) === String(inv.cod_vendedor));
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -296,11 +360,9 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
         },
       });
       if (error) throw error;
-
       await appendAuditLog('ANNULMENT_REQUEST_CREATED', String(inv.id), {
         correlativo: inv.correlativo, reason, total: inv.total, notified: target?.name,
       });
-
       if (target?.id) {
         try {
           await supabase.functions.invoke('send-push-notification', {
@@ -322,20 +384,9 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
 
   return (
     <div className="flex flex-col gap-3 h-full animate-in slide-in-from-right-3 duration-200">
-      <div className="flex items-center gap-2 shrink-0">
-        <button onClick={onBack}
-          className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors">
-          <ArrowLeft size={13} strokeWidth={2.5} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-black text-slate-800 truncate">Anulación — {inv.correlativo}</p>
-          <p className="text-[10px] text-slate-400">{fmtDate(inv.fecha)} · {fmtCurrency(inv.total)}</p>
-        </div>
-      </div>
+      <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
       <div className="flex flex-col gap-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-
-        {/* Crédito → aviso de demora */}
         {isCreditPay && (
           <div className="rounded-2xl px-3.5 py-2.5 flex items-start gap-2 bg-indigo-50 border border-indigo-200 shrink-0">
             <Info size={13} className="text-indigo-500 mt-0.5 shrink-0" strokeWidth={2.5} />
@@ -344,8 +395,6 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
             </p>
           </div>
         )}
-
-        {/* CCF mismo día — aviso informativo */}
         {ccfSameDay && (
           <div className="rounded-2xl px-3.5 py-2.5 flex items-start gap-2 bg-amber-50 border border-amber-200 shrink-0">
             <ShieldAlert size={13} className="text-amber-500 mt-0.5 shrink-0" strokeWidth={2.5} />
@@ -354,14 +403,12 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
             </p>
           </div>
         )}
-
-        {/* CCF de otro día — bloqueo severo */}
         {ccfNotSameDay && (
           <div className="rounded-2xl px-3.5 py-2.5 flex flex-col gap-2.5 bg-red-50 border border-red-300 shrink-0">
             <div className="flex items-start gap-2">
               <ShieldAlert size={14} className="text-red-600 mt-0.5 shrink-0" strokeWidth={2.5} />
               <p className="text-[11px] font-bold text-red-700 leading-snug">
-                <strong>CCF de fecha anterior.</strong> Los CCF solo pueden anularse el mismo día de la emisión y requieren nota de crédito. Esta solicitud será marcada como urgente y requiere motivo obligatorio.
+                <strong>CCF de fecha anterior.</strong> Solo pueden anularse el mismo día y requieren nota de crédito. Esta solicitud será marcada como urgente.
               </p>
             </div>
             <label className="flex items-start gap-2 cursor-pointer">
@@ -371,18 +418,15 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
             </label>
           </div>
         )}
-
-        {/* Fuera de gracia */}
         {!withinGrace && !ccfNotSameDay && (
           <div className="rounded-2xl px-3.5 py-2.5 flex items-start gap-2 bg-red-50 border border-red-200 shrink-0">
             <AlertTriangle size={13} className="text-red-500 mt-0.5 shrink-0" strokeWidth={2.5} />
             <p className="text-[11px] font-bold text-red-700 leading-snug">
-              Esta factura está fuera del período de gracia ({age} días). La solicitud requerirá aprobación del supervisor y motivo detallado.
+              Esta factura está fuera del plazo ({age} días). Requiere aprobación del supervisor y motivo detallado.
             </p>
           </div>
         )}
 
-        {/* Selector de motivo */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo *</label>
           <div className="grid grid-cols-2 gap-1.5">
@@ -397,7 +441,6 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           </div>
         </div>
 
-        {/* Comentario */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
             Comentarios {commentRequired ? <span className="text-red-400">*</span> : ''}
@@ -432,6 +475,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
 
   const currentPay = (inv.tipo_pago || '').toLowerCase();
   const available  = PAYMENT_METHODS.filter(m => m !== currentPay);
+  const vendor     = employees.find(e => String(e.code) === String(inv.cod_vendedor));
 
   const handleSubmit = async () => {
     if (!newPayment) return;
@@ -460,11 +504,9 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
         },
       });
       if (error) throw error;
-
       await appendAuditLog('PAYMENT_CHANGE_REQUEST_CREATED', String(inv.id), {
         correlativo: inv.correlativo, current_pago: inv.tipo_pago, new_pago: newPayment,
       });
-
       if (target?.id) {
         try {
           await supabase.functions.invoke('send-push-notification', {
@@ -486,29 +528,17 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
 
   return (
     <div className="flex flex-col gap-3 h-full animate-in slide-in-from-right-3 duration-200">
-      <div className="flex items-center gap-2 shrink-0">
-        <button onClick={onBack}
-          className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors">
-          <ArrowLeft size={13} strokeWidth={2.5} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-black text-slate-800 truncate">Cambio de Pago — {inv.correlativo}</p>
-          <p className="text-[10px] text-slate-400">{fmtDate(inv.fecha)} · {fmtCurrency(inv.total)}</p>
-        </div>
-      </div>
+      <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
 
       <div className="flex flex-col gap-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-
-        {/* Pago actual */}
         <div className="rounded-2xl px-3.5 py-2.5 flex items-center gap-2 bg-slate-50 border border-slate-200 shrink-0">
           <CreditCard size={13} className="text-slate-400 shrink-0" strokeWidth={2.5} />
           <div>
             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Forma de pago actual</p>
-            <p className="text-[13px] font-black text-slate-700 capitalize">{PAYMENT_LABELS[currentPay] || currentPay || '—'}</p>
+            <p className="text-[13px] font-black text-slate-700">{PAYMENT_LABELS[currentPay] || currentPay || '—'}</p>
           </div>
         </div>
 
-        {/* Selector nuevo pago */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Cambiar a *</label>
           <div className="grid grid-cols-2 gap-1.5">
@@ -523,7 +553,6 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
           </div>
         </div>
 
-        {/* Comentario */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo del cambio</label>
           <textarea
@@ -558,7 +587,6 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
     String(e.branch_id ?? e.branchId) === String(activeBranchId) &&
     String(e.code) !== String(inv.cod_vendedor)
   );
-
   const selectedVendor = employees.find(e => String(e.id) === String(newVendorId));
 
   const handleSubmit = async () => {
@@ -593,11 +621,9 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         },
       });
       if (error) throw error;
-
       await appendAuditLog('VENDOR_CHANGE_REQUEST_CREATED', String(inv.id), {
         correlativo: inv.correlativo, from: inv.cod_vendedor, to: selectedVendor.code,
       });
-
       if (target?.id) {
         try {
           await supabase.functions.invoke('send-push-notification', {
@@ -619,36 +645,22 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
   return (
     <div className="flex flex-col gap-3 h-full animate-in slide-in-from-right-3 duration-200">
-      <div className="flex items-center gap-2 shrink-0">
-        <button onClick={onBack}
-          className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors">
-          <ArrowLeft size={13} strokeWidth={2.5} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-black text-slate-800 truncate">Cambio de Vendedor — {inv.correlativo}</p>
-          <p className="text-[10px] text-slate-400">{fmtDate(inv.fecha)} · {fmtCurrency(inv.total)}</p>
-        </div>
-      </div>
+      <InvoiceHeader inv={inv} onBack={onBack} vendor={currentVendor} />
 
       <div className="flex flex-col gap-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
         {/* Vendedor actual */}
-        <div className="rounded-2xl px-3.5 py-2.5 bg-slate-50 border border-slate-200 shrink-0">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Vendedor actual</p>
+        <div className="rounded-2xl px-3.5 py-3 bg-slate-50 border border-slate-200 shrink-0">
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Vendedor actual</p>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-200 border border-slate-300 flex-shrink-0 flex items-center justify-center">
-              {currentVendor?.photo || currentVendor?.photo_url
-                ? <img src={currentVendor.photo || currentVendor.photo_url} className="w-full h-full object-cover" alt="" />
-                : <User size={14} className="text-slate-400" />}
-            </div>
-            <div>
-              <p className="text-[12px] font-black text-slate-700">{currentVendor?.name ?? 'Vendedor desconocido'}</p>
-              <p className="text-[10px] text-slate-400 font-mono">Código #{inv.cod_vendedor || '—'}</p>
-            </div>
+            <VendorAvatar employee={currentVendor} size={8} />
+            <p className="text-[13px] font-black text-slate-700">
+              {currentVendor?.name ?? `Vendedor #${inv.cod_vendedor || '—'}`}
+            </p>
           </div>
         </div>
 
-        {/* Lista de vendedores */}
+        {/* Lista vendedores — solo foto y nombre */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Asignar a *</label>
           {vendorList.length === 0 ? (
@@ -662,15 +674,10 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
                     className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-2xl border text-left transition-all ${
                       isSelected ? 'bg-[#0052CC]/5 border-[#0052CC]/40 shadow-[0_0_0_1px_rgba(0,82,204,0.15)]' : 'bg-white border-slate-200 hover:border-slate-300'
                     }`}>
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 flex items-center justify-center">
-                      {emp.photo || emp.photo_url
-                        ? <img src={emp.photo || emp.photo_url} className="w-full h-full object-cover" alt="" />
-                        : <User size={14} className="text-slate-400" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-[12px] font-black truncate ${isSelected ? 'text-[#0052CC]' : 'text-slate-700'}`}>{emp.name}</p>
-                      <p className="text-[9px] text-slate-400 font-mono">Código #{emp.code || '—'}</p>
-                    </div>
+                    <VendorAvatar employee={emp} size={8} />
+                    <p className={`text-[12px] font-black flex-1 truncate ${isSelected ? 'text-[#0052CC]' : 'text-slate-700'}`}>
+                      {emp.name}
+                    </p>
                     {isSelected && (
                       <div className="w-4 h-4 rounded-full bg-[#0052CC] flex items-center justify-center shrink-0">
                         <svg viewBox="0 0 10 8" className="w-2.5 h-2 fill-white"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -683,7 +690,6 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           )}
         </div>
 
-        {/* Comentario */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo del cambio</label>
           <textarea
@@ -716,7 +722,6 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   const activeBranchId = propBranchId ?? String(userBranchId ?? '');
   const activeBranch   = branches.find(b => String(b.id) === activeBranchId);
 
-  // view: 'list' | 'detail' | 'type_select' | 'annul' | 'pay_change' | 'vendor_change' | 'success'
   const [view,        setView]        = useState('list');
   const [prevView,    setPrevView]    = useState('list');
   const [invoices,    setInvoices]    = useState([]);
@@ -773,14 +778,14 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
     );
   }
 
-  /* ── Success screen ── */
+  /* ── Éxito ── */
   if (view === 'success') {
-    const successLabels = {
-      annul:         { title: 'Anulación solicitada',       sub: 'La supervisión fue notificada y revisará la solicitud.' },
-      pay_change:    { title: 'Cambio de pago solicitado',  sub: 'La supervisión fue notificada para su aprobación.' },
-      vendor_change: { title: 'Cambio de vendedor enviado', sub: 'La supervisión fue notificada para su aprobación.' },
+    const msgs = {
+      annul:         { title: 'Anulación solicitada',       sub: 'Supervisión fue notificada y revisará la solicitud.' },
+      pay_change:    { title: 'Cambio de pago solicitado',  sub: 'Supervisión fue notificada para su aprobación.' },
+      vendor_change: { title: 'Cambio de vendedor enviado', sub: 'Supervisión fue notificada para su aprobación.' },
     };
-    const lbl = successLabels[successInfo.type] || successLabels.annul;
+    const lbl = msgs[successInfo.type] || msgs.annul;
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3">
         <CheckCircle2 size={40} className="text-emerald-500" strokeWidth={1.5} />
@@ -798,32 +803,23 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   /* ── Sub-views ── */
   if (view === 'annul' && focused)
     return <AnnulForm inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} {...sharedProps} />;
-
   if (view === 'pay_change' && focused)
     return <PaymentChangeForm inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} {...sharedProps} />;
-
   if (view === 'vendor_change' && focused)
     return <VendorChangeForm inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} {...sharedProps} />;
-
   if (view === 'type_select' && focused)
-    return (
-      <TypeSelector
-        inv={focused}
-        onBack={() => setView(prevView)}
-        onSelect={key => setView(key)}
-      />
-    );
-
+    return <TypeSelector inv={focused} onBack={() => setView(prevView)} onSelect={key => setView(key)} employees={employees} />;
   if (view === 'detail' && focused)
     return (
       <InvoiceDetail
         inv={focused}
         onBack={() => { setView('list'); setFocused(null); }}
         onModify={() => { setPrevView('detail'); setView('type_select'); }}
+        employees={employees}
       />
     );
 
-  /* ── LISTA ── */
+  /* ── Lista ── */
   return (
     <div className="flex flex-col gap-3 h-full">
       <div className="flex items-center justify-between shrink-0">
@@ -870,12 +866,17 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
         )}
 
         {!loading && filtered.map(inv => {
-          const age = daysAgo(inv.fecha);
-          const ok  = age <= GRACE_DAYS;
+          const age    = daysAgo(inv.fecha);
+          const ok     = age <= GRACE_DAYS;
+          const vendor = employees.find(e => String(e.code) === String(inv.cod_vendedor));
           return (
             <div key={inv.id}
               className="flex items-center gap-2 px-3 py-2.5 rounded-2xl border border-slate-100 bg-white hover:border-slate-200 transition-all">
-              <Receipt size={13} className={ok ? 'text-slate-400 shrink-0' : 'text-slate-200 shrink-0'} strokeWidth={2} />
+
+              {/* Vendedor avatar */}
+              <div className="shrink-0">
+                <VendorAvatar employee={vendor} size={6} />
+              </div>
 
               <div className="flex-1 min-w-0">
                 <p className={`text-[12px] font-black truncate leading-tight ${ok ? 'text-slate-800' : 'text-slate-400'}`}>
@@ -885,6 +886,9 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
                   <span className="text-[9px] text-slate-400 font-mono">{inv.correlativo}</span>
                   <DocBadge tipo={inv.tipo_documento} />
                   {inv.tipo_pago && <PayBadge tipo={inv.tipo_pago} />}
+                  {vendor && (
+                    <span className="text-[9px] text-slate-400">{vendor.name.split(' ')[0]}</span>
+                  )}
                 </div>
               </div>
 

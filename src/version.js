@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.417';
+export const APP_VERSION = '2.2.418';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.418 — fix(pedidos): búsqueda se limpia al cerrar sección (useEffect on !open)
 // v2.2.417 — fix(pedidos): agotamiento aparece en AMBAS secciones (enviados + stock insuf.); COLS_AGOTAMIENTO con col "Faltó"; búsqueda persiste al cerrar sección, smartFilter superpoderes, lupa siempre visible
 // v2.2.416 — fix(pedidos): PDF incluye items agotamiento; búsqueda rediseñada (icono derecha → expande compacto, Escape cierra); sinCount+agotamientoCount en pie de PDF
 // v2.2.415 — feat(pedidos): búsqueda dentro de cada sección del detalle de pedido (Productos enviados, Sin inventario, Stock insuficiente, Revisar regla)

@@ -826,6 +826,10 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
         return results;
     }, [rows, search]);
 
+    useEffect(() => {
+        if (!open) { setSearch(''); setSearchOpen(false); setPage(1); }
+    }, [open]);
+
     const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
     const pageRows   = filteredRows.slice((page - 1) * pageSize, page * pageSize);
 

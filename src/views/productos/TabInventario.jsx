@@ -112,20 +112,20 @@ export default function TabInventario({ searchTerm = '' }) {
     }, []);
 
     useEffect(() => {
-        if (selectedErp !== 6) { setVencidosMap({}); return; }
-        supabase
+        let q = supabase
             .from('inventory')
-            .select('erp_product_id, cantidad, detalle')
-            .eq('erp_sucursal_id', 6)
-            .eq('is_vencidos', true)
-            .then(({ data }) => {
-                const map = {};
-                for (const row of (data || [])) {
-                    const factor = parseFactor(row.detalle);
-                    map[row.erp_product_id] = (map[row.erp_product_id] || 0) + (row.cantidad || 0) * factor;
-                }
-                setVencidosMap(map);
-            });
+            .select('erp_sucursal_id, erp_product_id, cantidad, detalle')
+            .eq('is_vencidos', true);
+        if (selectedErp !== null) q = q.eq('erp_sucursal_id', selectedErp);
+        q.then(({ data }) => {
+            const map = {};
+            for (const row of (data || [])) {
+                const key = `${row.erp_sucursal_id}_${row.erp_product_id}`;
+                const factor = parseFactor(row.detalle);
+                map[key] = (map[key] || 0) + (row.cantidad || 0) * factor;
+            }
+            setVencidosMap(map);
+        });
     }, [selectedErp]);
 
     useEffect(() => { setPage(1); }, [selectedErp, filterVencidos, filterSixMonths, filterLab, filterCat, searchTerm, pageSize, sortField]);
@@ -227,26 +227,22 @@ export default function TabInventario({ searchTerm = '' }) {
 
         setExpandLoading(prev => new Set([...prev, key]));
         try {
-            const regularQ = supabase
-                .from('inventory')
-                .select('presentacion, detalle, lote, fecha_vencimiento, cantidad')
-                .eq('erp_sucursal_id', erpId)
-                .eq('erp_product_id', productId)
-                .eq('is_vencidos', false)
-                .order('presentacion')
-                .order('lote');
-            const vencidosQ = erpId === 6 ? supabase
-                .from('inventory')
-                .select('presentacion, detalle, lote, fecha_vencimiento, cantidad')
-                .eq('erp_sucursal_id', 6)
-                .eq('erp_product_id', productId)
-                .eq('is_vencidos', true)
-                .order('presentacion')
-                .order('lote') : null;
-
-            const [{ data }, vRes] = await Promise.all([regularQ, vencidosQ ?? Promise.resolve({ data: [] })]);
+            const [{ data }, { data: vData }] = await Promise.all([
+                supabase.from('inventory')
+                    .select('presentacion, detalle, lote, fecha_vencimiento, cantidad')
+                    .eq('erp_sucursal_id', erpId)
+                    .eq('erp_product_id', productId)
+                    .eq('is_vencidos', false)
+                    .order('presentacion').order('lote'),
+                supabase.from('inventory')
+                    .select('presentacion, detalle, lote, fecha_vencimiento, cantidad')
+                    .eq('erp_sucursal_id', erpId)
+                    .eq('erp_product_id', productId)
+                    .eq('is_vencidos', true)
+                    .order('presentacion').order('lote'),
+            ]);
             setExpandedData(prev => ({ ...prev, [key]: data || [] }));
-            if (erpId === 6) setExpandedVencidos(prev => ({ ...prev, [key]: vRes.data || [] }));
+            setExpandedVencidos(prev => ({ ...prev, [key]: vData || [] }));
         } finally {
             setExpandLoading(prev => { const s = new Set(prev); s.delete(key); return s; });
         }
@@ -560,11 +556,11 @@ export default function TabInventario({ searchTerm = '' }) {
                                             {units.toLocaleString()}
                                         </span>
                                         <span className="text-[9px] text-slate-500 ml-0.5">und</span>
-                                        {isBodega && (() => {
-                                            const vUnits = vencidosMap[group.erp_product_id] || 0;
+                                        {(() => {
+                                            const vUnits = vencidosMap[`${group.erp_sucursal_id}_${group.erp_product_id}`] || 0;
                                             if (!vUnits) return null;
                                             return (
-                                                <span className="ml-1.5 text-[10px] font-bold text-amber-500 tabular-nums">
+                                                <span className="ml-1.5 text-[10px] font-bold text-rose-600 tabular-nums">
                                                     / {vUnits.toLocaleString()} V
                                                 </span>
                                             );
@@ -592,7 +588,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                         {/* Regular inventory */}
                                                         {(expandedData[key] || []).length > 0 && (
                                                             <table className="w-full">
-                                                                {isBodega && <caption className="text-left text-[9px] font-black uppercase tracking-widest text-blue-400 pb-1.5">Inventario regular</caption>}
+                                                                {(expandedVencidos[key] || []).length > 0 && <caption className="text-left text-[9px] font-black uppercase tracking-widest text-blue-400 pb-1.5">Inventario regular</caption>}
                                                                 <thead>
                                                                     <tr>
                                                                         {['Presentación', 'Lote', 'Vence', 'Cant.', 'Unidades'].map(h => (
@@ -643,17 +639,17 @@ export default function TabInventario({ searchTerm = '' }) {
                                                             </table>
                                                         )}
 
-                                                        {/* Vencidos section — bodega only */}
-                                                        {isBodega && (expandedVencidos[key] || []).length > 0 && (
+                                                        {/* Vencidos section */}
+                                                        {(expandedVencidos[key] || []).length > 0 && (
                                                             <table className="w-full mt-3">
-                                                                <caption className="text-left text-[9px] font-black uppercase tracking-widest text-amber-500 pb-1.5">
+                                                                <caption className="text-left text-[9px] font-black uppercase tracking-widest text-rose-500 pb-1.5">
                                                                     Ubicación vencidos
                                                                 </caption>
                                                                 <thead>
                                                                     <tr>
                                                                         {['Presentación', 'Lote', 'Vence', 'Cant.', 'Unidades'].map(h => (
                                                                             <th key={h}
-                                                                                className={`pb-2 text-[9px] font-black uppercase tracking-widest text-amber-500 pr-6 last:pr-0 ${
+                                                                                className={`pb-2 text-[9px] font-black uppercase tracking-widest text-rose-400 pr-6 last:pr-0 ${
                                                                                     h === 'Cant.' || h === 'Unidades' ? 'text-right' : 'text-left'
                                                                                 }`}>
                                                                                 {h}
@@ -666,31 +662,31 @@ export default function TabInventario({ searchTerm = '' }) {
                                                                         const factor   = parseFactor(row.detalle);
                                                                         const rowUnits = (row.cantidad || 0) * factor;
                                                                         return (
-                                                                            <tr key={j} className="border-t border-amber-100/60">
+                                                                            <tr key={j} className="border-t border-rose-100/60">
                                                                                 <td className="py-1.5 pr-6">
-                                                                                    <span className="text-[12px] font-semibold text-amber-700">
+                                                                                    <span className="text-[12px] font-semibold text-rose-700">
                                                                                         {row.presentacion || '—'}
                                                                                     </span>
                                                                                     {row.detalle && (
-                                                                                        <span className="text-[10px] text-amber-400 font-mono ml-1.5">
+                                                                                        <span className="text-[10px] text-rose-500 font-mono ml-1.5">
                                                                                             {row.detalle}
                                                                                         </span>
                                                                                     )}
                                                                                 </td>
-                                                                                <td className="py-1.5 pr-6 text-[11px] font-mono text-amber-500">
+                                                                                <td className="py-1.5 pr-6 text-[11px] font-mono text-rose-600">
                                                                                     {row.lote || '—'}
                                                                                 </td>
                                                                                 <td className="py-1.5 pr-6">
                                                                                     <ExpiryCell fecha={row.fecha_vencimiento} />
                                                                                 </td>
-                                                                                <td className="py-1.5 pr-6 text-right text-[12px] font-semibold text-amber-600 tabular-nums">
+                                                                                <td className="py-1.5 pr-6 text-right text-[12px] font-semibold text-rose-600 tabular-nums">
                                                                                     {(row.cantidad || 0).toLocaleString()}
                                                                                 </td>
                                                                                 <td className="py-1.5 text-right">
-                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-slate-400' : 'text-amber-600'}`}>
+                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-slate-400' : 'text-rose-600'}`}>
                                                                                         {rowUnits.toLocaleString()}
                                                                                     </span>
-                                                                                    <span className="text-[9px] text-amber-500 ml-0.5">und</span>
+                                                                                    <span className="text-[9px] text-rose-500 ml-0.5">und</span>
                                                                                 </td>
                                                                             </tr>
                                                                         );

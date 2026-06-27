@@ -10,7 +10,7 @@ import {
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
     UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box, Zap, Map as MapIcon,
-    CalendarClock, Ban, Star,
+    CalendarClock, Ban, Star, Search,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -798,17 +798,29 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
     const [open,     setOpen]     = useState(false);
     const [page,     setPage]     = useState(1);
     const [pageSize, setPageSize] = useState(MINI_PAGE);
+    const [search,   setSearch]   = useState('');
+    const searchRef = useRef(null);
 
-    const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
-    const pageRows   = rows.slice((page - 1) * pageSize, page * pageSize);
+    const filteredRows = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return rows;
+        return rows.filter(r => {
+            const name = (r.products?.nombre ?? r.product_name ?? '').toLowerCase();
+            const lab  = (r.products?.laboratorios?.nombre ?? '').toLowerCase();
+            return name.includes(q) || lab.includes(q) || tokenMatch(q, name);
+        });
+    }, [rows, search]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+    const pageRows   = filteredRows.slice((page - 1) * pageSize, page * pageSize);
 
     if (!count) return null;
 
     return (
         <div className="border-t border-slate-100">
-            <button onClick={() => setOpen(v => !v)} className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-slate-50/50 transition-colors">
+            <button onClick={() => { setOpen(v => !v); if (!open) setTimeout(() => searchRef.current?.focus(), 200); }} className="w-full flex items-center gap-2 px-4 py-2.5 text-left hover:bg-slate-50/50 transition-colors">
                 <span className="text-[11px] font-semibold text-slate-700 flex-1">{label}</span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${badgeCls}`}>{count}</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${badgeCls}`}>{search ? `${filteredRows.length}/${count}` : count}</span>
                 {open ? <ChevronDown size={12} className="text-slate-400 shrink-0" /> : <ChevronRight size={12} className="text-slate-400 shrink-0" />}
             </button>
             <AnimatePresence>
@@ -816,6 +828,21 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
                         <div className="px-4 pb-4 space-y-3">
                             {noteEl}
+                            <div className="relative">
+                                <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                <input
+                                    ref={searchRef}
+                                    value={search}
+                                    onChange={e => { setSearch(e.target.value); setPage(1); }}
+                                    placeholder="Buscar producto o laboratorio…"
+                                    className="w-full pl-7 pr-7 py-1.5 text-[11px] bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 text-slate-700 placeholder:text-slate-400"
+                                />
+                                {search && (
+                                    <button onClick={() => { setSearch(''); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                        <X size={11} />
+                                    </button>
+                                )}
+                            </div>
                             <DataTable
                                 columns={columns}
                                 minWidth="400px"
@@ -827,6 +854,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
                                         pageSize={pageSize}
                                         onPageSizeChange={sz => { setPageSize(sz); setPage(1); }}
                                         total={rows.length}
+                                        filteredTotal={search ? filteredRows.length : undefined}
                                         unit="productos"
                                     />
                                 }

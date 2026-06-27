@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.413';
+export const APP_VERSION = '2.2.414';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.414 — feat(pedidos): agotamiento de stock — nuevo flag cuando bodega tenía stock pero insuficiente para cubrir necesidad completa; RPC get_pedido_preview + get_pedido_item_stats actualizados; badge naranja "stock insuf." en cards y sección separada en detalle de pedido
 // v2.2.413 — fix(inventario): "X und / Y V" global — rose-600 en lugar de amber, visible en todas las sucursales (no solo Bodega); expand vencidos en rose para todas las ramas
 // v2.2.412 — feat(inventario/bodega): dual stock display — "7 und / 1 V" inline en Und. (ámbar, solo si tiene vencidos); expand muestra "Inventario regular" y "Ubicación vencidos" en secciones separadas; solo activo al filtrar por Bodega
 // v2.2.411 — fix(ventas/productos): 3 fixes drill-down — (1) paginación estándar con selector de tamaño (25/50/100); (2) COF es c/IVA (solo CCF es sin IVA); (3) badges de tier con número (Viñeta=1 Desc=2 VIP=3 Clínica=4 Mayoreo=5 Premium=6 P7=7) en TabProductos y TabVentas

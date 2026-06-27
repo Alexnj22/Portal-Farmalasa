@@ -152,6 +152,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 cantidad_asignada:     row.cantidad_asignada,
                 sin_stock:             row.sin_stock,
                 revision_minmax:       row.revision_minmax,
+                agotamiento:           row.agotamiento ?? false,
                 stock_packs_snapshot:  Number(row.stock_packs),
                 max_qty_snapshot:      row.max_qty,
                 min_qty_snapshot:      row.min_qty,
@@ -184,9 +185,10 @@ export default function TabGenerar({ searchTerm = '' }) {
             const map = {};
             for (const row of rows) {
                 const s = row.erp_sucursal_id;
-                if (!map[s]) map[s] = { normal: [], revision: [], sinStock: [] };
+                if (!map[s]) map[s] = { normal: [], revision: [], sinStock: [], agotamiento: [] };
                 if (row.sin_stock)            map[s].sinStock.push(row);
                 else if (row.revision_minmax) map[s].revision.push(row);
+                else if (row.agotamiento)     map[s].agotamiento.push(row);
                 else                          map[s].normal.push(row);
             }
             const sucIds     = SUCURSALES.filter(id => map[id]);

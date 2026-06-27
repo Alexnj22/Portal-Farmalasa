@@ -1117,10 +1117,11 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
 function ItemSections({ allItems, loading }) {
     if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-slate-300" /></div>;
 
-    const enviados = allItems.filter(i => i.cantidad_asignada > 0);
-    const sinStock = allItems.filter(i => i.sin_stock);
-    const porRegla = allItems.filter(i => i.revision_minmax);
-    const total    = enviados.length + sinStock.length + porRegla.length;
+    const enviados    = allItems.filter(i => i.cantidad_asignada > 0 && !i.agotamiento);
+    const agotamiento = allItems.filter(i => i.agotamiento);
+    const sinStock    = allItems.filter(i => i.sin_stock);
+    const porRegla    = allItems.filter(i => i.revision_minmax);
+    const total       = enviados.length + agotamiento.length + sinStock.length + porRegla.length;
 
     if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-slate-400">Sin ítems.</div>;
 
@@ -1129,10 +1130,15 @@ function ItemSections({ allItems, loading }) {
             <div className="border-t border-slate-100 px-4 py-2.5 bg-slate-50/60 flex items-center gap-5 flex-wrap">
                 <span className="text-[11px] text-slate-500">Solicitados <strong className="text-slate-700">{total}</strong></span>
                 <span className="text-[11px] text-slate-500">Enviados <strong className="text-emerald-600">{enviados.length}</strong></span>
+                {agotamiento.length > 0 && <span className="text-[11px] text-slate-500">Stock insuficiente <strong className="text-orange-600">{agotamiento.length}</strong></span>}
                 {sinStock.length > 0 && <span className="text-[11px] text-slate-500">Sin inventario <strong className="text-amber-600">{sinStock.length}</strong></span>}
                 {porRegla.length > 0 && <span className="text-[11px] text-slate-500">Revisar regla <strong className="text-rose-600">{porRegla.length}</strong></span>}
             </div>
             <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-emerald-50 text-emerald-700 border-emerald-200" rows={enviados} columns={COLS_ENVIADOS} />
+            <ItemSection
+                label="Stock insuficiente en bodega" count={agotamiento.length} badgeCls="bg-orange-50 text-orange-700 border-orange-200" rows={agotamiento} columns={COLS_ENVIADOS}
+                noteEl={<p className="text-[10px] text-orange-600/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad completa. Se envió lo disponible; el faltante quedará pendiente para el próximo pedido.</p>}
+            />
             <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-amber-50 text-amber-700 border-amber-200" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-[10px] text-amber-600/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
             <ItemSection
                 label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-rose-50 text-rose-700 border-rose-200" rows={porRegla} columns={COLS_REGLA}
@@ -1706,14 +1712,14 @@ export default function TabPedidos({ searchTerm = '' }) {
         const rows = data ?? [];
         const stats = {};
         rows.forEach(row => {
-            stats[`act_${row.pedido_id}_${row.erp_sucursal_id}`] = { enviados: 0, sinStock: 0, porRegla: 0 };
+            stats[`act_${row.pedido_id}_${row.erp_sucursal_id}`] = { enviados: 0, sinStock: 0, porRegla: 0, agotamiento: 0 };
         });
         const ids = [...new Set(rows.map(r => r.pedido_id))];
         if (ids.length) {
             const { data: statRows } = await supabase.rpc('get_pedido_item_stats', { p_pedido_ids: ids });
             (statRows ?? []).forEach(s => {
                 const k = `act_${s.pedido_id}_${s.erp_sucursal_id}`;
-                stats[k] = { enviados: s.enviados, sinStock: s.sin_stock, porRegla: s.por_regla, pendientes: s.pendientes ?? 0 };
+                stats[k] = { enviados: s.enviados, sinStock: s.sin_stock, porRegla: s.por_regla, agotamiento: s.agotamiento ?? 0, pendientes: s.pendientes ?? 0 };
             });
         }
         setCardStats(stats);
@@ -1925,7 +1931,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
         const ITEMS_SELECT = `
             id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_recibida,
-            status, nota_diferencia, error_tipo, received_at, received_by, lotes_asignados,
+            status, nota_diferencia, error_tipo, received_at, received_by, lotes_asignados, agotamiento,
             sin_stock, revision_minmax, falta_caja, caja_especial,
             factor, dispatch_tipo, dispatch_factor,
             max_qty_snapshot, stock_packs_snapshot,
@@ -2955,6 +2961,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600 border-slate-200">
                                                 {cardStats[cardKey].enviados} enviados
                                             </span>
+                                            {(cardStats[cardKey].agotamiento ?? 0) > 0 && (
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-50 text-orange-700 border-orange-200">
+                                                    {cardStats[cardKey].agotamiento} stock insuf.
+                                                </span>
+                                            )}
                                             {cardStats[cardKey].sinStock > 0 && (
                                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600 border-slate-200">
                                                     {cardStats[cardKey].sinStock} sin stock

@@ -2310,17 +2310,18 @@ export default function TabPedidos({ searchTerm = '' }) {
     const openFinalizarModal = useCallback(async (pedidoId, sucId, numero, key) => {
         if (busyAction) { useToastStore.getState().showToast('Espera', 'Hay una operación en curso, intenta de nuevo.', 'info'); return; }
         setBusyAction(`finalizar_load_${key}`);
-        const [rowsResult, pssResult] = await Promise.all([
-            items[key] ? Promise.resolve(items[key]) : fetchItems(key, pedidoId, sucId),
-            supabase.from('pedido_sucursal_status').select('paginas')
-                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle(),
-        ]);
-        setBusyAction(null);
-        setFinalizarModal({
-            pedidoId, sucId, numero, key,
-            rows:    rowsResult ?? [],
-            paginas: pssResult.data?.paginas ?? null,
-        });
+        try {
+            const [rowsResult, pssResult] = await Promise.all([
+                items[key] ? Promise.resolve(items[key]) : fetchItems(key, pedidoId, sucId),
+                supabase.from('pedido_sucursal_status').select('paginas')
+                    .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle(),
+            ]);
+            setFinalizarModal({
+                pedidoId, sucId, numero, key,
+                rows:    rowsResult ?? [],
+                paginas: pssResult.data?.paginas ?? null,
+            });
+        } catch (e) { console.error('openFinalizarModal:', e); } finally { setBusyAction(null); }
     }, [busyAction, items, fetchItems]);
 
     const handleFinalizarConCajas = useCallback(async ({ totalCajas, cajaMap, paginaItems }) => {
@@ -3415,9 +3416,12 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {isConductorRuta && ruta.status === 'pendiente' && (
                                                 <button
                                                     onClick={async () => {
-                                                        await supabase.from('rutas').update({ status: 'en_ruta', salida_at: new Date().toISOString() }).eq('id', ruta.id);
-                                                        useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
-                                                        loadActiveRutas();
+                                                        try {
+                                                            const { error } = await supabase.from('rutas').update({ status: 'en_ruta', salida_at: new Date().toISOString() }).eq('id', ruta.id);
+                                                            if (error) throw error;
+                                                            useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
+                                                            loadActiveRutas();
+                                                        } catch (e) { useToastStore.getState().showToast('Error', 'No se pudo iniciar la ruta. Intenta de nuevo.', 'error'); }
                                                     }}
                                                     className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 transition-all shadow-sm"
                                                 >
@@ -3427,9 +3431,12 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {isConductorRuta && ruta.status === 'en_ruta' && entregadas === total && total > 0 && (
                                                 <button
                                                     onClick={async () => {
-                                                        await supabase.from('rutas').update({ status: 'completada', vuelta_base_at: new Date().toISOString() }).eq('id', ruta.id);
-                                                        useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
-                                                        loadActiveRutas(); loadActive();
+                                                        try {
+                                                            const { error } = await supabase.from('rutas').update({ status: 'completada', vuelta_base_at: new Date().toISOString() }).eq('id', ruta.id);
+                                                            if (error) throw error;
+                                                            useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
+                                                            loadActiveRutas(); loadActive();
+                                                        } catch (e) { useToastStore.getState().showToast('Error', 'No se pudo completar la ruta. Intenta de nuevo.', 'error'); }
                                                     }}
                                                     className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-700 text-white hover:bg-slate-800 active:scale-95 transition-all shadow-sm"
                                                 >

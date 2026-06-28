@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.434';
+export const APP_VERSION = '2.2.435';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.435 — fix(pedidos): auditoría final TabPedidos — openFinalizarModal: try/catch/finally evita botón bloqueado en error; inline Iniciar+Base ruta: try/catch con toast de error en fallo DB
 // v2.2.434 — fix(pedidos): 10 bugs módulo completo — DB: get_pedidos_en_curso agrega cajas_especiales_llegadas (DROP+CREATE); elimina overload legacy anular_pedido(uuid); RLS en pedido_apoyo/rutas/ruta_pedidos; índice compuesto pedido_items(pedido_id,status); TabEnCurso: num_pausas→pauses.length; TabGenerar: try/catch/finally en dashStats+sinBodega+refreshStats; TabRutas: status filter→todos los estados + realtime subscription; CrearRutaModal: catch en Promise.all + error visible en footer al fallar submit
 // v2.2.433 — fix(pedidos): 9 issues flujo completo — ReenvioLlegadaModal bloquea confirmar si electrolit sin responder + badge "Pendiente"; fetchItems try/finally evita spinner eterno; RecepcionModal limpia presMap en re-apertura; PostCompletionSection auto-carga items + muestra quién confirmó; handleConfirmarTodo incluye especiales; LlegadaModal texto "Todas llegaron OK" cuando sin interacción; badge "Especial" en items sin caja_map
 // v2.2.432 — feat(pedidos): cajas especiales en RecepcionModal (tiles E1/E2 con estado ok/dañada/faltante, header y flujo diferenciado); PostCompletionSection resumen post-completado en cards; borrador auto-guardado en LlegadaModal y FinalizarCajasModal con restauración

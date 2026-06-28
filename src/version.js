@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.426';
+export const APP_VERSION = '2.2.427';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.427 — fix(widget-facturacion): avatar vendedor junto al nombre (no al inicio de fila), buscador 2/3 + date picker 1/3, botón enviar sticky, header y detalle más compactos
 // v2.2.426 — fix(widget-facturacion): título correcto, avatar vendedor en lista, detalle 2 cols + ID venta + fecha destacada, encabezado unificado en todos los formularios, cambio de vendedor sin códigos
 // v2.2.425 — feat(facturacion): elimina Mi Horario; widget anulación → Solicitar Modificación a Facturación (anulación+CCF+crédito, cambio de pago, cambio de vendedor); nuevos tipos en RequestsView
 // v2.2.424 — feat(alertas-dte): check-sales-alerts edge fn + cron 5min — 3 ventas consecutivas pendientes MH → push a Supervisor; CCF pendiente/anulada → push urgente; sales_alert_log evita duplicados

@@ -387,6 +387,11 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         <span>⚠</span> {extraError}
                     </p>
                 )}
+                {Object.keys(estados).length === 0 && cajas.length > 0 && (
+                    <p className="text-[10px] text-slate-400 text-center pb-1">
+                        Las cajas sin marcar se registran como <strong>OK</strong>
+                    </p>
+                )}
                 <div className="flex items-center justify-between gap-2">
                     <button onClick={handleClose} disabled={submitting}
                         className="text-[11px] font-semibold px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-all">
@@ -395,7 +400,9 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     <button onClick={handleConfirm} disabled={submitting}
                         className="text-[11px] font-bold px-5 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-40 active:scale-95 transition-all flex items-center gap-1.5">
                         {submitting && <Loader2 size={11} className="animate-spin" />}
-                        Confirmar llegada
+                        {Object.keys(estados).length === 0 && cajas.length > 0
+                            ? '✓ Todas llegaron OK'
+                            : 'Confirmar llegada'}
                     </button>
                 </div>
             </div>

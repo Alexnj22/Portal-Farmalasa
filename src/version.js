@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.432';
+export const APP_VERSION = '2.2.433';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.433 — fix(pedidos): 9 issues flujo completo — ReenvioLlegadaModal bloquea confirmar si electrolit sin responder + badge "Pendiente"; fetchItems try/finally evita spinner eterno; RecepcionModal limpia presMap en re-apertura; PostCompletionSection auto-carga items + muestra quién confirmó; handleConfirmarTodo incluye especiales; LlegadaModal texto "Todas llegaron OK" cuando sin interacción; badge "Especial" en items sin caja_map
 // v2.2.432 — feat(pedidos): cajas especiales en RecepcionModal (tiles E1/E2 con estado ok/dañada/faltante, header y flujo diferenciado); PostCompletionSection resumen post-completado en cards; borrador auto-guardado en LlegadaModal y FinalizarCajasModal con restauración
 // v2.2.431 — fix(pedidos): quita badge "Entregado en sucursal"; Reenviar caja muestra modal confirmación con conteo pendiente; oculta Reenviar si completado; banner reenvío menciona Electrolit+especiales; real-time UPDATE en pedido_items; DifSection muestra foto+nombre proponente + cantidad Solicitado+Enviado+Físico
 // v2.2.430 — fix(pedidos): PDF header más compacto + Caja row más grande + Cajas Adicionales gris (B&W); FinalizarCajasModal muestra "Pág. N" + texto "Primer producto" + oculta scrollbar; LlegadaModal placeholder "# de caja" + validación requerida + badge cajas extra; RecepcionModal elimina botón "Todo OK" redundante

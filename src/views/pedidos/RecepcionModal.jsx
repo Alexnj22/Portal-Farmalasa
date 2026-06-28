@@ -186,6 +186,7 @@ export default function RecepcionModal({
         setLocalRec([]);
         setAnyHasDiff(false);
         setSaveError(null);
+        setPresMap({});
         setExtras([]); setExtraSearch(''); setExtraResults([]);
         setProdSearch(''); setShowSearch(false); setPrevScreen(null);
 
@@ -519,6 +520,28 @@ export default function RecepcionModal({
                 .update({ cajas_recibidas: newRec })
                 .eq('pedido_id', pedido.id).eq('erp_sucursal_id', sucursalId);
             setLocalRec(newRec.filter(n => !initCajasRecibidas.includes(n)));
+
+            // También confirmar cajas especiales accesibles (no faltantes)
+            const newConfirmedEspIds = new Set([...confirmedEspecialIds]);
+            for (const { label, item } of especialItems) {
+                if (item.falta_caja) continue; // en reenvío, no tocar
+                if (confirmedEspecialIds.has(item.id) || item.status === 'recibido') continue;
+                const erpF  = Number(item.factor) || 1;
+                const dispF = Number(item.dispatch_factor) || erpF;
+                const rawQty = Math.round(toDispatch(item.cantidad_asignada, erpF, dispF) * dispF / erpF);
+                const { error } = await supabase.rpc('receive_pedido_sucursal', {
+                    p_pedido_id: pedido.id, p_sucursal_id: sucursalId,
+                    p_items: [{ pedido_item_id: item.id, cantidad_recibida: rawQty, nota_diferencia: null, error_tipo: null, cantidad_problema: null }],
+                    p_received_by: user?.id ?? null,
+                });
+                if (error) throw error;
+                newConfirmedEspIds.add(item.id);
+                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_ESPECIAL', pedido.id, {
+                    sucursal_id: sucursalId, especial: label, todo_ok: true,
+                });
+            }
+            setConfirmedEspecialIds(newConfirmedEspIds);
+
             await saveExtras();
             useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
                 sucursal_id: sucursalId, extras_count: extras.length, todo_ok: true, batch: true,
@@ -532,7 +555,8 @@ export default function RecepcionModal({
             setSaving(false);
         }
     }, [accessibleBoxNums, allRecibidas, itemIdsByCaja, sortedRows, pedido, sucursalId, user,
-        anyHasDiff, initCajasRecibidas, saveExtras, extras, onConfirmed, onClose]);
+        anyHasDiff, initCajasRecibidas, saveExtras, extras, onConfirmed, onClose,
+        especialItems, confirmedEspecialIds]);
 
     // ── Finalizar desde la pantalla de cajas (cuando todas ya están recibidas) ──
     const handleFinalizar = useCallback(async () => {
@@ -1131,7 +1155,14 @@ export default function RecepcionModal({
                         return (
                             <div key={r.id} className={`transition-colors ${hasDiff ? 'bg-amber-50' : hasProb ? 'bg-orange-50/40' : 'bg-white hover:bg-slate-50/50'}`}>
                                 <div className={`grid ${GRID} gap-x-2 items-center px-5 py-2`}>
-                                    <span className="text-[12px] text-slate-700 font-semibold leading-snug">{r.products?.nombre}</span>
+                                    <span className="text-[12px] text-slate-700 font-semibold leading-snug">
+                                        {r.products?.nombre}
+                                        {!hasCajaMap && r.caja_especial && (
+                                            <span className="ml-1.5 inline-flex items-center gap-0.5 text-[9px] font-bold text-violet-600 bg-violet-50 border border-violet-200 rounded-full px-1.5 py-0.5">
+                                                <Star size={8} />Especial
+                                            </span>
+                                        )}
+                                    </span>
                                     <span className="text-[12px] font-bold text-slate-500 tabular-nums text-center">{defDispQty}</span>
 
                                     <div className={fPres !== sPres ? 'ring-2 ring-amber-400 ring-offset-0 rounded-2xl' : ''}>

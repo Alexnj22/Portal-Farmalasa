@@ -1494,16 +1494,36 @@ const LLEGADA_TIPO_INFO = {
     mixto:      { cls: 'bg-orange-50 border-orange-200 text-orange-700',    icon: '!', label: 'Daños + faltantes' },
 };
 
-function PostCompletionSection({ row, difItems = [], empMap = new Map() }) {
+function PostCompletionSection({ row, cardKey, difItems = [], empMap = new Map(), onNeedItems, itemsLoaded }) {
+    // Auto-load items once per card so dif counts are accurate
+    const calledRef = React.useRef(false);
+    React.useEffect(() => {
+        if (!itemsLoaded && !calledRef.current && onNeedItems) {
+            calledRef.current = true;
+            onNeedItems();
+        }
+    }, [itemsLoaded, onNeedItems]); // eslint-disable-line
+
     const tipoInfo = LLEGADA_TIPO_INFO[row.llegada_tipo] ?? null;
     const reenvios = (row.reenvios_historial ?? []);
     const difResueltas   = difItems.filter(d => d.resolucion_status === 'confirmada').length;
     const difPendientes  = difItems.filter(d => d.resolucion_status !== 'confirmada').length;
     const hasCajasDanadas = (row.cajas_danadas ?? []).length > 0;
+    const llegadaEmp = row.llegada_fisica_por ? empMap.get(row.llegada_fisica_por) : null;
 
     return (
         <div className="border-t border-slate-100 px-4 py-3 space-y-1.5">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Resumen de recepción</p>
+            <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Resumen de recepción</p>
+                {llegadaEmp && (
+                    <span className="flex items-center gap-1 text-[10px] text-slate-500">
+                        {llegadaEmp.photo_url
+                            ? <img src={llegadaEmp.photo_url} className="w-4 h-4 rounded-full object-cover border border-white shadow-sm" alt="" />
+                            : <UserCircle2 size={12} className="text-slate-400" />}
+                        {llegadaEmp.name?.split(' ')[0]}
+                    </span>
+                )}
+            </div>
             <div className="flex flex-wrap gap-1.5">
                 {tipoInfo && (
                     <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${tipoInfo.cls}`}>
@@ -2068,6 +2088,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         if (!pedidoId) return;
         setLoadingItems(true);
         const sucFilter = sucId ?? (isBranch && erpSucursalId ? erpSucursalId : null);
+        try {
 
         const ITEMS_SELECT = `
             id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_recibida,
@@ -2141,8 +2162,13 @@ export default function TabPedidos({ searchTerm = '' }) {
             setErpStatus(prev => ({ ...prev, [key]: !!lcRow.recibido_erp_at }));
             setLlegadaStatus(prev => ({ ...prev, [key]: !!lcRow.llegada_fisica_at }));
         }
-        setLoadingItems(false);
         return resolved;
+        } catch (err) {
+            console.error('[fetchItems] error:', err?.message ?? err);
+            return [];
+        } finally {
+            setLoadingItems(false);
+        }
     }, [isBranch, erpSucursalId]);
 
     const toggleExpand = useCallback(async (key, pedidoId, sucId) => {
@@ -3326,8 +3352,11 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         <div onClick={e => e.stopPropagation()}>
                                             <PostCompletionSection
                                                 row={row}
+                                                cardKey={cardKey}
                                                 difItems={(items[cardKey] ?? []).filter(r => r.status === 'con_diferencia' || r.error_tipo)}
                                                 empMap={empMap}
+                                                onNeedItems={() => fetchItems(cardKey, row.pedido_id, row.erp_sucursal_id)}
+                                                itemsLoaded={!!items[cardKey]}
                                             />
                                         </div>
                                     )}

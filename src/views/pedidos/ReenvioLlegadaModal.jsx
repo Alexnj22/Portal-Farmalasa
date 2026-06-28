@@ -38,6 +38,8 @@ export default function ReenvioLlegadaModal({
 
     // ¿Hay algo que confirmar? cajas, electrolits o especiales
     const hasContent = cajasCiclo.length > 0 || electrolitCount > 0 || especialesList.length > 0;
+    // Electrolit debe ser respondido antes de poder confirmar
+    const electrolitPending = electrolitCount > 0 && electrolitOk === null;
 
     const handleConfirm = () => {
         setSubmitting(true);
@@ -132,9 +134,13 @@ export default function ReenvioLlegadaModal({
                             <span className="text-[11px] font-semibold text-amber-700 flex-1">
                                 ¿Llegaron las cajas de Electrolit?
                             </span>
-                            <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wide">
-                                {electrolitCount} caja{electrolitCount > 1 ? 's' : ''}
-                            </span>
+                            {electrolitOk === null ? (
+                                <span className="text-[9px] font-bold text-rose-500 uppercase tracking-wide animate-pulse">Pendiente</span>
+                            ) : (
+                                <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wide">
+                                    {electrolitCount} caja{electrolitCount > 1 ? 's' : ''}
+                                </span>
+                            )}
                         </div>
                         <div className="flex gap-2">
                             <button
@@ -231,10 +237,10 @@ export default function ReenvioLlegadaModal({
                         className="text-[11px] font-semibold px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-all">
                         Cancelar
                     </button>
-                    <button onClick={handleConfirm} disabled={submitting || !hasContent}
+                    <button onClick={handleConfirm} disabled={submitting || !hasContent || electrolitPending}
                         className="text-[11px] font-bold px-5 py-2 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 active:scale-95 transition-all flex items-center gap-1.5">
                         {submitting && <Loader2 size={11} className="animate-spin" />}
-                        Confirmar reenvío
+                        {electrolitPending ? 'Respondé el Electrolit primero' : 'Confirmar reenvío'}
                     </button>
                 </div>
             </div>

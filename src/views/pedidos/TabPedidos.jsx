@@ -1312,11 +1312,14 @@ function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, em
                         </div>
 
                         {/* Qty diff */}
-                        {qtyDiff && (
-                            <div className="flex items-center gap-1.5 px-3 pb-1.5 text-[10px] text-slate-500">
-                                <span>Sistema: <strong className="text-slate-700">{item.cantidad_asignada}</strong></span>
-                                <span className="text-slate-300">→</span>
-                                <span>Físico: <strong className={item.cantidad_recibida < item.cantidad_asignada ? 'text-red-600' : 'text-emerald-600'}>{item.cantidad_recibida}</strong></span>
+                        {(qtyDiff || item.cantidad_asignada != null) && (
+                            <div className="flex items-center gap-2 px-3 pb-1.5 text-[10px] text-slate-500 flex-wrap">
+                                {(() => { const sol = calcSolicitado(item); return sol != null ? <span>Solicitado: <strong className="text-slate-600">{sol}</strong></span> : null; })()}
+                                <span>Enviado: <strong className="text-slate-700">{item.cantidad_asignada}</strong></span>
+                                {item.cantidad_recibida != null && <>
+                                    <span className="text-slate-300">→</span>
+                                    <span>Físico: <strong className={item.cantidad_recibida < item.cantidad_asignada ? 'text-red-600' : 'text-emerald-600'}>{item.cantidad_recibida}</strong></span>
+                                </>}
                             </div>
                         )}
 
@@ -1369,6 +1372,9 @@ function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, em
                             {res === 'propuesta' && (
                                 <>
                                     <div className="flex items-start gap-1.5 text-[10px] bg-violet-50 rounded-lg px-2.5 py-1.5 border border-violet-100">
+                                        {resueltoEmp?.photo_url
+                                            ? <img src={resueltoEmp.photo_url} className="w-5 h-5 rounded-full object-cover border border-white shadow-sm shrink-0 mt-0.5" alt="" />
+                                            : <UserCircle2 size={14} className="text-violet-400 shrink-0 mt-0.5" />}
                                         <div className="flex-1">
                                             <span className="font-semibold text-violet-800">{RESOLUCION_LABEL[item.resolucion_tipo] ?? item.resolucion_tipo}</span>
                                             {resueltoEmp && <span className="text-violet-600"> — {resueltoEmp.name?.split(' ')[0]}</span>}
@@ -1558,8 +1564,11 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
             {llegadaOk && cicloEnCamino && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-indigo-50/40 border-indigo-100 text-[11px]">
                     <Truck size={12} className="text-indigo-400 shrink-0" />
-                    <span className="text-indigo-700">
-                        {reenviosHistorial.length > 1 ? `Reenvío ${cicloEnCamino.ciclo} en camino` : 'Reenvío en camino'} — caja{cicloEnCamino.cajas?.length > 1 ? 's' : ''} {(cicloEnCamino.cajas ?? []).map(n => `#${n}`).join(', ')}
+                    <span className="text-indigo-700 flex-1">
+                        {reenviosHistorial.length > 1 ? `Reenvío ${cicloEnCamino.ciclo} en camino` : 'Reenvío en camino'}
+                        {(cicloEnCamino.cajas ?? []).length > 0 && ` — caja${cicloEnCamino.cajas.length > 1 ? 's' : ''} ${cicloEnCamino.cajas.map(n => `#${n}`).join(', ')}`}
+                        {(cicloEnCamino.electrolits ?? 0) > 0 && ` · ${cicloEnCamino.electrolits} Electrolit`}
+                        {(cicloEnCamino.especiales ?? []).length > 0 && ` · ${cicloEnCamino.especiales.join(', ')}`}
                     </span>
                     <button onClick={onSegundaLlegada} disabled={!!busy}
                         className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shrink-0">
@@ -1742,8 +1751,9 @@ export default function TabPedidos({ searchTerm = '' }) {
     // Rutas activas: mapa pedidoId → { ruta, stop, driverOnline }
     const [pedidoRutaMap, setPedidoRutaMap] = useState(new Map());
 
-    const [llegadaModal,       setLlegadaModal]       = useState(null); // { pedidoId, sucId, key, rows }
-    const [reenvioLlegadaModal,setReenvioLlegadaModal] = useState(null); // { pedidoId, sucId, key, ciclo, cajasCiclo }
+    const [llegadaModal,         setLlegadaModal]         = useState(null); // { pedidoId, sucId, key, rows }
+    const [reenvioLlegadaModal,  setReenvioLlegadaModal]  = useState(null); // { pedidoId, sucId, key, ciclo, cajasCiclo }
+    const [reenviarConfirmModal, setReenviarConfirmModal] = useState(null); // { pedidoId, sucId, numero, cajas, electrolits, especiales }
     const [finalizarModal,     setFinalizarModal]      = useState(null); // { pedidoId, sucId, numero, key, rows }
     const [newAlert,      setNewAlert]      = useState(null);
 
@@ -1872,6 +1882,12 @@ export default function TabPedidos({ searchTerm = '' }) {
                 const key = `act_${pedido_id}_${erp_sucursal_id}`;
                 fetchItems(key, pedido_id, erp_sucursal_id);
                 loadActive();
+            })
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pedido_items' }, (payload) => {
+                const { pedido_id, erp_sucursal_id } = payload.new ?? {};
+                if (!pedido_id) return;
+                const key = `act_${pedido_id}_${erp_sucursal_id}`;
+                fetchItems(key, pedido_id, erp_sucursal_id);
             })
             .subscribe();
         return () => supabase.removeChannel(ch);
@@ -3190,10 +3206,10 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 const hasEspFaltantes  = Object.values(row.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante');
                                                 const hasPendingFalta  = (row.falta_cajas ?? []).length > 0 || hasElecFaltantes || hasEspFaltantes;
                                                 const reenvioEnCamino  = (row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at);
-                                                if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino) return null;
+                                                if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino || row.pedido_status === 'completado') return null;
                                                 const espFaltList = Object.entries(row.cajas_especiales_llegadas ?? {}).filter(([, v]) => v === 'faltante').map(([k]) => k);
                                                 return (
-                                                    <button onClick={() => handleReenviarCaja(row.pedido_id, row.erp_sucursal_id, row.numero, row.falta_cajas ?? [], hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, espFaltList)} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">
+                                                    <button onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">
                                                         {busyAction === 'reenvio' ? <Loader2 size={10} className="animate-spin" /> : <><Truck size={10} />Reenviar caja</>}
                                                     </button>
                                                 );
@@ -3201,16 +3217,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     </div>
 
-                                    {/* Badge de entregado (solo cuando ya fue confirmado) */}
-                                    {pedidoRutaMap.has(row.pedido_id) && !!pedidoRutaMap.get(row.pedido_id)?.stop?.entregado_at && (
-                                        <div className="flex items-center gap-2 px-3 py-1.5 border-t border-emerald-100 bg-emerald-50/70" onClick={e => e.stopPropagation()}>
-                                            <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
-                                            <span className="text-[10px] font-bold text-emerald-700">Entregado en sucursal</span>
-                                            <span className="text-[10px] text-emerald-500 tabular-nums">
-                                                · {new Date(pedidoRutaMap.get(row.pedido_id).stop.entregado_at).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                                            </span>
-                                        </div>
-                                    )}
 
                                     {/* Entrega estimada — visible en sucursal cuando hay programación y el pedido no ha llegado */}
                                     {isBranch && row.entrega_programada_at && stage !== 'erp' && stage !== 'contando' && (
@@ -3509,6 +3515,53 @@ export default function TabPedidos({ searchTerm = '' }) {
                 onConfirm={handleProgramarEntrega}
                 saving={savingProgramar}
             />
+
+            {/* ── Confirmación Reenviar Caja ─────────────────────────────────────── */}
+            {reenviarConfirmModal && (
+                <PedidoModal open onClose={() => setReenviarConfirmModal(null)} maxWidth="max-w-xs">
+                    <div className="px-5 pt-5 pb-4 border-b border-white/40">
+                        <h3 className="text-[15px] font-black text-slate-800">¿Confirmar reenvío?</h3>
+                        <p className="text-[11px] text-slate-500 mt-0.5">Pedido #{reenviarConfirmModal.numero}</p>
+                    </div>
+                    <div className="px-5 py-4 space-y-2">
+                        <p className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide mb-1">Pendiente de enviar:</p>
+                        {reenviarConfirmModal.cajas.length > 0 && (
+                            <div className="flex items-center gap-2 text-[12px] text-slate-700">
+                                <Box size={13} className="text-rose-500 shrink-0" />
+                                <span>Caja{reenviarConfirmModal.cajas.length > 1 ? 's' : ''}: {reenviarConfirmModal.cajas.map(n => `#${n}`).join(', ')}</span>
+                            </div>
+                        )}
+                        {reenviarConfirmModal.electrolits > 0 && (
+                            <div className="flex items-center gap-2 text-[12px] text-slate-700">
+                                <Inbox size={13} className="text-amber-500 shrink-0" />
+                                <span>{reenviarConfirmModal.electrolits} Electrolit faltante{reenviarConfirmModal.electrolits > 1 ? 's' : ''}</span>
+                            </div>
+                        )}
+                        {reenviarConfirmModal.especiales.length > 0 && (
+                            <div className="flex items-center gap-2 text-[12px] text-slate-700">
+                                <Star size={13} className="text-violet-500 shrink-0" />
+                                <span>Especial{reenviarConfirmModal.especiales.length > 1 ? 'es' : ''}: {reenviarConfirmModal.especiales.join(', ')}</span>
+                            </div>
+                        )}
+                    </div>
+                    <div className="px-5 pb-5 pt-2 flex gap-2 justify-end border-t border-white/40">
+                        <button onClick={() => setReenviarConfirmModal(null)} className="text-[12px] font-semibold px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100/80 transition-all">
+                            Cancelar
+                        </button>
+                        <button
+                            disabled={busyAction === 'reenvio'}
+                            onClick={() => {
+                                const { pedidoId, sucId, numero, cajas, electrolits, especiales } = reenviarConfirmModal;
+                                setReenviarConfirmModal(null);
+                                handleReenviarCaja(pedidoId, sucId, numero, cajas, electrolits, especiales);
+                            }}
+                            className="flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm"
+                        >
+                            {busyAction === 'reenvio' ? <Loader2 size={12} className="animate-spin" /> : <><Truck size={12} />Confirmar reenvío</>}
+                        </button>
+                    </div>
+                </PedidoModal>
+            )}
         </div>
     );
 }

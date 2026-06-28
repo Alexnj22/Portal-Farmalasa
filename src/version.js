@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.430';
+export const APP_VERSION = '2.2.431';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.431 — fix(pedidos): quita badge "Entregado en sucursal"; Reenviar caja muestra modal confirmación con conteo pendiente; oculta Reenviar si completado; banner reenvío menciona Electrolit+especiales; real-time UPDATE en pedido_items; DifSection muestra foto+nombre proponente + cantidad Solicitado+Enviado+Físico
 // v2.2.430 — fix(pedidos): PDF header más compacto + Caja row más grande + Cajas Adicionales gris (B&W); FinalizarCajasModal muestra "Pág. N" + texto "Primer producto" + oculta scrollbar; LlegadaModal placeholder "# de caja" + validación requerida + badge cajas extra; RecepcionModal elimina botón "Todo OK" redundante
 // v2.2.429 — fix(widget-facturacion): findTargetEmployee busca por role_id=13 (Supervisor/a de Ventas) en vez de system_role genérico
 // v2.2.428 — fix(widget-facturacion): solicitudes van a rol SUPERVISOR (no JEFE/SUBJEFE); fallback a ADMIN/SUPERADMIN si no hay supervisor en la sucursal

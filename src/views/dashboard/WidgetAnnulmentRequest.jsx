@@ -135,11 +135,15 @@ function StickySubmit({ label, onClick, disabled, loading: isLoading }) {
   );
 }
 
-function findTargetEmployee(employees, activeBranchId) {
-  const branchEmps = employees.filter(e => String(e.branchId ?? e.branch_id) === String(activeBranchId));
-  const candidates = branchEmps.filter(e => String(e.system_role ?? '').toUpperCase() === 'SUPERVISOR');
-  const avail = candidates.find(s => {
-    const ev = s.activeEventType ?? s.active_event_type;
+const SALES_SUPERVISOR_ROLE_ID = 13; // Supervisor/a de Ventas
+
+function findTargetEmployee(employees) {
+  const candidates = employees.filter(e =>
+    e.status === 'ACTIVO' &&
+    (e.role_id === SALES_SUPERVISOR_ROLE_ID || e.roleId === SALES_SUPERVISOR_ROLE_ID)
+  );
+  const avail = candidates.find(e => {
+    const ev = e.activeEventType ?? e.active_event_type;
     return !ev || !['VACATION', 'DISABILITY'].includes(ev);
   });
   if (avail) return avail;
@@ -321,7 +325,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
     if (!canSubmit) return;
     setSubmitting(true); setSubmitError('');
     try {
-      const target = findTargetEmployee(employees, activeBranchId);
+      const target = findTargetEmployee(employees);
       const { error } = await supabase.from('approval_requests').insert({
         employee_id: user?.id, approver_id: target?.id ?? null,
         type: 'ANNULMENT_REQUEST', status: 'PENDING',
@@ -444,7 +448,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
     if (!newPayment) return;
     setSubmitting(true); setSubmitError('');
     try {
-      const target = findTargetEmployee(employees, activeBranchId);
+      const target = findTargetEmployee(employees);
       const { error } = await supabase.from('approval_requests').insert({
         employee_id: user?.id, approver_id: target?.id ?? null,
         type: 'PAYMENT_CHANGE_REQUEST', status: 'PENDING',
@@ -534,7 +538,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
     if (!newVendorId || !selectedVendor) return;
     setSubmitting(true); setSubmitError('');
     try {
-      const target = findTargetEmployee(employees, activeBranchId);
+      const target = findTargetEmployee(employees);
       const { error } = await supabase.from('approval_requests').insert({
         employee_id: user?.id, approver_id: target?.id ?? null,
         type: 'VENDOR_CHANGE_REQUEST', status: 'PENDING',

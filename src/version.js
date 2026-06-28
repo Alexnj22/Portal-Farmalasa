@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.428';
+export const APP_VERSION = '2.2.429';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.429 — fix(widget-facturacion): findTargetEmployee busca por role_id=13 (Supervisor/a de Ventas) en vez de system_role genérico
 // v2.2.428 — fix(widget-facturacion): solicitudes van a rol SUPERVISOR (no JEFE/SUBJEFE); fallback a ADMIN/SUPERADMIN si no hay supervisor en la sucursal
 // v2.2.427 — fix(widget-facturacion): avatar vendedor junto al nombre (no al inicio de fila), buscador 2/3 + date picker 1/3, botón enviar sticky, header y detalle más compactos
 // v2.2.426 — fix(widget-facturacion): título correcto, avatar vendedor en lista, detalle 2 cols + ID venta + fecha destacada, encabezado unificado en todos los formularios, cambio de vendedor sin códigos

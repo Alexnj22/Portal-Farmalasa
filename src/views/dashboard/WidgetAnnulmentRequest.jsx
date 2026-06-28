@@ -137,8 +137,8 @@ function StickySubmit({ label, onClick, disabled, loading: isLoading }) {
 
 function findTargetEmployee(employees, activeBranchId) {
   const branchEmps = employees.filter(e => String(e.branchId ?? e.branch_id) === String(activeBranchId));
-  const supervisors = branchEmps.filter(e => ['JEFE', 'SUBJEFE'].includes(String(e.system_role ?? '').toUpperCase()));
-  const avail = supervisors.find(s => {
+  const candidates = branchEmps.filter(e => String(e.system_role ?? '').toUpperCase() === 'SUPERVISOR');
+  const avail = candidates.find(s => {
     const ev = s.activeEventType ?? s.active_event_type;
     return !ev || !['VACATION', 'DISABILITY'].includes(ev);
   });

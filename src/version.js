@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.429';
+export const APP_VERSION = '2.2.430';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.430 — fix(pedidos): PDF header más compacto + Caja row más grande + Cajas Adicionales gris (B&W); FinalizarCajasModal muestra "Pág. N" + texto "Primer producto" + oculta scrollbar; LlegadaModal placeholder "# de caja" + validación requerida + badge cajas extra; RecepcionModal elimina botón "Todo OK" redundante
 // v2.2.429 — fix(widget-facturacion): findTargetEmployee busca por role_id=13 (Supervisor/a de Ventas) en vez de system_role genérico
 // v2.2.428 — fix(widget-facturacion): solicitudes van a rol SUPERVISOR (no JEFE/SUBJEFE); fallback a ADMIN/SUPERADMIN si no hay supervisor en la sucursal
 // v2.2.427 — fix(widget-facturacion): avatar vendedor junto al nombre (no al inicio de fila), buscador 2/3 + date picker 1/3, botón enviar sticky, header y detalle más compactos

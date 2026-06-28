@@ -181,7 +181,7 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
     // Fila 1 — Logo+Farmacia | ORDEN DE DESPACHO | Código/Fecha — todo en UNA línea, sin fila separada para el título
     const titleRow = [
         {
-            colSpan: 6, fillColor: '#eeeeee', margin: [6, 6, 6, 6],
+            colSpan: 6, fillColor: '#eeeeee', margin: [6, 3, 6, 3],
             columns: [
                 {
                     columns: [
@@ -212,15 +212,15 @@ function buildSectionTable(sec, fecha, logo, addrMap) {
     const destText   = sucAddr    ? `Destino: ${sec.nombre} · ${sucAddr}` : `Destino: ${sec.nombre}`;
     const subtitleRow = [
         {
-            colSpan: 6, fillColor: '#ffffff', margin: [6, 6, 6, 6],
+            colSpan: 6, fillColor: '#ffffff', margin: [6, 9, 6, 9],
             columns: [
                 { text: originText, fontSize: 6, color: '#555', width: '36%' },
                 { text: destText,   fontSize: 6, color: '#555', width: '38%', alignment: 'center' },
                 {
                     width: '26%',
                     text: [
-                        { text: 'Caja: ', fontSize: 8, bold: true, color: '#222' },
-                        { text: '___________________', fontSize: 8, color: '#444' },
+                        { text: 'Caja: ', fontSize: 10, bold: true, color: '#222' },
+                        { text: '_______________________', fontSize: 10, color: '#444' },
                     ],
                     alignment: 'right',
                 },
@@ -310,21 +310,21 @@ function buildEspecialesBlock(especiales) {
 
     // Mismo formato exacto que la tabla principal — solo "Caja" reemplaza "Laboratorio"
     const titleRow = [
-        { text: 'CAJAS ADICIONALES', colSpan: 6, fillColor: '#ede9fe', bold: true, fontSize: 7, color: '#5b21b6', margin: [4, 3, 4, 3], alignment: 'center' },
+        { text: 'CAJAS ADICIONALES', colSpan: 6, fillColor: '#e8e8e8', bold: true, fontSize: 7, color: '#444444', margin: [4, 3, 4, 3], alignment: 'center' },
         {}, {}, {}, {}, {},
     ];
     const headerRow = ['Caja', 'Producto', 'Presentación', 'Cant.', 'Lote', 'OK'].map((label, i) => ({
-        text: label, fillColor: '#ede9fe', bold: true, fontSize: 6.5, color: '#5b21b6',
+        text: label, fillColor: '#e0e0e0', bold: true, fontSize: 6.5, color: '#333333',
         alignment: (i === 3 || i === 5) ? 'center' : 'left',
         margin: [0, 2, 0, 2],
     }));
 
     const bodyRows = groups.map((g, idx) => {
-        const bg    = idx % 2 === 1 ? '#f5f3ff' : '#ffffff';
+        const bg    = idx % 2 === 1 ? '#f2f2f2' : '#ffffff';
         const qty   = g.labels.length;
         const range = qty === 1 ? g.labels[0] : `${g.labels[0]}–${g.labels[qty - 1]}`;
         return [
-            { text: range, fontSize: 7.5, bold: true, color: '#7c3aed', fillColor: bg, alignment: 'center', margin: [2, 2, 2, 2], verticalAlignment: 'middle' },
+            { text: range, fontSize: 7.5, bold: true, color: '#555555', fillColor: bg, alignment: 'center', margin: [2, 2, 2, 2], verticalAlignment: 'middle' },
             { text: g.product_name, fontSize: 8.5, fillColor: bg, margin: [0, 2, 0, 2], verticalAlignment: 'middle' },
             { text: g.presentacion_tipo || '—', fontSize: 7, color: '#333', fillColor: bg, margin: [0, 2, 3, 2], verticalAlignment: 'middle' },
             g.tiene_dispatch_label
@@ -341,8 +341,8 @@ function buildEspecialesBlock(especiales) {
         layout: {
             hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 0.8 : i === 2 ? 1.2 : 0.5),
             vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 0.8 : 0.5),
-            hLineColor: (i) => (i === 2 ? '#a78bfa' : '#c4b5fd'),
-            vLineColor: () => '#c4b5fd',
+            hLineColor: (i) => (i === 2 ? '#999999' : '#cccccc'),
+            vLineColor: () => '#cccccc',
             paddingLeft: () => 5, paddingRight: () => 5,
             paddingTop: () => 0,  paddingBottom: () => 0,
         },

@@ -1170,19 +1170,11 @@ export default function RecepcionModal({
                         className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors disabled:opacity-40">
                         {hasCajaMap ? 'Volver' : 'Cancelar'}
                     </button>
-                    <div className="flex gap-2">
-                        <button onClick={handleTodoOk} disabled={saving}
-                            title="Confirmar todo sin diferencias"
-                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-emerald-300 text-emerald-700 font-bold text-[12px] hover:bg-emerald-50 active:scale-95 transition-all disabled:opacity-40">
-                            <Check size={13} />
-                            Todo OK
-                        </button>
-                        <button onClick={handleConfirmarCaja} disabled={saving}
-                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 text-[13px] transition-colors disabled:opacity-50">
-                            {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
-                            {hasCajaMap ? `Confirmar Caja ${selectedCaja}` : 'Confirmar recepción'}
-                        </button>
-                    </div>
+                    <button onClick={handleConfirmarCaja} disabled={saving}
+                        className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 text-[13px] transition-colors disabled:opacity-50">
+                        {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
+                        {hasCajaMap ? `Confirmar Caja ${selectedCaja}` : 'Confirmar recepción'}
+                    </button>
                 </div>
             </PedidoModal.Footer>
         </PedidoModal>

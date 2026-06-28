@@ -179,7 +179,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
 
             {/* ── Screen 2 ───────────────────────────────── */}
             {screen === 2 && (
-                <div className="px-4 py-3 max-h-[56vh] overflow-y-auto">
+                <div className="px-4 py-3 max-h-[56vh] overflow-y-auto scrollbar-hide">
                     {/* Box legend */}
                     <div className="flex items-center gap-1.5 mb-3 flex-wrap">
                         <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mr-1">Cajas:</span>
@@ -205,14 +205,16 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                     }`}>
                                     {/* Page info row */}
                                     <div className="flex items-center gap-3 px-3 pt-3 pb-2">
-                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 font-black text-[13px] tabular-nums transition-all ${
+                                        <div className={`shrink-0 flex flex-col items-center justify-center px-2 py-1.5 rounded-xl min-w-[44px] transition-all ${
                                             hasAssignment
                                                 ? 'bg-violet-500 text-white shadow-[0_2px_8px_rgba(139,92,246,0.35)]'
                                                 : 'bg-amber-400 text-white'
                                         }`}>
-                                            {idx + 1}
+                                            <span className="text-[7px] font-bold opacity-75 uppercase leading-none tracking-wide">Pág.</span>
+                                            <span className="text-[15px] font-black tabular-nums leading-tight">{idx + 1}</span>
                                         </div>
                                         <div className="flex-1 min-w-0">
+                                            <p className="text-[8px] font-semibold text-slate-400 uppercase tracking-wide leading-none mb-0.5">Primer producto</p>
                                             <p className="text-[11px] font-semibold text-slate-700 truncate leading-tight">{pg.firstItem}</p>
                                             <p className="text-[9px] text-slate-400 truncate mt-0.5">{pg.firstLab} · {pg.itemCount} prod.</p>
                                         </div>

@@ -34,8 +34,9 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     const [electrolitFaltantes,  setElectrolitFaltantes]  = useState(null); // null=sin responder, 0=todas ok, N=N faltantes
     const [espEstados,           setEspEstados]           = useState({});   // label → 'ok' | 'faltante'
     const [cajasExtra,           setCajasExtra]           = useState(0);
-    // idx → { sucursalId: string|null, pedidoNum: string, sinRotulacion: bool }
+    // idx → { sucursalId: string|null, cajaNum: string, sinRotulacion: bool }
     const [cajasExtraData,       setCajasExtraData]       = useState({});
+    const [extraError,           setExtraError]           = useState(null);
     const [submitting,           setSubmitting]           = useState(false);
 
     const cajas = useMemo(() => deriveCajas(cajaMap, items), [cajaMap, items]);
@@ -51,6 +52,15 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     const espFaltantes = cajasEspeciales.filter(e => espEstados[e.label] === 'faltante').map(e => e.label);
 
     const handleConfirm = () => {
+        // Validar cajas extra: si no tiene rotulación, requerir número de caja
+        for (let i = 0; i < cajasExtra; i++) {
+            const d = cajasExtraData[i] ?? {};
+            if (!d.sinRotulacion && !d.cajaNum?.trim()) {
+                setExtraError(`Caja extra ${i + 1}: ingresa el # de caja o marca "Sin rotulación".`);
+                return;
+            }
+        }
+        setExtraError(null);
         setSubmitting(true);
         onConfirm({
             cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim(),
@@ -73,8 +83,8 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                 out[i] = 'Sin rotulación';
             } else {
                 const suc = d.sucursalId ? (ERP_NAMES[Number(d.sucursalId)] ?? `Suc. ${d.sucursalId}`) : null;
-                const num = d.pedidoNum?.trim();
-                out[i] = [suc, num ? `Pedido #${num}` : null].filter(Boolean).join(' · ') || 'Sin identificar';
+                const num = d.cajaNum?.trim();
+                out[i] = [suc, num ? `Caja #${num}` : null].filter(Boolean).join(' · ') || 'Sin identificar';
             }
         }
         return out;
@@ -87,7 +97,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
         if (submitting) return;
         setEstados({}); setNota(''); setElectrolitFaltantes(null);
         setEspEstados({}); setCajasExtra(0); setCajasExtraData({});
-        setSubmitting(false);
+        setExtraError(null); setSubmitting(false);
         onClose();
     };
 
@@ -288,10 +298,10 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                                     />
                                                 </div>
                                                 <input
-                                                    value={d.pedidoNum ?? ''}
-                                                    onChange={e => setExtraField(i, 'pedidoNum', e.target.value)}
-                                                    placeholder="# Pedido (si visible)"
-                                                    className="w-36 text-[10px] rounded-lg border border-slate-200 px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-300 bg-white"
+                                                    value={d.cajaNum ?? ''}
+                                                    onChange={e => { setExtraField(i, 'cajaNum', e.target.value); setExtraError(null); }}
+                                                    placeholder="# de caja"
+                                                    className={`w-32 text-[10px] rounded-lg border px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-300 bg-white ${extraError && !d.cajaNum?.trim() ? 'border-red-400' : 'border-slate-200'}`}
                                                 />
                                             </div>
                                         )}
@@ -308,7 +318,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
             {/* Footer */}
             <div className="px-5 pb-5 pt-3 border-t border-slate-100 space-y-3 shrink-0">
-                {hayProblemas && (
+                {(hayProblemas || cajasExtra > 0) && (
                     <div className="flex flex-wrap gap-1.5">
                         {cajasDanadas.length > 0 && (
                             <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
@@ -320,7 +330,17 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                 ✗ No llegó{cajasFaltantes.length > 1 ? 'n' : ''}: {cajasFaltantes.map(n => `#${n}`).join(', ')}
                             </span>
                         )}
+                        {cajasExtra > 0 && (
+                            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-sky-100 text-sky-700 border border-sky-200">
+                                + {cajasExtra} caja{cajasExtra > 1 ? 's' : ''} extra{cajasExtra > 1 ? 's' : ''}
+                            </span>
+                        )}
                     </div>
+                )}
+                {extraError && (
+                    <p className="text-[10px] text-red-600 font-medium flex items-center gap-1">
+                        <span>⚠</span> {extraError}
+                    </p>
                 )}
                 <div className="flex items-center justify-between gap-2">
                     <button onClick={handleClose} disabled={submitting}

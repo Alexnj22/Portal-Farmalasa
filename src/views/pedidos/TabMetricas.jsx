@@ -65,20 +65,28 @@ export default function TabMetricas({ searchTerm = '' }) {
 
     const load = useCallback(async (days) => {
         setRefreshing(true);
-        const hasta  = toDateStr(new Date());
-        const desdeD = new Date();
-        desdeD.setDate(desdeD.getDate() - days);
-        const desde = toDateStr(desdeD);
+        try {
+            const hasta  = toDateStr(new Date());
+            const desdeD = new Date();
+            desdeD.setDate(desdeD.getDate() - days);
+            const desde = toDateStr(desdeD);
 
-        const [{ data: kData }, { data: rData }] = await Promise.all([
-            supabase.rpc('get_pedido_kpis',          { p_desde: desde, p_hasta: hasta }),
-            supabase.rpc('get_pausa_razones_stats',  { p_desde: desde, p_hasta: hasta }),
-        ]);
-
-        setKpis(kData ?? []);
-        setRazones(rData ?? []);
-        setLoading(false);
-        setRefreshing(false);
+            const [{ data: kData, error: e1 }, { data: rData, error: e2 }] = await Promise.all([
+                supabase.rpc('get_pedido_kpis',          { p_desde: desde, p_hasta: hasta }),
+                supabase.rpc('get_pausa_razones_stats',  { p_desde: desde, p_hasta: hasta }),
+            ]);
+            if (e1) throw e1;
+            if (e2) throw e2;
+            setKpis(kData ?? []);
+            setRazones(rData ?? []);
+        } catch (err) {
+            console.error('[TabMetricas]', err?.message ?? err);
+            setKpis([]);
+            setRazones([]);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
     }, []);
 
     useEffect(() => {

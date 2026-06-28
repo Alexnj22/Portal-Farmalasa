@@ -28,7 +28,7 @@ import ProgramarEntregaModal from './ProgramarEntregaModal';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
-import { printFromPedidoItems, buildPedidoCodigo, getExactPageGroups } from '../../utils/pedidoPrint';
+import { printFromPedidoItems, getExactPageGroups } from '../../utils/pedidoPrint';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 

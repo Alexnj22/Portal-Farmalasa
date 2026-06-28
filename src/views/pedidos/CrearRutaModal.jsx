@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2 } from 'lucide-react';
+import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -45,8 +45,9 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
   const mapRef = useRef(null);
 
   // Submit
-  const [submitting, setSubmitting] = useState(false);
-  const [mapError,   setMapError]   = useState(false);
+  const [submitting,   setSubmitting]   = useState(false);
+  const [submitError,  setSubmitError]  = useState(null);
+  const [mapError,     setMapError]     = useState(false);
 
   // ── Load data on open ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -72,7 +73,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
     Promise.all([
       supabase.from('pedidos')
         .select('id, numero')
-        .eq('status', 'confirmado')
+        .in('status', ['confirmado', 'enviado'])
         .order('numero'),
 
       supabase.from('pedido_sucursal_status')
@@ -119,6 +120,9 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
         });
       }
       setPedidosDisp(items);
+    }).catch(err => {
+      console.error('[CrearRutaModal] load error:', err?.message ?? err);
+    }).finally(() => {
       setLoadingData(false);
     });
   }, [open, user?.id]);
@@ -370,6 +374,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
   const handleSubmit = useCallback(async () => {
     if (!paradas.length || submitting) return;
     setSubmitting(true);
+    setSubmitError(null);
     try {
       // Solo paradas con pedido real (los encargos se guardan en rutas.visitas)
       const rpcParadas = paradas
@@ -439,7 +444,8 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
       onCreated?.();
       onClose();
     } catch (e) {
-      console.error('crear_ruta error:', e);
+      console.error('[CrearRutaModal] submit error:', e);
+      setSubmitError(e?.message ?? 'Error al crear la ruta. Intenta de nuevo.');
     } finally {
       setSubmitting(false);
     }
@@ -809,12 +815,19 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
           </>
         ) : (
           <>
-            <button onClick={() => { setStep(1); setReturnLeg(null); }}
-              className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors">
-              ← Atrás
-            </button>
+            <div className="flex flex-col items-start gap-1 flex-1 min-w-0">
+              <button onClick={() => { setStep(1); setReturnLeg(null); setSubmitError(null); }}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors">
+                ← Atrás
+              </button>
+              {submitError && (
+                <p className="text-[11px] text-rose-600 flex items-center gap-1 pl-1">
+                  <AlertTriangle size={11} /> {submitError}
+                </p>
+              )}
+            </div>
             <button onClick={handleSubmit} disabled={submitting}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold text-[13px] hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50">
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold text-[13px] hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 shrink-0">
               {submitting ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}
               Crear Ruta
             </button>

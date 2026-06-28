@@ -293,7 +293,7 @@ export default function TabRutas({ searchTerm = '' }) {
           entregado_at, entregado_por, confirmado_suc_at, discrepancia
         )
       `)
-      .in('status', ['completada'])
+      .in('status', ['pendiente', 'en_ruta', 'completada', 'con_alerta'])
       .order('created_at', { ascending: false })
       .limit(50);
 
@@ -333,6 +333,16 @@ export default function TabRutas({ searchTerm = '' }) {
   }, []);
 
   useEffect(() => { loadRutas(); }, [loadRutas]);
+
+  // Realtime: recarga cuando cambia el estado de rutas o paradas
+  useEffect(() => {
+    const ch = supabase
+      .channel('rutas-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rutas' }, () => loadRutas())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ruta_pedidos' }, () => loadRutas())
+      .subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [loadRutas]);
 
   // Search filter
   const filtered = useMemo(() => {

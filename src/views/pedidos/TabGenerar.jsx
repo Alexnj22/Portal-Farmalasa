@@ -84,17 +84,17 @@ export default function TabGenerar({ searchTerm = '' }) {
     // ── Dashboard stats ────────────────────────────────────────
     useEffect(() => {
         setDashLoading(true);
-        supabase.rpc('get_pedido_sucursal_stats', {
-            p_sucursal_ids: SUCURSALES,
-        }).then(({ data }) => { setDashStats(data || []); setDashLoading(false); });
+        supabase.rpc('get_pedido_sucursal_stats', { p_sucursal_ids: SUCURSALES })
+            .then(({ data }) => setDashStats(data || []))
+            .catch(() => setDashStats([]))
+            .finally(() => setDashLoading(false));
     }, []);
 
     // ── Empleados (para trazabilidad en handleGenerarDirecto) ──
     useEffect(() => {
         supabase.from('employees')
-            .select('id, name')
+            .select('id, first_names, last_names')
             .eq('status', 'ACTIVO')
-            .order('name')
             .then(({ data }) => setEmployees(data || []));
     }, []);
 
@@ -102,20 +102,23 @@ export default function TabGenerar({ searchTerm = '' }) {
     // La función devuelve JSONB (un solo valor escalar), sin el cap max-rows=1000 de PostgREST.
     useEffect(() => {
         setSinBodegaLoad(true);
-        supabase.rpc('get_pedido_sin_bodega', {
-            p_sucursal_ids: SUCURSALES,
-        }).then(({ data }) => { setSinBodega(Array.isArray(data) ? data : []); setSinBodegaLoad(false); });
+        supabase.rpc('get_pedido_sin_bodega', { p_sucursal_ids: SUCURSALES })
+            .then(({ data }) => setSinBodega(Array.isArray(data) ? data : []))
+            .catch(() => setSinBodega([]))
+            .finally(() => setSinBodegaLoad(false));
     }, []);
 
     const refreshStats = useCallback(() => {
         setDashLoading(true);
-        supabase.rpc('get_pedido_sucursal_stats', {
-            p_sucursal_ids: SUCURSALES,
-        }).then(({ data }) => { setDashStats(data || []); setDashLoading(false); });
+        supabase.rpc('get_pedido_sucursal_stats', { p_sucursal_ids: SUCURSALES })
+            .then(({ data }) => setDashStats(data || []))
+            .catch(() => setDashStats([]))
+            .finally(() => setDashLoading(false));
         setSinBodegaLoad(true);
-        supabase.rpc('get_pedido_sin_bodega', {
-            p_sucursal_ids: SUCURSALES,
-        }).then(({ data }) => { setSinBodega(Array.isArray(data) ? data : []); setSinBodegaLoad(false); });
+        supabase.rpc('get_pedido_sin_bodega', { p_sucursal_ids: SUCURSALES })
+            .then(({ data }) => setSinBodega(Array.isArray(data) ? data : []))
+            .catch(() => setSinBodega([]))
+            .finally(() => setSinBodegaLoad(false));
     }, []);
 
     // ── Sucursal toggle ────────────────────────────────────────

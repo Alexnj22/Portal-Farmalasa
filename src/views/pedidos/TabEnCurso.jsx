@@ -260,8 +260,9 @@ export default function TabEnCurso({ searchTerm = '' }) {
                                 .sort((a, b) => a.erp_sucursal_id - b.erp_sucursal_id)
                                 .map(suc => {
                                     const stage     = getBranchStage(suc, pedido.status);
-                                    const hasPausas = suc.num_pausas > 0;
-                                    const isPaused  = stage === 'pausado';
+                                    const pauseCount = (suc.pauses ?? []).length;
+                                    const hasPausas  = pauseCount > 0;
+                                    const isPaused   = stage === 'pausado';
                                     return (
                                         <div key={suc.erp_sucursal_id} className={`flex items-center gap-2 py-1.5 px-2.5 rounded-xl transition-colors ${
                                             isPaused ? 'bg-amber-50/60 border border-amber-100' : 'bg-slate-50/60 border border-slate-100/80'
@@ -274,7 +275,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                                             {hasPausas && (
                                                 <span className="ml-auto text-[9px] text-amber-500 font-medium flex items-center gap-0.5 shrink-0">
                                                     <Pause size={9} />
-                                                    {suc.num_pausas} {suc.num_pausas === 1 ? 'pausa' : 'pausas'}
+                                                    {pauseCount} {pauseCount === 1 ? 'pausa' : 'pausas'}
                                                     {suc.min_pausado_total > 0 && ` · ${fmtMin(suc.min_pausado_total)}`}
                                                 </span>
                                             )}

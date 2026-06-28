@@ -421,29 +421,43 @@ export default function TabReglas({ searchTerm = '' }) {
     const loadRules = useCallback(async () => {
         setLoadingRules(true);
         setStatsLoading(true);
-        const now          = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        // JOIN presentaciones directamente — elimina la query serial extra
-        const [rulesRes, totalRes, newRes] = await Promise.all([
-            supabase.from('dispatch_rules')
-                .select('id, erp_product_id, solo_cajas, multiplo, blister, multiplo_unidades, notes, dispatch_id_presentacion, dispatch_multiplo, dispatch_label, caja_especial, presentaciones(tipo)')
-                .range(0, 9999),
-            supabase.from('products').select('id', { count: 'exact', head: true }).eq('activo', true),
-            supabase.from('products').select('id', { count: 'exact' }).eq('activo', true).gte('created_at', startOfMonth),
-        ]);
-        const map = {};
-        for (const r of (rulesRes.data || [])) {
-            map[r.erp_product_id] = {
-                ...r,
-                dispatch_tipo: r.presentaciones?.tipo ?? null,
-            };
+        try {
+            const now          = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+            const SELECT_RULE  = 'id, erp_product_id, solo_cajas, multiplo, blister, multiplo_unidades, notes, dispatch_id_presentacion, dispatch_multiplo, dispatch_label, caja_especial, presentaciones(tipo)';
+
+            // Paginar dispatch_rules — PostgREST cap silencioso a 1000 filas
+            const PAGE = 1000;
+            let allRules = [], from = 0;
+            while (true) {
+                const { data, error } = await supabase.from('dispatch_rules')
+                    .select(SELECT_RULE).range(from, from + PAGE - 1);
+                if (error) throw error;
+                if (!data || data.length === 0) break;
+                allRules = allRules.concat(data);
+                if (data.length < PAGE) break;
+                from += PAGE;
+            }
+
+            const [totalRes, newRes] = await Promise.all([
+                supabase.from('products').select('id', { count: 'exact', head: true }).eq('activo', true),
+                supabase.from('products').select('id', { count: 'exact' }).eq('activo', true).gte('created_at', startOfMonth),
+            ]);
+
+            const map = {};
+            for (const r of allRules) {
+                map[r.erp_product_id] = { ...r, dispatch_tipo: r.presentaciones?.tipo ?? null };
+            }
+            setRulesMap(map);
+            setAllCount(totalRes.count ?? 0);
+            setThisMonthCount(newRes.count ?? 0);
+            setNewProductIds(new Set((newRes.data || []).map(p => p.id)));
+        } catch (err) {
+            console.error('[loadRules]', err?.message ?? err);
+        } finally {
+            setLoadingRules(false);
+            setStatsLoading(false);
         }
-        setRulesMap(map);
-        setAllCount(totalRes.count ?? 0);
-        setThisMonthCount(newRes.count ?? 0);
-        setNewProductIds(new Set((newRes.data || []).map(p => p.id)));
-        setLoadingRules(false);
-        setStatsLoading(false);
     }, []);
 
     useEffect(() => { loadRules(); }, [loadRules]);
@@ -452,37 +466,44 @@ export default function TabReglas({ searchTerm = '' }) {
     // Productos paginados
     const loadProducts = useCallback(async (pg, pgSize, term, ruleFilter, ruleIds, hiddenLabs, sk, sd, newIds) => {
         setLoadingProducts(true);
-        const offset = (pg - 1) * pgSize;
-        // Estado y despacho son computed — ordenar server-side por lab para consistencia entre páginas
-        const dbSk = (sk === 'estado' || sk === 'despacho') ? 'laboratorio_nombre' : sk;
-        let q = supabase
-            .from('products_with_lab')
-            .select('id, nombre, es_antibiotico, laboratorio_nombre, laboratorio_id', { count: 'exact' })
-            .eq('activo', true)
-            .range(offset, offset + pgSize - 1);
+        try {
+            const offset = (pg - 1) * pgSize;
+            const dbSk = (sk === 'estado' || sk === 'despacho') ? 'laboratorio_nombre' : sk;
+            let q = supabase
+                .from('products_with_lab')
+                .select('id, nombre, es_antibiotico, laboratorio_nombre, laboratorio_id', { count: 'exact' })
+                .eq('activo', true)
+                .range(offset, offset + pgSize - 1);
 
-        if (hiddenLabs?.length > 0)
-            q = q.not('laboratorio_id', 'in', `(${hiddenLabs.join(',')})`);
+            if (hiddenLabs?.length > 0)
+                q = q.not('laboratorio_id', 'in', `(${hiddenLabs.join(',')})`);
 
-        const asc = sd !== 'desc';
-        q = q.order(dbSk, { ascending: asc });
-        if (dbSk !== 'nombre') q = q.order('nombre', { ascending: true });
+            const asc = sd !== 'desc';
+            q = q.order(dbSk, { ascending: asc });
+            if (dbSk !== 'nombre') q = q.order('nombre', { ascending: true });
 
-        if (term.length >= 2) q = q.ilike('nombre', `%${normSearch(term) || term}%`);
+            if (term.length >= 2) q = q.ilike('nombre', `%${normSearch(term) || term}%`);
 
-        if (ruleFilter === 'con') {
-            q = ruleIds.length > 0 ? q.in('id', ruleIds) : q.in('id', [0]);
-        } else if (ruleFilter === 'sin' && ruleIds.length > 0) {
-            q = q.not('id', 'in', `(${ruleIds.join(',')})`);
-        } else if (ruleFilter === 'nuevo') {
-            const arr = [...newIds];
-            q = arr.length > 0 ? q.in('id', arr) : q.in('id', [0]);
+            if (ruleFilter === 'con') {
+                q = ruleIds.length > 0 ? q.in('id', ruleIds) : q.in('id', [0]);
+            } else if (ruleFilter === 'sin' && ruleIds.length > 0) {
+                q = q.not('id', 'in', `(${ruleIds.join(',')})`);
+            } else if (ruleFilter === 'nuevo') {
+                const arr = [...newIds];
+                q = arr.length > 0 ? q.in('id', arr) : q.in('id', [0]);
+            }
+
+            const { data, count, error } = await q;
+            if (error) throw error;
+            setProducts(data || []);
+            setTotalCount(count ?? 0);
+        } catch (err) {
+            console.error('[loadProducts]', err?.message ?? err);
+            setProducts([]);
+            setTotalCount(0);
+        } finally {
+            setLoadingProducts(false);
         }
-
-        const { data, count } = await q;
-        setProducts(data || []);
-        setTotalCount(count ?? 0);
-        setLoadingProducts(false);
     }, []);
 
     // Lee las reglas desde el ref: un autoguardado no re-fetchea la lista

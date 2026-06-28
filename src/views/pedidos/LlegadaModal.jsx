@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { PackageCheck, PackageX, Package, AlertTriangle, X, Loader2, Zap, HelpCircle } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { PackageCheck, PackageX, Package, AlertTriangle, X, Loader2, Zap, HelpCircle, RotateCcw } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { getPageGroups } from '../../utils/pedidoPrint';
 import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
+import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
 
 // Opciones de sucursal para selector de caja extra (excluye bodega)
 const SUC_OPTIONS = SUCURSALES.map(id => ({ value: String(id), label: ERP_NAMES[id] ?? `Suc. ${id}` }));
@@ -28,7 +29,7 @@ const TOGGLE_CFG = {
     faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-rose-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200' },
 };
 
-export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, totalCajas = 0, cajasElectrolit = 0, cajasEspeciales = [] }) {
+export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, totalCajas = 0, cajasElectrolit = 0, cajasEspeciales = [], draftKey = null }) {
     const [estados,              setEstados]              = useState({});
     const [nota,                 setNota]                 = useState('');
     const [electrolitFaltantes,  setElectrolitFaltantes]  = useState(null); // null=sin responder, 0=todas ok, N=N faltantes
@@ -38,6 +39,13 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     const [cajasExtraData,       setCajasExtraData]       = useState({});
     const [extraError,           setExtraError]           = useState(null);
     const [submitting,           setSubmitting]           = useState(false);
+    const [hasDraft,             setHasDraft]             = useState(false);
+
+    // Check for draft on open
+    useEffect(() => {
+        if (open && draftKey) setHasDraft(!!loadDraft(draftKey));
+        if (!open) setHasDraft(false);
+    }, [open, draftKey]);
 
     const cajas = useMemo(() => deriveCajas(cajaMap, items), [cajaMap, items]);
 
@@ -62,6 +70,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
         }
         setExtraError(null);
         setSubmitting(true);
+        if (draftKey) clearDraft(draftKey);
         onConfirm({
             cajasOk, cajasDanadas, cajasFaltantes, nota: nota.trim(),
             electrolitFaltantes:    cajasElectrolit > 0 ? electrolitFaltantes : null,
@@ -95,10 +104,32 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
     const handleClose = () => {
         if (submitting) return;
+        // Save draft if any estado was set (user started filling in)
+        const hasState = Object.keys(estados).some(k => estados[k] !== 'ok')
+            || nota.trim() || cajasExtra > 0
+            || electrolitFaltantes !== null
+            || Object.keys(espEstados).length > 0;
+        if (draftKey && hasState) {
+            saveDraft(draftKey, { estados, nota, electrolitFaltantes, espEstados, cajasExtra, cajasExtraData });
+        }
         setEstados({}); setNota(''); setElectrolitFaltantes(null);
         setEspEstados({}); setCajasExtra(0); setCajasExtraData({});
         setExtraError(null); setSubmitting(false);
         onClose();
+    };
+
+    const handleRestoreDraft = () => {
+        if (!draftKey) return;
+        const d = loadDraft(draftKey);
+        if (!d) return;
+        setEstados(d.estados ?? {});
+        setNota(d.nota ?? '');
+        setElectrolitFaltantes(d.electrolitFaltantes ?? null);
+        setEspEstados(d.espEstados ?? {});
+        setCajasExtra(d.cajasExtra ?? 0);
+        setCajasExtraData(d.cajasExtraData ?? {});
+        setHasDraft(false);
+        clearDraft(draftKey);
     };
 
     if (!open) return null;
@@ -115,6 +146,20 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     <X size={15} />
                 </button>
             </div>
+
+            {/* Draft restore banner */}
+            {hasDraft && (
+                <div className="mx-5 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-50 border border-violet-200">
+                    <RotateCcw size={12} className="text-violet-500 shrink-0" />
+                    <span className="text-[11px] text-violet-700 flex-1">Tenés un borrador guardado</span>
+                    <button onClick={handleRestoreDraft} className="text-[11px] font-bold text-violet-700 hover:text-violet-900 underline underline-offset-2">
+                        Restaurar
+                    </button>
+                    <button onClick={() => { if (draftKey) clearDraft(draftKey); setHasDraft(false); }} className="text-violet-400 hover:text-violet-600">
+                        <X size={12} />
+                    </button>
+                </div>
+            )}
 
             {/* Body — todo el contenido variable va aquí, scrollea cuando no cabe */}
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-3">

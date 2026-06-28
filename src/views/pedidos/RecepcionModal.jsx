@@ -5,7 +5,7 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
 import {
     Loader2, X, PackageCheck, AlertTriangle, Search,
-    Plus, Trash2, PackagePlus, Check, ChevronLeft, Box, Truck,
+    Plus, Trash2, PackagePlus, Check, ChevronLeft, Box, Truck, Star,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -78,6 +78,7 @@ export default function RecepcionModal({
     cajasRecibidas: initCajasRecibidas = [], // already confirmed box numbers (from DB)
     faltaCajas   = [],   // box numbers physically missing (items excluded)
     hasFaltaItems = false, // hay items falta_caja:true en otros grupos (electrolit/especial/caja pendiente)
+    especialesLlegadas = {}, // { 'E1': 'ok'|'danada'|'faltante', ... }
 }) {
     const { user } = useAuth();
 
@@ -85,8 +86,10 @@ export default function RecepcionModal({
     const hasCajaMap = Object.keys(cajaMap).length > 0 && Object.keys(paginaItems).length > 0;
 
     // ── Screen ─────────────────────────────────────────────────────────────────
-    const [screen,       setScreen]       = useState('cajas');
-    const [selectedCaja, setSelectedCaja] = useState(null);
+    const [screen,              setScreen]              = useState('cajas');
+    const [selectedCaja,        setSelectedCaja]        = useState(null);
+    const [selectedEspecial,    setSelectedEspecial]    = useState(null); // { label, item }
+    const [confirmedEspecialIds,setConfirmedEspecialIds] = useState(new Set());
     const [localRec,     setLocalRec]     = useState([]);   // confirmed this session
     const [anyHasDiff,   setAnyHasDiff]   = useState(false);
 
@@ -126,6 +129,13 @@ export default function RecepcionModal({
         return la.localeCompare(lb, 'es') || (a.products?.nombre ?? '').localeCompare(b.products?.nombre ?? '', 'es');
     }), [rows]);
 
+    // Cajas especiales: items with caja_especial=true, labelled E1, E2...
+    const especialItems = useMemo(() =>
+        sortedRows
+            .filter(r => r.caja_especial && (r.cantidad_asignada ?? 0) > 0)
+            .map((r, i) => ({ label: `E${i + 1}`, item: r }))
+    , [sortedRows]);
+
     // ── Per-box derived data ────────────────────────────────────────────────────
     const itemIdsByCaja = useMemo(() => {
         if (!hasCajaMap) return {};
@@ -150,22 +160,29 @@ export default function RecepcionModal({
         allBoxNums.filter(n => !faltaCajas.includes(n)),
     [allBoxNums, faltaCajas]);
 
-    const allAccessibleDone = accessibleBoxNums.length > 0 &&
-        accessibleBoxNums.every(n => allRecibidas.includes(n));
+    const accessibleEspeciales = especialItems.filter(e => !e.item.falta_caja);
+    const allEspecialesDone = accessibleEspeciales.every(e => confirmedEspecialIds.has(e.item.id) || e.item.status === 'recibido');
+    const hasAnythingToReceive = accessibleBoxNums.length > 0 || accessibleEspeciales.length > 0;
+    const allAccessibleDone = hasAnythingToReceive
+        && (accessibleBoxNums.length === 0 || accessibleBoxNums.every(n => allRecibidas.includes(n)))
+        && allEspecialesDone;
 
-    // Rows for the currently selected box (or all rows if no caja map)
+    // Rows for the currently selected box (or especial, or all if no caja map)
     const selectedCajaRows = useMemo(() => {
+        if (selectedEspecial !== null) return [selectedEspecial.item];
         if (selectedCaja === null || !hasCajaMap) return sortedRows;
         const ids = itemIdsByCaja[String(selectedCaja)];
         if (!ids) return sortedRows;
         return sortedRows.filter(r => ids.has(r.id));
-    }, [selectedCaja, itemIdsByCaja, sortedRows, hasCajaMap]);
+    }, [selectedCaja, selectedEspecial, itemIdsByCaja, sortedRows, hasCajaMap]);
 
     // ── Init on open ────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!open) return;
         setScreen(hasCajaMap ? 'cajas' : 'items');
         setSelectedCaja(null);
+        setSelectedEspecial(null);
+        setConfirmedEspecialIds(new Set());
         setLocalRec([]);
         setAnyHasDiff(false);
         setSaveError(null);
@@ -328,7 +345,7 @@ export default function RecepcionModal({
 
     // ── Confirm a single box (or all if no caja map) ────────────────────────────
     const handleConfirmarCaja = useCallback(async () => {
-        const rowsToSave = (hasCajaMap && selectedCaja !== null) ? selectedCajaRows : sortedRows;
+        const rowsToSave = (selectedEspecial !== null || (hasCajaMap && selectedCaja !== null)) ? selectedCajaRows : sortedRows;
 
         const invalidExtra = extras.find(e => e.fQty === 0 && e.sQty === 0);
         if (invalidExtra) {
@@ -346,11 +363,29 @@ export default function RecepcionModal({
             });
             if (error) throw error;
 
-            const boxHasDiff  = p_items.some(it => it.error_tipo !== null);
-            const newAnyDiff  = anyHasDiff || boxHasDiff;
+            const boxHasDiff = p_items.some(it => it.error_tipo !== null);
+            const newAnyDiff = anyHasDiff || boxHasDiff;
             setAnyHasDiff(newAnyDiff);
 
-            if (hasCajaMap && selectedCaja !== null) {
+            if (selectedEspecial !== null) {
+                // Mark this especial as confirmed locally
+                const newConfirmedIds = new Set([...confirmedEspecialIds, selectedEspecial.item.id]);
+                setConfirmedEspecialIds(newConfirmedIds);
+                const newAllEspeciales = especialItems
+                    .filter(e => !e.item.falta_caja)
+                    .every(e => newConfirmedIds.has(e.item.id) || e.item.status === 'recibido');
+                const allRegDone = accessibleBoxNums.length === 0 || accessibleBoxNums.every(n => allRecibidas.includes(n));
+                useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_ESPECIAL', pedido.id, {
+                    sucursal_id: sucursalId, especial: selectedEspecial.label, items_count: p_items.length,
+                });
+                if (allRegDone && newAllEspeciales) {
+                    await saveExtras();
+                    onConfirmed?.({ hasDiff: newAnyDiff, allDone: faltaCajas.length === 0 && !hasFaltaItems });
+                    onClose();
+                } else {
+                    setScreen('cajas'); setSelectedEspecial(null); setProdSearch(''); setShowSearch(false);
+                }
+            } else if (hasCajaMap && selectedCaja !== null) {
                 // Mark this box as received
                 const newRec = [...new Set([...allRecibidas, selectedCaja])].sort((a, b) => a - b);
                 await supabase.from('pedido_sucursal_status')
@@ -358,13 +393,14 @@ export default function RecepcionModal({
                     .eq('pedido_id', pedido.id).eq('erp_sucursal_id', sucursalId);
                 setLocalRec(prev => [...new Set([...prev, selectedCaja])].sort((a, b) => a - b));
 
-                const nowAllDone = accessibleBoxNums.every(n => newRec.includes(n));
+                const nowRegDone = accessibleBoxNums.every(n => newRec.includes(n));
+                const nowEspDone = especialItems.filter(e => !e.item.falta_caja).every(e => confirmedEspecialIds.has(e.item.id) || e.item.status === 'recibido');
 
                 useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_CAJA', pedido.id, {
                     sucursal_id: sucursalId, caja: selectedCaja, items_count: p_items.length,
                 });
 
-                if (nowAllDone) {
+                if (nowRegDone && nowEspDone) {
                     await saveExtras();
                     useStaff.getState().appendAuditLog('CONFIRMAR_RECEPCION_PEDIDO', pedido.id, {
                         sucursal_id: sucursalId, extras_count: extras.length,
@@ -372,7 +408,7 @@ export default function RecepcionModal({
                     onConfirmed?.({ hasDiff: newAnyDiff, allDone: true });
                     onClose();
                 } else {
-                    // More boxes pending — back to picker
+                    // More boxes / especiales pending — back to picker
                     setScreen('cajas');
                     setSelectedCaja(null);
                     setProdSearch(''); setShowSearch(false);
@@ -392,9 +428,9 @@ export default function RecepcionModal({
             setSaving(false);
         }
     }, [
-        hasCajaMap, selectedCaja, selectedCajaRows, sortedRows, extras, buildPItems,
-        pedido, sucursalId, user, anyHasDiff, allRecibidas, accessibleBoxNums,
-        saveExtras, onConfirmed, onClose,
+        selectedEspecial, hasCajaMap, selectedCaja, selectedCajaRows, sortedRows, extras, buildPItems,
+        pedido, sucursalId, user, anyHasDiff, allRecibidas, accessibleBoxNums, confirmedEspecialIds,
+        especialItems, saveExtras, onConfirmed, onClose, faltaCajas, hasFaltaItems,
     ]);
 
     // ── Confirmar todo sin errores (acción rápida) ──────────────────────────────
@@ -640,6 +676,56 @@ export default function RecepcionModal({
                             </p>
                         </div>
                     )}
+
+                    {/* Cajas especiales */}
+                    {especialItems.length > 0 && (
+                        <div className="mt-4">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Cajas especiales</p>
+                            <div className={`grid gap-2 ${especialItems.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                                {especialItems.map(({ label, item }) => {
+                                    const isDamaged   = especialesLlegadas[label] === 'danada';
+                                    const isFaltante  = !!item.falta_caja;
+                                    const isConfirmed = confirmedEspecialIds.has(item.id) || item.status === 'recibido';
+                                    return (
+                                        <button key={item.id}
+                                            disabled={isConfirmed || isFaltante}
+                                            onClick={() => { setSelectedEspecial({ label, item }); setScreen('items'); }}
+                                            className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 text-center transition-all ${
+                                                isConfirmed ? 'bg-emerald-50 border-emerald-200 cursor-default' :
+                                                isFaltante  ? 'bg-slate-50 border-slate-100 cursor-default opacity-50' :
+                                                isDamaged   ? 'bg-amber-50 border-amber-300 hover:border-amber-400 active:scale-95 cursor-pointer' :
+                                                              'bg-violet-50/60 border-violet-200 hover:border-violet-400 active:scale-95 cursor-pointer'
+                                            }`}>
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
+                                                isConfirmed ? 'bg-emerald-500' :
+                                                isFaltante  ? 'bg-slate-300' :
+                                                isDamaged   ? 'bg-amber-400' :
+                                                              'bg-violet-400'
+                                            }`}>
+                                                {isConfirmed ? <Check size={16} className="text-white" /> :
+                                                 isFaltante  ? <Truck size={14} className="text-white" /> :
+                                                 isDamaged   ? <AlertTriangle size={14} className="text-white" /> :
+                                                               <Star size={14} className="text-white" />}
+                                            </div>
+                                            <div>
+                                                <p className={`text-[12px] font-black leading-none ${
+                                                    isConfirmed ? 'text-emerald-700' : isFaltante ? 'text-slate-400' : 'text-slate-700'
+                                                }`}>{label}</p>
+                                                <p className="text-[9px] text-slate-400 mt-0.5 leading-tight max-w-[90px] truncate">
+                                                    {item.products?.nombre ?? ''}
+                                                </p>
+                                                <p className={`text-[9px] font-medium mt-0.5 ${
+                                                    isConfirmed ? 'text-emerald-500' : isFaltante ? 'text-slate-400' : isDamaged ? 'text-amber-600' : 'text-violet-500'
+                                                }`}>
+                                                    {isConfirmed ? '✓ Confirmado' : isFaltante ? 'En reenvío' : isDamaged ? '⚠ Dañada' : `${item.cantidad_asignada} unid.`}
+                                                </p>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </PedidoModal.Body>
 
                 {/* Extras section on cajas screen */}
@@ -872,11 +958,12 @@ export default function RecepcionModal({
     // ════════════════════════════════════════════════════════════════
     // SCREEN: ITEMS — product grid for selected box (or all items)
     // ════════════════════════════════════════════════════════════════
-    const goBack = () => { setScreen('cajas'); setSelectedCaja(null); setProdSearch(''); setShowSearch(false); };
+    const goBack = () => { setScreen('cajas'); setSelectedCaja(null); setSelectedEspecial(null); setProdSearch(''); setShowSearch(false); };
     const isDanadaBox = cajaDanada.includes(selectedCaja);
+    const isDanadaEspecial = selectedEspecial ? especialesLlegadas[selectedEspecial.label] === 'danada' : false;
 
     return (
-        <PedidoModal open={open} onClose={saving ? undefined : (hasCajaMap ? goBack : onClose)} maxWidth="max-w-2xl" className="max-h-[90vh]">
+        <PedidoModal open={open} onClose={saving ? undefined : ((hasCajaMap || selectedEspecial !== null) ? goBack : onClose)} maxWidth="max-w-2xl" className="max-h-[90vh]">
 
             {/* Header */}
             <PedidoModal.Header className="px-5 py-4">
@@ -892,7 +979,17 @@ export default function RecepcionModal({
                             <motion.div key="title" className="flex-1 min-w-0"
                                 initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.15 }}>
-                                {hasCajaMap ? (
+                                {selectedEspecial !== null ? (
+                                    <>
+                                        <h3 className="text-[15px] font-bold text-slate-800 leading-snug">
+                                            {selectedEspecial.label} — Caja especial
+                                            {isDanadaEspecial && <span className="ml-2 text-[11px] font-semibold text-amber-600">⚠ Dañada</span>}
+                                        </h3>
+                                        <p className="text-[11px] text-slate-400 mt-0.5">
+                                            {selectedEspecial.item.products?.nombre ?? ''} · {sucursalNombre}
+                                        </p>
+                                    </>
+                                ) : hasCajaMap ? (
                                     <>
                                         <h3 className="text-[15px] font-bold text-slate-800 leading-snug">
                                             Caja {selectedCaja}
@@ -910,15 +1007,15 @@ export default function RecepcionModal({
                                         </p>
                                     </>
                                 )}
-                                {isDanadaBox && (
+                                {(isDanadaBox || isDanadaEspecial) && (
                                     <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
                                         <AlertTriangle size={11} className="text-amber-500 shrink-0" />
                                         <span className="text-[10px] text-amber-700 font-medium">
-                                            Esta caja llegó dañada — revisá el estado físico al contar
+                                            {isDanadaEspecial ? 'Esta caja especial llegó dañada — revisá el estado físico al contar' : 'Esta caja llegó dañada — revisá el estado físico al contar'}
                                         </span>
                                     </div>
                                 )}
-                                {!hasCajaMap && cajaDanada.length > 0 && (
+                                {!hasCajaMap && !isDanadaBox && cajaDanada.length > 0 && (
                                     <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
                                         <AlertTriangle size={11} className="text-amber-500 shrink-0" />
                                         <span className="text-[10px] text-amber-700 font-medium">

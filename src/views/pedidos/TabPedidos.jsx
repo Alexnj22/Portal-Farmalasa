@@ -1486,6 +1486,55 @@ function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, em
     );
 }
 
+// ─── Post-completion summary ──────────────────────────────────────────────────
+const LLEGADA_TIPO_INFO = {
+    completa:   { cls: 'bg-emerald-50 border-emerald-200 text-emerald-700', icon: '✓', label: 'Recibido sin novedad' },
+    caja_danada:{ cls: 'bg-amber-50 border-amber-200 text-amber-700',       icon: '⚠', label: 'Caja dañada' },
+    falta_caja: { cls: 'bg-rose-50 border-rose-200 text-rose-700',          icon: '!', label: 'Caja faltante' },
+    mixto:      { cls: 'bg-orange-50 border-orange-200 text-orange-700',    icon: '!', label: 'Daños + faltantes' },
+};
+
+function PostCompletionSection({ row, difItems = [], empMap = new Map() }) {
+    const tipoInfo = LLEGADA_TIPO_INFO[row.llegada_tipo] ?? null;
+    const reenvios = (row.reenvios_historial ?? []);
+    const difResueltas   = difItems.filter(d => d.resolucion_status === 'confirmada').length;
+    const difPendientes  = difItems.filter(d => d.resolucion_status !== 'confirmada').length;
+    const hasCajasDanadas = (row.cajas_danadas ?? []).length > 0;
+
+    return (
+        <div className="border-t border-slate-100 px-4 py-3 space-y-1.5">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Resumen de recepción</p>
+            <div className="flex flex-wrap gap-1.5">
+                {tipoInfo && (
+                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${tipoInfo.cls}`}>
+                        <span>{tipoInfo.icon}</span>{tipoInfo.label}
+                    </span>
+                )}
+                {hasCajasDanadas && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700">
+                        ⚠ Caja{row.cajas_danadas.length > 1 ? 's' : ''} {row.cajas_danadas.map(n => `#${n}`).join(', ')} dañada{row.cajas_danadas.length > 1 ? 's' : ''}
+                    </span>
+                )}
+                {reenvios.length > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-indigo-50 border-indigo-200 text-indigo-700">
+                        <Truck size={9} />{reenvios.length} reenvío{reenvios.length > 1 ? 's' : ''}
+                    </span>
+                )}
+                {difResueltas > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-emerald-50 border-emerald-200 text-emerald-700">
+                        <CheckCircle2 size={9} />{difResueltas} dif. resuelta{difResueltas > 1 ? 's' : ''}
+                    </span>
+                )}
+                {difPendientes > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border bg-amber-50 border-amber-200 text-amber-700">
+                        <AlertCircle size={9} />{difPendientes} dif. pendiente{difPendientes > 1 ? 's' : ''}
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+}
+
 // ─── Reception actions ────────────────────────────────────────────────────────
 
 function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false, reenvioBodygaAt = null, segundaLlegadaAt = null }) {
@@ -2678,7 +2727,8 @@ export default function TabPedidos({ searchTerm = '' }) {
             cajasRecibidas = pss?.cajas_recibidas ?? [];
         }
 
-        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada, cajaMap, paginaItems, cajasRecibidas, faltaCajas, hasFaltaItems });
+        const especialesLlegadas = activeRow?.cajas_especiales_llegadas ?? {};
+        setModal({ pedido: { id: pedidoId, numero, codigo }, sucId, key, rows, cajaDanada, cajaMap, paginaItems, cajasRecibidas, faltaCajas, hasFaltaItems, especialesLlegadas });
     }, [fetchItems, activeRows]);
 
     const openReenvioModal = useCallback(async (pedidoId, numero, codigo, sucId, key) => {
@@ -3271,6 +3321,17 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     )}
 
+                                    {/* Resumen post-completado */}
+                                    {row.pedido_status === 'completado' && row.llegada_tipo && (
+                                        <div onClick={e => e.stopPropagation()}>
+                                            <PostCompletionSection
+                                                row={row}
+                                                difItems={(items[cardKey] ?? []).filter(r => r.status === 'con_diferencia' || r.error_tipo)}
+                                                empMap={empMap}
+                                            />
+                                        </div>
+                                    )}
+
                                     <AnimatePresence>
                                         {isExp && (
                                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -3389,6 +3450,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 totalCajas={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId)?.total_cajas ?? 0) : 0}
                 cajasElectrolit={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId && r.erp_sucursal_id === llegadaModal.sucId)?.cajas_electrolit ?? 0) : 0}
                 cajasEspeciales={llegadaModal ? (activeRows.find(r => r.pedido_id === llegadaModal.pedidoId && r.erp_sucursal_id === llegadaModal.sucId)?.cajas_especiales ?? []) : []}
+                draftKey={llegadaModal ? `llegada_${llegadaModal.pedidoId}_${llegadaModal.sucId}` : null}
             />
 
             <ReenvioLlegadaModal
@@ -3411,6 +3473,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 sucId={finalizarModal?.sucId}
                 pedidoNumero={finalizarModal?.numero}
                 paginas={finalizarModal?.paginas ?? null}
+                draftKey={finalizarModal ? `finalizar_${finalizarModal.pedidoId}_${finalizarModal.sucId}` : null}
             />
 
             {anularModal && (
@@ -3460,6 +3523,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     cajasRecibidas={modal.cajasRecibidas ?? []}
                     faltaCajas={modal.faltaCajas     ?? []}
                     hasFaltaItems={modal.hasFaltaItems ?? false}
+                    especialesLlegadas={modal.especialesLlegadas ?? {}}
                     onConfirmed={async ({ hasDiff, allDone }) => {
                         const { pedido, sucId, key } = modal;
                         setModal(null);

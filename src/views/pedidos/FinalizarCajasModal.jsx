@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Loader2, X, Package, PackageCheck } from 'lucide-react';
+import { ChevronLeft, Loader2, X, Package, PackageCheck, RotateCcw } from 'lucide-react';
 import PedidoModal from './PedidoModal';
 import { getExactPageGroups } from '../../utils/pedidoPrint';
+import { saveDraft, loadDraft, clearDraft } from '../../utils/draftUtils';
 
-export default function FinalizarCajasModal({ open, onClose, onConfirm, items = [], sucId, pedidoNumero, paginas = null }) {
+export default function FinalizarCajasModal({ open, onClose, onConfirm, items = [], sucId, pedidoNumero, paginas = null, draftKey = null }) {
     const [screen,          setScreen]          = useState(1);
     const [totalCajasInput, setTotalCajasInput] = useState('');
     const [pageAssignments, setPageAssignments] = useState([]);
     const [submitting,      setSubmitting]      = useState(false);
     const [pageGroups,      setPageGroups]      = useState([]);
     const [loadingPages,    setLoadingPages]    = useState(false);
+    const [hasDraft,        setHasDraft]        = useState(false);
 
     useEffect(() => {
         if (!open) {
@@ -18,8 +20,11 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             setScreen(1);
             setTotalCajasInput('');
             setPageAssignments([]);
+            setHasDraft(false);
             return;
         }
+        // Check for draft on open
+        if (draftKey) setHasDraft(!!loadDraft(draftKey));
         if (paginas) {
             setPageGroups(paginas);
             setLoadingPages(false);
@@ -67,6 +72,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
     const handleConfirm = () => {
         if (submitting || !isValid) return;
         setSubmitting(true);
+        if (draftKey) clearDraft(draftKey);
 
         const cajaMap = {};
         for (let i = 1; i <= cajaCount; i++) cajaMap[String(i)] = [];
@@ -86,9 +92,21 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
 
     const handleClose = () => {
         if (submitting) return;
+        if (draftKey && totalCajasInput) {
+            saveDraft(draftKey, { totalCajasInput });
+        }
         setScreen(1); setTotalCajasInput(''); setPageAssignments([]);
-        setSubmitting(false); setPageGroups([]); setLoadingPages(false);
+        setSubmitting(false); setPageGroups([]); setLoadingPages(false); setHasDraft(false);
         onClose();
+    };
+
+    const handleRestoreDraft = () => {
+        if (!draftKey) return;
+        const d = loadDraft(draftKey);
+        if (!d) return;
+        if (d.totalCajasInput) setTotalCajasInput(d.totalCajasInput);
+        setHasDraft(false);
+        clearDraft(draftKey);
     };
 
     if (!open) return null;
@@ -118,6 +136,20 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                     <X size={13} />
                 </button>
             </div>
+
+            {/* Draft restore banner */}
+            {hasDraft && screen === 1 && (
+                <div className="mx-5 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-violet-50 border border-violet-200">
+                    <RotateCcw size={12} className="text-violet-500 shrink-0" />
+                    <span className="text-[11px] text-violet-700 flex-1">Tenés un borrador guardado</span>
+                    <button onClick={handleRestoreDraft} className="text-[11px] font-bold text-violet-700 hover:text-violet-900 underline underline-offset-2">
+                        Restaurar
+                    </button>
+                    <button onClick={() => { if (draftKey) clearDraft(draftKey); setHasDraft(false); }} className="text-violet-400 hover:text-violet-600">
+                        <X size={12} />
+                    </button>
+                </div>
+            )}
 
             {/* ── Screen 1 ───────────────────────────────── */}
             {screen === 1 && (

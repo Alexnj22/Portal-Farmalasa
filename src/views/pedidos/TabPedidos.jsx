@@ -1264,7 +1264,7 @@ const EVENTO_LABEL = {
 
 const DIF_MAX = 3;
 
-function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, empMap = new Map(), onResolver }) {
+function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, empMap = new Map(), onResolver, readOnly = false }) {
     const [tipoSel,    setTipoSel]    = React.useState({});
     const [notaSel,    setNotaSel]    = React.useState({});
     const [rejectOpen, setRejectOpen] = React.useState({});
@@ -1326,7 +1326,7 @@ function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, em
                         <div className="px-3 pb-3 space-y-2">
 
                             {/* ── Estado: null o rechazada — BODEGA propone ── */}
-                            {(!res || res === 'rechazada') && !isBranch && (
+                            {(!res || res === 'rechazada') && !isBranch && !readOnly && (
                                 <>
                                     {res === 'rechazada' && (
                                         <div className="flex items-start gap-1.5 text-[10px] bg-red-50 rounded-lg px-2.5 py-1.5 border border-red-100">
@@ -1364,12 +1364,12 @@ function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, em
                             )}
 
                             {/* ── Estado: null — SUCURSAL espera ── */}
-                            {!res && isBranch && (
+                            {!res && isBranch && !readOnly && (
                                 <p className="text-[10px] text-slate-400 italic">Esperando resolución de bodega…</p>
                             )}
 
                             {/* ── Estado: propuesta — mostrar propuesta ── */}
-                            {res === 'propuesta' && (
+                            {res === 'propuesta' && !readOnly && (
                                 <>
                                     <div className="flex items-start gap-1.5 text-[10px] bg-violet-50 rounded-lg px-2.5 py-1.5 border border-violet-100">
                                         {resueltoEmp?.photo_url
@@ -2559,6 +2559,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 supabase.functions.invoke('send-push-notification', { body: { title: `Caja ${cajasStr} en camino`, message: 'La caja faltante ya salió de bodega.', url: '/pedidos', target_type: 'BRANCH', target_value: [m.branch_id] } }).catch(() => {});
             }).catch(() => {});
             await loadActive();
+            setCrearRutaOpen(true);
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [user, loadActive]);
 
@@ -2766,12 +2767,15 @@ export default function TabPedidos({ searchTerm = '' }) {
     }, [fetchItems]);
 
     const handleReportarDiferencias = useCallback(async (pedidoId, sucId) => {
-        supabase.rpc('update_pedido_sucursal_lifecycle', {
-            p_pedido_id: pedidoId, p_sucursal_id: sucId,
-            p_stage: 'reportar_diferencias', p_user_id: user?.id ?? null,
-        }).catch(e => console.error('lifecycle reportar_diferencias:', e));
+        try {
+            await supabase.rpc('update_pedido_sucursal_lifecycle', {
+                p_pedido_id: pedidoId, p_sucursal_id: sucId,
+                p_stage: 'reportar_diferencias', p_user_id: user?.id ?? null,
+            });
+        } catch (e) { console.error('lifecycle reportar_diferencias:', e); }
         useStaff.getState().appendAuditLog('PEDIDO_DIFERENCIAS_REPORTADAS', pedidoId, { sucursal_id: sucId });
-    }, [user]);
+        await loadActive();
+    }, [user, loadActive]);
 
     const handleCorregirBodega = useCallback(async (pedidoId, sucId, nota) => {
         setBusyAction('corr_bodega');
@@ -3279,11 +3283,13 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             )}
                                             {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen(true)} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
                                             {(() => {
-                                                const hasElecFaltantes = (row.electrolit_faltantes ?? 0) > 0 && row.electrolit_ok === false;
+                                                const hasElecFaltantes = (row.electrolit_faltantes ?? 0) > 0 && row.electrolit_ok !== true;
                                                 const hasEspFaltantes  = Object.values(row.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante');
                                                 const hasPendingFalta  = (row.falta_cajas ?? []).length > 0 || hasElecFaltantes || hasEspFaltantes;
                                                 const reenvioEnCamino  = (row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at);
-                                                if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino || row.pedido_status === 'completado') return null;
+                                                const rutaActiva       = pedidoRutaMap.get(row.pedido_id)?.ruta;
+                                                const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;
+                                                if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino || conductorEnRuta) return null;
                                                 const espFaltList = Object.entries(row.cajas_especiales_llegadas ?? {}).filter(([, v]) => v === 'faltante').map(([k]) => k);
                                                 return (
                                                     <button onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">
@@ -3331,8 +3337,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         </div>
                                     )}
 
-                                    {/* Diferencias — visible cuando parcial */}
-                                    {row.pedido_status === 'parcial' && (
+                                    {/* Diferencias — visible cuando parcial o completado con diffs en historial */}
+                                    {(row.pedido_status === 'parcial' || (row.pedido_status === 'completado' && (items[cardKey] ?? []).some(r => r.error_tipo))) && (
                                         <div onClick={e => e.stopPropagation()}>
                                             <DifSection
                                                 row={row}
@@ -3341,6 +3347,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 isBranch={isBranch}
                                                 busyAction={busyAction}
                                                 empMap={empMap}
+                                                readOnly={row.pedido_status === 'completado'}
                                                 onResolver={(itemId, action, tipo, nota) =>
                                                     handleResolverItem(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId, action, tipo, nota)
                                                 }

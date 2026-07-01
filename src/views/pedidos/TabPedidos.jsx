@@ -27,6 +27,7 @@ import RutaMapModal      from './RutaMapModal';
 import ProgramarEntregaModal from './ProgramarEntregaModal';
 import { ERP_NAMES } from '../../constants/erp';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import PeriodPicker from '../../components/common/PeriodPicker';
 import { printFromPedidoItems, getExactPageGroups } from '../../utils/pedidoPrint';
 
@@ -1196,12 +1197,13 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
 // ─── Item sections ────────────────────────────────────────────────────────────
 
 function ItemSections({ allItems, loading }) {
-    const [pspMap,   setPspMap]   = React.useState({});
-    const [editMap,  setEditMap]  = React.useState({});
-    const [origMap,  setOrigMap]  = React.useState({});
-    const [savingId, setSavingId] = React.useState(null);
-    const [savedId,  setSavedId]  = React.useState(null);
-    const [errorMap, setErrorMap] = React.useState({});
+    const [pspMap,          setPspMap]          = React.useState({});
+    const [editMap,         setEditMap]         = React.useState({});
+    const [origMap,         setOrigMap]         = React.useState({});
+    const [savingId,        setSavingId]        = React.useState(null);
+    const [savedId,         setSavedId]         = React.useState(null);
+    const [errorMap,        setErrorMap]        = React.useState({});
+    const [resetZeroTarget, setResetZeroTarget] = React.useState(null);
     const debounceRef = React.useRef({});
 
     // Stable key so the effect only refires when the set of revision_minmax products changes
@@ -1297,19 +1299,17 @@ function ItemSections({ allItems, loading }) {
     const onMinMaxChange = (row, field, value) => {
         const newEdit = { ...(editMap[row.id] ?? {}), [field]: value };
         setEditMap(prev => ({ ...prev, [row.id]: newEdit }));
-        const err = validateEdit(newEdit);
-        setErrorMap(prev => ({ ...prev, [row.id]: err }));
+        setErrorMap(prev => ({ ...prev, [row.id]: null })); // clear while typing so arrows work freely
         if (debounceRef.current[row.id]) clearTimeout(debounceRef.current[row.id]);
-        if (err) {
-            // Show toast + revert after short delay so user sees the change before reverting
-            debounceRef.current[row.id] = setTimeout(() => {
-                revertToOrig(row.id);
-                useToastStore.getState().showToast('Valor inválido', err, 'error');
-            }, 800);
-            return;
-        }
+        // Validate and save after 800ms idle — no revert, user can keep editing toward valid state
         debounceRef.current[row.id] = setTimeout(() => {
-            doSave(row, parseInt(newEdit.min, 10), parseInt(newEdit.max, 10));
+            const err = validateEdit(newEdit);
+            if (err) {
+                setErrorMap(prev => ({ ...prev, [row.id]: err }));
+                useToastStore.getState().showToast('Valor inválido', err, 'error');
+            } else {
+                doSave(row, parseInt(newEdit.min, 10), parseInt(newEdit.max, 10));
+            }
         }, 800);
     };
 
@@ -1321,11 +1321,7 @@ function ItemSections({ allItems, loading }) {
     };
 
     const resetZero = (row) => {
-        if (!window.confirm(`¿Dejar MIN/MAX en 0 para "${row.products?.nombre ?? 'este producto'}"?\nQuedará excluido del próximo pedido.`)) return;
-        if (debounceRef.current[row.id]) clearTimeout(debounceRef.current[row.id]);
-        setEditMap(prev => ({ ...prev, [row.id]: { min: '0', max: '0' } }));
-        setErrorMap(prev => ({ ...prev, [row.id]: null }));
-        doSave(row, 0, 0);
+        setResetZeroTarget(row);
     };
 
     const renderMinMaxRow = (row, colCount) => {
@@ -1354,8 +1350,8 @@ function ItemSections({ allItems, loading }) {
                             type="number" min="0" value={edit.min} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'min', e.target.value)}
                             onBlur={() => {
-                                const e = errorMap[row.id];
-                                if (e) { if (debounceRef.current[row.id]) clearTimeout(debounceRef.current[row.id]); revertToOrig(row.id); useToastStore.getState().showToast('Valor inválido', e, 'error'); }
+                                const e = validateEdit(editMap[row.id] ?? {});
+                                setErrorMap(prev => ({ ...prev, [row.id]: e ?? null }));
                             }}
                             className={inputCls(!!err && err !== 'MAX inválido' && !err.startsWith('MAX'))}
                         />
@@ -1364,8 +1360,8 @@ function ItemSections({ allItems, loading }) {
                             type="number" min="0" value={edit.max} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'max', e.target.value)}
                             onBlur={() => {
-                                const e = errorMap[row.id];
-                                if (e) { if (debounceRef.current[row.id]) clearTimeout(debounceRef.current[row.id]); revertToOrig(row.id); useToastStore.getState().showToast('Valor inválido', e, 'error'); }
+                                const e = validateEdit(editMap[row.id] ?? {});
+                                setErrorMap(prev => ({ ...prev, [row.id]: e ?? null }));
                             }}
                             className={inputCls(!!err && err !== 'MIN inválido')}
                         />
@@ -1410,6 +1406,23 @@ function ItemSections({ allItems, loading }) {
                 label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-rose-50 text-rose-700 border-rose-200" rows={porRegla} columns={COLS_REGLA}
                 renderRowExtra={renderMinMaxRow}
                 noteEl={<div className="flex items-start gap-2 text-[10px] text-rose-600/80 bg-rose-50/60 border border-rose-100 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-rose-500" />Estos productos no pudieron despacharse. Puede ser porque la necesidad no alcanzó el mínimo de la regla de despacho, o porque el stock en bodega fue insuficiente tras asignarlo a otras sucursales. Revisa la columna "Motivo" y ajusta los MIN/MAX.</div>}
+            />
+            <ConfirmModal
+                isOpen={!!resetZeroTarget}
+                onClose={() => setResetZeroTarget(null)}
+                onConfirm={() => {
+                    const row = resetZeroTarget;
+                    setResetZeroTarget(null);
+                    if (debounceRef.current[row.id]) clearTimeout(debounceRef.current[row.id]);
+                    setEditMap(prev => ({ ...prev, [row.id]: { min: '0', max: '0' } }));
+                    setErrorMap(prev => ({ ...prev, [row.id]: null }));
+                    doSave(row, 0, 0);
+                }}
+                title="¿Dejar MIN/MAX en 0 / 0?"
+                message={`"${resetZeroTarget?.products?.nombre ?? 'Este producto'}" quedará excluido del próximo pedido automático.`}
+                confirmText="Confirmar"
+                cancelText="Cancelar"
+                isDestructive={false}
             />
         </>
     );

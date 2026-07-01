@@ -1264,12 +1264,17 @@ const EVENTO_LABEL = {
 
 const DIF_MAX = 3;
 
-function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, empMap = new Map(), onResolver, readOnly = false }) {
+function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, empMap = new Map(), onResolver, readOnly = false, onNeedItems, itemsLoaded = true }) {
     const [tipoSel,    setTipoSel]    = React.useState({});
     const [notaSel,    setNotaSel]    = React.useState({});
     const [rejectOpen, setRejectOpen] = React.useState({});
     const [notaRec,    setNotaRec]    = React.useState({});
     const [showAll,    setShowAll]    = React.useState(false);
+
+    React.useEffect(() => {
+        if (!itemsLoaded && onNeedItems) onNeedItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [itemsLoaded]);
 
     const allConfirmed  = difItems.length > 0 && difItems.every(r => r.resolucion_status === 'confirmada');
     const visibleItems  = showAll ? difItems : difItems.slice(0, DIF_MAX);
@@ -1813,7 +1818,7 @@ export default function TabPedidos({ searchTerm = '' }) {
     const [erpStatus,     setErpStatus]     = useState({});
     const [busyAction,    setBusyAction]    = useState(null);
     const [busyLifecycle, setBusyLifecycle] = useState(null);
-    const [crearRutaOpen, setCrearRutaOpen] = useState(false);
+    const [crearRutaOpen, setCrearRutaOpen] = useState(null); // null | string[] (keys pre-seleccionados)
     const [modal,         setModal]         = useState(null);
     const [rutaMapOpen,   setRutaMapOpen]   = useState(null); // ruta obj para RutaMapModal
 
@@ -2559,7 +2564,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 supabase.functions.invoke('send-push-notification', { body: { title: `Caja ${cajasStr} en camino`, message: 'La caja faltante ya salió de bodega.', url: '/pedidos', target_type: 'BRANCH', target_value: [m.branch_id] } }).catch(() => {});
             }).catch(() => {});
             await loadActive();
-            setCrearRutaOpen(true);
+            setCrearRutaOpen([`${pedidoId}__${sucId}`]);
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [user, loadActive]);
 
@@ -2571,6 +2576,8 @@ export default function TabPedidos({ searchTerm = '' }) {
         if (!ciclo) {
             if (faltaCajasLegacy.length > 0) {
                 setReenvioLlegadaModal({ pedidoId, sucId, key, ciclo: 1, cajasCiclo: faltaCajasLegacy, electrolitCount: 0, especialesList: [], historial: [], cajaMap });
+            } else {
+                useToastStore.getState().showToast('Sin reenvío pendiente', 'No hay ciclo de reenvío registrado para confirmar.', 'info');
             }
             return;
         }
@@ -2608,8 +2615,9 @@ export default function TabPedidos({ searchTerm = '' }) {
             await supabase.from('pedido_sucursal_status').update({
                 segunda_llegada_at: now,
                 reenvios_historial: nuevoHistorial,
-                // Siempre actualizar falta_cajas: vacío si todo llegó, o las cajas aún pendientes
                 falta_cajas: hasFalta ? cajasFaltantes : [],
+                // Escribir estado electrolit al DB cuando estaban en este ciclo de reenvío
+                ...(electrolitCount > 0 ? { electrolit_ok: electrolitOk === true, electrolit_faltantes: electrolitOk ? 0 : electrolitCount } : {}),
             }).eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
 
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_LLEGADA', pedidoId, { ciclo, arrived_tipo, cajasOk, cajasDanadas, cajasFaltantes });
@@ -2774,8 +2782,8 @@ export default function TabPedidos({ searchTerm = '' }) {
             });
         } catch (e) { console.error('lifecycle reportar_diferencias:', e); }
         useStaff.getState().appendAuditLog('PEDIDO_DIFERENCIAS_REPORTADAS', pedidoId, { sucursal_id: sucId });
-        await loadActive();
-    }, [user, loadActive]);
+        // loadActive() lo llama el caller (onConfirmed) para no duplicar el fetch
+    }, [user]);
 
     const handleCorregirBodega = useCallback(async (pedidoId, sucId, nota) => {
         setBusyAction('corr_bodega');
@@ -3281,7 +3289,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                     <Ban size={10} />Anular
                                                 </button>
                                             )}
-                                            {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen(true)} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
+                                            {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen([])} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
                                             {(() => {
                                                 const hasElecFaltantes = (row.electrolit_faltantes ?? 0) > 0 && row.electrolit_ok !== true;
                                                 const hasEspFaltantes  = Object.values(row.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante');
@@ -3289,7 +3297,12 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 const reenvioEnCamino  = (row.reenvios_historial ?? []).some(c => c.sent_at && !c.arrived_at);
                                                 const rutaActiva       = pedidoRutaMap.get(row.pedido_id)?.ruta;
                                                 const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;
-                                                if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino || conductorEnRuta) return null;
+                                                if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino) return null;
+                                                if (conductorEnRuta) return (
+                                                    <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white/70 cursor-not-allowed" title="El conductor aún está en ruta. Esperá a que marque vuelta a base.">
+                                                        <Truck size={10} className="text-slate-300" />Esperando vuelta conductor
+                                                    </div>
+                                                );
                                                 const espFaltList = Object.entries(row.cajas_especiales_llegadas ?? {}).filter(([, v]) => v === 'faltante').map(([k]) => k);
                                                 return (
                                                     <button onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">
@@ -3348,6 +3361,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 busyAction={busyAction}
                                                 empMap={empMap}
                                                 readOnly={row.pedido_status === 'completado'}
+                                                onNeedItems={() => fetchItems(cardKey, row.pedido_id, row.erp_sucursal_id)}
+                                                itemsLoaded={!!items[cardKey]}
                                                 onResolver={(itemId, action, tipo, nota) =>
                                                     handleResolverItem(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId, action, tipo, nota)
                                                 }
@@ -3598,9 +3613,10 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             {/* ── Crear Ruta modal ───────────────────────────────────────────────── */}
             <CrearRutaModal
-                open={crearRutaOpen}
-                onClose={() => setCrearRutaOpen(false)}
-                onCreated={() => { setCrearRutaOpen(false); loadActive(); }}
+                open={crearRutaOpen !== null}
+                initialKeys={crearRutaOpen ?? []}
+                onClose={() => setCrearRutaOpen(null)}
+                onCreated={() => { setCrearRutaOpen(null); loadActive(); }}
             />
 
             {rutaMapOpen && (

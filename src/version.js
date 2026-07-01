@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.437';
+export const APP_VERSION = '2.2.438';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.438 — fix(pedidos): audit post-fix — electrolit_ok escrito a DB al confirmar reenvío; DifSection auto-fetch en cold load; indicador "Esperando vuelta conductor" en vez de botón invisible; CrearRutaModal pre-selecciona pedido del reenvío + incluye status parcial; toast en no-op segunda llegada; elimina double-loadActive
 // v2.2.437 — fix(pedidos): 6 bugs flujo reenvío — (1) handleReportarDiferencias await + loadActive (card refresca sola); (2) DifSection visible en completado (historial read-only); (3) Reenviar no se oculta con pedido_status=completado si hay falta_cajas; (4) check vuelta_base_at: Reenviar bloqueado si conductor aún en ruta; (5) auto-abre CrearRutaModal tras confirmar reenvío; (6) electrolit_ok !== true (cubre null además de false)
 // v2.2.436 — fix(minmax): 0/0 siempre muestra —/— (no solo dead/noHistory); panel MIN·MAX red en bodega muestra sucursales con 0/0 como —·— en vez de ocultarlas
 // v2.2.435 — fix(pedidos): auditoría final TabPedidos — openFinalizarModal: try/catch/finally evita botón bloqueado en error; inline Iniciar+Base ruta: try/catch con toast de error en fallo DB

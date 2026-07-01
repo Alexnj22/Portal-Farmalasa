@@ -19,7 +19,7 @@ function fmtMin(min) {
 // Tiempo fijo de descarga por parada — se recalibrará con datos reales
 function svcMin() { return 10; }
 
-export default function CrearRutaModal({ open, onClose, onCreated }) {
+export default function CrearRutaModal({ open, onClose, onCreated, initialKeys = [] }) {
   const { user } = useAuth();
 
   const [step, setStep] = useState(1);
@@ -73,7 +73,7 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
     Promise.all([
       supabase.from('pedidos')
         .select('id, numero')
-        .in('status', ['confirmado', 'enviado'])
+        .in('status', ['confirmado', 'enviado', 'parcial'])
         .order('numero'),
 
       supabase.from('pedido_sucursal_status')
@@ -120,6 +120,10 @@ export default function CrearRutaModal({ open, onClose, onCreated }) {
         });
       }
       setPedidosDisp(items);
+      if (initialKeys?.length) {
+        const validKeys = new Set(initialKeys.filter(k => items.some(i => i.key === k)));
+        if (validKeys.size) setSelected(validKeys);
+      }
     }).catch(err => {
       console.error('[CrearRutaModal] load error:', err?.message ?? err);
     }).finally(() => {

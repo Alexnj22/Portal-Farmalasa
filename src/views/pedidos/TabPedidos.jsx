@@ -138,8 +138,6 @@ function calcSolicitado(row) {
 }
 
 function fmtRegla(row) {
-    const hasRule = (row.products?.dispatch_rules ?? []).length > 0;
-    if (!hasRule) return <span className="text-[10px] italic text-slate-400">Sin regla</span>;
     if (!row.dispatch_tipo) return <span className="text-slate-400">—</span>;
     const tipoKey = (row.dispatch_tipo ?? '').toLowerCase();
     const tipos   = { caja: 'CAJA', blister: 'BLÍSTER', multiplo: 'UND ×', multiplo_unidades: 'UND ×', solo_cajas: 'SOLO CAJAS' };
@@ -793,22 +791,12 @@ const COLS_REGLA = [
             </span>
         );
     }},
-    { key: 'regla',  label: 'Regla aplicada', render: fmtRegla },
+    { key: 'regla',  label: 'Regla', render: fmtRegla },
     { key: 'motivo', label: 'Motivo', render: r => {
-        const hasRule = (r.products?.dispatch_rules ?? []).length > 0;
         const factor  = Number(r.factor) || 1;
         const needed  = r.max_qty_snapshot != null && r.stock_packs_snapshot != null
             ? Math.max(0, r.max_qty_snapshot - r.stock_packs_snapshot) : null;
         const needUnd = needed != null ? Math.ceil(needed * factor) : null;
-        if (!hasRule) return (
-            <div className="flex flex-col gap-0.5">
-                <span className="text-amber-600 text-[10px] font-semibold">Stock insuf. en bodega</span>
-                <span className="text-slate-400 text-[9px]">
-                    {needUnd != null ? `Necesita ${needUnd} und. — bodega no tuvo suficiente disponible` : 'Bodega sin stock suficiente al momento del despacho'}
-                </span>
-                <span className="text-slate-300 text-[9px]">Aumenta el MAX para priorizar en el próximo pedido</span>
-            </div>
-        );
         return (
             <div className="flex flex-col gap-0.5">
                 <span className="text-rose-600 text-[10px] font-semibold">Necesidad baja</span>
@@ -1207,7 +1195,11 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
 function ItemSections({ allItems, loading }) {
     const [pspMap,   setPspMap]   = React.useState({});
     const [editMap,  setEditMap]  = React.useState({});
+    const [origMap,  setOrigMap]  = React.useState({});
     const [savingId, setSavingId] = React.useState(null);
+    const [savedId,  setSavedId]  = React.useState(null);
+    const [errorMap, setErrorMap] = React.useState({});
+    const debounceRef = React.useRef({});
 
     // Stable key so the effect only refires when the set of revision_minmax products changes
     const revisionKey = React.useMemo(() =>
@@ -1241,6 +1233,7 @@ function ItemSections({ allItems, loading }) {
             }
             setPspMap(map);
             setEditMap(em);
+            setOrigMap({ ...em });
         })();
     }, [revisionKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1255,10 +1248,6 @@ function ItemSections({ allItems, loading }) {
     if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-slate-400">Sin ítems.</div>;
 
     const doSave = async (row, min, max) => {
-        if (isNaN(min) || isNaN(max) || min < 0 || max < min) {
-            useToastStore.getState().showToast('Valores inválidos', 'MAX debe ser ≥ MIN.', 'warning');
-            return;
-        }
         setSavingId(row.id);
         try {
             const { error } = await supabase.from('product_stock_params')
@@ -1267,9 +1256,10 @@ function ItemSections({ allItems, loading }) {
                 .eq('erp_sucursal_id', row.erp_sucursal_id);
             if (error) throw error;
             useStaff.getState().appendAuditLog('MINMAX_UPDATED_FROM_PEDIDO', row.pedido_id, { product_id: row.erp_product_id, sucursal_id: row.erp_sucursal_id, min, max });
-            useToastStore.getState().showToast('MIN/MAX actualizado', `${row.products?.nombre ?? 'Producto'} ajustado para el próximo pedido.`, 'success');
             const k = `${row.erp_product_id}_${row.erp_sucursal_id}`;
             setPspMap(prev => ({ ...prev, [k]: { ...(prev[k] ?? {}), manual_min: min, manual_max: max } }));
+            setSavedId(row.id);
+            setTimeout(() => setSavedId(id => id === row.id ? null : id), 2000);
         } catch (e) {
             useToastStore.getState().showToast('Error', e?.message ?? 'No se pudo guardar.', 'error');
         } finally {
@@ -1277,28 +1267,58 @@ function ItemSections({ allItems, loading }) {
         }
     };
 
-    const saveMinMax = (row) => {
-        const edit = editMap[row.id] ?? { min: '0', max: '0' };
-        doSave(row, parseInt(edit.min, 10), parseInt(edit.max, 10));
+    const validateEdit = (edit) => {
+        const min = parseInt(edit.min, 10);
+        const max = parseInt(edit.max, 10);
+        if (isNaN(min) || min < 0) return 'MIN inválido';
+        if (isNaN(max) || max < 0) return 'MAX inválido';
+        if (max < min) return 'MAX debe ser ≥ MIN';
+        return null;
+    };
+
+    const onMinMaxChange = (row, field, value) => {
+        const newEdit = { ...(editMap[row.id] ?? {}), [field]: value };
+        setEditMap(prev => ({ ...prev, [row.id]: newEdit }));
+        const err = validateEdit(newEdit);
+        setErrorMap(prev => ({ ...prev, [row.id]: err }));
+        if (debounceRef.current[row.id]) clearTimeout(debounceRef.current[row.id]);
+        if (err) return;
+        debounceRef.current[row.id] = setTimeout(() => {
+            doSave(row, parseInt(newEdit.min, 10), parseInt(newEdit.max, 10));
+        }, 800);
+    };
+
+    const restoreMinMax = (row) => {
+        const orig = origMap[row.id] ?? { min: '0', max: '0' };
+        setEditMap(prev => ({ ...prev, [row.id]: orig }));
+        setErrorMap(prev => ({ ...prev, [row.id]: null }));
+        doSave(row, parseInt(orig.min, 10), parseInt(orig.max, 10));
     };
 
     const resetZero = (row) => {
         if (!window.confirm(`¿Dejar MIN/MAX en 0 para "${row.products?.nombre ?? 'este producto'}"?\nQuedará excluido del próximo pedido.`)) return;
+        if (debounceRef.current[row.id]) clearTimeout(debounceRef.current[row.id]);
         setEditMap(prev => ({ ...prev, [row.id]: { min: '0', max: '0' } }));
+        setErrorMap(prev => ({ ...prev, [row.id]: null }));
         doSave(row, 0, 0);
     };
 
-    // Renderiza fila de MIN/MAX editable bajo cada item con revision_minmax=true
     const renderMinMaxRow = (row, colCount) => {
         if (!row.revision_minmax) return null;
         const psp      = pspMap[`${row.erp_product_id}_${row.erp_sucursal_id}`];
-        const edit     = editMap[row.id] ?? { min: '…', max: '…' };
+        const edit     = editMap[row.id] ?? { min: '0', max: '0' };
         const isSaving = savingId === row.id;
+        const isSaved  = savedId  === row.id;
+        const err      = errorMap[row.id] ?? null;
         const v6m      = psp?.units_sold_6m ?? null;
+        const inputCls = (hasErr) =>
+            `w-14 text-[11px] font-bold border rounded-lg px-2 py-1 focus:outline-none bg-white text-slate-700 text-center disabled:opacity-40 transition-colors ${
+                hasErr ? 'border-rose-300 focus:border-rose-400 bg-rose-50/60' : 'border-slate-200 focus:border-blue-400'
+            }`;
         return (
             <tr key={`mm_${row.id}`}>
                 <td colSpan={colCount} className="px-4 pb-2.5 pt-0">
-                    <div className="rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 flex items-center gap-2.5 flex-wrap">
+                    <div className="rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 flex items-center gap-2 flex-wrap">
                         <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">Ventas 6M</span>
                         <span className="text-[11px] font-bold tabular-nums text-slate-700 shrink-0">
                             {psp === undefined ? <span className="text-slate-300">—</span> : v6m != null ? `${v6m} und.` : '0 und.'}
@@ -1307,25 +1327,31 @@ function ItemSections({ allItems, loading }) {
                         <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">MIN</span>
                         <input
                             type="number" min="0" value={edit.min} disabled={isSaving}
-                            onChange={e => setEditMap(prev => ({ ...prev, [row.id]: { ...prev[row.id], min: e.target.value } }))}
-                            className="w-14 text-[11px] font-bold border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-400 bg-white text-slate-700 text-center disabled:opacity-40"
+                            onChange={e => onMinMaxChange(row, 'min', e.target.value)}
+                            className={inputCls(!!err && err.includes('MIN'))}
                         />
                         <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">MAX</span>
                         <input
                             type="number" min="0" value={edit.max} disabled={isSaving}
-                            onChange={e => setEditMap(prev => ({ ...prev, [row.id]: { ...prev[row.id], max: e.target.value } }))}
-                            className="w-14 text-[11px] font-bold border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-400 bg-white text-slate-700 text-center disabled:opacity-40"
+                            onChange={e => onMinMaxChange(row, 'max', e.target.value)}
+                            className={inputCls(!!err && err !== 'MIN inválido')}
                         />
+                        {isSaving && <Loader2 size={10} className="animate-spin text-blue-400 shrink-0" />}
+                        {!isSaving && isSaved && <Check size={10} className="text-emerald-500 shrink-0" />}
+                        {err && !isSaving && (
+                            <span className="text-[9px] text-rose-500 font-medium shrink-0">{err}</span>
+                        )}
                         <button
-                            onClick={() => saveMinMax(row)} disabled={isSaving}
-                            className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 transition-colors shrink-0"
+                            onClick={() => restoreMinMax(row)} disabled={isSaving}
+                            title="Restaurar MIN/MAX original"
+                            className="ml-auto flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 disabled:opacity-50 transition-colors shrink-0"
                         >
-                            {isSaving ? <Loader2 size={9} className="animate-spin" /> : <><Check size={9} />Guardar</>}
+                            <RotateCcw size={9} />Restaurar
                         </button>
                         <button
                             onClick={() => resetZero(row)} disabled={isSaving}
                             title="Dejar en 0/0 — excluye del próximo pedido"
-                            className="ml-auto flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50 disabled:opacity-50 transition-colors shrink-0"
+                            className="flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-white border border-rose-200 text-rose-400 hover:text-rose-600 hover:bg-rose-50 disabled:opacity-50 transition-colors shrink-0"
                         >
                             <X size={9} />0 / 0
                         </button>

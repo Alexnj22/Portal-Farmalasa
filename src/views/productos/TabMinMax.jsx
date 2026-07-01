@@ -481,7 +481,7 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
     }, [open]);
 
     const hasPoner0   = !dead && !noHistory && canManage && !isBodegaRow;
-    const hasRestaura = canManage && (row.calc_min != null || hasDraft || (isBodegaRow && row.has_manual));
+    const hasRestaura = canManage && (row.calc_min != null || hasDraft || row.has_manual);
 
     const B = 'flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-colors duration-75';
     const sp = {
@@ -2492,15 +2492,15 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             return;
         }
         if (row.calc_min == null && row.calc_max == null) {
-            // Sin valores calculados: limpia el borrador manual dejando -- (null)
+            // Sin valores calculados: limpia borrador y manual dejando -- (null)
             const { error: e } = await supabase.from('product_stock_params')
-                .update({ draft_min: null, draft_max: null, draft_status: 'none', updated_at: new Date().toISOString() })
+                .update({ draft_min: null, draft_max: null, draft_status: 'none', manual_min: null, manual_max: null, updated_at: new Date().toISOString() })
                 .eq('erp_product_id', row.erp_product_id)
                 .eq('erp_sucursal_id', row._erp_sucursal_id);
             if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${e.message}`, 'error'); return; }
             setData(prev => prev.map(r =>
                 r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
-                    ? { ...r, draft_min: null, draft_max: null, draft_status: 'none', effective_min: null, effective_max: null, alert_status: calcAlertStatus(r.current_stock, null, null) } : r
+                    ? { ...r, draft_min: null, draft_max: null, draft_status: 'none', manual_min: null, manual_max: null, has_manual: false, effective_min: null, effective_max: null, alert_status: calcAlertStatus(r.current_stock, null, null) } : r
             ));
             useToastStore.getState().showToast(row.product_name, 'Valores limpiados a —', 'success');
             useStaff.getState().appendAuditLog('MINMAX_RESET_CLEAR', String(row.erp_product_id), { sucursal_id: row._erp_sucursal_id });

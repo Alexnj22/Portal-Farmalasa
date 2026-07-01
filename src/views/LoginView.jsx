@@ -12,6 +12,8 @@ import { supabase } from '../supabaseClient';
 // Lectores físicos (keyboard-wedge) tipean rápido y terminan con Enter.
 const SCAN_KEY_GAP_MS = 250;
 const SCAN_MIN_LENGTH = 3;
+// Ventana inicial con prioridad del lector: si nadie escanea, el foco pasa a usuario.
+const SCAN_FOCUS_WAIT_MS = 10_000;
 
 /* ─── Shared styles ─────────────────────────────────────────────────────── */
 
@@ -119,6 +121,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const [changePassLoading, setChangePassLoading] = useState(false);
     const [mustChangePwd,     setMustChangePwd]     = useState(false);
     const [pendingUserLocal,  setPendingUserLocal]  = useState(null);
+    const [scanHold,          setScanHold]          = useState(true);
+    const [scanHoldLeft,      setScanHoldLeft]      = useState(SCAN_FOCUS_WAIT_MS / 1000);
+    const [hasCamera,         setHasCamera]         = useState(false);
 
     const usernameRef     = useRef(null);
     const userPasswordRef = useRef(null);
@@ -129,11 +134,55 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     const busyRef         = useRef(false);
     const scanBufRef      = useRef('');
     const scanLastKeyRef  = useRef(0);
+    const scanHoldTimeoutRef  = useRef(null);
+    const scanHoldIntervalRef = useRef(null);
 
     useEffect(() => {
         const t = setTimeout(() => setMounted(true), 60);
         return () => clearTimeout(t);
     }, []);
+
+    // Solo mostrar el botón de cámara si el dispositivo tiene una.
+    useEffect(() => {
+        let alive = true;
+        (async () => {
+            try {
+                if (!navigator.mediaDevices?.enumerateDevices) return;
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                if (alive) setHasCamera(devices.some(d => d.kind === 'videoinput'));
+            } catch { /* API no disponible → botón oculto */ }
+        })();
+        return () => { alive = false; };
+    }, []);
+
+    const endScanHold = useCallback(() => {
+        clearTimeout(scanHoldTimeoutRef.current);
+        clearInterval(scanHoldIntervalRef.current);
+        setScanHold(false);
+    }, []);
+
+    // Prioridad inicial del lector: durante los primeros 10s nada tiene foco
+    // (el navegador/gestor de contraseñas suele enfocar el primer input — se
+    // libera); si no hubo login al vencer, el foco pasa a usuario.
+    useEffect(() => {
+        const blurT = setTimeout(() => {
+            const ae = document.activeElement;
+            if (ae === usernameRef.current || ae === userPasswordRef.current) ae.blur();
+        }, 50);
+        const start = Date.now();
+        scanHoldIntervalRef.current = setInterval(() => {
+            setScanHoldLeft(Math.max(0, Math.ceil((SCAN_FOCUS_WAIT_MS - (Date.now() - start)) / 1000)));
+        }, 250);
+        scanHoldTimeoutRef.current = setTimeout(() => {
+            endScanHold();
+            if (!busyRef.current) usernameRef.current?.focus();
+        }, SCAN_FOCUS_WAIT_MS);
+        return () => {
+            clearTimeout(blurT);
+            clearTimeout(scanHoldTimeoutRef.current);
+            clearInterval(scanHoldIntervalRef.current);
+        };
+    }, [endScanHold]);
 
     useEffect(() => {
         if (user) { if (hasPermission('staff_list', 'can_view') || hasPermission('overview', 'can_view')) setView('dashboard'); else { setActiveEmployee(user); setView('employee-detail'); } }
@@ -150,6 +199,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
         const code = String(rawCode ?? '').trim().toUpperCase();
         if (!code) return false;
         busyRef.current = true;
+        endScanHold();
         setError('');
         setScanFeedback({ status: 'reading', code, message: 'Verificando...' });
         setIsLoading(true);
@@ -242,7 +292,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
 
     const toggleCamera = () => {
         if (cameraActive) { cooldownRef.current = false; stopCameraSafely(); setCameraActive(false); }
-        else { setScanFeedback(null); cooldownRef.current = false; setCameraActive(true); }
+        else { endScanHold(); setScanFeedback(null); cooldownRef.current = false; setCameraActive(true); }
     };
 
     /* ── Estado "lector en pausa" cuando el usuario usa el formulario ────── */
@@ -254,8 +304,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
             const focused = ae === usernameRef.current || ae === userPasswordRef.current;
             const hasText = !!(usernameRef.current?.value || userPasswordRef.current?.value);
             setFormEngaged(focused || hasText);
+            if (focused || hasText) endScanHold();
         }, 0);
-    }, []);
+    }, [endScanHold]);
 
     /* ── Login usuario/contraseña ────────────────────────────────────────── */
 
@@ -346,32 +397,36 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         ) : paused ? (
                             <>
                                 <p className="text-[11px] font-black uppercase tracking-widest text-slate-600">Lector en pausa</p>
-                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">Escribiendo usuario y contraseña</p>
+                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">Toca fuera de los campos para reactivar</p>
                             </>
                         ) : (
                             <>
                                 <p className="text-[11px] font-black uppercase tracking-widest text-[#0052CC]">Lector activo</p>
-                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">Escanea tu carné para entrar</p>
+                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">
+                                    {scanHold ? `Escanea tu carné · usuario en ${scanHoldLeft}s` : 'Escanea tu carné para entrar'}
+                                </p>
                             </>
                         )}
                     </div>
-                    <button
-                        type="button"
-                        onClick={toggleCamera}
-                        title={cameraActive ? 'Cerrar cámara' : 'Escanear con cámara'}
-                        className={[
-                            'shrink-0 flex items-center justify-center rounded-[1rem] border backdrop-blur-md',
-                            'transition-all duration-300 active:scale-[0.93]',
-                            compact ? 'w-10 h-10' : 'w-11 h-11',
-                            cameraActive
-                                ? 'bg-red-500/[0.15] border-red-400/45 text-red-400 shadow-[0_0_18px_rgba(239,68,68,0.18),inset_0_1px_0_rgba(255,255,255,0.55)] hover:bg-red-500/[0.25]'
-                                : 'bg-white/[0.28] border-white/60 text-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:bg-white/[0.55] hover:border-white/85 hover:text-[#0052CC]',
-                        ].join(' ')}
-                    >
-                        {cameraActive
-                            ? <X size={compact ? 15 : 17} strokeWidth={2.5} />
-                            : <Camera size={compact ? 16 : 18} strokeWidth={2} />}
-                    </button>
+                    {hasCamera && (
+                        <button
+                            type="button"
+                            onClick={toggleCamera}
+                            title={cameraActive ? 'Cerrar cámara' : 'Escanear con cámara'}
+                            className={[
+                                'shrink-0 flex items-center justify-center rounded-[1rem] border backdrop-blur-md',
+                                'transition-all duration-300 active:scale-[0.93]',
+                                compact ? 'w-10 h-10' : 'w-11 h-11',
+                                cameraActive
+                                    ? 'bg-red-500/[0.15] border-red-400/45 text-red-400 shadow-[0_0_18px_rgba(239,68,68,0.18),inset_0_1px_0_rgba(255,255,255,0.55)] hover:bg-red-500/[0.25]'
+                                    : 'bg-white/[0.28] border-white/60 text-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] hover:bg-white/[0.55] hover:border-white/85 hover:text-[#0052CC]',
+                            ].join(' ')}
+                        >
+                            {cameraActive
+                                ? <X size={compact ? 15 : 17} strokeWidth={2.5} />
+                                : <Camera size={compact ? 16 : 18} strokeWidth={2} />}
+                        </button>
+                    )}
                 </div>
                 {cameraActive && <CameraScanner videoRef={videoRef} />}
             </div>

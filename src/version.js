@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.447';
+export const APP_VERSION = '2.2.448';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.448 — fix(pedidos): inline MIN/MAX validación refleja constraint DB (min=0→max≤1; min≥1→max>min); doSave catch revierte editMap a origMap; onBlur revierte si error activo
 // v2.2.447 — fix(sql): get_pedido_preview — revision_minmax solo cuando reponer×factor < unit_base (necesidad genuinamente baja); agotamiento cuando reponer×factor >= unit_base pero bodega no alcanzó (ej. La Popular ELECTROLIT MORA AZUL); reclasifica pedido_items activos existentes
 // v2.2.446 — fix(minmax): hasRestaura para sucursales incluye has_manual (no solo bodega); resetToCalc rama sin-calc también limpia manual_min/manual_max + has_manual=false local
 // v2.2.445 — fix(minmax): pedidos escribe min_units/max_units + limpia manual (no override); TabMinMax Restaurar live también limpia manual_min/max + has_manual=false en estado local

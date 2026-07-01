@@ -1247,6 +1247,24 @@ function ItemSections({ allItems, loading }) {
 
     if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-slate-400">Sin ítems.</div>;
 
+    // Mirrors the DB constraint chk_min_lt_max:
+    // min=0 → max must be 0 or 1; min≥1 → max must be strictly > min
+    const validateEdit = (edit) => {
+        const min = parseInt(edit.min, 10);
+        const max = parseInt(edit.max, 10);
+        if (isNaN(min) || min < 0) return 'MIN inválido';
+        if (isNaN(max) || max < 0) return 'MAX inválido';
+        if (min === 0 && max > 1)  return 'Con MIN=0, MAX debe ser 0 o 1';
+        if (min >= 1 && max <= min) return 'MAX debe ser mayor que MIN';
+        return null;
+    };
+
+    const revertToOrig = React.useCallback((rowId) => {
+        const orig = origMap[rowId] ?? { min: '0', max: '0' };
+        setEditMap(prev => ({ ...prev, [rowId]: orig }));
+        setErrorMap(prev => ({ ...prev, [rowId]: null }));
+    }, [origMap]);
+
     const doSave = async (row, min, max) => {
         setSavingId(row.id);
         try {
@@ -1261,19 +1279,15 @@ function ItemSections({ allItems, loading }) {
             setSavedId(row.id);
             setTimeout(() => setSavedId(id => id === row.id ? null : id), 2000);
         } catch (e) {
-            useToastStore.getState().showToast('Error', e?.message ?? 'No se pudo guardar.', 'error');
+            // Revert to last-saved values so the input doesn't stay in an invalid state
+            revertToOrig(row.id);
+            const msg = /check constraint/i.test(e?.message ?? '')
+                ? 'Valor fuera del rango permitido (MIN=0 → MAX 0–1; MIN≥1 → MAX > MIN).'
+                : (e?.message ?? 'No se pudo guardar.');
+            useToastStore.getState().showToast('Error al guardar', msg, 'error');
         } finally {
             setSavingId(null);
         }
-    };
-
-    const validateEdit = (edit) => {
-        const min = parseInt(edit.min, 10);
-        const max = parseInt(edit.max, 10);
-        if (isNaN(min) || min < 0) return 'MIN inválido';
-        if (isNaN(max) || max < 0) return 'MAX inválido';
-        if (max < min) return 'MAX debe ser ≥ MIN';
-        return null;
     };
 
     const onMinMaxChange = (row, field, value) => {
@@ -1328,12 +1342,14 @@ function ItemSections({ allItems, loading }) {
                         <input
                             type="number" min="0" value={edit.min} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'min', e.target.value)}
-                            className={inputCls(!!err && err.includes('MIN'))}
+                            onBlur={() => { if (errorMap[row.id]) revertToOrig(row.id); }}
+                            className={inputCls(!!err && err !== 'MAX inválido' && !err.startsWith('MAX'))}
                         />
                         <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">MAX</span>
                         <input
                             type="number" min="0" value={edit.max} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'max', e.target.value)}
+                            onBlur={() => { if (errorMap[row.id]) revertToOrig(row.id); }}
                             className={inputCls(!!err && err !== 'MIN inválido')}
                         />
                         {isSaving && <Loader2 size={10} className="animate-spin text-blue-400 shrink-0" />}

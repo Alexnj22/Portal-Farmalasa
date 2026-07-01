@@ -2622,9 +2622,9 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_LLEGADA', pedidoId, { ciclo, arrived_tipo, cajasOk, cajasDanadas, cajasFaltantes });
 
-            // Cargar mapa de páginas → ítems una sola vez
+            // Cargar mapa de páginas + estado actual de especiales para merge
             const { data: pss } = await supabase.from('pedido_sucursal_status')
-                .select('caja_map, pagina_items, cajas_recibidas, cajas_danadas')
+                .select('caja_map, pagina_items, cajas_recibidas, cajas_danadas, cajas_especiales_llegadas')
                 .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
             const cajaMapDb     = pss?.caja_map    ?? {};
             const paginaItemsDb = pss?.pagina_items ?? {};
@@ -2659,18 +2659,30 @@ export default function TabPedidos({ searchTerm = '' }) {
                 if (elecIds.length > 0) await supabase.from('pedido_items').update({ falta_caja: false }).in('id', elecIds);
             }
 
-            // Limpiar falta_caja en especiales que llegaron en este reenvío
+            // Especiales: actualizar cajas_especiales_llegadas en DB + limpiar falta_caja en items
             const espLlegaron = (especialesList ?? []).filter(l => !especialesAun.includes(l));
-            if (espLlegaron.length > 0) {
-                // Los especiales que llegaron: limpiar falta_caja en sus items correspondientes
-                const { data: faltaEsp } = await supabase.from('pedido_items')
-                    .select('id')
-                    .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
-                    .eq('falta_caja', true).eq('status', 'pendiente').eq('caja_especial', true);
-                // Calcular cuáles items corresponden a las especiales que llegaron
-                // Por simplicidad limpiar todos los especiales con falta si todos llegaron; si aún hay faltantes dejar falta_caja
-                if (especialesAun.length === 0 && (faltaEsp ?? []).length > 0) {
-                    await supabase.from('pedido_items').update({ falta_caja: false }).in('id', faltaEsp.map(r => r.id));
+            if (espLlegaron.length > 0 || especialesAun.length > 0) {
+                // Merge: marcar las que llegaron como 'ok', las aún faltantes siguen 'faltante'
+                const mergedEsp = { ...(pss?.cajas_especiales_llegadas ?? {}) };
+                for (const label of espLlegaron)  mergedEsp[label] = 'ok';
+                for (const label of especialesAun) mergedEsp[label] = 'faltante';
+                await supabase.from('pedido_sucursal_status')
+                    .update({ cajas_especiales_llegadas: mergedEsp })
+                    .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+
+                // Limpiar falta_caja en items de especiales que sí llegaron
+                if (espLlegaron.length > 0) {
+                    const { data: faltaEsp } = await supabase.from('pedido_items')
+                        .select('id')
+                        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
+                        .eq('falta_caja', true).eq('status', 'pendiente').eq('caja_especial', true);
+                    if ((faltaEsp ?? []).length > 0) {
+                        // Si todas llegaron → limpiar todos; si algunas aún faltan → limpiar solo las que llegaron (proporcionalmente)
+                        const idsToClean = especialesAun.length === 0
+                            ? faltaEsp.map(r => r.id)
+                            : faltaEsp.slice(0, Math.round(faltaEsp.length * espLlegaron.length / (especialesList ?? []).length)).map(r => r.id);
+                        if (idsToClean.length > 0) await supabase.from('pedido_items').update({ falta_caja: false }).in('id', idsToClean);
+                    }
                 }
             }
 

@@ -10,7 +10,7 @@ import {
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
     UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box, Zap, Map as MapIcon,
-    CalendarClock, Ban, Star, Search,
+    CalendarClock, Ban, Star, Search, Pencil, Check,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -138,15 +138,17 @@ function calcSolicitado(row) {
 }
 
 function fmtRegla(row) {
+    const hasRule = (row.products?.dispatch_rules ?? []).length > 0;
+    if (!hasRule) return <span className="text-[10px] italic text-slate-400">Sin regla</span>;
     if (!row.dispatch_tipo) return <span className="text-slate-400">—</span>;
-    const tipos = { caja: 'CAJA', blister: 'BLISTER', multiplo: 'UND ×', multiplo_unidades: 'UND ×', solo_cajas: 'SOLO CAJAS' };
-    const base  = tipos[row.dispatch_tipo] ?? row.dispatch_tipo.toUpperCase();
-    const showFactor = row.dispatch_factor > 1
-        && !['solo_cajas'].includes(row.dispatch_tipo)
-        && !row.dispatch_tipo.includes(String(row.dispatch_factor));
+    const tipoKey = (row.dispatch_tipo ?? '').toLowerCase();
+    const tipos   = { caja: 'CAJA', blister: 'BLÍSTER', multiplo: 'UND ×', multiplo_unidades: 'UND ×', solo_cajas: 'SOLO CAJAS' };
+    const base    = tipos[tipoKey] ?? row.dispatch_tipo.toUpperCase();
+    const factor  = Number(row.dispatch_factor);
+    const showFactor = factor > 1 && tipoKey !== 'solo_cajas' && !tipoKey.includes(String(factor));
     return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-            {base}{showFactor ? ` ${row.dispatch_factor}` : ''}
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+            {base}{showFactor ? ` ×${factor}` : ''}
         </span>
     );
 }
@@ -791,17 +793,27 @@ const COLS_REGLA = [
             </span>
         );
     }},
-    { key: 'regla',  label: 'Regla', render: fmtRegla },
+    { key: 'regla',  label: 'Regla aplicada', render: fmtRegla },
     { key: 'motivo', label: 'Motivo', render: r => {
+        const hasRule = (r.products?.dispatch_rules ?? []).length > 0;
         const factor  = Number(r.factor) || 1;
         const needed  = r.max_qty_snapshot != null && r.stock_packs_snapshot != null
             ? Math.max(0, r.max_qty_snapshot - r.stock_packs_snapshot) : null;
         const needUnd = needed != null ? Math.ceil(needed * factor) : null;
+        if (!hasRule) return (
+            <div className="flex flex-col gap-0.5">
+                <span className="text-amber-600 text-[10px] font-semibold">Stock insuf. en bodega</span>
+                <span className="text-slate-400 text-[9px]">
+                    {needUnd != null ? `Necesita ${needUnd} und. — bodega no tuvo suficiente disponible` : 'Bodega sin stock suficiente al momento del despacho'}
+                </span>
+                <span className="text-slate-300 text-[9px]">Aumenta el MAX para priorizar en el próximo pedido</span>
+            </div>
+        );
         return (
             <div className="flex flex-col gap-0.5">
                 <span className="text-rose-600 text-[10px] font-semibold">Necesidad baja</span>
                 <span className="text-slate-400 text-[9px]">
-                    {needUnd != null ? `Reponer ${needUnd} und. no alcanza el mín. de despacho` : 'Necesidad < 40% de la unidad mínima de despacho'}
+                    {needUnd != null ? `Reponer ${needUnd} und. no alcanza el mín. de la regla` : 'Cantidad < 40% de la unidad mínima de despacho'}
                 </span>
                 <span className="text-slate-300 text-[9px]">Ajustar MAX o reducir el múltiplo en la regla</span>
             </div>
@@ -809,7 +821,7 @@ const COLS_REGLA = [
     }},
 ];
 
-function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
+function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowExtra }) {
     const [open,        setOpen]        = useState(false);
     const [page,        setPage]        = useState(1);
     const [pageSize,    setPageSize]    = useState(MINI_PAGE);
@@ -907,13 +919,16 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl }) {
                                 }
                             >
                                 {pageRows.map((row, idx) => (
-                                    <DataRow key={row.id ?? idx} index={idx}>
-                                        {columns.map(col => (
-                                            <DataCell key={col.key} align={col.align ?? 'left'}>
-                                                {col.render ? col.render(row) : row[col.key]}
-                                            </DataCell>
-                                        ))}
-                                    </DataRow>
+                                    <React.Fragment key={row.id ?? idx}>
+                                        <DataRow index={idx}>
+                                            {columns.map(col => (
+                                                <DataCell key={col.key} align={col.align ?? 'left'}>
+                                                    {col.render ? col.render(row) : row[col.key]}
+                                                </DataCell>
+                                            ))}
+                                        </DataRow>
+                                        {renderRowExtra && renderRowExtra(row, columns.length)}
+                                    </React.Fragment>
                                 ))}
                             </DataTable>
                         </div>
@@ -1190,6 +1205,11 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
 // ─── Item sections ────────────────────────────────────────────────────────────
 
 function ItemSections({ allItems, loading }) {
+    const [editingId, setEditingId] = React.useState(null);
+    const [editMin,   setEditMin]   = React.useState('');
+    const [editMax,   setEditMax]   = React.useState('');
+    const [saving,    setSaving]    = React.useState(false);
+
     if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-slate-300" /></div>;
 
     const enviados    = allItems.filter(i => i.cantidad_asignada > 0);
@@ -1199,6 +1219,94 @@ function ItemSections({ allItems, loading }) {
     const total       = allItems.length;
 
     if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-slate-400">Sin ítems.</div>;
+
+    const startEdit = (row) => {
+        const factor = Number(row.factor) || 1;
+        setEditingId(row.id);
+        setEditMin(String(Math.round((row.min_qty_snapshot ?? 0) * factor)));
+        setEditMax(String(Math.round((row.max_qty_snapshot ?? 0) * factor)));
+    };
+    const cancelEdit = () => setEditingId(null);
+
+    const saveMinMax = async (row) => {
+        const min = parseInt(editMin, 10);
+        const max = parseInt(editMax, 10);
+        if (isNaN(min) || isNaN(max) || min < 0 || max <= 0 || max < min) {
+            useToastStore.getState().showToast('Valores inválidos', 'MAX debe ser mayor a 0 y ≥ MIN.', 'warning');
+            return;
+        }
+        setSaving(true);
+        try {
+            const { error } = await supabase.from('product_stock_params')
+                .update({ manual_min: min, manual_max: max })
+                .eq('erp_product_id', row.erp_product_id)
+                .eq('erp_sucursal_id', row.erp_sucursal_id);
+            if (error) throw error;
+            useStaff.getState().appendAuditLog('MINMAX_UPDATED_FROM_PEDIDO', row.pedido_id, { product_id: row.erp_product_id, sucursal_id: row.erp_sucursal_id, min, max });
+            useToastStore.getState().showToast('MIN/MAX actualizado', `${row.products?.nombre ?? 'Producto'} ajustado para el próximo pedido.`, 'success');
+            setEditingId(null);
+        } catch (e) {
+            useToastStore.getState().showToast('Error', e?.message ?? 'No se pudo guardar.', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const renderMinMaxRow = (row, colCount) => {
+        const factor  = Number(row.factor) || 1;
+        const minVal  = Math.round((row.min_qty_snapshot ?? 0) * factor);
+        const maxVal  = Math.round((row.max_qty_snapshot ?? 0) * factor);
+        const isEdit  = editingId === row.id;
+        const isZero  = minVal === 0 && maxVal === 0;
+        return (
+            <tr key={`mm_${row.id}`}>
+                <td colSpan={colCount} className="px-4 pb-2.5 pt-0">
+                    <div className="rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2">
+                        {!isEdit ? (
+                            <div className="flex items-center gap-3">
+                                <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide">MIN / MAX</span>
+                                <span className={`text-[11px] font-bold tabular-nums ${isZero ? 'text-slate-300' : 'text-slate-700'}`}>
+                                    {isZero ? '— / —' : `${minVal} / ${maxVal} und.`}
+                                </span>
+                                <button
+                                    onClick={() => startEdit(row)}
+                                    className="ml-auto flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors"
+                                >
+                                    <Pencil size={9} />Ajustar
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">Ajustar MIN / MAX</span>
+                                <label className="flex items-center gap-1">
+                                    <span className="text-[9px] text-slate-400">MIN</span>
+                                    <input
+                                        type="number" min="0" value={editMin}
+                                        onChange={e => setEditMin(e.target.value)}
+                                        className="w-16 text-[11px] border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-400 bg-white text-slate-700 text-center"
+                                    />
+                                </label>
+                                <label className="flex items-center gap-1">
+                                    <span className="text-[9px] text-slate-400">MAX</span>
+                                    <input
+                                        type="number" min="1" value={editMax}
+                                        onChange={e => setEditMax(e.target.value)}
+                                        className="w-16 text-[11px] border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-400 bg-white text-slate-700 text-center"
+                                    />
+                                </label>
+                                <div className="flex gap-1.5 ml-auto">
+                                    <button onClick={cancelEdit} disabled={saving} className="text-[10px] font-medium px-2.5 py-1 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-50">Cancelar</button>
+                                    <button onClick={() => saveMinMax(row)} disabled={saving} className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 transition-colors">
+                                        {saving ? <Loader2 size={9} className="animate-spin" /> : <><Check size={9} />Guardar</>}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </td>
+            </tr>
+        );
+    };
 
     return (
         <>
@@ -1216,8 +1324,9 @@ function ItemSections({ allItems, loading }) {
             />
             <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-amber-50 text-amber-700 border-amber-200" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-[10px] text-amber-600/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
             <ItemSection
-                label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-rose-50 text-rose-700 border-rose-200" rows={porRegla} columns={COLS_REGLA}
-                noteEl={<div className="flex items-start gap-2 text-[10px] text-rose-600/80 bg-rose-50/60 border border-rose-100 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-rose-500" />La cantidad requerida no alcanzó el 40% de la unidad mínima de despacho. Ajusta la regla o los MIN/MAX del producto para que se incluya en el próximo pedido.</div>}
+                label="Revisar — sin asignar" count={porRegla.length} badgeCls="bg-rose-50 text-rose-700 border-rose-200" rows={porRegla} columns={COLS_REGLA}
+                renderRowExtra={renderMinMaxRow}
+                noteEl={<div className="flex items-start gap-2 text-[10px] text-rose-600/80 bg-rose-50/60 border border-rose-100 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-rose-500" />Estos productos necesitaban reposición pero no pudieron asignarse. Puede ser por regla de despacho (mínimo no alcanzado) o stock insuficiente en bodega. Ajusta los MIN/MAX para darles prioridad en el próximo pedido.</div>}
             />
         </>
     );

@@ -1246,14 +1246,11 @@ function ItemSections({ allItems, loading }) {
 
     if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-slate-300" /></div>;
 
-    const enviados       = allItems.filter(i => i.cantidad_asignada > 0);
-    const agotamiento    = allItems.filter(i => i.agotamiento);
-    const sinStock       = allItems.filter(i => i.sin_stock);
-    // revision_minmax sin regla → van a la sección de stock insuficiente
-    const sinAsignarBod  = allItems.filter(i => i.revision_minmax && (i.products?.dispatch_rules ?? []).length === 0);
-    const porRegla       = allItems.filter(i => i.revision_minmax && (i.products?.dispatch_rules ?? []).length > 0);
-    const agotamientoAll = [...agotamiento, ...sinAsignarBod];
-    const total          = allItems.length;
+    const enviados    = allItems.filter(i => i.cantidad_asignada > 0);
+    const agotamiento = allItems.filter(i => i.agotamiento);
+    const sinStock    = allItems.filter(i => i.sin_stock);
+    const porRegla    = allItems.filter(i => i.revision_minmax);
+    const total       = allItems.length;
 
     if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-slate-400">Sin ítems.</div>;
 
@@ -1343,21 +1340,20 @@ function ItemSections({ allItems, loading }) {
             <div className="border-t border-slate-100 px-4 py-2.5 bg-slate-50/60 flex items-center gap-5 flex-wrap">
                 <span className="text-[11px] text-slate-500">Solicitados <strong className="text-slate-700">{total}</strong></span>
                 <span className="text-[11px] text-slate-500">Enviados <strong className="text-emerald-600">{enviados.length}</strong></span>
-                {agotamientoAll.length > 0 && <span className="text-[11px] text-slate-500">Stock insuficiente <strong className="text-orange-600">{agotamientoAll.length}</strong></span>}
+                {agotamiento.length > 0 && <span className="text-[11px] text-slate-500">Stock insuficiente <strong className="text-orange-600">{agotamiento.length}</strong></span>}
                 {sinStock.length > 0 && <span className="text-[11px] text-slate-500">Sin inventario <strong className="text-amber-600">{sinStock.length}</strong></span>}
                 {porRegla.length > 0 && <span className="text-[11px] text-slate-500">Revisar regla <strong className="text-rose-600">{porRegla.length}</strong></span>}
             </div>
             <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-emerald-50 text-emerald-700 border-emerald-200" rows={enviados} columns={COLS_ENVIADOS} />
             <ItemSection
-                label="Stock insuficiente en bodega" count={agotamientoAll.length} badgeCls="bg-orange-50 text-orange-700 border-orange-200" rows={agotamientoAll} columns={COLS_AGOTAMIENTO}
-                renderRowExtra={renderMinMaxRow}
-                noteEl={<p className="text-[10px] text-orange-600/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad. Se envió lo disponible (o nada si el disponible era menor a 1 unidad tras compromisos con otras sucursales). Ajusta el MAX para priorizar en el próximo pedido.</p>}
+                label="Stock insuficiente en bodega" count={agotamiento.length} badgeCls="bg-orange-50 text-orange-700 border-orange-200" rows={agotamiento} columns={COLS_AGOTAMIENTO}
+                noteEl={<p className="text-[10px] text-orange-600/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad completa. Se envió lo disponible; el faltante quedará pendiente para el próximo pedido.</p>}
             />
             <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-amber-50 text-amber-700 border-amber-200" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-[10px] text-amber-600/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
             <ItemSection
                 label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-rose-50 text-rose-700 border-rose-200" rows={porRegla} columns={COLS_REGLA}
                 renderRowExtra={renderMinMaxRow}
-                noteEl={<div className="flex items-start gap-2 text-[10px] text-rose-600/80 bg-rose-50/60 border border-rose-100 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-rose-500" />La cantidad requerida no alcanzó el mínimo de la regla de despacho. Ajusta los MIN/MAX para que se incluya en el próximo pedido.</div>}
+                noteEl={<div className="flex items-start gap-2 text-[10px] text-rose-600/80 bg-rose-50/60 border border-rose-100 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-rose-500" />Estos productos no pudieron despacharse. Puede ser porque la necesidad no alcanzó el mínimo de la regla de despacho, o porque el stock en bodega fue insuficiente tras asignarlo a otras sucursales. Revisa la columna "Motivo" y ajusta los MIN/MAX.</div>}
             />
         </>
     );

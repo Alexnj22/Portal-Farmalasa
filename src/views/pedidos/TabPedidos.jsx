@@ -139,14 +139,17 @@ function calcSolicitado(row) {
 
 function fmtRegla(row) {
     if (!row.dispatch_tipo) return <span className="text-slate-400">—</span>;
-    const tipoKey = (row.dispatch_tipo ?? '').toLowerCase();
-    const tipos   = { caja: 'CAJA', blister: 'BLÍSTER', multiplo: 'UND ×', multiplo_unidades: 'UND ×', solo_cajas: 'SOLO CAJAS' };
-    const base    = tipos[tipoKey] ?? row.dispatch_tipo.toUpperCase();
-    const factor  = Number(row.dispatch_factor);
-    const showFactor = factor > 1 && tipoKey !== 'solo_cajas' && !tipoKey.includes(String(factor));
+    const tipoKey    = (row.dispatch_tipo ?? '').toLowerCase();
+    const tipos      = { caja: 'CAJA', blister: 'BLÍSTER', multiplo: 'UND ×', multiplo_unidades: 'UND ×', solo_cajas: 'SOLO CAJAS' };
+    const base       = tipos[tipoKey] ?? row.dispatch_tipo.toUpperCase();
+    // dispatch_pres_factor = raw factor per dispatch unit (e.g. 12 for CAJA×12)
+    // dispatch_multiplo = how many dispatch units per delivery (default 1)
+    const presFactor = Number(row.dispatch_pres_factor ?? row.dispatch_factor);
+    const multiplo   = Number(row.dispatch_multiplo ?? 1);
+    const showFactor = presFactor > 1 && tipoKey !== 'solo_cajas';
     return (
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
-            {base}{showFactor ? ` ×${factor}` : ''}
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 whitespace-nowrap">
+            {base}{showFactor ? ` ×${presFactor}` : ''} | ×{multiplo}
         </span>
     );
 }
@@ -1296,7 +1299,14 @@ function ItemSections({ allItems, loading }) {
         const err = validateEdit(newEdit);
         setErrorMap(prev => ({ ...prev, [row.id]: err }));
         if (debounceRef.current[row.id]) clearTimeout(debounceRef.current[row.id]);
-        if (err) return;
+        if (err) {
+            // Show toast + revert after short delay so user sees the change before reverting
+            debounceRef.current[row.id] = setTimeout(() => {
+                revertToOrig(row.id);
+                useToastStore.getState().showToast('Valor inválido', err, 'error');
+            }, 800);
+            return;
+        }
         debounceRef.current[row.id] = setTimeout(() => {
             doSave(row, parseInt(newEdit.min, 10), parseInt(newEdit.max, 10));
         }, 800);
@@ -1342,21 +1352,24 @@ function ItemSections({ allItems, loading }) {
                         <input
                             type="number" min="0" value={edit.min} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'min', e.target.value)}
-                            onBlur={() => { if (errorMap[row.id]) revertToOrig(row.id); }}
+                            onBlur={() => {
+                                const e = errorMap[row.id];
+                                if (e) { if (debounceRef.current[row.id]) clearTimeout(debounceRef.current[row.id]); revertToOrig(row.id); useToastStore.getState().showToast('Valor inválido', e, 'error'); }
+                            }}
                             className={inputCls(!!err && err !== 'MAX inválido' && !err.startsWith('MAX'))}
                         />
                         <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">MAX</span>
                         <input
                             type="number" min="0" value={edit.max} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'max', e.target.value)}
-                            onBlur={() => { if (errorMap[row.id]) revertToOrig(row.id); }}
+                            onBlur={() => {
+                                const e = errorMap[row.id];
+                                if (e) { if (debounceRef.current[row.id]) clearTimeout(debounceRef.current[row.id]); revertToOrig(row.id); useToastStore.getState().showToast('Valor inválido', e, 'error'); }
+                            }}
                             className={inputCls(!!err && err !== 'MIN inválido')}
                         />
                         {isSaving && <Loader2 size={10} className="animate-spin text-blue-400 shrink-0" />}
                         {!isSaving && isSaved && <Check size={10} className="text-emerald-500 shrink-0" />}
-                        {err && !isSaving && (
-                            <span className="text-[9px] text-rose-500 font-medium shrink-0">{err}</span>
-                        )}
                         <button
                             onClick={() => restoreMinMax(row)} disabled={isSaving}
                             title="Restaurar MIN/MAX original"

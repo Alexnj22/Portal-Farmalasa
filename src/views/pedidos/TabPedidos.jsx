@@ -1251,13 +1251,13 @@ function ItemSections({ allItems, loading }) {
         setSavingId(row.id);
         try {
             const { error } = await supabase.from('product_stock_params')
-                .update({ manual_min: min, manual_max: max })
+                .update({ min_units: min, max_units: max, manual_min: null, manual_max: null })
                 .eq('erp_product_id', row.erp_product_id)
                 .eq('erp_sucursal_id', row.erp_sucursal_id);
             if (error) throw error;
             useStaff.getState().appendAuditLog('MINMAX_UPDATED_FROM_PEDIDO', row.pedido_id, { product_id: row.erp_product_id, sucursal_id: row.erp_sucursal_id, min, max });
             const k = `${row.erp_product_id}_${row.erp_sucursal_id}`;
-            setPspMap(prev => ({ ...prev, [k]: { ...(prev[k] ?? {}), manual_min: min, manual_max: max } }));
+            setPspMap(prev => ({ ...prev, [k]: { ...(prev[k] ?? {}), min_units: min, max_units: max, manual_min: null, manual_max: null } }));
             setSavedId(row.id);
             setTimeout(() => setSavedId(id => id === row.id ? null : id), 2000);
         } catch (e) {

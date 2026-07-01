@@ -2510,7 +2510,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         const cMax = row.calc_max ?? 0;
         const saveLive = hasPublishedData && row.draft_status !== 'pending';
         const upsertData = saveLive
-            ? { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, min_units: cMin, max_units: cMax, updated_at: new Date().toISOString() }
+            ? { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, min_units: cMin, max_units: cMax, manual_min: null, manual_max: null, updated_at: new Date().toISOString() }
             : { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, draft_min: cMin, draft_max: cMax, draft_status: 'pending', updated_at: new Date().toISOString() };
         const { error: e } = await supabase.from('product_stock_params')
             .upsert(upsertData, { onConflict: 'erp_product_id,erp_sucursal_id' });
@@ -2519,7 +2519,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             if (r.erp_product_id !== row.erp_product_id || r._erp_sucursal_id !== row._erp_sucursal_id) return r;
             const newAlert = calcAlertStatus(r.current_stock, cMin, cMax);
             return saveLive
-                ? { ...r, effective_min: cMin, effective_max: cMax, alert_status: newAlert }
+                ? { ...r, effective_min: cMin, effective_max: cMax, has_manual: false, alert_status: newAlert }
                 : { ...r, draft_min: cMin, draft_max: cMax, draft_status: 'pending', alert_status: newAlert };
         }));
         useToastStore.getState().showToast(row.product_name, `Restaurado a MIN ${cMin} / MAX ${cMax} (calculado)`, 'success');

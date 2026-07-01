@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.444';
+export const APP_VERSION = '2.2.445';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.445 — fix(minmax): pedidos escribe min_units/max_units + limpia manual (no override); TabMinMax Restaurar live también limpia manual_min/max + has_manual=false en estado local
 // v2.2.444 — fix(pedidos): fmtRegla — lee dispatch_tipo/dispatch_factor del item (sin join dispatch_rules que falla nested); columna "Regla"; motivo siempre "Necesidad baja" en sección; MIN/MAX auto-save 800ms debounce + validación + Restaurar + 0/0 rose
 // v2.2.443 — fix(sql): get_pedido_preview — revision_minmax solo para productos CON dispatch_rule activa; sin regla + asignado=0 → agotamiento; UPDATE fix en pedido_items activos existentes
 // v2.2.442 — fix(pedidos): revertir reclasificación — todos los revision_minmax van a "Revisar regla de despacho" (mezcla con/sin regla); motivo por fila diferencia ambos; fix agotamientoAll→agotamiento en JSX

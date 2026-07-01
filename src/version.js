@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.452';
+export const APP_VERSION = '2.2.453';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.453 — fix(sql): get_pedido_preview — doble redondeo en reponer bloqueaba despachos con dispatch_rules (ANARA×3 pedía 2 sobres pero no despachaba nada); ahora el umbral 40% se evalúa una sola vez contra need_u real (sin redondeo previo al factor de presentación) en vez de reponer*factor ya redondeado; solo afecta sucursales no limitadas por bodega, no toca distribución entre sucursales
 // v2.2.452 — fix(pedidos): MIN/MAX sin auto-revert — flechas y edición secuencial funcionan; validación solo al detener escritura; onBlur solo muestra borde rojo; confirmación 0/0 con ConfirmModal (no window.confirm)
 // v2.2.451 — fix(pedidos): dispatch_multiplo columna en pedido_items + backfill + confirm_pedido actualizado; badge regla ahora muestra multiplo correcto (ej. UNIDAD | ×3)
 // v2.2.450 — fix(pedidos): React error #310 — mover revertToOrig useCallback antes del early return de loading para cumplir Rules of Hooks

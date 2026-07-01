@@ -1155,7 +1155,6 @@ function ExpandedPanel({ row, cycleDays }) {
                                                     const hasDraft = bd.draft_status === 'pending';
                                                     const dMin = hasDraft ? Number(bd.draft_min ?? 0) : null;
                                                     const dMax = hasDraft ? Number(bd.draft_max ?? 0) : null;
-                                                    if (bMin === 0 && bMax === 0 && !hasDraft) return null;
                                                     return (
                                                         <div key={erpId} className="flex items-center gap-1.5 text-[10px]">
                                                             <span className="text-slate-400 shrink-0 w-9 text-[8px] truncate">
@@ -3664,7 +3663,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 </div>
                                             );
 
-                                            if (((dead || noHistory) && minN === 0 && maxN === 0) || (row.effective_min === null && row.effective_max === null)) return (
+                                            if ((minN === 0 && maxN === 0) || (row.effective_min === null && row.effective_max === null)) return (
                                                 <div className="flex items-center gap-1">
                                                     {box('—', 'text-slate-300 bg-white/60', 'border-slate-100', openMinEdit)}
                                                     {sep}

@@ -321,9 +321,10 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        // Usuario con contraseña temporal: loginWithUsername maneja ese flujo
+        // Usuario con contraseña temporal: loginWithUsername maneja ese flujo.
+        // Las cuentas kiosk/carné (@staff.local) no usan contraseña personal — se exentan.
         const meta = session.user?.user_metadata;
-        if (meta?.must_change_password !== false) {
+        if (!meta?.kiosk && meta?.must_change_password !== false) {
           clearAuthCache();
           clearErpCache();
           return;
@@ -366,6 +367,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (identifier) => {
     const cleanId = String(identifier ?? '').trim().toUpperCase();
     if (!cleanId) return { ok: false };
+    skipAuthListener.current = true;
     try {
       const { data: ensured, error: fnErr } = await withNetworkRetry(() =>
         supabase.functions.invoke('ensure_user_by_code', { body: { code: cleanId } })
@@ -379,12 +381,20 @@ export const AuthProvider = ({ children }) => {
       if (isNetworkError(authErr)) return { ok: false, error: NETWORK_ERROR_MSG };
       if (authErr || !authData?.session) return { ok: false };
 
-      clearErpCache();
-      writeLastActivity(true);
+      // Segunda llamada (ya autenticada): devuelve el perfil completo y sincroniza
+      // metadata del JWT. Completar aquí mismo evita depender del listener.
+      const { data: profile, error: profErr } = await withNetworkRetry(() =>
+        supabase.functions.invoke('ensure_user_by_code', { body: { code: cleanId } })
+      );
+      if (isNetworkError(profErr)) return { ok: false, error: NETWORK_ERROR_MSG };
+      if (profErr || !profile?.ok || !profile?.user?.id) return { ok: false };
+
+      completeLogin(profile.user);
       return { ok: true };
-      // El perfil llega vía onAuthStateChange
     } catch (err) {
       return { ok: false, error: isNetworkError(err) ? NETWORK_ERROR_MSG : undefined };
+    } finally {
+      skipAuthListener.current = false;
     }
   };
 

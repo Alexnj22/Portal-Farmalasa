@@ -91,24 +91,16 @@ Deno.serve(async (req: Request) => {
         user_metadata: { code: employee.code, kiosk: true },
       };
     } else {
-      const baseEmail = employee.username || employee.code.toLowerCase();
-      email = `${baseEmail}@farmalasa.app`;
-
-      const randomPassword = (): string => {
-        const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-        let result = "";
-        const array = new Uint8Array(12);
-        crypto.getRandomValues(array);
-        array.forEach(b => (result += chars[b % chars.length]));
-        return result;
-      };
-
+      // Carné escaneado / código de empleado: cuenta scan-style cuyo password es el
+      // propio código normalizado (mismo modelo de seguridad que kiosk_pin). El cliente
+      // siempre envía el código en mayúsculas, por eso se normaliza aquí también.
+      const codeKey = employee.code.trim().toUpperCase();
+      email = `${codeKey.toLowerCase()}@staff.local`;
       createPayload = {
-        id: employee.id,
         email,
-        password: randomPassword(),
+        password: codeKey,
         email_confirm: true,
-        user_metadata: { code: employee.code, must_change_password: true },
+        user_metadata: { code: employee.code, kiosk: true },
       };
     }
 

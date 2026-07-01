@@ -14,6 +14,21 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 });
 
+// Tras un deploy, los chunks con hash viejo ya no existen en el servidor y el
+// SPA fallback devuelve index.html ("'text/html' is not a valid JavaScript
+// MIME type") al hacer un import() dinámico (React.lazy). Vite emite
+// vite:preloadError en ese caso: recargamos para tomar el bundle nuevo,
+// con guard de 30s en sessionStorage para no entrar en loop de reloads.
+window.addEventListener('vite:preloadError', (event) => {
+  const KEY = 'chunk_reload_at';
+  const last = Number(sessionStorage.getItem(KEY) || 0);
+  if (Date.now() - last > 30_000) {
+    event.preventDefault();
+    sessionStorage.setItem(KEY, String(Date.now()));
+    window.location.reload();
+  }
+});
+
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";

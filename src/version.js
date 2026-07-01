@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.455';
+export const APP_VERSION = '2.2.456';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.456 — fix(app): auto-reload en vite:preloadError — al editar empleado con una pestaña de un deploy anterior, el chunk lazy (EmployeeFormModal) ya no existía y el SPA fallback devolvía index.html ("text/html is not a valid JavaScript MIME type"); ahora la app se recarga sola (guard 30s anti-loop). Hardening flujo personal: code con trim + guard de duplicados en addEmployee/updateEmployee (el código es la credencial del carné), code obligatorio también al editar, índice único case-insensitive employees_code_norm_key en BD
 // v2.2.455 — feat(login): prioridad inicial del lector — primeros 10s sin foco en inputs (se libera el autofocus del navegador) con countdown visible en la pill ("usuario en Xs"); si no hay login al vencer, el foco pasa automáticamente a usuario; la ventana se cancela al escanear, abrir cámara o tocar los campos. Botón de cámara solo se muestra si el dispositivo tiene cámara (enumerateDevices videoinput)
 // v2.2.454 — fix(login): escaneo de carné no iniciaba sesión (3 causas: ensure_user_by_code creaba cuenta con password aleatoria para match por code → signIn fallaba; onAuthStateChange descartaba cuentas kiosk sin must_change_password=false → perfil nunca se seteaba; input oculto del lector se remontaba cada 200ms por el countdown perdiendo foco/buffer). Rediseño LoginView: usuario+contraseña siempre visibles, pill de lector siempre activa con captura global de teclado (Enter-terminated), pausa automática al escribir en los campos, cámara opcional; login() ahora completa el perfil determinísticamente (2ª llamada autenticada a ensure_user_by_code + completeLogin)
 // v2.2.453 — fix(sql): get_pedido_preview — doble redondeo en reponer bloqueaba despachos con dispatch_rules (ANARA×3 pedía 2 sobres pero no despachaba nada); ahora el umbral 40% se evalúa una sola vez contra need_u real (sin redondeo previo al factor de presentación) en vez de reponer*factor ya redondeado; solo afecta sucursales no limitadas por bodega, no toca distribución entre sucursales

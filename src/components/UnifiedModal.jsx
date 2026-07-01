@@ -201,6 +201,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     setValidationError("Los Nombres y Apellidos son obligatorios.");
                     return;
                 }
+                if (!formData.code?.trim()) {
+                    setValidationError("El Código es obligatorio — es la credencial del carné para iniciar sesión.");
+                    return;
+                }
             }
 
             setIsSaving(true);

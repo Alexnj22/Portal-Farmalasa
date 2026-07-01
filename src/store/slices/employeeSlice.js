@@ -95,11 +95,22 @@ export const createEmployeeSlice = (set, get) => ({
             const fNames = (formData.first_names || '').trim();
             const lNames = (formData.last_names || '').trim();
 
+            // El código es la credencial del carné: sin espacios (rompen el match
+            // ilike del login) y único entre empleados. No se cambia el case porque
+            // el kiosk_pin se deriva de un hash case-sensitive del código.
+            const cleanCode = String(formData.code ?? '').trim() || null;
+            if (cleanCode) {
+                const dup = get().employees.find(e =>
+                    (e.code || '').trim().toUpperCase() === cleanCode.toUpperCase()
+                );
+                if (dup) throw new Error(`El código "${cleanCode}" ya está asignado a ${dup.name}.`);
+            }
+
             const dbPayload = {
                 first_names: fNames,
                 last_names: lNames,
                 username: formData.username ? formData.username.trim().toLowerCase() : null,
-                code: formData.code,
+                code: cleanCode,
                 
                 role_id: formData.role_id ? parseInt(formData.role_id, 10) : null,
                 secondary_role_id: formData.secondary_role_id ? parseInt(formData.secondary_role_id, 10) : null,
@@ -201,7 +212,6 @@ export const createEmployeeSlice = (set, get) => ({
                         console.warn('Auth creation error:', authError);
                     } else if (!authResult?.ok) {
                         console.warn('Auth creation failed:', authResult);
-                    } else {
                     }
                 } catch (authErr) {
                     console.warn('No se pudo crear usuario Auth:', authErr);
@@ -250,6 +260,19 @@ export const createEmployeeSlice = (set, get) => ({
     updateEmployee: async (id, updatedData) => {
         try {
             const dbPayload = { ...updatedData };
+
+            // Mismas reglas del código que en addEmployee: trim (espacios rompen el
+            // login por carné) y único entre los demás empleados.
+            if (dbPayload.code !== undefined) {
+                dbPayload.code = String(dbPayload.code ?? '').trim() || null;
+                if (dbPayload.code) {
+                    const dup = get().employees.find(e =>
+                        String(e.id) !== String(id) &&
+                        (e.code || '').trim().toUpperCase() === dbPayload.code.toUpperCase()
+                    );
+                    if (dup) throw new Error(`El código "${dbPayload.code}" ya está asignado a ${dup.name}.`);
+                }
+            }
 
             if (updatedData.branch_id) dbPayload.branch_id = parseInt(updatedData.branch_id, 10);
             else if (updatedData.branchId) dbPayload.branch_id = parseInt(updatedData.branchId, 10);

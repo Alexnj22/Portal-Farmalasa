@@ -2291,7 +2291,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_recibida,
             status, nota_diferencia, error_tipo, received_at, received_by, lotes_asignados, agotamiento,
             sin_stock, revision_minmax, falta_caja, caja_especial,
-            factor, dispatch_tipo, dispatch_factor,
+            factor, dispatch_tipo, dispatch_factor, dispatch_multiplo,
             max_qty_snapshot, stock_packs_snapshot,
             resolucion_status, resolucion_tipo, resolucion_nota,
             resuelto_por, resuelto_at, confirmado_suc_por, confirmado_suc_at,

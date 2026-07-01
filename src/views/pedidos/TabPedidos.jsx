@@ -1240,6 +1240,13 @@ function ItemSections({ allItems, loading }) {
         })();
     }, [revisionKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Must be defined BEFORE any early return — hooks cannot be called conditionally
+    const revertToOrig = React.useCallback((rowId) => {
+        const orig = origMap[rowId] ?? { min: '0', max: '0' };
+        setEditMap(prev => ({ ...prev, [rowId]: orig }));
+        setErrorMap(prev => ({ ...prev, [rowId]: null }));
+    }, [origMap]);
+
     if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-slate-300" /></div>;
 
     const enviados    = allItems.filter(i => i.cantidad_asignada > 0);
@@ -1261,12 +1268,6 @@ function ItemSections({ allItems, loading }) {
         if (min >= 1 && max <= min) return 'MAX debe ser mayor que MIN';
         return null;
     };
-
-    const revertToOrig = React.useCallback((rowId) => {
-        const orig = origMap[rowId] ?? { min: '0', max: '0' };
-        setEditMap(prev => ({ ...prev, [rowId]: orig }));
-        setErrorMap(prev => ({ ...prev, [rowId]: null }));
-    }, [origMap]);
 
     const doSave = async (row, min, max) => {
         setSavingId(row.id);

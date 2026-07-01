@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.449';
+export const APP_VERSION = '2.2.450';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.450 — fix(pedidos): React error #310 — mover revertToOrig useCallback antes del early return de loading para cumplir Rules of Hooks
 // v2.2.449 — fix(pedidos/sql): revision_minmax usa approx_cajas(reponer) 40%; agotamiento cubre unit_base=NULL y approx>0; fmtRegla badge "CAJA ×12 | ×1"; MIN/MAX errores solo toast; reclasifica items activos
 // v2.2.448 — fix(pedidos): inline MIN/MAX validación refleja constraint DB (min=0→max≤1; min≥1→max>min); doSave catch revierte editMap a origMap; onBlur revierte si error activo
 // v2.2.447 — fix(sql): get_pedido_preview — revision_minmax solo cuando reponer×factor < unit_base (necesidad genuinamente baja); agotamiento cuando reponer×factor >= unit_base pero bodega no alcanzó (ej. La Popular ELECTROLIT MORA AZUL); reclasifica pedido_items activos existentes

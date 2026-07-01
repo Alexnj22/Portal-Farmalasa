@@ -10,7 +10,7 @@ import {
     X, Send, CheckCheck, RotateCcw, Flag, ShieldAlert, UserCircle2,
     Coffee, Users, Clock, ClipboardList, Bell, MessageSquare,
     UserPlus, ScanLine, Inbox, AlertCircle, CheckSquare, FileDown, Box, Zap, Map as MapIcon,
-    CalendarClock, Ban, Star, Search, Pencil, Check,
+    CalendarClock, Ban, Star, Search, Check,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -1205,37 +1205,64 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
 // ─── Item sections ────────────────────────────────────────────────────────────
 
 function ItemSections({ allItems, loading }) {
-    const [editingId, setEditingId] = React.useState(null);
-    const [editMin,   setEditMin]   = React.useState('');
-    const [editMax,   setEditMax]   = React.useState('');
-    const [saving,    setSaving]    = React.useState(false);
+    const [pspMap,   setPspMap]   = React.useState({});
+    const [editMap,  setEditMap]  = React.useState({});
+    const [savingId, setSavingId] = React.useState(null);
+
+    // Stable key so the effect only refires when the set of revision_minmax products changes
+    const revisionKey = React.useMemo(() =>
+        allItems.filter(i => i.revision_minmax)
+            .map(r => `${r.erp_product_id}_${r.erp_sucursal_id}`).sort().join(','),
+        [allItems]
+    );
+
+    // Fetch product_stock_params for all revision_minmax items (has-rule + no-rule)
+    React.useEffect(() => {
+        const items = allItems.filter(i => i.revision_minmax);
+        if (items.length === 0) { setPspMap({}); setEditMap({}); return; }
+        const productIds  = [...new Set(items.map(r => r.erp_product_id))];
+        const sucursalIds = [...new Set(items.map(r => r.erp_sucursal_id))];
+        (async () => {
+            const { data } = await supabase
+                .from('product_stock_params')
+                .select('erp_product_id, erp_sucursal_id, units_sold_6m, daily_velocity, min_units, max_units, manual_min, manual_max, abc_class')
+                .in('erp_product_id', productIds)
+                .in('erp_sucursal_id', sucursalIds);
+            if (!data) return;
+            const map = {};
+            for (const psp of data) map[`${psp.erp_product_id}_${psp.erp_sucursal_id}`] = psp;
+            const em = {};
+            for (const item of items) {
+                const psp = map[`${item.erp_product_id}_${item.erp_sucursal_id}`];
+                em[item.id] = {
+                    min: String(psp?.manual_min ?? psp?.min_units ?? 0),
+                    max: String(psp?.manual_max ?? psp?.max_units ?? 0),
+                };
+            }
+            setPspMap(map);
+            setEditMap(em);
+        })();
+    }, [revisionKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-slate-300" /></div>;
 
-    const enviados    = allItems.filter(i => i.cantidad_asignada > 0);
-    const agotamiento = allItems.filter(i => i.agotamiento);
-    const sinStock    = allItems.filter(i => i.sin_stock);
-    const porRegla    = allItems.filter(i => i.revision_minmax);
-    const total       = allItems.length;
+    const enviados       = allItems.filter(i => i.cantidad_asignada > 0);
+    const agotamiento    = allItems.filter(i => i.agotamiento);
+    const sinStock       = allItems.filter(i => i.sin_stock);
+    // revision_minmax sin regla → van a la sección de stock insuficiente
+    const sinAsignarBod  = allItems.filter(i => i.revision_minmax && (i.products?.dispatch_rules ?? []).length === 0);
+    const porRegla       = allItems.filter(i => i.revision_minmax && (i.products?.dispatch_rules ?? []).length > 0);
+    const agotamientoAll = [...agotamiento, ...sinAsignarBod];
+    const total          = allItems.length;
 
     if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-slate-400">Sin ítems.</div>;
 
-    const startEdit = (row) => {
-        const factor = Number(row.factor) || 1;
-        setEditingId(row.id);
-        setEditMin(String(Math.round((row.min_qty_snapshot ?? 0) * factor)));
-        setEditMax(String(Math.round((row.max_qty_snapshot ?? 0) * factor)));
-    };
-    const cancelEdit = () => setEditingId(null);
-
-    const saveMinMax = async (row) => {
-        const min = parseInt(editMin, 10);
-        const max = parseInt(editMax, 10);
-        if (isNaN(min) || isNaN(max) || min < 0 || max <= 0 || max < min) {
-            useToastStore.getState().showToast('Valores inválidos', 'MAX debe ser mayor a 0 y ≥ MIN.', 'warning');
+    const doSave = async (row, min, max) => {
+        if (isNaN(min) || isNaN(max) || min < 0 || max < min) {
+            useToastStore.getState().showToast('Valores inválidos', 'MAX debe ser ≥ MIN.', 'warning');
             return;
         }
-        setSaving(true);
+        setSavingId(row.id);
         try {
             const { error } = await supabase.from('product_stock_params')
                 .update({ manual_min: min, manual_max: max })
@@ -1244,64 +1271,67 @@ function ItemSections({ allItems, loading }) {
             if (error) throw error;
             useStaff.getState().appendAuditLog('MINMAX_UPDATED_FROM_PEDIDO', row.pedido_id, { product_id: row.erp_product_id, sucursal_id: row.erp_sucursal_id, min, max });
             useToastStore.getState().showToast('MIN/MAX actualizado', `${row.products?.nombre ?? 'Producto'} ajustado para el próximo pedido.`, 'success');
-            setEditingId(null);
+            const k = `${row.erp_product_id}_${row.erp_sucursal_id}`;
+            setPspMap(prev => ({ ...prev, [k]: { ...(prev[k] ?? {}), manual_min: min, manual_max: max } }));
         } catch (e) {
             useToastStore.getState().showToast('Error', e?.message ?? 'No se pudo guardar.', 'error');
         } finally {
-            setSaving(false);
+            setSavingId(null);
         }
     };
 
+    const saveMinMax = (row) => {
+        const edit = editMap[row.id] ?? { min: '0', max: '0' };
+        doSave(row, parseInt(edit.min, 10), parseInt(edit.max, 10));
+    };
+
+    const resetZero = (row) => {
+        if (!window.confirm(`¿Dejar MIN/MAX en 0 para "${row.products?.nombre ?? 'este producto'}"?\nQuedará excluido del próximo pedido.`)) return;
+        setEditMap(prev => ({ ...prev, [row.id]: { min: '0', max: '0' } }));
+        doSave(row, 0, 0);
+    };
+
+    // Renderiza fila de MIN/MAX editable bajo cada item con revision_minmax=true
     const renderMinMaxRow = (row, colCount) => {
-        const factor  = Number(row.factor) || 1;
-        const minVal  = Math.round((row.min_qty_snapshot ?? 0) * factor);
-        const maxVal  = Math.round((row.max_qty_snapshot ?? 0) * factor);
-        const isEdit  = editingId === row.id;
-        const isZero  = minVal === 0 && maxVal === 0;
+        if (!row.revision_minmax) return null;
+        const psp      = pspMap[`${row.erp_product_id}_${row.erp_sucursal_id}`];
+        const edit     = editMap[row.id] ?? { min: '…', max: '…' };
+        const isSaving = savingId === row.id;
+        const v6m      = psp?.units_sold_6m ?? null;
         return (
             <tr key={`mm_${row.id}`}>
                 <td colSpan={colCount} className="px-4 pb-2.5 pt-0">
-                    <div className="rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2">
-                        {!isEdit ? (
-                            <div className="flex items-center gap-3">
-                                <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide">MIN / MAX</span>
-                                <span className={`text-[11px] font-bold tabular-nums ${isZero ? 'text-slate-300' : 'text-slate-700'}`}>
-                                    {isZero ? '— / —' : `${minVal} / ${maxVal} und.`}
-                                </span>
-                                <button
-                                    onClick={() => startEdit(row)}
-                                    className="ml-auto flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors"
-                                >
-                                    <Pencil size={9} />Ajustar
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">Ajustar MIN / MAX</span>
-                                <label className="flex items-center gap-1">
-                                    <span className="text-[9px] text-slate-400">MIN</span>
-                                    <input
-                                        type="number" min="0" value={editMin}
-                                        onChange={e => setEditMin(e.target.value)}
-                                        className="w-16 text-[11px] border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-400 bg-white text-slate-700 text-center"
-                                    />
-                                </label>
-                                <label className="flex items-center gap-1">
-                                    <span className="text-[9px] text-slate-400">MAX</span>
-                                    <input
-                                        type="number" min="1" value={editMax}
-                                        onChange={e => setEditMax(e.target.value)}
-                                        className="w-16 text-[11px] border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-400 bg-white text-slate-700 text-center"
-                                    />
-                                </label>
-                                <div className="flex gap-1.5 ml-auto">
-                                    <button onClick={cancelEdit} disabled={saving} className="text-[10px] font-medium px-2.5 py-1 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 transition-colors disabled:opacity-50">Cancelar</button>
-                                    <button onClick={() => saveMinMax(row)} disabled={saving} className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 transition-colors">
-                                        {saving ? <Loader2 size={9} className="animate-spin" /> : <><Check size={9} />Guardar</>}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                    <div className="rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 flex items-center gap-2.5 flex-wrap">
+                        <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">Ventas 6M</span>
+                        <span className="text-[11px] font-bold tabular-nums text-slate-700 shrink-0">
+                            {psp === undefined ? <span className="text-slate-300">—</span> : v6m != null ? `${v6m} und.` : '0 und.'}
+                        </span>
+                        <div className="w-px h-4 bg-slate-200 shrink-0 mx-0.5" />
+                        <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">MIN</span>
+                        <input
+                            type="number" min="0" value={edit.min} disabled={isSaving}
+                            onChange={e => setEditMap(prev => ({ ...prev, [row.id]: { ...prev[row.id], min: e.target.value } }))}
+                            className="w-14 text-[11px] font-bold border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-400 bg-white text-slate-700 text-center disabled:opacity-40"
+                        />
+                        <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">MAX</span>
+                        <input
+                            type="number" min="0" value={edit.max} disabled={isSaving}
+                            onChange={e => setEditMap(prev => ({ ...prev, [row.id]: { ...prev[row.id], max: e.target.value } }))}
+                            className="w-14 text-[11px] font-bold border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:border-blue-400 bg-white text-slate-700 text-center disabled:opacity-40"
+                        />
+                        <button
+                            onClick={() => saveMinMax(row)} disabled={isSaving}
+                            className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 transition-colors shrink-0"
+                        >
+                            {isSaving ? <Loader2 size={9} className="animate-spin" /> : <><Check size={9} />Guardar</>}
+                        </button>
+                        <button
+                            onClick={() => resetZero(row)} disabled={isSaving}
+                            title="Dejar en 0/0 — excluye del próximo pedido"
+                            className="ml-auto flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50 disabled:opacity-50 transition-colors shrink-0"
+                        >
+                            <X size={9} />0 / 0
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -1313,20 +1343,21 @@ function ItemSections({ allItems, loading }) {
             <div className="border-t border-slate-100 px-4 py-2.5 bg-slate-50/60 flex items-center gap-5 flex-wrap">
                 <span className="text-[11px] text-slate-500">Solicitados <strong className="text-slate-700">{total}</strong></span>
                 <span className="text-[11px] text-slate-500">Enviados <strong className="text-emerald-600">{enviados.length}</strong></span>
-                {agotamiento.length > 0 && <span className="text-[11px] text-slate-500">Stock insuficiente <strong className="text-orange-600">{agotamiento.length}</strong></span>}
+                {agotamientoAll.length > 0 && <span className="text-[11px] text-slate-500">Stock insuficiente <strong className="text-orange-600">{agotamientoAll.length}</strong></span>}
                 {sinStock.length > 0 && <span className="text-[11px] text-slate-500">Sin inventario <strong className="text-amber-600">{sinStock.length}</strong></span>}
                 {porRegla.length > 0 && <span className="text-[11px] text-slate-500">Revisar regla <strong className="text-rose-600">{porRegla.length}</strong></span>}
             </div>
             <ItemSection label="Productos enviados" count={enviados.length} badgeCls="bg-emerald-50 text-emerald-700 border-emerald-200" rows={enviados} columns={COLS_ENVIADOS} />
             <ItemSection
-                label="Stock insuficiente en bodega" count={agotamiento.length} badgeCls="bg-orange-50 text-orange-700 border-orange-200" rows={agotamiento} columns={COLS_AGOTAMIENTO}
-                noteEl={<p className="text-[10px] text-orange-600/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad completa. Se envió lo disponible; el faltante quedará pendiente para el próximo pedido.</p>}
+                label="Stock insuficiente en bodega" count={agotamientoAll.length} badgeCls="bg-orange-50 text-orange-700 border-orange-200" rows={agotamientoAll} columns={COLS_AGOTAMIENTO}
+                renderRowExtra={renderMinMaxRow}
+                noteEl={<p className="text-[10px] text-orange-600/80">Bodega tenía stock pero no alcanzó para cubrir la necesidad. Se envió lo disponible (o nada si el disponible era menor a 1 unidad tras compromisos con otras sucursales). Ajusta el MAX para priorizar en el próximo pedido.</p>}
             />
             <ItemSection label="Sin inventario en bodega" count={sinStock.length} badgeCls="bg-amber-50 text-amber-700 border-amber-200" rows={sinStock} columns={COLS_SIN_STOCK} noteEl={<p className="text-[10px] text-amber-600/80">No se incluyeron por falta de stock en bodega al momento del despacho.</p>} />
             <ItemSection
-                label="Revisar — sin asignar" count={porRegla.length} badgeCls="bg-rose-50 text-rose-700 border-rose-200" rows={porRegla} columns={COLS_REGLA}
+                label="Revisar regla de despacho" count={porRegla.length} badgeCls="bg-rose-50 text-rose-700 border-rose-200" rows={porRegla} columns={COLS_REGLA}
                 renderRowExtra={renderMinMaxRow}
-                noteEl={<div className="flex items-start gap-2 text-[10px] text-rose-600/80 bg-rose-50/60 border border-rose-100 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-rose-500" />Estos productos necesitaban reposición pero no pudieron asignarse. Puede ser por regla de despacho (mínimo no alcanzado) o stock insuficiente en bodega. Ajusta los MIN/MAX para darles prioridad en el próximo pedido.</div>}
+                noteEl={<div className="flex items-start gap-2 text-[10px] text-rose-600/80 bg-rose-50/60 border border-rose-100 rounded-xl px-3 py-2"><ShieldAlert size={12} className="mt-0.5 shrink-0 text-rose-500" />La cantidad requerida no alcanzó el mínimo de la regla de despacho. Ajusta los MIN/MAX para que se incluya en el próximo pedido.</div>}
             />
         </>
     );

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.440';
+export const APP_VERSION = '2.2.441';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.441 — fix(pedidos): revision_minmax sin regla → sección "Stock insuficiente" (no "Revisar regla"); MIN/MAX siempre editable en fila: ventas 6M + inputs directos + Guardar + botón 0/0; datos de PSP via fetch en useEffect
 // v2.2.440 — fix(pedidos): "Revisar regla de despacho" — fmtRegla muestra "Sin regla" vs badge por tipo; motivo diferencia sin-regla (stock insuf.) vs con-regla (necesidad baja); fila inline MIN/MAX editable por producto; nota de sección actualizada
 // v2.2.439 — fix(pedidos): cajas_especiales_llegadas escrito a DB al confirmar reenvío (mismo bug que electrolit_ok); partial clear proporcional cuando algunas especiales aún faltan
 // v2.2.438 — fix(pedidos): audit post-fix — electrolit_ok escrito a DB al confirmar reenvío; DifSection auto-fetch en cold load; indicador "Esperando vuelta conductor" en vez de botón invisible; CrearRutaModal pre-selecciona pedido del reenvío + incluye status parcial; toast en no-op segunda llegada; elimina double-loadActive

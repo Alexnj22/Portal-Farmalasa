@@ -232,15 +232,28 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 if (finalData.base_salary === "") finalData.base_salary = null;
                 if (finalData.weekly_contracted_hours === "") finalData.weekly_contracted_hours = null;
 
+                const { showToast } = useToastStore.getState();
                 if (type === "editEmployee" || (formData.id)) {
                     await updateEmployee(formData.id, finalData);
+                    if (showToast) showToast("Personal Actualizado", "La ficha del empleado se guardó exitosamente.", "success");
                 } else {
-                    await addEmployee(finalData);
+                    const created = await addEmployee(finalData);
+                    // La temporal solo existe en esta respuesta — mostrarla al admin
+                    // (antes se descartaba y el primer login era imposible sin reset).
+                    if (created?.tempPassword) {
+                        try { await navigator.clipboard.writeText(created.tempPassword); } catch { /* sin permiso de clipboard */ }
+                        if (showToast) showToast(
+                            "Colaborador Creado — Contraseña Temporal",
+                            `Usuario: ${created.username} · Contraseña: ${created.tempPassword} (copiada al portapapeles). Deberá cambiarla en su primer ingreso.`,
+                            "success",
+                            'light',
+                            20000
+                        );
+                    } else if (showToast) {
+                        showToast("Personal Registrado", "La ficha del empleado se guardó exitosamente.", "success");
+                    }
                 }
 
-                const { showToast } = useToastStore.getState();
-                if (showToast) showToast("Personal Actualizado", "La ficha del empleado se guardó exitosamente.", "success");
-                
                 localStorage.removeItem('wfm_employee_draft');
                 onClose();
             } catch (err) {
@@ -646,7 +659,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 await handleSubmit(e);
                 window.dispatchEvent(new CustomEvent('force-history-refresh'));
             } catch (err) {
-                setValidationError(err?.message || "Ocurrió un error inesperado.");
+                const msg = (err?.message || "Ocurrió un error inesperado.")
+                    .replace(/^(OVERLAP_ERROR|HEADCOUNT_LIMIT):\s*/, '');
+                setValidationError(msg);
             } finally {
                 setIsSaving(false);
             }

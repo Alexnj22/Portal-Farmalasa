@@ -7,10 +7,10 @@ export const useToastStore = create((set, get) => ({
     type: 'success',
     theme: 'light',
     _timer: null,
-    showToast: (title, message, type = 'success', theme = 'light') => {
+    showToast: (title, message, type = 'success', theme = 'light', duration = 3500) => {
         const prev = get()._timer;
         if (prev) clearTimeout(prev);
-        const timer = setTimeout(() => set({ isOpen: false, _timer: null }), 3500);
+        const timer = setTimeout(() => set({ isOpen: false, _timer: null }), duration);
         set({ isOpen: true, title, message, type, theme, _timer: timer });
     },
     hideToast: () => {

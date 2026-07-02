@@ -478,6 +478,14 @@ export const AuthProvider = ({ children }) => {
         return { ok: false, error: 'Usuario no encontrado en el sistema.' };
       }
 
+      // Empleado dado de baja: la cuenta Auth queda baneada por disable-employee-auth,
+      // pero este gate cubre bajas previas al ban y cierra la sesión recién creada.
+      if (emp.status && emp.status !== 'ACTIVO') {
+        skipAuthListener.current = false;
+        supabase.auth.signOut().catch(() => {});
+        return { ok: false, error: 'Tu cuenta está desactivada. Contacta a Recursos Humanos.' };
+      }
+
       const u = {
         id:         emp.id,
         name:       emp.name,

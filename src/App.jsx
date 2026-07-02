@@ -402,6 +402,8 @@ function MainApp() {
         } catch (error) {
             if (error?.message?.startsWith('OVERLAP_ERROR:')) {
                 showAlert('Conflicto de Fechas', error.message.replace('OVERLAP_ERROR: ', ''), 'error');
+            } else if (error?.message?.startsWith('HEADCOUNT_LIMIT:')) {
+                showAlert('Límite de Organigrama', error.message.replace('HEADCOUNT_LIMIT: ', ''), 'error');
             } else {
                 throw error;
             }

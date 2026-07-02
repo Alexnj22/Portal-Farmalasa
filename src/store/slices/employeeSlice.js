@@ -39,6 +39,35 @@ const compressImage = (file, maxWidth = 400) => {
     });
 };
 
+// Valida el límite de headcount (max_limit) del cargo antes de asignarlo.
+// Lanza HEADCOUNT_LIMIT si la plaza ya está ocupada. Se usa en alta, edición,
+// recontratación y acciones RRHH (PROMOTION/TRANSFER) para cerrar las vías
+// laterales que antes solo validaban en UI.
+export const assertHeadcountAvailable = (state, roleId, branchId, excludeEmployeeId = null) => {
+    if (!roleId) return;
+    const roleConfig = state.roles.find(r => String(r.id) === String(roleId));
+    if (!roleConfig || roleConfig.max_limit >= 99) return;
+
+    const occupants = state.employees.filter(e => {
+        if (e.status !== 'ACTIVO') return false;
+        if (excludeEmployeeId != null && String(e.id) === String(excludeEmployeeId)) return false;
+        if (String(e.role_id) !== String(roleId)) return false;
+        if (roleConfig.scope === 'BRANCH') {
+            return String(e.branch_id ?? e.branchId) === String(branchId);
+        }
+        return true; // GLOBAL
+    });
+
+    if (occupants.length >= roleConfig.max_limit) {
+        const names = occupants.map(o => o.name).join(', ');
+        throw new Error(
+            `HEADCOUNT_LIMIT: El cargo "${roleConfig.name}" ` +
+            `ya tiene ${roleConfig.max_limit} ocupante(s): ${names}. ` +
+            `No se puede asignar este cargo.`
+        );
+    }
+};
+
 export const createEmployeeSlice = (set, get) => ({
     employees: safeJsonParse(localStorage.getItem(CACHE_KEYS.EMPLOYEES), []) || [],
     attendanceLoaded: false,
@@ -151,30 +180,7 @@ export const createEmployeeSlice = (set, get) => ({
             };
 
             // Validar headcount del cargo seleccionado
-            if (dbPayload.role_id) {
-                const state = get();
-                const roleConfig = state.roles.find(r => String(r.id) === String(dbPayload.role_id));
-
-                if (roleConfig && roleConfig.max_limit < 99) {
-                    const occupants = state.employees.filter(e => {
-                        if (e.status !== 'ACTIVO') return false;
-                        if (String(e.role_id) !== String(dbPayload.role_id)) return false;
-                        if (roleConfig.scope === 'BRANCH') {
-                            return String(e.branch_id || e.branchId) === String(dbPayload.branch_id);
-                        }
-                        return true; // GLOBAL
-                    });
-
-                    if (occupants.length >= roleConfig.max_limit) {
-                        const names = occupants.map(o => o.name).join(', ');
-                        throw new Error(
-                            `HEADCOUNT_LIMIT: El cargo "${roleConfig.name}" ` +
-                            `ya tiene ${roleConfig.max_limit} ocupante(s): ${names}. ` +
-                            `No se puede asignar este cargo.`
-                        );
-                    }
-                }
-            }
+            assertHeadcountAvailable(get(), dbPayload.role_id, dbPayload.branch_id);
 
             const { data: newEmp, error } = await supabase.from("employees").insert([dbPayload]).select().single();
             if (error) {
@@ -201,7 +207,11 @@ export const createEmployeeSlice = (set, get) => ({
                 );
             }
 
-            // Crear usuario Auth automáticamente (no bloquea la creación si falla)
+            // Crear usuario Auth automáticamente (no bloquea la creación si falla).
+            // La edge function genera una temporal aleatoria y la devuelve — hay que
+            // capturarla aquí para mostrársela al admin (antes se descartaba y el
+            // primer login era imposible sin un reset manual).
+            let tempPassword = null;
             if (dbPayload.username) {
                 try {
                     const { data: authResult, error: authError } =
@@ -212,6 +222,8 @@ export const createEmployeeSlice = (set, get) => ({
                         console.warn('Auth creation error:', authError);
                     } else if (!authResult?.ok) {
                         console.warn('Auth creation failed:', authResult);
+                    } else {
+                        tempPassword = authResult.tempPassword || null;
                     }
                 } catch (authErr) {
                     console.warn('No se pudo crear usuario Auth:', authErr);
@@ -250,7 +262,7 @@ export const createEmployeeSlice = (set, get) => ({
                 persistEmployees(next);
                 return { employees: next };
             });
-            return appEmp.id;
+            return { id: appEmp.id, username: dbPayload.username, tempPassword };
         } catch (err) {
             console.error("Fallo al crear empleado:", err);
             throw err; // Re-lanzar el error original sin modificarlo
@@ -274,8 +286,12 @@ export const createEmployeeSlice = (set, get) => ({
                 }
             }
 
-            if (updatedData.branch_id) dbPayload.branch_id = parseInt(updatedData.branch_id, 10);
-            else if (updatedData.branchId) dbPayload.branch_id = parseInt(updatedData.branchId, 10);
+            // branch_id: null/'' significa "quitar de la sucursal" (bolsa flotante) —
+            // el mapeo anterior solo aceptaba valores truthy y el desasignar no se guardaba.
+            if (updatedData.branch_id !== undefined || updatedData.branchId !== undefined) {
+                const rawBranch = updatedData.branch_id !== undefined ? updatedData.branch_id : updatedData.branchId;
+                dbPayload.branch_id = (rawBranch === null || rawBranch === '') ? null : parseInt(rawBranch, 10);
+            }
             
             const uploadedFile = updatedData.file || updatedData.photo;
             if (uploadedFile instanceof File) {
@@ -320,6 +336,15 @@ export const createEmployeeSlice = (set, get) => ({
                 : null;
             delete dbPayload.assigned_branch_ids;
 
+            // Validar headcount si se asigna un cargo (misma regla que en el alta)
+            if (dbPayload.role_id) {
+                const currentEmp = get().employees.find(e => String(e.id) === String(id));
+                const targetBranch = dbPayload.branch_id !== undefined
+                    ? dbPayload.branch_id
+                    : (currentEmp?.branch_id ?? currentEmp?.branchId);
+                assertHeadcountAvailable(get(), dbPayload.role_id, targetBranch, id);
+            }
+
             const { data: updated, error } = await supabase.from("employees").update(dbPayload).eq("id", id).select().single();
             if (error) throw error;
 
@@ -353,12 +378,14 @@ export const createEmployeeSlice = (set, get) => ({
                     return {
                         ...emp,
                         ...updated,
-                        branchId: updated.branch_id ?? emp.branchId,
+                        // `updated` es la fila completa post-UPDATE: branch_id null es real
+                        // (desasignación), no un dato faltante — sin fallback al valor previo.
+                        branchId: updated.branch_id,
                         photo: updated.photo_url ?? emp.photo,
                         birthDate: updated.birth_date ?? emp.birthDate,
                         hireDate: updated.hire_date ?? emp.hireDate,
-                        role: mainRoleName || emp.role,
-                        secondary_role: secRoleName !== null ? secRoleName : emp.secondary_role
+                        role: updated.role_id ? (mainRoleName || emp.role) : 'Sin Asignar',
+                        secondary_role: updated.secondary_role_id ? (secRoleName !== null ? secRoleName : emp.secondary_role) : null
                     };
                 });
                 persistEmployees(next);
@@ -374,6 +401,8 @@ export const createEmployeeSlice = (set, get) => ({
     rehireEmployee: async (id, rehireData) => {
         const emp = get().employees.find(e => String(e.id) === String(id));
         if (!emp) throw new Error("Empleado no encontrado");
+
+        assertHeadcountAvailable(get(), parseInt(rehireData.role_id, 10), parseInt(rehireData.branch_id, 10), id);
 
         // Regenerar PIN desde su código
         const encoder = new TextEncoder();
@@ -396,6 +425,11 @@ export const createEmployeeSlice = (set, get) => ({
 
         const { error } = await supabase.from('employees').update(dbPayload).eq('id', id);
         if (error) throw error;
+
+        // Levantar el ban de la cuenta Auth aplicado en la baja (best-effort)
+        supabase.functions.invoke('disable-employee-auth', {
+            body: { employeeId: id, action: 'enable' }
+        }).catch(err => console.warn('No se pudo reactivar la cuenta Auth:', err));
 
         const roles = get().roles;
         const mainRoleName = roles.find(r => String(r.id) === String(dbPayload.role_id))?.name || null;
@@ -515,75 +549,17 @@ export const createEmployeeSlice = (set, get) => ({
         return { hoursWorked, newOwed };
     },
 
-    // 🚨 SOFT DELETE: Desactivación Segura (No borra el registro de BD)
+    // 🚨 SOFT DELETE: delega en registerEmployeeEvent(TERMINATION) para que exista
+    // una sola vía de baja (evento + update de expediente + revocación de accesos).
     deleteEmployee: async (id, reason = 'Baja general', exitDate = null) => {
-        try {
-            const fechaBaja = exitDate || new Date().toISOString().split('T')[0];
-            const empEliminar = get().employees.find(e => String(e.id) === String(id));
-            
-            if (!empEliminar) throw new Error("Empleado no encontrado en caché local");
-
-            const dbPayload = {
-                status: 'INACTIVO',
-                branch_id: null,        
-                role_id: null,          
-                secondary_role_id: null, 
-                shift_id: null,         
-                kiosk_pin: null,        // Invalida acceso biométrico
-                contract_end_date: fechaBaja 
-            };
-
-            const { error } = await supabase
-                .from("employees")
-                .update(dbPayload)
-                .eq("id", id);
-                
-            if (error) throw error;
-
-            await supabase.from('employee_events').insert([{
-                employee_id: id,
-                type: 'TERMINATION',
-                date: fechaBaja,
-                note: `Motivo de salida: ${reason}`,
-                metadata: {
-                    previous_branch_id: empEliminar.branchId,
-                    previous_role: empEliminar.role,
-                    new_role: 'Desvinculado'
-                }
-            }]);
-
-            await get().appendAuditLog('BAJA_EMPLEADO', id, {
-                timeline_title: `Desvinculación: ${empEliminar.name}`,
-                dimension: 'HR',
-                branch_id: empEliminar.branchId,
-                old_value: 'Activo',
-                new_value: 'INACTIVO (Soft Delete)',
-                notas: reason
-            });
-
-            window.dispatchEvent(new CustomEvent('force-history-refresh'));
-
-            set((state) => {
-                const next = state.employees.map(emp => {
-                    if (String(emp.id) !== String(id)) return emp;
-                    return {
-                        ...emp,
-                        ...dbPayload,
-                        branchId: null,
-                        status: 'INACTIVO',
-                        role: 'Sin Asignar',
-                        effectiveStatus: 'Inactivo'
-                    };
-                });
-                persistEmployees(next);
-                return { employees: next };
-            });
-            
-            return true;
-        } catch (err) {
-            console.error("Error al procesar la baja del empleado:", err);
-            return false;
-        }
+        const fechaBaja = exitDate || new Date().toISOString().split('T')[0];
+        const eventId = await get().registerEmployeeEvent(id, {
+            type: 'TERMINATION',
+            date: fechaBaja,
+            terminationReason: reason,
+            note: `Motivo de salida: ${reason}`,
+        });
+        return !!eventId;
     },
 
     loadAttendanceLastDays: async (days = 15) => {

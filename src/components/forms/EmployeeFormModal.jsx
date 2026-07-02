@@ -251,7 +251,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         return EL_SALVADOR_GEO[formData.department].map(m => ({ value: m, label: m }));
     }, [formData?.department]);
 
-    const generateUniqueCode = () => `EMP${Math.floor(1000 + Math.random() * 9000)}`;
+    // Verifica contra los códigos existentes — el random puro podía colisionar
+    // y el índice único de BD rechazaba el guardado sin explicación clara.
+    const generateUniqueCode = () => {
+        const taken = new Set(employees.map(e => (e.code || '').trim().toUpperCase()));
+        for (let i = 0; i < 50; i++) {
+            const candidate = `EMP${Math.floor(1000 + Math.random() * 9000)}`;
+            if (!taken.has(candidate)) return candidate;
+        }
+        return `EMP${Date.now().toString().slice(-6)}`;
+    };
 
     useEffect(() => {
         const updatePin = async () => {

@@ -1,6 +1,25 @@
 import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS, SENSITIVE_FIELDS, persistEmployees } from '../utils';
 import { useToastStore } from '../toastStore';
+import { assertHeadcountAvailable } from './employeeSlice';
+
+// PostgREST trunca en 1000 filas sin aviso (max-rows=1000). Este helper pagina
+// cualquier query hasta agotarla — usar para tablas que crecen sin tope
+// (employee_events, employee_documents, employees, employee_branches).
+const fetchAllRows = async (buildQuery) => {
+    const CHUNK = 1000;
+    let all = [];
+    for (let page = 0; ; page++) {
+        const { data, error } = await buildQuery().range(page * CHUNK, (page + 1) * CHUNK - 1);
+        if (error) {
+            console.error('fetchAllRows error:', error.message);
+            return page === 0 ? null : all;
+        }
+        all = all.concat(data || []);
+        if (!data || data.length < CHUNK) break;
+    }
+    return all;
+};
 
 export const createSystemSlice = (set, get) => ({
     // 🚨 1. INICIALIZAMOS HOLIDAYS Y EL RESTO (Desde LocalStorage si existe)
@@ -76,28 +95,31 @@ export const createSystemSlice = (set, get) => ({
                 const weekStartDate = monday.toLocaleDateString('en-CA'); // YYYY-MM-DD local
 
                 // Todas las queries en paralelo — de ~3-4s secuencial a ~600ms
+                // Tablas chicas (<1000 filas garantizadas) con select directo; las que
+                // crecen sin tope (empleados, eventos, documentos, asignaciones) van
+                // paginadas con fetchAllRows para evitar el truncado silencioso de PostgREST.
                 const [
                     { data: holidaysData },
                     { data: branchData },
                     { data: rolesData },
                     { data: shiftsData },
                     { data: rostersData },
-                    { data: empData },
-                    { data: eventsData },
-                    { data: docsData },
+                    empData,
+                    eventsData,
+                    docsData,
                     { data: annData },
-                    { data: branchAssignData },
+                    branchAssignData,
                 ] = await Promise.all([
                     supabase.from('holidays').select('*').order('holiday_date', { ascending: true }),
                     supabase.from('branches').select('*').order('id', { ascending: true }),
                     supabase.from('roles').select('*').order('name', { ascending: true }),
                     supabase.from('shifts').select('*'),
                     supabase.from('employee_rosters').select('employee_id, schedule_data').eq('week_start_date', weekStartDate).eq('status', 'PUBLISHED'),
-                    supabase.from('employees_safe').select(`*, main_role:roles!employees_role_id_fkey(id, name), sec_role:roles!employees_secondary_role_id_fkey(id, name)`),
-                    supabase.from('employee_events').select('*'),
-                    supabase.from('employee_documents').select('*'),
+                    fetchAllRows(() => supabase.from('employees_safe').select(`*, main_role:roles!employees_role_id_fkey(id, name), sec_role:roles!employees_secondary_role_id_fkey(id, name)`).order('id', { ascending: true })),
+                    fetchAllRows(() => supabase.from('employee_events').select('*').order('id', { ascending: true })),
+                    fetchAllRows(() => supabase.from('employee_documents').select('*').order('id', { ascending: true })),
                     supabase.from('announcements').select('*').order('created_at', { ascending: false }),
-                    supabase.from('employee_branches').select('employee_id, branch_id'),
+                    fetchAllRows(() => supabase.from('employee_branches').select('employee_id, branch_id').order('employee_id', { ascending: true })),
                 ]);
 
                 // Holidays
@@ -359,6 +381,82 @@ export const createSystemSlice = (set, get) => ({
                 }
             }
 
+            // 2.6 Calcular el cambio real al expediente según el tipo de acción.
+            // Antes solo TERMINATION escribía en employees: promociones, traslados,
+            // cambios de salario y de código quedaban registrados pero nunca aplicados.
+            const empUpdates = {};   // columnas de employees
+            const localPatch = {};   // campos derivados del estado local (role name, branchId…)
+            const stateNow = get();
+            const currentEmp = stateNow.employees.find(e => String(e.id) === String(employeeId));
+
+            if (eventData.type === 'TERMINATION') {
+                Object.assign(empUpdates, {
+                    status: 'INACTIVO',
+                    branch_id: null,
+                    role_id: null,
+                    secondary_role_id: null,
+                    shift_id: null,
+                    kiosk_pin: null,
+                    contract_end_date: primaryDate,
+                });
+                Object.assign(localPatch, {
+                    ...empUpdates,
+                    branchId: null,
+                    role: 'Sin Asignar',
+                    secondary_role: null,
+                    effectiveStatus: 'Inactivo',
+                    assigned_branch_ids: [],
+                });
+            } else if (eventData.type === 'TRANSFER' && eventData.targetBranchId) {
+                const targetBranch = parseInt(eventData.targetBranchId, 10);
+                assertHeadcountAvailable(stateNow, currentEmp?.role_id, targetBranch, employeeId);
+                empUpdates.branch_id = targetBranch;
+                Object.assign(localPatch, { branch_id: targetBranch, branchId: targetBranch });
+            } else if (eventData.type === 'PROMOTION' && eventData.newRole) {
+                const roleObj = stateNow.roles.find(r => r.name === eventData.newRole);
+                if (!roleObj) {
+                    const e = new Error(`El cargo "${eventData.newRole}" no existe en el catálogo de roles.`);
+                    e.userFacing = true;
+                    throw e;
+                }
+                const movesBranch = eventData.isTransferAndPromotion && eventData.targetBranchId;
+                const targetBranch = movesBranch
+                    ? parseInt(eventData.targetBranchId, 10)
+                    : (currentEmp?.branch_id ?? currentEmp?.branchId);
+                assertHeadcountAvailable(stateNow, roleObj.id, targetBranch, employeeId);
+                empUpdates.role_id = roleObj.id;
+                Object.assign(localPatch, { role_id: roleObj.id, role: roleObj.name });
+                if (movesBranch) {
+                    empUpdates.branch_id = targetBranch;
+                    Object.assign(localPatch, { branch_id: targetBranch, branchId: targetBranch });
+                }
+            } else if (eventData.type === 'SALARY') {
+                const newSalary = parseFloat(eventData.newSalary);
+                if (!Number.isNaN(newSalary)) {
+                    empUpdates.base_salary = newSalary;
+                    localPatch.base_salary = newSalary;
+                }
+            } else if (eventData.type === 'CODE_CHANGE') {
+                const cleanCode = String(eventData.newCode ?? '').trim();
+                if (cleanCode) {
+                    const dup = stateNow.employees.find(e =>
+                        String(e.id) !== String(employeeId) &&
+                        (e.code || '').trim().toUpperCase() === cleanCode.toUpperCase()
+                    );
+                    if (dup) {
+                        const e = new Error(`El código "${cleanCode}" ya está asignado a ${dup.name}.`);
+                        e.userFacing = true;
+                        throw e;
+                    }
+                    empUpdates.code = cleanCode;
+                    localPatch.code = cleanCode;
+                    if (eventData.newKioskPin) {
+                        empUpdates.kiosk_pin = eventData.newKioskPin;
+                        localPatch.kiosk_pin = eventData.newKioskPin;
+                    }
+                }
+            }
+
             // 3. Armamos el payload seguro para Supabase
             const dbPayload = {
                 employee_id: employeeId,
@@ -375,17 +473,24 @@ export const createSystemSlice = (set, get) => ({
             const { data: newEvent, error } = await supabase.from('employee_events').insert([dbPayload]).select().single();
             if (error) throw error;
 
-            // If termination, update employee status to INACTIVO in DB
+            // Aplicar el cambio calculado en 2.6 al expediente
+            if (Object.keys(empUpdates).length > 0) {
+                const { error: updErr } = await supabase.from('employees').update(empUpdates).eq('id', employeeId);
+                if (updErr) {
+                    const e = new Error(`El evento quedó registrado pero el cambio no se aplicó al expediente: ${updErr.message}`);
+                    e.userFacing = true;
+                    throw e;
+                }
+            }
+
             if (eventData.type === 'TERMINATION') {
-                await supabase.from('employees').update({
-                    status: 'INACTIVO',
-                    branch_id: null,
-                    role_id: null,
-                    secondary_role_id: null,
-                    shift_id: null,
-                    kiosk_pin: null,
-                    contract_end_date: primaryDate
-                }).eq('id', employeeId);
+                // Limpiar farmacias asignadas (personal externo) — quedaban huérfanas tras la baja
+                await supabase.from('employee_branches').delete().eq('employee_id', employeeId);
+                // Revocar la cuenta Auth (best-effort): bloquea el login usuario/contraseña
+                // además del carné, y cierra las sesiones activas.
+                supabase.functions.invoke('disable-employee-auth', {
+                    body: { employeeId, action: 'disable' }
+                }).catch(err => console.warn('No se pudo desactivar la cuenta Auth:', err));
             }
 
             const empEvento = get().employees.find(e => String(e.id) === String(employeeId));
@@ -420,32 +525,24 @@ export const createSystemSlice = (set, get) => ({
             }
 
             // 5. Actualizamos el estado en Zustand (Memoria RAM)
-            const isTermination = eventData.type === 'TERMINATION';
             set((state) => {
                 const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
                     ...emp,
-                    ...(isTermination ? {
-                        status: 'INACTIVO',
-                        effectiveStatus: 'Inactivo',
-                        branchId: null,
-                        branch_id: null,
-                        role_id: null,
-                        secondary_role_id: null,
-                        shift_id: null,
-                        kiosk_pin: null,
-                        contract_end_date: primaryDate
-                    } : {}),
+                    ...localPatch,
                     history: [...(emp.history || []), newEvent],
                     documents: docObject ? [...(emp.documents || []), docObject] : emp.documents
                 });
                 persistEmployees(next);
                 return { employees: next };
             });
-            
+
             return newEvent.id;
         } catch (err) {
             console.error("Error registrando evento de empleado:", err);
-            if (err?.message?.startsWith('OVERLAP_ERROR:')) throw err;
+            // Errores de validación de negocio se relanzan para que la UI los muestre
+            if (err?.userFacing ||
+                err?.message?.startsWith('OVERLAP_ERROR:') ||
+                err?.message?.startsWith('HEADCOUNT_LIMIT:')) throw err;
             return null;
         }
     },

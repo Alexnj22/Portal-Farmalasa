@@ -87,15 +87,18 @@ export const getStartOfWeek = (dateString) => {
 export const getEffectiveBranchId = (emp) => {
     const t = toLocalISO(new Date());
     const s = emp?.history?.find(h => h.type === 'SUPPORT' && h.date <= t && (h.metadata?.endDate ?? h.endDate) >= t);
-    return s ? parseInt(s.targetBranchId, 10) : emp?.branchId;
+    // targetBranchId vive en metadata (registerEmployeeEvent lo guarda ahí)
+    const bid = s?.metadata?.targetBranchId ?? s?.targetBranchId;
+    return bid != null ? parseInt(bid, 10) : emp?.branchId;
 };
 
 const TEMPORAL_TYPES = ['VACATION', 'DISABILITY', 'SUPPORT', 'PERMIT', 'INDUCTION'];
 
 export const getEffectiveStatus = (emp) => {
     const t = toLocalISO(new Date());
-    if (emp?.status === 'INACTIVO') return 'Inactivo';
-    if (emp?.status === 'Liquidado') return 'Liquidado';
+    if (emp?.status === 'INACTIVO' || emp?.status === 'BAJA') return 'Inactivo';
+    if (emp?.status === 'LIQUIDADO' || emp?.status === 'Liquidado') return 'Liquidado';
+    if (emp?.status === 'SUSPENDIDO') return 'Suspendido';
 
     const ev = emp?.history?.find(h =>
         TEMPORAL_TYPES.includes(h.type) &&

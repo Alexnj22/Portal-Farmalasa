@@ -48,6 +48,35 @@ El límite no aplica cuando el RPC devuelve un único objeto JSON/JSONB. Opción
 - Project ID: `sacecdkdmsdvgqnrsett`
 - Aplicar migraciones vía MCP tool `apply_migration` (no `supabase db push`)
 
+## Estructura BD — reglas OBLIGATORIAS al crear tablas/funciones/vistas
+
+Hardening completo aplicado 2026-07-02 (`supabase/migrations/20260702_db_hardening_*`).
+Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo así:
+
+1. **Toda tabla nueva**: PK + `created_at timestamptz default now()` + **RLS habilitado
+   con policy explícita** (mínimo `FOR SELECT TO authenticated`). NUNCA dejar una tabla
+   sin RLS — `anon` no debe ver nada.
+2. **Toda FK**: con índice que la cubra (`CREATE INDEX ... ON tabla(col_fk)`), excepto
+   columnas de puro audit (`*_por`, `created_by`) en tablas pequeñas.
+3. **Policies de escritura**: preferir `auth_has_module_permission(module, 'can_edit')`
+   sobre `USING (true)` en tablas sensibles (nómina, precios, facturación).
+4. **Funciones**: SECURITY DEFINER solo si es necesario, SIEMPRE con
+   `SET search_path = public, extensions`, y `REVOKE EXECUTE ... FROM PUBLIC, anon` +
+   `GRANT ... TO authenticated, service_role`. Únicas funciones con anon permitido:
+   `get_kiosk_boot_payload`, `get_kiosk_coverage_employees` (pre-login kiosco, validan
+   device token internamente).
+5. **Vistas**: SIEMPRE `WITH (security_invoker = true)` (o `ALTER VIEW ... SET`).
+6. **Vistas materializadas**: no exponerlas a la API — `REVOKE ALL FROM anon, authenticated`
+   y acceso solo vía RPC SECURITY DEFINER. Excepción actual: `mv_product_factor`
+   (la lee `get_pedido_preview` que es INVOKER).
+7. **Tablas de log/historial**: definir retención desde el día 1 (cron de purga tipo
+   `purge-sync-logs-daily`, 90 días). El historial de negocio (precios, minmax, eventos
+   de empleados) NO se purga.
+8. **Nombres**: snake_case; español para dominio de negocio (`pedidos`, `ventas_perdidas`),
+   inglés para infra (`sync_log`); sufijos `*_history`/`*_log`/`*_changelog` para auditoría.
+9. **Employee code**: SOLO números (trigger `enforce_numeric_employee_code`); el kiosk_pin
+   se deriva SHA-256(code)→base64→alfanumérico→8 chars uppercase.
+
 ## Estándares del proyecto
 - Ver `DESIGN.md` para patrones de UI (glassmorphism, filter pills, tabs, search)
 - Siempre usar `LiquidSelect` en lugar de `<select>` nativo

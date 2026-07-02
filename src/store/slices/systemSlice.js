@@ -389,6 +389,12 @@ export const createSystemSlice = (set, get) => ({
             const stateNow = get();
             const currentEmp = stateNow.employees.find(e => String(e.id) === String(employeeId));
 
+            // Fecha efectiva futura → el evento queda SCHEDULED y lo aplica el cron
+            // diario (edge function apply-scheduled-employee-events, 5:00 a.m.) en la
+            // fecha indicada. Las validaciones sí corren ahora para feedback inmediato.
+            const todayLocal = new Date().toLocaleDateString('en-CA');
+            const isScheduled = primaryDate > todayLocal;
+
             if (eventData.type === 'TERMINATION') {
                 Object.assign(empUpdates, {
                     status: 'INACTIVO',
@@ -457,6 +463,29 @@ export const createSystemSlice = (set, get) => ({
                 }
             }
 
+            // Trazabilidad de aplicación: APPLIED lleva snapshot previo (previousValues,
+            // para poder revertir al cancelar); SCHEDULED lo aplica el cron en la fecha
+            // efectiva y captura el snapshot en ese momento.
+            const hasChanges = Object.keys(empUpdates).length > 0;
+            let applyMeta = {};
+            if (hasChanges) {
+                if (isScheduled) {
+                    applyMeta = { applyStatus: 'SCHEDULED', appliedChanges: empUpdates };
+                } else {
+                    const previousValues = {};
+                    Object.keys(empUpdates).forEach(k => { previousValues[k] = currentEmp?.[k] ?? null; });
+                    if (eventData.type === 'TERMINATION') {
+                        previousValues._employee_branches = currentEmp?.assigned_branch_ids || [];
+                    }
+                    applyMeta = {
+                        applyStatus: 'APPLIED',
+                        appliedAt: new Date().toISOString(),
+                        appliedChanges: empUpdates,
+                        previousValues,
+                    };
+                }
+            }
+
             // 3. Armamos el payload seguro para Supabase
             const dbPayload = {
                 employee_id: employeeId,
@@ -466,15 +495,17 @@ export const createSystemSlice = (set, get) => ({
                 metadata: {
                     ...eventData,
                     permissionDates: isPermission ? (eventData.permissionDates || []) : null,
-                    ...(needsBranchName && { targetBranchName })
+                    ...(needsBranchName && { targetBranchName }),
+                    ...applyMeta
                 }
             };
 
             const { data: newEvent, error } = await supabase.from('employee_events').insert([dbPayload]).select().single();
             if (error) throw error;
 
-            // Aplicar el cambio calculado en 2.6 al expediente
-            if (Object.keys(empUpdates).length > 0) {
+            // Aplicar el cambio calculado en 2.6 al expediente — solo si la fecha
+            // efectiva ya llegó; los SCHEDULED los aplica el cron en su fecha.
+            if (hasChanges && !isScheduled) {
                 const { error: updErr } = await supabase.from('employees').update(empUpdates).eq('id', employeeId);
                 if (updErr) {
                     const e = new Error(`El evento quedó registrado pero el cambio no se aplicó al expediente: ${updErr.message}`);
@@ -483,7 +514,7 @@ export const createSystemSlice = (set, get) => ({
                 }
             }
 
-            if (eventData.type === 'TERMINATION') {
+            if (eventData.type === 'TERMINATION' && !isScheduled) {
                 // Limpiar farmacias asignadas (personal externo) — quedaban huérfanas tras la baja
                 await supabase.from('employee_branches').delete().eq('employee_id', employeeId);
                 // Revocar la cuenta Auth (best-effort): bloquea el login usuario/contraseña
@@ -528,7 +559,7 @@ export const createSystemSlice = (set, get) => ({
             set((state) => {
                 const next = state.employees.map(emp => String(emp.id) !== String(employeeId) ? emp : {
                     ...emp,
-                    ...localPatch,
+                    ...(isScheduled ? {} : localPatch),
                     history: [...(emp.history || []), newEvent],
                     documents: docObject ? [...(emp.documents || []), docObject] : emp.documents
                 });
@@ -551,7 +582,7 @@ export const createSystemSlice = (set, get) => ({
         try {
             const { data: existing, error: fetchErr } = await supabase
                 .from('employee_events')
-                .select('metadata, employee_id')
+                .select('type, metadata, employee_id')
                 .eq('id', eventId)
                 .single();
             if (fetchErr) throw fetchErr;
@@ -560,38 +591,91 @@ export const createSystemSlice = (set, get) => ({
                 ? JSON.parse(existing.metadata)
                 : (existing.metadata || {});
 
+            // Revertir el cambio que este evento aplicó al expediente (si lo aplicó).
+            // Solo se restauran los campos cuyo valor actual sigue siendo el que este
+            // evento escribió — si alguien lo cambió después, se respeta el valor nuevo.
+            // Los SCHEDULED aún no aplicaron nada: cancelar basta (el cron los ignora).
+            const applied = currentMeta.appliedChanges || null;
+            const previous = currentMeta.previousValues || null;
+            let reverted = false;
+            const localRevert = {};
+
+            if (applied && previous && currentMeta.applyStatus === 'APPLIED') {
+                const { data: row, error: rowErr } = await supabase
+                    .from('employees').select('*').eq('id', existing.employee_id).single();
+                if (rowErr) throw rowErr;
+
+                const revertPayload = {};
+                Object.keys(applied).forEach(k => {
+                    if (k.startsWith('_')) return;
+                    if (!(k in previous)) return;
+                    if (String(row?.[k] ?? '') === String(applied[k] ?? '')) {
+                        revertPayload[k] = previous[k] ?? null;
+                    }
+                });
+
+                if (Object.keys(revertPayload).length > 0) {
+                    const { error: revErr } = await supabase
+                        .from('employees').update(revertPayload).eq('id', existing.employee_id);
+                    if (revErr) throw revErr;
+                    reverted = true;
+
+                    Object.assign(localRevert, revertPayload);
+                    if ('branch_id' in revertPayload) localRevert.branchId = revertPayload.branch_id;
+                    if ('role_id' in revertPayload) {
+                        localRevert.role = revertPayload.role_id
+                            ? (get().roles.find(r => String(r.id) === String(revertPayload.role_id))?.name || null)
+                            : 'Sin Asignar';
+                    }
+                    if ('status' in revertPayload) {
+                        localRevert.effectiveStatus = revertPayload.status === 'ACTIVO' ? 'Activo' : 'Inactivo';
+                    }
+
+                    // Cancelar una baja aplicada: restaurar farmacias asignadas y
+                    // levantar el ban de las cuentas Auth.
+                    if (existing.type === 'TERMINATION' && 'status' in revertPayload) {
+                        const prevBranches = previous._employee_branches || [];
+                        if (prevBranches.length > 0) {
+                            await supabase.from('employee_branches').insert(
+                                prevBranches.map(branch_id => ({ employee_id: existing.employee_id, branch_id }))
+                            );
+                            localRevert.assigned_branch_ids = prevBranches;
+                        }
+                        supabase.functions.invoke('disable-employee-auth', {
+                            body: { employeeId: existing.employee_id, action: 'enable' }
+                        }).catch(err => console.warn('No se pudo reactivar la cuenta Auth:', err));
+                    }
+                }
+            }
+
+            const newMeta = {
+                ...currentMeta,
+                status: 'CANCELLED',
+                cancelledAt: new Date().toISOString(),
+                cancelReason: reason,
+                ...(reverted ? { applyStatus: 'REVERTED' } : {})
+            };
+
             const { error: updateErr } = await supabase
                 .from('employee_events')
-                .update({
-                    metadata: {
-                        ...currentMeta,
-                        status: 'CANCELLED',
-                        cancelledAt: new Date().toISOString(),
-                        cancelReason: reason
-                    }
-                })
+                .update({ metadata: newMeta })
                 .eq('id', eventId);
             if (updateErr) throw updateErr;
 
             // Actualizar estado local sin refetch completo
-            set((state) => ({
-                employees: state.employees.map(emp =>
+            set((state) => {
+                const next = state.employees.map(emp =>
                     String(emp.id) !== String(existing.employee_id) ? emp : {
                         ...emp,
+                        ...localRevert,
                         history: (emp.history || []).map(ev =>
-                            String(ev.id) !== String(eventId) ? ev : {
-                                ...ev,
-                                metadata: {
-                                    ...(typeof ev.metadata === 'object' ? ev.metadata : {}),
-                                    status: 'CANCELLED',
-                                    cancelledAt: new Date().toISOString(),
-                                    cancelReason: reason
-                                }
-                            }
+                            String(ev.id) !== String(eventId) ? ev : { ...ev, metadata: newMeta }
                         )
                     }
-                )
-            }));
+                );
+                persistEmployees(next);
+                return { employees: next };
+            });
 
             window.dispatchEvent(new CustomEvent('employee-event-updated', { detail: { employeeId: existing.employee_id } }));
             return true;

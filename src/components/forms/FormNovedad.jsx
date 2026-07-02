@@ -297,6 +297,20 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 </div>
             )}
 
+            {/* 🗓️ ACCIÓN PROGRAMADA — tipos que aplican cambios al expediente con fecha futura */}
+            {['PROMOTION', 'TRANSFER', 'SALARY', 'CODE_CHANGE', 'TERMINATION'].includes(type) &&
+             formData?.date && formData.date > new Date().toLocaleDateString('en-CA') && (
+                <div className="bg-indigo-50/80 border border-indigo-200 p-4 rounded-2xl flex gap-3 items-start animate-in zoom-in-95">
+                    <CalendarClock className="text-indigo-500 shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
+                    <div>
+                        <p className="text-[11px] font-black uppercase tracking-widest text-indigo-600">Acción Programada</p>
+                        <p className="text-[12px] text-indigo-800/80 font-medium leading-tight mt-1">
+                            La fecha efectiva es futura: el evento se registra hoy pero el cambio se aplicará automáticamente el <b>{formatDate(formData.date)}</b> a las 5:00 a.m. Puedes cancelarlo antes desde el historial.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {isDisability && (
                 <div className="relative z-[30] animate-in fade-in">
                     <label className={labelClasses}>Origen de la Incapacidad</label>

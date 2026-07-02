@@ -1,0 +1,5 @@
+Flujo completo — Storage privado
+
+- Fase 1 (hoy): documents + payment-proofs privados. Estrategia sin migración de datos: las URLs guardadas en BD se conservan como identificadores, y un helper nuevo las convierte a URLs firmadas con expiración al momento de mostrarlas. Policies de Storage para que solo authenticated lea/suba.
+- Fase 2 (siguiente sesión): bucket empleados (fotos). Más delicado porque las fotos se renderizan en decenas de componentes — el punto de conversión es único (fetchBoot/fetchKioskBoot/login mapean photo_url → firmar ahí en lote con createSignedUrls), pero hay que verificar kiosco, header y login.
+- Fase 3 (opcional): límites de tamaño/MIME en documents y empleados como los que ya tienen payment-proofs/product-photos.

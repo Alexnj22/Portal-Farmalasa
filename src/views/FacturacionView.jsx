@@ -13,6 +13,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import { tokenMatch, smartFilter } from '../utils/searchUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
+import { openStoredFile } from '../utils/storageFiles';
 
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const fmt = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -2070,10 +2071,10 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                             <DataCell className="whitespace-nowrap">{dt}</DataCell>
                                             <DataCell>
                                                 {r.proof_url ? (
-                                                    <a href={r.proof_url} target="_blank" rel="noopener noreferrer"
+                                                    <button type="button" onClick={() => openStoredFile(r.proof_url)}
                                                         className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors">
                                                         <Paperclip size={12} /> Ver <ExternalLink size={10} />
-                                                    </a>
+                                                    </button>
                                                 ) : <span className="text-[12px] text-slate-300 italic">Sin comprobante</span>}
                                             </DataCell>
                                             <DataCell className="max-w-[180px]">{r.notes || <span className="italic text-slate-300">—</span>}</DataCell>

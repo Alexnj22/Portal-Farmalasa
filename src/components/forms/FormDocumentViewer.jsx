@@ -1,8 +1,24 @@
-import React from 'react';
-import { Download, FileText } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Download, FileText, Loader2 } from 'lucide-react';
+import { getSignedFileUrl } from '../../utils/storageFiles';
 
 const FormDocumentViewer = ({ formData }) => {
-    const { url, title } = formData || {};
+    const { url: storedUrl, title } = formData || {};
+
+    // Los buckets sensibles son privados: la URL guardada es un identificador
+    // que se convierte a URL firmada con expiración al momento de mostrar.
+    // `key` marca a qué storedUrl pertenece el resultado — mientras no
+    // coincidan, seguimos resolviendo (estado derivado, sin setState síncrono).
+    const [signed, setSigned] = useState({ key: undefined, url: null });
+    useEffect(() => {
+        let alive = true;
+        getSignedFileUrl(storedUrl).then((signedUrl) => {
+            if (alive) setSigned({ key: storedUrl, url: signedUrl });
+        });
+        return () => { alive = false; };
+    }, [storedUrl]);
+    const resolving = signed.key !== storedUrl;
+    const url = resolving ? null : signed.url;
 
     return (
         <div className="flex flex-col h-full bg-slate-50/50">
@@ -27,7 +43,12 @@ const FormDocumentViewer = ({ formData }) => {
                 </a>
             </div>
             <div className="flex-1 p-4 md:p-6 overflow-hidden">
-                {url ? (
+                {resolving ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm">
+                        <Loader2 size={32} className="animate-spin mb-3 text-[#0052CC]" />
+                        <p className="font-bold text-[11px] uppercase tracking-widest">Generando acceso seguro...</p>
+                    </div>
+                ) : url ? (
                     <div className="w-full h-full rounded-[1.5rem] border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
                         {/* Usamos object/embed para mejor compatibilidad con PDFs en navegadores. 
                             Fallback a iframe si falla.

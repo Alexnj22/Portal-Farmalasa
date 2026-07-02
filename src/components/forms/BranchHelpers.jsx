@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { UploadCloud, CheckCircle2, Eye, X } from 'lucide-react';
+import { openStoredFile } from '../../utils/storageFiles';
 
 export const EL_SALVADOR_GEO = {
     "Ahuachapán": ["Ahuachapán Norte", "Ahuachapán Centro", "Ahuachapán Sur"],
@@ -71,7 +72,7 @@ export const FileUploader = ({ label, file, url, onChange }) => {
     const handleView = (e) => {
         e.preventDefault(); e.stopPropagation();
         if (file) window.open(URL.createObjectURL(file), '_blank');
-        else if (url) window.open(url, '_blank');
+        else if (url) openStoredFile(url);
     };
 
     const handleClear = (e) => {

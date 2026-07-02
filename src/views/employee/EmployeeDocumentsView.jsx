@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../supabaseClient';
+import { openStoredFile } from '../../utils/storageFiles';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 
@@ -141,15 +142,14 @@ const DocCard = ({ doc }) => {
                                 <span className="text-[10px] text-slate-400 font-medium truncate max-w-[120px]">
                                     {doc.meta.docName || 'Documento adjunto'}
                                 </span>
-                                <a
-                                    href={doc.meta.docUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
+                                <button
+                                    type="button"
+                                    onClick={() => openStoredFile(doc.meta.docUrl)}
                                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97] ${cfg.bg} ${cfg.border} ${cfg.text}`}
                                 >
                                     <Eye size={10} strokeWidth={2.5} />
                                     Ver
-                                </a>
+                                </button>
                             </div>
                         ) : (
                             <span className="text-[10px] text-slate-300 font-medium italic">Sin archivo adjunto</span>

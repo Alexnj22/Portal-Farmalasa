@@ -17,6 +17,7 @@ import { formatDate, formatTime12h, getEffectiveStatus } from '../utils/helpers'
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
+import { openStoredFile } from '../utils/storageFiles';
 import { useToastStore } from '../store/toastStore';
 import ShiftExceptionModal from '../components/ShiftExceptionModal';
 import LiquidAvatar from '../components/common/LiquidAvatar';
@@ -770,7 +771,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{doc.type || 'DOCUMENTO'}</p>
                                                         </div>
                                                     </div>
-                                                    <button className="w-8 h-8 flex items-center justify-center shrink-0 opacity-0 group-hover:opacity-100 text-[#0052CC] bg-blue-50 rounded-full transition-all duration-300 shadow-sm border border-blue-100"><Download size={14} strokeWidth={2.5}/></button>
+                                                    <button onClick={() => openStoredFile(doc.url)} className="w-8 h-8 flex items-center justify-center shrink-0 opacity-0 group-hover:opacity-100 text-[#0052CC] bg-blue-50 rounded-full transition-all duration-300 shadow-sm border border-blue-100"><Download size={14} strokeWidth={2.5}/></button>
                                                 </div>
                                             ))}
                                             {(!emp.documents || emp.documents.length === 0) && (

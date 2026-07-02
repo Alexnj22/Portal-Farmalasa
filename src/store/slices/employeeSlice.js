@@ -124,11 +124,13 @@ export const createEmployeeSlice = (set, get) => ({
             const fNames = (formData.first_names || '').trim();
             const lNames = (formData.last_names || '').trim();
 
-            // El código es la credencial del carné: sin espacios (rompen el match
-            // ilike del login) y único entre empleados. No se cambia el case porque
-            // el kiosk_pin se deriva de un hash case-sensitive del código.
+            // El código es la credencial del carné: SOLO números (regla de negocio,
+            // también validada por trigger en BD) y único entre empleados.
             const cleanCode = String(formData.code ?? '').trim() || null;
             if (cleanCode) {
+                if (!/^\d+$/.test(cleanCode)) {
+                    throw new Error('El código de empleado debe contener solo números.');
+                }
                 const dup = get().employees.find(e =>
                     (e.code || '').trim().toUpperCase() === cleanCode.toUpperCase()
                 );
@@ -273,11 +275,16 @@ export const createEmployeeSlice = (set, get) => ({
         try {
             const dbPayload = { ...updatedData };
 
-            // Mismas reglas del código que en addEmployee: trim (espacios rompen el
-            // login por carné) y único entre los demás empleados.
+            // Mismas reglas del código que en addEmployee: trim, único, y SOLO números.
+            // Los códigos legacy no numéricos (SUPERADMIN, edwin, etc.) se toleran
+            // mientras NO cambien — igual que el trigger de BD.
             if (dbPayload.code !== undefined) {
                 dbPayload.code = String(dbPayload.code ?? '').trim() || null;
                 if (dbPayload.code) {
+                    const prevCode = (get().employees.find(e => String(e.id) === String(id))?.code || '').trim();
+                    if (dbPayload.code !== prevCode && !/^\d+$/.test(dbPayload.code)) {
+                        throw new Error('El código de empleado debe contener solo números.');
+                    }
                     const dup = get().employees.find(e =>
                         String(e.id) !== String(id) &&
                         (e.code || '').trim().toUpperCase() === dbPayload.code.toUpperCase()

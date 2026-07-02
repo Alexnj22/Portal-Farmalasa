@@ -198,7 +198,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 first_names: '', last_names: '', username: '', phone: '', email: '', address: '', dui: '', birth_date: '',
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',
                 department: '', municipality: '', education_level: '', profession: '',
-                code: `EMP${Math.floor(1000 + Math.random() * 9000)}`, 
+                code: String(Math.floor(1000 + Math.random() * 9000)),
                 branch_id: prev?.branchId || prev?.branch_id || '', 
                 role_id: '', secondary_role_id: '', 
                 hire_date: prev?.hireDate || prev?.hire_date || new Date().toISOString().split('T')[0], 
@@ -251,15 +251,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         return EL_SALVADOR_GEO[formData.department].map(m => ({ value: m, label: m }));
     }, [formData?.department]);
 
-    // Verifica contra los códigos existentes — el random puro podía colisionar
-    // y el índice único de BD rechazaba el guardado sin explicación clara.
+    // Código SOLO numérico (regla de negocio + trigger en BD): con dígitos no
+    // existe ambigüedad de mayúsculas en el hash SHA-256 del PIN. Verifica
+    // contra los códigos existentes para no colisionar con el índice único.
     const generateUniqueCode = () => {
-        const taken = new Set(employees.map(e => (e.code || '').trim().toUpperCase()));
+        const taken = new Set(employees.map(e => (e.code || '').trim()));
         for (let i = 0; i < 50; i++) {
-            const candidate = `EMP${Math.floor(1000 + Math.random() * 9000)}`;
+            const candidate = String(Math.floor(1000 + Math.random() * 9000));
             if (!taken.has(candidate)) return candidate;
         }
-        return `EMP${Date.now().toString().slice(-6)}`;
+        return Date.now().toString().slice(-6);
     };
 
     useEffect(() => {
@@ -689,10 +690,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div>
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">Cod. Empleado <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md border border-red-200">Requerido</span></label>
                                     <div className="relative">
-                                        <input type="text" name="code" value={formData.code} onChange={handleChange} className={`w-full bg-white border border-slate-200/80 rounded-[1rem] px-4 h-[40px] text-[13px] font-black text-slate-700 outline-none uppercase shadow-sm transition-all duration-300 focus-within:ring-4 focus-within:ring-[#0052CC]/10 focus-within:border-[#0052CC]/50 hover:shadow-md ${!formData.code?.trim() ? '!border-red-400 !bg-red-50/50' : ''}`} />
+                                        <input type="text" name="code" value={formData.code} inputMode="numeric" placeholder="Ej. 1024"
+                                            onChange={(e) => { e.target.value = e.target.value.replace(/\D/g, ''); handleChange(e); }}
+                                            className={`w-full bg-white border border-slate-200/80 rounded-[1rem] px-4 h-[40px] text-[13px] font-black text-slate-700 outline-none shadow-sm transition-all duration-300 focus-within:ring-4 focus-within:ring-[#0052CC]/10 focus-within:border-[#0052CC]/50 hover:shadow-md ${!formData.code?.trim() ? '!border-red-400 !bg-red-50/50' : ''}`} />
                                         <button type="button" onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-[#0052CC] hover:bg-blue-50 rounded-lg transition-colors"><RefreshCw size={14} strokeWidth={2.5} /></button>
                                     </div>
-                                    <p className="text-[9px] font-bold text-[#0052CC] mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Codificado vía SHA-256 para el carnet.</p>
+                                    <p className="text-[9px] font-bold text-[#0052CC] mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Solo números — codificado vía SHA-256 para el carnet.</p>
                                 </div>
                             </div>
                         </div>

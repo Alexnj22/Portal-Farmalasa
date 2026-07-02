@@ -553,16 +553,17 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                 <label className={labelClasses}>Nuevo Código</label>
                                 <div className="relative">
                                     <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-[#0052CC]/50" size={14} strokeWidth={2.5}/>
-                                    <input type="text" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-[#0052CC] uppercase text-center focus:!ring-[#0052CC]/20`} value={formData?.newCode || ''} onChange={(e) => {
-                                        const upperVal = e.target.value.toUpperCase().trim();
-                                        setFormData(prev => ({ ...prev, newCode: upperVal }));
-                                        if (upperVal.length > 0) {
+                                    <input type="text" inputMode="numeric" placeholder="Ej. 1024" className={`${inputClasses} pl-9 font-black tracking-widest text-[#0052CC] text-center focus:!ring-[#0052CC]/20`} value={formData?.newCode || ''} onChange={(e) => {
+                                        // El código es SOLO numérico (regla de negocio + trigger en BD)
+                                        const cleanVal = e.target.value.replace(/\D/g, '');
+                                        setFormData(prev => ({ ...prev, newCode: cleanVal }));
+                                        if (cleanVal.length > 0) {
                                             const conflict = employees.find(emp =>
                                                 emp.id !== activeEmployee?.id &&
                                                 emp.status === 'ACTIVO' &&
-                                                (emp.code?.toUpperCase() === upperVal ||
-                                                 emp.kiosk_pin?.toUpperCase() === upperVal ||
-                                                 emp.username?.toLowerCase() === upperVal.toLowerCase())
+                                                (emp.code === cleanVal ||
+                                                 emp.kiosk_pin?.toUpperCase() === cleanVal ||
+                                                 emp.username?.toLowerCase() === cleanVal.toLowerCase())
                                             );
                                             setCodeConflict(conflict || null);
                                         } else {

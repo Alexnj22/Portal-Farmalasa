@@ -445,6 +445,11 @@ export const createSystemSlice = (set, get) => ({
             } else if (eventData.type === 'CODE_CHANGE') {
                 const cleanCode = String(eventData.newCode ?? '').trim();
                 if (cleanCode) {
+                    if (!/^\d+$/.test(cleanCode)) {
+                        const e = new Error('El código de empleado debe contener solo números.');
+                        e.userFacing = true;
+                        throw e;
+                    }
                     const dup = stateNow.employees.find(e =>
                         String(e.id) !== String(employeeId) &&
                         (e.code || '').trim().toUpperCase() === cleanCode.toUpperCase()

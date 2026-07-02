@@ -1,0 +1,61 @@
+-- ============================================================================
+-- POLICIES GRANULARES — protección contra modificación/eliminación masiva
+-- 2026-07-02 (v2.2.461). Aplicado vía MCP en 3 migraciones:
+--   auth_helpers_robust_resolution, granular_write_policies_part1/part2
+-- Este archivo es el registro consolidado. Cero cambios de datos.
+--
+-- PRINCIPIOS (verificado tabla por tabla contra el código del portal):
+--  · SELECT abierto a authenticated (el patrón de lectura del portal)
+--  · Escrituras: SOLO las operaciones que el portal realmente ejecuta
+--  · DELETE eliminado donde el portal nunca borra (historial append-only)
+--  · Config/catálogos: candado auth_can_edit_any(módulos de role_permissions)
+--  · service_role, RPCs SECURITY DEFINER y cascadas de FK no pasan por RLS
+--
+-- RESOLUCIÓN DE EMPLEADO (auth_employee_role_id): auth.uid() → metadata.code
+-- (cuentas de carné @staff.local) → username del email. La versión anterior
+-- solo resolvía por username y bloqueaba a los logins por carné.
+--
+-- MAPA DE CANDADOS:
+--  product_stock_params (min/max)  I/U: minmax|pedidos · sin DELETE
+--  stock_config                    U: minmax
+--  customers                       SOLO LECTURA (escribe el sync service role)
+--  branches                        I/U: branches · sin DELETE
+--  dispatch_rules                  I/U/D: pedidos
+--  promotions (+5 satélites)       escrituras: promociones
+--  roles.DELETE                    roles|permissions
+--  shifts.DELETE                   schedules
+--  overtime_bank                   I/D: payroll|time_audit · sin UPDATE
+--  product_categories              I: productos · sin U/D
+--  product_active_principles       I/D: productos|compras
+--  lab_locations                   I/U: laboratorios|productos · sin DELETE
+--  survey_responses.DELETE         encuesta_admin
+--
+-- APPEND-ONLY / SIN DELETE (el portal jamás borra):
+--  employee_events, employee_documents, timesheets, employee_rosters,
+--  branch_documents, branch_expenses, kiosk_devices, pedido_apoyo,
+--  pedido_item_eventos (solo SELECT), pedido_recepcion_extras, ruta_pedidos,
+--  rutas, vacation_plans, vacation_plan_headers, sales_payment_confirmations,
+--  wfm_snapshots (solo SELECT), promotion_sales_cache (solo SELECT)
+--
+-- SIN CAMBIOS (operativa diaria por diseño):
+--  minmax_ignored, product_locations, schedule_coverage, attendance, holidays,
+--  announcements, cotizaciones, payroll_*, push_subscriptions, employee_branches
+--
+-- MANTENIMIENTO APLICADO EN LA MISMA SESIÓN:
+--  VACUUM (ANALYZE) sales_invoices  · autovacuum_scale_factor 0.02 en
+--  sales_invoices y sales_invoice_items (antes 5 semanas sin autovacuum)
+--
+-- VERIFICACIÓN (SET LOCAL request.jwt.claims, en transacción con ROLLBACK):
+--  ✓ Supervisor (Edwin): UPDATE product_stock_params → 1 fila
+--  ✓ Dependiente logueada POR CARNÉ (resolución por code): UPDATE min/max → 1;
+--    DELETE promotions → 0
+--  ✓ JWT sin empleado asociado: UPDATE min/max, DELETE customers,
+--    DELETE employee_events, UPDATE branches, DELETE promotions → 0 filas;
+--    SELECT products → OK
+--
+-- El SQL completo vive en el historial de migraciones de Supabase
+-- (list_migrations): auth_helpers_robust_resolution,
+-- granular_write_policies_part1, granular_write_policies_part2,
+-- autovacuum_tuning_sales_invoices.
+-- ============================================================================
+SELECT 1; -- registro documental; el DDL real ya está aplicado en la nube

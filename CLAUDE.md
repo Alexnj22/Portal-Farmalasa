@@ -58,8 +58,12 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
    sin RLS — `anon` no debe ver nada.
 2. **Toda FK**: con índice que la cubra (`CREATE INDEX ... ON tabla(col_fk)`), excepto
    columnas de puro audit (`*_por`, `created_by`) en tablas pequeñas.
-3. **Policies de escritura**: preferir `auth_has_module_permission(module, 'can_edit')`
-   sobre `USING (true)` en tablas sensibles (nómina, precios, facturación).
+3. **Policies de escritura**: usar `auth_can_edit_any(ARRAY['modulo1','modulo2'])`
+   (helper que resuelve al empleado por uid/code/username y chequea can_edit en
+   role_permissions) — NUNCA `USING (true)` para UPDATE/DELETE en tablas sensibles.
+   Historial (`employee_events`, `timesheets`, etc.) es append-only: sin policy
+   de DELETE (las RPCs DEFINER y service_role no la necesitan). Aplicado a las
+   35 tablas expuestas el 2026-07-02 (`20260702_granular_write_policies.sql`).
 4. **Funciones**: SECURITY DEFINER solo si es necesario, SIEMPRE con
    `SET search_path = public, extensions`, y `REVOKE EXECUTE ... FROM PUBLIC, anon` +
    `GRANT ... TO authenticated, service_role`. Únicas funciones con anon permitido:

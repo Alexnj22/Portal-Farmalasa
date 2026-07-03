@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
-import { User, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail } from 'lucide-react';
+import { User, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect'; 
 import LiquidDatePicker from '../common/LiquidDatePicker'; 
 import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo'; 
@@ -696,6 +696,30 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <button type="button" onClick={() => setFormData(p => ({...p, code: generateUniqueCode()}))} className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 text-[#0052CC] hover:bg-blue-50 rounded-lg transition-colors"><RefreshCw size={14} strokeWidth={2.5} /></button>
                                     </div>
                                     <p className="text-[9px] font-bold text-[#0052CC] mt-2 ml-1 flex items-center gap-1"><ShieldCheck size={12} /> Solo números — codificado vía SHA-256 para el carnet.</p>
+
+                                    {/* PIN derivado del código (se recalcula en vivo al escribir) */}
+                                    {formData.kiosk_pin && (
+                                        <div className="mt-3 animate-in fade-in">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">PIN del Carné (SHA-256)</label>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 h-[40px] bg-slate-800 rounded-[1rem] flex items-center justify-center px-4 text-[14px] font-black tracking-[0.3em] text-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.4)] select-all">
+                                                    {formData.kiosk_pin}
+                                                </div>
+                                                <button type="button"
+                                                    onClick={async () => {
+                                                        try {
+                                                            await navigator.clipboard.writeText(formData.kiosk_pin);
+                                                            useToastStore.getState().showToast('PIN Copiado', `${formData.kiosk_pin} está en el portapapeles.`, 'success');
+                                                        } catch { /* sin permiso de clipboard */ }
+                                                    }}
+                                                    className="w-10 h-10 shrink-0 flex items-center justify-center bg-white border border-slate-200 rounded-[1rem] text-slate-500 hover:text-[#0052CC] hover:border-[#0052CC]/40 hover:shadow-md transition-all active:scale-[0.97]"
+                                                    title="Copiar PIN">
+                                                    <Copy size={15} strokeWidth={2.5} />
+                                                </button>
+                                            </div>
+                                            <p className="text-[9px] font-bold text-slate-400 mt-1.5 ml-1">Este es el valor del código de barras del carné.</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

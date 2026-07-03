@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search, Loader2, AlertTriangle, CheckCircle2, X, Clock,
   Eye, ArrowLeft, AlertCircle, Ban, CreditCard, UserCog,
-  ChevronRight, Info, ShieldAlert, User, CalendarDays,
+  ChevronRight, Info, ShieldAlert, User, CalendarDays, Contact,
 } from 'lucide-react';
+import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -277,6 +278,11 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
       key: 'vendor_change', icon: UserCog, label: 'Cambio de Vendedor',
       desc: vendor ? vendor.name.split(' ')[0] : `Vendedor: #${inv.cod_vendedor || 'N/A'}`,
       color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200/70', iconBg: 'bg-purple-100',
+    },
+    {
+      key: 'client_change', icon: Contact, label: 'Cambio de Cliente',
+      desc: `Actual: ${inv.cliente || 'Sin nombre'}`,
+      color: 'text-teal-600', bg: 'bg-teal-50 border-teal-200/70', iconBg: 'bg-teal-100',
     },
   ];
 
@@ -634,6 +640,182 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
   );
 }
 
+/* ─── Client change form ─────────────────────────────────────────────────────── */
+function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId, employees, appendAuditLog }) {
+  const [query,       setQuery]       = useState('');
+  const [results,     setResults]     = useState([]);
+  const [searching,   setSearching]   = useState(false);
+  const [newClient,   setNewClient]   = useState(null);
+  const [comment,     setComment]     = useState('');
+  const [submitting,  setSubmitting]  = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const vendor = employees.find(e => String(e.code) === String(inv.cod_vendedor));
+
+  /* Búsqueda server-side sobre el listado COMPLETO de clientes (23K+ filas,
+     el cap de 1000 de PostgREST hace inviable traerlos al cliente):
+     · cada palabra escrita debe coincidir (AND de tokens)
+     · cada token busca en search_name (columna generada sin acentos/mayúsculas)
+       + NIT, DUI, teléfono y código ERP — "jose" encuentra "JOSÉ" y viceversa
+     · debounce 300ms · top 30 por nombre */
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) { setResults([]); setSearching(false); return; }
+    setSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const tokens = q.split(/\s+/).filter(Boolean).slice(0, 5)
+          .map(tok => tok.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[,%()]/g, ''))
+          .filter(Boolean);
+        let req = supabase.from('customers')
+          .select('id, name, nit, dui, phone, erp_id')
+          .order('name')
+          .limit(30);
+        for (const tok of tokens) {
+          const like = `%${tok}%`;
+          req = req.or(`search_name.ilike.${like},nit.ilike.${like},dui.ilike.${like},phone.ilike.${like},erp_id.ilike.${like}`);
+        }
+        const { data } = await req;
+        setResults(data || []);
+      } catch { setResults([]); }
+      setSearching(false);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const handleSubmit = async () => {
+    if (!newClient) return;
+    setSubmitting(true); setSubmitError('');
+    try {
+      const target = findTargetEmployee(employees);
+      const { error } = await supabase.from('approval_requests').insert({
+        employee_id: user?.id, approver_id: target?.id ?? null,
+        type: 'CLIENT_CHANGE_REQUEST', status: 'PENDING',
+        note: comment.trim() || null,
+        metadata: {
+          invoice_id: inv.id, correlativo: inv.correlativo, fecha: inv.fecha,
+          total: inv.total, tipo_documento: inv.tipo_documento,
+          branch_id: activeBranchId, branch_name: activeBranch?.name,
+          current_cliente: inv.cliente ?? null,
+          new_client_id: newClient.id,
+          new_client_name: newClient.name,
+          new_client_nit: newClient.nit ?? null,
+          new_client_dui: newClient.dui ?? null,
+          notified_employee_id: target?.id ?? null,
+          notified_employee: target?.name ?? 'Sin supervisor asignado',
+        },
+      });
+      if (error) throw error;
+      await appendAuditLog('CLIENT_CHANGE_REQUEST_CREATED', String(inv.id), {
+        correlativo: inv.correlativo, from: inv.cliente, to: newClient.name,
+      });
+      if (target?.id) {
+        try {
+          await supabase.functions.invoke('send-push-notification', {
+            body: { employeeId: target.id, title: '🧾 Cambio de Cliente',
+              body: `${user?.name || 'Un empleado'} solicita cambiar el cliente de ${inv.correlativo}: ${inv.cliente || 'Sin nombre'} → ${newClient.name}` },
+          });
+        } catch { /* non-fatal */ }
+      }
+      onSuccess('client_change', target?.name);
+    } catch (e) { setSubmitError(e.message || 'Error al enviar solicitud'); }
+    finally { setSubmitting(false); }
+  };
+
+  return (
+    <div className="flex flex-col gap-2 h-full animate-in slide-in-from-right-3 duration-200">
+      <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
+
+      <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {/* Cliente actual */}
+        <div className="rounded-2xl px-3 py-2 bg-slate-50 border border-slate-200">
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Cliente actual</p>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center shrink-0">
+              <span className="text-slate-600 font-black text-[11px] leading-none">{(inv.cliente || '?').charAt(0)}</span>
+            </div>
+            <p className="text-[13px] font-black text-slate-700 truncate">{inv.cliente || 'Sin nombre'}</p>
+          </div>
+        </div>
+
+        {/* Buscador de cliente nuevo */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Cliente nuevo *</label>
+          <div className="relative">
+            {searching
+              ? <Loader2 size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />
+              : <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />}
+            <input
+              type="text" value={query}
+              onChange={e => { setQuery(e.target.value); setNewClient(null); }}
+              placeholder="Nombre, NIT, DUI o teléfono..."
+              className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200 bg-white text-[11px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
+              spellCheck={false}
+            />
+            {query && (
+              <button onClick={() => { setQuery(''); setNewClient(null); setResults([]); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600">
+                <X size={10} strokeWidth={2.5} />
+              </button>
+            )}
+          </div>
+
+          {/* Seleccionado */}
+          {newClient && (
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-2xl border bg-[#0052CC]/5 border-[#0052CC]/40">
+              <div className="w-7 h-7 rounded-full bg-[#0052CC]/10 flex items-center justify-center shrink-0">
+                <span className="text-[#0052CC] font-black text-[10px] leading-none">{newClient.name?.charAt(0)}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-black text-[#0052CC] truncate">{newClient.name}</p>
+                {(newClient.nit || newClient.dui) && (
+                  <p className="text-[9px] text-slate-400 font-mono truncate">{newClient.nit || newClient.dui}</p>
+                )}
+              </div>
+              <div className="w-4 h-4 rounded-full bg-[#0052CC] flex items-center justify-center shrink-0">
+                <svg viewBox="0 0 10 8" className="w-2.5 h-2"><path d="M1 4l2.5 2.5L9 1" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+            </div>
+          )}
+
+          {/* Resultados */}
+          {!newClient && query.trim().length >= 2 && !searching && results.length === 0 && (
+            <p className="text-[11px] text-slate-400 text-center py-2">Sin coincidencias en el listado de clientes</p>
+          )}
+          {!newClient && results.length > 0 && (
+            <div className="space-y-1 max-h-[180px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {results.map(c => (
+                <button key={c.id} onClick={() => setNewClient(c)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl border text-left transition-all bg-white border-slate-200 hover:border-[#0052CC]/40">
+                  <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                    <span className="text-slate-500 font-black text-[10px] leading-none">{c.name?.charAt(0)}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-bold text-slate-700 truncate leading-tight">{c.name}</p>
+                    <p className="text-[9px] text-slate-400 font-mono truncate">
+                      {[c.nit && `NIT ${c.nit}`, c.dui && `DUI ${c.dui}`, c.phone].filter(Boolean).join(' · ') || `#${c.erp_id || c.id}`}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo</label>
+          <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
+            placeholder="Explica por qué se debe cambiar el cliente..."
+            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all resize-none"
+          />
+        </div>
+        {submitError && <p className="text-[11px] text-red-500 font-medium px-1">{submitError}</p>}
+      </div>
+
+      <StickySubmit label="Enviar solicitud de cambio" onClick={handleSubmit} disabled={!newClient} loading={submitting} />
+    </div>
+  );
+}
+
 /* ─── Main component ─────────────────────────────────────────────────────────── */
 export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId = null }) {
   const { user }       = useAuth();
@@ -723,6 +905,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
       annul:         { title: 'Anulación solicitada',       sub: 'Supervisión fue notificada y revisará la solicitud.' },
       pay_change:    { title: 'Cambio de pago solicitado',  sub: 'Supervisión fue notificada para su aprobación.' },
       vendor_change: { title: 'Cambio de vendedor enviado', sub: 'Supervisión fue notificada para su aprobación.' },
+      client_change: { title: 'Cambio de cliente enviado',  sub: 'Supervisión fue notificada para su aprobación.' },
     };
     const lbl = msgs[successInfo.type] || msgs.annul;
     return (
@@ -741,6 +924,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   if (view === 'annul'        && focused) return <AnnulForm         inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} {...sharedProps} />;
   if (view === 'pay_change'   && focused) return <PaymentChangeForm inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} {...sharedProps} />;
   if (view === 'vendor_change'&& focused) return <VendorChangeForm  inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} {...sharedProps} />;
+  if (view === 'client_change'&& focused) return <ClientChangeForm  inv={focused} onBack={() => setView('type_select')} onSuccess={handleSuccess} {...sharedProps} />;
   if (view === 'type_select'  && focused) return <TypeSelector inv={focused} onBack={() => setView(prevView)} onSelect={key => setView(key)} employees={employees} />;
   if (view === 'detail'       && focused) return (
     <InvoiceDetail inv={focused} onBack={() => { setView('list'); setFocused(null); }}
@@ -748,12 +932,6 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   );
 
   /* ── Lista ── */
-  const now  = svToday();
-  const y    = now.getFullYear();
-  const m    = String(now.getMonth() + 1).padStart(2, '0');
-  const minDate = `${y}-${m}-01`;
-  const maxDate = `${y}-${m}-${String(new Date(y, now.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
-
   return (
     <div className="flex flex-col gap-2.5 h-full">
       <div className="flex items-center justify-between shrink-0">
@@ -765,10 +943,10 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
         </span>
       </div>
 
-      {/* Controls: search 2/3 + date 1/3 */}
-      <div className="grid grid-cols-3 gap-2 shrink-0">
-        {/* Search — 2/3 */}
-        <div className="col-span-2 relative">
+      {/* Controls: search flexible + LiquidDatePicker fijo */}
+      <div className="flex items-stretch gap-2 shrink-0">
+        {/* Search */}
+        <div className="flex-1 relative">
           <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
@@ -784,20 +962,9 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
           )}
         </div>
 
-        {/* Date picker — 1/3 */}
-        <div className="col-span-1 relative">
-          <CalendarDays size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
-          <input
-            type="date" value={dateFilter} min={minDate} max={maxDate}
-            onChange={e => setDateFilter(e.target.value)}
-            className="w-full pl-7 pr-1 py-2 rounded-2xl border border-slate-200 bg-white text-[10px] font-medium text-slate-700 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all cursor-pointer [color-scheme:light]"
-          />
-          {dateFilter && (
-            <button onClick={() => setDateFilter('')}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full bg-slate-100 text-slate-400 hover:text-slate-600 z-10">
-              <X size={9} strokeWidth={2.5} />
-            </button>
-          )}
+        {/* LiquidDatePicker (estándar del proyecto — nunca input date nativo) */}
+        <div className="w-[150px] shrink-0 rounded-2xl border border-slate-200 bg-white flex items-center focus-within:border-[#0052CC] focus-within:ring-2 focus-within:ring-[#0052CC]/10 transition-all">
+          <LiquidDatePicker value={dateFilter} onChange={(d) => setDateFilter(d || '')} icon={CalendarDays} />
         </div>
       </div>
 

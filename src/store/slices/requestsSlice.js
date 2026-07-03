@@ -17,6 +17,7 @@ export const REQUEST_TYPES = {
     ANNULMENT_REQUEST:      { label: 'Anulación de Factura',    color: 'bg-rose-100 text-rose-800',      border: 'border-rose-200' },
     PAYMENT_CHANGE_REQUEST: { label: 'Cambio de Forma de Pago', color: 'bg-sky-100 text-sky-800',        border: 'border-sky-200' },
     VENDOR_CHANGE_REQUEST:  { label: 'Cambio de Vendedor',      color: 'bg-purple-100 text-purple-800',  border: 'border-purple-200' },
+    CLIENT_CHANGE_REQUEST:  { label: 'Cambio de Cliente',       color: 'bg-teal-100 text-teal-800',      border: 'border-teal-200' },
 };
 
 export const REQUEST_STATUS = {

@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.469';
+export const APP_VERSION = '2.2.470';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.470 — feat(solicitudes): vista del aprobador para Cambio de Cliente — RequestsView reconoce CLIENT_CHANGE_REQUEST: badge teal "Cambio de Cliente" en catálogo (requestsSlice), ícono Contact, estilos de tarjeta teal, resumen en fila (correlativo · actual → nuevo) y bloque de detalle antes→después: tarjeta de factura (correlativo + total) y comparativa Cliente actual | Cambiar a con avatar de inicial y NIT/DUI del nuevo
 // v2.2.469 — feat(dashboard): widget Modificar Facturación — (1) nuevo tipo "Cambio de Cliente" (CLIENT_CHANGE_REQUEST): tarjeta teal en el selector, muestra el cliente actual y buscador server-side sobre los 23K clientes completos (tokens AND en search_name normalizado + NIT/DUI/teléfono/ERP, insensible a acentos en ambas direcciones vía columna generada customers.search_name, debounce 300ms, top 30) — precisión verificada: "jose"→solo JOSE/JOSÉ, "maria lopez"→163 exactos, PEÑA/NUÑEZ encontrados sin acento; metadata con cliente actual/nuevo + push al supervisor + audit; (2) filtro de fecha ahora usa LiquidDatePicker (eliminado el input date nativo — regla del proyecto)
 // v2.2.468 — feat(empleados): campos opcionales con formato fijo ahora BLOQUEAN el guardado si están a medias — validateOptionalFormats en addEmployee/updateEmployee: Teléfono (8), Tel. Emergencia (8), ISSS (9), NUP (12); regla "o se completa, o se borra para quedar pendiente" con mensaje explícito en el banner del modal; vacío sigue siendo válido (banner Información Pendiente lo recuerda en edición); testeado 9/9 casos; 0 empleados existentes afectados (verificado en BD)
 // v2.2.467 — feat(empleados): DUI ahora BLOQUEA el guardado si es inválido/duplicado/incompleto (antes solo aviso visual) — validateDui en addEmployee/updateEmployee (formato 00000000-0 + dígito verificador + duplicado, testeado 4/4 casos); BD: índice único employees_dui_unique + CHECK chk_employees_dui_format (probados en vivo); máscara nueva en Número de Cuenta (dígitos y guiones, máx 25); avisos "Incompleto"/"Debe tener N dígitos" en DUI a medias, Teléfono, Tel. Emergencia, ISSS (9) y NUP (12)

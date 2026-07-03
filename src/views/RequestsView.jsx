@@ -6,7 +6,7 @@ import {
     Palmtree, FileText, RefreshCw, DollarSign, FileCheck, Coffee,
     CheckCircle2, XCircle, Stethoscope, FileImage, AlertTriangle,
     Search, ArrowLeftRight, CalendarDays, Banknote, FileCheck2,
-    Ban, CreditCard, UserCog, Receipt,
+    Ban, CreditCard, UserCog, Receipt, Contact,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +26,7 @@ const TYPE_ICONS = {
     ANNULMENT_REQUEST:      Ban,
     PAYMENT_CHANGE_REQUEST: CreditCard,
     VENDOR_CHANGE_REQUEST:  UserCog,
+    CLIENT_CHANGE_REQUEST:  Contact,
 };
 
 // circle = card colored avatar; section = section label color
@@ -40,6 +41,7 @@ const TYPE_COLORS = {
     ANNULMENT_REQUEST:      { circle: 'bg-rose-500',     ring: 'ring-rose-200',     section: 'text-rose-700',     border: 'border-rose-200/60',     hover: 'hover:shadow-[0_8px_28px_rgba(244,63,94,0.14)]',     sectionIcon: 'text-rose-600 bg-rose-50 border-rose-200/50'           },
     PAYMENT_CHANGE_REQUEST: { circle: 'bg-sky-500',      ring: 'ring-sky-200',      section: 'text-sky-700',      border: 'border-sky-200/50',      hover: 'hover:shadow-[0_8px_28px_rgba(14,165,233,0.12)]',    sectionIcon: 'text-sky-600 bg-sky-50 border-sky-200/50'              },
     VENDOR_CHANGE_REQUEST:  { circle: 'bg-purple-500',   ring: 'ring-purple-200',   section: 'text-purple-700',   border: 'border-purple-200/50',   hover: 'hover:shadow-[0_8px_28px_rgba(168,85,247,0.12)]',    sectionIcon: 'text-purple-600 bg-purple-50 border-purple-200/50'     },
+    CLIENT_CHANGE_REQUEST:  { circle: 'bg-teal-500',     ring: 'ring-teal-200',     section: 'text-teal-700',     border: 'border-teal-200/50',     hover: 'hover:shadow-[0_8px_28px_rgba(20,184,166,0.12)]',    sectionIcon: 'text-teal-600 bg-teal-50 border-teal-200/50'           },
 };
 
 const fmtDate = (iso) => !iso ? '—' : new Date(iso + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
@@ -72,6 +74,8 @@ const CompactSummary = ({ req }) => {
         return <span className="text-[10px] text-slate-500">{meta.correlativo} · {meta.current_pago} → {meta.new_pago}</span>;
     if (req.type === 'VENDOR_CHANGE_REQUEST' && meta.correlativo)
         return <span className="text-[10px] text-slate-500">{meta.correlativo} · vendedor #{meta.current_vendor_code} → #{meta.new_vendor_code}</span>;
+    if (req.type === 'CLIENT_CHANGE_REQUEST' && meta.correlativo)
+        return <span className="text-[10px] text-slate-500">{meta.correlativo} · {(meta.current_cliente || 'Sin nombre').split(' ')[0]} → {(meta.new_client_name || '').split(' ')[0]}</span>;
     if (req.note) return <span className="text-[10px] text-slate-400 italic truncate max-w-[160px]">"{req.note}"</span>;
     return null;
 };
@@ -315,6 +319,38 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     )}
                                     <p className="text-[11px] font-black text-slate-700">{meta.new_vendor_name || `#${meta.new_vendor_code}`}</p>
                                     {meta.new_vendor_code && <p className="text-[9px] text-slate-400 font-mono">#{meta.new_vendor_code}</p>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CLIENT_CHANGE_REQUEST */}
+                    {req.type === 'CLIENT_CHANGE_REQUEST' && meta.correlativo && (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-2xl bg-teal-50/80 border border-teal-200/60">
+                                <Receipt size={13} className="text-teal-500 flex-shrink-0" strokeWidth={2} />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-teal-400 mb-0.5">Factura</p>
+                                    <p className="text-[12px] font-bold text-teal-700">{meta.correlativo} · ${Number(meta.total || 0).toFixed(2)}</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-white/70 border border-white/80 rounded-2xl p-2.5">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Cliente actual</p>
+                                    <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center mb-1">
+                                        <span className="text-slate-500 font-black text-[10px] leading-none">{(meta.current_cliente || '?').charAt(0)}</span>
+                                    </div>
+                                    <p className="text-[11px] font-black text-slate-700 leading-tight">{meta.current_cliente || 'Sin nombre'}</p>
+                                </div>
+                                <div className="bg-teal-50/80 border border-teal-100 rounded-2xl p-2.5">
+                                    <p className="text-[8px] font-black text-teal-500 uppercase tracking-widest mb-1">Cambiar a</p>
+                                    <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center mb-1">
+                                        <span className="text-teal-600 font-black text-[10px] leading-none">{(meta.new_client_name || '?').charAt(0)}</span>
+                                    </div>
+                                    <p className="text-[11px] font-black text-slate-700 leading-tight">{meta.new_client_name}</p>
+                                    {(meta.new_client_nit || meta.new_client_dui) && (
+                                        <p className="text-[9px] text-slate-400 font-mono mt-0.5">{meta.new_client_nit ? `NIT ${meta.new_client_nit}` : `DUI ${meta.new_client_dui}`}</p>
+                                    )}
                                 </div>
                             </div>
                         </div>

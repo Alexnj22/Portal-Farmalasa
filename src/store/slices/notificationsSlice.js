@@ -63,4 +63,25 @@ export const createNotificationsSlice = (set, get) => ({
             console.error('Error marcando notificaciones leídas:', err);
         }
     },
+
+    // RLS solo permite borrar las propias (policy notifications_delete)
+    deleteNotification: async (id) => {
+        set(state => ({ notifications: state.notifications.filter(n => n.id !== id) }));
+        try {
+            await supabase.from('notifications').delete().eq('id', id);
+        } catch (err) {
+            console.error('Error borrando notificación:', err);
+        }
+    },
+
+    clearAllNotifications: async () => {
+        const ids = get().notifications.map(n => n.id);
+        if (!ids.length) return;
+        set({ notifications: [] });
+        try {
+            await supabase.from('notifications').delete().in('id', ids);
+        } catch (err) {
+            console.error('Error limpiando notificaciones:', err);
+        }
+    },
 });

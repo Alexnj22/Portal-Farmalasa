@@ -478,11 +478,26 @@ Deno.serve(async (req) => {
       const INV_MAP_FILTERED = onlyInvErpId != null
         ? INV_BRANCH_MAP.filter((b: any) => Number(b.erpId) === Number(onlyInvErpId))
         : INV_BRANCH_MAP;
+
+      // Ubicaciones por sucursal desde BD (erp_sucursal_map.inv_ubicaciones):
+      // ahí es editable sin tocar el secret (que solo aporta credenciales).
+      // Bodega usa [{id:1,regular},{id:2,vencidos}] — la ubicación 0 del ERP
+      // mezcla el área de vencidos dentro del inventario regular.
+      const { data: ubicRows } = await supabase
+        .from('erp_sucursal_map')
+        .select('erp_sucursal_id, inv_ubicaciones');
+      const ubicByErpId = new Map<number, any>(
+        (ubicRows ?? []).map((r: any) => [Number(r.erp_sucursal_id), r.inv_ubicaciones])
+      );
+
       for (const { erpId: invErpId, username, password, ubicaciones: rawUbicaciones } of INV_MAP_FILTERED) {
-        // Fallback: if ubicaciones is missing/null in the secret, default to [{id:0, isVencidos:false}]
-        const ubicaciones = (Array.isArray(rawUbicaciones) && rawUbicaciones.length > 0)
-          ? rawUbicaciones
-          : [{ id: 0, isVencidos: false }];
+        // Prioridad: BD → secret → [{id:0, isVencidos:false}]
+        const dbUbicaciones = ubicByErpId.get(Number(invErpId));
+        const ubicaciones = (Array.isArray(dbUbicaciones) && dbUbicaciones.length > 0)
+          ? dbUbicaciones
+          : (Array.isArray(rawUbicaciones) && rawUbicaciones.length > 0)
+            ? rawUbicaciones
+            : [{ id: 0, isVencidos: false }];
         for (const { id: ubicacionId, isVencidos } of ubicaciones) {
           try {
             const result = await syncInventoryBranch(supabase, invErpId, username, password, ubicacionId, isVencidos, cookieCache);

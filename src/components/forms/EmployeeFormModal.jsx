@@ -57,6 +57,7 @@ const generateHashCorto = async (valor) => {
 
 const applyMask = (value, type) => {
     if (!value) return '';
+    if (type === 'ACCOUNT') return value.replace(/[^0-9-]/g, '').substring(0, 25);
     let v = value.replace(/\D/g, ''); 
     if (type === 'DUI') {
         if (v.length > 8) return `${v.substring(0, 8)}-${v.substring(8, 9)}`;
@@ -332,10 +333,19 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     }, [formData?.dui, formData?.id, employees]);
 
     const isDuiInvalid = formData?.dui?.length === 10 && !isValidDUIAlgorithm(formData.dui);
+    const isDuiIncomplete = !!formData?.dui && formData.dui.length > 0 && formData.dui.length < 10;
+
+    // Avisos de longitud para campos opcionales con formato fijo
+    const digitsLen = (v) => (v || '').replace(/\D/g, '').length;
+    const phoneIncomplete = !!formData?.phone && digitsLen(formData.phone) < 8;
+    const emergPhoneIncomplete = !!formData?.emergency_contact_phone && digitsLen(formData.emergency_contact_phone) < 8;
+    const isssIncomplete = !!formData?.isss_number && formData.isss_number.length !== 9;
+    const afpIncomplete = !!formData?.afp_number && formData.afp_number.length !== 12;
 
     let duiErrorMsg = null;
     if (isDuiDuplicate) duiErrorMsg = "DUI Ya Registrado";
     else if (isDuiInvalid) duiErrorMsg = "DUI Inválido";
+    else if (isDuiIncomplete) duiErrorMsg = "Incompleto";
 
     const isHomonymWarning = useMemo(() => {
         if (!formData?.first_names || !formData?.last_names) return false;
@@ -466,7 +476,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <PortalInput label="Nombres" name="first_names" value={formData.first_names} onChange={handleChange} required />
                                 <PortalInput label="Apellidos" name="last_names" value={formData.last_names} onChange={handleChange} required />
-                                <PortalInput label="DUI" name="dui" value={formData.dui} onChange={handleChange} icon={Fingerprint} placeholder="00000000-0" maskType="DUI" hasError={isDuiInvalid || isDuiDuplicate} errorMessage={duiErrorMsg} />
+                                <PortalInput label="DUI" name="dui" value={formData.dui} onChange={handleChange} icon={Fingerprint} placeholder="00000000-0" maskType="DUI" hasError={isDuiInvalid || isDuiDuplicate || isDuiIncomplete} errorMessage={duiErrorMsg} />
                                 
                                 <div className="relative z-30">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Fecha de Nacimiento</label>
@@ -474,7 +484,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <LiquidDatePicker value={formData.birth_date} onChange={(date) => handleDateChange('birth_date', date)} placeholder="Seleccionar Fecha" />
                                     </div>
                                 </div>
-                                <PortalInput label="Teléfono" name="phone" value={formData.phone} onChange={handleChange} type="tel" icon={Phone} placeholder="0000-0000" maskType="PHONE" />
+                                <PortalInput label="Teléfono" name="phone" value={formData.phone} onChange={handleChange} type="tel" icon={Phone} placeholder="0000-0000" maskType="PHONE" hasError={phoneIncomplete} errorMessage="Incompleto" />
                                 <PortalInput label="Correo Electrónico" name="email" value={formData.email} onChange={handleChange} type="email" icon={Mail} placeholder="nombre@correo.com" />
                                 <div className="relative z-20">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Género</label>
@@ -532,7 +542,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <PortalInput label="Avisar a (Nombre)" name="emergency_contact_name" value={formData.emergency_contact_name} onChange={handleChange} placeholder="Familiar o Pareja" />
-                                    <PortalInput label="Teléfono de Emergencia" name="emergency_contact_phone" value={formData.emergency_contact_phone} onChange={handleChange} placeholder="0000-0000" maskType="PHONE" />
+                                    <PortalInput label="Teléfono de Emergencia" name="emergency_contact_phone" value={formData.emergency_contact_phone} onChange={handleChange} placeholder="0000-0000" maskType="PHONE" hasError={emergPhoneIncomplete} errorMessage="Incompleto" />
                                 </div>
                             </div>
                         </div>
@@ -645,8 +655,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Cuentas y Retenciones</h4>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <PortalInput label="Número ISSS" name="isss_number" value={formData.isss_number} onChange={handleChange} icon={Hash} placeholder="9 dígitos" maskType="ISSS" />
-                                <PortalInput label="NUP (AFP)" name="afp_number" value={formData.afp_number} onChange={handleChange} icon={Hash} placeholder="12 dígitos" maskType="AFP" />
+                                <PortalInput label="Número ISSS" name="isss_number" value={formData.isss_number} onChange={handleChange} icon={Hash} placeholder="9 dígitos" maskType="ISSS" hasError={isssIncomplete} errorMessage="Debe tener 9 dígitos" />
+                                <PortalInput label="NUP (AFP)" name="afp_number" value={formData.afp_number} onChange={handleChange} icon={Hash} placeholder="12 dígitos" maskType="AFP" hasError={afpIncomplete} errorMessage="Debe tener 12 dígitos" />
 
                                 <div className="relative z-20">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Institución AFP</label>
@@ -669,7 +679,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 </div>
 
-                                <PortalInput label="Número de Cuenta" name="account_number" value={formData.account_number} onChange={handleChange} icon={CreditCard} placeholder="0000-0000-00" />
+                                <PortalInput label="Número de Cuenta" name="account_number" value={formData.account_number} onChange={handleChange} icon={CreditCard} placeholder="0000-0000-00" maskType="ACCOUNT" />
                             </div>
                         </div>
 

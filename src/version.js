@@ -5,10 +5,11 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.2.466';
+export const APP_VERSION = '2.2.467';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
 // Changelog (most recent first)
+// v2.2.467 — feat(empleados): DUI ahora BLOQUEA el guardado si es inválido/duplicado/incompleto (antes solo aviso visual) — validateDui en addEmployee/updateEmployee (formato 00000000-0 + dígito verificador + duplicado, testeado 4/4 casos); BD: índice único employees_dui_unique + CHECK chk_employees_dui_format (probados en vivo); máscara nueva en Número de Cuenta (dígitos y guiones, máx 25); avisos "Incompleto"/"Debe tener N dígitos" en DUI a medias, Teléfono, Tel. Emergencia, ISSS (9) y NUP (12)
 // v2.2.466 — feat(empleados): el modal de creación/edición muestra el PIN del carné (SHA-256 del código) en vivo bajo Cod. Empleado — pill oscura con el PIN de 8 caracteres que se recalcula al escribir el código + botón copiar al portapapeles con toast; es el valor del código de barras del carné
 // v2.2.465 — fix(fotos/encuestas): 7 renders más con orden photo_url||photo invertido a photo||photo_url (StaffManagementView era el reporte original — foto 400 en Personal; VentasView ×3, EarlyExitForm, FeedbackOverlay condición, EmployeeFormModal condición); fix embed roto en perfil: survey_responses→survey_bloques no tiene FK (PGRST200, bug pre-existente silenciado) — bloques ahora anidados vía surveys(bloques:survey_bloques(...)) + fallback result.survey?.bloques; verificado REST 200
 // v2.2.464 — feat(storage): Fases 2+3 — bucket empleados (fotos) privado: firma en LOTE (createSignedUrls 12h) en fetchBoot/fetchKioskBoot (photo=firmada, photo_url=crudo identificador BD); AuthContext withSignedPhoto en los 4 logins (7d) + re-firma al arrancar de caché (photoRaw); signPhotosDeep() en las 10 vistas con selects directos de photo_url (Encuestas, VentasPerdidas, RecepcionModal, TabPedidos×3, CrearRutaModal, TabMinMax×2, Facturación historial); escritores que copian fotos a BD guardan RAW (confirmed_by_photo, vendor_photo en anulaciones); 9 renders reordenados photo||photo_url; límites nuevos: documents 10MB pdf/imágenes, empleados 10MB imágenes. Verificado: privado en BD, requests nuevas 400, CDN expira ≤1h

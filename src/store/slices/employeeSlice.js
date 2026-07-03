@@ -40,6 +40,28 @@ const compressImage = (file, maxWidth = 400) => {
     });
 };
 
+// DUI salvadoreño: formato 00000000-0 + dígito verificador (suma ponderada 9..2
+// mod 10). Mismo algoritmo que isValidDUIAlgorithm en EmployeeFormModal — aquí
+// BLOQUEA el guardado (el modal solo lo señala visualmente).
+const validateDui = (dui, employees, excludeId = null) => {
+    if (!dui) return;
+    if (!/^\d{8}-\d$/.test(dui)) {
+        throw new Error(`El DUI "${dui}" no tiene el formato correcto (00000000-0).`);
+    }
+    const digits = dui.replace(/\D/g, '').split('').map(Number);
+    const verifier = digits.pop();
+    const sum = digits.reduce((acc, d, i) => acc + d * (9 - i), 0);
+    let calc = 10 - (sum % 10);
+    if (calc === 10) calc = 0;
+    if (calc !== verifier) {
+        throw new Error(`El DUI "${dui}" no es válido (dígito verificador incorrecto).`);
+    }
+    const dup = employees.find(e =>
+        (excludeId == null || String(e.id) !== String(excludeId)) && e.dui === dui
+    );
+    if (dup) throw new Error(`El DUI "${dui}" ya está registrado a nombre de ${dup.name}.`);
+};
+
 // Valida el límite de headcount (max_limit) del cargo antes de asignarlo.
 // Lanza HEADCOUNT_LIMIT si la plaza ya está ocupada. Se usa en alta, edición,
 // recontratación y acciones RRHH (PROMOTION/TRANSFER) para cerrar las vías
@@ -137,6 +159,8 @@ export const createEmployeeSlice = (set, get) => ({
                 );
                 if (dup) throw new Error(`El código "${cleanCode}" ya está asignado a ${dup.name}.`);
             }
+
+            validateDui(formData.dui || null, get().employees);
 
             const dbPayload = {
                 first_names: fNames,
@@ -292,6 +316,11 @@ export const createEmployeeSlice = (set, get) => ({
                     );
                     if (dup) throw new Error(`El código "${dbPayload.code}" ya está asignado a ${dup.name}.`);
                 }
+            }
+
+            if (dbPayload.dui !== undefined) {
+                dbPayload.dui = String(dbPayload.dui ?? '').trim() || null;
+                validateDui(dbPayload.dui, get().employees, id);
             }
 
             // branch_id: null/'' significa "quitar de la sucursal" (bolsa flotante) —

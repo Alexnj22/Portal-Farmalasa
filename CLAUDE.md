@@ -80,6 +80,13 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
    inglés para infra (`sync_log`); sufijos `*_history`/`*_log`/`*_changelog` para auditoría.
 9. **Employee code**: SOLO números (trigger `enforce_numeric_employee_code`); el kiosk_pin
    se deriva SHA-256(code)→base64→alfanumérico→8 chars uppercase.
+10. **Storage**: bucket nuevo → PRIVADO por defecto + `file_size_limit` + `allowed_mime_types`
+   + policies por bucket en storage.objects. Para mostrar archivos usar
+   `getSignedFileUrl`/`openStoredFile`/`signPhotosDeep` de `src/utils/storageFiles.js`
+   (agregar el bucket a PRIVATE_BUCKETS). En BD SIEMPRE se guarda la URL formato-public
+   como identificador — NUNCA una URL firmada (expira). Fotos de empleados: `photo` =
+   firmada (se genera en fetchBoot/login), `photo_url` = cruda; todo select directo de
+   photo_url debe pasar por `signPhotosDeep()`. Públicos permitidos: solo product-photos/photos.
 
 ## Estándares del proyecto
 - Ver `DESIGN.md` para patrones de UI (glassmorphism, filter pills, tabs, search)

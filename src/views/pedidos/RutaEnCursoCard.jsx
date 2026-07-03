@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { notifyBranch } from '../../utils/notify';
 import RutaMapModal from './RutaMapModal';
 
 const STATUS_BADGE = {
@@ -63,15 +64,14 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
       const { data: mapa } = await supabase.from('erp_sucursal_map')
         .select('branch_id').eq('erp_sucursal_id', stop.erp_sucursal_id).maybeSingle();
       if (mapa?.branch_id) {
-        supabase.from('announcements').insert({
-          title:       'Conductor llegó a tu sucursal',
-          message:     `${ruta.conductor_nombre} acaba de llegar. Confirma la recepción de tu pedido.`,
-          target_type: 'BRANCH', target_value: [mapa.branch_id],
-          read_by: [], is_archived: false, created_by: currentUserId, priority: 'HIGH',
-        }).then(() => {}, () => {});
-        supabase.functions.invoke('send-push-notification', {
-          body: { title: 'El conductor llegó', message: `${ruta.conductor_nombre} está en tu sucursal. Recibe el pedido.`, url: '/pedidos', target_type: 'BRANCH', target_value: [mapa.branch_id] },
-        }).catch(() => {});
+        // Llegada física = accionable → campana + push
+        notifyBranch(mapa.branch_id, {
+          type: 'PEDIDO_LLEGADA',
+          title: 'Conductor llegó a tu sucursal',
+          body: `${ruta.conductor_nombre} acaba de llegar. Confirma la recepción de tu pedido.`,
+          link: '/pedidos',
+          push: true,
+        });
       }
       onRefresh();
     } catch (e) { console.error(e); }

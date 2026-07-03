@@ -4,6 +4,7 @@ import { supabase } from '../../supabaseClient';
 import { signPhotosDeep } from '../../utils/storageFiles';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { notifyBranch } from '../../utils/notify';
 import PedidoModal from './PedidoModal';
 import { optimizeRoute, optimizeRouteGoogleMaps, totalRoute, haversineMeters, loadGoogleMaps, loadLeaflet, getDirectionsREST } from '../../utils/routeOptimizer';
 
@@ -433,16 +434,13 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
           const numeros    = stop.items.map(i => `#${i.numero}`).join(', ');
           const totalCajas = stop.items.reduce((s, i) => s + (i.total_cajas ?? 0), 0);
           const cajasStr   = totalCajas ? ` en ${totalCajas} caja${totalCajas !== 1 ? 's' : ''}` : '';
-          supabase.from('announcements').insert({
-            title:        `Pedido ${numeros} en camino`,
-            message:      `Tu pedido ${numeros} salió de bodega${cajasStr} con ${conductorNombre}.`,
-            target_type:  'BRANCH', target_value: [bid],
-            read_by: [], is_archived: false,
-            created_by: user?.id ?? null, priority: 'NORMAL',
-          }).then(() => {}, () => {});
-          supabase.functions.invoke('send-push-notification', {
-            body: { title: `Pedido ${numeros} en camino`, message: `Tu pedido ya salió de bodega${cajasStr}. Prepárate para recibirlo.`, url: '/pedidos', target_type: 'BRANCH', target_value: [bid] },
-          }).catch(() => {});
+          // Informativo (aún no llegó): campana sin push
+          notifyBranch(bid, {
+            type: 'PEDIDO_TRACKING',
+            title: `Pedido ${numeros} en camino`,
+            body: `Tu pedido ${numeros} salió de bodega${cajasStr} con ${conductorNombre}.`,
+            link: '/pedidos',
+          });
         }
       }
 

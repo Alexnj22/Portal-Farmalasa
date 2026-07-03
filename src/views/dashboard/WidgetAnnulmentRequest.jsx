@@ -9,6 +9,7 @@ import { supabase } from '../../supabaseClient';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
+import { notifyEmployees } from '../../utils/notify';
 
 const GRACE_DAYS = 3;
 
@@ -351,12 +352,13 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
         correlativo: inv.correlativo, reason, total: inv.total, notified: target?.name,
       });
       if (target?.id) {
-        try {
-          await supabase.functions.invoke('send-push-notification', {
-            body: { employeeId: target.id, title: '⚠️ Solicitud de Anulación',
-              body: `${user?.name || 'Un empleado'} solicita anular ${inv.correlativo} (${fmtCurrency(inv.total)}) — ${reason}` },
-          });
-        } catch { /* non-fatal */ }
+        await notifyEmployees([target.id], {
+          type: 'REQUEST_PENDING',
+          title: '⚠️ Solicitud de Anulación',
+          body: `${user?.name || 'Un empleado'} solicita anular ${inv.correlativo} (${fmtCurrency(inv.total)}) — ${reason}`,
+          link: '/requests',
+          push: true,
+        });
       }
       onSuccess('annul', target?.name);
     } catch (e) { setSubmitError(e.message || 'Error al enviar solicitud'); }
@@ -473,12 +475,13 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
         correlativo: inv.correlativo, current_pago: inv.tipo_pago, new_pago: newPayment,
       });
       if (target?.id) {
-        try {
-          await supabase.functions.invoke('send-push-notification', {
-            body: { employeeId: target.id, title: '💳 Cambio de Forma de Pago',
-              body: `${user?.name || 'Un empleado'} solicita cambiar pago de ${inv.correlativo}: ${inv.tipo_pago} → ${newPayment}` },
-          });
-        } catch { /* non-fatal */ }
+        await notifyEmployees([target.id], {
+          type: 'REQUEST_PENDING',
+          title: '💳 Cambio de Forma de Pago',
+          body: `${user?.name || 'Un empleado'} solicita cambiar pago de ${inv.correlativo}: ${inv.tipo_pago} → ${newPayment}`,
+          link: '/requests',
+          push: true,
+        });
       }
       onSuccess('pay_change', target?.name);
     } catch (e) { setSubmitError(e.message || 'Error al enviar solicitud'); }
@@ -569,12 +572,13 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         correlativo: inv.correlativo, from: inv.cod_vendedor, to: selectedVendor.code,
       });
       if (target?.id) {
-        try {
-          await supabase.functions.invoke('send-push-notification', {
-            body: { employeeId: target.id, title: '👤 Cambio de Vendedor',
-              body: `${user?.name || 'Un empleado'} solicita reasignar ${inv.correlativo} a ${selectedVendor.name}` },
-          });
-        } catch { /* non-fatal */ }
+        await notifyEmployees([target.id], {
+          type: 'REQUEST_PENDING',
+          title: '👤 Cambio de Vendedor',
+          body: `${user?.name || 'Un empleado'} solicita reasignar ${inv.correlativo} a ${selectedVendor.name}`,
+          link: '/requests',
+          push: true,
+        });
       }
       onSuccess('vendor_change', target?.name);
     } catch (e) { setSubmitError(e.message || 'Error al enviar solicitud'); }
@@ -709,12 +713,13 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         correlativo: inv.correlativo, from: inv.cliente, to: newClient.name,
       });
       if (target?.id) {
-        try {
-          await supabase.functions.invoke('send-push-notification', {
-            body: { employeeId: target.id, title: '🧾 Cambio de Cliente',
-              body: `${user?.name || 'Un empleado'} solicita cambiar el cliente de ${inv.correlativo}: ${inv.cliente || 'Sin nombre'} → ${newClient.name}` },
-          });
-        } catch { /* non-fatal */ }
+        await notifyEmployees([target.id], {
+          type: 'REQUEST_PENDING',
+          title: '🧾 Cambio de Cliente',
+          body: `${user?.name || 'Un empleado'} solicita cambiar el cliente de ${inv.correlativo}: ${inv.cliente || 'Sin nombre'} → ${newClient.name}`,
+          link: '/requests',
+          push: true,
+        });
       }
       onSuccess('client_change', target?.name);
     } catch (e) { setSubmitError(e.message || 'Error al enviar solicitud'); }

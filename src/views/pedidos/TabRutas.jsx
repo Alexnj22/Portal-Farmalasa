@@ -4,6 +4,7 @@ import { supabase } from '../../supabaseClient';
 import { tokenMatch } from '../../utils/searchUtils';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { notifyBranch } from '../../utils/notify';
 import CrearRutaModal from './CrearRutaModal';
 import RutaMapModal   from './RutaMapModal';
 
@@ -69,32 +70,20 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
       if (error) throw error;
       useStaff.getState().appendAuditLog('RUTA_PARADA_ENTREGADA', stop.id, { sucursal_id: stop.erp_sucursal_id });
 
-      // Notificación push a la sucursal
+      // Llegada física = accionable → campana + push
       const { data: mapa } = await supabase
         .from('erp_sucursal_map')
         .select('branch_id')
         .eq('erp_sucursal_id', stop.erp_sucursal_id)
         .maybeSingle();
       if (mapa?.branch_id) {
-        supabase.from('announcements').insert({
-          title:        'Conductor llegó a tu sucursal',
-          message:      `${ruta.conductor_nombre} acaba de llegar. Confirma la recepción de tu pedido.`,
-          target_type:  'BRANCH',
-          target_value: [mapa.branch_id],
-          read_by:      [],
-          is_archived:  false,
-          created_by:   currentUserId,
-          priority:     'HIGH',
-        }).then(() => {}, () => {});
-        supabase.functions.invoke('send-push-notification', {
-          body: {
-            title:        'El conductor llegó',
-            message:      `${ruta.conductor_nombre} está en tu sucursal. Recibe el pedido.`,
-            url:          '/pedidos',
-            target_type:  'BRANCH',
-            target_value: [mapa.branch_id],
-          },
-        }).catch(() => {});
+        notifyBranch(mapa.branch_id, {
+          type: 'PEDIDO_LLEGADA',
+          title: 'Conductor llegó a tu sucursal',
+          body: `${ruta.conductor_nombre} acaba de llegar. Confirma la recepción de tu pedido.`,
+          link: '/pedidos',
+          push: true,
+        });
       }
       onRefresh();
     } catch (e) { console.error(e); }

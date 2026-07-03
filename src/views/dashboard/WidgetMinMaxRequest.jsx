@@ -4,6 +4,7 @@ import { supabase } from '../../supabaseClient';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
+import { notifyEmployees } from '../../utils/notify';
 
 // ERP sucursal ids ↔ nombre (igual que TabMinMax). product_stock_params usa erp_sucursal_id.
 const ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
@@ -108,17 +109,15 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
       try {
         const { data: ids } = await supabase.rpc('get_minmax_approver_ids');
         if (ids && ids.length) {
-          await supabase.functions.invoke('send-push-notification', {
-            body: {
-              title: '📊 Solicitud de ajuste Min/Max',
-              message: `${user?.name || 'Un colaborador'} propone MIN ${newMin} · MAX ${newMax} para ${product.nombre} (${ERP_NAMES[Number(erp)] || erp})`,
-              url: '/minmax',
-              target_type: 'EMPLOYEE',
-              target_value: ids,
-            },
+          await notifyEmployees(ids, {
+            type: 'MINMAX_PENDING',
+            title: '📊 Solicitud de ajuste Min/Max',
+            body: `${user?.name || 'Un colaborador'} propone MIN ${newMin} · MAX ${newMax} para ${product.nombre} (${ERP_NAMES[Number(erp)] || erp})`,
+            link: '/minmax?tab=solicitudes',
+            push: true,
           });
         }
-      } catch { /* push no-fatal */ }
+      } catch { /* no-fatal */ }
 
       onSuccess();
     } catch (e) {

@@ -1,4 +1,5 @@
 import { supabase } from '../../supabaseClient';
+import { notifyEmployees } from '../../utils/notify';
 
 export const createVacationPlanSlice = (set, get) => ({
     vacationPlans: [],
@@ -323,15 +324,14 @@ export const createVacationPlanSlice = (set, get) => ({
                     const fmtDate = (d) => d
                         ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' })
                         : '—';
-                    await supabase.from('announcements').insert([{
-                        title: '🌴 Vacaciones Confirmadas',
-                        message: `Tus vacaciones han sido confirmadas del ${fmtDate(plan.start_date)} al ${fmtDate(plan.end_date)} (${plan.days} días). ¡Disfrútalas!`,
-                        target_type: 'EMPLOYEE',
-                        target_value: [String(plan.employee_id)],
-                        read_by: [],
-                        is_archived: false,
-                        priority: 'HIGH',
-                    }]);
+                    await notifyEmployees([String(plan.employee_id)], {
+                        type: 'REQUEST_DECIDED',
+                        title: '🌴 Vacaciones confirmadas',
+                        body: `Tus vacaciones han sido confirmadas del ${fmtDate(plan.start_date)} al ${fmtDate(plan.end_date)} (${plan.days} días). ¡Disfrútalas!`,
+                        link: '/my-requests',
+                        push: true,
+                        metadata: { status: 'APPROVED', startDate: plan.start_date, endDate: plan.end_date, days: plan.days },
+                    });
                 }
             }
 

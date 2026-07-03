@@ -4,6 +4,7 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
+import { notifyEmployees } from '../../utils/notify';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
 const ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
@@ -173,34 +174,22 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
     const message = approved
       ? `Tu propuesta para ${r.product_name} (${ERP_NAMES[r.erp_sucursal_id] || r.erp_sucursal_id}) fue aplicada: MIN ${r.requested_min} · MAX ${r.requested_max}.`
       : `Tu propuesta para ${r.product_name} fue rechazada.${note ? ' Motivo: ' + note : ''}`;
-    try {
-      await supabase.functions.invoke('send-push-notification', {
-        body: { title, message, url: '/minmax', target_type: 'EMPLOYEE', target_value: [r.requested_by_id] },
-      });
-    } catch { /* no-fatal */ }
-    // Anuncio persistente con trazabilidad de lectura (read_by[])
-    try {
-      await supabase.from('announcements').insert({
-        title,
-        message,
-        target_type: 'EMPLOYEE',
-        target_value: [String(r.requested_by_id)],
-        read_by: [],
-        is_archived: false,
-        created_by: user?.id ?? null,
-        priority: approved ? 'NORMAL' : 'HIGH',
-        metadata: {
-          requestType: 'MINMAX',
-          status: approved ? 'APPROVED' : 'REJECTED',
-          product_name: r.product_name,
-          erp_sucursal_id: r.erp_sucursal_id,
-          requested_min: r.requested_min,
-          requested_max: r.requested_max,
-          note: note || null,
-        },
-      });
-    } catch { /* no-fatal */ }
-  }, [user]);
+    await notifyEmployees([String(r.requested_by_id)], {
+      type: 'MINMAX_DECIDED',
+      title,
+      body: message,
+      link: '/minmax',
+      push: true,
+      metadata: {
+        status: approved ? 'APPROVED' : 'REJECTED',
+        product_name: r.product_name,
+        erp_sucursal_id: r.erp_sucursal_id,
+        requested_min: r.requested_min,
+        requested_max: r.requested_max,
+        note: note || null,
+      },
+    });
+  }, []);
 
   // Lógica de decisión sin gestión de UI (reutilizable por individual y masivo)
   const runDecision = useCallback(async (r, approve, note) => {

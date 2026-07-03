@@ -1,5 +1,6 @@
 import { supabase } from '../../supabaseClient';
 import { useToastStore } from '../toastStore';
+import { notifyEmployees } from '../../utils/notify';
 
 // ============================================================================
 // 📋 SOLICITUDES — Employee-initiated requests requiring admin approval
@@ -211,47 +212,40 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
 };
 
 /**
- * Crea un anuncio interno dirigido al empleado notificándole el resultado
- * de su solicitud. No lanza error si falla — la notificación es no-bloqueante.
+ * Notifica al empleado el resultado de su solicitud vía el canal de
+ * notificaciones (campana + push). No lanza error — es no-bloqueante.
  */
 const notifyEmployee = async (employeeId, approverId, requestType, status, approverNote, reqMetadata = {}) => {
-    try {
-        const typeLabel = REQUEST_TYPES[requestType]?.label || requestType;
-        const isApproved = status === 'APPROVED';
-        await supabase.from('announcements').insert([{
-            title: isApproved ? `${typeLabel} aprobada` : `${typeLabel} rechazada`,
-            message: isApproved
-                ? `Tu solicitud de ${typeLabel} fue aprobada.${approverNote ? ` Nota: "${approverNote}"` : ''}`
-                : `Tu solicitud de ${typeLabel} fue rechazada.${approverNote ? ` Motivo: "${approverNote}"` : ''}`,
-            target_type: 'EMPLOYEE',
-            target_value: [String(employeeId)],
-            read_by: [],
-            is_archived: false,
-            created_by: approverId,
-            priority: isApproved ? 'NORMAL' : 'HIGH',
-            metadata: {
-                requestType,
-                status,
-                approverNote: approverNote || null,
-                // Cambio de turno
-                targetEmployeeName: reqMetadata.targetEmployeeName || null,
-                date: reqMetadata.date || null,
-                myShift: reqMetadata.myShift || null,
-                targetShift: reqMetadata.targetShift || null,
-                // Vacaciones / Permiso / Incapacidad
-                startDate: reqMetadata.startDate || null,
-                endDate: reqMetadata.endDate || null,
-                days: reqMetadata.days || null,
-                permissionDates: reqMetadata.permissionDates || null,
-                // Anticipo
-                amount: reqMetadata.amount || null,
-                // Constancia
-                certificateType: reqMetadata.certificateType || null,
-            },
-        }]);
-    } catch (err) {
-        console.error('Error enviando notificación al empleado:', err);
-    }
+    const typeLabel = REQUEST_TYPES[requestType]?.label || requestType;
+    const isApproved = status === 'APPROVED';
+    await notifyEmployees([String(employeeId)], {
+        type: 'REQUEST_DECIDED',
+        title: isApproved ? `${typeLabel} aprobada` : `${typeLabel} rechazada`,
+        body: isApproved
+            ? `Tu solicitud de ${typeLabel} fue aprobada.${approverNote ? ` Nota: "${approverNote}"` : ''}`
+            : `Tu solicitud de ${typeLabel} fue rechazada.${approverNote ? ` Motivo: "${approverNote}"` : ''}`,
+        link: '/my-requests',
+        push: true,
+        metadata: {
+            requestType,
+            status,
+            approverNote: approverNote || null,
+            // Cambio de turno
+            targetEmployeeName: reqMetadata.targetEmployeeName || null,
+            date: reqMetadata.date || null,
+            myShift: reqMetadata.myShift || null,
+            targetShift: reqMetadata.targetShift || null,
+            // Vacaciones / Permiso / Incapacidad
+            startDate: reqMetadata.startDate || null,
+            endDate: reqMetadata.endDate || null,
+            days: reqMetadata.days || null,
+            permissionDates: reqMetadata.permissionDates || null,
+            // Anticipo
+            amount: reqMetadata.amount || null,
+            // Constancia
+            certificateType: reqMetadata.certificateType || null,
+        },
+    });
 };
 
 // ── Helpers de Incapacidad ──────────────────────────────────────────────────
@@ -420,16 +414,14 @@ const _sendCoverageAlert = async (branchId, startDate, endDate, approverId, empl
 
         const fmtD = (d) => new Date(d + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
 
-        await supabase.from('announcements').insert([{
-            title: 'Cobertura de Horario Reducida',
-            message: `La incapacidad de ${employeeName} (${fmtD(startDate)}–${fmtD(endDate)}) deja la sucursal con solo ${count} colaborador${count !== 1 ? 'es' : ''} disponible${count !== 1 ? 's' : ''}. Revisa el horario y ajusta según sea necesario.`,
-            target_type: 'EMPLOYEE',
-            target_value: [String(thId)],
-            read_by: [],
-            is_archived: false,
-            created_by: approverId,
-            priority: 'HIGH',
-        }]);
+        await notifyEmployees([String(thId)], {
+            type: 'SYSTEM',
+            title: 'Cobertura de horario reducida',
+            body: `La incapacidad de ${employeeName} (${fmtD(startDate)}–${fmtD(endDate)}) deja la sucursal con solo ${count} colaborador${count !== 1 ? 'es' : ''} disponible${count !== 1 ? 's' : ''}. Revisa el horario y ajusta según sea necesario.`,
+            link: '/schedules',
+            push: true,
+            branchId: branchId != null ? Number(branchId) : null,
+        });
     } catch (err) {
         console.error('Error enviando alerta de cobertura:', err);
     }
@@ -574,6 +566,14 @@ export const createRequestsSlice = (set, get) => ({
                     dimension: 'HR',
                     new_value: `Solicitud de ${REQUEST_TYPES[type]?.label || type} (cambio de par)`,
                 });
+                // El compañero debe enterarse YA de que su aprobación está pendiente
+                await notifyEmployees([String(payload.targetEmployeeId)], {
+                    type: 'REQUEST_PENDING',
+                    title: 'Cambio de turno propuesto',
+                    body: `${enrichedPeer.employee?.name || 'Un compañero'} te propone un cambio de turno${payload.date ? ` para el ${payload.date}` : ''}. Requiere tu aprobación.`,
+                    link: '/my-requests',
+                    push: true,
+                });
                 return enrichedPeer;
             }
 
@@ -617,6 +617,17 @@ export const createRequestsSlice = (set, get) => ({
                 dimension: 'HR',
                 new_value: `Solicitud de ${REQUEST_TYPES[type]?.label || type}`,
             });
+
+            // Notificar al aprobador designado — antes nadie se enteraba
+            if (approverId) {
+                await notifyEmployees([String(approverId)], {
+                    type: 'REQUEST_PENDING',
+                    title: 'Nueva solicitud pendiente',
+                    body: `Solicitud de ${REQUEST_TYPES[type]?.label || type} de ${enriched.employee?.name || 'un empleado'} espera tu decisión.`,
+                    link: '/requests',
+                    push: true,
+                });
+            }
 
             return enriched;
         } catch (err) {
@@ -800,12 +811,13 @@ export const createRequestsSlice = (set, get) => ({
                         r.id === requestId ? { ...r, current_level: 2, approver_id: nextApprover, approvals: newApprovals } : r
                     ),
                 }));
-                await supabase.from('announcements').insert([{
-                    title: 'Nueva Solicitud Pendiente',
-                    message: `Cambio de turno de ${req.employee?.name} aprobado por el compañero — requiere tu aprobación final`,
-                    target_type: 'EMPLOYEE', target_value: [String(nextApprover)],
-                    read_by: [], is_archived: false, created_by: approverId, priority: 'HIGH',
-                }]);
+                await notifyEmployees([String(nextApprover)], {
+                    type: 'REQUEST_PENDING',
+                    title: 'Solicitud pendiente de aprobación final',
+                    body: `Cambio de turno de ${req.employee?.name} aprobado por el compañero — requiere tu aprobación final.`,
+                    link: '/requests',
+                    push: true,
+                });
                 useToastStore.getState().showToast('Aprobado — Nivel 1', 'El compañero aprobó. Enviado al jefe de sucursal.', 'success');
                 window.dispatchEvent(new CustomEvent('requests-updated'));
                 return true;
@@ -832,12 +844,13 @@ export const createRequestsSlice = (set, get) => ({
                         r.id === requestId ? { ...r, current_level: nextLevel, approver_id: nextApprover, approvals: newApprovals } : r
                     ),
                 }));
-                await supabase.from('announcements').insert([{
-                    title: 'Nueva Solicitud Pendiente',
-                    message: `Solicitud de ${REQUEST_TYPES[req.type]?.label} de ${req.employee?.name} — Nivel ${nextLevel} de ${maxLevels}`,
-                    target_type: 'EMPLOYEE', target_value: [String(nextApprover)],
-                    read_by: [], is_archived: false, created_by: approverId, priority: 'HIGH',
-                }]);
+                await notifyEmployees([String(nextApprover)], {
+                    type: 'REQUEST_PENDING',
+                    title: 'Nueva solicitud pendiente',
+                    body: `Solicitud de ${REQUEST_TYPES[req.type]?.label} de ${req.employee?.name} — Nivel ${nextLevel} de ${maxLevels}.`,
+                    link: '/requests',
+                    push: true,
+                });
                 useToastStore.getState().showToast(
                     `Aprobado — Nivel ${currentLevel}`,
                     `Solicitud avanzada al nivel ${nextLevel}. Notificado el siguiente aprobador.`,

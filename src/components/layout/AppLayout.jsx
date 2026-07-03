@@ -5,7 +5,7 @@ import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
     Megaphone, AlertTriangle, Activity, Copy, CheckCircle2,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
-    Home, Bell, FolderOpen, BellRing, LayoutDashboard,
+    Home, Bell, FolderOpen, LayoutDashboard,
     TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
     PackageMinus, ShoppingCart
 } from 'lucide-react';
@@ -14,6 +14,8 @@ import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useSyncMonitor } from '../../hooks/useSyncMonitor';
+import { useNotificationsChannel } from '../../hooks/useNotificationsChannel';
+import NotificationBell from '../common/NotificationBell';
 import SidebarSyncStatus from '../common/SidebarSyncStatus';
 import { APP_VERSION } from '../../version';
 import PushPromptBanner from '../common/PushPromptBanner';
@@ -102,6 +104,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const location = useLocation();
 
     useSyncMonitor();
+    useNotificationsChannel();
 
     const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
     const [isWide, setIsWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1280);
@@ -261,7 +264,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     }, [announcements, user]);
 
     const unreadCount = unreadAnnouncements.length;
-    const hasUrgentUnread = unreadAnnouncements.some(a => a.priority === 'URGENT');
 
     const getBadge = (key) => {
         if (key === 'emp_announcements' && unreadCount > 0) return unreadCount;
@@ -282,8 +284,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         setTimeout(() => setIsSuCopied(false), 2000);
     };
 
-    const showBell = hasPermission('emp_announcements', 'can_view');
-    const isOnAnnouncements = activeId === 'my-announcements';
 
     const isExpanded = isSidebarOpen;
     const blurClasses = isOverlayActive ? 'pointer-events-none select-none scale-[0.98] blur-[2px]' : '';
@@ -856,23 +856,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                {showBell && unreadCount > 0 && (
-                                    <button
-                                        onClick={() => navigate('/my-announcements')}
-                                        className={`relative w-11 h-11 rounded-[1.4rem] border shadow-sm active:scale-[0.97] transition-all flex items-center justify-center hover:shadow-md
-                                            ${hasUrgentUnread ? 'bg-red-50 border-red-200' : 'bg-white border-white/60'}`}
-                                    >
-                                        <BellRing
-                                            size={18}
-                                            strokeWidth={2}
-                                            className={hasUrgentUnread ? 'text-red-500 animate-wiggle' : 'text-[#0052CC]'}
-                                        />
-                                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center shadow-sm z-10">
-                                            {unreadCount > 9 ? '9+' : unreadCount}
-                                        </span>
-                                        <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-red-400 animate-ping opacity-60" />
-                                    </button>
-                                )}
+                                <NotificationBell variant="mobile" />
                                 <button onClick={() => navigate('/profile')} className="w-11 h-11 rounded-[1.4rem] shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-white border-white">
                                     <div className="absolute inset-0 bg-[#0052CC]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
@@ -888,40 +872,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                     {/* Content */}
                     <div id="main-scroll" className={`lg:flex-1 lg:min-h-0 lg:overflow-hidden relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`}>
-                        {showBell && !isMobile && !isOnAnnouncements && unreadCount > 0 && (
+                        {!isMobile && (
                             <div className="absolute top-4 right-5 z-[200] hidden lg:block">
-                                <div className={`absolute -inset-3 rounded-[2rem] blur-xl pointer-events-none
-                                    ${hasUrgentUnread ? 'bg-red-500/30' : 'bg-[#0052CC]/20'}`} />
-                                {hasUrgentUnread && (
-                                    <span className="absolute inset-0 rounded-[1.25rem] bg-red-400/25 animate-ping" style={{ animationDuration: '1.5s' }} />
-                                )}
-                                <button
-                                    onClick={() => navigate('/my-announcements')}
-                                    className={`relative flex items-center justify-center w-11 h-11 rounded-[1.25rem]
-                                        backdrop-blur-2xl border
-                                        shadow-[0_8px_32px_rgba(0,0,0,0.18),0_2px_8px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.9),inset_0_-1px_0_rgba(0,0,0,0.06)]
-                                        hover:-translate-y-0.5 hover:scale-105 active:scale-[0.97] active:translate-y-0
-                                        transition-all duration-200
-                                        ${hasUrgentUnread
-                                            ? 'bg-red-50/90 border-red-300/80 hover:shadow-[0_12px_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,1)]'
-                                            : 'bg-white/75 border-blue-200/80 hover:shadow-[0_12px_40px_rgba(0,82,204,0.22),inset_0_1px_0_rgba(255,255,255,1)]'}`}
-                                >
-                                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/80 to-transparent rounded-t-[1.25rem] pointer-events-none" />
-                                    <div className={`absolute inset-0 rounded-[1.25rem] pointer-events-none
-                                        ${hasUrgentUnread ? 'bg-gradient-to-br from-red-500/10 via-transparent to-transparent' : 'bg-gradient-to-br from-[#0052CC]/8 via-transparent to-transparent'}`} />
-                                    <BellRing
-                                        size={18}
-                                        strokeWidth={2}
-                                        className={`relative z-10 transition-colors ${hasUrgentUnread ? 'text-red-500 animate-[wiggle_0.4s_ease-in-out_infinite]' : 'text-[#0052CC]'}`}
-                                    />
-                                    <span className={`absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 text-white text-[9px] font-black rounded-full flex items-center justify-center z-20
-                                        ${hasUrgentUnread
-                                            ? 'bg-red-500 shadow-[0_2px_8px_rgba(239,68,68,0.6)]'
-                                            : 'bg-red-500 shadow-[0_2px_8px_rgba(239,68,68,0.4)]'}`}>
-                                        {unreadCount > 9 ? '9+' : unreadCount}
-                                    </span>
-                                    <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full animate-ping opacity-60 z-10 bg-red-400" />
-                                </button>
+                                <NotificationBell variant="desktop" />
                             </div>
                         )}
                         <div key={activeId} className="lg:h-full w-full animate-route-enter">

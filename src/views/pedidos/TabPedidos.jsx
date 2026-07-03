@@ -16,6 +16,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
+import { notifyBranch } from '../../utils/notify';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import RecepcionModal from './RecepcionModal';
@@ -2404,8 +2405,8 @@ export default function TabPedidos({ searchTerm = '' }) {
             if (stage === 'iniciar' && numero != null) {
                 supabase.from('erp_sucursal_map').select('branch_id, nombre').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
                     if (!m?.branch_id) return;
-                    supabase.from('announcements').insert({ title: `Pedido #${numero} en preparación`, message: `Bodega ha iniciado la preparación de tu pedido #${numero}. Te avisaremos cuando salga en camino.`, target_type: 'BRANCH', target_value: [m.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'NORMAL' }).catch(() => {});
-                    supabase.functions.invoke('send-push-notification', { body: { title: `Pedido #${numero} en preparación`, message: `Bodega está preparando tu pedido. Te avisamos cuando salga.`, url: '/pedidos', target_type: 'BRANCH', target_value: [m.branch_id] } }).catch(() => {});
+                    // Informativo: campana sin push
+                    notifyBranch(m.branch_id, { type: 'PEDIDO_TRACKING', title: `Pedido #${numero} en preparación`, body: `Bodega ha iniciado la preparación de tu pedido #${numero}. Te avisaremos cuando salga en camino.`, link: '/pedidos' });
                 }).catch(() => {});
             }
         } catch (e) { console.error('Lifecycle error:', e); } finally { setBusyLifecycle(null); }
@@ -2697,8 +2698,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                     if (cajasFaltantes.length > 0) parts.push(`caja${cajasFaltantes.length > 1 ? 's' : ''} faltante${cajasFaltantes.length > 1 ? 's' : ''} ${cajasFaltantes.map(n => `#${n}`).join(', ')}`);
                     const title   = `Problema en llegada — ${branchName}`;
                     const message = `${branchName} reporta: ${parts.join(' y ')}.${nota ? ' ' + nota : ''}`;
-                    supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
-                    supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
+                    // Accionable para bodega (requiere reenvío) → con push
+                    notifyBranch(b.branch_id, { type: 'PEDIDO_PROBLEMA', title, body: message, link: '/pedidos', push: true });
                 }).catch(() => {});
             }
 
@@ -2709,8 +2710,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     const cnt = electrolitFaltantes;
                     const title   = `Electrolit faltante — ${branchName}`;
                     const message = `${branchName} reporta ${cnt} caja${cnt > 1 ? 's' : ''} de Electrolit que no llegaron.`;
-                    supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
-                    supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
+                    notifyBranch(b.branch_id, { type: 'PEDIDO_PROBLEMA', title, body: message, link: '/pedidos', push: true });
                 }).catch(() => {});
             }
 
@@ -2721,8 +2721,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                     const notas = cajasExtraNotas ? Object.values(cajasExtraNotas).filter(Boolean) : [];
                     const title   = `Cajas de más — ${branchName}`;
                     const message = `${branchName} reporta ${cajasExtra} caja${cajasExtra > 1 ? 's' : ''} extra no esperada${cajasExtra > 1 ? 's' : ''}.${notas.length ? ' ' + notas.join(', ') : ''}`;
-                    supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'MEDIUM' }).catch(() => {});
-                    supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
+                    // Informativo: campana sin push
+                    notifyBranch(b.branch_id, { type: 'PEDIDO_TRACKING', title, body: message, link: '/pedidos' });
                 }).catch(() => {});
             }
 
@@ -2733,8 +2733,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     const faltanE = Object.entries(especialesLlegadas).filter(([, v]) => v === 'faltante').map(([k]) => k);
                     const title   = `Caja especial faltante — ${branchName}`;
                     const message = `${branchName} reporta caja${faltanE.length > 1 ? 's' : ''} especial${faltanE.length > 1 ? 'es' : ''} no recibida${faltanE.length > 1 ? 's' : ''}: ${faltanE.join(', ')}.`;
-                    supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
-                    supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
+                    notifyBranch(b.branch_id, { type: 'PEDIDO_PROBLEMA', title, body: message, link: '/pedidos', push: true });
                 }).catch(() => {});
             }
 
@@ -2768,8 +2767,8 @@ export default function TabPedidos({ searchTerm = '' }) {
             supabase.from('erp_sucursal_map').select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
                 if (!m?.branch_id) return;
                 const cajasStr = cajasFaltantes.map(n => `#${n}`).join(', ');
-                supabase.from('announcements').insert({ title: `Reenvío en camino — pedido #${numero}`, message: `La caja ${cajasStr} del pedido #${numero} ya salió de bodega. Confirma la llegada cuando la recibas.`, target_type: 'BRANCH', target_value: [m.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
-                supabase.functions.invoke('send-push-notification', { body: { title: `Caja ${cajasStr} en camino`, message: 'La caja faltante ya salió de bodega.', url: '/pedidos', target_type: 'BRANCH', target_value: [m.branch_id] } }).catch(() => {});
+                // Accionable (deben confirmar llegada) → con push
+                notifyBranch(m.branch_id, { type: 'PEDIDO_REENVIO', title: `Reenvío en camino — pedido #${numero}`, body: `La caja ${cajasStr} del pedido #${numero} ya salió de bodega. Confirma la llegada cuando la recibas.`, link: '/pedidos', push: true });
             }).catch(() => {});
             await loadActive();
             setCrearRutaOpen([`${pedidoId}__${sucId}`]);
@@ -2903,7 +2902,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     if (hasFalta) partes.push(`Cajas: ${cajasFaltantes.map(n => `#${n}`).join(', ')}`);
                     if (!electrolitOk) partes.push('Electrolit aún pendiente');
                     if (especialesAun.length > 0) partes.push(`Especiales: ${especialesAun.join(', ')}`);
-                    supabase.from('announcements').insert({ title: `Aún hay pendientes — reenvío ${ciclo}`, message: `${branchName} reporta que aún no llegó: ${partes.join(' | ')}. Se requiere otro envío.`, target_type: 'BRANCH', target_value: [m.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: 'HIGH' }).catch(() => {});
+                    notifyBranch(m.branch_id, { type: 'PEDIDO_PROBLEMA', title: `Aún hay pendientes — reenvío ${ciclo}`, body: `${branchName} reporta que aún no llegó: ${partes.join(' | ')}. Se requiere otro envío.`, link: '/pedidos', push: true });
                 }).catch(() => {});
             }
 
@@ -2940,12 +2939,8 @@ export default function TabPedidos({ searchTerm = '' }) {
             const { data: mapa } = await supabase.from('erp_sucursal_map')
                 .select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle();
             if (mapa?.branch_id) {
-                supabase.from('announcements').insert({
-                    title: 'Conductor llegó a tu sucursal',
-                    message: 'Confirma la recepción de tu pedido.',
-                    target_type: 'BRANCH', target_value: [mapa.branch_id],
-                    read_by: [], is_archived: false, created_by: user?.id, priority: 'HIGH',
-                }).then(() => {}, () => {});
+                // Llegada física = accionable → con push
+                notifyBranch(mapa.branch_id, { type: 'PEDIDO_LLEGADA', title: 'Conductor llegó a tu sucursal', body: 'Confirma la recepción de tu pedido.', link: '/pedidos', push: true });
             }
             loadActiveRutas();
         } catch (e) { console.error(e); }
@@ -3819,8 +3814,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 const message = realHasDiff
                                     ? `${branchName} reporta diferencias en la recepción del pedido #${pedido.numero}. Revisá y marcalo como corregido.`
                                     : `${branchName} confirmó la recepción del pedido #${pedido.numero} sin novedades.`;
-                                supabase.from('announcements').insert({ title, message, target_type: 'BRANCH', target_value: [b.branch_id], read_by: [], is_archived: false, created_by: user?.id ?? null, priority: realHasDiff ? 'HIGH' : 'NORMAL' }).catch(() => {});
-                                supabase.functions.invoke('send-push-notification', { body: { title, message, url: '/pedidos', target_type: 'BRANCH', target_value: [b.branch_id] } }).catch(() => {});
+                                // Con diferencias = accionable (push); sin novedades = solo campana
+                                notifyBranch(b.branch_id, { type: realHasDiff ? 'PEDIDO_PROBLEMA' : 'PEDIDO_TRACKING', title, body: message, link: '/pedidos', push: realHasDiff });
                             }).catch(() => {});
                         } else {
                             // Partial box confirmed — reload items before active so DifSection gets fresh data

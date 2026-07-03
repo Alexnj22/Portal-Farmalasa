@@ -81,7 +81,7 @@ export default function FeedbackOverlay({
                 {/* Contenedor de la Foto */}
                 <div
                   className={`relative h-36 w-36 md:h-44 md:w-44 rounded-[2rem] md:rounded-[2.5rem] flex items-center justify-center border bg-white/[0.03] backdrop-blur-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3),inset_0_2px_15px_rgba(255,255,255,0.05)] overflow-hidden transition-all duration-500 ${color === 'red' ? `${theme.border} animate-pulse` : 'border-white/10'}`}>
-                  {(employee?.photo_url || employee?.photo) ? (
+                  {(employee?.photo || employee?.photo_url) ? (
                     <img
                       src={employee.photo || employee.photo_url}
                       alt={employee?.name || 'Empleado'}

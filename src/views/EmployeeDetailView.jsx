@@ -90,7 +90,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         setLoadingSurvey(true);
         supabase
             .from('survey_responses')
-            .select(`*, survey:surveys(nombre, año), bloques:survey_bloques(numero, nombre, color, indices)`)
+            .select(`*, survey:surveys(nombre, año, bloques:survey_bloques(numero, nombre, color, indices))`)
             .eq('employee_id', activeEmployee.id)
             .order('survey_id', { ascending: false })
             .then(({ data }) => {
@@ -1316,7 +1316,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             </div>
                                         ) : surveyResults.map(result => {
                                             const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
-                                            const bloques = result.bloques || [];
+                                            const bloques = result.survey?.bloques || result.bloques || [];
                                             const responses = result.responses || [];
 
                                             const bScore = (indices) => {

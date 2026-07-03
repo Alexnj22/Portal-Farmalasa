@@ -24,7 +24,7 @@ function EarlyExitForm({
   if (!employee) return null;
 
   // 🚨 HOMOLOGADO: Extrae la foto sea como photo_url (Supabase) o photo local
-  const photoUrl = employee?.photo_url || employee?.photo;
+  const photoUrl = employee?.photo || employee?.photo_url;
 
   return (
     <div className="relative z-20 w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 pointer-events-auto overflow-hidden">

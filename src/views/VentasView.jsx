@@ -638,7 +638,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 <DataCell hideBelow="md">
                                     <div className="flex items-center gap-2">
                                         {emp ? (
-                                            <LiquidAvatar src={emp.photo_url || emp.photo} fallbackText={emp.first_names} className="w-6 h-6 rounded-full shrink-0" />
+                                            <LiquidAvatar src={emp.photo || emp.photo_url} fallbackText={emp.first_names} className="w-6 h-6 rounded-full shrink-0" />
                                         ) : (
                                             <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
                                                 <Users size={11} className="text-slate-400" />
@@ -1057,7 +1057,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                 <DataCell>
                                     <div className="flex items-center gap-2.5">
                                         {r.emp ? (
-                                            <LiquidAvatar src={r.emp.photo_url || r.emp.photo}
+                                            <LiquidAvatar src={r.emp.photo || r.emp.photo_url}
                                                 fallbackText={r.emp.first_names}
                                                 className="w-8 h-8 rounded-full shrink-0" />
                                         ) : (
@@ -1975,7 +1975,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                             </td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 <div className="flex items-center gap-1.5">
-                                                                                                    <LiquidAvatar src={emp?.photo_url || emp?.photo} fallbackText={emp?.first_names} className="w-5 h-5 rounded-full shrink-0" />
+                                                                                                    <LiquidAvatar src={emp?.photo || emp?.photo_url} fallbackText={emp?.first_names} className="w-5 h-5 rounded-full shrink-0" />
                                                                                                     <span className="text-slate-600 text-[11px]">{empShort}</span>
                                                                                                 </div>
                                                                                             </td>

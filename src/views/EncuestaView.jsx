@@ -8,6 +8,7 @@ import {
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { supabase } from '../supabaseClient';
+import { signPhotosDeep } from '../utils/storageFiles';
 
 // Jefe inmediato de cada sucursal — configuración de org-chart
 const SUPERVISOR_DE_JEFE = {
@@ -376,7 +377,8 @@ export default function EncuestaView() {
             supabase.from('survey_responses')
                 .select('*, employee:employees!employee_id(first_names, last_names, photo_url, branch:branches(name))')
                 .eq('survey_id', selectedSurveyId),
-        ]).then(([bRes, pRes, rRes]) => {
+        ]).then(async ([bRes, pRes, rRes]) => {
+            await signPhotosDeep(rRes.data || []);
             setBloques((bRes.data || []).map(b => ({
                 id: b.numero,
                 _dbId: b.id,

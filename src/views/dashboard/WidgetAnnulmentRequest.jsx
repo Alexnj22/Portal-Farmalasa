@@ -81,7 +81,7 @@ function VendorAvatar({ employee, size = 6 }) {
   if (!employee)
     return <div className={`${base} bg-slate-100`}><User size={size <= 6 ? 11 : 14} className="text-slate-400" /></div>;
   if (employee.photo || employee.photo_url)
-    return <div className={base}><img src={employee.photo || employee.photo_url} className="w-full h-full object-cover" alt="" /></div>;
+    return <div className={base}><img src={employee.photo || employee.photo_url} className="w-full h-full object-cover" alt="" onError={(ev) => { ev.currentTarget.style.display = 'none'; }} /></div>;
   return (
     <div className={`${base} bg-gradient-to-br from-slate-200 to-slate-300`}>
       <span className="text-slate-600 font-black text-[10px] leading-none">{employee.name?.charAt(0)}</span>
@@ -549,11 +549,11 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           branch_id: activeBranchId, branch_name: activeBranch?.name,
           current_vendor_code: inv.cod_vendedor,
           current_vendor_name: currentVendor?.name ?? null,
-          current_vendor_photo: currentVendor?.photo ?? currentVendor?.photo_url ?? null,
+          current_vendor_photo: currentVendor?.photo_url ?? null,
           new_vendor_id: selectedVendor.id,
           new_vendor_code: selectedVendor.code,
           new_vendor_name: selectedVendor.name,
-          new_vendor_photo: selectedVendor.photo ?? selectedVendor.photo_url ?? null,
+          new_vendor_photo: selectedVendor.photo_url ?? null,
           notified_employee_id: target?.id ?? null,
           notified_employee: target?.name ?? 'Sin supervisor asignado',
         },

@@ -1,5 +1,6 @@
 import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS, persistEmployees } from '../utils';
+import { getSignedFileUrl } from '../../utils/storageFiles';
 
 // 🚨 COMPRESOR DE IMÁGENES NATIVO (Actualizado para mantener fondos transparentes)
 const compressImage = (file, maxWidth = 400) => {
@@ -250,7 +251,7 @@ export const createEmployeeSlice = (set, get) => ({
                 branchId: newEmp.branch_id,
                 hireDate: newEmp.hire_date,
                 birthDate: newEmp.birth_date,
-                photo: newEmp.photo_url,
+                photo: newEmp.photo_url ? await getSignedFileUrl(newEmp.photo_url, 43200) : null,
                 role: mainRoleName,
                 secondary_role: secRoleName,
                 assigned_branch_ids: assignedBranches,
@@ -378,6 +379,11 @@ export const createEmployeeSlice = (set, get) => ({
             const mainRoleName = roles.find(r => String(r.id) === String(updated.role_id))?.name || null;
             const secRoleName = roles.find(r => String(r.id) === String(updated.secondary_role_id))?.name || null;
 
+            // Foto nueva: firmar para el estado local (photo_url en BD queda crudo)
+            const signedPhoto = dbPayload.photo_url && updated.photo_url
+                ? await getSignedFileUrl(updated.photo_url, 43200)
+                : null;
+
             set((state) => {
                 const next = state.employees.map((emp) => {
                     if (String(emp.id) !== String(id)) return emp;
@@ -388,7 +394,7 @@ export const createEmployeeSlice = (set, get) => ({
                         // `updated` es la fila completa post-UPDATE: branch_id null es real
                         // (desasignación), no un dato faltante — sin fallback al valor previo.
                         branchId: updated.branch_id,
-                        photo: updated.photo_url ?? emp.photo,
+                        photo: signedPhoto ?? emp.photo,
                         birthDate: updated.birth_date ?? emp.birthDate,
                         hireDate: updated.hire_date ?? emp.hireDate,
                         role: updated.role_id ? (mainRoleName || emp.role) : 'Sin Asignar',

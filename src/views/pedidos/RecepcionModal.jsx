@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
+import { signPhotosDeep } from '../../utils/storageFiles';
 import {
     Loader2, X, PackageCheck, AlertTriangle, Search,
     Plus, Trash2, PackagePlus, Check, ChevronLeft, Box, Truck, Star,
@@ -206,7 +207,7 @@ export default function RecepcionModal({
             const { data } = await supabase.from('pedido_apoyo')
                 .select('employee_id, employees(name, photo_url)')
                 .eq('pedido_id', pedido.id).eq('erp_sucursal_id', sucursalId);
-            setApoyo((data || []).map(r => ({ id: r.employee_id, ...r.employees })));
+            setApoyo(await signPhotosDeep((data || []).map(r => ({ id: r.employee_id, ...r.employees }))));
         })();
 
         const productIds = [...new Set(rows.map(r => r.erp_product_id))];

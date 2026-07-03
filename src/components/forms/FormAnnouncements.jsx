@@ -137,7 +137,7 @@ const FormAnnouncements = ({ data }) => {
                           key={emp.id}
                           className="flex items-center gap-3.5 p-3 bg-white/70 rounded-[1.25rem] border border-white shadow-[0_2px_10px_rgba(0,0,0,0.03)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:shadow-md group"
                         >
-                          <EmployeeAvatar photoUrl={emp.photo_url} name={emp.name} fallbackColor="bg-emerald-500 shadow-[0_4px_12px_rgba(16,185,129,0.4)] transition-transform group-hover:scale-105" />
+                          <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-emerald-500 shadow-[0_4px_12px_rgba(16,185,129,0.4)] transition-transform group-hover:scale-105" />
                           <div className="min-w-0 flex-1">
                             <p className="text-[12px] font-black text-slate-800 truncate">
                               {emp.name}
@@ -190,7 +190,7 @@ const FormAnnouncements = ({ data }) => {
                           key={emp.id}
                           className="flex items-center gap-3.5 p-3 bg-white/40 rounded-[1.25rem] border border-white/60 shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:bg-white/60 group"
                         >
-                          <EmployeeAvatar photoUrl={emp.photo_url} name={emp.name} fallbackColor="bg-slate-100 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                          <EmployeeAvatar photoUrl={emp.photo || emp.photo_url} name={emp.name} fallbackColor="bg-slate-100 text-slate-400 group-hover:text-slate-600 transition-colors" />
                           <div className="min-w-0 flex-1 opacity-80 group-hover:opacity-100 transition-opacity">
                             <p className="text-[12px] font-bold text-slate-600 truncate transition-colors group-hover:text-slate-800">
                               {emp.name}

@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { supabase } from "../supabaseClient";
 import { CACHE_KEYS } from "../store/utils";
 import { useStaffStore } from "../store/staffStore";
+import { getSignedFileUrl } from "../utils/storageFiles";
 
 const AuthContext = createContext(null);
 
@@ -32,6 +33,21 @@ const withNetworkRetry = async (fn, attempts = 3, delayMs = 1200) => {
     if (i < attempts - 1) await new Promise((r) => setTimeout(r, delayMs));
   }
   return result;
+};
+
+// El bucket de fotos de empleados es privado: `photo` lleva URL firmada (7d)
+// y `photoRaw` conserva el identificador crudo para poder re-firmar al arrancar
+// desde caché sin red round-trip al perfil.
+const withSignedPhoto = async (u) => {
+  if (!u) return u;
+  const raw = u.photoRaw || u.photo;
+  if (!raw) return u;
+  try {
+    const signed = await getSignedFileUrl(raw, 604800);
+    return { ...u, photo: signed || raw, photoRaw: raw };
+  } catch {
+    return { ...u, photoRaw: raw };
+  }
 };
 
 // -------------------------
@@ -277,6 +293,19 @@ export const AuthProvider = ({ children }) => {
           }
           setUser(parsed);
           startIdleWatcher(parsed);
+          // Re-firmar la foto (la firmada cacheada puede haber expirado)
+          if (parsed.photoRaw) {
+            getSignedFileUrl(parsed.photoRaw, 604800).then((signed) => {
+              if (signed && signed !== parsed.photo) {
+                setUser(prev => {
+                  if (!prev) return prev;
+                  const updated = { ...prev, photo: signed };
+                  try { localStorage.setItem(LS_USER, JSON.stringify(updated)); } catch { /* ignore */ }
+                  return updated;
+                });
+              }
+            }).catch(() => {});
+          }
         }
       } catch {
         clearAuthCache();
@@ -342,7 +371,7 @@ export const AuthProvider = ({ children }) => {
 
         if (fnErr || !ensured?.ok || !ensured?.user) return;
 
-        const u = ensured.user;
+        const u = await withSignedPhoto(ensured.user);
         if (isExpiredByIdle(u)) { doLogout(); return; }
 
         setUser(u);
@@ -423,7 +452,7 @@ export const AuthProvider = ({ children }) => {
       );
       if (fnErr || !ensured?.ok || !ensured?.user) { skipAuthListener.current = false; return false; }
 
-      const u = ensured.user;
+      const u = await withSignedPhoto(ensured.user);
       clearErpCache();
       localStorage.setItem(LS_USER, JSON.stringify(u));
       writeLastActivity(true);
@@ -486,7 +515,7 @@ export const AuthProvider = ({ children }) => {
         return { ok: false, error: 'Tu cuenta está desactivada. Contacta a Recursos Humanos.' };
       }
 
-      const u = {
+      const u = await withSignedPhoto({
         id:         emp.id,
         name:       emp.name,
         code:       emp.code,
@@ -496,7 +525,7 @@ export const AuthProvider = ({ children }) => {
         role:       emp.role_id,
         roleId:     emp.role_id ?? null,
         systemRole: emp.system_role || 'EMPLEADO',
-      };
+      });
 
       const meta       = data.session.user?.user_metadata;
       const mustChange = meta?.must_change_password !== false;
@@ -520,19 +549,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const completeLogin = (u) => {
+  const completeLogin = async (u) => {
+    const su = await withSignedPhoto(u);
     clearErpCache();
-    localStorage.setItem(LS_USER, JSON.stringify(u));
+    localStorage.setItem(LS_USER, JSON.stringify(su));
     writeLastActivity(true);
     setPermsLoading(true);
     setUser(u);
     startIdleWatcher(u);
   };
 
-  const completePasswordChange = (u) => {
+  const completePasswordChange = async (u) => {
+    const su = await withSignedPhoto(u);
     skipAuthListener.current = false;
     clearErpCache();
-    localStorage.setItem(LS_USER, JSON.stringify(u));
+    localStorage.setItem(LS_USER, JSON.stringify(su));
     writeLastActivity(true);
     setPermsLoading(true);
     setUser(u);

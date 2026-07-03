@@ -2,6 +2,7 @@ import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS, SENSITIVE_FIELDS, persistEmployees } from '../utils';
 import { useToastStore } from '../toastStore';
 import { assertHeadcountAvailable } from './employeeSlice';
+import { signStorageUrls } from '../../utils/storageFiles';
 
 // PostgREST trunca en 1000 filas sin aviso (max-rows=1000). Este helper pagina
 // cualquier query hasta agotarla — usar para tablas que crecen sin tope
@@ -215,6 +216,16 @@ export const createSystemSlice = (set, get) => ({
                             assigned_branch_ids: branchMap[e.id] || [],
                         };
                     });
+
+                    // Fotos: bucket empleados es privado — `photo` lleva la URL firmada
+                    // (12h, se renueva en cada boot); `photo_url` queda CRUDO como
+                    // identificador de BD (nunca guardar la firmada).
+                    try {
+                        const photoMap = await signStorageUrls(mappedEmployees.map(e => e.photo_url).filter(Boolean));
+                        mappedEmployees.forEach(e => {
+                            if (e.photo_url) e.photo = photoMap.get(e.photo_url) || e.photo_url;
+                        });
+                    } catch { /* fallback: photo queda con la URL cruda */ }
 
                     set({ employees: mappedEmployees });
                     persistEmployees(mappedEmployees);
@@ -1311,6 +1322,14 @@ export const createSystemSlice = (set, get) => ({
                         mappedEmployees = [...mappedEmployees, ...mapped];
                     }
                 } catch (_) { /* non-fatal */ }
+
+                // Fotos firmadas para el kiosco (bucket empleados privado)
+                try {
+                    const photoMap = await signStorageUrls(mappedEmployees.map(e => e.photo_url).filter(Boolean));
+                    mappedEmployees.forEach(e => {
+                        if (e.photo_url) e.photo = photoMap.get(e.photo_url) || e.photo_url;
+                    });
+                } catch { /* fallback */ }
 
                 set({
                     shifts: mappedShifts,

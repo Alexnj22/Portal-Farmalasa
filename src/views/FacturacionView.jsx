@@ -14,6 +14,7 @@ import { tokenMatch, smartFilter } from '../utils/searchUtils';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { openStoredFile } from '../utils/storageFiles';
+import { signPhotosDeep } from '../utils/storageFiles';
 
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const fmt = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -1607,7 +1608,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
         ]);
 
         const cidSet = new Set((confirmedIdsRes.data || []).map(r => r.invoice_id));
-        const hData = historialRes.data || [];
+        const hData = await signPhotosDeep(historialRes.data || []);
         const hIds = hData.map(r => r.invoice_id);
         let invMap = {};
         if (hIds.length > 0) {
@@ -1674,7 +1675,8 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
     const handleConfirm = async (invoiceId) => {
         setConfirmSaving(true);
         const confirmedBy = currentUser?.name || currentUser?.email || 'Desconocido';
-        const confirmedByPhoto = currentUser?.photo || currentUser?.photo_url || null;
+        // Guardar el identificador CRUDO (photo_url), nunca la URL firmada expirable
+        const confirmedByPhoto = currentUser?.photo_url || currentUser?.photoRaw || null;
 
         let proofUrl = null;
         if (confirmFile) {

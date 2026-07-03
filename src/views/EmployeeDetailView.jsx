@@ -488,7 +488,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     
                                     <div className="h-36 w-36 md:h-40 md:w-40 rounded-full p-1.5 bg-white/60 border border-white shadow-xl backdrop-blur-md mb-5 group relative">
                                         <div className="h-full w-full rounded-full overflow-hidden bg-slate-100 relative shadow-inner">
-                                            <LiquidAvatar src={emp.photo_url || emp.photo} alt={emp.name} fallbackText={fallbackInitials} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                            <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={fallbackInitials} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                         </div>
                                         {canEdit && (
                                             <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer"

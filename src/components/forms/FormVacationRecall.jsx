@@ -52,7 +52,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
             {emp && (
                 <div className="bg-white/70 border border-white/80 rounded-2xl p-4 flex items-center gap-3">
                     <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0">
-                        <LiquidAvatar src={emp.photo_url || emp.photo} alt={emp.name} fallbackText={emp.name} className="w-full h-full" />
+                        <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={emp.name} className="w-full h-full" />
                     </div>
                     <div>
                         <p className="text-[13px] font-black text-slate-800">{emp.name}</p>

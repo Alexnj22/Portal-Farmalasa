@@ -1089,7 +1089,7 @@ const VacationPlanView = () => {
                                                     <div className="flex items-center gap-2.5">
                                                         <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-white shadow-sm flex-shrink-0 flex items-center justify-center text-slate-500 font-black text-[11px]">
                                                             {emp?.photo_url
-                                                                ? <img src={emp.photo_url} alt={emp.name} className="w-full h-full object-cover" />
+                                                                ? <img src={emp.photo || emp.photo_url} alt={emp.name} className="w-full h-full object-cover" />
                                                                 : (emp?.name || '?').charAt(0).toUpperCase()
                                                             }
                                                         </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { tokenMatch, smartFilter } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
+import { signPhotosDeep } from '../../utils/storageFiles';
 import {
     Loader2, ChevronDown, ChevronRight, CheckCircle2,
     Package, Building2, AlertTriangle,
@@ -473,7 +474,7 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existin
                 .select('id, name, photo_url')
                 .eq('kiosk_pin', code.toUpperCase().trim())
                 .maybeSingle();
-            if (data) { setEmployee(data); setManualWarn(false); }
+            if (data) { await signPhotosDeep(data); setEmployee(data); setManualWarn(false); }
             else       setError('No se encontró ningún empleado con ese carnet.');
         } catch { setError('Error al buscar empleado.'); }
         finally   { setLoading(false); }
@@ -2120,6 +2121,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             // Branch: filter to their sucursal only; bodega: load all sucursales
             if (isBranch && erpSucursalId) q = q.eq('erp_sucursal_id', erpSucursalId);
             const { data } = await q;
+            await signPhotosDeep(data || []);
             if (!data) return;
             const map = {};
             data.forEach(r => {
@@ -2351,6 +2353,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         }
 
         const [{ data: lcRow }, { data: apoyoRows }] = await Promise.all([lcPromise, apoyoQ]);
+        await signPhotosDeep(apoyoRows || []);
         const resolved = allItemRows.map(row => ({
             ...row,
             presentations: (row.products?.product_precios || [])

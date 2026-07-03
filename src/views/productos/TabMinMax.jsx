@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '../../supabaseClient';
+import { signPhotosDeep } from '../../utils/storageFiles';
 import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download, Trash2,
@@ -1943,7 +1944,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         supabase.auth.getUser().then(({ data: { user } }) => {
             if (!user?.email) return;
             supabase.from('employees').select('id,name,photo_url').eq('email', user.email).maybeSingle()
-                .then(({ data: emp }) => { if (emp) setCurrentEmployee(emp); });
+                .then(async ({ data: emp }) => { if (emp) { await signPhotosDeep(emp); setCurrentEmployee(emp); } });
         });
     }, []);
 
@@ -2574,6 +2575,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             supabase.from('employees').select('name,photo_url'),
         ]);
         const photoMap = {};
+        await signPhotosDeep(emps || []);
         (emps || []).forEach(e => { if (e.name) photoMap[e.name] = e.photo_url; });
         setHistoryLogs(logs || []);
         setEmpPhotoMap(photoMap);

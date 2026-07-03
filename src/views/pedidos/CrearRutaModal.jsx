@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import { signPhotosDeep } from '../../utils/storageFiles';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import PedidoModal from './PedidoModal';
@@ -66,7 +67,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
         .maybeSingle()
         .then(({ data }) => {
           setConductorNombre(data ? `${data.first_names} ${data.last_names}`.trim() : (user.email ?? 'Usuario'));
-          setConductorPhoto(data?.photo_url ?? null);
+          if (data?.photo_url) { signPhotosDeep(data).then(() => setConductorPhoto(data.photo_url)); } else { setConductorPhoto(null); }
         });
     }
 

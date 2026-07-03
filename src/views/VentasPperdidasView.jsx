@@ -3,6 +3,7 @@ import { PackageMinus, CheckCircle2, TrendingDown, Clock, FlaskConical, Building
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import { supabase }   from '../supabaseClient';
+import { signPhotosDeep } from '../utils/storageFiles';
 
 const TABS = [
     { key: 'pendiente', label: 'Pendiente' },
@@ -32,6 +33,7 @@ export default function VentasPperdidasView() {
             const bm = {};
             for (const b of bData || []) bm[b.id] = b.name;
             setBranchMap(bm);
+            await signPhotosDeep(eData || []);
             const em = {};
             for (const e of eData || []) em[e.id] = { name: e.name, photo: e.photo_url || null };
             setEmpMap(em);

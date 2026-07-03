@@ -446,7 +446,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="relative group cursor-pointer shrink-0">
                                     <div className="w-20 h-20 md:w-24 md:h-24 rounded-[1.5rem] border-4 border-white shadow-[0_4px_15px_rgba(0,0,0,0.08)] overflow-hidden bg-slate-100 flex items-center justify-center transition-transform group-hover:scale-105 duration-300">
                                         {formData.photoPreview || formData.photo_url || formData.photo ? (
-                                            <img src={formData.photoPreview || formData.photo_url || formData.photo} alt="Perfil" className="w-full h-full object-cover" />
+                                            <img src={formData.photoPreview || formData.photo || formData.photo_url} alt="Perfil" className="w-full h-full object-cover" />
                                         ) : (
                                             <User size={36} className="text-slate-300" strokeWidth={2} />
                                         )}

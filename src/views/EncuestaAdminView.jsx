@@ -11,6 +11,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import { supabase } from '../supabaseClient';
+import { signPhotosDeep } from '../utils/storageFiles';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
@@ -241,7 +242,7 @@ export default function EncuestaAdminView() {
         supabase.from('employees')
             .select('id, first_names, last_names, photo_url, role_id, hire_date, branch:branches(id, name)')
             .order('first_names')
-            .then(({ data }) => setEmployees(data || []));
+            .then(async ({ data }) => setEmployees(await signPhotosDeep(data || [])));
     }, []);
 
     const loadDetail = useCallback(async (survey) => {
@@ -258,7 +259,7 @@ export default function EncuestaAdminView() {
         const pData = pRes.data || [];
         setBloques(bData);
         setPreguntas(pData);
-        const sorted = (rRes.data || []).sort((a, b) => {
+        const sorted = (await signPhotosDeep(rRes.data || [])).sort((a, b) => {
             if (a.is_jefe !== b.is_jefe) return a.is_jefe ? -1 : 1;
             return (a.employee?.branch?.name || '').localeCompare(b.employee?.branch?.name || '');
         });

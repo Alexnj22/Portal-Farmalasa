@@ -64,24 +64,17 @@ export const createNotificationsSlice = (set, get) => ({
         }
     },
 
-    // RLS solo permite borrar las propias (policy notifications_delete)
-    deleteNotification: async (id) => {
-        set(state => ({ notifications: state.notifications.filter(n => n.id !== id) }));
+    // RLS solo permite borrar las propias (policy notifications_delete).
+    // El commit llega DESPUÉS de la ventana de "Deshacer" (3s) de la campana,
+    // por eso recibe IDs explícitos: lo que llegue durante la ventana no se toca.
+    deleteNotificationsByIds: async (ids) => {
+        const idSet = new Set(ids || []);
+        if (!idSet.size) return;
+        set(state => ({ notifications: state.notifications.filter(n => !idSet.has(n.id)) }));
         try {
-            await supabase.from('notifications').delete().eq('id', id);
+            await supabase.from('notifications').delete().in('id', [...idSet]);
         } catch (err) {
-            console.error('Error borrando notificación:', err);
-        }
-    },
-
-    clearAllNotifications: async () => {
-        const ids = get().notifications.map(n => n.id);
-        if (!ids.length) return;
-        set({ notifications: [] });
-        try {
-            await supabase.from('notifications').delete().in('id', ids);
-        } catch (err) {
-            console.error('Error limpiando notificaciones:', err);
+            console.error('Error borrando notificaciones:', err);
         }
     },
 });

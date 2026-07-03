@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bell, BellRing, CheckCheck, ClipboardList, Package, BarChart2,
-    Megaphone, ChevronRight, Trash2, X, ArrowRight,
+    Megaphone, ChevronRight, Trash2, X, ArrowRight, Undo2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -38,7 +38,8 @@ const tintForType = (type = '', metadata = {}, isDark = false) => {
     return 'bg-slate-100 text-slate-500 border-slate-200/70';
 };
 
-// Tipos que esperan una acción del usuario → muestran chip de acción
+// Tipos que esperan una acción del usuario → chip con verbo específico;
+// el resto de filas con link muestran "Ver" (indicador de que son clickeables)
 const ACTION_LABEL = {
     REQUEST_PENDING: 'Revisar solicitud',
     MINMAX_PENDING:  'Revisar solicitud',
@@ -46,6 +47,8 @@ const ACTION_LABEL = {
     PEDIDO_REENVIO:  'Confirmar llegada',
     PEDIDO_PROBLEMA: 'Ver detalle',
 };
+
+const UNDO_MS = 3000;
 
 const timeAgo = (iso) => {
     const diff = Date.now() - new Date(iso).getTime();
@@ -59,10 +62,25 @@ const timeAgo = (iso) => {
     return new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
 };
 
+// Barra de cuenta regresiva de la ventana Deshacer (3s, lineal)
+const UndoProgress = ({ isDark }) => (
+    <div className={`absolute bottom-0 inset-x-0 h-[2px] ${isDark ? 'bg-white/10' : 'bg-slate-200/70'}`}>
+        <motion.div
+            initial={{ scaleX: 1 }}
+            animate={{ scaleX: 0 }}
+            transition={{ duration: UNDO_MS / 1000, ease: 'linear' }}
+            style={{ transformOrigin: 'left' }}
+            className="h-full bg-[#0052CC]"
+        />
+    </div>
+);
+
 // ============================================================================
 // 🔔 Campana de notificaciones — canal personal (sistema → ti).
 // Los AVISOS siguen en /my-announcements; aquí solo una fila fijada si hay
 // sin leer. El feed lo monta useNotificationsChannel() UNA vez en AppLayout.
+// Borrar = DELETE real en BD, pero con ventana de 3s para deshacer: el commit
+// se agenda con los IDs capturados y "Deshacer" cancela el timer.
 // ============================================================================
 const NotificationBell = ({ variant = 'desktop' }) => {
     const navigate = useNavigate();
@@ -73,21 +91,38 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const announcements = useStaff(s => s.announcements || []);
     const markNotificationRead = useStaff(s => s.markNotificationRead);
     const markAllNotificationsRead = useStaff(s => s.markAllNotificationsRead);
-    const deleteNotification = useStaff(s => s.deleteNotification);
-    const clearAllNotifications = useStaff(s => s.clearAllNotifications);
+    const deleteNotificationsByIds = useStaff(s => s.deleteNotificationsByIds);
 
     const [isOpen, setIsOpen] = useState(false);
     const [confirmClear, setConfirmClear] = useState(false);
     const [justRang, setJustRang] = useState(false);
     const [flashIds, setFlashIds] = useState(() => new Set());
+    // Borrados en ventana de deshacer: [{ key, ids: string[], isAll }]
+    const [pendingDeletes, setPendingDeletes] = useState([]);
     const rootRef = useRef(null);
     const seenIdsRef = useRef(null);
     const prevUnreadRef = useRef(0);
     const confirmTimerRef = useRef(null);
+    const deleteTimersRef = useRef(new Map());
 
     const canSeeAnnouncements = hasPermission('emp_announcements', 'can_view');
 
-    const unreadNotifs = useMemo(() => notifications.filter(n => !n.read_at), [notifications]);
+    const pendingIds = useMemo(() => {
+        const s = new Set();
+        pendingDeletes.forEach(e => e.ids.forEach(id => s.add(id)));
+        return s;
+    }, [pendingDeletes]);
+    const pendingAll = pendingDeletes.find(e => e.isAll) || null;
+    const pendingEntryByNotifId = useMemo(() => {
+        const m = new Map();
+        pendingDeletes.forEach(e => { if (!e.isAll) e.ids.forEach(id => m.set(id, e)); });
+        return m;
+    }, [pendingDeletes]);
+
+    const unreadNotifs = useMemo(
+        () => notifications.filter(n => !n.read_at && !pendingIds.has(n.id)),
+        [notifications, pendingIds]
+    );
 
     const unreadAnnouncements = useMemo(() => {
         if (!user || !canSeeAnnouncements) return [];
@@ -109,10 +144,41 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const hasUrgentAnn = unreadAnnouncements.some(a => a.priority === 'URGENT');
     const totalBadge = unreadNotifs.length + annUnread;
 
+    // ── Borrar con ventana de deshacer ──────────────────────────────────────
+    // Los IDs viven junto al timer en el ref: el commit es un side-effect
+    // puro del timeout, nunca dentro de un updater de estado (StrictMode-safe).
+    const commitDelete = (key) => {
+        const rec = deleteTimersRef.current.get(key);
+        if (rec) {
+            deleteTimersRef.current.delete(key);
+            deleteNotificationsByIds(rec.ids);
+        }
+        setPendingDeletes(prev => prev.filter(e => e.key !== key));
+    };
+
+    const scheduleDelete = (ids, isAll = false) => {
+        if (!ids.length) return;
+        const key = `${isAll ? 'all' : 'one'}-${Date.now()}`;
+        setPendingDeletes(prev => [...prev, { key, ids, isAll }]);
+        deleteTimersRef.current.set(key, { ids, timer: setTimeout(() => commitDelete(key), UNDO_MS) });
+    };
+
+    const undoDelete = (key) => {
+        const rec = deleteTimersRef.current.get(key);
+        if (rec) clearTimeout(rec.timer);
+        deleteTimersRef.current.delete(key);
+        setPendingDeletes(prev => prev.filter(e => e.key !== key));
+    };
+
+    useEffect(() => () => {
+        // Al desmontar (logout) se cancelan las ventanas abiertas: no se borra
+        deleteTimersRef.current.forEach(rec => clearTimeout(rec.timer));
+        deleteTimersRef.current.clear();
+    }, []);
+
     // ── Realtime: campanazo + flash en filas recién llegadas ────────────────
     useEffect(() => {
         if (seenIdsRef.current === null) {
-            // Primera carga: no marcar nada como "nuevo"
             if (notifications.length > 0 || !user) {
                 seenIdsRef.current = new Set(notifications.map(n => n.id));
             }
@@ -160,8 +226,10 @@ const NotificationBell = ({ variant = 'desktop' }) => {
 
     const handleNotifClick = (n) => {
         if (!n.read_at) markNotificationRead(n.id);
-        setIsOpen(false);
-        if (n.link) navigate(n.link);
+        if (n.link) {
+            setIsOpen(false);
+            navigate(n.link);
+        }
     };
 
     const handleClearAll = () => {
@@ -172,7 +240,8 @@ const NotificationBell = ({ variant = 'desktop' }) => {
             return;
         }
         setConfirmClear(false);
-        clearAllNotifications();
+        // Captura los visibles AHORA; lo que llegue durante la ventana no se toca
+        scheduleDelete(notifications.filter(n => !pendingIds.has(n.id)).map(n => n.id), true);
     };
 
     if (!user) return null;
@@ -192,7 +261,10 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         iconBtn: 'text-white/45 hover:text-white/90 hover:bg-white/10',
         emptyIconBox: 'bg-white/[0.06] border-white/10 text-white/40',
         emptyTitle: 'text-white/80', emptySub: 'text-white/45',
-        divider: 'border-white/[0.06]',
+        chipMuted: 'text-white/40',
+        undoStrip: 'bg-white/[0.05]',
+        undoText: 'text-white/60',
+        undoBtn: 'text-blue-300 hover:bg-blue-400/10 border-blue-300/25',
     } : {
         panel: 'bg-white/60 backdrop-blur-[20px] backdrop-saturate-[150%] border border-white/90 shadow-[0_30px_80px_rgba(0,0,0,0.15),0_15px_30px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)]',
         headerBorder: 'border-slate-200/60',
@@ -205,8 +277,21 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         iconBtn: 'text-slate-500 hover:text-slate-700 hover:bg-white/80',
         emptyIconBox: 'bg-white/80 border-white text-[#0052CC]/50',
         emptyTitle: 'text-slate-700', emptySub: 'text-slate-500',
-        divider: 'border-slate-100/80',
+        chipMuted: 'text-slate-500',
+        undoStrip: 'bg-slate-50/80',
+        undoText: 'text-slate-600',
+        undoBtn: 'text-[#0052CC] hover:bg-blue-50 border-blue-200/70',
     };
+
+    const undoButton = (key, label = 'Deshacer') => (
+        <button
+            onClick={() => undoDelete(key)}
+            className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl border transition-colors ${cx.undoBtn}`}
+        >
+            <Undo2 size={12} strokeWidth={2.5} />
+            {label}
+        </button>
+    );
 
     return (
         <div ref={rootRef} className="relative">
@@ -277,7 +362,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                     )}
                                 </div>
                                 <div className="flex items-center gap-0.5">
-                                    {unreadNotifs.length > 0 && !confirmClear && (
+                                    {unreadNotifs.length > 0 && !confirmClear && !pendingAll && (
                                         <button
                                             onClick={() => markAllNotificationsRead()}
                                             title="Marcar todas como leídas"
@@ -287,7 +372,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                             Leídas
                                         </button>
                                     )}
-                                    {notifications.length > 0 && (
+                                    {notifications.length > 0 && !pendingAll && (
                                         confirmClear ? (
                                             <button
                                                 onClick={handleClearAll}
@@ -308,6 +393,17 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                     )}
                                 </div>
                             </div>
+
+                            {/* ── Franja Deshacer (borrado masivo) ── */}
+                            {pendingAll && (
+                                <div className={`relative flex items-center justify-between pl-5 pr-3 py-2.5 border-b ${cx.headerBorder} ${cx.undoStrip}`}>
+                                    <span className={`text-[12px] font-semibold ${cx.undoText}`}>
+                                        Borrando {pendingAll.ids.length} notificación{pendingAll.ids.length > 1 ? 'es' : ''}…
+                                    </span>
+                                    {undoButton(pendingAll.key)}
+                                    <UndoProgress isDark={isDark} />
+                                </div>
+                            )}
 
                             {/* ── Fila fijada: avisos sin leer ── */}
                             {annUnread > 0 && (
@@ -352,21 +448,44 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                 const Icon = iconForType(n.type);
                                                 const unread = !n.read_at;
                                                 const isFlash = flashIds.has(n.id);
-                                                const actionLabel = unread ? ACTION_LABEL[n.type] : null;
+                                                const pendingOne = pendingEntryByNotifId.get(n.id);
+                                                const inPendingAll = pendingAll?.ids.includes(n.id);
+                                                const actionLabel = n.link ? (ACTION_LABEL[n.type] || 'Ver') : null;
+
+                                                // Fila en ventana de deshacer (borrado individual)
+                                                if (pendingOne) {
+                                                    return (
+                                                        <motion.div
+                                                            key={n.id}
+                                                            layout="position"
+                                                            exit={{ opacity: 0, x: 24, transition: { duration: 0.15 } }}
+                                                            className={`relative flex items-center justify-between pl-5 pr-3 py-3 ${cx.undoStrip}`}
+                                                        >
+                                                            <span className={`text-[12px] font-semibold truncate pr-3 ${cx.undoText}`}>
+                                                                Notificación borrada
+                                                            </span>
+                                                            {undoButton(pendingOne.key)}
+                                                            <UndoProgress isDark={isDark} />
+                                                        </motion.div>
+                                                    );
+                                                }
+
                                                 return (
                                                     <motion.div
                                                         key={n.id}
                                                         layout="position"
                                                         initial={isFlash ? { opacity: 0, y: -10 } : false}
-                                                        animate={{ opacity: 1, y: 0 }}
+                                                        animate={{ opacity: inPendingAll ? 0.35 : 1, y: 0 }}
                                                         exit={{ opacity: 0, x: 24, transition: { duration: 0.15 } }}
                                                         transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
                                                         className={`relative group transition-colors duration-500
+                                                            ${inPendingAll ? 'pointer-events-none' : ''}
                                                             ${isFlash ? (isDark ? 'bg-blue-400/[0.14]' : 'bg-blue-100/70') : unread ? cx.rowUnread : ''}`}
                                                     >
                                                         <button
                                                             onClick={() => handleNotifClick(n)}
-                                                            className={`w-full flex items-start gap-3 pl-5 pr-10 py-3 text-left transition-colors ${cx.rowHover}`}
+                                                            className={`w-full flex items-start gap-3 pl-5 pr-10 py-3 text-left transition-colors
+                                                                ${n.link ? `cursor-pointer ${cx.rowHover}` : 'cursor-default'}`}
                                                         >
                                                             <div className={`w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0 mt-0.5 ${tintForType(n.type, n.metadata, isDark)}`}>
                                                                 <Icon size={16} strokeWidth={2} />
@@ -380,8 +499,9 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                                 )}
                                                                 <div className="flex items-center gap-2 mt-1.5">
                                                                     <span className={`text-[10px] font-bold uppercase tracking-wider ${cx.rowTime}`}>{timeAgo(n.created_at)}</span>
-                                                                    {actionLabel && n.link && (
-                                                                        <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-blue-300' : 'text-[#0052CC]'}`}>
+                                                                    {actionLabel && (
+                                                                        <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest transition-transform group-hover:translate-x-0.5
+                                                                            ${unread ? (isDark ? 'text-blue-300' : 'text-[#0052CC]') : cx.chipMuted}`}>
                                                                             {actionLabel}
                                                                             <ArrowRight size={10} strokeWidth={3} />
                                                                         </span>
@@ -392,7 +512,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
                                                         </button>
                                                         {/* Borrar individual — visible al hover en desktop, siempre tenue en touch */}
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); deleteNotification(n.id); }}
+                                                            onClick={(e) => { e.stopPropagation(); scheduleDelete([n.id]); }}
                                                             title="Borrar"
                                                             aria-label="Borrar notificación"
                                                             className={`absolute top-2.5 right-2.5 p-1.5 rounded-lg transition-all opacity-60 lg:opacity-0 lg:group-hover:opacity-100 ${cx.iconBtn} hover:!text-red-500`}

@@ -62,6 +62,29 @@ const validateDui = (dui, employees, excludeId = null) => {
     if (dup) throw new Error(`El DUI "${dui}" ya está registrado a nombre de ${dup.name}.`);
 };
 
+// Campos OPCIONALES con formato fijo: vacío es válido (queda pendiente y el
+// banner "Información Pendiente" lo recuerda), pero si tienen contenido deben
+// estar COMPLETOS — a medias no se guarda: o se completa, o se borra.
+const validateOptionalFormats = (data) => {
+    const digitsLen = (v) => String(v ?? '').replace(/\D/g, '').length;
+    const checks = [
+        ['phone', 8, 'El Teléfono'],
+        ['emergency_contact_phone', 8, 'El Teléfono de Emergencia'],
+        ['isss_number', 9, 'El Número ISSS'],
+        ['afp_number', 12, 'El NUP (AFP)'],
+    ];
+    for (const [field, len, label] of checks) {
+        const val = data[field];
+        if (val === undefined || val === null || String(val).trim() === '') continue;
+        if (digitsLen(val) !== len) {
+            throw new Error(
+                `${label} está incompleto (debe tener ${len} dígitos). ` +
+                `Complétalo, o bórralo para guardarlo como pendiente.`
+            );
+        }
+    }
+};
+
 // Valida el límite de headcount (max_limit) del cargo antes de asignarlo.
 // Lanza HEADCOUNT_LIMIT si la plaza ya está ocupada. Se usa en alta, edición,
 // recontratación y acciones RRHH (PROMOTION/TRANSFER) para cerrar las vías
@@ -161,6 +184,7 @@ export const createEmployeeSlice = (set, get) => ({
             }
 
             validateDui(formData.dui || null, get().employees);
+            validateOptionalFormats(formData);
 
             const dbPayload = {
                 first_names: fNames,
@@ -322,6 +346,7 @@ export const createEmployeeSlice = (set, get) => ({
                 dbPayload.dui = String(dbPayload.dui ?? '').trim() || null;
                 validateDui(dbPayload.dui, get().employees, id);
             }
+            validateOptionalFormats(dbPayload);
 
             // branch_id: null/'' significa "quitar de la sucursal" (bolsa flotante) —
             // el mapeo anterior solo aceptaba valores truthy y el desasignar no se guardaba.

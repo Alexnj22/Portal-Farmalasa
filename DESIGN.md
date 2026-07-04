@@ -721,7 +721,7 @@ bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded-full
 
 ## 17. Filter Pills
 
-All view-level filters live in a pill container, never inline in the content body.
+All view-level filters live in a pill container, never as loose controls scattered in the content body.
 
 **Standard pill anatomy:**
 ```
@@ -729,9 +729,20 @@ rounded-2xl bg-white/80 border border-slate-200/70
 ```
 Dividers between filter controls: `h-5 w-px bg-slate-100`.
 
-Filters are placed in `GlassViewLayout`'s `filtersContent` prop (renders in page header right slot on desktop, below mobile title on mobile).
+**Placement: body, not header.** The filter pill renders in the view **body**, in the same row as the stat cards — stat cards in a `flex-1 min-w-0` group on the left, filter pill `shrink-0` on the right:
+```jsx
+<div className="flex items-start gap-3 flex-wrap">
+  <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
+    {/* stat cards */}
+  </div>
+  <div className="rounded-2xl bg-white/80 border border-slate-200/70 ... shrink-0">
+    {/* branch select, period picker, toggles, individual clear buttons */}
+  </div>
+</div>
+```
+`GlassViewLayout`'s `filtersContent` prop is a **different** slot — it renders in the page header (right slot on desktop, below the mobile title) and is reserved for the search toggle, tab buttons, and primary actions (export, "Nuevo X"), not for the filter pill itself. Do not put branch/period/status filters there.
 
-Reference implementation: `VentasView` FilterControls component.
+Reference implementation: `VentasView` — see `FilterControls` (`src/views/VentasView.jsx:118`), rendered inline in each tab body (`TabVentas`/`TabVendedores`/`TabProductos`) immediately after the stat cards row, never passed through `filtersContent`. Same pattern in the Productos tabs (`TabInventario`, `TabCatalogo`, `TabSinVenta`) and `StaffManagementView`.
 
 ---
 

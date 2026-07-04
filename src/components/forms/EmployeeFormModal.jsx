@@ -34,8 +34,9 @@ const EDUCATION_OPTIONS = [
 const LEVELS_WITH_SPECIALTY = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR'];
 // Niveles donde "¿Actualmente estudiando?" tiene sentido
 const LEVELS_WITH_STUDY_TOGGLE = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR', 'MAESTRIA'];
-// Niveles donde el campo Profesión/Título se muestra
-const LEVELS_WITH_PROFESSION = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR', 'UNIVERSITARIO_E', 'UNIVERSITARIO_G', 'MAESTRIA'];
+// Niveles donde el campo Profesión/Título se muestra — Bachillerato Técnico
+// queda fuera: su "título" ya es la especialidad, no una profesión aparte.
+const LEVELS_WITH_PROFESSION = ['TECNICO_SUPERIOR', 'UNIVERSITARIO_E', 'UNIVERSITARIO_G', 'MAESTRIA'];
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const MONTH_OPTIONS = MESES.map((m, i) => ({ value: String(i + 1).padStart(2, '0'), label: m }));
@@ -59,6 +60,20 @@ const isValidPersonName = (val) => {
     const v = (val || '').trim();
     if (v.length < 2) return false;
     return /^[A-Za-zÀ-ÖØ-öø-ÿÑñ'’\-\s.]+$/.test(v);
+};
+
+// Edad real en años a partir de una fecha "YYYY-MM-DD". Rango laboral válido: 16-90.
+const MIN_WORK_AGE = 16;
+const MAX_WORK_AGE = 90;
+const calcAge = (birthDateStr) => {
+    if (!birthDateStr) return null;
+    const bd = new Date(birthDateStr + 'T00:00:00');
+    if (isNaN(bd.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - bd.getFullYear();
+    const m = today.getMonth() - bd.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+    return age;
 };
 
 const AFP_OPTIONS = [
@@ -179,7 +194,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
 
 // Select de especialidad con fallback a texto libre ("Otra especialidad...").
 // key={education_level} en el caller para que se remonte limpio al cambiar de nivel.
-const SpecialtySelector = ({ value, onChange, options, portalSelectProps, inputHoverClass }) => {
+const SpecialtySelector = ({ value, onChange, options, portalSelectProps, inputHoverClass, hasError }) => {
     const knownValues = useMemo(() => options.map(o => o.value), [options]);
     const [isOther, setIsOther] = useState(() => !!value && !knownValues.includes(value));
 
@@ -187,7 +202,7 @@ const SpecialtySelector = ({ value, onChange, options, portalSelectProps, inputH
 
     return (
         <div className="flex flex-col sm:flex-row gap-2">
-            <div className={`flex-1 rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+            <div className={`flex-1 rounded-[1rem] h-[40px] ${inputHoverClass} ${hasError && !isOther ? '!border-red-400 !bg-red-50/50' : ''}`}>
                 <LiquidSelect
                     value={selectValue}
                     onChange={(val) => {
@@ -206,7 +221,7 @@ const SpecialtySelector = ({ value, onChange, options, portalSelectProps, inputH
                     value={value || ''}
                     onChange={(e) => onChange(e.target.value.toUpperCase())}
                     placeholder="Especifica la especialidad"
-                    className={`flex-1 h-[40px] px-4 bg-white border border-slate-200/80 rounded-[1rem] text-[13px] font-bold text-slate-700 outline-none shadow-sm ${inputHoverClass}`}
+                    className={`flex-1 h-[40px] px-4 bg-white border rounded-[1rem] text-[13px] font-bold text-slate-700 outline-none shadow-sm ${inputHoverClass} ${hasError ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}
                 />
             )}
         </div>
@@ -404,14 +419,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         });
     };
 
-    const estimatedStudyEnd = useMemo(() => {
+    const estimatedStudyEndDate = useMemo(() => {
         if (!formData?.study_start_date || !formData?.study_duration_years) return null;
         const [y, m] = formData.study_start_date.split('-').map(Number);
         const totalMonths = (m - 1) + Math.round(Number(formData.study_duration_years) * 12);
         const endYear = y + Math.floor(totalMonths / 12);
         const endMonth = ((totalMonths % 12) + 12) % 12;
-        return `${MESES[endMonth]} ${endYear}`;
+        return { date: new Date(endYear, endMonth, 1), label: `${MESES[endMonth]} ${endYear}` };
     }, [formData?.study_start_date, formData?.study_duration_years]);
+
+    const estimatedStudyEnd = estimatedStudyEndDate?.label || null;
+    // No es real seguir "actualmente estudiando" si la fecha estimada de fin ya pasó.
+    const studyEndInPast = !!formData?.is_studying && !!estimatedStudyEndDate && estimatedStudyEndDate.date < new Date();
 
     const addSkill = () => setFormData(prev => ({ ...prev, additional_skills: [...(prev.additional_skills || []), ''] }));
     const updateSkill = (idx, value) => setFormData(prev => {
@@ -487,6 +506,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const emailInvalid = !!formData?.email && !isValidEmail(formData.email);
     const firstNamesInvalid = !!formData?.first_names && !isValidPersonName(formData.first_names);
     const lastNamesInvalid  = !!formData?.last_names && !isValidPersonName(formData.last_names);
+
+    const employeeAge = calcAge(formData?.birth_date);
+    const birthDateInFuture = !!formData?.birth_date && new Date(formData.birth_date + 'T00:00:00') > new Date();
+    const birthDateOutOfRange = employeeAge !== null && (employeeAge < MIN_WORK_AGE || employeeAge > MAX_WORK_AGE);
+    const birthDateInvalid = birthDateInFuture || birthDateOutOfRange;
+    const birthDateErrorMsg = birthDateInFuture ? 'Fecha futura' : birthDateOutOfRange ? `Edad debe ser ${MIN_WORK_AGE}-${MAX_WORK_AGE}` : null;
 
     let duiErrorMsg = null;
     if (isDuiDuplicate) duiErrorMsg = "DUI Ya Registrado";
@@ -625,8 +650,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <PortalInput label="DUI" name="dui" value={formData.dui} onChange={handleChange} icon={Fingerprint} placeholder="00000000-0" maskType="DUI" hasError={isDuiInvalid || isDuiDuplicate || isDuiIncomplete} errorMessage={duiErrorMsg} />
 
                                 <div className="relative z-30">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Fecha de Nacimiento</label>
-                                    <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                        <span>Fecha de Nacimiento {employeeAge !== null && !birthDateInvalid && <span className="text-slate-400 font-bold normal-case tracking-normal">· {employeeAge} años</span>}</span>
+                                        {birthDateInvalid && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md ml-1">{birthDateErrorMsg}</span>}
+                                    </label>
+                                    <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${birthDateInvalid ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}>
                                         <LiquidDatePicker value={formData.birth_date} onChange={(date) => handleDateChange('birth_date', date)} placeholder="Seleccionar Fecha" />
                                     </div>
                                 </div>
@@ -703,8 +731,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 </div>
                                 <div className="relative z-10">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Distrito</label>
-                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                        <span>Distrito</span>
+                                        {formData.department && !formData.municipality && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
+                                    </label>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${formData.department && !formData.municipality ? '!border-red-400 !bg-red-50/50' : ''}`}>
                                         <LiquidSelect value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Distrito...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
@@ -738,8 +769,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Distrito</label>
-                                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                                                <span>Distrito</span>
+                                                                {addr.department && !addr.municipality && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
+                                                            </label>
+                                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${addr.department && !addr.municipality ? '!border-red-400 !bg-red-50/50' : ''}`}>
                                                                 <LiquidSelect value={addr.municipality} onChange={(val) => updateAddress(idx, 'municipality', val)} options={altMunicipioOpts} placeholder={addr.department ? 'Distrito...' : 'Elija Depto.'} disabled={!addr.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                                             </div>
                                                         </div>
@@ -772,22 +806,28 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="relative z-30">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Nivel Académico</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.education_level} onChange={(val) => handleSelectChange('education_level', val)} options={EDUCATION_OPTIONS} placeholder="Nivel..." icon={GraduationCap} clearLabel="Ninguno" {...portalSelectProps} />
+                                        <LiquidSelect value={formData.education_level} onChange={(val) => handleSelectChange('education_level', val)} options={EDUCATION_OPTIONS} placeholder="Nivel..." icon={GraduationCap} clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
 
                                 {formData.education_level === 'BASICA' && (
                                     <div className="relative z-20 animate-in fade-in zoom-in-95 duration-200">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Grado Finalizado</label>
-                                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                            <LiquidSelect value={formData.education_grade_completed} onChange={(val) => handleSelectChange('education_grade_completed', val)} options={GRADO_BASICA_OPTIONS} placeholder="Grado..." clearLabel="Ninguno" {...portalSelectProps} />
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                            <span>Grado Finalizado</span>
+                                            {!formData.education_grade_completed && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
+                                        </label>
+                                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.education_grade_completed ? '!border-red-400 !bg-red-50/50' : ''}`}>
+                                            <LiquidSelect value={formData.education_grade_completed} onChange={(val) => handleSelectChange('education_grade_completed', val)} options={GRADO_BASICA_OPTIONS} placeholder="Grado..." clearable={false} {...portalSelectProps} />
                                         </div>
                                     </div>
                                 )}
 
                                 {LEVELS_WITH_SPECIALTY.includes(formData.education_level) && (
-                                    <div className="relative z-20 md:col-span-2 animate-in fade-in zoom-in-95 duration-200">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Especialidad</label>
+                                    <div className="relative z-20 animate-in fade-in zoom-in-95 duration-200">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                            <span>Especialidad</span>
+                                            {!formData.education_specialty && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
+                                        </label>
                                         <SpecialtySelector
                                             key={formData.education_level}
                                             value={formData.education_specialty}
@@ -795,12 +835,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             options={formData.education_level === 'BACHILLERATO_TECNICO' ? BACHILLERATO_TECNICO_ESPECIALIDADES : TECNICO_SUPERIOR_ESPECIALIDADES}
                                             portalSelectProps={portalSelectProps}
                                             inputHoverClass={inputHoverClass}
+                                            hasError={!formData.education_specialty}
                                         />
                                     </div>
                                 )}
 
                                 {LEVELS_WITH_PROFESSION.includes(formData.education_level) && (
-                                    <PortalInput label="Profesión / Título" name="profession" value={formData.profession} onChange={handleChange} icon={BookOpen} placeholder="Ej. Lic. en Farmacia" colSpan={2} />
+                                    <PortalInput label="Profesión / Título" name="profession" value={formData.profession} onChange={handleChange} icon={BookOpen} placeholder="Ej. Lic. en Farmacia" required colSpan={2} />
                                 )}
 
                                 {(LEVELS_WITH_STUDY_TOGGLE.includes(formData.education_level) || formData.education_level === 'UNIVERSITARIO_E') && (
@@ -828,11 +869,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         <LiquidSelect value={formData.study_start_date ? formData.study_start_date.split('-')[0] : ''} onChange={(val) => handleStudyDateChange('year', val)} options={YEAR_OPTIONS} placeholder="Año..." compact clearable={false} {...portalSelectProps} />
                                                     </div>
                                                 </div>
-                                                <PortalInput label="Duración (años)" name="study_duration_years" value={formData.study_duration_years} onChange={handleChange} type="number" placeholder="Ej. 2.5" />
+                                                <PortalInput label="Duración (años)" name="study_duration_years" value={formData.study_duration_years} onChange={handleChange} type="number" placeholder="Ej. 2.5" hasError={studyEndInPast} errorMessage="Revisa fechas" />
                                             </div>
                                         )}
                                         {estimatedStudyEnd && (
-                                            <p className="text-[10px] font-bold text-indigo-600 mt-2 ml-1">Finaliza aprox.: {estimatedStudyEnd}</p>
+                                            <p className={`text-[10px] font-bold mt-2 ml-1 ${studyEndInPast ? 'text-red-600' : 'text-indigo-600'}`}>
+                                                {studyEndInPast
+                                                    ? `Finalizó en ${estimatedStudyEnd} — no puede seguir "actualmente estudiando"`
+                                                    : `Finaliza aprox.: ${estimatedStudyEnd}`}
+                                            </p>
                                         )}
                                     </div>
                                 )}

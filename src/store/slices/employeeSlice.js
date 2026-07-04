@@ -132,6 +132,29 @@ const validateOptionalFormats = (data) => {
             throw new Error(`${label} solo pueden contener letras (mínimo 2 caracteres).`);
         }
     }
+
+    // Fecha de nacimiento: ni futura ni una edad fuera de rango laboral real.
+    if (data.birth_date) {
+        const bd = new Date(`${data.birth_date}T00:00:00`);
+        if (!isNaN(bd.getTime())) {
+            const today = new Date();
+            if (bd > today) throw new Error('La Fecha de Nacimiento no puede ser futura.');
+            let age = today.getFullYear() - bd.getFullYear();
+            const m = today.getMonth() - bd.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+            if (age < 16 || age > 90) throw new Error('La Fecha de Nacimiento resulta en una edad no válida (debe estar entre 16 y 90 años).');
+        }
+    }
+
+    // "¿Actualmente estudiando?" no es real si la fecha estimada de fin ya pasó.
+    if (data.is_studying && data.study_start_date && data.study_duration_years) {
+        const [y, m] = data.study_start_date.split('-').map(Number);
+        const totalMonths = (m - 1) + Math.round(parseFloat(data.study_duration_years) * 12);
+        const endDate = new Date(y + Math.floor(totalMonths / 12), ((totalMonths % 12) + 12) % 12, 1);
+        if (endDate < new Date()) {
+            throw new Error('La carrera marcada como "actualmente estudiando" ya debería haber finalizado según el inicio y la duración indicados. Revisa las fechas.');
+        }
+    }
 };
 
 // Valida el límite de headcount (max_limit) del cargo antes de asignarlo.

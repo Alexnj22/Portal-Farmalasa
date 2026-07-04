@@ -2393,7 +2393,7 @@ export default function TabCatalogo({
         textInactive: 'text-slate-400 line-through decoration-slate-300',
         avatarBg: 'bg-[#0052CC]/[0.07]',
         avatarIcon: 'text-[#0052CC]/50',
-        filterPill: 'bg-white border-slate-200/80 shadow-[0_2px_12px_rgba(0,82,204,0.08)]',
+        filterPill: 'bg-white/80 border-slate-200/70 shadow-[0_2px_12px_rgba(0,82,204,0.08)]',
         filterDivider: 'bg-slate-100',
         filterBtn: 'text-slate-400 hover:text-slate-600 hover:bg-slate-50',
         totalText: 'text-slate-400',

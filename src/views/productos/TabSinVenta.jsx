@@ -293,7 +293,7 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
                             <c.Icon size={15} className={c.iconColor} />
                         </div>
                         <div className="text-left min-w-0 flex-1">
-                            <div className={`text-[21px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
+                            <div className={`text-[22px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
                                 {loading ? <span className="text-slate-200 text-[16px]">–</span> : counts[c.id].toLocaleString()}
                             </div>
                             <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">{c.label}</div>
@@ -345,7 +345,7 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
                             <c.Icon size={15} className={c.iconColor} />
                         </div>
                         <div className="text-left min-w-0 flex-1">
-                            <div className={`text-[21px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
+                            <div className={`text-[22px] font-black leading-none tabular-nums ${c.numColor(counts[c.id])}`}>
                                 {loading ? <span className="text-slate-200 text-[16px]">–</span> : counts[c.id].toLocaleString()}
                             </div>
                             <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">{c.label}</div>
@@ -422,9 +422,9 @@ export default function TabGestionStock({ searchTerm = '' }) {
         rowHover:         'hover:bg-[#0052CC]/[0.03]',
         skeleton:         'bg-slate-200/70',
         emptyBg:          'bg-white/80 border-slate-200/70 backdrop-blur-sm',
-        filterPill:       'bg-white/60 border-white/50 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.10)]',
+        filterPill:       'bg-white/80 border-slate-200/70 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.10)]',
         filterBtn:        'text-slate-500 hover:text-slate-700 hover:bg-white/60',
-        filterDivider:    'bg-slate-200/60',
+        filterDivider:    'bg-slate-100',
         totalText:        'text-slate-400',
     };
 
@@ -619,13 +619,13 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
                     {/* Sub-filter cards */}
                     {mode === 'sin_gestion' && <React.Fragment key="sin_gestion_filters">
-                        <div className="w-px h-12 self-center hidden sm:block bg-slate-200/50" />
+                        <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
                         <SinMinMaxFilters data={activeData} filterMode={filterMode}
                             onFilter={id => setFilterMode(p => p === id ? 'agregar' : id)}
                             loading={activeLoading} ignoredSet={ignoredSet} />
                     </React.Fragment>}
                     {mode === 'stock_ret' && <React.Fragment key="stock_ret_filters">
-                        <div className="w-px h-12 self-center hidden sm:block bg-slate-200/50" />
+                        <div className="w-px h-14 self-center hidden sm:block bg-slate-100" />
                         <StockRetFilters data={activeData} filterMode={filterMode}
                             onFilter={id => setFilterMode(p => p === id ? 'todos' : id)} loading={activeLoading} />
                     </React.Fragment>}
@@ -727,16 +727,9 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                 const isIgnored = ignoredSet.has(row.erp_product_id);
                                 const sugg  = getSinMinMaxSugg(row);
                                 const lvl   = sugg.level;
-                                const leftColor = isIgnored ? '#94a3b8'
-                                    : lvl === 'agregar'   ? '#10b981'
-                                    : lvl === 'evaluar'   ? '#f59e0b'
-                                    : lvl === 'encargo'   ? '#f97316'
-                                    : lvl === 'mayorista' ? '#6366f1'
-                                    : '#cbd5e1';
                                 return (
                                     <DataRow key={row.erp_product_id} index={row.erp_product_id}
-                                        style={{ borderLeftColor: leftColor }}
-                                        className={`border-l-[3px] ${isIgnored ? 'opacity-50' : ''}`}>
+                                        className={isIgnored ? 'opacity-50' : ''}>
                                         <DataCell>
                                             <button onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
                                                 title="Copiar nombre"
@@ -823,9 +816,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                 const soldIn = row.sold_in || [];
                                 const sug    = getSuggestion(row);
                                 return (
-                                    <DataRow key={row.erp_product_id} index={row.erp_product_id}
-                                        style={{ borderLeftColor: row.in_minmax ? '#10b981' : '#f87171' }}
-                                        className="border-l-[3px]">
+                                    <DataRow key={row.erp_product_id} index={row.erp_product_id}>
                                         <DataCell>
                                             <button onClick={() => handleCopyName(row.erp_product_id, row.product_name)}
                                                 title="Copiar nombre"

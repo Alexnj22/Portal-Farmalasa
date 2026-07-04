@@ -137,7 +137,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                     <div className="flex-1 flex flex-col items-center justify-center text-center opacity-40">
                         <User size={64} strokeWidth={1} className="text-slate-400 mb-4"/>
                         <p className="text-[16px] font-black text-slate-700 uppercase tracking-widest">Esperando Candidato</p>
-                        <p className="text-[12px] font-bold text-slate-500 mt-2 max-w-[250px]">Elige a un colaborador de la lista lateral.</p>
+                        <p className="text-[12px] font-bold text-slate-500 mt-2 max-w-[250px]">Elige a un empleado de la lista lateral.</p>
                     </div>
                 ) : (
                     <div className="w-full max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-right-4 pb-10">
@@ -182,7 +182,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 <ShieldCheck size={32} className="text-amber-400 mx-auto mb-3" strokeWidth={2}/>
                                 <h4 className="text-[14px] font-black text-amber-800 uppercase tracking-widest">Titular Actual</h4>
                                 <p className="text-[11px] font-bold text-amber-700/80 mt-2 max-w-sm mx-auto leading-relaxed">
-                                    Este colaborador ocupa actualmente el cargo de {formData.targetRole}. Para efectuar un relevo o cambio, selecciona a un candidato diferente en la lista.
+                                    Este empleado ocupa actualmente el cargo de {formData.targetRole}. Para efectuar un relevo o cambio, selecciona a un candidato diferente en la lista.
                                 </p>
                             </div>
                         ) : (

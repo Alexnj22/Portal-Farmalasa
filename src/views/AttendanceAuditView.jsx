@@ -1423,7 +1423,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
               {/* Stat cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { Icon: Users,        label: 'Colaboradores',   val: withData,          unit: '',  c: 'text-[#0052CC]', bg: 'bg-[#0052CC]/10' },
+                  { Icon: Users,        label: 'Empleados',   val: withData,          unit: '',  c: 'text-[#0052CC]', bg: 'bg-[#0052CC]/10' },
                   { Icon: Clock,        label: 'Horas Regulares', val: totReg.toFixed(1), unit: 'h', c: 'text-slate-700',  bg: 'bg-slate-100' },
                   { Icon: TrendingUp,   label: 'Horas Extra',     val: totOT.toFixed(1),  unit: 'h', c: totOT > 0 ? 'text-amber-600' : 'text-slate-400', bg: totOT > 0 ? 'bg-amber-50' : 'bg-slate-100' },
                   { Icon: CalendarRange,label: 'Ausencias',       val: totAbs,            unit: '',  c: totAbs > 0 ? 'text-red-600' : 'text-slate-400', bg: totAbs > 0 ? 'bg-red-50' : 'bg-slate-100' },
@@ -1463,7 +1463,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
                         <div className="min-w-0">
                           <p className="text-[12px] font-black text-slate-700 leading-none">{bName}</p>
                           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                            {branchEmployees.length} colaborador{branchEmployees.length !== 1 ? 'es' : ''}
+                            {branchEmployees.length} empleado{branchEmployees.length !== 1 ? 'es' : ''}
                           </p>
                         </div>
                         <div className="flex-1 h-px bg-gradient-to-r from-slate-300/40 to-transparent" />

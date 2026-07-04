@@ -65,7 +65,7 @@ const FormRoleEmployees = ({ formData }) => {
                 ) : (
                     <div className="text-center py-12 bg-white/60 backdrop-blur-md rounded-[2rem] border-2 border-dashed border-slate-200">
                         <User className="mx-auto text-slate-300 mb-4" size={40} strokeWidth={1.5} />
-                        <p className="text-slate-500 font-bold text-[15px]">No hay colaboradores asignados.</p>
+                        <p className="text-slate-500 font-bold text-[15px]">No hay empleados asignados.</p>
                         <p className="text-[10px] text-slate-400 mt-1.5 uppercase tracking-widest font-bold px-4">
                             Puedes asignar este cargo desde la edición del perfil de empleado.
                         </p>

@@ -627,8 +627,8 @@ const SchedulesView = ({ openModal, setView }) => {
 
         if (incompleteCount > 0 || excessCount > 0) {
             const msgs = [];
-            if (incompleteCount > 0) msgs.push(`${incompleteCount} colaborador(es) con horarios incompletos.`);
-            if (excessCount > 0)     msgs.push(`${excessCount} colaborador(es) con exceso de horas.`);
+            if (incompleteCount > 0) msgs.push(`${incompleteCount} empleado(es) con horarios incompletos.`);
+            if (excessCount > 0)     msgs.push(`${excessCount} empleado(es) con exceso de horas.`);
             setPublishState({
                 isOpen: true, isDestructive: true,
                 title: "⚠️ Planificación No Óptima",
@@ -687,7 +687,7 @@ const SchedulesView = ({ openModal, setView }) => {
     });
 
     const searchPlaceholder =
-        viewMode === 'calendar' ? 'Buscar colaborador...' :
+        viewMode === 'calendar' ? 'Buscar empleado...' :
         viewMode === 'shifts'   ? 'Buscar turno...' :
                                   'Buscar feriado...';
 
@@ -881,8 +881,8 @@ const SchedulesView = ({ openModal, setView }) => {
                                 <CalendarDays size={36} className="text-[#0052CC]/30" strokeWidth={1.5} />
                             </div>
                             <div className="text-center">
-                                <p className="text-[16px] font-black text-slate-600 mb-1">Sin colaboradores</p>
-                                <p className="text-[13px] font-medium text-slate-400">No hay colaboradores activos en esta sucursal.</p>
+                                <p className="text-[16px] font-black text-slate-600 mb-1">Sin empleados</p>
+                                <p className="text-[13px] font-medium text-slate-400">No hay empleados activos en esta sucursal.</p>
                             </div>
                             <button onClick={goToPersonal}
                                 className="inline-flex items-center gap-2 px-6 py-3 bg-[#0052CC] text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transition-all">

@@ -447,7 +447,7 @@ export default function EncuestaView() {
         const segs = [
             { key: 'General',        comments: withComment.map(r => ({ texto: r.comentario, isJefe: r.isJefe, sucursal: r.sucursal })) },
             { key: 'Jefes',         comments: withComment.filter(r => r.isJefe).map(r => ({ texto: r.comentario, isJefe: true, sucursal: r.sucursal })) },
-            { key: 'Colaboradores', comments: withComment.filter(r => !r.isJefe).map(r => ({ texto: r.comentario, isJefe: false, sucursal: r.sucursal })) },
+            { key: 'Empleados', comments: withComment.filter(r => !r.isJefe).map(r => ({ texto: r.comentario, isJefe: false, sucursal: r.sucursal })) },
         ];
         segs.forEach(seg => {
             if (!done.has(seg.key) && seg.comments.length > 0) {
@@ -617,7 +617,7 @@ export default function EncuestaView() {
                     <span>{selectedSurvey?.nombre?.replace(/^encuesta\s+de\s+/i, '') ?? 'Clima Organizacional'}</span>
                 </div>
             }
-            subtitle={`Farmacias La Popular y La Salud — ${RESPUESTAS.length} colaboradores`}
+            subtitle={`Farmacias La Popular y La Salud — ${RESPUESTAS.length} empleados`}
             filtersContent={filtersContent}>
             <div className="p-5 md:p-6 space-y-5">
 
@@ -654,7 +654,7 @@ export default function EncuestaView() {
                             {[
                                 { label: 'Participantes',  value: RESPUESTAS.length, sub: '100% del total', Icon: Users,    grad: 'from-blue-500 to-indigo-500' },
                                 { label: 'Jefes',          value: RESPUESTAS.filter(r => r.isJefe).length,  sub: 'de sala / área', Icon: UserCheck, grad: 'from-purple-500 to-violet-500' },
-                                { label: 'Colaboradores',  value: RESPUESTAS.filter(r => !r.isJefe).length, sub: 'de sala / área', Icon: UserX,     grad: 'from-slate-500 to-slate-400' },
+                                { label: 'Empleados',  value: RESPUESTAS.filter(r => !r.isJefe).length, sub: 'de sala / área', Icon: UserX,     grad: 'from-slate-500 to-slate-400' },
                                 { label: 'Sucursales',     value: sucursales.length, sub: 'representadas',  Icon: Building2, grad: 'from-teal-500 to-emerald-500' },
                             ].map(({ label, value, sub, Icon, grad }) => ( // eslint-disable-line no-unused-vars
                                 <div key={label} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-100 bg-white shadow-sm">
@@ -915,7 +915,7 @@ export default function EncuestaView() {
                                                     {/* Colabs evaluando jefes de sala */}
                                                     <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-3">
                                                         <p className="text-[10px] font-black text-blue-700 uppercase tracking-wider mb-2.5">
-                                                            Colaboradores evaluando a su Jefe/a de Sala
+                                                            Empleados evaluando a su Jefe/a de Sala
                                                         </p>
                                                         <div className="space-y-2">
                                                             {jefesScoreboard.map(({ suc, jefe, colabRows, sColabs }) => {
@@ -1050,10 +1050,10 @@ export default function EncuestaView() {
                 {/* ── SEGMENTOS ───────────────────────────────────────────── */}
                 {tab === 'segmentos' && (
                     <div className="space-y-5">
-                        {/* Jefes vs Colaboradores */}
+                        {/* Jefes vs Empleados */}
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
                             <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-1.5">
-                                <Award size={12} className="text-purple-400" /> Jefes vs Colaboradores
+                                <Award size={12} className="text-purple-400" /> Jefes vs Empleados
                             </h3>
                             <div className="overflow-x-auto">
                                 <table className="w-full min-w-[480px] text-sm">
@@ -1062,7 +1062,7 @@ export default function EncuestaView() {
                                             <th className="text-left px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Bloque</th>
                                             <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-purple-600">Jefes ({RESPUESTAS.filter(r => r.isJefe).length})</th>
                                             <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-600">Colabs. ({RESPUESTAS.filter(r => !r.isJefe).length})</th>
-                                            <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400" title="Diferencia en puntos porcentuales: Jefes − Colaboradores. Positivo = jefes puntúan más alto.">Jefes − Colabs</th>
+                                            <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400" title="Diferencia en puntos porcentuales: Jefes − Empleados. Positivo = jefes puntúan más alto.">Jefes − Colabs</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1192,7 +1192,7 @@ export default function EncuestaView() {
                                     onChange={setFilterRol}
                                     options={[
                                         { value: 'jefe',  label: 'Solo jefes' },
-                                        { value: 'colab', label: 'Solo colaboradores' },
+                                        { value: 'colab', label: 'Solo empleados' },
                                     ]}
                                     placeholder="Todos los roles"
                                     icon={Users}
@@ -1214,7 +1214,7 @@ export default function EncuestaView() {
                                     <table className="w-full min-w-[560px] text-sm">
                                         <thead>
                                             <tr className="bg-[#0052CC]/5 border-b border-[#0052CC]/10">
-                                                <th className="text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Colaborador</th>
+                                                <th className="text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Empleado</th>
                                                 <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500 w-16">Rol</th>
                                                 {BLOQUES.map(b => (
                                                     <th key={b.id} title={b.nombre || `Bloque ${b.id}`} className="text-center px-2 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 cursor-help">B{b.id}</th>
@@ -1363,7 +1363,7 @@ export default function EncuestaView() {
                     const segments = [
                         { key: 'General', label: 'General', comments: withComment.map(r => ({ texto: r.comentario, isJefe: r.isJefe, sucursal: r.sucursal })) },
                         { key: 'Jefes', label: 'Jefes', comments: withComment.filter(r => r.isJefe).map(r => ({ texto: r.comentario, isJefe: true, sucursal: r.sucursal })) },
-                        { key: 'Colaboradores', label: 'Colaboradores', comments: withComment.filter(r => !r.isJefe).map(r => ({ texto: r.comentario, isJefe: false, sucursal: r.sucursal })) },
+                        { key: 'Empleados', label: 'Empleados', comments: withComment.filter(r => !r.isJefe).map(r => ({ texto: r.comentario, isJefe: false, sucursal: r.sucursal })) },
                     ];
 
                     return (

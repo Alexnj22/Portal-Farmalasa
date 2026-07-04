@@ -131,7 +131,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "manageKiosks": return "Dispositivos Kiosco";
             case "planSchedule": return "Planificación Semanal";
             case "manageShifts": return "Catálogo de Turnos";
-            case "newEmployee": return "Nuevo Colaborador";
+            case "newEmployee": return "Nuevo Empleado";
             case "editEmployee": return "Actualizar Información";
             case "rehireEmployee": return "Recontratación";
             case "vacationRecall": return "Ingreso en Vacaciones";
@@ -166,17 +166,17 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const getModalSubtitle = () => {
         if (type === "manageKiosks") return formData?.name;
         if (type === "planSchedule") return `${formData?.employee?.name} • ${formData?.employee?.role}`;
-        if (type === "newEmployee") return "Nueva ficha de colaborador";
-        if (type === "editEmployee") return formData?.name?.toUpperCase() || "COLABORADOR";
-        if (type === "rehireEmployee") return formData?.name?.toUpperCase() || "COLABORADOR";
-        if (type === "vacationRecall") return formData?.employee?.name?.toUpperCase() || "COLABORADOR";
+        if (type === "newEmployee") return "Nueva ficha de empleado";
+        if (type === "editEmployee") return formData?.name?.toUpperCase() || "EMPLEADO";
+        if (type === "rehireEmployee") return formData?.name?.toUpperCase() || "EMPLEADO";
+        if (type === "vacationRecall") return formData?.employee?.name?.toUpperCase() || "EMPLEADO";
         if (type === "viewBranchEmployees") return `SUCURSAL: ${formData?.name || formData?.branchName || 'DESCONOCIDA'}`;
         if (type === "editBranchLeadership") return `SUCURSAL: ${formData?.branch?.name || 'DESCONOCIDA'}`;
-        if (type === "setEmployeePassword") return formData?.name?.toUpperCase() || "COLABORADOR";
+        if (type === "setEmployeePassword") return formData?.name?.toUpperCase() || "EMPLEADO";
         if (type === "changeOwnPassword") return "TU CUENTA";
         if (type === "editContact") return formData?.name?.toUpperCase() || "TU PERFIL";
         if (type === "newPayrollPeriod") return "PERÍODO DE NÓMINA";
-        if (type === "editPayrollEntry") return (formData?._entry?.employee?.name || 'COLABORADOR').toUpperCase();
+        if (type === "editPayrollEntry") return (formData?._entry?.employee?.name || 'EMPLEADO').toUpperCase();
         if (BRANCH_SUBTITLES.has(type)) return `SUCURSAL: ${formData?.branch?.name || formData?.name || formData?.branchName || 'NUEVA'}`;
         if (type === "viewDocument") return "Vista Previa de Archivo";
         return "Panel de configuración";
@@ -243,7 +243,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     if (created?.tempPassword) {
                         try { await navigator.clipboard.writeText(created.tempPassword); } catch { /* sin permiso de clipboard */ }
                         if (showToast) showToast(
-                            "Colaborador Creado — Contraseña Temporal",
+                            "Empleado Creado — Contraseña Temporal",
                             `Usuario: ${created.username} · Contraseña: ${created.tempPassword} (copiada al portapapeles). Deberá cambiarla en su primer ingreso.`,
                             "success",
                             'light',
@@ -429,7 +429,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
         if (type === "editBranchLeadership") {
             if (!formData.selectedEmpId) {
-                setValidationError("Debes seleccionar a un colaborador de la lista.");
+                setValidationError("Debes seleccionar a un empleado de la lista.");
                 return;
             }
             if (formData.isPermanent === false && !formData.interimEndDate) {

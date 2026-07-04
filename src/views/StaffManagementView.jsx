@@ -218,7 +218,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
         uniqueRoles.push({ original: r, display: display });
       }
     }
-    return uniqueRoles.length > 0 ? uniqueRoles : [{ original: 'Colaborador', display: 'COLABORADOR' }];
+    return uniqueRoles.length > 0 ? uniqueRoles : [{ original: 'Empleado', display: 'EMPLEADO' }];
   }, [emp.role, emp.secondary_role, emp.secondaryRole]);
 
   const rowCelebrationClass = birthdayInfo?.isToday ? 'animate-in fade-in zoom-in-95 duration-700 bg-gradient-to-r from-pink-50 via-white to-pink-50 ring-2 ring-pink-100' : '';
@@ -623,7 +623,7 @@ const StaffManagementView = ({
           <button
             onClick={() => setIsSearchActive(true)}
             className="relative w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
-            title="Buscar colaborador"
+            title="Buscar empleado"
           >
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
             {searchTerm && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 md:h-3 md:w-3 bg-red-500 border-2 border-white rounded-full"></span>}
@@ -716,7 +716,7 @@ const StaffManagementView = ({
             )}
             <DataTable
               columns={[
-                { key: 'name',   label: 'Colaborador',      sortable: true },
+                { key: 'name',   label: 'Empleado',      sortable: true },
                 { key: 'branch', label: 'Sucursal',         sortable: true },
                 { key: 'role',   label: 'Cargos Asignados', sortable: true },
                 { key: 'status', label: 'Estado Operativo', sortable: true },
@@ -736,7 +736,7 @@ const StaffManagementView = ({
               toolbar={
                 <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC]">
                   <Hash size={12} strokeWidth={3} />
-                  {totalItems} <span className="text-slate-500 hidden sm:inline">Colaboradores Listados</span>
+                  {totalItems} <span className="text-slate-500 hidden sm:inline">Empleados Listados</span>
                   {activeStatFilter !== 'ALL' && (
                     <span className="ml-2 px-2 py-0.5 bg-white/60 text-slate-500 rounded-full border border-white shadow-sm lowercase font-bold tracking-normal">
                       Filtrado por: <span className="uppercase text-[#0052CC] font-black">{activeStatFilter}</span>
@@ -761,7 +761,7 @@ const StaffManagementView = ({
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
                 total={totalItems}
-                unit="colaboradores"
+                unit="empleados"
               />
             </div>
           )}

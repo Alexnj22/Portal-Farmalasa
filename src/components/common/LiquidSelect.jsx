@@ -29,6 +29,9 @@ const LiquidSelect = ({
     isLoading = false,
     // Bare mode: no background/border/shadow — blends into a parent pill bar
     bare = false,
+    // Texto del botón de limpiar selección. Default 'Todos' (uso como filtro
+    // de listas); en formularios de datos usar algo como 'Ninguno'.
+    clearLabel = 'Todos',
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -243,7 +246,7 @@ const LiquidSelect = ({
                                 : 'bg-transparent text-slate-400 border-transparent hover:bg-white/80 hover:text-slate-700'
                         }`}
                     >
-                        Todos
+                        {clearLabel}
                     </button>
                 )}
                 {isLoading ? (

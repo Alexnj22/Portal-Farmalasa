@@ -83,6 +83,10 @@ const validateOptionalFormats = (data) => {
             );
         }
     }
+
+    if (data.email && String(data.email).trim() !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(data.email.trim())) {
+        throw new Error('El Correo Electrónico no tiene un formato válido. Corrígelo, o bórralo para guardarlo como pendiente.');
+    }
 };
 
 // Valida el límite de headcount (max_limit) del cargo antes de asignarlo.
@@ -208,6 +212,13 @@ export const createEmployeeSlice = (set, get) => ({
                 municipality: formData.municipality || null,
                 education_level: formData.education_level || null,
                 profession: formData.profession || null,
+                education_grade_completed: formData.education_grade_completed || null,
+                education_specialty: formData.education_specialty || null,
+                is_studying: !!formData.is_studying,
+                study_start_date: formData.is_studying ? (formData.study_start_date || null) : null,
+                study_duration_years: formData.is_studying && formData.study_duration_years ? parseFloat(formData.study_duration_years) : null,
+                additional_skills: Array.isArray(formData.additional_skills) ? formData.additional_skills.map(s => (s || '').trim()).filter(Boolean) : [],
+                extra_phones: Array.isArray(formData.extra_phones) ? formData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [],
 
                 email: formData.email || null,
                 emergency_contact_name: formData.emergency_contact_name || null,
@@ -368,6 +379,20 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.username) dbPayload.username = updatedData.username.trim().toLowerCase();
             if (updatedData.weekly_contracted_hours) dbPayload.weekly_contracted_hours = parseInt(updatedData.weekly_contracted_hours, 10);
             if (updatedData.base_salary) dbPayload.base_salary = parseFloat(updatedData.base_salary);
+
+            if (updatedData.is_studying !== undefined) {
+                dbPayload.is_studying = !!updatedData.is_studying;
+                dbPayload.study_start_date = dbPayload.is_studying ? (updatedData.study_start_date || null) : null;
+                dbPayload.study_duration_years = dbPayload.is_studying && updatedData.study_duration_years ? parseFloat(updatedData.study_duration_years) : null;
+            } else if (updatedData.study_duration_years !== undefined) {
+                dbPayload.study_duration_years = updatedData.study_duration_years ? parseFloat(updatedData.study_duration_years) : null;
+            }
+            if (updatedData.additional_skills !== undefined) {
+                dbPayload.additional_skills = Array.isArray(updatedData.additional_skills) ? updatedData.additional_skills.map(s => (s || '').trim()).filter(Boolean) : [];
+            }
+            if (updatedData.extra_phones !== undefined) {
+                dbPayload.extra_phones = Array.isArray(updatedData.extra_phones) ? updatedData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [];
+            }
             if (updatedData.afp_institution !== undefined) dbPayload.afp_institution = updatedData.afp_institution || null;
             if (updatedData.account_type !== undefined) dbPayload.account_type = updatedData.account_type || 'AHORRO';
             

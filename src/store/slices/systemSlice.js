@@ -805,7 +805,7 @@ export const createSystemSlice = (set, get) => ({
     deleteRole: async (roleId, roleName) => {
         const state = get();
         if (state.employees.some(e => String(e.role_id) === String(roleId) || String(e.secondary_role_id) === String(roleId))) {
-            throw new Error("No se puede eliminar: Existen colaboradores asignados a este cargo.");
+            throw new Error("No se puede eliminar: Existen empleados asignados a este cargo.");
         }
         if (state.roles.some(r => r.parent_role_id === roleId || r.secondary_parent_role_id === roleId)) {
             throw new Error("No se puede eliminar: Este cargo es superior (o reporte matricial) de otros niveles.");

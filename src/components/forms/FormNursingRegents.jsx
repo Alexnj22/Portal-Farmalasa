@@ -125,10 +125,10 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                             </button>
                             
                             <div className="space-y-5">
-                                {/* SELECT DEL COLABORADOR */}
+                                {/* SELECT DEL EMPLEADO */}
                                 <div className="group/select">
                                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1.5 block group-focus-within/select:text-[#0052CC] transition-colors">
-                                        Colaborador en Planilla
+                                        Empleado en Planilla
                                     </label>
                                     <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-[1.5rem]">
                                         <LiquidSelect 

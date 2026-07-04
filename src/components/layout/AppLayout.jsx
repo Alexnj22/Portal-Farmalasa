@@ -134,7 +134,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         if (isSU) return 'Super Admin';
         if (typeof user?.role === 'string' && isNaN(Number(user.role))) return user.role;
         const sr = user?.systemRole;
-        return { ADMIN: 'Administrador', EMPLEADO: 'Colaborador' }[sr] || sr || '';
+        return { ADMIN: 'Administrador', EMPLEADO: 'Empleado' }[sr] || sr || '';
     })();
 
     useEffect(() => {

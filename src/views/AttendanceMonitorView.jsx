@@ -596,7 +596,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                             style={{ color: "rgba(255,255,255,0.88)" }}>{emp.name}</h3>
                           <p className="text-[10px] font-bold uppercase tracking-widest truncate mt-0.5"
                             style={{ color: "rgba(255,255,255,0.35)" }}>
-                            {emp.role || "Colaborador"}
+                            {emp.role || "Empleado"}
                           </p>
                         </div>
                       </button>
@@ -836,7 +836,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                         {emp.name}
                       </h3>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate mt-0.5">
-                        {emp.role || "Colaborador"}
+                        {emp.role || "Empleado"}
                       </p>
                     </div>
                   </button>

@@ -43,7 +43,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
                 <div>
                     <p className="text-[11px] font-black uppercase tracking-widest text-amber-700">Ingreso durante Vacaciones</p>
                     <p className="text-[11px] text-amber-700/80 mt-0.5 leading-snug">
-                        Este colaborador está de vacaciones. Al autorizar su ingreso, las horas trabajadas quedarán registradas como <b>horas debidas</b> a su favor.
+                        Este empleado está de vacaciones. Al autorizar su ingreso, las horas trabajadas quedarán registradas como <b>horas debidas</b> a su favor.
                     </p>
                 </div>
             </div>
@@ -112,7 +112,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
             <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-3 flex gap-2">
                 <FileText size={13} className="text-blue-400 shrink-0 mt-0.5" strokeWidth={2.5} />
                 <p className="text-[10px] text-blue-600 leading-snug">
-                    Las horas trabajadas se calcularán automáticamente según el turno seleccionado y se acumularán en el saldo de horas debidas del colaborador.
+                    Las horas trabajadas se calcularán automáticamente según el turno seleccionado y se acumularán en el saldo de horas debidas del empleado.
                 </p>
             </div>
         </div>

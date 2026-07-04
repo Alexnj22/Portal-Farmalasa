@@ -112,7 +112,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           await notifyEmployees(ids, {
             type: 'MINMAX_PENDING',
             title: '📊 Solicitud de ajuste Min/Max',
-            body: `${user?.name || 'Un colaborador'} propone MIN ${newMin} · MAX ${newMax} para ${product.nombre} (${ERP_NAMES[Number(erp)] || erp})`,
+            body: `${user?.name || 'Un empleado'} propone MIN ${newMin} · MAX ${newMax} para ${product.nombre} (${ERP_NAMES[Number(erp)] || erp})`,
             link: '/minmax?tab=solicitudes',
             push: true,
           });

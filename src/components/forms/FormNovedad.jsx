@@ -256,7 +256,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={18} strokeWidth={2.5}/>
                     <div>
                         <p className="text-[11px] font-black uppercase tracking-widest text-red-600">Alerta de Desvinculación</p>
-                        <p className="text-[12px] text-red-800/80 font-medium leading-tight mt-1">Esta acción cambiará el estado del colaborador a <b>INACTIVO</b> y le revocará accesos al sistema.</p>
+                        <p className="text-[12px] text-red-800/80 font-medium leading-tight mt-1">Esta acción cambiará el estado del empleado a <b>INACTIVO</b> y le revocará accesos al sistema.</p>
                     </div>
                 </div>
             )}

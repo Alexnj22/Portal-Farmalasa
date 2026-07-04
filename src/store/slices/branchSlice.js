@@ -318,7 +318,7 @@ export const createBranchSlice = (set, get) => ({
 
     deleteBranch: async (id) => {
         if (get().employees.some((e) => String(e.branchId) === String(id))) {
-            throw new Error("No se puede eliminar: Hay colaboradores asignados a esta farmacia.");
+            throw new Error("No se puede eliminar: Hay empleados asignados a esta farmacia.");
         }
         try {
             const { error } = await supabase.from("branches").delete().eq("id", id);

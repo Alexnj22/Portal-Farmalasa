@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
-import { User, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy } from 'lucide-react';
-import LiquidSelect from '../common/LiquidSelect'; 
-import LiquidDatePicker from '../common/LiquidDatePicker'; 
-import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo'; 
+import { User, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, BookOpen } from 'lucide-react';
+import LiquidSelect from '../common/LiquidSelect';
+import LiquidDatePicker from '../common/LiquidDatePicker';
+import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
+import {
+    GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD,
+    BACHILLERATO_TECNICO_ESPECIALIDADES, TECNICO_SUPERIOR_ESPECIALIDADES,
+} from '../../utils/educationCatalogs';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -13,7 +17,28 @@ const GENDER_OPTIONS = [{ value: 'F', label: 'Femenino' }, { value: 'M', label: 
 const BLOOD_TYPE_OPTIONS = [{ value: 'O+', label: 'O+ (Positivo)' }, { value: 'O-', label: 'O- (Negativo)' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' }, { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' }, { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' }];
 const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { value: 'CASADO', label: 'Casado/a' }, { value: 'DIVORCIADO', label: 'Divorciado/a' }, { value: 'VIUDO', label: 'Viudo/a' }, { value: 'ACOMPAÑADO', label: 'Acompañado/a' }];
 const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal / Plazo Fijo' }, { value: 'MEDIO_TIEMPO', label: 'Medio Tiempo (Part-Time)' }, { value: 'SERVICIOS', label: 'Servicios Profesionales' }];
-const EDUCATION_OPTIONS = [{ value: 'BACHILLERATO', label: 'Bachillerato' }, { value: 'TECNICO', label: 'Técnico Superior' }, { value: 'UNIVERSITARIO_E', label: 'Universitario (Estudiante)' }, { value: 'UNIVERSITARIO_G', label: 'Universitario (Graduado)' }, { value: 'MAESTRIA', label: 'Maestría / Postgrado' }];
+const EDUCATION_OPTIONS = [
+    { value: 'BASICA', label: 'Educación Básica' },
+    { value: 'BACHILLERATO_GENERAL', label: 'Bachillerato General' },
+    { value: 'BACHILLERATO_TECNICO', label: 'Bachillerato Técnico' },
+    { value: 'TECNICO_SUPERIOR', label: 'Técnico Superior' },
+    { value: 'UNIVERSITARIO_E', label: 'Universitario (Estudiante)' },
+    { value: 'UNIVERSITARIO_G', label: 'Universitario (Graduado)' },
+    { value: 'MAESTRIA', label: 'Maestría / Postgrado' },
+];
+// Niveles donde el select de Especialidad aplica
+const LEVELS_WITH_SPECIALTY = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR'];
+// Niveles donde "¿Actualmente estudiando?" tiene sentido
+const LEVELS_WITH_STUDY_TOGGLE = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR', 'MAESTRIA'];
+// Niveles donde el campo Profesión/Título se muestra
+const LEVELS_WITH_PROFESSION = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR', 'UNIVERSITARIO_E', 'UNIVERSITARIO_G', 'MAESTRIA'];
+
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const MONTH_OPTIONS = MESES.map((m, i) => ({ value: String(i + 1).padStart(2, '0'), label: m }));
+const CURRENT_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = Array.from({ length: 12 }, (_, i) => CURRENT_YEAR + 1 - i).map(y => ({ value: String(y), label: String(y) }));
+
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email || '');
 
 const AFP_OPTIONS = [
     { value: 'CRECER', label: 'AFP Crecer' },
@@ -131,6 +156,42 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
     );
 });
 
+// Select de especialidad con fallback a texto libre ("Otra especialidad...").
+// key={education_level} en el caller para que se remonte limpio al cambiar de nivel.
+const SpecialtySelector = ({ value, onChange, options, portalSelectProps, inputHoverClass }) => {
+    const knownValues = useMemo(() => options.map(o => o.value), [options]);
+    const [isOther, setIsOther] = useState(() => !!value && !knownValues.includes(value));
+
+    const selectValue = isOther ? OTRA_ESPECIALIDAD : value;
+
+    return (
+        <div className="flex flex-col sm:flex-row gap-2">
+            <div className={`flex-1 rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                <LiquidSelect
+                    value={selectValue}
+                    onChange={(val) => {
+                        if (val === OTRA_ESPECIALIDAD) { setIsOther(true); onChange(''); }
+                        else { setIsOther(false); onChange(val); }
+                    }}
+                    options={options}
+                    placeholder="Especialidad..."
+                    clearable={false}
+                    {...portalSelectProps}
+                />
+            </div>
+            {isOther && (
+                <input
+                    type="text"
+                    value={value || ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder="Especifica la especialidad"
+                    className={`flex-1 h-[40px] px-4 bg-white border border-slate-200/80 rounded-[1rem] text-[13px] font-bold text-slate-700 outline-none shadow-sm ${inputHoverClass}`}
+                />
+            )}
+        </div>
+    );
+};
+
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL
 // ============================================================================
@@ -196,9 +257,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     useEffect(() => {
         if (!formData?.code) { 
             setFormData(prev => ({
-                first_names: '', last_names: '', username: '', phone: '', email: '', address: '', dui: '', birth_date: '',
+                first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', address: '', dui: '', birth_date: '',
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',
                 department: '', municipality: '', education_level: '', profession: '',
+                education_grade_completed: '', education_specialty: '', is_studying: false,
+                study_start_date: '', study_duration_years: '', additional_skills: [],
                 code: String(Math.floor(1000 + Math.random() * 9000)),
                 branch_id: prev?.branchId || prev?.branch_id || '', 
                 role_id: '', secondary_role_id: '', 
@@ -295,9 +358,50 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             if (name === 'contract_type' && value !== 'TEMPORAL') newData.contract_end_date = '';
             if (name === 'contract_type' && value === 'MEDIO_TIEMPO') newData.weekly_contracted_hours = '22';
             if (name === 'contract_type' && value !== 'MEDIO_TIEMPO' && prev.weekly_contracted_hours === '22') newData.weekly_contracted_hours = '44';
+            if (name === 'education_level') {
+                newData.education_grade_completed = '';
+                newData.education_specialty = '';
+                if (value === 'BASICA' || value === 'BACHILLERATO_GENERAL') newData.profession = '';
+                if (value === 'UNIVERSITARIO_E') newData.is_studying = true;
+                else if (!LEVELS_WITH_STUDY_TOGGLE.includes(value)) newData.is_studying = false;
+                if (!LEVELS_WITH_STUDY_TOGGLE.includes(value) && value !== 'UNIVERSITARIO_E') {
+                    newData.study_start_date = '';
+                    newData.study_duration_years = '';
+                }
+            }
             return newData;
         });
     };
+
+    const handleStudyDateChange = (part, value) => {
+        setFormData(prev => {
+            const [y, m] = (prev.study_start_date || `${CURRENT_YEAR}-01`).split('-');
+            const newY = part === 'year' ? value : y;
+            const newM = part === 'month' ? value : m;
+            return { ...prev, study_start_date: `${newY}-${newM}-01` };
+        });
+    };
+
+    const estimatedStudyEnd = useMemo(() => {
+        if (!formData?.study_start_date || !formData?.study_duration_years) return null;
+        const [y, m] = formData.study_start_date.split('-').map(Number);
+        const totalMonths = (m - 1) + Math.round(Number(formData.study_duration_years) * 12);
+        const endYear = y + Math.floor(totalMonths / 12);
+        const endMonth = ((totalMonths % 12) + 12) % 12;
+        return `${MESES[endMonth]} ${endYear}`;
+    }, [formData?.study_start_date, formData?.study_duration_years]);
+
+    const addSkill = () => setFormData(prev => ({ ...prev, additional_skills: [...(prev.additional_skills || []), ''] }));
+    const updateSkill = (idx, value) => setFormData(prev => {
+        const arr = [...(prev.additional_skills || [])]; arr[idx] = value; return { ...prev, additional_skills: arr };
+    });
+    const removeSkill = (idx) => setFormData(prev => ({ ...prev, additional_skills: (prev.additional_skills || []).filter((_, i) => i !== idx) }));
+
+    const addPhone = () => setFormData(prev => ({ ...prev, extra_phones: [...(prev.extra_phones || []), ''] }));
+    const updatePhone = (idx, value) => setFormData(prev => {
+        const arr = [...(prev.extra_phones || [])]; arr[idx] = applyMask(value, 'PHONE'); return { ...prev, extra_phones: arr };
+    });
+    const removePhone = (idx) => setFormData(prev => ({ ...prev, extra_phones: (prev.extra_phones || []).filter((_, i) => i !== idx) }));
 
     const handleDateChange = (name, dateString) => setFormData(prev => ({ ...prev, [name]: dateString }));
 
@@ -341,6 +445,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const emergPhoneIncomplete = !!formData?.emergency_contact_phone && digitsLen(formData.emergency_contact_phone) < 8;
     const isssIncomplete = !!formData?.isss_number && formData.isss_number.length !== 9;
     const afpIncomplete = !!formData?.afp_number && formData.afp_number.length !== 12;
+    const emailInvalid = !!formData?.email && !isValidEmail(formData.email);
 
     let duiErrorMsg = null;
     if (isDuiDuplicate) duiErrorMsg = "DUI Ya Registrado";
@@ -445,7 +550,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" strokeWidth={2.5} />
                                 <div>
                                     <h4 className="text-[11px] font-black uppercase tracking-widest text-amber-700">Posible Duplicado</h4>
-                                    <p className="text-[11px] text-amber-600 font-medium leading-tight mt-0.5">Ya existe un colaborador registrado con este mismo nombre completo. Verifica si es una persona diferente (Homónimo).</p>
+                                    <p className="text-[11px] text-amber-600 font-medium leading-tight mt-0.5">Ya existe un empleado registrado con este mismo nombre completo. Verifica si es una persona diferente (Homónimo).</p>
                                 </div>
                             </div>
                         )}
@@ -477,19 +582,60 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <PortalInput label="Nombres" name="first_names" value={formData.first_names} onChange={handleChange} required />
                                 <PortalInput label="Apellidos" name="last_names" value={formData.last_names} onChange={handleChange} required />
                                 <PortalInput label="DUI" name="dui" value={formData.dui} onChange={handleChange} icon={Fingerprint} placeholder="00000000-0" maskType="DUI" hasError={isDuiInvalid || isDuiDuplicate || isDuiIncomplete} errorMessage={duiErrorMsg} />
-                                
+
                                 <div className="relative z-30">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Fecha de Nacimiento</label>
                                     <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
                                         <LiquidDatePicker value={formData.birth_date} onChange={(date) => handleDateChange('birth_date', date)} placeholder="Seleccionar Fecha" />
                                     </div>
                                 </div>
-                                <PortalInput label="Teléfono" name="phone" value={formData.phone} onChange={handleChange} type="tel" icon={Phone} placeholder="0000-0000" maskType="PHONE" hasError={phoneIncomplete} errorMessage="Incompleto" />
-                                <PortalInput label="Correo Electrónico" name="email" value={formData.email} onChange={handleChange} type="email" icon={Mail} placeholder="nombre@correo.com" />
+
+                                <div>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                        <span>Teléfono {phoneIncomplete && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md ml-1">Incompleto</span>}</span>
+                                        <button type="button" onClick={addPhone} className="text-[#0052CC] hover:text-blue-700 flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors">
+                                            <Plus size={11} strokeWidth={3} /> Agregar
+                                        </button>
+                                    </label>
+                                    <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] z-10 border-slate-200/80 ${inputHoverClass} ${phoneIncomplete ? '!border-red-400 !bg-red-50/50' : ''}`}>
+                                        <div className="absolute left-3 text-slate-400"><Phone size={14} strokeWidth={2.5} /></div>
+                                        <input type="tel" name="phone" value={formData.phone || ''}
+                                            onChange={(e) => { e.target.value = applyMask(e.target.value, 'PHONE'); handleChange(e); }}
+                                            placeholder="0000-0000"
+                                            className="w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none pl-9 pr-4" />
+                                    </div>
+                                </div>
+
+                                <PortalInput label="Correo Electrónico" name="email" value={formData.email} onChange={handleChange} type="email" icon={Mail} placeholder="nombre@correo.com" hasError={emailInvalid} errorMessage="Correo inválido" />
+
+                                {(formData.extra_phones || []).length > 0 && (
+                                    <div className="md:col-span-2 flex flex-col gap-2">
+                                        {(formData.extra_phones || []).map((ph, idx) => (
+                                            <div key={idx} className="flex items-center gap-2">
+                                                <div className={`relative flex-1 bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
+                                                    <div className="absolute left-3 text-slate-400"><Phone size={14} strokeWidth={2.5} /></div>
+                                                    <input type="tel" value={ph} onChange={(e) => updatePhone(idx, e.target.value)} placeholder="0000-0000"
+                                                        className="w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none pl-9 pr-4" />
+                                                </div>
+                                                <button type="button" onClick={() => removePhone(idx)} title="Quitar teléfono"
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                    <X size={14} strokeWidth={2.5} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
                                 <div className="relative z-20">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Género</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.gender} onChange={(val) => handleSelectChange('gender', val)} options={GENDER_OPTIONS} placeholder="Seleccionar..." {...portalSelectProps} />
+                                        <LiquidSelect value={formData.gender} onChange={(val) => handleSelectChange('gender', val)} options={GENDER_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
+                                    </div>
+                                </div>
+                                <div className="relative z-20">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Estado Civil</label>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                        <LiquidSelect value={formData.marital_status} onChange={(val) => handleSelectChange('marital_status', val)} options={MARITAL_STATUS_OPTIONS} placeholder="Opcional..." clearLabel="Ninguno" {...portalSelectProps} />
                                     </div>
                                 </div>
                             </div>
@@ -497,16 +643,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="relative z-20"> 
+                                <div className="relative z-20">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Departamento</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.department} onChange={(val) => handleSelectChange('department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} {...portalSelectProps} />
+                                        <LiquidSelect value={formData.department} onChange={(val) => handleSelectChange('department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearLabel="Ninguno" {...portalSelectProps} />
                                     </div>
                                 </div>
                                 <div className="relative z-10">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Municipio / Distrito</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Distrito...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} {...portalSelectProps} />
+                                        <LiquidSelect value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Distrito...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearLabel="Ninguno" {...portalSelectProps} />
                                     </div>
                                 </div>
                                 <PortalInput label="Dirección Detallada" name="address" value={formData.address} onChange={handleChange} icon={MapPin} placeholder="Colonia, Calle, Número de Casa..." colSpan={2} />
@@ -514,20 +660,100 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         </div>
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-[0.8rem] border border-indigo-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                    <GraduationCap size={16} strokeWidth={2.5} />
+                                </div>
+                                <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Nivel Académico</h4>
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="relative z-10">
+                                <div className="relative z-30">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Nivel Académico</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.education_level} onChange={(val) => handleSelectChange('education_level', val)} options={EDUCATION_OPTIONS} placeholder="Nivel..." icon={GraduationCap} {...portalSelectProps} />
+                                        <LiquidSelect value={formData.education_level} onChange={(val) => handleSelectChange('education_level', val)} options={EDUCATION_OPTIONS} placeholder="Nivel..." icon={GraduationCap} clearLabel="Ninguno" {...portalSelectProps} />
                                     </div>
                                 </div>
-                                <PortalInput label="Profesión / Título" name="profession" value={formData.profession} onChange={handleChange} icon={GraduationCap} placeholder="Ej. Lic. en Farmacia" />
-                                <div className="relative z-0">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Estado Civil</label>
-                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.marital_status} onChange={(val) => handleSelectChange('marital_status', val)} options={MARITAL_STATUS_OPTIONS} placeholder="Opcional..." {...portalSelectProps} />
+
+                                {formData.education_level === 'BASICA' && (
+                                    <div className="relative z-20 animate-in fade-in zoom-in-95 duration-200">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Grado Finalizado</label>
+                                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                            <LiquidSelect value={formData.education_grade_completed} onChange={(val) => handleSelectChange('education_grade_completed', val)} options={GRADO_BASICA_OPTIONS} placeholder="Grado..." clearLabel="Ninguno" {...portalSelectProps} />
+                                        </div>
                                     </div>
+                                )}
+
+                                {LEVELS_WITH_SPECIALTY.includes(formData.education_level) && (
+                                    <div className="relative z-20 md:col-span-2 animate-in fade-in zoom-in-95 duration-200">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Especialidad</label>
+                                        <SpecialtySelector
+                                            key={formData.education_level}
+                                            value={formData.education_specialty}
+                                            onChange={(val) => handleSelectChange('education_specialty', val)}
+                                            options={formData.education_level === 'BACHILLERATO_TECNICO' ? BACHILLERATO_TECNICO_ESPECIALIDADES : TECNICO_SUPERIOR_ESPECIALIDADES}
+                                            portalSelectProps={portalSelectProps}
+                                            inputHoverClass={inputHoverClass}
+                                        />
+                                    </div>
+                                )}
+
+                                {LEVELS_WITH_PROFESSION.includes(formData.education_level) && (
+                                    <PortalInput label="Profesión / Título" name="profession" value={formData.profession} onChange={handleChange} icon={BookOpen} placeholder="Ej. Lic. en Farmacia" colSpan={2} />
+                                )}
+
+                                {(LEVELS_WITH_STUDY_TOGGLE.includes(formData.education_level) || formData.education_level === 'UNIVERSITARIO_E') && (
+                                    <div className="md:col-span-2 bg-indigo-50/40 rounded-[1.25rem] p-3.5 border border-indigo-100/60 animate-in fade-in zoom-in-95 duration-200">
+                                        {formData.education_level !== 'UNIVERSITARIO_E' ? (
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input type="checkbox" checked={!!formData.is_studying} onChange={(e) => handleSelectChange('is_studying', e.target.checked)} className="w-4 h-4 rounded accent-[#0052CC]" />
+                                                <span className="text-[11px] font-black text-indigo-700 uppercase tracking-wide">¿Actualmente estudiando?</span>
+                                            </label>
+                                        ) : (
+                                            <p className="text-[11px] font-black text-indigo-700 uppercase tracking-wide">Datos de la carrera en curso</p>
+                                        )}
+
+                                        {!!formData.is_studying && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                                                <div>
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-indigo-500 ml-1 mb-1 block">Mes de Inicio</label>
+                                                    <div className="rounded-[1rem] h-[38px]">
+                                                        <LiquidSelect value={formData.study_start_date ? formData.study_start_date.split('-')[1] : ''} onChange={(val) => handleStudyDateChange('month', val)} options={MONTH_OPTIONS} placeholder="Mes..." compact clearable={false} {...portalSelectProps} />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-indigo-500 ml-1 mb-1 block">Año de Inicio</label>
+                                                    <div className="rounded-[1rem] h-[38px]">
+                                                        <LiquidSelect value={formData.study_start_date ? formData.study_start_date.split('-')[0] : ''} onChange={(val) => handleStudyDateChange('year', val)} options={YEAR_OPTIONS} placeholder="Año..." compact clearable={false} {...portalSelectProps} />
+                                                    </div>
+                                                </div>
+                                                <PortalInput label="Duración (años)" name="study_duration_years" value={formData.study_duration_years} onChange={handleChange} type="number" placeholder="Ej. 2.5" />
+                                            </div>
+                                        )}
+                                        {estimatedStudyEnd && (
+                                            <p className="text-[10px] font-bold text-indigo-600 mt-2 ml-1">Finaliza aprox.: {estimatedStudyEnd}</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t border-slate-200/50">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2 block">Cursos / Habilidades Adicionales</label>
+                                <div className="flex flex-col gap-2">
+                                    {(formData.additional_skills || []).map((skill, idx) => (
+                                        <div key={idx} className="flex items-center gap-2">
+                                            <input type="text" value={skill} onChange={(e) => updateSkill(idx, e.target.value)} placeholder="Ej. Curso de atención al cliente"
+                                                className={`flex-1 h-[38px] px-4 bg-white border border-slate-200/80 rounded-[1rem] text-[13px] font-bold text-slate-700 outline-none shadow-sm ${inputHoverClass}`} />
+                                            <button type="button" onClick={() => removeSkill(idx)} title="Quitar"
+                                                className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                <X size={14} strokeWidth={2.5} />
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
+                                <button type="button" onClick={addSkill} className="mt-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC] hover:text-blue-700 transition-colors">
+                                    <Plus size={12} strokeWidth={3} /> Agregar Curso / Habilidad
+                                </button>
                             </div>
                         </div>
 
@@ -537,7 +763,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="col-span-1 relative z-10">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 block">Tipo de Sangre</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Vital..." {...portalSelectProps} />
+                                        <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Vital..." clearLabel="Ninguno" {...portalSelectProps} />
                                     </div>
                                 </div>
                                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -602,7 +828,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <div className="relative z-10">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Cargo Secundario (Apoyo)</label>
                                             <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                                <LiquidSelect value={formData.secondary_role_id} onChange={(val) => handleSelectChange('secondary_role_id', val)} options={roleOpts} placeholder="Opcional..." clearable={true} icon={ShieldCheck} {...portalSelectProps} />
+                                                <LiquidSelect value={formData.secondary_role_id} onChange={(val) => handleSelectChange('secondary_role_id', val)} options={roleOpts} placeholder="Opcional..." clearable={true} clearLabel="Ninguno" icon={ShieldCheck} {...portalSelectProps} />
                                             </div>
                                         </div>
                                     </>
@@ -661,21 +887,21 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="relative z-20">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Institución AFP</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.afp_institution} onChange={(val) => handleSelectChange('afp_institution', val)} options={AFP_OPTIONS} placeholder="Crecer o Confía..." icon={Hash} {...portalSelectProps} />
+                                        <LiquidSelect value={formData.afp_institution} onChange={(val) => handleSelectChange('afp_institution', val)} options={AFP_OPTIONS} placeholder="Crecer o Confía..." icon={Hash} clearLabel="Ninguno" {...portalSelectProps} />
                                     </div>
                                 </div>
 
                                 <div className="relative z-20">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Banco (Planilla)</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.bank_name} onChange={(val) => handleSelectChange('bank_name', val)} options={BANKS_OPTIONS} placeholder="Seleccionar Banco..." icon={Building2} {...portalSelectProps} />
+                                        <LiquidSelect value={formData.bank_name} onChange={(val) => handleSelectChange('bank_name', val)} options={BANKS_OPTIONS} placeholder="Seleccionar Banco..." icon={Building2} clearLabel="Ninguno" {...portalSelectProps} />
                                     </div>
                                 </div>
 
                                 <div className="relative z-20">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Tipo de Cuenta</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.account_type} onChange={(val) => handleSelectChange('account_type', val)} options={ACCOUNT_TYPE_OPTIONS} placeholder="Tipo de cuenta..." icon={CreditCard} {...portalSelectProps} />
+                                        <LiquidSelect value={formData.account_type} onChange={(val) => handleSelectChange('account_type', val)} options={ACCOUNT_TYPE_OPTIONS} placeholder="Tipo de cuenta..." icon={CreditCard} clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
 

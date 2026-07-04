@@ -92,7 +92,7 @@ const TIPO_TABS = [
 const TIPO_DESC = {
     clima:        'Mide el ambiente general de trabajo, motivación y relaciones interpersonales.',
     satisfaccion: 'Evalúa qué tan satisfechos están los empleados con su rol y condiciones laborales.',
-    desempeno:    'Evalúa el rendimiento individual y competencias de cada colaborador.',
+    desempeno:    'Evalúa el rendimiento individual y competencias de cada empleado.',
     adhoc:        'Encuesta libre para objetivos específicos que no encajan en los otros tipos.',
 };
 
@@ -610,12 +610,12 @@ export default function EncuestaAdminView() {
                                         <AlertCircle size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
                                         {sfAnonima
                                             ? 'Internamente se guarda quién respondió, pero el empleado no verá su propia atribución.'
-                                            : 'Cada respuesta es visible con el nombre del colaborador.'}
+                                            : 'Cada respuesta es visible con el nombre del empleado.'}
                                     </p>
                                     <p className={`text-[10px] mt-1 ml-1 flex items-start gap-1.5 leading-snug ${sfCompartir ? 'text-emerald-600' : 'text-slate-400'}`}>
                                         <Globe size={11} strokeWidth={2.5} className="shrink-0 mt-0.5" />
                                         {sfCompartir
-                                            ? 'Los resultados generales serán visibles para los colaboradores.'
+                                            ? 'Los resultados generales serán visibles para los empleados.'
                                             : 'Los resultados solo son visibles para administradores.'}
                                     </p>
                                 </div>
@@ -745,9 +745,9 @@ export default function EncuestaAdminView() {
                             </div>
 
                             <div className="space-y-5">
-                                {/* Colaborador */}
+                                {/* Empleado */}
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Colaborador</label>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Empleado</label>
                                     {editingResponse ? (
                                         <div className="flex items-center gap-2.5 py-3 px-4 bg-white/50 border border-white/60 rounded-2xl">
                                             <PersonAvatar
@@ -779,7 +779,7 @@ export default function EncuestaAdminView() {
                                                     ? 'bg-white/80 border-[#0052CC]/30 text-[#0052CC] shadow-[0_2px_10px_rgba(0,82,204,0.2)]'
                                                     : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'
                                             }`}>
-                                            <Users size={14} strokeWidth={2.5} /> Colaborador/a
+                                            <Users size={14} strokeWidth={2.5} /> Empleado/a
                                         </button>
                                         <button type="button" onClick={() => setRfIsJefe(true)}
                                             className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${
@@ -1153,7 +1153,7 @@ export default function EncuestaAdminView() {
                                                                 <table className="w-full min-w-[520px]">
                                                                     <thead>
                                                                         <tr className="border-b border-white/50">
-                                                                            <th className="text-left py-2.5 pl-5 pr-3 text-[9px] font-black uppercase tracking-wider text-slate-400">Colaborador</th>
+                                                                            <th className="text-left py-2.5 pl-5 pr-3 text-[9px] font-black uppercase tracking-wider text-slate-400">Empleado</th>
                                                                             <th className="text-center py-2.5 px-2 text-[9px] font-black uppercase tracking-wider text-slate-400">Rol</th>
                                                                             {bloques.map(b => (
                                                                                 <th key={b.id} title={b.nombre || `Bloque ${b.numero}`} className="text-center py-2.5 px-2 text-[8px] font-black uppercase tracking-wider text-slate-300 cursor-help">B{b.numero}</th>

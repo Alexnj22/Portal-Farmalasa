@@ -305,7 +305,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
             }
         }
 
-        if (uniqueRoles.length === 0) return [{ original: 'Colaborador', display: 'COLABORADOR' }];
+        if (uniqueRoles.length === 0) return [{ original: 'Empleado', display: 'EMPLEADO' }];
 
         const totalChars = uniqueRoles.reduce((sum, r) => sum + r.display.length, 0) + (uniqueRoles.length - 1) * 2;
         if (totalChars > 26) {

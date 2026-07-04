@@ -226,7 +226,7 @@ const RolesView = ({ openModal }) => {
             setAlertDialog({
                 isOpen: true,
                 title: 'Operación Prohibida',
-                message: `No puedes eliminar el cargo "${role.name}" porque tiene ${roleEmps.length} colaborador(es) asignado(s). Reasígnalos primero.`
+                message: `No puedes eliminar el cargo "${role.name}" porque tiene ${roleEmps.length} empleado(es) asignado(s). Reasígnalos primero.`
             });
             return;
         }
@@ -389,7 +389,7 @@ const RolesView = ({ openModal }) => {
 
                 {isExporting && (
                     <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest bg-white/50 px-2 py-1 rounded-md">
-                        {roleEmps.length} Colaboradores
+                        {roleEmps.length} Empleados
                     </span>
                 )}
             </div>
@@ -815,7 +815,7 @@ const RolesView = ({ openModal }) => {
                                                         ? 'border-amber-200 text-amber-500 hover:bg-amber-500 hover:text-white'
                                                         : 'border-slate-100 text-slate-400 hover:bg-[#0052CC] hover:text-white hover:border-[#0052CC]'
                                                         }`}
-                                                    title="Ver Colaboradores"
+                                                    title="Ver Empleados"
                                                 >
                                                     <ArrowUpRight size={16} strokeWidth={2.5} />
                                                 </button>

@@ -417,7 +417,7 @@ const _sendCoverageAlert = async (branchId, startDate, endDate, approverId, empl
         await notifyEmployees([String(thId)], {
             type: 'SYSTEM',
             title: 'Cobertura de horario reducida',
-            body: `La incapacidad de ${employeeName} (${fmtD(startDate)}–${fmtD(endDate)}) deja la sucursal con solo ${count} colaborador${count !== 1 ? 'es' : ''} disponible${count !== 1 ? 's' : ''}. Revisa el horario y ajusta según sea necesario.`,
+            body: `La incapacidad de ${employeeName} (${fmtD(startDate)}–${fmtD(endDate)}) deja la sucursal con solo ${count} empleado${count !== 1 ? 'es' : ''} disponible${count !== 1 ? 's' : ''}. Revisa el horario y ajusta según sea necesario.`,
             link: '/schedules',
             push: true,
             branchId: branchId != null ? Number(branchId) : null,

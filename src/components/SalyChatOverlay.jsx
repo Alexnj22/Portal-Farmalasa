@@ -38,7 +38,7 @@ const SalyChatOverlay = () => {
             const hour = new Date().getHours();
             const time = hour < 12 ? 'mañana' : hour < 19 ? 'tarde' : 'noche';
             const userName = user?.name?.split(' ')[0] || 'equipo';
-            setMessages([{ id: 1, role: 'saly', text: `Excelente ${time}, ${userName}. Telemetría operativa en línea. Detecto **${employees?.length || 0} colaboradores activos** en la matriz. \n\n¿Cuál es el diagnóstico operativo que revisaremos hoy? ✨` }]);
+            setMessages([{ id: 1, role: 'saly', text: `Excelente ${time}, ${userName}. Telemetría operativa en línea. Detecto **${employees?.length || 0} empleados activos** en la matriz. \n\n¿Cuál es el diagnóstico operativo que revisaremos hoy? ✨` }]);
         }
     }, [isOpen, messages.length, user, employees]);
 

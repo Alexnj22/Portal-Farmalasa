@@ -118,7 +118,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
         };
 
         if (branchEmployees.length > 0) fetchAiProposal();
-        else { setError("No hay colaboradores asignados a esta sucursal."); setIsLoading(false); }
+        else { setError("No hay empleados asignados a esta sucursal."); setIsLoading(false); }
     }, [branchId, weekStartDate, branchEmployees, currentBranch, shifts]);
 
     const handleShiftChange = (empId, dayId, newShiftId) => {
@@ -276,7 +276,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                 <table className="w-full text-left border-collapse bg-slate-50/50 min-w-[1000px]">
                     <thead className="sticky top-0 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] z-20">
                         <tr>
-                            <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-widest w-[180px] bg-white">Colaborador</th>
+                            <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-widest w-[180px] bg-white">Empleado</th>
                             <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border-r border-slate-200 bg-white w-[60px]">Hrs</th>
                             {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, i) => (
                                 <th key={i} className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center min-w-[120px] bg-white">{day}</th>

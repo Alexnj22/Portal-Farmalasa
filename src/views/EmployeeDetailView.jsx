@@ -1354,7 +1354,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                     <div className="flex items-center justify-between">
                                                         <div>
                                                             <p className="text-[13px] font-black text-slate-800">{result.survey?.nombre}</p>
-                                                            <p className="text-[10px] text-slate-400">{result.survey?.año} · {result.is_jefe ? 'Jefe/a de sala' : 'Colaborador/a'}</p>
+                                                            <p className="text-[10px] text-slate-400">{result.survey?.año} · {result.is_jefe ? 'Jefe/a de sala' : 'Empleado/a'}</p>
                                                         </div>
                                                         {global != null && (() => { const sl = scoreLabel(global); return (
                                                             <div className="text-right">

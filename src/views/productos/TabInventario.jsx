@@ -206,12 +206,14 @@ export default function TabInventario({ searchTerm = '' }) {
                     .eq('erp_sucursal_id', erpId)
                     .eq('erp_product_id', productId)
                     .eq('is_vencidos', false)
+                    .gt('cantidad', 0)
                     .order('presentacion').order('lote'),
                 supabase.from('inventory')
                     .select('presentacion, detalle, lote, fecha_vencimiento, cantidad')
                     .eq('erp_sucursal_id', erpId)
                     .eq('erp_product_id', productId)
                     .eq('is_vencidos', true)
+                    .gt('cantidad', 0)
                     .order('presentacion').order('lote'),
             ]);
             setExpandedData(prev => ({ ...prev, [key]: data || [] }));

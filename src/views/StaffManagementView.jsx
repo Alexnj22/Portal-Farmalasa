@@ -10,7 +10,6 @@ import {
   Building2,
   ShieldCheck,
   ListFilter,
-  ChevronLeft,
   X,
   Trash2,
   Hash,
@@ -41,6 +40,7 @@ import { getEffectiveStatus } from '../utils/helpers';
 import { getRoleTheme } from '../utils/scheduleHelpers';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
+import TablePagination from '../components/common/TablePagination';
 import { smartFilter } from '../utils/searchUtils';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
@@ -352,7 +352,7 @@ const StaffManagementView = ({
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: 'default', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(15);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [activeStatFilter, setActiveStatFilter] = useState('ALL');
 
   const searchInputRef = useRef(null);
@@ -672,6 +672,12 @@ const StaffManagementView = ({
         <div data-surface="card" className="flex-1 flex flex-col bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.5),0_8px_20px_rgba(0,0,0,0.03)] rounded-[2rem] overflow-hidden relative">
 
           <div className="flex-1 overflow-y-auto hide-scrollbar">
+            {isStaffSearchFuzzy && normalizedSearch && (
+              <div className="mx-4 md:mx-6 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                Resultados similares para &ldquo;{normalizedSearch}&rdquo; — no se encontraron coincidencias exactas
+              </div>
+            )}
             <DataTable
               columns={[
                 { key: 'name',   label: 'Colaborador',      sortable: true },
@@ -704,12 +710,6 @@ const StaffManagementView = ({
               }
               minWidth="700px"
             >
-              {isStaffSearchFuzzy && normalizedSearch && (
-                <div className="col-span-full mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
-                  <Search size={12} strokeWidth={2.5} className="shrink-0" />
-                  Resultados similares para &ldquo;{normalizedSearch}&rdquo; — no se encontraron coincidencias exactas
-                </div>
-              )}
               {paginatedEmployees.map((emp, i) => (
                 <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit} />
               ))}
@@ -717,21 +717,16 @@ const StaffManagementView = ({
           </div>
 
           {totalItems > 0 && (
-            <div className="px-5 py-3 border-t border-white/40 bg-white/20 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
-              <div className="flex items-center gap-3">
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Ver:</span>
-                <select className="bg-white/80 backdrop-blur-md border border-white/80 rounded-full px-3 py-1.5 text-[10px] font-black text-slate-700 outline-none focus:ring-2 focus:ring-[#0052CC]/20 cursor-pointer shadow-sm transition-all appearance-none pr-8 relative" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundPosition: 'right 8px center', backgroundRepeat: 'no-repeat', backgroundSize: '12px' }} value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
-                  <option value={15}>15 Filas</option><option value={30}>30 Filas</option><option value={50}>50 Filas</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Pág {currentPage} / {totalPages || 1}</span>
-                <div className="flex items-center gap-1.5 bg-white/50 p-1 rounded-full border border-white/60 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
-                  <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-600 hover:text-[#0052CC] disabled:opacity-50 disabled:hover:text-slate-600 transition-all hover:scale-105 active:scale-[0.97] disabled:hover:scale-100"><ChevronLeft size={16} strokeWidth={2.5} /></button>
-                  <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-slate-600 hover:text-[#0052CC] disabled:opacity-50 disabled:hover:text-slate-600 transition-all hover:scale-105 active:scale-[0.97] disabled:hover:scale-100"><ChevronRight size={16} strokeWidth={2.5} /></button>
-                </div>
-              </div>
+            <div className="px-5 py-3 border-t border-white/40 bg-white/20 shrink-0">
+              <TablePagination
+                pageSize={itemsPerPage}
+                onPageSizeChange={setItemsPerPage}
+                page={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                total={totalItems}
+                unit="colaboradores"
+              />
             </div>
           )}
         </div>

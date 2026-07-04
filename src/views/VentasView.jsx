@@ -349,13 +349,70 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
     const prevMonthRange = useMemo(() => computePrevRange(fini, ffin), [fini, ffin]);
 
-    // Stats: always use live RPC (supports arbitrary date ranges incl. Hoy / Sem.)
+    // Suma puntos canjeados (erp_product_id=0, deduplicado por factura tomando el
+    // total_linea mayor) para un set de IDs de factura ya filtrado — mismo cálculo
+    // que el RPC get_puntos_canjeados pero sobre una lista arbitraria de IDs.
+    const sumPuntosForIds = async (ids) => {
+        if (!ids.length) return 0;
+        const { data } = await supabase
+            .from('sales_invoice_items')
+            .select('invoice_id, total_linea')
+            .eq('erp_product_id', 0)
+            .in('invoice_id', ids);
+        const maxByInvoice = new Map();
+        for (const r of (data || [])) {
+            const cur = maxByInvoice.get(r.invoice_id);
+            if (cur === undefined || Number(r.total_linea) > cur) maxByInvoice.set(r.invoice_id, Number(r.total_linea));
+        }
+        return [...maxByInvoice.values()].reduce((a, b) => a + b, 0);
+    };
+
+    // Stats: RPC rápido (usa sales_daily_stats pre-agregado) para el caso normal.
+    // Anuladas / antibiótico / búsqueda no tienen parámetro en el RPC (y romperían
+    // el pre-agregado diario, que solo cubre ventas válidas) — para esos filtros
+    // se agrega en el cliente con exactamente los mismos filtros que fetchRows.
     const fetchStats = useCallback(async () => {
         setLoadingStats(true);
         const branchFilter = filterBranch ? Number(filterBranch) : null;
-        const { prevFini, prevFfin } = prevMonthRange;
         const horaCorte = currentHoraCorte(ffin);
+        const hasSpecialFilter = filterAnuladas || filterAntibiotico || isSearching;
 
+        if (hasSpecialFilter) {
+            if (filterAntibiotico && abInvoiceIds === null) { setLoadingStats(false); return; } // aún cargando ids
+            let q = supabase.from('sales_invoices').select('id, total', { count: 'exact' })
+                .gte('fecha', fini).lte('fecha', ffin);
+            if (branchFilter) q = q.eq('branch_id', branchFilter);
+            if (filterAnuladas) q = q.in('estado', CANCELLED_ESTADOS);
+            else q = q.not('estado', 'in', `(${CANCELLED_ESTADOS.join(',')})`);
+            if (filterAntibiotico) {
+                if (abInvoiceIds.length === 0) {
+                    setTotalCount(0); setTotalAmount(0); setTotalPuntos(0);
+                    setPrevStats({ count: 0, sum: 0, puntos: 0 });
+                    setLoadingStats(false);
+                    return;
+                }
+                q = q.in('id', abInvoiceIds);
+            }
+            if (isSearching) {
+                const s = searchTerm.trim();
+                q = q.or(`erp_invoice_id.ilike.%${s}%,correlativo.ilike.%${s}%,cliente.ilike.%${s}%`);
+            }
+            const { data, count } = await q.limit(1000);
+            const invoices = data || [];
+            const sum = invoices.reduce((acc, r) => acc + Number(r.total || 0), 0);
+            const puntos = await sumPuntosForIds(invoices.map(r => r.id));
+
+            setTotalCount(count ?? invoices.length);
+            setTotalAmount(sum);
+            setTotalPuntos(puntos);
+            // Sin comparativo de período anterior para vistas filtradas — evita un %
+            // engañoso que compare universos distintos (ej. "anuladas" vs "todo el mes pasado").
+            setPrevStats({ count: 0, sum: 0, puntos: 0 });
+            setLoadingStats(false);
+            return;
+        }
+
+        const { prevFini, prevFfin } = prevMonthRange;
         const [cur, prev, puntosCur, puntosPrev] = await Promise.all([
             supabase.rpc('get_ventas_stats', { p_fini: fini,    p_ffin: ffin,    p_branch_id: branchFilter, p_hora_corte: horaCorte }),
             supabase.rpc('get_ventas_stats', { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: branchFilter, p_hora_corte: horaCorte }),
@@ -374,7 +431,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             puntos: parseFloat(puntosPrev.data || 0),
         });
         setLoadingStats(false);
-    }, [fini, ffin, filterBranch, prevMonthRange]);
+    }, [fini, ffin, filterBranch, prevMonthRange, filterAnuladas, filterAntibiotico, abInvoiceIds, isSearching, searchTerm]);
 
     // 6-month history for tooltip
 

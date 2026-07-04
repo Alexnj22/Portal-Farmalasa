@@ -505,7 +505,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                 </span>
                                                 {group.es_antibiotico && (
                                                     <span className="mt-0.5 inline-flex text-[9px] font-bold text-orange-600 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-full">
-                                                        ANTIBIÓTICO
+                                                        Bajo Receta
                                                     </span>
                                                 )}
                                             </div>
@@ -575,7 +575,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                                     <tr>
                                                                         {['Presentación', 'Lote', 'Vence', 'Cant.', 'Unidades'].map(h => (
                                                                             <th key={h}
-                                                                                className={`pb-2 text-[9px] font-black uppercase tracking-widest text-slate-400 pr-6 last:pr-0 ${
+                                                                                className={`pb-2 text-[9px] font-black uppercase tracking-widest text-slate-500 pr-6 last:pr-0 ${
                                                                                     h === 'Cant.' || h === 'Unidades' ? 'text-right' : 'text-left'
                                                                                 }`}>
                                                                                 {h}

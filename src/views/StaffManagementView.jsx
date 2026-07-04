@@ -8,8 +8,6 @@ import {
   ChevronRight,
   MapPin,
   Building2,
-  ShieldCheck,
-  ListFilter,
   X,
   Trash2,
   Hash,
@@ -354,14 +352,13 @@ const StaffManagementView = ({
   const [sortConfig, setSortConfig] = useState({ key: 'default', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [activeStatFilter, setActiveStatFilter] = useState('ALL');
 
   const searchInputRef = useRef(null);
   const normalizedSearch = (searchTerm || '').trim();
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [normalizedSearch, selectedBranch, itemsPerPage, activeStatFilter]);
+  }, [normalizedSearch, selectedBranch, itemsPerPage]);
 
   useEffect(() => {
     if (isSearchActive && searchInputRef.current) {
@@ -382,44 +379,49 @@ const StaffManagementView = ({
     return m;
   }, [branches]);
 
-  const staffBranchFiltered = useMemo(() => {
-    const baseEmployees = getScope('staff_list') === 'BRANCH'
+  const scopeFilteredEmployees = useMemo(() => {
+    return getScope('staff_list') === 'BRANCH'
         ? (employees || []).filter(e => String(e.branch_id || e.branchId) === String(user?.branchId))
         : (employees || []);
-    return baseEmployees.filter(emp => {
+  }, [employees, getScope, user?.branchId]);
+
+  const staffBranchFiltered = useMemo(() => {
+    return scopeFilteredEmployees.filter(emp => {
       const matchesBranch = selectedBranch === 'ALL' || String(emp?.branchId ?? emp?.branch_id ?? '') === String(selectedBranch);
       return matchesBranch;
     });
-  }, [employees, selectedBranch, branchMap, getScope, user?.branchId]);
+  }, [scopeFilteredEmployees, selectedBranch]);
 
   const { results: searchFilteredEmployees, isFuzzy: isStaffSearchFuzzy } = useMemo(() => {
     if (!normalizedSearch.trim()) return { results: staffBranchFiltered, isFuzzy: false };
     return smartFilter(normalizedSearch, staffBranchFiltered, emp => [emp?.name, emp?.code, emp?.role, branchMap.get(Number(emp.branchId || emp.branch_id))]);
   }, [staffBranchFiltered, normalizedSearch, branchMap]);
 
-  const stats = useMemo(() => {
-    const total = searchFilteredEmployees.length;
-    const active = searchFilteredEmployees.filter((emp) => getEffectiveStatus(emp) === 'Activo').length;
-    const support = searchFilteredEmployees.filter((emp) => getEffectiveStatus(emp) === 'En Apoyo').length;
-    const inactive = searchFilteredEmployees.filter(
-      (emp) => !['Activo', 'En Apoyo'].includes(getEffectiveStatus(emp))
-    ).length;
+  const stats = useMemo(() => ({ total: searchFilteredEmployees.length }), [searchFilteredEmployees]);
 
-    return { total, active, support, inactive };
-  }, [searchFilteredEmployees]);
+  // Desglose por sucursal — ignora selectedBranch (para no colapsar a 1 sola sucursal
+  // una vez elegida) pero sí respeta scope de rol y el término de búsqueda.
+  const branchBreakdown = useMemo(() => {
+    const base = !normalizedSearch.trim()
+      ? scopeFilteredEmployees
+      : smartFilter(normalizedSearch, scopeFilteredEmployees, emp => [emp?.name, emp?.code, emp?.role, branchMap.get(Number(emp.branchId || emp.branch_id))]).results;
 
-  const filteredEmployees = useMemo(() => {
-    return searchFilteredEmployees.filter(emp => {
-      const statusEff = getEffectiveStatus(emp);
-      return activeStatFilter === 'ALL' ||
-        (activeStatFilter === 'Activo' && statusEff === 'Activo') ||
-        (activeStatFilter === 'En Apoyo' && statusEff === 'En Apoyo') ||
-        (activeStatFilter === 'Otros' && !['Activo', 'En Apoyo'].includes(statusEff));
-    });
-  }, [searchFilteredEmployees, activeStatFilter]);
+    const counts = new Map();
+    for (const emp of base) {
+      const bId = Number(emp.branchId ?? emp.branch_id);
+      counts.set(bId, (counts.get(bId) || 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([id, count]) => ({ id, name: branchMap.get(id) || 'Sin Asignar', count }))
+      .sort((a, b) => b.count - a.count);
+  }, [scopeFilteredEmployees, normalizedSearch, branchMap]);
+
+  const topBranches  = branchBreakdown.slice(0, 2);
+  const otherBranches = branchBreakdown.slice(2);
+  const otherBranchesCount = otherBranches.reduce((s, b) => s + b.count, 0);
 
   const sortedEmployees = useMemo(() => {
-    const list = [...filteredEmployees];
+    const list = [...searchFilteredEmployees];
 
     list.sort((a, b) => {
       const branchA = (branchMap.get(Number(a.branchId || a.branch_id)) || '').toLowerCase();
@@ -465,7 +467,7 @@ const StaffManagementView = ({
     });
 
     return list;
-  }, [filteredEmployees, sortConfig, branchMap]);
+  }, [searchFilteredEmployees, sortConfig, branchMap]);
 
   const totalItems = sortedEmployees.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
@@ -475,7 +477,7 @@ const StaffManagementView = ({
     return sortedEmployees.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedEmployees, currentPage, itemsPerPage]);
 
-  const hasActiveFilters = normalizedSearch !== '' || selectedBranch !== 'ALL' || activeStatFilter !== 'ALL';
+  const hasActiveFilters = normalizedSearch !== '' || selectedBranch !== 'ALL';
 
   const handleOpenNewEmployee = () => {
     setIsSearchActive(false);
@@ -502,7 +504,6 @@ const StaffManagementView = ({
   const clearFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedBranch('ALL');
-    setActiveStatFilter('ALL');
   }, [setSearchTerm, setSelectedBranch]);
 
   const handleSort = useCallback((key) => {
@@ -571,15 +572,6 @@ const StaffManagementView = ({
         <div className="flex items-center gap-2 md:gap-3 shrink-0 overflow-visible">
           <button
             type="button"
-            onClick={handleExportCSV}
-            className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/60 hover:bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] border border-white/80 hover:border-emerald-200"
-            title="Exportar a Excel"
-          >
-            <Download size={16} strokeWidth={3} />
-          </button>
-
-          <button
-            type="button"
             onClick={handleOpenNewEmployee}
             disabled={!canEdit}
             className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-[#0052CC] to-[#003D99] text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-[#0052CC]/50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -616,30 +608,27 @@ const StaffManagementView = ({
             <StatCard
               icon={Users} iconBg="bg-[#0052CC]/10" iconCls="text-[#0052CC]"
               label="Total" value={stats.total} valueCls="text-slate-700"
-              active={activeStatFilter === 'ALL'} onClick={() => setActiveStatFilter('ALL')}
+              active={selectedBranch === 'ALL'} onClick={() => setSelectedBranch('ALL')}
               loading={bootStatus !== 'ready' && employees.length === 0}
             />
-            <StatCard
-              icon={ShieldCheck} iconBg="bg-emerald-50" iconCls="text-emerald-600"
-              label="Activos" value={stats.active} valueCls="text-emerald-600"
-              active={activeStatFilter === 'Activo'} onClick={() => setActiveStatFilter('Activo')}
-              activeBg="bg-emerald-50 border-emerald-300 shadow-md"
-              loading={bootStatus !== 'ready' && employees.length === 0}
-            />
-            <StatCard
-              icon={Building2} iconBg="bg-cyan-50" iconCls="text-cyan-600"
-              label="Apoyo" value={stats.support} valueCls="text-cyan-600"
-              active={activeStatFilter === 'En Apoyo'} onClick={() => setActiveStatFilter('En Apoyo')}
-              activeBg="bg-cyan-50 border-cyan-300 shadow-md"
-              loading={bootStatus !== 'ready' && employees.length === 0}
-            />
-            <StatCard
-              icon={ListFilter} iconBg="bg-amber-50" iconCls="text-amber-600"
-              label="Otros" value={stats.inactive} valueCls="text-amber-600"
-              active={activeStatFilter === 'Otros'} onClick={() => setActiveStatFilter('Otros')}
-              activeBg="bg-amber-50 border-amber-300 shadow-md"
-              loading={bootStatus !== 'ready' && employees.length === 0}
-            />
+            {topBranches.map(b => (
+              <StatCard
+                key={b.id}
+                icon={MapPin} iconBg="bg-indigo-50" iconCls="text-indigo-600"
+                label={b.name} value={b.count} valueCls="text-indigo-600"
+                active={String(selectedBranch) === String(b.id)}
+                onClick={() => setSelectedBranch(String(b.id))}
+                activeBg="bg-indigo-50 border-indigo-300 shadow-md"
+                loading={bootStatus !== 'ready' && employees.length === 0}
+              />
+            ))}
+            {otherBranches.length > 0 && (
+              <StatCard
+                icon={Building2} iconBg="bg-slate-100" iconCls="text-slate-500"
+                label={`+ Otras ${otherBranches.length}`} value={otherBranchesCount} valueCls="text-slate-600"
+                loading={bootStatus !== 'ready' && employees.length === 0}
+              />
+            )}
           </div>
 
           <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
@@ -655,6 +644,17 @@ const StaffManagementView = ({
                 bare
               />
             </div>
+
+            <div className="h-5 w-px bg-slate-100 shrink-0" />
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="mx-1.5 w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-emerald-50 text-emerald-600 border border-slate-200/70 hover:border-emerald-200 shrink-0 transition-all hover:-translate-y-0.5"
+              title="Exportar a Excel"
+            >
+              <Download size={13} strokeWidth={2.5} />
+            </button>
+
             {hasActiveFilters && (
               <>
                 <div className="h-5 w-px bg-slate-100 shrink-0" />
@@ -703,11 +703,6 @@ const StaffManagementView = ({
                 <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC]">
                   <Hash size={12} strokeWidth={3} />
                   {totalItems} <span className="text-slate-500 hidden sm:inline">Colaboradores Listados</span>
-                  {activeStatFilter !== 'ALL' && (
-                    <span className="ml-2 px-2 py-0.5 bg-white/60 text-slate-500 rounded-full border border-white shadow-sm lowercase font-bold tracking-normal">
-                      Filtrado por: <span className="uppercase text-[#0052CC] font-black">{activeStatFilter}</span>
-                    </span>
-                  )}
                 </div>
               }
               minWidth="700px"

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
-    AlertTriangle, Calendar, CalendarClock, Loader2, Package, RefreshCw,
+    AlertTriangle, Calendar, CalendarClock, Loader2, Package, PackageX,
     Building2, X, ChevronLeft, ChevronRight, ChevronDown, DollarSign,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -37,16 +37,6 @@ function expiryInfo(fecha) {
     return { days, expired: days < 0 };
 }
 
-function relativeTime(iso) {
-    const diff = Date.now() - new Date(iso).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 2)  return 'ahora mismo';
-    if (mins < 60) return `hace ${mins} min`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24)  return `hace ${hrs}h`;
-    return new Date(iso).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' });
-}
-
 function ExpiryCell({ fecha }) {
     if (!fecha) return <span className="text-slate-400 text-xs">—</span>;
     const info = expiryInfo(fecha);
@@ -74,6 +64,7 @@ export default function TabInventario({ searchTerm = '' }) {
     const [selectedErp,      setSelectedErp]      = useState(null);
     const [filterVencidos,   setFilterVencidos]   = useState(false);
     const [filterSixMonths,  setFilterSixMonths]  = useState(false);
+    const [filterAreaVenc,   setFilterAreaVenc]   = useState(false);
     const [filterLab,        setFilterLab]        = useState(null);
     const [filterCat,        setFilterCat]        = useState(null);
     const [groups,           setGroups]           = useState([]);
@@ -128,9 +119,12 @@ export default function TabInventario({ searchTerm = '' }) {
         });
     }, [selectedErp]);
 
-    useEffect(() => { setPage(1); }, [selectedErp, filterVencidos, filterSixMonths, filterLab, filterCat, searchTerm, pageSize, sortField]);
+    useEffect(() => { setPage(1); }, [selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, pageSize, sortField]);
 
-    const loadInventory = useCallback(async (erpId, fVenc, fSix, labId, catId, q, pg, ps, sf, sd) => {
+    // El área de vencidos solo existe en bodega — al salir de bodega se apaga el filtro
+    useEffect(() => { if (!isBodega) setFilterAreaVenc(false); }, [isBodega]);
+
+    const loadInventory = useCallback(async (erpId, fVenc, fSix, fArea, labId, catId, q, pg, ps, sf, sd) => {
         const rid = ++loadRef.current;
         setLoading(true);
         setLoadError(null);
@@ -138,9 +132,10 @@ export default function TabInventario({ searchTerm = '' }) {
         try {
             const [{ data, error }, smResult, invResult] = await Promise.all([
                 supabase.rpc('inventory_grouped', {
-                    p_erp_id:    erpId,
-                    p_vencidos:  fVenc,
-                    p_proximos:  fSix,
+                    p_erp_id:         erpId,
+                    p_vencidos:       fVenc,
+                    p_proximos:       fSix,
+                    p_area_vencidos:  fArea,
                     p_lab_id:    labId,
                     p_categoria: catId,
                     p_search:    normSearch(q) || null,
@@ -210,9 +205,9 @@ export default function TabInventario({ searchTerm = '' }) {
 
     useEffect(() => {
         const t = setTimeout(() =>
-            loadInventory(selectedErp, filterVencidos, filterSixMonths, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir), 50);
+            loadInventory(selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir), 50);
         return () => clearTimeout(t);
-    }, [selectedErp, filterVencidos, filterSixMonths, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir, loadInventory]);
+    }, [selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir, loadInventory]);
 
     const handleSort = useCallback((field) => {
         if (field === sortField) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -260,15 +255,6 @@ export default function TabInventario({ searchTerm = '' }) {
         { key: 'vence',        label: 'Vence',             hideBelow: 'sm' },
     ];
 
-    const lastSync = (() => {
-        const logs = syncLog.filter(l =>
-            l.is_vencidos === false && l.success &&
-            (selectedErp === null || l.erp_sucursal_id === selectedErp)
-        );
-        if (!logs.length) return null;
-        return logs.sort((a, b) => new Date(b.synced_at) - new Date(a.synced_at))[0]?.synced_at;
-    })();
-
     const erpOptions = ERP_ORDER.map(id => {
         const log = syncLog.find(l => l.erp_sucursal_id === id && !l.is_vencidos && l.success);
         return {
@@ -301,7 +287,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     </div>
 
                     <button
-                        onClick={() => { setFilterVencidos(v => !v); setFilterSixMonths(false); }}
+                        onClick={() => { setFilterVencidos(v => !v); setFilterSixMonths(false); setFilterAreaVenc(false); }}
                         className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                             filterVencidos
                                 ? 'bg-red-50 border-red-300 shadow-md shadow-red-100/80 -translate-y-px'
@@ -321,7 +307,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     </button>
 
                     <button
-                        onClick={() => { setFilterSixMonths(v => !v); setFilterVencidos(false); }}
+                        onClick={() => { setFilterSixMonths(v => !v); setFilterVencidos(false); setFilterAreaVenc(false); }}
                         className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
                             filterSixMonths
                                 ? 'bg-orange-50 border-orange-300 shadow-md shadow-orange-100/80 -translate-y-px'
@@ -340,6 +326,28 @@ export default function TabInventario({ searchTerm = '' }) {
                         {filterSixMonths && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
                     </button>
 
+                    {isBodega && (
+                        <button
+                            onClick={() => { setFilterAreaVenc(v => !v); setFilterVencidos(false); setFilterSixMonths(false); }}
+                            className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${
+                                filterAreaVenc
+                                    ? 'bg-rose-50 border-rose-300 shadow-md shadow-rose-100/80 -translate-y-px'
+                                    : 'bg-white border-slate-100 hover:border-rose-200 hover:bg-rose-50/40'
+                            }`}>
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${filterAreaVenc ? 'bg-white' : 'bg-rose-50'}`}>
+                                <PackageX size={15} className="text-rose-500" />
+                            </div>
+                            <div className="text-left">
+                                <div className="text-[22px] font-black leading-none tabular-nums text-rose-600">
+                                    {loading ? <span className="text-slate-200">–</span> : Object.keys(vencidosMap).length.toLocaleString()}
+                                </div>
+                                <div className="text-[10px] font-bold text-slate-600">Área vencidos</div>
+                                <div className="text-[9px] text-slate-400">ubicación bodega</div>
+                            </div>
+                            {filterAreaVenc && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+                        </button>
+                    )}
+
                     <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border border-slate-100 bg-white min-w-[130px]">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50">
                             <DollarSign size={15} className="text-emerald-600" />
@@ -356,12 +364,6 @@ export default function TabInventario({ searchTerm = '' }) {
                         </div>
                     </div>
 
-                    {lastSync && (
-                        <span className="text-[10px] text-slate-400 flex items-center gap-1 self-center">
-                            <RefreshCw size={9} />
-                            {relativeTime(lastSync)}
-                        </span>
-                    )}
                 </div>
 
                 {(() => {
@@ -456,7 +458,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-red-400" />
                     <p className="text-sm font-semibold text-red-600 mb-1">Error al cargar inventario</p>
                     <p className="text-[11px] text-red-400 mb-4">{loadError}</p>
-                    <button onClick={() => loadInventory(selectedErp, filterVencidos, filterSixMonths, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir)}
+                    <button onClick={() => loadInventory(selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir)}
                         className="px-5 py-2 text-[12px] font-bold text-white bg-red-500 hover:bg-red-600 rounded-full transition-colors">
                         Reintentar
                     </button>

@@ -202,8 +202,8 @@ export const createEmployeeSlice = (set, get) => ({
 
     addEmployee: async (formData) => {
         try {
-            const fNames = (formData.first_names || '').trim();
-            const lNames = (formData.last_names || '').trim();
+            const fNames = (formData.first_names || '').trim().toUpperCase();
+            const lNames = (formData.last_names || '').trim().toUpperCase();
 
             // El código es la credencial del carné: SOLO números (regla de negocio,
             // también validada por trigger en BD) y único entre empleados.
@@ -237,23 +237,23 @@ export const createEmployeeSlice = (set, get) => ({
                 birth_date: formData.birth_date || null,
                 dui: formData.dui || null,
                 phone: formData.phone || null,
-                address: formData.address || null,
-                
+                address: formData.address ? formData.address.trim().toUpperCase() : null,
+
                 department: formData.department || null,
                 municipality: formData.municipality || null,
                 education_level: formData.education_level || null,
-                profession: formData.profession || null,
+                profession: formData.profession ? formData.profession.trim().toUpperCase() : null,
                 education_grade_completed: formData.education_grade_completed || null,
-                education_specialty: formData.education_specialty || null,
+                education_specialty: formData.education_specialty ? formData.education_specialty.trim().toUpperCase() : null,
                 is_studying: !!formData.is_studying,
                 study_start_date: formData.is_studying ? (formData.study_start_date || null) : null,
                 study_duration_years: formData.is_studying && formData.study_duration_years ? parseFloat(formData.study_duration_years) : null,
-                additional_skills: Array.isArray(formData.additional_skills) ? formData.additional_skills.map(s => (s || '').trim()).filter(Boolean) : [],
+                additional_skills: Array.isArray(formData.additional_skills) ? formData.additional_skills.map(s => (s || '').trim().toUpperCase()).filter(Boolean) : [],
                 extra_phones: Array.isArray(formData.extra_phones) ? formData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [],
-                extra_addresses: Array.isArray(formData.extra_addresses) ? formData.extra_addresses.map(a => (a || '').trim()).filter(Boolean) : [],
+                extra_addresses: Array.isArray(formData.extra_addresses) ? formData.extra_addresses.map(a => (a || '').trim().toUpperCase()).filter(Boolean) : [],
 
                 email: formData.email || null,
-                emergency_contact_name: formData.emergency_contact_name || null,
+                emergency_contact_name: formData.emergency_contact_name ? formData.emergency_contact_name.trim().toUpperCase() : null,
                 emergency_contact_phone: formData.emergency_contact_phone || null,
                 
                 contract_type: formData.contract_type || 'INDEFINIDO',
@@ -409,6 +409,12 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.secondary_role_id !== undefined) dbPayload.secondary_role_id = updatedData.secondary_role_id ? parseInt(updatedData.secondary_role_id, 10) : null;
             
             if (updatedData.username) dbPayload.username = updatedData.username.trim().toLowerCase();
+            if (updatedData.first_names) dbPayload.first_names = updatedData.first_names.trim().toUpperCase();
+            if (updatedData.last_names) dbPayload.last_names = updatedData.last_names.trim().toUpperCase();
+            if (updatedData.address !== undefined) dbPayload.address = updatedData.address ? updatedData.address.trim().toUpperCase() : null;
+            if (updatedData.profession !== undefined) dbPayload.profession = updatedData.profession ? updatedData.profession.trim().toUpperCase() : null;
+            if (updatedData.emergency_contact_name !== undefined) dbPayload.emergency_contact_name = updatedData.emergency_contact_name ? updatedData.emergency_contact_name.trim().toUpperCase() : null;
+            if (updatedData.education_specialty !== undefined) dbPayload.education_specialty = updatedData.education_specialty ? updatedData.education_specialty.trim().toUpperCase() : null;
             if (updatedData.weekly_contracted_hours) dbPayload.weekly_contracted_hours = parseInt(updatedData.weekly_contracted_hours, 10);
             if (updatedData.base_salary) dbPayload.base_salary = parseFloat(updatedData.base_salary);
 
@@ -420,13 +426,13 @@ export const createEmployeeSlice = (set, get) => ({
                 dbPayload.study_duration_years = updatedData.study_duration_years ? parseFloat(updatedData.study_duration_years) : null;
             }
             if (updatedData.additional_skills !== undefined) {
-                dbPayload.additional_skills = Array.isArray(updatedData.additional_skills) ? updatedData.additional_skills.map(s => (s || '').trim()).filter(Boolean) : [];
+                dbPayload.additional_skills = Array.isArray(updatedData.additional_skills) ? updatedData.additional_skills.map(s => (s || '').trim().toUpperCase()).filter(Boolean) : [];
             }
             if (updatedData.extra_phones !== undefined) {
                 dbPayload.extra_phones = Array.isArray(updatedData.extra_phones) ? updatedData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [];
             }
             if (updatedData.extra_addresses !== undefined) {
-                dbPayload.extra_addresses = Array.isArray(updatedData.extra_addresses) ? updatedData.extra_addresses.map(a => (a || '').trim()).filter(Boolean) : [];
+                dbPayload.extra_addresses = Array.isArray(updatedData.extra_addresses) ? updatedData.extra_addresses.map(a => (a || '').trim().toUpperCase()).filter(Boolean) : [];
             }
             if (updatedData.afp_institution !== undefined) dbPayload.afp_institution = updatedData.afp_institution || null;
             if (updatedData.account_type !== undefined) dbPayload.account_type = updatedData.account_type || 'AHORRO';

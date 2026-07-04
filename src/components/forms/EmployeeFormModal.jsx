@@ -13,6 +13,10 @@ import {
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
 // ============================================================================
+// Campos de texto libre que se guardan siempre en mayúscula (información de
+// ficha, no credenciales) — email/username/teléfonos/DUI quedan fuera.
+const UPPERCASE_FIELDS = new Set(['first_names', 'last_names', 'address', 'profession', 'emergency_contact_name']);
+
 const GENDER_OPTIONS = [{ value: 'F', label: 'Femenino' }, { value: 'M', label: 'Masculino' }];
 const BLOOD_TYPE_OPTIONS = [{ value: 'O+', label: 'O+ (Positivo)' }, { value: 'O-', label: 'O- (Negativo)' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' }, { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' }, { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' }];
 const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { value: 'CASADO', label: 'Casado/a' }, { value: 'DIVORCIADO', label: 'Divorciado/a' }, { value: 'VIUDO', label: 'Viudo/a' }, { value: 'ACOMPAÑADO', label: 'Acompañado/a' }];
@@ -200,7 +204,7 @@ const SpecialtySelector = ({ value, onChange, options, portalSelectProps, inputH
                 <input
                     type="text"
                     value={value || ''}
-                    onChange={(e) => onChange(e.target.value)}
+                    onChange={(e) => onChange(e.target.value.toUpperCase())}
                     placeholder="Especifica la especialidad"
                     className={`flex-1 h-[40px] px-4 bg-white border border-slate-200/80 rounded-[1rem] text-[13px] font-bold text-slate-700 outline-none shadow-sm ${inputHoverClass}`}
                 />
@@ -355,7 +359,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     }, [formData?.code]);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name } = e.target;
+        const value = UPPERCASE_FIELDS.has(name) ? e.target.value.toUpperCase() : e.target.value;
         setFormData(prev => {
             const newData = { ...prev, [name]: value };
             if ((name === 'first_names' || name === 'last_names') && (!prev.id)) {
@@ -410,7 +415,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     const addSkill = () => setFormData(prev => ({ ...prev, additional_skills: [...(prev.additional_skills || []), ''] }));
     const updateSkill = (idx, value) => setFormData(prev => {
-        const arr = [...(prev.additional_skills || [])]; arr[idx] = value; return { ...prev, additional_skills: arr };
+        const arr = [...(prev.additional_skills || [])]; arr[idx] = value.toUpperCase(); return { ...prev, additional_skills: arr };
     });
     const removeSkill = (idx) => setFormData(prev => ({ ...prev, additional_skills: (prev.additional_skills || []).filter((_, i) => i !== idx) }));
 
@@ -422,7 +427,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     const addAddress = () => setFormData(prev => ({ ...prev, extra_addresses: [...(prev.extra_addresses || []), ''] }));
     const updateAddress = (idx, value) => setFormData(prev => {
-        const arr = [...(prev.extra_addresses || [])]; arr[idx] = value; return { ...prev, extra_addresses: arr };
+        const arr = [...(prev.extra_addresses || [])]; arr[idx] = value.toUpperCase(); return { ...prev, extra_addresses: arr };
     });
     const removeAddress = (idx) => setFormData(prev => ({ ...prev, extra_addresses: (prev.extra_addresses || []).filter((_, i) => i !== idx) }));
 

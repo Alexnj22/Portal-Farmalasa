@@ -1,21 +1,19 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
-import { User, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, BookOpen } from 'lucide-react';
+import { User, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
-import {
-    GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD,
-    BACHILLERATO_TECNICO_ESPECIALIDADES, TECNICO_SUPERIOR_ESPECIALIDADES,
-} from '../../utils/educationCatalogs';
+import { supabase } from '../../supabaseClient';
+import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD } from '../../utils/educationCatalogs';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
 // ============================================================================
 // Campos de texto libre que se guardan siempre en mayúscula (información de
 // ficha, no credenciales) — email/username/teléfonos/DUI quedan fuera.
-const UPPERCASE_FIELDS = new Set(['first_names', 'last_names', 'address', 'profession', 'emergency_contact_name']);
+const UPPERCASE_FIELDS = new Set(['first_names', 'last_names', 'address', 'emergency_contact_name']);
 
 const GENDER_OPTIONS = [{ value: 'F', label: 'Femenino' }, { value: 'M', label: 'Masculino' }];
 const BLOOD_TYPE_OPTIONS = [{ value: 'O+', label: 'O+ (Positivo)' }, { value: 'O-', label: 'O- (Negativo)' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' }, { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' }, { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' }];
@@ -34,9 +32,10 @@ const EDUCATION_OPTIONS = [
 const LEVELS_WITH_SPECIALTY = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR'];
 // Niveles donde "¿Actualmente estudiando?" tiene sentido
 const LEVELS_WITH_STUDY_TOGGLE = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR', 'MAESTRIA'];
-// Niveles donde el campo Profesión/Título se muestra — Bachillerato Técnico
-// queda fuera: su "título" ya es la especialidad, no una profesión aparte.
-const LEVELS_WITH_PROFESSION = ['TECNICO_SUPERIOR', 'UNIVERSITARIO_E', 'UNIVERSITARIO_G', 'MAESTRIA'];
+// Niveles donde el campo Profesión/Título se muestra — Bachillerato Técnico y
+// Técnico Superior quedan fuera: su "título" ya es la especialidad de arriba,
+// no una profesión aparte.
+const LEVELS_WITH_PROFESSION = ['UNIVERSITARIO_E', 'UNIVERSITARIO_G', 'MAESTRIA'];
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const MONTH_OPTIONS = MESES.map((m, i) => ({ value: String(i + 1).padStart(2, '0'), label: m }));
@@ -171,7 +170,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between transition-colors">
                 <span>{label} {helperText && <span className="text-[8px] text-[#0052CC] ml-1">{helperText}</span>}</span>
                 {required && !value?.trim() && !hasError && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
-                {hasError && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md shadow-sm border border-red-300 flex items-center gap-1"><AlertCircle size={10} /> {errorMessage}</span>}
+                {hasError && errorMessage && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md shadow-sm border border-red-300 flex items-center gap-1"><AlertCircle size={10} /> {errorMessage}</span>}
             </label>
             <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] z-10 ${readOnly ? 'opacity-80 cursor-not-allowed bg-slate-100/50 border-slate-200/50' : `border-slate-200/80 ${inputHoverClass} ${errorClasses}`}`}>
                 {Icon && <div className="absolute left-3 text-slate-400"><Icon size={14} strokeWidth={2.5} /></div>}
@@ -192,41 +191,51 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
     );
 });
 
-// Select de especialidad con fallback a texto libre ("Otra especialidad...").
-// key={education_level} en el caller para que se remonte limpio al cambiar de nivel.
-const SpecialtySelector = ({ value, onChange, options, portalSelectProps, inputHoverClass, hasError }) => {
-    const knownValues = useMemo(() => options.map(o => o.value), [options]);
-    const [isOther, setIsOther] = useState(() => !!value && !knownValues.includes(value));
+// "Otra..." se detecta por dato, no por estado interno: si el valor guardado
+// no está en el catálogo (incluido el propio sentinel OTRA_ESPECIALIDAD
+// mientras no se ha tecleado nada), se considera "otro". Esto permite que el
+// select y el input de texto libre vivan en celdas separadas del grid
+// (el segundo debajo, a ancho completo) sin desincronizarse entre sí.
+const isCatalogOther = (value, options) => value != null && value !== '' && !options.some(o => o.value === value && o.value !== OTRA_ESPECIALIDAD);
 
+// Select con fallback a "Otra..." (solo el select — el input de texto libre
+// se renderiza aparte, en el caller, para poder ubicarlo a ancho completo).
+const CatalogSelect = ({ value, onChange, options, portalSelectProps, inputHoverClass, hasError, placeholder = 'Seleccionar...' }) => {
+    const isOther = isCatalogOther(value, options);
     const selectValue = isOther ? OTRA_ESPECIALIDAD : value;
-
     return (
-        <div className="flex flex-col sm:flex-row gap-2">
-            <div className={`flex-1 rounded-[1rem] h-[40px] ${inputHoverClass} ${hasError && !isOther ? '!border-red-400 !bg-red-50/50' : ''}`}>
-                <LiquidSelect
-                    value={selectValue}
-                    onChange={(val) => {
-                        if (val === OTRA_ESPECIALIDAD) { setIsOther(true); onChange(''); }
-                        else { setIsOther(false); onChange(val); }
-                    }}
-                    options={options}
-                    placeholder="Especialidad..."
-                    clearable={false}
-                    {...portalSelectProps}
-                />
-            </div>
-            {isOther && (
-                <input
-                    type="text"
-                    value={value || ''}
-                    onChange={(e) => onChange(e.target.value.toUpperCase())}
-                    placeholder="Especifica la especialidad"
-                    className={`flex-1 h-[40px] px-4 bg-white border rounded-[1rem] text-[13px] font-bold text-slate-700 outline-none shadow-sm ${inputHoverClass} ${hasError ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}
-                />
-            )}
+        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${hasError && !isOther ? '!border-red-400 !bg-red-50/50' : ''}`}>
+            <LiquidSelect
+                value={selectValue}
+                onChange={(val) => onChange(val)}
+                options={options}
+                placeholder={placeholder}
+                clearable={false}
+                {...portalSelectProps}
+            />
         </div>
     );
 };
+
+// Input de texto libre para cuando se elige "Otra..." — value llega en
+// OTRA_ESPECIALIDAD (sentinel) hasta que el usuario teclea algo real.
+const CatalogOtherInput = ({ value, onChange, inputHoverClass, hasError, placeholder }) => (
+    <input
+        type="text"
+        value={value === OTRA_ESPECIALIDAD ? '' : (value || '')}
+        onChange={(e) => onChange(e.target.value.toUpperCase())}
+        placeholder={placeholder}
+        className={`w-full h-[40px] px-4 bg-white border rounded-[1rem] text-[13px] font-bold text-slate-700 outline-none shadow-sm ${inputHoverClass} ${hasError ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}
+    />
+);
+
+// Especialidades/profesiones viven en education_catalog_entries (no
+// hardcodeadas) — arma las options de un catálogo a partir de los valores
+// traídos de la BD, con "Otra..." siempre al final.
+const buildCatalogOptions = (values, otherLabel) => [
+    ...values.map(v => ({ value: v, label: v })),
+    { value: OTRA_ESPECIALIDAD, label: otherLabel },
+];
 
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL
@@ -253,6 +262,25 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const [localActiveTab, setLocalActiveTab] = useState('personal');
     const activeTab = activeTabProp !== undefined ? activeTabProp : localActiveTab;
     const [hasDraft, setHasDraft] = useState(false);
+
+    // Especialidades/profesiones viven en education_catalog_entries — se
+    // traen una vez al abrir el modal; "Otra..." agrega filas nuevas ahí
+    // (employeeSlice.js) y quedan disponibles como opción real de inmediato.
+    const [educationCatalog, setEducationCatalog] = useState({ BACHILLERATO_TECNICO_ESPECIALIDAD: [], TECNICO_SUPERIOR_ESPECIALIDAD: [], PROFESION_UNIVERSITARIA: [] });
+    useEffect(() => {
+        let cancelled = false;
+        supabase.from('education_catalog_entries').select('category, value').order('value').then(({ data }) => {
+            if (cancelled || !data) return;
+            const grouped = { BACHILLERATO_TECNICO_ESPECIALIDAD: [], TECNICO_SUPERIOR_ESPECIALIDAD: [], PROFESION_UNIVERSITARIA: [] };
+            for (const row of data) { if (grouped[row.category]) grouped[row.category].push(row.value); }
+            setEducationCatalog(grouped);
+        });
+        return () => { cancelled = true; };
+    }, []);
+
+    const bachilleratoTecnicoOptions = useMemo(() => buildCatalogOptions(educationCatalog.BACHILLERATO_TECNICO_ESPECIALIDAD, 'Otra especialidad...'), [educationCatalog]);
+    const tecnicoSuperiorOptions = useMemo(() => buildCatalogOptions(educationCatalog.TECNICO_SUPERIOR_ESPECIALIDAD, 'Otra especialidad...'), [educationCatalog]);
+    const profesionesUniversitariasOptions = useMemo(() => buildCatalogOptions(educationCatalog.PROFESION_UNIVERSITARIA, 'Otra profesión...'), [educationCatalog]);
 
     // Skip draft logic in edit mode
     useEffect(() => {
@@ -405,6 +433,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     newData.study_start_date = '';
                     newData.study_duration_years = '';
                 }
+            }
+            if (name === 'is_studying' && !value) {
+                newData.study_start_date = '';
+                newData.study_duration_years = '';
             }
             return newData;
         });
@@ -822,27 +854,82 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 )}
 
-                                {LEVELS_WITH_SPECIALTY.includes(formData.education_level) && (
-                                    <div className="relative z-20 animate-in fade-in zoom-in-95 duration-200">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
-                                            <span>Especialidad</span>
-                                            {!formData.education_specialty && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
-                                        </label>
-                                        <SpecialtySelector
-                                            key={formData.education_level}
-                                            value={formData.education_specialty}
-                                            onChange={(val) => handleSelectChange('education_specialty', val)}
-                                            options={formData.education_level === 'BACHILLERATO_TECNICO' ? BACHILLERATO_TECNICO_ESPECIALIDADES : TECNICO_SUPERIOR_ESPECIALIDADES}
-                                            portalSelectProps={portalSelectProps}
-                                            inputHoverClass={inputHoverClass}
-                                            hasError={!formData.education_specialty}
-                                        />
-                                    </div>
-                                )}
+                                {LEVELS_WITH_SPECIALTY.includes(formData.education_level) && (() => {
+                                    const specialtyOptions = formData.education_level === 'BACHILLERATO_TECNICO' ? bachilleratoTecnicoOptions : tecnicoSuperiorOptions;
+                                    const isOtherSpecialty = isCatalogOther(formData.education_specialty, specialtyOptions);
+                                    return (
+                                        <>
+                                            <div className="relative z-20 animate-in fade-in zoom-in-95 duration-200">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                                    <span>Especialidad</span>
+                                                    {!formData.education_specialty && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
+                                                </label>
+                                                <CatalogSelect
+                                                    value={formData.education_specialty}
+                                                    onChange={(val) => handleSelectChange('education_specialty', val)}
+                                                    options={specialtyOptions}
+                                                    portalSelectProps={portalSelectProps}
+                                                    inputHoverClass={inputHoverClass}
+                                                    hasError={!formData.education_specialty}
+                                                    placeholder="Especialidad..."
+                                                />
+                                            </div>
+                                            {isOtherSpecialty && (
+                                                <div className="md:col-span-2 animate-in fade-in zoom-in-95 duration-200">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                                        <span>Especifica la Especialidad</span>
+                                                        {formData.education_specialty === OTRA_ESPECIALIDAD && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
+                                                    </label>
+                                                    <CatalogOtherInput
+                                                        value={formData.education_specialty}
+                                                        onChange={(val) => handleSelectChange('education_specialty', val)}
+                                                        inputHoverClass={inputHoverClass}
+                                                        hasError={formData.education_specialty === OTRA_ESPECIALIDAD}
+                                                        placeholder="Especifica la especialidad"
+                                                    />
+                                                </div>
+                                            )}
+                                        </>
+                                    );
+                                })()}
 
-                                {LEVELS_WITH_PROFESSION.includes(formData.education_level) && (
-                                    <PortalInput label="Profesión / Título" name="profession" value={formData.profession} onChange={handleChange} icon={BookOpen} placeholder="Ej. Lic. en Farmacia" required colSpan={2} />
-                                )}
+                                {LEVELS_WITH_PROFESSION.includes(formData.education_level) && (() => {
+                                    const isOtherProfession = isCatalogOther(formData.profession, profesionesUniversitariasOptions);
+                                    return (
+                                        <>
+                                            <div className="relative z-20 md:col-span-2 animate-in fade-in zoom-in-95 duration-200">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                                    <span>Profesión / Título</span>
+                                                    {!formData.profession && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
+                                                </label>
+                                                <CatalogSelect
+                                                    value={formData.profession}
+                                                    onChange={(val) => handleSelectChange('profession', val)}
+                                                    options={profesionesUniversitariasOptions}
+                                                    portalSelectProps={portalSelectProps}
+                                                    inputHoverClass={inputHoverClass}
+                                                    hasError={!formData.profession}
+                                                    placeholder="Profesión / Título..."
+                                                />
+                                            </div>
+                                            {isOtherProfession && (
+                                                <div className="md:col-span-2 animate-in fade-in zoom-in-95 duration-200">
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                                        <span>Especifica la Profesión / Título</span>
+                                                        {formData.profession === OTRA_ESPECIALIDAD && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
+                                                    </label>
+                                                    <CatalogOtherInput
+                                                        value={formData.profession}
+                                                        onChange={(val) => handleSelectChange('profession', val)}
+                                                        inputHoverClass={inputHoverClass}
+                                                        hasError={formData.profession === OTRA_ESPECIALIDAD}
+                                                        placeholder="Ej. Lic. en Farmacia"
+                                                    />
+                                                </div>
+                                            )}
+                                        </>
+                                    );
+                                })()}
 
                                 {(LEVELS_WITH_STUDY_TOGGLE.includes(formData.education_level) || formData.education_level === 'UNIVERSITARIO_E') && (
                                     <div className="md:col-span-2 bg-indigo-50/40 rounded-[1.25rem] p-3.5 border border-indigo-100/60 animate-in fade-in zoom-in-95 duration-200">
@@ -869,7 +956,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         <LiquidSelect value={formData.study_start_date ? formData.study_start_date.split('-')[0] : ''} onChange={(val) => handleStudyDateChange('year', val)} options={YEAR_OPTIONS} placeholder="Año..." compact clearable={false} {...portalSelectProps} />
                                                     </div>
                                                 </div>
-                                                <PortalInput label="Duración (años)" name="study_duration_years" value={formData.study_duration_years} onChange={handleChange} type="number" placeholder="Ej. 2.5" hasError={studyEndInPast} errorMessage="Revisa fechas" />
+                                                <PortalInput label="Duración (años)" name="study_duration_years" value={formData.study_duration_years} onChange={handleChange} type="number" placeholder="Ej. 2.5" hasError={studyEndInPast} />
                                             </div>
                                         )}
                                         {estimatedStudyEnd && (

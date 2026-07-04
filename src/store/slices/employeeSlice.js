@@ -1,6 +1,34 @@
 import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS, persistEmployees } from '../utils';
 import { getSignedFileUrl } from '../../utils/storageFiles';
+import { OTRA_ESPECIALIDAD } from '../../utils/educationCatalogs';
+
+// education_specialty/profession son selects de catálogo con fallback a
+// texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
+// tecleó nada — se trata como vacío. Nunca se fuerza mayúscula aquí: el
+// texto libre ya llega en mayúscula desde el modal (CatalogOtherInput), y
+// los valores de catálogo deben conservar su capitalización original.
+const normalizeCatalogValue = (val) => {
+    if (!val || val === OTRA_ESPECIALIDAD) return null;
+    return val.trim();
+};
+
+// Registra el valor final en education_catalog_entries (upsert, ignora
+// duplicados) para que quede disponible como opción real en el próximo
+// registro — sin importar si ya existía o se acaba de escribir en "Otra...".
+const registerCatalogEntry = (educationLevel, specialty, profession) => {
+    const rows = [];
+    if (specialty) {
+        if (educationLevel === 'BACHILLERATO_TECNICO') rows.push({ category: 'BACHILLERATO_TECNICO_ESPECIALIDAD', value: specialty });
+        else if (educationLevel === 'TECNICO_SUPERIOR') rows.push({ category: 'TECNICO_SUPERIOR_ESPECIALIDAD', value: specialty });
+    }
+    if (profession && ['UNIVERSITARIO_E', 'UNIVERSITARIO_G', 'MAESTRIA'].includes(educationLevel)) {
+        rows.push({ category: 'PROFESION_UNIVERSITARIA', value: profession });
+    }
+    if (!rows.length) return;
+    supabase.from('education_catalog_entries').upsert(rows, { onConflict: 'category,value', ignoreDuplicates: true })
+        .then(({ error }) => { if (error) console.warn('No se pudo registrar entrada de catálogo educativo:', error.message); });
+};
 
 // 🚨 COMPRESOR DE IMÁGENES NATIVO (Actualizado para mantener fondos transparentes)
 const compressImage = (file, maxWidth = 400) => {
@@ -279,9 +307,9 @@ export const createEmployeeSlice = (set, get) => ({
                 department: formData.department || null,
                 municipality: formData.municipality || null,
                 education_level: formData.education_level || null,
-                profession: formData.profession ? formData.profession.trim().toUpperCase() : null,
+                profession: normalizeCatalogValue(formData.profession),
                 education_grade_completed: formData.education_grade_completed || null,
-                education_specialty: formData.education_specialty ? formData.education_specialty.trim().toUpperCase() : null,
+                education_specialty: normalizeCatalogValue(formData.education_specialty),
                 is_studying: !!formData.is_studying,
                 study_start_date: formData.is_studying ? (formData.study_start_date || null) : null,
                 study_duration_years: formData.is_studying && formData.study_duration_years ? parseFloat(formData.study_duration_years) : null,
@@ -318,6 +346,7 @@ export const createEmployeeSlice = (set, get) => ({
                 console.error('Supabase INSERT error:', error.message, error.details, error.hint);
                 throw error;
             }
+            registerCatalogEntry(dbPayload.education_level, dbPayload.education_specialty, dbPayload.profession);
 
             const uploadedFile = formData.file || formData.photo;
             if (uploadedFile && uploadedFile instanceof File) {
@@ -449,9 +478,9 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.first_names) dbPayload.first_names = updatedData.first_names.trim().toUpperCase();
             if (updatedData.last_names) dbPayload.last_names = updatedData.last_names.trim().toUpperCase();
             if (updatedData.address !== undefined) dbPayload.address = updatedData.address ? updatedData.address.trim().toUpperCase() : null;
-            if (updatedData.profession !== undefined) dbPayload.profession = updatedData.profession ? updatedData.profession.trim().toUpperCase() : null;
+            if (updatedData.profession !== undefined) dbPayload.profession = normalizeCatalogValue(updatedData.profession);
             if (updatedData.emergency_contact_name !== undefined) dbPayload.emergency_contact_name = updatedData.emergency_contact_name ? updatedData.emergency_contact_name.trim().toUpperCase() : null;
-            if (updatedData.education_specialty !== undefined) dbPayload.education_specialty = updatedData.education_specialty ? updatedData.education_specialty.trim().toUpperCase() : null;
+            if (updatedData.education_specialty !== undefined) dbPayload.education_specialty = normalizeCatalogValue(updatedData.education_specialty);
             if (updatedData.weekly_contracted_hours) dbPayload.weekly_contracted_hours = parseInt(updatedData.weekly_contracted_hours, 10);
             if (updatedData.base_salary) dbPayload.base_salary = parseFloat(updatedData.base_salary);
 
@@ -512,6 +541,9 @@ export const createEmployeeSlice = (set, get) => ({
 
             const { data: updated, error } = await supabase.from("employees").update(dbPayload).eq("id", id).select().single();
             if (error) throw error;
+            if (dbPayload.education_specialty !== undefined || dbPayload.profession !== undefined) {
+                registerCatalogEntry(dbPayload.education_level ?? updated.education_level, dbPayload.education_specialty, dbPayload.profession);
+            }
 
             // Sync branch assignments to junction table if provided
             if (newAssignedBranches !== null) {

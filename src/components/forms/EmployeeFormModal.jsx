@@ -40,6 +40,23 @@ const YEAR_OPTIONS = Array.from({ length: 12 }, (_, i) => CURRENT_YEAR + 1 - i).
 
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email || '');
 
+// Numeración de El Salvador: 8 dígitos, celular inicia en 6/7, fijo en 2.
+// (No valida contra un rango exacto por operador — solo el primer dígito.)
+const isValidSVPhone = (phone) => {
+    const digits = (phone || '').replace(/\D/g, '');
+    if (digits.length !== 8) return false;
+    return /^[267]/.test(digits);
+};
+
+// Nombres/Apellidos: solo letras (con acentos/Ñ), espacios, guiones y apóstrofes;
+// mínimo 2 caracteres. Cubre "apellido de casada" (ej. "Pérez de García") sin
+// necesitar un campo aparte — es texto libre normal.
+const isValidPersonName = (val) => {
+    const v = (val || '').trim();
+    if (v.length < 2) return false;
+    return /^[A-Za-zÀ-ÖØ-öø-ÿÑñ'’\-\s.]+$/.test(v);
+};
+
 const AFP_OPTIONS = [
     { value: 'CRECER', label: 'AFP Crecer' },
     { value: 'CONFIA', label: 'AFP Confía' },
@@ -257,7 +274,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     useEffect(() => {
         if (!formData?.code) { 
             setFormData(prev => ({
-                first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', address: '', dui: '', birth_date: '',
+                first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', address: '', extra_addresses: [], dui: '', birth_date: '',
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',
                 department: '', municipality: '', education_level: '', profession: '',
                 education_grade_completed: '', education_specialty: '', is_studying: false,
@@ -403,6 +420,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     });
     const removePhone = (idx) => setFormData(prev => ({ ...prev, extra_phones: (prev.extra_phones || []).filter((_, i) => i !== idx) }));
 
+    const addAddress = () => setFormData(prev => ({ ...prev, extra_addresses: [...(prev.extra_addresses || []), ''] }));
+    const updateAddress = (idx, value) => setFormData(prev => {
+        const arr = [...(prev.extra_addresses || [])]; arr[idx] = value; return { ...prev, extra_addresses: arr };
+    });
+    const removeAddress = (idx) => setFormData(prev => ({ ...prev, extra_addresses: (prev.extra_addresses || []).filter((_, i) => i !== idx) }));
+
     const handleDateChange = (name, dateString) => setFormData(prev => ({ ...prev, [name]: dateString }));
 
     const handlePhotoUpload = (e) => {
@@ -441,11 +464,19 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     // Avisos de longitud para campos opcionales con formato fijo
     const digitsLen = (v) => (v || '').replace(/\D/g, '').length;
-    const phoneIncomplete = !!formData?.phone && digitsLen(formData.phone) < 8;
-    const emergPhoneIncomplete = !!formData?.emergency_contact_phone && digitsLen(formData.emergency_contact_phone) < 8;
+    const phoneIncomplete = !!formData?.phone && digitsLen(formData.phone) > 0 && digitsLen(formData.phone) < 8;
+    const phoneBadPrefix   = !!formData?.phone && digitsLen(formData.phone) === 8 && !isValidSVPhone(formData.phone);
+    const phoneHasError    = phoneIncomplete || phoneBadPrefix;
+    const phoneErrorMsg    = phoneIncomplete ? 'Incompleto' : phoneBadPrefix ? 'Debe iniciar en 2, 6 o 7' : null;
+    const emergPhoneIncomplete = !!formData?.emergency_contact_phone && digitsLen(formData.emergency_contact_phone) > 0 && digitsLen(formData.emergency_contact_phone) < 8;
+    const emergPhoneBadPrefix  = !!formData?.emergency_contact_phone && digitsLen(formData.emergency_contact_phone) === 8 && !isValidSVPhone(formData.emergency_contact_phone);
+    const emergPhoneHasError   = emergPhoneIncomplete || emergPhoneBadPrefix;
+    const emergPhoneErrorMsg  = emergPhoneIncomplete ? 'Incompleto' : emergPhoneBadPrefix ? 'Debe iniciar en 2, 6 o 7' : null;
     const isssIncomplete = !!formData?.isss_number && formData.isss_number.length !== 9;
     const afpIncomplete = !!formData?.afp_number && formData.afp_number.length !== 12;
     const emailInvalid = !!formData?.email && !isValidEmail(formData.email);
+    const firstNamesInvalid = !!formData?.first_names && !isValidPersonName(formData.first_names);
+    const lastNamesInvalid  = !!formData?.last_names && !isValidPersonName(formData.last_names);
 
     let duiErrorMsg = null;
     if (isDuiDuplicate) duiErrorMsg = "DUI Ya Registrado";
@@ -579,8 +610,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <PortalInput label="Nombres" name="first_names" value={formData.first_names} onChange={handleChange} required />
-                                <PortalInput label="Apellidos" name="last_names" value={formData.last_names} onChange={handleChange} required />
+                                <PortalInput label="Nombres" name="first_names" value={formData.first_names} onChange={handleChange} required hasError={firstNamesInvalid} errorMessage="Solo letras" />
+                                <PortalInput label="Apellidos" name="last_names" value={formData.last_names} onChange={handleChange} required hasError={lastNamesInvalid} errorMessage="Solo letras" />
                                 <PortalInput label="DUI" name="dui" value={formData.dui} onChange={handleChange} icon={Fingerprint} placeholder="00000000-0" maskType="DUI" hasError={isDuiInvalid || isDuiDuplicate || isDuiIncomplete} errorMessage={duiErrorMsg} />
 
                                 <div className="relative z-30">
@@ -592,12 +623,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 <div>
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
-                                        <span>Teléfono {phoneIncomplete && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md ml-1">Incompleto</span>}</span>
+                                        <span>Teléfono {phoneHasError && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md ml-1">{phoneErrorMsg}</span>}</span>
                                         <button type="button" onClick={addPhone} className="text-[#0052CC] hover:text-blue-700 flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors">
                                             <Plus size={11} strokeWidth={3} /> Agregar
                                         </button>
                                     </label>
-                                    <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] z-10 border-slate-200/80 ${inputHoverClass} ${phoneIncomplete ? '!border-red-400 !bg-red-50/50' : ''}`}>
+                                    <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] z-10 border-slate-200/80 ${inputHoverClass} ${phoneHasError ? '!border-red-400 !bg-red-50/50' : ''}`}>
                                         <div className="absolute left-3 text-slate-400"><Phone size={14} strokeWidth={2.5} /></div>
                                         <input type="tel" name="phone" value={formData.phone || ''}
                                             onChange={(e) => { e.target.value = applyMask(e.target.value, 'PHONE'); handleChange(e); }}
@@ -610,32 +641,42 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 {(formData.extra_phones || []).length > 0 && (
                                     <div className="md:col-span-2 flex flex-col gap-2">
-                                        {(formData.extra_phones || []).map((ph, idx) => (
-                                            <div key={idx} className="flex items-center gap-2">
-                                                <div className={`relative flex-1 bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
-                                                    <div className="absolute left-3 text-slate-400"><Phone size={14} strokeWidth={2.5} /></div>
-                                                    <input type="tel" value={ph} onChange={(e) => updatePhone(idx, e.target.value)} placeholder="0000-0000"
-                                                        className="w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none pl-9 pr-4" />
+                                        {(formData.extra_phones || []).map((ph, idx) => {
+                                            const dLen = digitsLen(ph);
+                                            const phErr = !!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph));
+                                            return (
+                                                <div key={idx} className="flex items-center gap-2">
+                                                    <div className={`relative flex-1 bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}>
+                                                        <div className="absolute left-3 text-slate-400"><Phone size={14} strokeWidth={2.5} /></div>
+                                                        <input type="tel" value={ph} onChange={(e) => updatePhone(idx, e.target.value)} placeholder="0000-0000"
+                                                            className="w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none pl-9 pr-4" />
+                                                    </div>
+                                                    <button type="button" onClick={() => removePhone(idx)} title="Quitar teléfono"
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                        <X size={14} strokeWidth={2.5} />
+                                                    </button>
                                                 </div>
-                                                <button type="button" onClick={() => removePhone(idx)} title="Quitar teléfono"
-                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
-                                                    <X size={14} strokeWidth={2.5} />
-                                                </button>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
 
                                 <div className="relative z-20">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Género</label>
-                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                        <span>Género</span>
+                                        {!formData.gender && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
+                                    </label>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.gender ? '!border-red-400 !bg-red-50/50' : ''}`}>
                                         <LiquidSelect value={formData.gender} onChange={(val) => handleSelectChange('gender', val)} options={GENDER_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
                                 <div className="relative z-20">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Estado Civil</label>
-                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.marital_status} onChange={(val) => handleSelectChange('marital_status', val)} options={MARITAL_STATUS_OPTIONS} placeholder="Opcional..." clearLabel="Ninguno" {...portalSelectProps} />
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                        <span>Estado Civil</span>
+                                        {!formData.marital_status && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
+                                    </label>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.marital_status ? '!border-red-400 !bg-red-50/50' : ''}`}>
+                                        <LiquidSelect value={formData.marital_status} onChange={(val) => handleSelectChange('marital_status', val)} options={MARITAL_STATUS_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
                             </div>
@@ -643,19 +684,47 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <PortalInput label="Dirección Detallada" name="address" value={formData.address} onChange={handleChange} icon={MapPin} placeholder="Colonia, Calle, Número de Casa..." colSpan={2} />
+
+                                <div className="md:col-span-2 -mt-2">
+                                    <button type="button" onClick={addAddress} className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-[#0052CC] hover:text-blue-700 transition-colors">
+                                        <Plus size={11} strokeWidth={3} /> Agregar Dirección Alterna
+                                    </button>
+                                </div>
+
+                                {(formData.extra_addresses || []).length > 0 && (
+                                    <div className="md:col-span-2 flex flex-col gap-2">
+                                        {(formData.extra_addresses || []).map((addr, idx) => (
+                                            <div key={idx}>
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1 mb-1 block">Dirección Alterna {idx + 1}</label>
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`relative flex-1 bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
+                                                        <div className="absolute left-3 text-slate-400"><MapPin size={14} strokeWidth={2.5} /></div>
+                                                        <input type="text" value={addr} onChange={(e) => updateAddress(idx, e.target.value)} placeholder="Colonia, Calle, Número de Casa..."
+                                                            className="w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none pl-9 pr-4" />
+                                                    </div>
+                                                    <button type="button" onClick={() => removeAddress(idx)} title="Quitar dirección"
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                        <X size={14} strokeWidth={2.5} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
                                 <div className="relative z-20">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Departamento</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.department} onChange={(val) => handleSelectChange('department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearLabel="Ninguno" {...portalSelectProps} />
+                                        <LiquidSelect value={formData.department} onChange={(val) => handleSelectChange('department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
                                 <div className="relative z-10">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Municipio / Distrito</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Distrito...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearLabel="Ninguno" {...portalSelectProps} />
+                                        <LiquidSelect value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Distrito...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
-                                <PortalInput label="Dirección Detallada" name="address" value={formData.address} onChange={handleChange} icon={MapPin} placeholder="Colonia, Calle, Número de Casa..." colSpan={2} />
                             </div>
                         </div>
 
@@ -768,7 +837,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <PortalInput label="Avisar a (Nombre)" name="emergency_contact_name" value={formData.emergency_contact_name} onChange={handleChange} placeholder="Familiar o Pareja" />
-                                    <PortalInput label="Teléfono de Emergencia" name="emergency_contact_phone" value={formData.emergency_contact_phone} onChange={handleChange} placeholder="0000-0000" maskType="PHONE" hasError={emergPhoneIncomplete} errorMessage="Incompleto" />
+                                    <PortalInput label="Teléfono de Emergencia" name="emergency_contact_phone" value={formData.emergency_contact_phone} onChange={handleChange} placeholder="0000-0000" maskType="PHONE" hasError={emergPhoneHasError} errorMessage={emergPhoneErrorMsg} />
                                 </div>
                             </div>
                         </div>

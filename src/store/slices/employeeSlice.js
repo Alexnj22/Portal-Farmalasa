@@ -87,6 +87,37 @@ const validateOptionalFormats = (data) => {
     if (data.email && String(data.email).trim() !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(data.email.trim())) {
         throw new Error('El Correo Electrónico no tiene un formato válido. Corrígelo, o bórralo para guardarlo como pendiente.');
     }
+
+    // Numeración de El Salvador: 8 dígitos, celular inicia en 6/7, fijo en 2.
+    const svPhoneChecks = [['phone', 'El Teléfono'], ['emergency_contact_phone', 'El Teléfono de Emergencia']];
+    for (const [field, label] of svPhoneChecks) {
+        const val = data[field];
+        if (val === undefined || val === null || String(val).trim() === '') continue;
+        const cleanDigits = digitsLen(val);
+        if (cleanDigits === 8 && !/^[267]/.test(String(val).replace(/\D/g, ''))) {
+            throw new Error(`${label} no es un número válido de El Salvador (debe iniciar en 2, 6 o 7).`);
+        }
+    }
+    if (Array.isArray(data.extra_phones)) {
+        for (const p of data.extra_phones) {
+            if (!p || !String(p).trim()) continue;
+            const cleanDigits = digitsLen(p);
+            if (cleanDigits !== 8 || !/^[267]/.test(String(p).replace(/\D/g, ''))) {
+                throw new Error('Uno de los teléfonos adicionales no es un número válido de El Salvador (8 dígitos, inicia en 2, 6 o 7).');
+            }
+        }
+    }
+
+    const namePattern = /^[A-Za-zÀ-ÖØ-öø-ÿÑñ'’\-\s.]+$/;
+    const nameChecks = [['first_names', 'Los Nombres'], ['last_names', 'Los Apellidos']];
+    for (const [field, label] of nameChecks) {
+        const val = data[field];
+        if (val === undefined || val === null || String(val).trim() === '') continue;
+        const v = String(val).trim();
+        if (v.length < 2 || !namePattern.test(v)) {
+            throw new Error(`${label} solo pueden contener letras (mínimo 2 caracteres).`);
+        }
+    }
 };
 
 // Valida el límite de headcount (max_limit) del cargo antes de asignarlo.
@@ -219,6 +250,7 @@ export const createEmployeeSlice = (set, get) => ({
                 study_duration_years: formData.is_studying && formData.study_duration_years ? parseFloat(formData.study_duration_years) : null,
                 additional_skills: Array.isArray(formData.additional_skills) ? formData.additional_skills.map(s => (s || '').trim()).filter(Boolean) : [],
                 extra_phones: Array.isArray(formData.extra_phones) ? formData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [],
+                extra_addresses: Array.isArray(formData.extra_addresses) ? formData.extra_addresses.map(a => (a || '').trim()).filter(Boolean) : [],
 
                 email: formData.email || null,
                 emergency_contact_name: formData.emergency_contact_name || null,
@@ -392,6 +424,9 @@ export const createEmployeeSlice = (set, get) => ({
             }
             if (updatedData.extra_phones !== undefined) {
                 dbPayload.extra_phones = Array.isArray(updatedData.extra_phones) ? updatedData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [];
+            }
+            if (updatedData.extra_addresses !== undefined) {
+                dbPayload.extra_addresses = Array.isArray(updatedData.extra_addresses) ? updatedData.extra_addresses.map(a => (a || '').trim()).filter(Boolean) : [];
             }
             if (updatedData.afp_institution !== undefined) dbPayload.afp_institution = updatedData.afp_institution || null;
             if (updatedData.account_type !== undefined) dbPayload.account_type = updatedData.account_type || 'AHORRO';

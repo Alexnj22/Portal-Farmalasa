@@ -166,7 +166,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const getModalSubtitle = () => {
         if (type === "manageKiosks") return formData?.name;
         if (type === "planSchedule") return `${formData?.employee?.name} • ${formData?.employee?.role}`;
-        if (type === "newEmployee") return "Nueva ficha de empleado";
+        if (type === "newEmployee") return null;
         if (type === "editEmployee") return formData?.name?.toUpperCase() || "EMPLEADO";
         if (type === "rehireEmployee") return formData?.name?.toUpperCase() || "EMPLEADO";
         if (type === "vacationRecall") return formData?.employee?.name?.toUpperCase() || "EMPLEADO";
@@ -714,7 +714,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
                                         {getModalTitle()}
                                     </h3>
-                                    <p className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">{getModalSubtitle()}</p>
+                                    {getModalSubtitle() && (
+                                        <p className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">{getModalSubtitle()}</p>
+                                    )}
                                 </div>
                             </div>
                             <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/60 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-[0.97] shrink-0 hover:scale-105">

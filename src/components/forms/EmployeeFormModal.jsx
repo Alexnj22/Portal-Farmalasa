@@ -425,9 +425,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     });
     const removePhone = (idx) => setFormData(prev => ({ ...prev, extra_phones: (prev.extra_phones || []).filter((_, i) => i !== idx) }));
 
-    const addAddress = () => setFormData(prev => ({ ...prev, extra_addresses: [...(prev.extra_addresses || []), ''] }));
-    const updateAddress = (idx, value) => setFormData(prev => {
-        const arr = [...(prev.extra_addresses || [])]; arr[idx] = value.toUpperCase(); return { ...prev, extra_addresses: arr };
+    const addAddress = () => setFormData(prev => ({ ...prev, extra_addresses: [...(prev.extra_addresses || []), { department: '', municipality: '', address: '' }] }));
+    const updateAddress = (idx, field, value) => setFormData(prev => {
+        const arr = [...(prev.extra_addresses || [])];
+        const entry = { ...(arr[idx] || {}) };
+        entry[field] = field === 'address' ? value.toUpperCase() : value;
+        if (field === 'department') entry.municipality = '';
+        arr[idx] = entry;
+        return { ...prev, extra_addresses: arr };
     });
     const removeAddress = (idx) => setFormData(prev => ({ ...prev, extra_addresses: (prev.extra_addresses || []).filter((_, i) => i !== idx) }));
 
@@ -689,6 +694,19 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="relative z-20">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Departamento</label>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                        <LiquidSelect value={formData.department} onChange={(val) => handleSelectChange('department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
+                                    </div>
+                                </div>
+                                <div className="relative z-10">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Distrito</label>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                        <LiquidSelect value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Distrito...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
+                                    </div>
+                                </div>
+
                                 <PortalInput label="Dirección Detallada" name="address" value={formData.address} onChange={handleChange} icon={MapPin} placeholder="Colonia, Calle, Número de Casa..." colSpan={2} />
 
                                 <div className="md:col-span-2 -mt-2">
@@ -698,38 +716,47 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
 
                                 {(formData.extra_addresses || []).length > 0 && (
-                                    <div className="md:col-span-2 flex flex-col gap-2">
-                                        {(formData.extra_addresses || []).map((addr, idx) => (
-                                            <div key={idx}>
-                                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1 mb-1 block">Dirección Alterna {idx + 1}</label>
-                                                <div className="flex items-center gap-2">
-                                                    <div className={`relative flex-1 bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
-                                                        <div className="absolute left-3 text-slate-400"><MapPin size={14} strokeWidth={2.5} /></div>
-                                                        <input type="text" value={addr} onChange={(e) => updateAddress(idx, e.target.value)} placeholder="Colonia, Calle, Número de Casa..."
-                                                            className="w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none pl-9 pr-4" />
+                                    <div className="md:col-span-2 flex flex-col gap-3">
+                                        {(formData.extra_addresses || []).map((addr, idx) => {
+                                            const altMunicipioOpts = addr.department && EL_SALVADOR_GEO[addr.department]
+                                                ? EL_SALVADOR_GEO[addr.department].map(m => ({ value: m, label: m }))
+                                                : [];
+                                            return (
+                                                <div key={idx} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Dirección Alterna {idx + 1}</span>
+                                                        <button type="button" onClick={() => removeAddress(idx)} title="Quitar dirección"
+                                                            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                            <X size={13} strokeWidth={2.5} />
+                                                        </button>
                                                     </div>
-                                                    <button type="button" onClick={() => removeAddress(idx)} title="Quitar dirección"
-                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
-                                                        <X size={14} strokeWidth={2.5} />
-                                                    </button>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Departamento</label>
+                                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                                                <LiquidSelect value={addr.department} onChange={(val) => updateAddress(idx, 'department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Distrito</label>
+                                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                                                <LiquidSelect value={addr.municipality} onChange={(val) => updateAddress(idx, 'municipality', val)} options={altMunicipioOpts} placeholder={addr.department ? 'Distrito...' : 'Elija Depto.'} disabled={!addr.department} icon={Navigation} clearable={false} {...portalSelectProps} />
+                                                            </div>
+                                                        </div>
+                                                        <div className="md:col-span-2">
+                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Dirección Detallada</label>
+                                                            <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
+                                                                <div className="absolute left-3 text-slate-400"><MapPin size={14} strokeWidth={2.5} /></div>
+                                                                <input type="text" value={addr.address || ''} onChange={(e) => updateAddress(idx, 'address', e.target.value)} placeholder="Colonia, Calle, Número de Casa..."
+                                                                    className="w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none pl-9 pr-4" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
-
-                                <div className="relative z-20">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Departamento</label>
-                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.department} onChange={(val) => handleSelectChange('department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
-                                    </div>
-                                </div>
-                                <div className="relative z-10">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Municipio / Distrito</label>
-                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Distrito...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
-                                    </div>
-                                </div>
                             </div>
                         </div>
 

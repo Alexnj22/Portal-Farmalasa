@@ -40,6 +40,20 @@ const compressImage = (file, maxWidth = 400) => {
     });
 };
 
+// Direcciones alternas: cada una es {department, municipality, address}
+// completa (no solo texto libre) — se descartan las filas vacías (agregadas
+// con el botón "+" pero nunca llenadas antes de guardar).
+const normalizeExtraAddresses = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    return arr
+        .map(a => ({
+            department: (a?.department || '').trim(),
+            municipality: (a?.municipality || '').trim(),
+            address: (a?.address || '').trim().toUpperCase(),
+        }))
+        .filter(a => a.department || a.municipality || a.address);
+};
+
 // DUI salvadoreño: formato 00000000-0 + dígito verificador (suma ponderada 9..2
 // mod 10). Mismo algoritmo que isValidDUIAlgorithm en EmployeeFormModal — aquí
 // BLOQUEA el guardado (el modal solo lo señala visualmente).
@@ -250,7 +264,7 @@ export const createEmployeeSlice = (set, get) => ({
                 study_duration_years: formData.is_studying && formData.study_duration_years ? parseFloat(formData.study_duration_years) : null,
                 additional_skills: Array.isArray(formData.additional_skills) ? formData.additional_skills.map(s => (s || '').trim().toUpperCase()).filter(Boolean) : [],
                 extra_phones: Array.isArray(formData.extra_phones) ? formData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [],
-                extra_addresses: Array.isArray(formData.extra_addresses) ? formData.extra_addresses.map(a => (a || '').trim().toUpperCase()).filter(Boolean) : [],
+                extra_addresses: normalizeExtraAddresses(formData.extra_addresses),
 
                 email: formData.email || null,
                 emergency_contact_name: formData.emergency_contact_name ? formData.emergency_contact_name.trim().toUpperCase() : null,
@@ -432,7 +446,7 @@ export const createEmployeeSlice = (set, get) => ({
                 dbPayload.extra_phones = Array.isArray(updatedData.extra_phones) ? updatedData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [];
             }
             if (updatedData.extra_addresses !== undefined) {
-                dbPayload.extra_addresses = Array.isArray(updatedData.extra_addresses) ? updatedData.extra_addresses.map(a => (a || '').trim().toUpperCase()).filter(Boolean) : [];
+                dbPayload.extra_addresses = normalizeExtraAddresses(updatedData.extra_addresses);
             }
             if (updatedData.afp_institution !== undefined) dbPayload.afp_institution = updatedData.afp_institution || null;
             if (updatedData.account_type !== undefined) dbPayload.account_type = updatedData.account_type || 'AHORRO';

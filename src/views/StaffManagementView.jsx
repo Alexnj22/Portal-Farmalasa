@@ -8,6 +8,7 @@ import {
   ChevronRight,
   MapPin,
   Building2,
+  ShieldCheck,
   X,
   Trash2,
   Hash,
@@ -37,12 +38,28 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import { getEffectiveStatus } from '../utils/helpers';
 import { getRoleTheme } from '../utils/scheduleHelpers';
 import LiquidAvatar from '../components/common/LiquidAvatar';
-import StatCard from '../components/common/StatCard';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
 import { smartFilter } from '../utils/searchUtils';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
+
+// Código de empleado es numérico crudo (ej. "201") — si se mezcla con nombre/rol/
+// sucursal en un solo texto para el match por tokens, un dígito suelto como "2" hace
+// falso-positivo con cualquier código que lo contenga (ej. "201" al buscar "salud 2").
+// Por eso el código se prueba aparte, solo como fallback si no hay match por nombre/rol/sucursal.
+const searchEmployees = (query, list, branchMap) => {
+    const byNameRoleBranch = smartFilter(query, list, emp =>
+        [emp?.name, emp?.role, branchMap.get(Number(emp?.branchId || emp?.branch_id))]);
+    if (byNameRoleBranch.results.length) return byNameRoleBranch;
+
+    const normalizedCode = query.replace(/\D/g, '');
+    if (normalizedCode) {
+        const byCode = list.filter(emp => String(emp?.code || '').includes(normalizedCode));
+        if (byCode.length) return { results: byCode, isFuzzy: false };
+    }
+    return byNameRoleBranch;
+};
 
 const formatShortName = (fullName) => {
   if (!fullName) return 'Personal';
@@ -335,6 +352,35 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
   );
 });
 
+const STAT_CARD_COLORS = {
+  blue:    { activeBg: 'bg-blue-50 border-blue-300 shadow-md shadow-blue-100/80 -translate-y-px',       inactiveBg: 'bg-white border-slate-100 hover:border-blue-200 hover:bg-blue-50/40',       iconBg: 'bg-blue-50',    iconColor: 'text-[#0052CC]',  textColor: 'text-slate-700'   },
+  emerald: { activeBg: 'bg-emerald-50 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px', inactiveBg: 'bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', textColor: 'text-emerald-600' },
+  cyan:    { activeBg: 'bg-cyan-50 border-cyan-300 shadow-md shadow-cyan-100/80 -translate-y-px',       inactiveBg: 'bg-white border-slate-100 hover:border-cyan-200 hover:bg-cyan-50/40',       iconBg: 'bg-cyan-50',    iconColor: 'text-cyan-600',   textColor: 'text-cyan-600'    },
+  amber:   { activeBg: 'bg-amber-50 border-amber-300 shadow-md shadow-amber-100/80 -translate-y-px',     inactiveBg: 'bg-white border-slate-100 hover:border-amber-200 hover:bg-amber-50/40',     iconBg: 'bg-amber-50',   iconColor: 'text-amber-600',  textColor: 'text-amber-600'   },
+};
+
+function StaffStatCard({ icon: Icon, label, value, active, onClick, color, loading }) {
+  const c = STAT_CARD_COLORS[color];
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] disabled:opacity-40 ${active ? c.activeBg : c.inactiveBg}`}
+    >
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? 'bg-white' : c.iconBg}`}>
+        <Icon size={15} strokeWidth={1.5} className={c.iconColor} />
+      </div>
+      <div className="text-left">
+        <div className={`text-[22px] font-black leading-none tabular-nums ${c.textColor}`}>
+          {loading ? <span className="text-slate-200">–</span> : value.toLocaleString()}
+        </div>
+        <div className="text-[10px] font-bold text-slate-600">{label}</div>
+      </div>
+      {active && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
+    </button>
+  );
+}
+
 const StaffManagementView = ({
   setActiveEmployee,
   openModal,
@@ -352,19 +398,13 @@ const StaffManagementView = ({
   const [sortConfig, setSortConfig] = useState({ key: 'default', direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [activeStatFilter, setActiveStatFilter] = useState('ALL');
 
-  const searchInputRef = useRef(null);
   const normalizedSearch = (searchTerm || '').trim();
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [normalizedSearch, selectedBranch, itemsPerPage]);
-
-  useEffect(() => {
-    if (isSearchActive && searchInputRef.current) {
-        setTimeout(() => searchInputRef.current.focus(), 100);
-    }
-  }, [isSearchActive]);
+  }, [normalizedSearch, selectedBranch, itemsPerPage, activeStatFilter]);
 
   const branchOptions = useMemo(() => {
     return [
@@ -394,34 +434,31 @@ const StaffManagementView = ({
 
   const { results: searchFilteredEmployees, isFuzzy: isStaffSearchFuzzy } = useMemo(() => {
     if (!normalizedSearch.trim()) return { results: staffBranchFiltered, isFuzzy: false };
-    return smartFilter(normalizedSearch, staffBranchFiltered, emp => [emp?.name, emp?.code, emp?.role, branchMap.get(Number(emp.branchId || emp.branch_id))]);
+    return searchEmployees(normalizedSearch, staffBranchFiltered, branchMap);
   }, [staffBranchFiltered, normalizedSearch, branchMap]);
 
-  const stats = useMemo(() => ({ total: searchFilteredEmployees.length }), [searchFilteredEmployees]);
+  const stats = useMemo(() => {
+    const total = searchFilteredEmployees.length;
+    const active = searchFilteredEmployees.filter((emp) => getEffectiveStatus(emp) === 'Activo').length;
+    const support = searchFilteredEmployees.filter((emp) => getEffectiveStatus(emp) === 'En Apoyo').length;
+    const inactive = searchFilteredEmployees.filter(
+      (emp) => !['Activo', 'En Apoyo'].includes(getEffectiveStatus(emp))
+    ).length;
+    return { total, active, support, inactive };
+  }, [searchFilteredEmployees]);
 
-  // Desglose por sucursal — ignora selectedBranch (para no colapsar a 1 sola sucursal
-  // una vez elegida) pero sí respeta scope de rol y el término de búsqueda.
-  const branchBreakdown = useMemo(() => {
-    const base = !normalizedSearch.trim()
-      ? scopeFilteredEmployees
-      : smartFilter(normalizedSearch, scopeFilteredEmployees, emp => [emp?.name, emp?.code, emp?.role, branchMap.get(Number(emp.branchId || emp.branch_id))]).results;
-
-    const counts = new Map();
-    for (const emp of base) {
-      const bId = Number(emp.branchId ?? emp.branch_id);
-      counts.set(bId, (counts.get(bId) || 0) + 1);
-    }
-    return [...counts.entries()]
-      .map(([id, count]) => ({ id, name: branchMap.get(id) || 'Sin Asignar', count }))
-      .sort((a, b) => b.count - a.count);
-  }, [scopeFilteredEmployees, normalizedSearch, branchMap]);
-
-  const topBranches  = branchBreakdown.slice(0, 2);
-  const otherBranches = branchBreakdown.slice(2);
-  const otherBranchesCount = otherBranches.reduce((s, b) => s + b.count, 0);
+  const filteredEmployees = useMemo(() => {
+    return searchFilteredEmployees.filter(emp => {
+      const statusEff = getEffectiveStatus(emp);
+      return activeStatFilter === 'ALL' ||
+        (activeStatFilter === 'Activo' && statusEff === 'Activo') ||
+        (activeStatFilter === 'En Apoyo' && statusEff === 'En Apoyo') ||
+        (activeStatFilter === 'Otros' && !['Activo', 'En Apoyo'].includes(statusEff));
+    });
+  }, [searchFilteredEmployees, activeStatFilter]);
 
   const sortedEmployees = useMemo(() => {
-    const list = [...searchFilteredEmployees];
+    const list = [...filteredEmployees];
 
     list.sort((a, b) => {
       const branchA = (branchMap.get(Number(a.branchId || a.branch_id)) || '').toLowerCase();
@@ -467,7 +504,7 @@ const StaffManagementView = ({
     });
 
     return list;
-  }, [searchFilteredEmployees, sortConfig, branchMap]);
+  }, [filteredEmployees, sortConfig, branchMap]);
 
   const totalItems = sortedEmployees.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
@@ -477,7 +514,7 @@ const StaffManagementView = ({
     return sortedEmployees.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedEmployees, currentPage, itemsPerPage]);
 
-  const hasActiveFilters = normalizedSearch !== '' || selectedBranch !== 'ALL';
+  const hasActiveFilters = normalizedSearch !== '' || selectedBranch !== 'ALL' || activeStatFilter !== 'ALL';
 
   const handleOpenNewEmployee = () => {
     setIsSearchActive(false);
@@ -504,6 +541,7 @@ const StaffManagementView = ({
   const clearFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedBranch('ALL');
+    setActiveStatFilter('ALL');
   }, [setSearchTerm, setSelectedBranch]);
 
   const handleSort = useCallback((key) => {
@@ -556,7 +594,7 @@ const StaffManagementView = ({
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
         <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
         <input
-          ref={searchInputRef}
+          ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
           type="text"
           placeholder="Buscar por nombre, código o cargo..."
           className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[14px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0"
@@ -604,31 +642,27 @@ const StaffManagementView = ({
       <div className="p-4 md:p-6 lg:p-8 space-y-6 flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-700">
 
         <div className="flex items-start gap-3 flex-wrap shrink-0">
-          <div className="flex items-stretch gap-3 flex-wrap flex-1 min-w-0">
-            <StatCard
-              icon={Users} iconBg="bg-[#0052CC]/10" iconCls="text-[#0052CC]"
-              label="Total" value={stats.total} valueCls="text-slate-700"
-              active={selectedBranch === 'ALL'} onClick={() => setSelectedBranch('ALL')}
+          <div className="flex items-center gap-3 flex-wrap">
+            <StaffStatCard
+              icon={Users} color="blue" label="Total" value={stats.total}
+              active={activeStatFilter === 'ALL'} onClick={() => setActiveStatFilter('ALL')}
               loading={bootStatus !== 'ready' && employees.length === 0}
             />
-            {topBranches.map(b => (
-              <StatCard
-                key={b.id}
-                icon={MapPin} iconBg="bg-indigo-50" iconCls="text-indigo-600"
-                label={b.name} value={b.count} valueCls="text-indigo-600"
-                active={String(selectedBranch) === String(b.id)}
-                onClick={() => setSelectedBranch(String(b.id))}
-                activeBg="bg-indigo-50 border-indigo-300 shadow-md"
-                loading={bootStatus !== 'ready' && employees.length === 0}
-              />
-            ))}
-            {otherBranches.length > 0 && (
-              <StatCard
-                icon={Building2} iconBg="bg-slate-100" iconCls="text-slate-500"
-                label={`+ Otras ${otherBranches.length}`} value={otherBranchesCount} valueCls="text-slate-600"
-                loading={bootStatus !== 'ready' && employees.length === 0}
-              />
-            )}
+            <StaffStatCard
+              icon={ShieldCheck} color="emerald" label="Activos" value={stats.active}
+              active={activeStatFilter === 'Activo'} onClick={() => setActiveStatFilter('Activo')}
+              loading={bootStatus !== 'ready' && employees.length === 0}
+            />
+            <StaffStatCard
+              icon={Briefcase} color="cyan" label="Apoyo" value={stats.support}
+              active={activeStatFilter === 'En Apoyo'} onClick={() => setActiveStatFilter('En Apoyo')}
+              loading={bootStatus !== 'ready' && employees.length === 0}
+            />
+            <StaffStatCard
+              icon={UserMinus} color="amber" label="Otros" value={stats.inactive}
+              active={activeStatFilter === 'Otros'} onClick={() => setActiveStatFilter('Otros')}
+              loading={bootStatus !== 'ready' && employees.length === 0}
+            />
           </div>
 
           <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
@@ -703,6 +737,11 @@ const StaffManagementView = ({
                 <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC]">
                   <Hash size={12} strokeWidth={3} />
                   {totalItems} <span className="text-slate-500 hidden sm:inline">Colaboradores Listados</span>
+                  {activeStatFilter !== 'ALL' && (
+                    <span className="ml-2 px-2 py-0.5 bg-white/60 text-slate-500 rounded-full border border-white shadow-sm lowercase font-bold tracking-normal">
+                      Filtrado por: <span className="uppercase text-[#0052CC] font-black">{activeStatFilter}</span>
+                    </span>
+                  )}
                 </div>
               }
               minWidth="700px"

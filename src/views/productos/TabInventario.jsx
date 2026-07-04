@@ -72,10 +72,9 @@ export default function TabInventario({ searchTerm = '' }) {
     const [loading,          setLoading]          = useState(false);
     const [page,             setPage]             = useState(1);
     const [pageSize,         setPageSize]         = useState(25);
-    const [sortField,        setSortField]        = useState('descripcion');
+    const [sortField,        setSortField]        = useState('laboratorio');
     const [sortDir,          setSortDir]          = useState('asc');
     const [syncLog,          setSyncLog]          = useState([]);
-    const [labMap,           setLabMap]           = useState({});
     const [labOptions,       setLabOptions]       = useState([]);
     const [catOptions,       setCatOptions]       = useState([]);
     const [expiredTotal,     setExpiredTotal]     = useState(0);
@@ -165,35 +164,14 @@ export default function TabInventario({ searchTerm = '' }) {
             setGroups(data || []);
             setTotal(data?.length ? Number(data[0].total) : 0);
 
-            const ids = [...new Set((data || []).map(r => r.erp_product_id).filter(Boolean))];
-            if (ids.length) {
-                const [{ data: prods }, { count: ec }] = await Promise.all([
-                    supabase.from('products').select('id, laboratorios(nombre)').in('id', ids),
-                    (() => {
-                        const today = new Date().toISOString().split('T')[0];
-                        let cq = supabase.from('inventory')
-                            .select('*', { count: 'exact', head: true })
-                            .eq('is_vencidos', false).lt('fecha_vencimiento', today);
-                        if (erpId !== null) cq = cq.eq('erp_sucursal_id', erpId);
-                        return cq;
-                    })(),
-                ]);
-                if (rid !== loadRef.current) return;
-                const map = {};
-                (prods || []).forEach(p => { map[p.id] = p.laboratorios?.nombre ?? null; });
-                setLabMap(map);
-                setExpiredTotal(ec ?? 0);
-            } else {
-                const today = new Date().toISOString().split('T')[0];
-                let cq = supabase.from('inventory')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('is_vencidos', false).lt('fecha_vencimiento', today);
-                if (erpId !== null) cq = cq.eq('erp_sucursal_id', erpId);
-                const { count: ec } = await cq;
-                if (rid !== loadRef.current) return;
-                setLabMap({});
-                setExpiredTotal(ec ?? 0);
-            }
+            const today = new Date().toISOString().split('T')[0];
+            let cq = supabase.from('inventory')
+                .select('*', { count: 'exact', head: true })
+                .eq('is_vencidos', false).lt('fecha_vencimiento', today);
+            if (erpId !== null) cq = cq.eq('erp_sucursal_id', erpId);
+            const { count: ec } = await cq;
+            if (rid !== loadRef.current) return;
+            setExpiredTotal(ec ?? 0);
         } catch (e) {
             if (rid !== loadRef.current) return;
             console.error(e);
@@ -247,10 +225,10 @@ export default function TabInventario({ searchTerm = '' }) {
     const colCount   = selectedErp === null ? 7 : 6;
     const tableColumns = [
         ...(selectedErp === null ? [{ key: 'sucursal',     label: 'Sucursal',    sortable: true }] : []),
+        { key: 'laboratorio',  label: 'Laboratorio',       sortable: true, hideBelow: 'lg' },
         { key: 'descripcion',  label: 'Producto',          sortable: true },
         { key: 'presentacion', label: 'Presentación',      hideBelow: 'md' },
         { key: 'lote',         label: 'Lote',              hideBelow: 'lg' },
-        { key: 'laboratorio',  label: 'Laboratorio',       hideBelow: 'lg' },
         { key: 'unidades',     label: 'Und.',              sortable: true, align: 'right' },
         { key: 'vence',        label: 'Vence',             hideBelow: 'sm' },
     ];
@@ -477,7 +455,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     {groups.map((group, i) => {
                         const key        = `${group.erp_sucursal_id}_${group.erp_product_id}`;
                         const isExpanded = expandedKey === key;
-                        const lab        = labMap[group.erp_product_id] ?? null;
+                        const lab        = group.laboratorio ?? null;
                         const numLotes   = Number(group.num_lotes);
                         const loteDisplay = numLotes === 0 ? '—'
                             : numLotes === 1 ? (group.lote_sample || '—')
@@ -509,6 +487,12 @@ export default function TabInventario({ searchTerm = '' }) {
                                         </DataCell>
                                     )}
 
+                                    <DataCell hideBelow="lg">
+                                        <span className="text-[11px] text-slate-500">
+                                            {lab || <span className="text-slate-400">—</span>}
+                                        </span>
+                                    </DataCell>
+
                                     <DataCell>
                                         <div className="flex items-center gap-2">
                                             <ChevronDown size={12} strokeWidth={2.5}
@@ -539,14 +523,8 @@ export default function TabInventario({ searchTerm = '' }) {
                                     </DataCell>
 
                                     <DataCell hideBelow="lg">
-                                        <span className={`text-[11px] font-mono ${numLotes > 1 ? 'text-slate-400 italic' : 'text-slate-500'}`}>
+                                        <span className="text-[11px] font-mono text-slate-500">
                                             {loteDisplay}
-                                        </span>
-                                    </DataCell>
-
-                                    <DataCell hideBelow="lg">
-                                        <span className="text-[11px] text-slate-500">
-                                            {lab || <span className="text-slate-400">—</span>}
                                         </span>
                                     </DataCell>
 

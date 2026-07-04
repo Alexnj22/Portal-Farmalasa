@@ -19,23 +19,26 @@ const GENDER_OPTIONS = [{ value: 'F', label: 'Femenino' }, { value: 'M', label: 
 const BLOOD_TYPE_OPTIONS = [{ value: 'O+', label: 'O+ (Positivo)' }, { value: 'O-', label: 'O- (Negativo)' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' }, { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' }, { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' }];
 const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { value: 'CASADO', label: 'Casado/a' }, { value: 'DIVORCIADO', label: 'Divorciado/a' }, { value: 'VIUDO', label: 'Viudo/a' }, { value: 'ACOMPAÑADO', label: 'Acompañado/a' }];
 const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal / Plazo Fijo' }, { value: 'MEDIO_TIEMPO', label: 'Medio Tiempo (Part-Time)' }, { value: 'SERVICIOS', label: 'Servicios Profesionales' }];
+// "Universitario" ya no distingue Estudiante/Graduado como niveles separados
+// — eso lo define el toggle "¿Actualmente estudiando?" de abajo. Maestría /
+// Postgrado tampoco es un nivel aparte: requiere estudio universitario previo,
+// así que es un complemento ("¿Tiene Maestría / Postgrado?") que solo aparece
+// dentro de Universitario, no un Nivel Académico independiente.
 const EDUCATION_OPTIONS = [
     { value: 'BASICA', label: 'Educación Básica' },
     { value: 'BACHILLERATO_GENERAL', label: 'Bachillerato General' },
     { value: 'BACHILLERATO_TECNICO', label: 'Bachillerato Técnico' },
     { value: 'TECNICO_SUPERIOR', label: 'Técnico Superior' },
-    { value: 'UNIVERSITARIO_E', label: 'Universitario (Estudiante)' },
-    { value: 'UNIVERSITARIO_G', label: 'Universitario (Graduado)' },
-    { value: 'MAESTRIA', label: 'Maestría / Postgrado' },
+    { value: 'UNIVERSITARIO', label: 'Universitario' },
 ];
 // Niveles donde el select de Especialidad aplica
 const LEVELS_WITH_SPECIALTY = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR'];
-// Niveles donde "¿Actualmente estudiando?" tiene sentido
-const LEVELS_WITH_STUDY_TOGGLE = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR', 'MAESTRIA'];
+// Niveles donde "¿Actualmente estudiando?" siempre se muestra
+const LEVELS_WITH_STUDY_TOGGLE = ['BACHILLERATO_TECNICO', 'TECNICO_SUPERIOR', 'UNIVERSITARIO'];
 // Niveles donde el campo Profesión/Título se muestra — Bachillerato Técnico y
 // Técnico Superior quedan fuera: su "título" ya es la especialidad de arriba,
 // no una profesión aparte.
-const LEVELS_WITH_PROFESSION = ['UNIVERSITARIO_E', 'UNIVERSITARIO_G', 'MAESTRIA'];
+const LEVELS_WITH_PROFESSION = ['UNIVERSITARIO'];
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const MONTH_OPTIONS = MESES.map((m, i) => ({ value: String(i + 1).padStart(2, '0'), label: m }));
@@ -266,12 +269,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // Especialidades/profesiones viven en education_catalog_entries — se
     // traen una vez al abrir el modal; "Otra..." agrega filas nuevas ahí
     // (employeeSlice.js) y quedan disponibles como opción real de inmediato.
-    const [educationCatalog, setEducationCatalog] = useState({ BACHILLERATO_TECNICO_ESPECIALIDAD: [], TECNICO_SUPERIOR_ESPECIALIDAD: [], PROFESION_UNIVERSITARIA: [] });
+    const CATALOG_CATEGORIES = ['BACHILLERATO_TECNICO_ESPECIALIDAD', 'TECNICO_SUPERIOR_ESPECIALIDAD', 'PROFESION_UNIVERSITARIA', 'MAESTRIA_POSTGRADO', 'CURSO_HABILIDAD', 'INSTITUCION_CAPACITACION'];
+    const [educationCatalog, setEducationCatalog] = useState(() => Object.fromEntries(CATALOG_CATEGORIES.map(c => [c, []])));
     useEffect(() => {
         let cancelled = false;
         supabase.from('education_catalog_entries').select('category, value').order('value').then(({ data }) => {
             if (cancelled || !data) return;
-            const grouped = { BACHILLERATO_TECNICO_ESPECIALIDAD: [], TECNICO_SUPERIOR_ESPECIALIDAD: [], PROFESION_UNIVERSITARIA: [] };
+            const grouped = Object.fromEntries(CATALOG_CATEGORIES.map(c => [c, []]));
             for (const row of data) { if (grouped[row.category]) grouped[row.category].push(row.value); }
             setEducationCatalog(grouped);
         });
@@ -281,6 +285,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const bachilleratoTecnicoOptions = useMemo(() => buildCatalogOptions(educationCatalog.BACHILLERATO_TECNICO_ESPECIALIDAD, 'Otra especialidad...'), [educationCatalog]);
     const tecnicoSuperiorOptions = useMemo(() => buildCatalogOptions(educationCatalog.TECNICO_SUPERIOR_ESPECIALIDAD, 'Otra especialidad...'), [educationCatalog]);
     const profesionesUniversitariasOptions = useMemo(() => buildCatalogOptions(educationCatalog.PROFESION_UNIVERSITARIA, 'Otra profesión...'), [educationCatalog]);
+    const maestriaPostgradoOptions = useMemo(() => buildCatalogOptions(educationCatalog.MAESTRIA_POSTGRADO, 'Otra maestría/postgrado...'), [educationCatalog]);
+    const cursoHabilidadOptions = useMemo(() => buildCatalogOptions(educationCatalog.CURSO_HABILIDAD, 'Otro curso/habilidad...'), [educationCatalog]);
+    const institucionOptions = useMemo(() => buildCatalogOptions(educationCatalog.INSTITUCION_CAPACITACION, 'Otra institución...'), [educationCatalog]);
 
     // Skip draft logic in edit mode
     useEffect(() => {
@@ -326,6 +333,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 department: '', municipality: '', education_level: '', profession: '',
                 education_grade_completed: '', education_specialty: '', is_studying: false,
                 study_start_date: '', study_duration_years: '', additional_skills: [],
+                has_maestria: false, maestria_title: '',
                 code: String(Math.floor(1000 + Math.random() * 9000)),
                 branch_id: prev?.branchId || prev?.branch_id || '', 
                 role_id: '', secondary_role_id: '', 
@@ -426,13 +434,20 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             if (name === 'education_level') {
                 newData.education_grade_completed = '';
                 newData.education_specialty = '';
-                if (value === 'BASICA' || value === 'BACHILLERATO_GENERAL') newData.profession = '';
-                if (value === 'UNIVERSITARIO_E') newData.is_studying = true;
-                else if (!LEVELS_WITH_STUDY_TOGGLE.includes(value)) newData.is_studying = false;
-                if (!LEVELS_WITH_STUDY_TOGGLE.includes(value) && value !== 'UNIVERSITARIO_E') {
+                if (!LEVELS_WITH_PROFESSION.includes(value)) newData.profession = '';
+                if (!LEVELS_WITH_STUDY_TOGGLE.includes(value)) {
+                    newData.is_studying = false;
                     newData.study_start_date = '';
                     newData.study_duration_years = '';
                 }
+                // Maestría/Postgrado solo tiene sentido sobre estudio universitario
+                if (value !== 'UNIVERSITARIO') {
+                    newData.has_maestria = false;
+                    newData.maestria_title = '';
+                }
+            }
+            if (name === 'has_maestria' && !value) {
+                newData.maestria_title = '';
             }
             if (name === 'is_studying' && !value) {
                 newData.study_start_date = '';
@@ -464,9 +479,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // No es real seguir "actualmente estudiando" si la fecha estimada de fin ya pasó.
     const studyEndInPast = !!formData?.is_studying && !!estimatedStudyEndDate && estimatedStudyEndDate.date < new Date();
 
-    const addSkill = () => setFormData(prev => ({ ...prev, additional_skills: [...(prev.additional_skills || []), ''] }));
-    const updateSkill = (idx, value) => setFormData(prev => {
-        const arr = [...(prev.additional_skills || [])]; arr[idx] = value.toUpperCase(); return { ...prev, additional_skills: arr };
+    const addSkill = () => setFormData(prev => ({ ...prev, additional_skills: [...(prev.additional_skills || []), { skill: '', institution: '', hours: '' }] }));
+    const updateSkill = (idx, field, value) => setFormData(prev => {
+        const arr = [...(prev.additional_skills || [])];
+        arr[idx] = { ...(arr[idx] || {}), [field]: value };
+        return { ...prev, additional_skills: arr };
     });
     const removeSkill = (idx) => setFormData(prev => ({ ...prev, additional_skills: (prev.additional_skills || []).filter((_, i) => i !== idx) }));
 
@@ -897,7 +914,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     const isOtherProfession = isCatalogOther(formData.profession, profesionesUniversitariasOptions);
                                     return (
                                         <>
-                                            <div className="relative z-20 md:col-span-2 animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="relative z-20 animate-in fade-in zoom-in-95 duration-200">
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
                                                     <span>Profesión / Título</span>
                                                     {!formData.profession && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
@@ -931,16 +948,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     );
                                 })()}
 
-                                {(LEVELS_WITH_STUDY_TOGGLE.includes(formData.education_level) || formData.education_level === 'UNIVERSITARIO_E') && (
+                                {LEVELS_WITH_STUDY_TOGGLE.includes(formData.education_level) && (
                                     <div className="md:col-span-2 bg-indigo-50/40 rounded-[1.25rem] p-3.5 border border-indigo-100/60 animate-in fade-in zoom-in-95 duration-200">
-                                        {formData.education_level !== 'UNIVERSITARIO_E' ? (
-                                            <label className="flex items-center gap-2 cursor-pointer">
-                                                <input type="checkbox" checked={!!formData.is_studying} onChange={(e) => handleSelectChange('is_studying', e.target.checked)} className="w-4 h-4 rounded accent-[#0052CC]" />
-                                                <span className="text-[11px] font-black text-indigo-700 uppercase tracking-wide">¿Actualmente estudiando?</span>
-                                            </label>
-                                        ) : (
-                                            <p className="text-[11px] font-black text-indigo-700 uppercase tracking-wide">Datos de la carrera en curso</p>
-                                        )}
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" checked={!!formData.is_studying} onChange={(e) => handleSelectChange('is_studying', e.target.checked)} className="w-4 h-4 rounded accent-[#0052CC]" />
+                                            <span className="text-[11px] font-black text-indigo-700 uppercase tracking-wide">¿Actualmente estudiando?</span>
+                                        </label>
 
                                         {!!formData.is_studying && (
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
@@ -968,23 +981,98 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         )}
                                     </div>
                                 )}
+
+                                {formData.education_level === 'UNIVERSITARIO' && (() => {
+                                    const isOtherMaestria = isCatalogOther(formData.maestria_title, maestriaPostgradoOptions);
+                                    return (
+                                        <div className="md:col-span-2 bg-purple-50/40 rounded-[1.25rem] p-3.5 border border-purple-100/60 animate-in fade-in zoom-in-95 duration-200">
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input type="checkbox" checked={!!formData.has_maestria} onChange={(e) => handleSelectChange('has_maestria', e.target.checked)} className="w-4 h-4 rounded accent-purple-600" />
+                                                <span className="text-[11px] font-black text-purple-700 uppercase tracking-wide">¿Tiene Maestría / Postgrado?</span>
+                                            </label>
+                                            {!!formData.has_maestria && (
+                                                <div className="mt-3 grid grid-cols-1 gap-3">
+                                                    <div>
+                                                        <label className="text-[9px] font-black uppercase tracking-widest text-purple-500 ml-1 mb-1 flex items-center justify-between">
+                                                            <span>Maestría / Postgrado</span>
+                                                            {!formData.maestria_title && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
+                                                        </label>
+                                                        <CatalogSelect
+                                                            value={formData.maestria_title}
+                                                            onChange={(val) => handleSelectChange('maestria_title', val)}
+                                                            options={maestriaPostgradoOptions}
+                                                            portalSelectProps={portalSelectProps}
+                                                            inputHoverClass={inputHoverClass}
+                                                            hasError={!formData.maestria_title}
+                                                            placeholder="Maestría / Postgrado..."
+                                                        />
+                                                    </div>
+                                                    {isOtherMaestria && (
+                                                        <div>
+                                                            <label className="text-[9px] font-black uppercase tracking-widest text-purple-500 ml-1 mb-1 block">Especifica la Maestría / Postgrado</label>
+                                                            <CatalogOtherInput
+                                                                value={formData.maestria_title}
+                                                                onChange={(val) => handleSelectChange('maestria_title', val)}
+                                                                inputHoverClass={inputHoverClass}
+                                                                hasError={formData.maestria_title === OTRA_ESPECIALIDAD}
+                                                                placeholder="Ej. Maestría en..."
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
                             <div className="mt-4 pt-4 border-t border-slate-200/50">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-2 block">Cursos / Habilidades Adicionales</label>
-                                <div className="flex flex-col gap-2">
-                                    {(formData.additional_skills || []).map((skill, idx) => (
-                                        <div key={idx} className="flex items-center gap-2">
-                                            <input type="text" value={skill} onChange={(e) => updateSkill(idx, e.target.value)} placeholder="Ej. Curso de atención al cliente"
-                                                className={`flex-1 h-[38px] px-4 bg-white border border-slate-200/80 rounded-[1rem] text-[13px] font-bold text-slate-700 outline-none shadow-sm ${inputHoverClass}`} />
-                                            <button type="button" onClick={() => removeSkill(idx)} title="Quitar"
-                                                className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
-                                                <X size={14} strokeWidth={2.5} />
-                                            </button>
-                                        </div>
-                                    ))}
+                                <div className="flex flex-col gap-3">
+                                    {(formData.additional_skills || []).map((entry, idx) => {
+                                        const isOtherSkill = isCatalogOther(entry.skill, cursoHabilidadOptions);
+                                        const isOtherInstitution = isCatalogOther(entry.institution, institucionOptions);
+                                        return (
+                                            <div key={idx} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Curso / Habilidad {idx + 1}</span>
+                                                    <button type="button" onClick={() => removeSkill(idx)} title="Quitar"
+                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                        <X size={13} strokeWidth={2.5} />
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <div className="md:col-span-2">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Curso / Habilidad</label>
+                                                        <CatalogSelect value={entry.skill} onChange={(val) => updateSkill(idx, 'skill', val)} options={cursoHabilidadOptions} portalSelectProps={portalSelectProps} inputHoverClass={inputHoverClass} placeholder="Curso/Habilidad..." />
+                                                    </div>
+                                                    {isOtherSkill && (
+                                                        <div className="md:col-span-2">
+                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Especifica el Curso / Habilidad</label>
+                                                            <CatalogOtherInput value={entry.skill} onChange={(val) => updateSkill(idx, 'skill', val)} inputHoverClass={inputHoverClass} placeholder="Especifica el curso o habilidad" />
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Institución</label>
+                                                        <CatalogSelect value={entry.institution} onChange={(val) => updateSkill(idx, 'institution', val)} options={institucionOptions} portalSelectProps={portalSelectProps} inputHoverClass={inputHoverClass} placeholder="Institución..." />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Horas Totales</label>
+                                                        <input type="number" min="0" value={entry.hours || ''} onChange={(e) => updateSkill(idx, 'hours', e.target.value)} placeholder="Ej. 40"
+                                                            className={`w-full h-[40px] px-4 bg-white border border-slate-200/80 rounded-[1rem] text-[13px] font-bold text-slate-700 outline-none shadow-sm ${inputHoverClass}`} />
+                                                    </div>
+                                                    {isOtherInstitution && (
+                                                        <div className="md:col-span-2">
+                                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Especifica la Institución</label>
+                                                            <CatalogOtherInput value={entry.institution} onChange={(val) => updateSkill(idx, 'institution', val)} inputHoverClass={inputHoverClass} placeholder="Especifica la institución" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                                <button type="button" onClick={addSkill} className="mt-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC] hover:text-blue-700 transition-colors">
+                                <button type="button" onClick={addSkill} className="mt-3 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC] hover:text-blue-700 transition-colors">
                                     <Plus size={12} strokeWidth={3} /> Agregar Curso / Habilidad
                                 </button>
                             </div>

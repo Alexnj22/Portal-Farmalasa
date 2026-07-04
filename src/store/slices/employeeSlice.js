@@ -13,21 +13,51 @@ const normalizeCatalogValue = (val) => {
     return val.trim();
 };
 
+// additional_skills: array de {skill, institution, hours} — descarta filas
+// completamente vacías (agregadas con "+" pero nunca llenadas).
+const normalizeAdditionalSkills = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    return arr
+        .map(s => ({
+            skill: normalizeCatalogValue(s?.skill),
+            institution: normalizeCatalogValue(s?.institution),
+            hours: s?.hours !== undefined && s?.hours !== null && s.hours !== '' ? parseFloat(s.hours) : null,
+        }))
+        .filter(s => s.skill || s.institution || s.hours != null);
+};
+
 // Registra el valor final en education_catalog_entries (upsert, ignora
 // duplicados) para que quede disponible como opción real en el próximo
 // registro — sin importar si ya existía o se acaba de escribir en "Otra...".
-const registerCatalogEntry = (educationLevel, specialty, profession) => {
+const upsertCatalogEntries = (rows) => {
+    if (!rows.length) return;
+    supabase.from('education_catalog_entries').upsert(rows, { onConflict: 'category,value', ignoreDuplicates: true })
+        .then(({ error }) => { if (error) console.warn('No se pudo registrar entrada de catálogo educativo:', error.message); });
+};
+
+// Maestría/Postgrado ya no es un education_level propio — es un complemento
+// de UNIVERSITARIO (has_maestria/maestria_title), así que se registra aparte.
+const registerCatalogEntry = (educationLevel, specialty, profession, maestriaTitle) => {
     const rows = [];
     if (specialty) {
         if (educationLevel === 'BACHILLERATO_TECNICO') rows.push({ category: 'BACHILLERATO_TECNICO_ESPECIALIDAD', value: specialty });
         else if (educationLevel === 'TECNICO_SUPERIOR') rows.push({ category: 'TECNICO_SUPERIOR_ESPECIALIDAD', value: specialty });
     }
-    if (profession && ['UNIVERSITARIO_E', 'UNIVERSITARIO_G', 'MAESTRIA'].includes(educationLevel)) {
-        rows.push({ category: 'PROFESION_UNIVERSITARIA', value: profession });
+    if (profession && educationLevel === 'UNIVERSITARIO') rows.push({ category: 'PROFESION_UNIVERSITARIA', value: profession });
+    if (maestriaTitle) rows.push({ category: 'MAESTRIA_POSTGRADO', value: maestriaTitle });
+    upsertCatalogEntries(rows);
+};
+
+// Cada curso/habilidad adicional aporta hasta 2 entradas de catálogo:
+// el curso/habilidad en sí y la institución que lo impartió.
+const registerSkillCatalogEntries = (skills) => {
+    if (!Array.isArray(skills)) return;
+    const rows = [];
+    for (const s of skills) {
+        if (s?.skill) rows.push({ category: 'CURSO_HABILIDAD', value: s.skill });
+        if (s?.institution) rows.push({ category: 'INSTITUCION_CAPACITACION', value: s.institution });
     }
-    if (!rows.length) return;
-    supabase.from('education_catalog_entries').upsert(rows, { onConflict: 'category,value', ignoreDuplicates: true })
-        .then(({ error }) => { if (error) console.warn('No se pudo registrar entrada de catálogo educativo:', error.message); });
+    upsertCatalogEntries(rows);
 };
 
 // 🚨 COMPRESOR DE IMÁGENES NATIVO (Actualizado para mantener fondos transparentes)
@@ -313,7 +343,9 @@ export const createEmployeeSlice = (set, get) => ({
                 is_studying: !!formData.is_studying,
                 study_start_date: formData.is_studying ? (formData.study_start_date || null) : null,
                 study_duration_years: formData.is_studying && formData.study_duration_years ? parseFloat(formData.study_duration_years) : null,
-                additional_skills: Array.isArray(formData.additional_skills) ? formData.additional_skills.map(s => (s || '').trim().toUpperCase()).filter(Boolean) : [],
+                has_maestria: formData.education_level === 'UNIVERSITARIO' && !!formData.has_maestria,
+                maestria_title: formData.education_level === 'UNIVERSITARIO' && formData.has_maestria ? normalizeCatalogValue(formData.maestria_title) : null,
+                additional_skills: normalizeAdditionalSkills(formData.additional_skills),
                 extra_phones: Array.isArray(formData.extra_phones) ? formData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [],
                 extra_addresses: normalizeExtraAddresses(formData.extra_addresses),
 
@@ -346,7 +378,8 @@ export const createEmployeeSlice = (set, get) => ({
                 console.error('Supabase INSERT error:', error.message, error.details, error.hint);
                 throw error;
             }
-            registerCatalogEntry(dbPayload.education_level, dbPayload.education_specialty, dbPayload.profession);
+            registerCatalogEntry(dbPayload.education_level, dbPayload.education_specialty, dbPayload.profession, dbPayload.maestria_title);
+            registerSkillCatalogEntries(dbPayload.additional_skills);
 
             const uploadedFile = formData.file || formData.photo;
             if (uploadedFile && uploadedFile instanceof File) {
@@ -491,8 +524,13 @@ export const createEmployeeSlice = (set, get) => ({
             } else if (updatedData.study_duration_years !== undefined) {
                 dbPayload.study_duration_years = updatedData.study_duration_years ? parseFloat(updatedData.study_duration_years) : null;
             }
+            if (updatedData.has_maestria !== undefined || updatedData.maestria_title !== undefined) {
+                const isUniversitario = (updatedData.education_level ?? dbPayload.education_level) === 'UNIVERSITARIO';
+                dbPayload.has_maestria = isUniversitario && !!updatedData.has_maestria;
+                dbPayload.maestria_title = isUniversitario && updatedData.has_maestria ? normalizeCatalogValue(updatedData.maestria_title) : null;
+            }
             if (updatedData.additional_skills !== undefined) {
-                dbPayload.additional_skills = Array.isArray(updatedData.additional_skills) ? updatedData.additional_skills.map(s => (s || '').trim().toUpperCase()).filter(Boolean) : [];
+                dbPayload.additional_skills = normalizeAdditionalSkills(updatedData.additional_skills);
             }
             if (updatedData.extra_phones !== undefined) {
                 dbPayload.extra_phones = Array.isArray(updatedData.extra_phones) ? updatedData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [];
@@ -541,9 +579,10 @@ export const createEmployeeSlice = (set, get) => ({
 
             const { data: updated, error } = await supabase.from("employees").update(dbPayload).eq("id", id).select().single();
             if (error) throw error;
-            if (dbPayload.education_specialty !== undefined || dbPayload.profession !== undefined) {
-                registerCatalogEntry(dbPayload.education_level ?? updated.education_level, dbPayload.education_specialty, dbPayload.profession);
+            if (dbPayload.education_specialty !== undefined || dbPayload.profession !== undefined || dbPayload.maestria_title !== undefined) {
+                registerCatalogEntry(dbPayload.education_level ?? updated.education_level, dbPayload.education_specialty, dbPayload.profession, dbPayload.maestria_title);
             }
+            if (dbPayload.additional_skills !== undefined) registerSkillCatalogEntries(dbPayload.additional_skills);
 
             // Sync branch assignments to junction table if provided
             if (newAssignedBranches !== null) {

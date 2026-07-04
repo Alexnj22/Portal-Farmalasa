@@ -11,7 +11,6 @@ import {
   ShieldCheck,
   X,
   Trash2,
-  Hash,
   User,
   Edit3,
   CheckCircle2,
@@ -420,9 +419,12 @@ const StaffManagementView = ({
   }, [branches]);
 
   const scopeFilteredEmployees = useMemo(() => {
+    // La cuenta SUPERADMIN ("Administrador del Sistema") es una cuenta técnica de
+    // acceso, no un empleado real — nunca debe listarse en Gestión de Personal.
+    const withoutSystemAccount = (employees || []).filter(e => e.system_role !== 'SUPERADMIN');
     return getScope('staff_list') === 'BRANCH'
-        ? (employees || []).filter(e => String(e.branch_id || e.branchId) === String(user?.branchId))
-        : (employees || []);
+        ? withoutSystemAccount.filter(e => String(e.branch_id || e.branchId) === String(user?.branchId))
+        : withoutSystemAccount;
   }, [employees, getScope, user?.branchId]);
 
   const staffBranchFiltered = useMemo(() => {
@@ -639,7 +641,7 @@ const StaffManagementView = ({
       title="Gestión de Personal"
       filtersContent={filtersContent}
     >
-      <div className="p-4 md:p-6 lg:p-8 space-y-6 flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-700">
+      <div className="p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in duration-700">
 
         <div className="flex items-start gap-3 flex-wrap shrink-0">
           <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
@@ -705,67 +707,50 @@ const StaffManagementView = ({
           </div>
         </div>
 
-        <div data-surface="card" className="flex-1 flex flex-col bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.5),0_8px_20px_rgba(0,0,0,0.03)] rounded-[2rem] overflow-hidden relative">
-
-          <div className="flex-1 overflow-y-auto hide-scrollbar">
-            {isStaffSearchFuzzy && normalizedSearch && (
-              <div className="mx-4 md:mx-6 mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
-                <Search size={12} strokeWidth={2.5} className="shrink-0" />
-                Resultados similares para &ldquo;{normalizedSearch}&rdquo; — no se encontraron coincidencias exactas
-              </div>
-            )}
-            <DataTable
-              columns={[
-                { key: 'name',   label: 'Empleado',      sortable: true },
-                { key: 'branch', label: 'Sucursal',         sortable: true },
-                { key: 'role',   label: 'Cargos Asignados', sortable: true },
-                { key: 'status', label: 'Estado Operativo', sortable: true },
-                { key: 'actions',label: 'Acciones',         align: 'right' },
-              ]}
-              sortKey={sortConfig.key}
-              sortDir={sortConfig.direction}
-              onSort={handleSort}
-              loading={bootStatus !== 'ready' && employees.length === 0}
-              skeletonRows={8}
-              empty={{
-                icon: Search,
-                message: 'No hay nadie aquí',
-                subtext: 'Ajusta el filtro de sucursal o limpia la búsqueda.',
-                action: hasActiveFilters ? { label: 'Limpiar Filtros', onClick: clearFilters } : undefined,
-              }}
-              toolbar={
-                <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC]">
-                  <Hash size={12} strokeWidth={3} />
-                  {totalItems} <span className="text-slate-500 hidden sm:inline">Empleados Listados</span>
-                  {activeStatFilter !== 'ALL' && (
-                    <span className="ml-2 px-2 py-0.5 bg-white/60 text-slate-500 rounded-full border border-white shadow-sm lowercase font-bold tracking-normal">
-                      Filtrado por: <span className="uppercase text-[#0052CC] font-black">{activeStatFilter}</span>
-                    </span>
-                  )}
-                </div>
-              }
-              minWidth="700px"
-            >
-              {paginatedEmployees.map((emp, i) => (
-                <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit} />
-              ))}
-            </DataTable>
+        {isStaffSearchFuzzy && normalizedSearch && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+            <Search size={12} strokeWidth={2.5} className="shrink-0" />
+            Resultados similares para &ldquo;{normalizedSearch}&rdquo; — no se encontraron coincidencias exactas
           </div>
+        )}
 
-          {totalItems > 0 && (
-            <div className="px-5 py-3 border-t border-white/40 bg-white/20 shrink-0">
-              <TablePagination
-                pageSize={itemsPerPage}
-                onPageSizeChange={setItemsPerPage}
-                page={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                total={totalItems}
-                unit="empleados"
-              />
-            </div>
-          )}
-        </div>
+        <DataTable
+          columns={[
+            { key: 'name',   label: 'Empleado',      sortable: true },
+            { key: 'branch', label: 'Sucursal',         sortable: true },
+            { key: 'role',   label: 'Cargos Asignados', sortable: true },
+            { key: 'status', label: 'Estado Operativo', sortable: true },
+            { key: 'actions',label: 'Acciones',         align: 'right' },
+          ]}
+          sortKey={sortConfig.key}
+          sortDir={sortConfig.direction}
+          onSort={handleSort}
+          loading={bootStatus !== 'ready' && employees.length === 0}
+          skeletonRows={8}
+          empty={{
+            icon: Search,
+            message: 'No hay nadie aquí',
+            subtext: 'Ajusta el filtro de sucursal o limpia la búsqueda.',
+            action: hasActiveFilters ? { label: 'Limpiar Filtros', onClick: clearFilters } : undefined,
+          }}
+          minWidth="700px"
+        >
+          {paginatedEmployees.map((emp, i) => (
+            <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit} />
+          ))}
+        </DataTable>
+
+        {totalItems > 0 && (
+          <TablePagination
+            pageSize={itemsPerPage}
+            onPageSizeChange={setItemsPerPage}
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            total={totalItems}
+            unit="empleados"
+          />
+        )}
       </div>
     </GlassViewLayout>
   );

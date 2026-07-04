@@ -525,6 +525,8 @@ Props: `data`, `columns`, `loading`, `skeletonRows`, `empty` (`{ icon, message }
 
 **Empty state:** Rendered inline in table body using `empty.icon` squircle + `empty.message`. Must always be provided.
 
+**Never wrap `DataTable` in an extra card container.** `DataTable` already renders its own `rounded-2xl` card via `tk.cardBg`/`cardBorder`/`cardShadow` — wrapping it in a second `data-surface="card"` div (or any custom `bg-white/... backdrop-blur... rounded-[Nrem]` wrapper) double-cards it and makes the view look inconsistent with every other table view in the app (visible regression fixed in `StaffManagementView` v2.4.2 — it had grown a `data-surface="card"` wrapper with its own internal `overflow-y-auto` scroll region, which also fought `GlassViewLayout`'s own scroll container). Reference implementation: `VentasView` — `<DataTable>...</DataTable>` and `<TablePagination>` are plain siblings directly in the page's `space-y-*` flow, no wrapping div, no toolbar row for a row-count label (the count lives only in `TablePagination`'s own total badge).
+
 ### LiquidSelect
 
 File: `src/components/common/LiquidSelect.jsx`
@@ -1261,3 +1263,4 @@ Creating a parallel component that duplicates functionality is prohibited. Exten
 - Cards with identical visual weight in a grid (no hierarchy).
 - `backdrop-filter` or surface background hardcoded in component when `[data-surface]` covers the case.
 - Web fonts loaded via `@import` or `<link>` — system font stack only.
+- Wrapping `DataTable` in a second card div (`data-surface="card"` or custom `bg-white/... backdrop-blur...`) — it already renders its own card. See §14 DataTable.

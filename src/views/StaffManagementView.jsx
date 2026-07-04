@@ -39,6 +39,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import { getEffectiveStatus } from '../utils/helpers';
 import { getRoleTheme } from '../utils/scheduleHelpers';
 import LiquidAvatar from '../components/common/LiquidAvatar';
+import StatCard from '../components/common/StatCard';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
 import { smartFilter } from '../utils/searchUtils';
@@ -567,32 +568,7 @@ const StaffManagementView = ({
 
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-2 gap-3"}`}>
 
-        <div className="flex items-center min-w-0 flex-1 gap-2 overflow-visible">
-          <div className="w-[180px] md:w-[240px] overflow-visible group/branch hover:-translate-y-0.5 transition-transform duration-300 h-full flex items-center shrink-0">
-            <LiquidSelect
-              value={selectedBranch}
-              onChange={setSelectedBranch}
-              options={branchOptions}
-              compact
-              clearable={false}
-              icon={Building2}
-              bare
-            />
-          </div>
-
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/60 hover:bg-white text-slate-500 hover:text-red-500 flex items-center justify-center transition-all duration-200 active:scale-[0.97] shrink-0 shadow-sm border border-white animate-in zoom-in"
-              title="Limpiar filtros"
-            >
-              <Trash2 size={14} strokeWidth={2.5} />
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 md:gap-3 shrink-0 border-l border-white/40 pl-2 md:pl-3 ml-1 md:ml-2 overflow-visible">
+        <div className="flex items-center gap-2 md:gap-3 shrink-0 overflow-visible">
           <button
             type="button"
             onClick={handleExportCSV}
@@ -635,38 +611,64 @@ const StaffManagementView = ({
     >
       <div className="p-4 md:p-6 lg:p-8 space-y-6 flex-1 flex flex-col h-full overflow-hidden animate-in fade-in duration-700">
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 shrink-0">
-          <button onClick={() => setActiveStatFilter('ALL')} className={`text-left bg-white/40 backdrop-blur-3xl border rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-5 flex justify-between items-center transition-all duration-300 transform-gpu ${activeStatFilter === 'ALL' ? 'border-[#0052CC] shadow-[0_0_15px_rgba(0,82,204,0.2)] ring-1 ring-[#0052CC] -translate-y-1' : 'border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-md'}`}>
-            <div>
-              <p className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] mb-1 transition-colors ${activeStatFilter === 'ALL' ? 'text-[#0052CC]' : 'text-slate-500'}`}>Total</p>
-              <h3 className="text-2xl md:text-3xl font-black text-slate-800 leading-none">{stats.total}</h3>
-            </div>
-            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-[1rem] flex items-center justify-center shadow-sm transition-all duration-300 border ${activeStatFilter === 'ALL' ? 'bg-[#0052CC] text-white border-transparent shadow-[0_4px_15px_rgba(0,82,204,0.4)] scale-110' : 'bg-[#0052CC]/10 text-[#0052CC] border-[#0052CC]/20 group-hover:scale-110'}`}><Users size={20} strokeWidth={2.5} /></div>
-          </button>
+        <div className="flex items-start gap-3 flex-wrap shrink-0">
+          <div className="flex items-stretch gap-3 flex-wrap flex-1 min-w-0">
+            <StatCard
+              icon={Users} iconBg="bg-[#0052CC]/10" iconCls="text-[#0052CC]"
+              label="Total" value={stats.total} valueCls="text-slate-700"
+              active={activeStatFilter === 'ALL'} onClick={() => setActiveStatFilter('ALL')}
+              loading={bootStatus !== 'ready' && employees.length === 0}
+            />
+            <StatCard
+              icon={ShieldCheck} iconBg="bg-emerald-50" iconCls="text-emerald-600"
+              label="Activos" value={stats.active} valueCls="text-emerald-600"
+              active={activeStatFilter === 'Activo'} onClick={() => setActiveStatFilter('Activo')}
+              activeBg="bg-emerald-50 border-emerald-300 shadow-md"
+              loading={bootStatus !== 'ready' && employees.length === 0}
+            />
+            <StatCard
+              icon={Building2} iconBg="bg-cyan-50" iconCls="text-cyan-600"
+              label="Apoyo" value={stats.support} valueCls="text-cyan-600"
+              active={activeStatFilter === 'En Apoyo'} onClick={() => setActiveStatFilter('En Apoyo')}
+              activeBg="bg-cyan-50 border-cyan-300 shadow-md"
+              loading={bootStatus !== 'ready' && employees.length === 0}
+            />
+            <StatCard
+              icon={ListFilter} iconBg="bg-amber-50" iconCls="text-amber-600"
+              label="Otros" value={stats.inactive} valueCls="text-amber-600"
+              active={activeStatFilter === 'Otros'} onClick={() => setActiveStatFilter('Otros')}
+              activeBg="bg-amber-50 border-amber-300 shadow-md"
+              loading={bootStatus !== 'ready' && employees.length === 0}
+            />
+          </div>
 
-          <button onClick={() => setActiveStatFilter('Activo')} className={`text-left bg-white/40 backdrop-blur-3xl border rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-5 flex justify-between items-center transition-all duration-300 transform-gpu ${activeStatFilter === 'Activo' ? 'border-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.2)] ring-1 ring-emerald-400 -translate-y-1' : 'border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-md'}`}>
-            <div>
-              <p className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] mb-1 transition-colors ${activeStatFilter === 'Activo' ? 'text-emerald-500' : 'text-slate-500'}`}>Activos</p>
-              <h3 className="text-2xl md:text-3xl font-black text-emerald-600 leading-none">{stats.active}</h3>
+          <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 shrink-0 overflow-visible">
+            <div className="px-2 py-2 overflow-visible" style={{ width: '220px' }}>
+              <LiquidSelect
+                value={selectedBranch}
+                onChange={setSelectedBranch}
+                options={branchOptions}
+                placeholder="Todas las Sucursales"
+                icon={Building2}
+                clearable={false}
+                compact
+                bare
+              />
             </div>
-            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-[1rem] flex items-center justify-center shadow-sm transition-all duration-300 border ${activeStatFilter === 'Activo' ? 'bg-emerald-500 text-white border-transparent shadow-[0_4px_15px_rgba(52,211,153,0.4)] scale-110' : 'bg-emerald-50 text-emerald-600 border-emerald-200 group-hover:scale-110'}`}><ShieldCheck size={20} strokeWidth={2.5} /></div>
-          </button>
-
-          <button onClick={() => setActiveStatFilter('En Apoyo')} className={`text-left bg-white/40 backdrop-blur-3xl border rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-5 flex justify-between items-center transition-all duration-300 transform-gpu ${activeStatFilter === 'En Apoyo' ? 'border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)] ring-1 ring-cyan-400 -translate-y-1' : 'border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-md'}`}>
-            <div>
-              <p className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] mb-1 transition-colors ${activeStatFilter === 'En Apoyo' ? 'text-cyan-500' : 'text-slate-500'}`}>Apoyo</p>
-              <h3 className="text-2xl md:text-3xl font-black text-cyan-600 leading-none">{stats.support}</h3>
-            </div>
-            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-[1rem] flex items-center justify-center shadow-sm transition-all duration-300 border ${activeStatFilter === 'En Apoyo' ? 'bg-cyan-500 text-white border-transparent shadow-[0_4px_15px_rgba(6,182,212,0.4)] scale-110' : 'bg-cyan-50 text-cyan-600 border-cyan-200 group-hover:scale-110'}`}><Building2 size={20} strokeWidth={2.5} /></div>
-          </button>
-
-          <button onClick={() => setActiveStatFilter('Otros')} className={`text-left bg-white/40 backdrop-blur-3xl border rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-5 flex justify-between items-center transition-all duration-300 transform-gpu ${activeStatFilter === 'Otros' ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.2)] ring-1 ring-amber-400 -translate-y-1' : 'border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 hover:shadow-md'}`}>
-            <div>
-              <p className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] mb-1 transition-colors ${activeStatFilter === 'Otros' ? 'text-amber-500' : 'text-slate-500'}`}>Otros</p>
-              <h3 className="text-2xl md:text-3xl font-black text-amber-600 leading-none">{stats.inactive}</h3>
-            </div>
-            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-[1rem] flex items-center justify-center shadow-sm transition-all duration-300 border ${activeStatFilter === 'Otros' ? 'bg-amber-500 text-white border-transparent shadow-[0_4px_15px_rgba(251,191,36,0.4)] scale-110' : 'bg-amber-50 text-amber-600 border-amber-200 group-hover:scale-110'}`}><ListFilter size={20} strokeWidth={2.5} /></div>
-          </button>
+            {hasActiveFilters && (
+              <>
+                <div className="h-5 w-px bg-slate-100 shrink-0" />
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="mx-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-500 text-red-500 hover:text-white transition-all shrink-0"
+                  title="Limpiar filtros"
+                >
+                  <Trash2 size={11} strokeWidth={3} />
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         <div data-surface="card" className="flex-1 flex flex-col bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[inset_0_1px_5px_rgba(255,255,255,0.5),0_8px_20px_rgba(0,0,0,0.03)] rounded-[2rem] overflow-hidden relative">

@@ -694,6 +694,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <PortalInput label="Dirección Detallada" name="address" value={formData.address} onChange={handleChange} icon={MapPin} placeholder="Colonia, Calle, Número de Casa..." colSpan={2} />
+
                                 <div className="relative z-20">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Departamento</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
@@ -706,8 +708,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <LiquidSelect value={formData.municipality} onChange={(val) => handleSelectChange('municipality', val)} options={municipioOpts} placeholder={formData.department ? 'Distrito...' : 'Elija Depto.'} disabled={!formData.department} icon={Navigation} clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
-
-                                <PortalInput label="Dirección Detallada" name="address" value={formData.address} onChange={handleChange} icon={MapPin} placeholder="Colonia, Calle, Número de Casa..." colSpan={2} />
 
                                 <div className="md:col-span-2 -mt-2">
                                     <button type="button" onClick={addAddress} className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-[#0052CC] hover:text-blue-700 transition-colors">

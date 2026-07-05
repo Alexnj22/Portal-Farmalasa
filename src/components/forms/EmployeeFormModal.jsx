@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
-import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, Upload, FileText } from 'lucide-react';
+import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, Upload, FileText, Loader2 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo';
@@ -7,6 +7,7 @@ import { NATIONALITY_OPTIONS } from '../../data/nationalities';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../supabaseClient';
+import { getStoragePathFromUrl } from '../../utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD } from '../../utils/educationCatalogs';
 
 // ============================================================================
@@ -698,8 +699,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const handleDateChange = (name, dateString) => setFormData(prev => ({ ...prev, [name]: dateString }));
 
     // Documentación: slots fijos + lista abierta "Otros Documentos". El archivo
-    // recién elegido queda como File en memoria (igual que la foto de perfil)
-    // hasta que addEmployee/updateEmployee lo suba tras crear/tener el id.
+    // se sube al bucket privado 'documents' EN EL MOMENTO de elegirlo (no se
+    // espera a Guardar) y se manda de inmediato al edge function
+    // analyze-document (mismo motor IA del expediente de sucursal) para leer la
+    // fecha de vencimiento impresa en el propio documento — así el campo se
+    // autocompleta sin tener que reabrir la ficha. Solo se pisa si el usuario
+    // no había tecleado una fecha a mano.
     const selectedRoleName = roles?.find(r => String(r.id) === String(formData.role_id))?.name || '';
     const isNursingRole = /enfermer/i.test(selectedRoleName);
     const documentCategories = useMemo(() => [
@@ -707,28 +712,54 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         ...(isNursingRole ? [{ key: 'ENFERMERIA', label: 'Acreditación de Enfermería' }] : []),
     ], [isNursingRole]);
 
+    const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
+    const [analyzingDocs, setAnalyzingDocs] = useState({});
+
     const getDocEntry = (category) => (formData.employee_documents || []).find(d => d.category === category)
-        || { category, title: documentCategories.find(c => c.key === category)?.label || category, file: null, url: null, expiry_date: '' };
+        || { category, title: documentCategories.find(c => c.key === category)?.label || category, file_name: '', url: null, expiry_date: '' };
 
     const updateDoc = (category, patch) => setFormData(prev => {
         const list = [...(prev.employee_documents || [])];
         const idx = list.findIndex(d => d.category === category);
-        const base = idx >= 0 ? list[idx] : { category, title: documentCategories.find(c => c.key === category)?.label || category, file: null, url: null, expiry_date: '' };
+        const base = idx >= 0 ? list[idx] : { category, title: documentCategories.find(c => c.key === category)?.label || category, file_name: '', url: null, expiry_date: '' };
         const updated = { ...base, ...patch };
         if (idx >= 0) list[idx] = updated; else list.push(updated);
         return { ...prev, employee_documents: list };
     });
 
-    const handleDocFileChange = (category, e) => {
+    const handleDocFileChange = async (category, e) => {
         const file = e.target.files[0];
+        e.target.value = '';
         if (!file) return;
-        updateDoc(category, { file, url: null });
+        updateDoc(category, { file_name: file.name, url: null });
+        setAnalyzingDocs(prev => ({ ...prev, [category]: true }));
+        try {
+            const folder = formData?.id ? `employees/${formData.id}/documents` : 'employee-documents/unassigned';
+            const url = await uploadFileToStorage(file, 'documents', folder);
+            if (!url) throw new Error('La subida no devolvió una URL.');
+            const stored = getStoragePathFromUrl(url);
+            let expiryDate = getDocEntry(category).expiry_date || null;
+            if (stored) {
+                const { data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-document', {
+                    body: { filePath: stored.path, bucketName: stored.bucket }
+                });
+                if (!aiError && aiResponse?.success && aiResponse.aiData?.expDate && !expiryDate) {
+                    expiryDate = aiResponse.aiData.expDate;
+                }
+            }
+            updateDoc(category, { url, file_name: file.name, expiry_date: expiryDate });
+        } catch (err) {
+            useToastStore.getState().showToast('Error al subir documento', err.message || 'Intenta de nuevo.', 'error');
+            updateDoc(category, { url: null, file_name: '' });
+        } finally {
+            setAnalyzingDocs(prev => ({ ...prev, [category]: false }));
+        }
     };
 
-    const removeDocFile = (category) => updateDoc(category, { file: null, url: null });
+    const removeDocFile = (category) => updateDoc(category, { url: null, file_name: '' });
 
     const extraDocs = (formData.employee_documents || []).filter(d => d.category?.startsWith('EXTRA_'));
-    const addExtraDoc = () => setFormData(prev => ({ ...prev, employee_documents: [...(prev.employee_documents || []), { category: `EXTRA_${Date.now()}`, title: '', file: null, url: null, expiry_date: '' }] }));
+    const addExtraDoc = () => setFormData(prev => ({ ...prev, employee_documents: [...(prev.employee_documents || []), { category: `EXTRA_${Date.now()}`, title: '', file_name: '', url: null, expiry_date: '' }] }));
     const removeExtraDoc = (category) => setFormData(prev => ({ ...prev, employee_documents: (prev.employee_documents || []).filter(d => d.category !== category) }));
 
     // Aviso visual de vencimiento — la fecha puede venir tecleada a mano o
@@ -1835,15 +1866,21 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {documentCategories.map(cat => {
                                     const doc = getDocEntry(cat.key);
-                                    const hasFile = !!(doc.file || doc.url);
+                                    const isAnalyzing = !!analyzingDocs[cat.key];
+                                    const hasFile = !!doc.url;
                                     const expiryBadge = getExpiryBadge(doc.expiry_date);
                                     return (
                                         <div key={cat.key} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">{cat.label}</label>
-                                            {hasFile ? (
+                                            {isAnalyzing ? (
+                                                <div className="flex items-center gap-2 bg-white rounded-xl border border-[#0052CC]/30 h-[40px] px-3">
+                                                    <Loader2 size={14} className="text-[#0052CC] shrink-0 animate-spin" />
+                                                    <span className="text-[12px] font-bold text-[#0052CC] truncate flex-1">Subiendo y analizando con IA…</span>
+                                                </div>
+                                            ) : hasFile ? (
                                                 <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200/80 h-[40px] px-3">
                                                     <FileText size={14} className="text-[#0052CC] shrink-0" />
-                                                    <span className="text-[12px] font-bold text-slate-700 truncate flex-1">{doc.file?.name || 'Documento cargado'}</span>
+                                                    <span className="text-[12px] font-bold text-slate-700 truncate flex-1">{doc.file_name || 'Documento cargado'}</span>
                                                     <button type="button" onClick={() => removeDocFile(cat.key)} title="Quitar" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
                                                 </div>
                                             ) : (
@@ -1852,10 +1889,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocFileChange(cat.key, e)} />
                                                 </label>
                                             )}
-                                            {hasFile && (
+                                            {hasFile && !isAnalyzing && (
                                                 <div className="mt-2">
                                                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 flex items-center justify-between">
-                                                        <span>Fecha de Vencimiento (opcional) — se detecta al Guardar si la trae el documento</span>
+                                                        <span>Fecha de Vencimiento (opcional) — detectada por IA si el documento la trae</span>
                                                         {expiryBadge && <span className={`ml-1 shrink-0 px-1.5 py-0.5 rounded-md border font-black normal-case tracking-normal ${expiryBadge.className}`}>{expiryBadge.label}</span>}
                                                     </label>
                                                     <div className="bg-white rounded-xl border border-slate-200/80 h-[36px] flex items-center px-1.5">
@@ -1879,7 +1916,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             {extraDocs.length === 0 && <p className="text-[11px] text-slate-400 font-medium">Sin documentos adicionales.</p>}
                             <div className="flex flex-col gap-3">
                                 {extraDocs.map(doc => {
-                                    const hasFile = !!(doc.file || doc.url);
+                                    const isAnalyzing = !!analyzingDocs[doc.category];
+                                    const hasFile = !!doc.url;
                                     const expiryBadge = getExpiryBadge(doc.expiry_date);
                                     return (
                                         <div key={doc.category} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
@@ -1888,11 +1926,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     className="flex-1 bg-transparent text-[12px] font-bold text-slate-700 outline-none border-b border-slate-200 pb-1" />
                                                 <button type="button" onClick={() => removeExtraDoc(doc.category)} title="Quitar documento" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
                                             </div>
-                                            {hasFile ? (
+                                            {isAnalyzing ? (
+                                                <div className="flex items-center gap-2 bg-white rounded-xl border border-[#0052CC]/30 h-[40px] px-3">
+                                                    <Loader2 size={14} className="text-[#0052CC] shrink-0 animate-spin" />
+                                                    <span className="text-[12px] font-bold text-[#0052CC] truncate flex-1">Subiendo y analizando con IA…</span>
+                                                </div>
+                                            ) : hasFile ? (
                                                 <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200/80 h-[40px] px-3">
                                                     <FileText size={14} className="text-[#0052CC] shrink-0" />
-                                                    <span className="text-[12px] font-bold text-slate-700 truncate flex-1">{doc.file?.name || 'Documento cargado'}</span>
-                                                    <button type="button" onClick={() => updateDoc(doc.category, { file: null, url: null })} title="Quitar archivo" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
+                                                    <span className="text-[12px] font-bold text-slate-700 truncate flex-1">{doc.file_name || 'Documento cargado'}</span>
+                                                    <button type="button" onClick={() => removeDocFile(doc.category)} title="Quitar archivo" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
                                                 </div>
                                             ) : (
                                                 <label className="flex items-center justify-center gap-2 h-[40px] rounded-xl border border-dashed border-slate-300 text-slate-400 hover:border-[#0052CC]/40 hover:text-[#0052CC] cursor-pointer transition-colors">
@@ -1900,10 +1943,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <input type="file" className="hidden" onChange={(e) => handleDocFileChange(doc.category, e)} />
                                                 </label>
                                             )}
-                                            {hasFile && (
+                                            {hasFile && !isAnalyzing && (
                                                 <div className="mt-2">
                                                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 flex items-center justify-between">
-                                                        <span>Fecha de Vencimiento (opcional) — se detecta al Guardar si la trae el documento</span>
+                                                        <span>Fecha de Vencimiento (opcional) — detectada por IA si el documento la trae</span>
                                                         {expiryBadge && <span className={`ml-1 shrink-0 px-1.5 py-0.5 rounded-md border font-black normal-case tracking-normal ${expiryBadge.className}`}>{expiryBadge.label}</span>}
                                                     </label>
                                                     <div className="bg-white rounded-xl border border-slate-200/80 h-[36px] flex items-center px-1.5">

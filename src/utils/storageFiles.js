@@ -6,6 +6,16 @@ import { supabase } from '../supabaseClient';
 const PRIVATE_BUCKETS = ['documents', 'payment-proofs', 'empleados'];
 const STORAGE_PATH_RE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+?)(?:\?.*)?$/;
 
+// Extrae {bucket, path} de una URL formato-public de Supabase Storage — para
+// llamar edge functions que necesitan el path crudo (ej. analyze-document),
+// no la URL. Devuelve null si no matchea (URL externa, o ya no es de storage).
+export const getStoragePathFromUrl = (storedUrl) => {
+    if (!storedUrl) return null;
+    const m = String(storedUrl).match(STORAGE_PATH_RE);
+    if (!m) return null;
+    return { bucket: m[1], path: decodeURIComponent(m[2]) };
+};
+
 export const getSignedFileUrl = async (storedUrl, expiresIn = 3600) => {
     if (!storedUrl) return null;
     const str = String(storedUrl);

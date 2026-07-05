@@ -286,9 +286,9 @@ const validateOptionalFormats = (data) => {
         }
     }
 
-    if (data.has_srs_accreditation && !data.srs_accreditation_expiry) {
-        throw new Error('Falta la Fecha de Vencimiento de la Acreditación SRS.');
-    }
+    // Nota: la fecha de vencimiento de la Acreditación SRS ya no vive en
+    // srs_accreditation_expiry — vive en el documento subido (employee_documents,
+    // categoría SRS, opcional / autocompletada por IA), así que no se exige aquí.
 
     // Art. 23.2 Código de Trabajo: el DUI es obligatorio en el contrato escrito;
     // en El Salvador no se tramita antes de los 18 años, así que para menores se

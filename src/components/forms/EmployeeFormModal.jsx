@@ -56,15 +56,17 @@ const TEMPORAL_LEGAL_BASIS_OPTIONS = [
 const PROBATION_DAYS = 30;
 const PROBATION_EXEMPTION_DAYS = 365;
 const MINOR_AGE = 18;
-// Documentación del expediente — slots fijos siempre visibles; "Acreditación de
-// Enfermería" se agrega dinámicamente solo si el Cargo Principal contiene
-// "enfermer" (Regente/Auxiliar de Enfermería). El resto de documentos usa la
-// lista abierta "+ Agregar Documento" (categoría EXTRA_<timestamp>).
+// Documentación del expediente — slots siempre visibles (CV, Contrato, DUI
+// frente/reverso). El resto son condicionales según lo marcado en Personal:
+// Licencia de Moto/Carro solo si se activó "Posee Licencia" respectiva,
+// Acreditación SRS solo si se activó su checkbox, y "Acreditación de
+// Enfermería" solo si el Cargo Principal contiene "enfermer". El resto de
+// documentos usa la lista abierta "+ Agregar Documento" (categoría EXTRA_<ts>).
 const FIXED_DOCUMENT_CATEGORIES = [
     { key: 'CV', label: 'Currículum Vitae (CV)' },
     { key: 'CONTRATO', label: 'Contrato de Trabajo Firmado' },
-    { key: 'LICENCIA', label: 'Licencia de Conducir' },
-    { key: 'SRS', label: 'Acreditación SRS (Junta de Vigilancia de la Profesión Farmacéutica)' },
+    { key: 'DUI_FRENTE', label: 'DUI (Frente)' },
+    { key: 'DUI_REVERSO', label: 'DUI (Reverso)' },
 ];
 // Compartido entre "Avisar a" (Ficha Médica) y Personas Dependientes.
 const PARENTESCO_OPTIONS = [
@@ -425,7 +427,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', address: '', extra_addresses: [], dui: '', alt_identity_document: '', birth_date: '', nationality: 'Salvadoreña',
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',
                 emergency_contact_relationship: '', emergency_contact_extra_phones: [], economic_dependents: [],
-                has_motorcycle: false, has_car: false, has_motorcycle_license: false, has_car_license: false,
+                has_motorcycle: false, has_car: false, has_motorcycle_license: false, has_car_license: false, has_srs_accreditation: false,
                 employee_documents: [],
                 department: '', municipality: '', education_level: '', profession: '',
                 education_grade_completed: '', education_specialty: '', is_studying: false,
@@ -709,8 +711,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const isNursingRole = /enfermer/i.test(selectedRoleName);
     const documentCategories = useMemo(() => [
         ...FIXED_DOCUMENT_CATEGORIES,
+        ...(formData.has_motorcycle_license ? [{ key: 'LICENCIA_MOTO', label: 'Licencia de Motocicleta' }] : []),
+        ...(formData.has_car_license ? [{ key: 'LICENCIA_CARRO', label: 'Licencia de Automóvil' }] : []),
+        ...(formData.has_srs_accreditation ? [{ key: 'SRS', label: 'Acreditación SRS (Junta de Vigilancia de la Profesión Farmacéutica)' }] : []),
         ...(isNursingRole ? [{ key: 'ENFERMERIA', label: 'Acreditación de Enfermería' }] : []),
-    ], [isNursingRole]);
+    ], [formData.has_motorcycle_license, formData.has_car_license, formData.has_srs_accreditation, isNursingRole]);
 
     const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
     const [analyzingDocs, setAnalyzingDocs] = useState({});
@@ -1576,7 +1581,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="p-2 bg-teal-50 text-teal-600 rounded-[0.8rem] border border-teal-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                                     <Car size={16} strokeWidth={2.5} />
                                 </div>
-                                <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Vehículo</h4>
+                                <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Vehículo y Acreditaciones</h4>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1600,7 +1605,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <Car size={15} strokeWidth={2.5} className="text-slate-400" />
                                     <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Licencia de Automóvil</span>
                                 </label>
+                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60 md:col-span-2">
+                                    <input type="checkbox" checked={!!formData.has_srs_accreditation} onChange={(e) => handleSelectChange('has_srs_accreditation', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                                    <ShieldCheck size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Acreditación de la SRS</span>
+                                </label>
                             </div>
+                            {(formData.has_motorcycle_license || formData.has_car_license || formData.has_srs_accreditation) && (
+                                <p className="text-[9px] text-teal-600 font-bold mt-2 ml-1">El documento correspondiente ya está disponible para subir en la pestaña Documentos.</p>
+                            )}
                         </div>
                     </>
                 )}

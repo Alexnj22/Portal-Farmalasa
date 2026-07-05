@@ -18,7 +18,7 @@ const UPPERCASE_FIELDS = new Set(['first_names', 'last_names', 'address', 'emerg
 const GENDER_OPTIONS = [{ value: 'F', label: 'Femenino' }, { value: 'M', label: 'Masculino' }];
 const BLOOD_TYPE_OPTIONS = [{ value: 'O+', label: 'O+ (Positivo)' }, { value: 'O-', label: 'O- (Negativo)' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' }, { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' }, { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' }];
 const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { value: 'CASADO', label: 'Casado/a' }, { value: 'DIVORCIADO', label: 'Divorciado/a' }, { value: 'VIUDO', label: 'Viudo/a' }, { value: 'ACOMPAÑADO', label: 'Acompañado/a' }];
-const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal / Plazo Fijo' }, { value: 'SERVICIOS', label: 'Servicios Profesionales' }];
+const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal' }, { value: 'SERVICIOS', label: 'Servicios Profesionales' }];
 // "Medio Tiempo" ya no es un tipo de contrato — es una configuración de horas
 // semanales (ver HOURS_OPTIONS), independiente del tipo de contrato.
 const HOURS_OPTIONS = [
@@ -35,8 +35,11 @@ const isCustomHours = (h) => h !== '' && h !== null && h !== undefined && String
 // false (por diseño, para no confundir "vacío" con "personalizado") y el
 // select rebotaría de vuelta a "Tiempo Completo 44h" apenas se eligiera Otro.
 const OTRO_HOURS_SENTINEL = '__OTRO_HORAS__';
+// Tope legal: jornada ordinaria semanal diurna, Art. 161 Código de Trabajo
+// (44h; la nocturna es 39h pero no distinguimos turno aquí). Sin mínimo legal
+// para tiempo parcial, se deja 1 como piso solo para evitar valores absurdos.
 const MIN_WEEKLY_HOURS = 1;
-const MAX_WEEKLY_HOURS = 80;
+const MAX_WEEKLY_HOURS = 44;
 // Compartido entre "Avisar a" (Ficha Médica) y Personas Dependientes.
 const PARENTESCO_OPTIONS = [
     { value: 'CONYUGE', label: 'Cónyuge / Pareja' },
@@ -1512,7 +1515,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         </div>
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className={`grid grid-cols-1 gap-4 ${formData.contract_type === 'TEMPORAL' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                                 {isEditMode ? (
                                     <>
                                         <LockedField label="Tipo de Contrato" value={CONTRACT_TYPE_OPTIONS.find(o => o.value === formData.contract_type)?.label || formData.contract_type} />
@@ -1535,33 +1538,35 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </>
                                 )}
 
+                                {formData.contract_type === 'TEMPORAL' && (
+                                    <div className="relative z-30 animate-in fade-in zoom-in-95">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1 mb-1.5 flex items-center justify-between">
+                                            <span>Fecha Fin de Contrato {contractDatesInvalid && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md ml-1">Debe ser posterior al inicio</span>}</span>
+                                            {!formData.contract_end_date && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md border border-red-200">Obligatorio</span>}
+                                        </label>
+                                        <div className={`bg-amber-50/30 rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${contractDatesInvalid ? '!border-red-400 !bg-red-50/50' : 'border-amber-200'}`}>
+                                            <LiquidDatePicker value={formData.contract_end_date} onChange={(date) => handleDateChange('contract_end_date', date)} placeholder="Obligatorio para temporales" />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className={`grid grid-cols-1 gap-4 mt-4 ${hoursMode === 'OTRO' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                                 <div className="relative z-20">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Horas Semanales</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
                                         <LiquidSelect value={hoursMode} onChange={handleHoursModeChange} options={HOURS_OPTIONS} clearable={false} icon={Clock} {...portalSelectProps} />
                                     </div>
-                                    {hoursMode === 'OTRO' && (
-                                        <div className="mt-2">
-                                            <PortalInput name="weekly_contracted_hours" value={formData.weekly_contracted_hours === OTRO_HOURS_SENTINEL ? '' : formData.weekly_contracted_hours} onChange={handleChange} type="number" icon={Clock} placeholder="Ej. 36" hasError={hoursInvalid} errorMessage={`Entre ${MIN_WEEKLY_HOURS} y ${MAX_WEEKLY_HOURS}`} />
-                                        </div>
-                                    )}
                                 </div>
+                                {hoursMode === 'OTRO' && (
+                                    <div className="relative z-20 animate-in fade-in zoom-in-95">
+                                        <PortalInput label="Horas (Otro)" name="weekly_contracted_hours" value={formData.weekly_contracted_hours === OTRO_HOURS_SENTINEL ? '' : formData.weekly_contracted_hours} onChange={handleChange} type="number" icon={Clock} placeholder="Ej. 36" hasError={hoursInvalid} errorMessage={`Entre ${MIN_WEEKLY_HOURS} y ${MAX_WEEKLY_HOURS}`} />
+                                    </div>
+                                )}
                                 {isEditMode
                                     ? <LockedField label="Salario Base" value={formData.base_salary ? `$${Number(formData.base_salary).toFixed(2)}` : '—'} />
                                     : <PortalInput label="Salario Base" name="base_salary" value={formData.base_salary} onChange={handleChange} type="number" icon={DollarSign} placeholder="0.00" prefix="$" hasError={salaryInvalid} errorMessage="Debe ser mayor a 0" />
                                 }
-
-                                {formData.contract_type === 'TEMPORAL' && (
-                                    <div className="md:col-span-2 relative z-30 animate-in fade-in zoom-in-95">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1 mb-1.5 flex items-center justify-between">
-                                            <span>Fecha Fin de Contrato {contractDatesInvalid && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md ml-1">Debe ser posterior al inicio</span>}</span>
-                                            {!formData.contract_end_date && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md border border-red-200">Obligatorio</span>}
-                                        </label>
-                                        <div className={`bg-amber-50/30 rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 max-w-xs ${contractDatesInvalid ? '!border-red-400 !bg-red-50/50' : 'border-amber-200'}`}>
-                                            <LiquidDatePicker value={formData.contract_end_date} onChange={(date) => handleDateChange('contract_end_date', date)} placeholder="Obligatorio para temporales" />
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </>

@@ -272,8 +272,9 @@ const validateOptionalFormats = (data) => {
 
     if (data.weekly_contracted_hours !== undefined && data.weekly_contracted_hours !== null && String(data.weekly_contracted_hours).trim() !== '') {
         const hours = Number(data.weekly_contracted_hours);
-        if (isNaN(hours) || hours < 1 || hours > 80) {
-            throw new Error('Las Horas Semanales deben estar entre 1 y 80.');
+        // Tope legal Art. 161 Código de Trabajo: jornada ordinaria semanal diurna = 44h.
+        if (isNaN(hours) || hours < 1 || hours > 44) {
+            throw new Error('Las Horas Semanales deben estar entre 1 y 44 (jornada ordinaria máxima según el Código de Trabajo).');
         }
     }
 

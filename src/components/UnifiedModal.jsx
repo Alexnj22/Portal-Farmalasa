@@ -196,6 +196,31 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     setValidationError("Faltan campos obligatorios: Nombres, Apellidos, Código, Sucursal Base o Cargo.");
                     return;
                 }
+                // Art. 23.2 Código de Trabajo: DUI obligatorio en el contrato — salvo
+                // menores de edad (no se tramita antes de los 18 en El Salvador), a
+                // quienes se les acepta un documento alterno (partida de nacimiento,
+                // carné de minoridad) en su lugar.
+                let isMinor = false;
+                if (formData.birth_date) {
+                    const bd = new Date(`${formData.birth_date}T00:00:00`);
+                    if (!isNaN(bd.getTime())) {
+                        const today = new Date();
+                        let age = today.getFullYear() - bd.getFullYear();
+                        const m = today.getMonth() - bd.getMonth();
+                        if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+                        isMinor = age < 18;
+                    }
+                }
+                if (isMinor ? !formData.alt_identity_document?.trim() : !formData.dui?.trim()) {
+                    setValidationError(isMinor
+                        ? "Falta el Documento de Identidad Alternativo (el empleado es menor de edad)."
+                        : "El DUI es obligatorio (Art. 23.2 Código de Trabajo).");
+                    return;
+                }
+                if (formData.contract_type === 'TEMPORAL' && (!formData.contract_temporal_legal_basis || !formData.contract_temporal_reason?.trim())) {
+                    setValidationError("Falta la Base Legal y/o el Motivo Concreto del contrato Temporal (Art. 25).");
+                    return;
+                }
             } else {
                 if (!formData.first_names?.trim() || !formData.last_names?.trim()) {
                     setValidationError("Los Nombres y Apellidos son obligatorios.");

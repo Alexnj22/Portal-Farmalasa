@@ -289,6 +289,43 @@ const validateOptionalFormats = (data) => {
     if (data.has_srs_accreditation && !data.srs_accreditation_expiry) {
         throw new Error('Falta la Fecha de Vencimiento de la Acreditación SRS.');
     }
+
+    // Art. 23.2 Código de Trabajo: el DUI es obligatorio en el contrato escrito;
+    // en El Salvador no se tramita antes de los 18 años, así que para menores se
+    // acepta "cualquier documento fehaciente" en su lugar (partida de nacimiento,
+    // carné de minoridad). Solo se exige cuando el dato llega en el payload (los
+    // updates parciales no siempre traen dui/birth_date).
+    if (data.dui !== undefined || data.alt_identity_document !== undefined) {
+        let isMinor = false;
+        if (data.birth_date) {
+            const bd = new Date(`${data.birth_date}T00:00:00`);
+            if (!isNaN(bd.getTime())) {
+                const today = new Date();
+                let age = today.getFullYear() - bd.getFullYear();
+                const m = today.getMonth() - bd.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+                isMinor = age < 18;
+            }
+        }
+        if (isMinor) {
+            if (!String(data.alt_identity_document ?? '').trim()) {
+                throw new Error('El empleado es menor de edad: falta el Documento de Identidad Alternativo (partida de nacimiento, carné de minoridad).');
+            }
+        } else if (!String(data.dui ?? '').trim()) {
+            throw new Error('El DUI es obligatorio (Art. 23.2 Código de Trabajo).');
+        }
+    }
+
+    // Art. 25/23.4: un contrato a plazo sin base legal + motivo documentados
+    // queda sin respaldo escrito si se disputa la validez del plazo.
+    if (data.contract_type === 'TEMPORAL') {
+        if (!data.contract_temporal_legal_basis) {
+            throw new Error('Falta la Base Legal del Plazo (Art. 25) para un contrato Temporal.');
+        }
+        if (!String(data.contract_temporal_reason ?? '').trim()) {
+            throw new Error('Falta el Motivo Concreto del contrato Temporal.');
+        }
+    }
 };
 
 // Valida el límite de headcount (max_limit) del cargo antes de asignarlo.
@@ -407,6 +444,8 @@ export const createEmployeeSlice = (set, get) => ({
                 marital_status: formData.marital_status || null,
                 birth_date: formData.birth_date || null,
                 dui: formData.dui || null,
+                alt_identity_document: formData.alt_identity_document || null,
+                nationality: formData.nationality || null,
                 phone: formData.phone || null,
                 address: formData.address ? formData.address.trim().toUpperCase() : null,
 
@@ -438,6 +477,8 @@ export const createEmployeeSlice = (set, get) => ({
                 contract_type: formData.contract_type || 'INDEFINIDO',
                 contract_start_date: formData.contract_start_date || null,
                 contract_end_date: formData.contract_type === 'TEMPORAL' ? (formData.contract_end_date || null) : null,
+                contract_temporal_legal_basis: formData.contract_type === 'TEMPORAL' ? (formData.contract_temporal_legal_basis || null) : null,
+                contract_temporal_reason: formData.contract_type === 'TEMPORAL' ? (formData.contract_temporal_reason || null) : null,
                 weekly_contracted_hours: formData.weekly_contracted_hours ? parseInt(formData.weekly_contracted_hours, 10) : 44,
                 base_salary: formData.base_salary ? parseFloat(formData.base_salary) : null,
                 has_motorcycle: !!formData.has_motorcycle,
@@ -657,6 +698,8 @@ export const createEmployeeSlice = (set, get) => ({
             
             if (updatedData.contract_type && updatedData.contract_type !== 'TEMPORAL') {
                 dbPayload.contract_end_date = null;
+                dbPayload.contract_temporal_legal_basis = null;
+                dbPayload.contract_temporal_reason = null;
             }
 
             delete dbPayload.id;

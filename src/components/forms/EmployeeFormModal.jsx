@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
-import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike } from 'lucide-react';
+import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo';
+import { NATIONALITY_OPTIONS } from '../../data/nationalities';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../supabaseClient';
@@ -40,6 +41,20 @@ const OTRO_HOURS_SENTINEL = '__OTRO_HORAS__';
 // para tiempo parcial, se deja 1 como piso solo para evitar valores absurdos.
 const MIN_WEEKLY_HOURS = 1;
 const MAX_WEEKLY_HOURS = 44;
+// Art. 25 Código de Trabajo: un contrato a plazo/Temporal SOLO es válido si cae
+// en una de estas dos bases legales — no hay una tercera opción por ley. El
+// motivo concreto (texto libre) sí es abierto y lo define la empresa caso por
+// caso, pero la base legal es un catálogo cerrado.
+const TEMPORAL_LEGAL_BASIS_OPTIONS = [
+    { value: 'TRANSITORIO_EVENTUAL', label: 'Labor transitoria, temporal o eventual por su naturaleza (Art. 25 lit. a)' },
+    { value: 'TERMINACION_NEGOCIO', label: 'Circunstancia que terminará el negocio total o parcial (Art. 25 lit. b)' },
+];
+// Art. 28: hasta 30 días de prueba desde que inicia labores (fecha de
+// contratación). Si se recontrata a la misma persona antes de 1 año, no puede
+// volver a estipularse período de prueba.
+const PROBATION_DAYS = 30;
+const PROBATION_EXEMPTION_DAYS = 365;
+const MINOR_AGE = 18;
 // Compartido entre "Avisar a" (Ficha Médica) y Personas Dependientes.
 const PARENTESCO_OPTIONS = [
     { value: 'CONYUGE', label: 'Cónyuge / Pareja' },
@@ -319,6 +334,37 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         return () => { cancelled = true; };
     }, []);
 
+    // Art. 28: si esta persona tiene una baja (TERMINATION) a menos de 1 año de
+    // la fecha de contratación actual, no puede volver a estipularse período de
+    // prueba — solo se necesita el evento más reciente para saberlo.
+    const [lastTermination, setLastTermination] = useState(null);
+    useEffect(() => {
+        if (!isEditMode || !formData?.id) { setLastTermination(null); return; }
+        let cancelled = false;
+        supabase.from('employee_events').select('date')
+            .eq('employee_id', formData.id).eq('type', 'TERMINATION')
+            .order('date', { ascending: false }).limit(1).then(({ data }) => {
+                if (!cancelled) setLastTermination(data?.[0] || null);
+            });
+        return () => { cancelled = true; };
+    }, [isEditMode, formData?.id]);
+
+    const probationInfo = useMemo(() => {
+        if (!formData?.hire_date) return null;
+        const hireDate = new Date(formData.hire_date + 'T00:00:00');
+        if (isNaN(hireDate.getTime())) return null;
+        if (lastTermination?.date) {
+            const termDate = new Date(lastTermination.date + 'T00:00:00');
+            const daysSinceTermination = (hireDate - termDate) / 86400000;
+            if (daysSinceTermination >= 0 && daysSinceTermination < PROBATION_EXEMPTION_DAYS) {
+                return { exempt: true };
+            }
+        }
+        const probationEnd = new Date(hireDate);
+        probationEnd.setDate(probationEnd.getDate() + PROBATION_DAYS);
+        return { exempt: false, inProbation: new Date() <= probationEnd, probationEnd };
+    }, [formData?.hire_date, lastTermination]);
+
     const bachilleratoTecnicoOptions = useMemo(() => buildCatalogOptions(educationCatalog.BACHILLERATO_TECNICO_ESPECIALIDAD, 'Otra especialidad...'), [educationCatalog]);
     const tecnicoSuperiorOptions = useMemo(() => buildCatalogOptions(educationCatalog.TECNICO_SUPERIOR_ESPECIALIDAD, 'Otra especialidad...'), [educationCatalog]);
     const profesionesUniversitariasOptions = useMemo(() => buildCatalogOptions(educationCatalog.PROFESION_UNIVERSITARIA, 'Otra profesión...'), [educationCatalog]);
@@ -365,7 +411,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     useEffect(() => {
         if (!formData?.code) { 
             setFormData(prev => ({
-                first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', address: '', extra_addresses: [], dui: '', birth_date: '',
+                first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', address: '', extra_addresses: [], dui: '', alt_identity_document: '', birth_date: '', nationality: 'Salvadoreña',
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',
                 emergency_contact_relationship: '', emergency_contact_extra_phones: [], economic_dependents: [],
                 has_motorcycle: false, has_car: false, has_motorcycle_license: false, has_car_license: false,
@@ -381,7 +427,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 hire_date: prev?.hireDate || prev?.hire_date || new Date().toISOString().split('T')[0], 
                 kiosk_pin: '', photoPreview: null, file: null,
                 contract_type: 'INDEFINIDO', contract_start_date: prev?.hireDate || prev?.hire_date || new Date().toISOString().split('T')[0],
-                contract_end_date: '', weekly_contracted_hours: '44', base_salary: '',
+                contract_end_date: '', contract_temporal_legal_basis: '', contract_temporal_reason: '', weekly_contracted_hours: '44', base_salary: '',
                 afp_number: '', isss_number: '', afp_institution: '', bank_name: '', account_number: '', account_type: 'AHORRO',
                 ...prev 
             }));
@@ -470,7 +516,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         setFormData(prev => {
             const newData = { ...prev, [name]: value };
             if (name === 'department') newData.municipality = '';
-            if (name === 'contract_type' && value !== 'TEMPORAL') newData.contract_end_date = '';
+            if (name === 'contract_type' && value !== 'TEMPORAL') {
+                newData.contract_end_date = '';
+                newData.contract_temporal_legal_basis = '';
+                newData.contract_temporal_reason = '';
+            }
             if (name === 'education_level') {
                 newData.education_grade_completed = '';
                 newData.education_specialty = '';
@@ -696,12 +746,23 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const hoursInvalid = hoursMode === 'OTRO' && (formData?.weekly_contracted_hours === '' || isNaN(customHoursNum) || customHoursNum < MIN_WEEKLY_HOURS || customHoursNum > MAX_WEEKLY_HOURS);
     const contractDatesInvalid = formData?.contract_type === 'TEMPORAL' && !!formData?.contract_start_date && !!formData?.contract_end_date
         && new Date(`${formData.contract_end_date}T00:00:00`) <= new Date(`${formData.contract_start_date}T00:00:00`);
+    // Art. 25/23.4: un contrato a plazo sin la base legal + motivo documentados
+    // queda sin respaldo si se disputa — la ley presume indefinido cualquier
+    // labor permanente, así que el plazo necesita justificación por escrito.
+    const temporalBasisMissing = formData?.contract_type === 'TEMPORAL' && !formData?.contract_temporal_legal_basis;
+    const temporalReasonMissing = formData?.contract_type === 'TEMPORAL' && !formData?.contract_temporal_reason?.trim();
 
     const employeeAge = calcAge(formData?.birth_date);
     const birthDateInFuture = !!formData?.birth_date && new Date(formData.birth_date + 'T00:00:00') > new Date();
     const birthDateOutOfRange = employeeAge !== null && (employeeAge < MIN_WORK_AGE || employeeAge > MAX_WORK_AGE);
     const birthDateInvalid = birthDateInFuture || birthDateOutOfRange;
     const birthDateErrorMsg = birthDateInFuture ? 'Fecha futura' : birthDateOutOfRange ? `Edad debe ser ${MIN_WORK_AGE}-${MAX_WORK_AGE}` : null;
+    // Menor de edad (16-17): en El Salvador el DUI se tramita hasta los 18, así
+    // que Art. 23.2 permite sustituirlo por "cualquier documento fehaciente"
+    // (partida de nacimiento, carné de minoridad). También aplican Art. 116-117:
+    // prohibido el trabajo nocturno y examen médico previo obligatorio.
+    const isMinor = employeeAge !== null && employeeAge < MINOR_AGE;
+    const altIdMissing = isMinor && !formData?.alt_identity_document?.trim();
 
     let duiErrorMsg = null;
     if (isDuiDuplicate) duiErrorMsg = "DUI Ya Registrado";
@@ -837,17 +898,38 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <PortalInput label="Nombres" name="first_names" value={formData.first_names} onChange={handleChange} required hasError={firstNamesInvalid} errorMessage="Solo letras" />
                                 <PortalInput label="Apellidos" name="last_names" value={formData.last_names} onChange={handleChange} required hasError={lastNamesInvalid} errorMessage="Solo letras" />
-                                <PortalInput label="DUI" name="dui" value={formData.dui} onChange={handleChange} icon={Fingerprint} placeholder="00000000-0" maskType="DUI" hasError={isDuiInvalid || isDuiDuplicate || isDuiIncomplete} errorMessage={duiErrorMsg} />
+
+                                <div className="relative z-20">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Nacionalidad</label>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                        <LiquidSelect value={formData.nationality} onChange={(val) => handleSelectChange('nationality', val)} options={NATIONALITY_OPTIONS} placeholder="Nacionalidad..." icon={Globe} clearable={false} {...portalSelectProps} />
+                                    </div>
+                                </div>
 
                                 <div className="relative z-30">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
-                                        <span>Fecha de Nacimiento {employeeAge !== null && !birthDateInvalid && <span className="text-slate-400 font-bold normal-case tracking-normal">· {employeeAge} años</span>}</span>
+                                        <span>Fecha de Nacimiento {employeeAge !== null && !birthDateInvalid && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-amber-600' : 'text-slate-400'}`}>· {employeeAge} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
                                         {birthDateInvalid && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md ml-1">{birthDateErrorMsg}</span>}
                                     </label>
-                                    <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${birthDateInvalid ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}>
+                                    <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${birthDateInvalid ? '!border-red-400 !bg-red-50/50' : isMinor ? '!border-amber-300 !bg-amber-50/40' : 'border-slate-200/80'}`}>
                                         <LiquidDatePicker value={formData.birth_date} onChange={(date) => handleDateChange('birth_date', date)} placeholder="Seleccionar Fecha" />
                                     </div>
                                 </div>
+
+                                <PortalInput label="DUI" name="dui" value={formData.dui} onChange={handleChange} icon={Fingerprint} placeholder="00000000-0" maskType="DUI" required={!isMinor} hasError={isDuiInvalid || isDuiDuplicate || isDuiIncomplete} errorMessage={duiErrorMsg} />
+
+                                {isMinor && (
+                                    <PortalInput label="Documento de Identidad Alternativo" name="alt_identity_document" value={formData.alt_identity_document} onChange={handleChange} icon={Fingerprint} placeholder="Partida de Nacimiento, Carné de Minoridad..." required hasError={altIdMissing} errorMessage="Requerido para menores sin DUI" colSpan={2} />
+                                )}
+
+                                {isMinor && (
+                                    <div className="md:col-span-2 bg-amber-50/70 border border-amber-200/70 rounded-2xl p-3 flex items-start gap-3 animate-in fade-in zoom-in-95">
+                                        <ShieldAlert size={18} className="text-amber-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+                                        <p className="text-[11px] text-amber-700 font-medium leading-tight">
+                                            <span className="font-black">Menor de edad (16-17 años).</span> Por Ley (Art. 116-117 Código de Trabajo): prohibido asignar turno nocturno, y requiere examen médico previo gratuito antes de admitirlo (con repetición anual hasta los 18 años). En El Salvador el DUI no se tramita hasta los 18 — por eso se pide un documento alterno (partida de nacimiento, carné de minoridad).
+                                        </p>
+                                    </div>
+                                )}
 
                                 <div>
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
@@ -1514,6 +1596,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
                         </div>
 
+                        {formData.contract_type === 'SERVICIOS' && (
+                            <div className="bg-red-50/70 border border-red-200/70 rounded-2xl p-3.5 flex items-start gap-3">
+                                <ShieldAlert size={18} className="text-red-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+                                <p className="text-[11px] text-red-700 font-medium leading-tight">
+                                    <span className="font-black">Riesgo legal — "Servicios Profesionales" con subordinación.</span> El Art. 20 del Código de Trabajo presume un contrato laboral real (con derecho a aguinaldo, vacaciones, ISSS e indemnización) cuando hay subordinación — horario, cargo y sucursal asignados, como en este expediente. Un juez laboral puede reclasificarlo sin importar la etiqueta del contrato. Usa este tipo solo para relaciones genuinamente independientes, sin horario ni supervisión directa.
+                                </p>
+                            </div>
+                        )}
+
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className={`grid grid-cols-1 gap-4 ${formData.contract_type === 'TEMPORAL' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                                 {isEditMode ? (
@@ -1549,7 +1640,35 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </div>
                                     </div>
                                 )}
+
+                                {formData.contract_type === 'TEMPORAL' && (
+                                    <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in zoom-in-95">
+                                        <div className="relative z-20">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1 mb-1.5 flex items-center justify-between">
+                                                <span>Base Legal del Plazo (Art. 25)</span>
+                                                {temporalBasisMissing && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md border border-red-200">Requerido</span>}
+                                            </label>
+                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${temporalBasisMissing ? '!border-red-400 !bg-red-50/50' : ''}`}>
+                                                <LiquidSelect value={formData.contract_temporal_legal_basis} onChange={(val) => handleSelectChange('contract_temporal_legal_basis', val)} options={TEMPORAL_LEGAL_BASIS_OPTIONS} placeholder="Seleccionar base legal..." clearable={false} {...portalSelectProps} />
+                                            </div>
+                                        </div>
+                                        <PortalInput label="Motivo Concreto" name="contract_temporal_reason" value={formData.contract_temporal_reason} onChange={handleChange} placeholder="Ej. Cobertura de incapacidad de la titular del puesto" required hasError={temporalReasonMissing} errorMessage="Requerido para justificar el plazo" />
+                                        <p className="md:col-span-2 text-[10px] text-amber-600/80 font-medium -mt-2 ml-1">La base legal es un catálogo cerrado (solo hay 2 según el Art. 25); el motivo concreto lo redacta la empresa caso por caso — queda como respaldo escrito si el plazo se disputa.</p>
+                                    </div>
+                                )}
                             </div>
+
+                            {probationInfo && (
+                                <div className="mt-4 pt-4 border-t border-slate-200/50">
+                                    {probationInfo.exempt ? (
+                                        <p className="text-[10px] font-bold text-slate-500 flex items-center gap-1.5"><ShieldCheck size={12} className="text-emerald-500" /> Recontratación antes de 1 año: no aplica período de prueba (Art. 28, último párrafo).</p>
+                                    ) : probationInfo.inProbation ? (
+                                        <p className="text-[10px] font-bold text-[#0052CC] flex items-center gap-1.5 bg-[#0052CC]/5 border border-[#0052CC]/20 rounded-xl px-3 py-2 w-fit">
+                                            <Clock size={12} /> En Período de Prueba — vence el {probationInfo.probationEnd.toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' })} (Art. 28: 30 días desde la fecha de contratación)
+                                        </p>
+                                    ) : null}
+                                </div>
+                            )}
 
                             <div className={`grid grid-cols-1 gap-4 mt-4 ${hoursMode === 'OTRO' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                                 <div className="relative z-20">

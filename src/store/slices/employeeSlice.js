@@ -489,6 +489,7 @@ export const createEmployeeSlice = (set, get) => ({
                 birth_date: formData.birth_date || null,
                 dui: formData.dui || null,
                 alt_identity_document: formData.alt_identity_document || null,
+                alt_identity_document_type: formData.alt_identity_document_type || null,
                 nationality: formData.nationality || null,
                 phone: formData.phone || null,
                 address: formData.address ? formData.address.trim().toUpperCase() : null,

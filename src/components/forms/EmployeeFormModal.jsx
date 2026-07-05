@@ -65,8 +65,16 @@ const MINOR_AGE = 18;
 const FIXED_DOCUMENT_CATEGORIES = [
     { key: 'CV', label: 'Currículum Vitae (CV)' },
     { key: 'CONTRATO', label: 'Contrato de Trabajo Firmado' },
-    { key: 'DUI_FRENTE', label: 'DUI (Frente)' },
-    { key: 'DUI_REVERSO', label: 'DUI (Reverso)' },
+];
+// El documento de identidad (DUI frente/reverso para adultos, o el documento
+// alterno para menores — Art. 23.2) se renderiza aparte del resto, en un
+// único bloque agrupado, para que quede claro que son partes del MISMO
+// documento y no archivos independientes.
+const ALT_ID_DOCUMENT_TYPE_OPTIONS = [
+    { value: 'PARTIDA_NACIMIENTO', label: 'Partida de Nacimiento' },
+    { value: 'CARNET_MINORIDAD', label: 'Carné de Minoridad' },
+    { value: 'PASAPORTE', label: 'Pasaporte' },
+    { value: OTRA_ESPECIALIDAD, label: 'Otro documento legal...' },
 ];
 // Compartido entre "Avisar a" (Ficha Médica) y Personas Dependientes.
 const PARENTESCO_OPTIONS = [
@@ -424,7 +432,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     useEffect(() => {
         if (!formData?.code) { 
             setFormData(prev => ({
-                first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', address: '', extra_addresses: [], dui: '', alt_identity_document: '', birth_date: '', nationality: 'Salvadoreña',
+                first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', address: '', extra_addresses: [], dui: '', alt_identity_document: '', alt_identity_document_type: '', birth_date: '', nationality: 'Salvadoreña',
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',
                 emergency_contact_relationship: '', emergency_contact_extra_phones: [], economic_dependents: [],
                 has_motorcycle: false, has_car: false, has_motorcycle_license: false, has_car_license: false, has_srs_accreditation: false,
@@ -480,8 +488,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         if (!formData?.dui) items.push('DUI');
         if (!formData?.birth_date) items.push('Fecha de Nacimiento');
         if (!formData?.isss_number && !formData?.afp_number) items.push('ISSS o AFP');
+        // Documento de identidad (imagen): no bloquea el alta, pero se marca como
+        // pendiente si no se pudo completar al crear el expediente.
+        const age = calcAge(formData?.birth_date);
+        const minor = age !== null && age < MINOR_AGE;
+        const docs = formData?.employee_documents || [];
+        const hasIdDoc = minor
+            ? docs.some(d => d.category === 'DOCUMENTO_IDENTIDAD' && d.url)
+            : docs.some(d => d.category === 'DUI_FRENTE' && d.url) && docs.some(d => d.category === 'DUI_REVERSO' && d.url);
+        if (!hasIdDoc) items.push('DUI (Documento)');
         return items;
-    }, [isEditMode, formData?.dui, formData?.birth_date, formData?.isss_number, formData?.afp_number]);
+    }, [isEditMode, formData?.dui, formData?.birth_date, formData?.isss_number, formData?.afp_number, formData?.employee_documents]);
 
     const municipioOpts = useMemo(() => {
         if (!formData?.department || !EL_SALVADOR_GEO[formData.department]) return [];
@@ -782,6 +799,48 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         if (daysLeft <= DOC_EXPIRY_DANGER_DAYS) return { label: `Vence en ${daysLeft} día${daysLeft === 1 ? '' : 's'}`, className: 'text-red-600 bg-red-100 border-red-300' };
         if (daysLeft <= DOC_EXPIRY_WARN_DAYS) return { label: `Vence pronto (${daysLeft} días)`, className: 'text-amber-600 bg-amber-100 border-amber-300' };
         return null;
+    };
+
+    // Bloque de subida reutilizado por los slots fijos, el documento de
+    // identidad (DUI/alterno) y "Otros Documentos" — mismo estado
+    // analizando/cargado/vacío y mismo campo de vencimiento opcional.
+    const renderDocUploadArea = (category, { showExpiry = true } = {}) => {
+        const doc = getDocEntry(category);
+        const isAnalyzing = !!analyzingDocs[category];
+        const hasFile = !!doc.url;
+        const expiryBadge = getExpiryBadge(doc.expiry_date);
+        return (
+            <>
+                {isAnalyzing ? (
+                    <div className="flex items-center gap-2 bg-white rounded-xl border border-[#0052CC]/30 h-[40px] px-3">
+                        <Loader2 size={14} className="text-[#0052CC] shrink-0 animate-spin" />
+                        <span className="text-[12px] font-bold text-[#0052CC] truncate flex-1">Subiendo y analizando con IA…</span>
+                    </div>
+                ) : hasFile ? (
+                    <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200/80 h-[40px] px-3">
+                        <FileText size={14} className="text-[#0052CC] shrink-0" />
+                        <span className="text-[12px] font-bold text-slate-700 truncate flex-1">{doc.file_name || 'Documento cargado'}</span>
+                        <button type="button" onClick={() => removeDocFile(category)} title="Quitar" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
+                    </div>
+                ) : (
+                    <label className="flex items-center justify-center gap-2 h-[40px] rounded-xl border border-dashed border-slate-300 text-slate-400 hover:border-[#0052CC]/40 hover:text-[#0052CC] cursor-pointer transition-colors">
+                        <Upload size={14} /> <span className="text-[11px] font-bold">Subir archivo</span>
+                        <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocFileChange(category, e)} />
+                    </label>
+                )}
+                {showExpiry && hasFile && !isAnalyzing && (
+                    <div className="mt-2">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 flex items-center justify-between">
+                            <span>Fecha de Vencimiento (opcional) — detectada por IA si el documento la trae</span>
+                            {expiryBadge && <span className={`ml-1 shrink-0 px-1.5 py-0.5 rounded-md border font-black normal-case tracking-normal ${expiryBadge.className}`}>{expiryBadge.label}</span>}
+                        </label>
+                        <div className="bg-white rounded-xl border border-slate-200/80 h-[36px] flex items-center px-1.5">
+                            <LiquidDatePicker value={doc.expiry_date} onChange={(date) => updateDoc(category, { expiry_date: date })} placeholder="Sin vencimiento" />
+                        </div>
+                    </div>
+                )}
+            </>
+        );
     };
 
     const handlePhotoUpload = (e) => {
@@ -1876,46 +1935,72 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                                 <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Documentación del Expediente</h4>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {documentCategories.map(cat => {
-                                    const doc = getDocEntry(cat.key);
-                                    const isAnalyzing = !!analyzingDocs[cat.key];
-                                    const hasFile = !!doc.url;
-                                    const expiryBadge = getExpiryBadge(doc.expiry_date);
-                                    return (
-                                        <div key={cat.key} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">{cat.label}</label>
-                                            {isAnalyzing ? (
-                                                <div className="flex items-center gap-2 bg-white rounded-xl border border-[#0052CC]/30 h-[40px] px-3">
-                                                    <Loader2 size={14} className="text-[#0052CC] shrink-0 animate-spin" />
-                                                    <span className="text-[12px] font-bold text-[#0052CC] truncate flex-1">Subiendo y analizando con IA…</span>
-                                                </div>
-                                            ) : hasFile ? (
-                                                <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200/80 h-[40px] px-3">
-                                                    <FileText size={14} className="text-[#0052CC] shrink-0" />
-                                                    <span className="text-[12px] font-bold text-slate-700 truncate flex-1">{doc.file_name || 'Documento cargado'}</span>
-                                                    <button type="button" onClick={() => removeDocFile(cat.key)} title="Quitar" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
-                                                </div>
-                                            ) : (
-                                                <label className="flex items-center justify-center gap-2 h-[40px] rounded-xl border border-dashed border-slate-300 text-slate-400 hover:border-[#0052CC]/40 hover:text-[#0052CC] cursor-pointer transition-colors">
-                                                    <Upload size={14} /> <span className="text-[11px] font-bold">Subir archivo</span>
-                                                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocFileChange(cat.key, e)} />
-                                                </label>
-                                            )}
-                                            {hasFile && !isAnalyzing && (
+
+                            {/* Documento de identidad: DUI (Frente+Reverso, un solo documento) para
+                                adultos; documento alterno con selector de tipo (Art. 23.2) para
+                                menores — agrupado aparte para que no se lea como 2 archivos
+                                independientes. La imagen NO bloquea el alta del empleado (a
+                                diferencia del campo de texto DUI/documento alterno, que sí es
+                                obligatorio) — si falta, queda marcada "Pendiente". */}
+                            <div className="p-3 rounded-2xl border-2 border-[#0052CC]/20 bg-[#0052CC]/5 mb-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#0052CC] block">{isMinor ? 'Documento de Identidad' : 'DUI'}</label>
+                                    {!(isMinor ? !!getDocEntry('DOCUMENTO_IDENTIDAD').url : (!!getDocEntry('DUI_FRENTE').url && !!getDocEntry('DUI_REVERSO').url)) && (
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 shrink-0">Pendiente — no bloquea el alta</span>
+                                    )}
+                                </div>
+                                {isMinor ? (
+                                    <>
+                                        <div className="mb-3">
+                                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 block">Tipo de Documento</label>
+                                            <CatalogSelect
+                                                value={formData.alt_identity_document_type}
+                                                onChange={(val) => handleSelectChange('alt_identity_document_type', val)}
+                                                options={ALT_ID_DOCUMENT_TYPE_OPTIONS}
+                                                portalSelectProps={portalSelectProps}
+                                                inputHoverClass={inputHoverClass}
+                                                placeholder="Selecciona el tipo de documento..."
+                                            />
+                                            {isCatalogOther(formData.alt_identity_document_type, ALT_ID_DOCUMENT_TYPE_OPTIONS) && (
                                                 <div className="mt-2">
-                                                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 flex items-center justify-between">
-                                                        <span>Fecha de Vencimiento (opcional) — detectada por IA si el documento la trae</span>
-                                                        {expiryBadge && <span className={`ml-1 shrink-0 px-1.5 py-0.5 rounded-md border font-black normal-case tracking-normal ${expiryBadge.className}`}>{expiryBadge.label}</span>}
-                                                    </label>
-                                                    <div className="bg-white rounded-xl border border-slate-200/80 h-[36px] flex items-center px-1.5">
-                                                        <LiquidDatePicker value={doc.expiry_date} onChange={(date) => updateDoc(cat.key, { expiry_date: date })} placeholder="Sin vencimiento" />
-                                                    </div>
+                                                    <CatalogOtherInput
+                                                        value={formData.alt_identity_document_type}
+                                                        onChange={(val) => handleSelectChange('alt_identity_document_type', val)}
+                                                        inputHoverClass={inputHoverClass}
+                                                        placeholder="Especifica el documento"
+                                                    />
                                                 </div>
                                             )}
                                         </div>
-                                    );
-                                })}
+                                        {renderDocUploadArea('DOCUMENTO_IDENTIDAD')}
+                                    </>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 flex items-center justify-between">
+                                                <span>Frente</span>
+                                                {!getDocEntry('DUI_FRENTE').url && <span className="text-amber-600 font-black">Pendiente</span>}
+                                            </label>
+                                            {renderDocUploadArea('DUI_FRENTE')}
+                                        </div>
+                                        <div>
+                                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 flex items-center justify-between">
+                                                <span>Reverso</span>
+                                                {!getDocEntry('DUI_REVERSO').url && <span className="text-amber-600 font-black">Pendiente</span>}
+                                            </label>
+                                            {renderDocUploadArea('DUI_REVERSO', { showExpiry: false })}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {documentCategories.map(cat => (
+                                    <div key={cat.key} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">{cat.label}</label>
+                                        {renderDocUploadArea(cat.key)}
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
@@ -1928,48 +2013,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
                             {extraDocs.length === 0 && <p className="text-[11px] text-slate-400 font-medium">Sin documentos adicionales.</p>}
                             <div className="flex flex-col gap-3">
-                                {extraDocs.map(doc => {
-                                    const isAnalyzing = !!analyzingDocs[doc.category];
-                                    const hasFile = !!doc.url;
-                                    const expiryBadge = getExpiryBadge(doc.expiry_date);
-                                    return (
-                                        <div key={doc.category} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
-                                            <div className="flex items-center justify-between mb-2 gap-2">
-                                                <input type="text" value={doc.title} onChange={(e) => updateDoc(doc.category, { title: e.target.value })} placeholder="Nombre del documento"
-                                                    className="flex-1 bg-transparent text-[12px] font-bold text-slate-700 outline-none border-b border-slate-200 pb-1" />
-                                                <button type="button" onClick={() => removeExtraDoc(doc.category)} title="Quitar documento" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
-                                            </div>
-                                            {isAnalyzing ? (
-                                                <div className="flex items-center gap-2 bg-white rounded-xl border border-[#0052CC]/30 h-[40px] px-3">
-                                                    <Loader2 size={14} className="text-[#0052CC] shrink-0 animate-spin" />
-                                                    <span className="text-[12px] font-bold text-[#0052CC] truncate flex-1">Subiendo y analizando con IA…</span>
-                                                </div>
-                                            ) : hasFile ? (
-                                                <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200/80 h-[40px] px-3">
-                                                    <FileText size={14} className="text-[#0052CC] shrink-0" />
-                                                    <span className="text-[12px] font-bold text-slate-700 truncate flex-1">{doc.file_name || 'Documento cargado'}</span>
-                                                    <button type="button" onClick={() => removeDocFile(doc.category)} title="Quitar archivo" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
-                                                </div>
-                                            ) : (
-                                                <label className="flex items-center justify-center gap-2 h-[40px] rounded-xl border border-dashed border-slate-300 text-slate-400 hover:border-[#0052CC]/40 hover:text-[#0052CC] cursor-pointer transition-colors">
-                                                    <Upload size={14} /> <span className="text-[11px] font-bold">Subir archivo</span>
-                                                    <input type="file" className="hidden" onChange={(e) => handleDocFileChange(doc.category, e)} />
-                                                </label>
-                                            )}
-                                            {hasFile && !isAnalyzing && (
-                                                <div className="mt-2">
-                                                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 flex items-center justify-between">
-                                                        <span>Fecha de Vencimiento (opcional) — detectada por IA si el documento la trae</span>
-                                                        {expiryBadge && <span className={`ml-1 shrink-0 px-1.5 py-0.5 rounded-md border font-black normal-case tracking-normal ${expiryBadge.className}`}>{expiryBadge.label}</span>}
-                                                    </label>
-                                                    <div className="bg-white rounded-xl border border-slate-200/80 h-[36px] flex items-center px-1.5">
-                                                        <LiquidDatePicker value={doc.expiry_date} onChange={(date) => updateDoc(doc.category, { expiry_date: date })} placeholder="Sin vencimiento" />
-                                                    </div>
-                                                </div>
-                                            )}
+                                {extraDocs.map(doc => (
+                                    <div key={doc.category} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                        <div className="flex items-center justify-between mb-2 gap-2">
+                                            <input type="text" value={doc.title} onChange={(e) => updateDoc(doc.category, { title: e.target.value })} placeholder="Nombre del documento"
+                                                className="flex-1 bg-transparent text-[12px] font-bold text-slate-700 outline-none border-b border-slate-200 pb-1" />
+                                            <button type="button" onClick={() => removeExtraDoc(doc.category)} title="Quitar documento" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
                                         </div>
-                                    );
-                                })}
+                                        {renderDocUploadArea(doc.category)}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </>

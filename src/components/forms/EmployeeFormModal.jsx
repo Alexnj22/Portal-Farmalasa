@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
-import { User, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X } from 'lucide-react';
+import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo';
@@ -19,6 +19,22 @@ const GENDER_OPTIONS = [{ value: 'F', label: 'Femenino' }, { value: 'M', label: 
 const BLOOD_TYPE_OPTIONS = [{ value: 'O+', label: 'O+ (Positivo)' }, { value: 'O-', label: 'O- (Negativo)' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' }, { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' }, { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' }];
 const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { value: 'CASADO', label: 'Casado/a' }, { value: 'DIVORCIADO', label: 'Divorciado/a' }, { value: 'VIUDO', label: 'Viudo/a' }, { value: 'ACOMPAÑADO', label: 'Acompañado/a' }];
 const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal / Plazo Fijo' }, { value: 'MEDIO_TIEMPO', label: 'Medio Tiempo (Part-Time)' }, { value: 'SERVICIOS', label: 'Servicios Profesionales' }];
+// Compartido entre "Avisar a" (Ficha Médica) y Personas Dependientes.
+const PARENTESCO_OPTIONS = [
+    { value: 'CONYUGE', label: 'Cónyuge / Pareja' },
+    { value: 'HIJO_A', label: 'Hijo/a' },
+    { value: 'PADRE', label: 'Padre' },
+    { value: 'MADRE', label: 'Madre' },
+    { value: 'HERMANO_A', label: 'Hermano/a' },
+    { value: 'ABUELO_A', label: 'Abuelo/a' },
+    { value: 'NIETO_A', label: 'Nieto/a' },
+    { value: 'SUEGRO_A', label: 'Suegro/a' },
+    { value: 'CUNADO_A', label: 'Cuñado/a' },
+    { value: 'TIO_A', label: 'Tío/a' },
+    { value: 'SOBRINO_A', label: 'Sobrino/a' },
+    { value: 'PRIMO_A', label: 'Primo/a' },
+    { value: 'OTRO', label: 'Otro' },
+];
 // "Universitario" ya no distingue Estudiante/Graduado como niveles separados
 // — eso lo define el toggle "¿Actualmente estudiando?" de abajo. Maestría /
 // Postgrado tampoco es un nivel aparte: requiere estudio universitario previo,
@@ -330,6 +346,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             setFormData(prev => ({
                 first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', address: '', extra_addresses: [], dui: '', birth_date: '',
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',
+                emergency_contact_relationship: '', emergency_contact_extra_phones: [], economic_dependents: [],
                 department: '', municipality: '', education_level: '', profession: '',
                 education_grade_completed: '', education_specialty: '', is_studying: false,
                 study_start_date: '', study_duration_years: '', additional_skills: [],
@@ -445,12 +462,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 if (value !== 'UNIVERSITARIO') {
                     newData.has_maestria = false;
                     newData.maestria_title = '';
+                    newData.maestria_is_studying = false;
+                    newData.maestria_study_start_date = '';
+                    newData.maestria_study_duration_years = '';
                 }
             }
+            // "¿Actualmente estudiando?" (Universitario) y "¿Tiene Maestría?" son mutuamente
+            // excluyentes: tener maestría implica que la licenciatura ya finalizó, y seguir
+            // cursando la licenciatura implica que la maestría todavía no aplica. Activar
+            // uno apaga y oculta el otro.
             if (name === 'has_maestria') {
                 if (value) {
-                    // Tener maestría implica que la licenciatura ya finalizó — no puede
-                    // seguir "actualmente estudiando" el Universitario al mismo tiempo.
                     newData.is_studying = false;
                     newData.study_start_date = '';
                     newData.study_duration_years = '';
@@ -461,9 +483,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     newData.maestria_study_duration_years = '';
                 }
             }
-            if (name === 'is_studying' && !value) {
-                newData.study_start_date = '';
-                newData.study_duration_years = '';
+            if (name === 'is_studying') {
+                if (value) {
+                    newData.has_maestria = false;
+                    newData.maestria_title = '';
+                    newData.maestria_is_studying = false;
+                    newData.maestria_study_start_date = '';
+                    newData.maestria_study_duration_years = '';
+                } else {
+                    newData.study_start_date = '';
+                    newData.study_duration_years = '';
+                }
             }
             if (name === 'maestria_is_studying' && !value) {
                 newData.maestria_study_start_date = '';
@@ -524,6 +554,37 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         return { ...prev, additional_skills: arr };
     });
     const removeSkill = (idx) => setFormData(prev => ({ ...prev, additional_skills: (prev.additional_skills || []).filter((_, i) => i !== idx) }));
+
+    const addEmergencyPhone = () => setFormData(prev => ({ ...prev, emergency_contact_extra_phones: [...(prev.emergency_contact_extra_phones || []), ''] }));
+    const updateEmergencyPhone = (idx, value) => setFormData(prev => {
+        const arr = [...(prev.emergency_contact_extra_phones || [])]; arr[idx] = applyMask(value, 'PHONE'); return { ...prev, emergency_contact_extra_phones: arr };
+    });
+    const removeEmergencyPhone = (idx) => setFormData(prev => ({ ...prev, emergency_contact_extra_phones: (prev.emergency_contact_extra_phones || []).filter((_, i) => i !== idx) }));
+
+    const addDependent = () => setFormData(prev => ({ ...prev, economic_dependents: [...(prev.economic_dependents || []), { name: '', birth_date: '', relationship: '', address: '', department: '', municipality: '' }] }));
+    const updateDependent = (idx, field, value) => setFormData(prev => {
+        const arr = [...(prev.economic_dependents || [])];
+        const val = (field === 'name' || field === 'address') ? value.toUpperCase() : value;
+        const entry = { ...(arr[idx] || {}), [field]: val };
+        if (field === 'department') entry.municipality = '';
+        arr[idx] = entry;
+        return { ...prev, economic_dependents: arr };
+    });
+    const removeDependent = (idx) => setFormData(prev => ({ ...prev, economic_dependents: (prev.economic_dependents || []).filter((_, i) => i !== idx) }));
+    // Copia dirección del empleado o de otro dependiente ya cargado (mismo hogar) — evita re-teclear.
+    const copyDependentAddress = (idx, sourceKey) => setFormData(prev => {
+        const arr = [...(prev.economic_dependents || [])];
+        let source = null;
+        if (sourceKey === 'employee') {
+            source = { address: prev.address || '', department: prev.department || '', municipality: prev.municipality || '' };
+        } else if (sourceKey?.startsWith('dep-')) {
+            const dep = arr[parseInt(sourceKey.slice(4), 10)];
+            if (dep) source = { address: dep.address || '', department: dep.department || '', municipality: dep.municipality || '' };
+        }
+        if (!source || !arr[idx]) return prev;
+        arr[idx] = { ...arr[idx], ...source };
+        return { ...prev, economic_dependents: arr };
+    });
 
     const addPhone = () => setFormData(prev => ({ ...prev, extra_phones: [...(prev.extra_phones || []), ''] }));
     const updatePhone = (idx, value) => setFormData(prev => {
@@ -1020,7 +1081,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 )}
 
-                                {formData.education_level === 'UNIVERSITARIO' && (() => {
+                                {formData.education_level === 'UNIVERSITARIO' && !formData.is_studying && (() => {
                                     const isOtherMaestria = isCatalogOther(formData.maestria_title, maestriaPostgradoOptions);
                                     return (
                                         <div className="md:col-span-2 bg-purple-50/40 rounded-[1.25rem] p-3.5 border border-purple-100/60 animate-in fade-in zoom-in-95 duration-200">
@@ -1147,19 +1208,153 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
                         </div>
 
+                        <div className={`${islandClass} ${islandHoverClass}`}>
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-cyan-50 text-cyan-600 rounded-[0.8rem] border border-cyan-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                    <Users size={16} strokeWidth={2.5} />
+                                </div>
+                                <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Personas que Dependen Económicamente</h4>
+                            </div>
+
+                            {(formData.economic_dependents || []).length > 0 && (
+                                <div className="flex flex-col gap-3 mb-3">
+                                    {(formData.economic_dependents || []).map((dep, idx) => {
+                                        const depMunicipioOpts = dep.department && EL_SALVADOR_GEO[dep.department]
+                                            ? EL_SALVADOR_GEO[dep.department].map(m => ({ value: m, label: m }))
+                                            : [];
+                                        const depAge = calcAge(dep.birth_date);
+                                        const copyOptions = [
+                                            { value: 'employee', label: 'Mi Dirección (Empleado)' },
+                                            ...(formData.economic_dependents || [])
+                                                .map((d, i) => ({ d, i }))
+                                                .filter(({ d, i }) => i !== idx && (d.address || d.department))
+                                                .map(({ d, i }) => ({ value: `dep-${i}`, label: `Igual que ${d.name || `Dependiente ${i + 1}`}` })),
+                                        ];
+                                        return (
+                                            <div key={idx} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Dependiente {idx + 1}</span>
+                                                    <button type="button" onClick={() => removeDependent(idx)} title="Quitar dependiente"
+                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                        <X size={13} strokeWidth={2.5} />
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                    <div>
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Nombre</label>
+                                                        <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
+                                                            <div className="absolute left-3 text-slate-400"><User size={14} strokeWidth={2.5} /></div>
+                                                            <input type="text" value={dep.name || ''} onChange={(e) => updateDependent(idx, 'name', e.target.value)} placeholder="Nombre completo"
+                                                                className="w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none pl-9 pr-4" />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                                            <span>Fecha de Nacimiento</span>
+                                                            {depAge !== null && <span className="text-slate-400 font-bold normal-case tracking-normal">· {depAge} años</span>}
+                                                        </label>
+                                                        <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                                            <LiquidDatePicker value={dep.birth_date} onChange={(date) => updateDependent(idx, 'birth_date', date)} placeholder="Seleccionar Fecha" />
+                                                        </div>
+                                                    </div>
+                                                    <div className="relative z-10">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Parentesco</label>
+                                                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                                            <LiquidSelect value={dep.relationship} onChange={(val) => updateDependent(idx, 'relationship', val)} options={PARENTESCO_OPTIONS} placeholder="Seleccionar..." clearLabel="Ninguno" {...portalSelectProps} />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="md:col-span-3 flex items-center justify-between -mb-1">
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 block">Dirección</label>
+                                                        <div className="w-56">
+                                                            <LiquidSelect value="" onChange={(val) => copyDependentAddress(idx, val)} options={copyOptions} placeholder="Copiar dirección de..." compact clearable={false} {...portalSelectProps} />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Departamento</label>
+                                                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                                            <LiquidSelect value={dep.department} onChange={(val) => updateDependent(idx, 'department', val)} options={DEPARTAMENTOS_OPTS} placeholder="Departamento..." icon={MapIcon} clearable={false} {...portalSelectProps} />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Distrito</label>
+                                                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                                            <LiquidSelect value={dep.municipality} onChange={(val) => updateDependent(idx, 'municipality', val)} options={depMunicipioOpts} placeholder={dep.department ? 'Distrito...' : 'Elija Depto.'} disabled={!dep.department} icon={Navigation} clearable={false} {...portalSelectProps} />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Dirección Detallada</label>
+                                                        <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
+                                                            <div className="absolute left-3 text-slate-400"><MapPin size={14} strokeWidth={2.5} /></div>
+                                                            <input type="text" value={dep.address || ''} onChange={(e) => updateDependent(idx, 'address', e.target.value)} placeholder="Colonia, Calle, Número de Casa..."
+                                                                className="w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none pl-9 pr-4" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                            <button type="button" onClick={addDependent} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC] hover:text-blue-700 transition-colors">
+                                <Plus size={12} strokeWidth={3} /> Agregar Dependiente
+                            </button>
+                        </div>
+
                         <div className={`bg-red-50/50 rounded-[1.5rem] p-4 md:p-5 border border-red-100/50 shadow-[0_8px_30px_rgba(0,0,0,0.03)] transition-all duration-300 hover:-translate-y-1 hover:shadow-md`}>
                             <h4 className="text-[12px] font-black uppercase tracking-widest text-red-500 mb-4 flex items-center gap-2"><HeartPulse size={16} strokeWidth={2.5} /> Ficha Médica y Emergencia</h4>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="col-span-1 relative z-10">
+                                <div className="relative z-10">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 block">Tipo de Sangre</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
                                         <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Vital..." clearLabel="Ninguno" {...portalSelectProps} />
                                     </div>
                                 </div>
-                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <PortalInput label="Avisar a (Nombre)" name="emergency_contact_name" value={formData.emergency_contact_name} onChange={handleChange} placeholder="Familiar o Pareja" />
-                                    <PortalInput label="Teléfono de Emergencia" name="emergency_contact_phone" value={formData.emergency_contact_phone} onChange={handleChange} placeholder="0000-0000" maskType="PHONE" hasError={emergPhoneHasError} errorMessage={emergPhoneErrorMsg} />
+                                <PortalInput label="Avisar a (Nombre)" name="emergency_contact_name" value={formData.emergency_contact_name} onChange={handleChange} placeholder="Familiar o Pareja" />
+                                <div className="relative z-10">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 block">Parentesco</label>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                        <LiquidSelect value={formData.emergency_contact_relationship} onChange={(val) => handleSelectChange('emergency_contact_relationship', val)} options={PARENTESCO_OPTIONS} placeholder="Seleccionar..." clearLabel="Ninguno" {...portalSelectProps} />
+                                    </div>
                                 </div>
+
+                                <div className="md:col-span-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 flex items-center justify-between">
+                                        <span>Teléfono de Emergencia {emergPhoneHasError && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md ml-1">{emergPhoneErrorMsg}</span>}</span>
+                                        <button type="button" onClick={addEmergencyPhone} className="text-[#0052CC] hover:text-blue-700 flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors">
+                                            <Plus size={11} strokeWidth={3} /> Agregar
+                                        </button>
+                                    </label>
+                                    <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] z-10 border-slate-200/80 ${inputHoverClass} ${emergPhoneHasError ? '!border-red-400 !bg-red-50/50' : ''}`}>
+                                        <div className="absolute left-3 text-slate-400"><Phone size={14} strokeWidth={2.5} /></div>
+                                        <input type="tel" name="emergency_contact_phone" value={formData.emergency_contact_phone || ''}
+                                            onChange={(e) => { e.target.value = applyMask(e.target.value, 'PHONE'); handleChange(e); }}
+                                            placeholder="0000-0000"
+                                            className="w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none pl-9 pr-4" />
+                                    </div>
+                                </div>
+
+                                {(formData.emergency_contact_extra_phones || []).length > 0 && (
+                                    <div className="md:col-span-3 flex flex-col gap-2">
+                                        {(formData.emergency_contact_extra_phones || []).map((ph, idx) => {
+                                            const dLen = digitsLen(ph);
+                                            const phErr = !!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph));
+                                            return (
+                                                <div key={idx} className="flex items-center gap-2">
+                                                    <div className={`relative flex-1 bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}>
+                                                        <div className="absolute left-3 text-slate-400"><Phone size={14} strokeWidth={2.5} /></div>
+                                                        <input type="tel" value={ph} onChange={(e) => updateEmergencyPhone(idx, e.target.value)} placeholder="0000-0000"
+                                                            className="w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none pl-9 pr-4" />
+                                                    </div>
+                                                    <button type="button" onClick={() => removeEmergencyPhone(idx)} title="Quitar teléfono"
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                        <X size={14} strokeWidth={2.5} />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </>

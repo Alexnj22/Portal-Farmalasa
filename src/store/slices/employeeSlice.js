@@ -112,6 +112,22 @@ const normalizeExtraAddresses = (arr) => {
         .filter(a => a.department || a.municipality || a.address);
 };
 
+// Dependientes económicos: {name, birth_date, relationship, department,
+// municipality, address} — descarta filas totalmente vacías.
+const normalizeEconomicDependents = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    return arr
+        .map(d => ({
+            name: (d?.name || '').trim().toUpperCase(),
+            birth_date: d?.birth_date || null,
+            relationship: (d?.relationship || '').trim(),
+            department: (d?.department || '').trim(),
+            municipality: (d?.municipality || '').trim(),
+            address: (d?.address || '').trim().toUpperCase(),
+        }))
+        .filter(d => d.name || d.birth_date || d.relationship || d.department || d.municipality || d.address);
+};
+
 // DUI salvadoreño: formato 00000000-0 + dígito verificador (suma ponderada 9..2
 // mod 10). Mismo algoritmo que isValidDUIAlgorithm en EmployeeFormModal — aquí
 // BLOQUEA el guardado (el modal solo lo señala visualmente).
@@ -176,6 +192,27 @@ const validateOptionalFormats = (data) => {
             const cleanDigits = digitsLen(p);
             if (cleanDigits !== 8 || !/^[267]/.test(String(p).replace(/\D/g, ''))) {
                 throw new Error('Uno de los teléfonos adicionales no es un número válido de El Salvador (8 dígitos, inicia en 2, 6 o 7).');
+            }
+        }
+    }
+    if (Array.isArray(data.emergency_contact_extra_phones)) {
+        for (const p of data.emergency_contact_extra_phones) {
+            if (!p || !String(p).trim()) continue;
+            const cleanDigits = digitsLen(p);
+            if (cleanDigits !== 8 || !/^[267]/.test(String(p).replace(/\D/g, ''))) {
+                throw new Error('Uno de los teléfonos de emergencia adicionales no es un número válido de El Salvador (8 dígitos, inicia en 2, 6 o 7).');
+            }
+        }
+    }
+
+    // Dependientes económicos: solo se bloquea si la fecha de nacimiento es futura
+    // (sin rango de edad — a diferencia del empleado, un dependiente puede ser un bebé o un adulto mayor).
+    if (Array.isArray(data.economic_dependents)) {
+        for (const dep of data.economic_dependents) {
+            if (!dep?.birth_date) continue;
+            const bd = new Date(`${dep.birth_date}T00:00:00`);
+            if (!isNaN(bd.getTime()) && bd > new Date()) {
+                throw new Error(`La Fecha de Nacimiento de "${dep.name || 'un dependiente'}" no puede ser futura.`);
             }
         }
     }
@@ -355,14 +392,14 @@ export const createEmployeeSlice = (set, get) => ({
                 profession: normalizeCatalogValue(formData.profession),
                 education_grade_completed: formData.education_grade_completed || null,
                 education_specialty: normalizeCatalogValue(formData.education_specialty),
-                is_studying: !!formData.is_studying && !formData.has_maestria,
-                study_start_date: (formData.is_studying && !formData.has_maestria) ? (formData.study_start_date || null) : null,
-                study_duration_years: (formData.is_studying && !formData.has_maestria && formData.study_duration_years) ? parseFloat(formData.study_duration_years) : null,
-                has_maestria: formData.education_level === 'UNIVERSITARIO' && !!formData.has_maestria,
-                maestria_title: formData.education_level === 'UNIVERSITARIO' && formData.has_maestria ? normalizeCatalogValue(formData.maestria_title) : null,
-                maestria_is_studying: formData.education_level === 'UNIVERSITARIO' && !!formData.has_maestria && !!formData.maestria_is_studying,
-                maestria_study_start_date: (formData.education_level === 'UNIVERSITARIO' && formData.has_maestria && formData.maestria_is_studying) ? (formData.maestria_study_start_date || null) : null,
-                maestria_study_duration_years: (formData.education_level === 'UNIVERSITARIO' && formData.has_maestria && formData.maestria_is_studying && formData.maestria_study_duration_years) ? parseFloat(formData.maestria_study_duration_years) : null,
+                is_studying: !!formData.is_studying,
+                study_start_date: formData.is_studying ? (formData.study_start_date || null) : null,
+                study_duration_years: (formData.is_studying && formData.study_duration_years) ? parseFloat(formData.study_duration_years) : null,
+                has_maestria: formData.education_level === 'UNIVERSITARIO' && !formData.is_studying && !!formData.has_maestria,
+                maestria_title: (formData.education_level === 'UNIVERSITARIO' && !formData.is_studying && formData.has_maestria) ? normalizeCatalogValue(formData.maestria_title) : null,
+                maestria_is_studying: formData.education_level === 'UNIVERSITARIO' && !formData.is_studying && !!formData.has_maestria && !!formData.maestria_is_studying,
+                maestria_study_start_date: (formData.education_level === 'UNIVERSITARIO' && !formData.is_studying && formData.has_maestria && formData.maestria_is_studying) ? (formData.maestria_study_start_date || null) : null,
+                maestria_study_duration_years: (formData.education_level === 'UNIVERSITARIO' && !formData.is_studying && formData.has_maestria && formData.maestria_is_studying && formData.maestria_study_duration_years) ? parseFloat(formData.maestria_study_duration_years) : null,
                 additional_skills: normalizeAdditionalSkills(formData.additional_skills),
                 extra_phones: Array.isArray(formData.extra_phones) ? formData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [],
                 extra_addresses: normalizeExtraAddresses(formData.extra_addresses),
@@ -370,7 +407,10 @@ export const createEmployeeSlice = (set, get) => ({
                 email: formData.email || null,
                 emergency_contact_name: formData.emergency_contact_name ? formData.emergency_contact_name.trim().toUpperCase() : null,
                 emergency_contact_phone: formData.emergency_contact_phone || null,
-                
+                emergency_contact_relationship: formData.emergency_contact_relationship || null,
+                emergency_contact_extra_phones: Array.isArray(formData.emergency_contact_extra_phones) ? formData.emergency_contact_extra_phones.map(p => (p || '').trim()).filter(Boolean) : [],
+                economic_dependents: normalizeEconomicDependents(formData.economic_dependents),
+
                 contract_type: formData.contract_type || 'INDEFINIDO',
                 contract_end_date: formData.contract_type === 'TEMPORAL' ? (formData.contract_end_date || null) : null,
                 weekly_contracted_hours: formData.weekly_contracted_hours ? parseInt(formData.weekly_contracted_hours, 10) : 44,
@@ -542,21 +582,18 @@ export const createEmployeeSlice = (set, get) => ({
             } else if (updatedData.study_duration_years !== undefined) {
                 dbPayload.study_duration_years = updatedData.study_duration_years ? parseFloat(updatedData.study_duration_years) : null;
             }
+            // "¿Actualmente estudiando?" (Universitario) y Maestría son mutuamente excluyentes
+            // (tener maestría implica licenciatura terminada, y seguir cursándola implica que la
+            // maestría no aplica todavía) — is_studying manda si por algún camino llegan ambos true.
             if (updatedData.has_maestria !== undefined || updatedData.maestria_title !== undefined || updatedData.maestria_is_studying !== undefined) {
                 const isUniversitario = (updatedData.education_level ?? dbPayload.education_level) === 'UNIVERSITARIO';
-                const hasMaestria = isUniversitario && !!updatedData.has_maestria;
+                const isStudying = updatedData.is_studying !== undefined ? !!updatedData.is_studying : !!dbPayload.is_studying;
+                const hasMaestria = isUniversitario && !isStudying && !!updatedData.has_maestria;
                 dbPayload.has_maestria = hasMaestria;
                 dbPayload.maestria_title = hasMaestria ? normalizeCatalogValue(updatedData.maestria_title) : null;
                 dbPayload.maestria_is_studying = hasMaestria && !!updatedData.maestria_is_studying;
                 dbPayload.maestria_study_start_date = (hasMaestria && updatedData.maestria_is_studying) ? (updatedData.maestria_study_start_date || null) : null;
                 dbPayload.maestria_study_duration_years = (hasMaestria && updatedData.maestria_is_studying && updatedData.maestria_study_duration_years) ? parseFloat(updatedData.maestria_study_duration_years) : null;
-                // Tener maestría implica licenciatura terminada — no puede seguir
-                // "actualmente estudiando" Universitario a la vez.
-                if (hasMaestria) {
-                    dbPayload.is_studying = false;
-                    dbPayload.study_start_date = null;
-                    dbPayload.study_duration_years = null;
-                }
             }
             if (updatedData.additional_skills !== undefined) {
                 dbPayload.additional_skills = normalizeAdditionalSkills(updatedData.additional_skills);
@@ -566,6 +603,13 @@ export const createEmployeeSlice = (set, get) => ({
             }
             if (updatedData.extra_addresses !== undefined) {
                 dbPayload.extra_addresses = normalizeExtraAddresses(updatedData.extra_addresses);
+            }
+            if (updatedData.emergency_contact_relationship !== undefined) dbPayload.emergency_contact_relationship = updatedData.emergency_contact_relationship || null;
+            if (updatedData.emergency_contact_extra_phones !== undefined) {
+                dbPayload.emergency_contact_extra_phones = Array.isArray(updatedData.emergency_contact_extra_phones) ? updatedData.emergency_contact_extra_phones.map(p => (p || '').trim()).filter(Boolean) : [];
+            }
+            if (updatedData.economic_dependents !== undefined) {
+                dbPayload.economic_dependents = normalizeEconomicDependents(updatedData.economic_dependents);
             }
             if (updatedData.afp_institution !== undefined) dbPayload.afp_institution = updatedData.afp_institution || null;
             if (updatedData.account_type !== undefined) dbPayload.account_type = updatedData.account_type || 'AHORRO';

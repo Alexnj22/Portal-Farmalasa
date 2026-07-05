@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
-import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X } from 'lucide-react';
+import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo';
@@ -18,7 +18,20 @@ const UPPERCASE_FIELDS = new Set(['first_names', 'last_names', 'address', 'emerg
 const GENDER_OPTIONS = [{ value: 'F', label: 'Femenino' }, { value: 'M', label: 'Masculino' }];
 const BLOOD_TYPE_OPTIONS = [{ value: 'O+', label: 'O+ (Positivo)' }, { value: 'O-', label: 'O- (Negativo)' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' }, { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' }, { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' }];
 const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { value: 'CASADO', label: 'Casado/a' }, { value: 'DIVORCIADO', label: 'Divorciado/a' }, { value: 'VIUDO', label: 'Viudo/a' }, { value: 'ACOMPAÑADO', label: 'Acompañado/a' }];
-const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal / Plazo Fijo' }, { value: 'MEDIO_TIEMPO', label: 'Medio Tiempo (Part-Time)' }, { value: 'SERVICIOS', label: 'Servicios Profesionales' }];
+const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal / Plazo Fijo' }, { value: 'SERVICIOS', label: 'Servicios Profesionales' }];
+// "Medio Tiempo" ya no es un tipo de contrato — es una configuración de horas
+// semanales (ver HOURS_OPTIONS), independiente del tipo de contrato.
+const HOURS_OPTIONS = [
+    { value: '44', label: 'Tiempo Completo 44h' },
+    { value: '22', label: 'Medio Tiempo 22h' },
+    { value: 'OTRO', label: 'Otro' },
+];
+// weekly_contracted_hours llega como number desde Postgres (integer) pero como
+// string mientras se edita en el input — comparar siempre vía String() para
+// que "Tiempo Completo 44h"/"Medio Tiempo 22h" se detecten sin importar el tipo.
+const isCustomHours = (h) => h !== '' && h !== null && h !== undefined && String(h) !== '44' && String(h) !== '22';
+const MIN_WEEKLY_HOURS = 1;
+const MAX_WEEKLY_HOURS = 80;
 // Compartido entre "Avisar a" (Ficha Médica) y Personas Dependientes.
 const PARENTESCO_OPTIONS = [
     { value: 'CONYUGE', label: 'Cónyuge / Pareja' },
@@ -347,6 +360,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', address: '', extra_addresses: [], dui: '', birth_date: '',
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',
                 emergency_contact_relationship: '', emergency_contact_extra_phones: [], economic_dependents: [],
+                has_motorcycle: false, has_car: false, has_motorcycle_license: false, has_car_license: false,
+                has_srs_accreditation: false, srs_accreditation_expiry: '',
                 department: '', municipality: '', education_level: '', profession: '',
                 education_grade_completed: '', education_specialty: '', is_studying: false,
                 study_start_date: '', study_duration_years: '', additional_skills: [],
@@ -357,7 +372,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 role_id: '', secondary_role_id: '', 
                 hire_date: prev?.hireDate || prev?.hire_date || new Date().toISOString().split('T')[0], 
                 kiosk_pin: '', photoPreview: null, file: null,
-                contract_type: 'INDEFINIDO', contract_end_date: '', weekly_contracted_hours: '44', base_salary: '',
+                contract_type: 'INDEFINIDO', contract_start_date: prev?.hireDate || prev?.hire_date || new Date().toISOString().split('T')[0],
+                contract_end_date: '', weekly_contracted_hours: '44', base_salary: '',
                 afp_number: '', isss_number: '', afp_institution: '', bank_name: '', account_number: '', account_type: 'AHORRO',
                 ...prev 
             }));
@@ -447,8 +463,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             const newData = { ...prev, [name]: value };
             if (name === 'department') newData.municipality = '';
             if (name === 'contract_type' && value !== 'TEMPORAL') newData.contract_end_date = '';
-            if (name === 'contract_type' && value === 'MEDIO_TIEMPO') newData.weekly_contracted_hours = '22';
-            if (name === 'contract_type' && value !== 'MEDIO_TIEMPO' && prev.weekly_contracted_hours === '22') newData.weekly_contracted_hours = '44';
             if (name === 'education_level') {
                 newData.education_grade_completed = '';
                 newData.education_specialty = '';
@@ -499,8 +513,21 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 newData.maestria_study_start_date = '';
                 newData.maestria_study_duration_years = '';
             }
+            if (name === 'has_srs_accreditation' && !value) {
+                newData.srs_accreditation_expiry = '';
+            }
             return newData;
         });
+    };
+
+    // Horas Semanales: 44/22 se guardan directo; "Otro" solo cambia el modo de
+    // UI (deriva de si weekly_contracted_hours ya es un valor distinto de 44/22,
+    // sin estado interno propio) y limpia el campo para que el usuario tecleé.
+    const handleHoursModeChange = (mode) => {
+        setFormData(prev => ({
+            ...prev,
+            weekly_contracted_hours: mode === 'OTRO' ? (isCustomHours(prev.weekly_contracted_hours) ? prev.weekly_contracted_hours : '') : mode,
+        }));
     };
 
     const handleStudyDateChange = (part, value) => {
@@ -654,6 +681,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const emailInvalid = !!formData?.email && !isValidEmail(formData.email);
     const firstNamesInvalid = !!formData?.first_names && !isValidPersonName(formData.first_names);
     const lastNamesInvalid  = !!formData?.last_names && !isValidPersonName(formData.last_names);
+
+    const salaryInvalid = formData?.base_salary !== '' && formData?.base_salary !== undefined && formData?.base_salary !== null && !(Number(formData.base_salary) > 0);
+    const hoursMode = isCustomHours(formData?.weekly_contracted_hours) ? 'OTRO' : String(formData?.weekly_contracted_hours || '44');
+    const customHoursNum = Number(formData?.weekly_contracted_hours);
+    const hoursInvalid = hoursMode === 'OTRO' && (formData?.weekly_contracted_hours === '' || isNaN(customHoursNum) || customHoursNum < MIN_WEEKLY_HOURS || customHoursNum > MAX_WEEKLY_HOURS);
+    const contractDatesInvalid = formData?.contract_type === 'TEMPORAL' && !!formData?.contract_start_date && !!formData?.contract_end_date
+        && new Date(`${formData.contract_end_date}T00:00:00`) <= new Date(`${formData.contract_start_date}T00:00:00`);
 
     const employeeAge = calcAge(formData?.birth_date);
     const birthDateInFuture = !!formData?.birth_date && new Date(formData.birth_date + 'T00:00:00') > new Date();
@@ -1357,6 +1391,57 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 )}
                             </div>
                         </div>
+
+                        <div className={`${islandClass} ${islandHoverClass}`}>
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-teal-50 text-teal-600 rounded-[0.8rem] border border-teal-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                    <Car size={16} strokeWidth={2.5} />
+                                </div>
+                                <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Vehículo y Acreditaciones</h4>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                    <input type="checkbox" checked={!!formData.has_motorcycle} onChange={(e) => handleSelectChange('has_motorcycle', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                                    <Bike size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Posee Moto</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                    <input type="checkbox" checked={!!formData.has_car} onChange={(e) => handleSelectChange('has_car', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                                    <Car size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Posee Carro</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                    <input type="checkbox" checked={!!formData.has_motorcycle_license} onChange={(e) => handleSelectChange('has_motorcycle_license', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                                    <Bike size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Licencia de Motocicleta</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                    <input type="checkbox" checked={!!formData.has_car_license} onChange={(e) => handleSelectChange('has_car_license', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                                    <Car size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Licencia de Automóvil</span>
+                                </label>
+                            </div>
+
+                            <div className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked={!!formData.has_srs_accreditation} onChange={(e) => handleSelectChange('has_srs_accreditation', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                                    <ShieldCheck size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Acreditación de la SRS</span>
+                                </label>
+                                {!!formData.has_srs_accreditation && (
+                                    <div className="mt-3 max-w-xs">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
+                                            <span>Fecha de Vencimiento</span>
+                                            {!formData.srs_accreditation_expiry && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
+                                        </label>
+                                        <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${!formData.srs_accreditation_expiry ? '!border-red-400 !bg-red-50/50' : ''}`}>
+                                            <LiquidDatePicker value={formData.srs_accreditation_expiry} onChange={(date) => handleDateChange('srs_accreditation_expiry', date)} placeholder="Seleccionar fecha" />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </>
                 )}
 
@@ -1424,31 +1509,53 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {isEditMode ? (
-                                    <LockedField label="Tipo de Contrato" value={CONTRACT_TYPE_OPTIONS.find(o => o.value === formData.contract_type)?.label || formData.contract_type} />
+                                    <>
+                                        <LockedField label="Tipo de Contrato" value={CONTRACT_TYPE_OPTIONS.find(o => o.value === formData.contract_type)?.label || formData.contract_type} />
+                                        <LockedField label="Fecha de Inicio de Contrato" value={formData.contract_start_date ? new Date(formData.contract_start_date + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'long', year: 'numeric' }) : '—'} />
+                                    </>
                                 ) : (
-                                    <div className="relative z-30">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Tipo de Contrato</label>
-                                        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                            <LiquidSelect value={formData.contract_type} onChange={(val) => handleSelectChange('contract_type', val)} options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalSelectProps} />
+                                    <>
+                                        <div className="relative z-30">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Tipo de Contrato</label>
+                                            <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                                <LiquidSelect value={formData.contract_type} onChange={(val) => handleSelectChange('contract_type', val)} options={CONTRACT_TYPE_OPTIONS} clearable={false} icon={Briefcase} {...portalSelectProps} />
+                                            </div>
                                         </div>
-                                    </div>
+                                        <div className="relative z-30">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Fecha de Inicio de Contrato</label>
+                                            <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                                <LiquidDatePicker value={formData.contract_start_date} onChange={(date) => handleDateChange('contract_start_date', date)} placeholder="Seleccionar fecha" />
+                                            </div>
+                                        </div>
+                                    </>
                                 )}
 
                                 {formData.contract_type === 'TEMPORAL' ? (
                                     <div className="relative z-30 animate-in fade-in zoom-in-95">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1 mb-1.5 flex items-center justify-between">
-                                            Fecha Fin de Contrato <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md border border-red-200">Obligatorio</span>
+                                            <span>Fecha Fin de Contrato {contractDatesInvalid && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md ml-1">Debe ser posterior al inicio</span>}</span>
+                                            {!formData.contract_end_date && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md border border-red-200">Obligatorio</span>}
                                         </label>
-                                        <div className={`bg-amber-50/30 rounded-[1rem] border border-amber-200 shadow-sm flex items-center h-[40px] px-1.5`}>
+                                        <div className={`bg-amber-50/30 rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${contractDatesInvalid ? '!border-red-400 !bg-red-50/50' : 'border-amber-200'}`}>
                                             <LiquidDatePicker value={formData.contract_end_date} onChange={(date) => handleDateChange('contract_end_date', date)} placeholder="Obligatorio para temporales" />
                                         </div>
                                     </div>
                                 ) : <div className="hidden md:block" />}
 
-                                <PortalInput label="Horas Semanales (WFM)" name="weekly_contracted_hours" value={formData.weekly_contracted_hours} onChange={handleChange} type="number" icon={Clock} placeholder="44" />
+                                <div className="relative z-20">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Horas Semanales</label>
+                                    <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
+                                        <LiquidSelect value={hoursMode} onChange={handleHoursModeChange} options={HOURS_OPTIONS} clearable={false} icon={Clock} {...portalSelectProps} />
+                                    </div>
+                                    {hoursMode === 'OTRO' && (
+                                        <div className="mt-2">
+                                            <PortalInput name="weekly_contracted_hours" value={formData.weekly_contracted_hours} onChange={handleChange} type="number" icon={Clock} placeholder="Ej. 36" hasError={hoursInvalid} errorMessage={`Entre ${MIN_WEEKLY_HOURS} y ${MAX_WEEKLY_HOURS}`} />
+                                        </div>
+                                    )}
+                                </div>
                                 {isEditMode
                                     ? <LockedField label="Salario Base" value={formData.base_salary ? `$${Number(formData.base_salary).toFixed(2)}` : '—'} />
-                                    : <PortalInput label="Salario Base" name="base_salary" value={formData.base_salary} onChange={handleChange} type="number" icon={DollarSign} placeholder="0.00" prefix="$" />
+                                    : <PortalInput label="Salario Base" name="base_salary" value={formData.base_salary} onChange={handleChange} type="number" icon={DollarSign} placeholder="0.00" prefix="$" hasError={salaryInvalid} errorMessage="Debe ser mayor a 0" />
                                 }
                             </div>
                         </div>

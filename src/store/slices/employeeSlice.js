@@ -265,6 +265,29 @@ const validateOptionalFormats = (data) => {
             throw new Error('La maestría/postgrado marcada como "en curso" ya debería haber finalizado según el inicio y la duración indicados. Revisa las fechas.');
         }
     }
+
+    if (data.base_salary !== undefined && data.base_salary !== null && String(data.base_salary).trim() !== '' && !(Number(data.base_salary) > 0)) {
+        throw new Error('El Salario Base debe ser un número mayor a 0.');
+    }
+
+    if (data.weekly_contracted_hours !== undefined && data.weekly_contracted_hours !== null && String(data.weekly_contracted_hours).trim() !== '') {
+        const hours = Number(data.weekly_contracted_hours);
+        if (isNaN(hours) || hours < 1 || hours > 80) {
+            throw new Error('Las Horas Semanales deben estar entre 1 y 80.');
+        }
+    }
+
+    if (data.contract_type === 'TEMPORAL' && data.contract_start_date && data.contract_end_date) {
+        const start = new Date(`${data.contract_start_date}T00:00:00`);
+        const end = new Date(`${data.contract_end_date}T00:00:00`);
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end <= start) {
+            throw new Error('La Fecha Fin de Contrato debe ser posterior a la Fecha de Inicio de Contrato.');
+        }
+    }
+
+    if (data.has_srs_accreditation && !data.srs_accreditation_expiry) {
+        throw new Error('Falta la Fecha de Vencimiento de la Acreditación SRS.');
+    }
 };
 
 // Valida el límite de headcount (max_limit) del cargo antes de asignarlo.
@@ -412,9 +435,16 @@ export const createEmployeeSlice = (set, get) => ({
                 economic_dependents: normalizeEconomicDependents(formData.economic_dependents),
 
                 contract_type: formData.contract_type || 'INDEFINIDO',
+                contract_start_date: formData.contract_start_date || null,
                 contract_end_date: formData.contract_type === 'TEMPORAL' ? (formData.contract_end_date || null) : null,
                 weekly_contracted_hours: formData.weekly_contracted_hours ? parseInt(formData.weekly_contracted_hours, 10) : 44,
                 base_salary: formData.base_salary ? parseFloat(formData.base_salary) : null,
+                has_motorcycle: !!formData.has_motorcycle,
+                has_car: !!formData.has_car,
+                has_motorcycle_license: !!formData.has_motorcycle_license,
+                has_car_license: !!formData.has_car_license,
+                has_srs_accreditation: !!formData.has_srs_accreditation,
+                srs_accreditation_expiry: formData.has_srs_accreditation ? (formData.srs_accreditation_expiry || null) : null,
                 hire_date: formData.hire_date || null,
                 afp_number: formData.afp_number || null,
                 isss_number: formData.isss_number || null,
@@ -574,6 +604,16 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.education_specialty !== undefined) dbPayload.education_specialty = normalizeCatalogValue(updatedData.education_specialty);
             if (updatedData.weekly_contracted_hours) dbPayload.weekly_contracted_hours = parseInt(updatedData.weekly_contracted_hours, 10);
             if (updatedData.base_salary) dbPayload.base_salary = parseFloat(updatedData.base_salary);
+            if (updatedData.contract_start_date !== undefined) dbPayload.contract_start_date = updatedData.contract_start_date || null;
+            if (updatedData.has_motorcycle !== undefined) dbPayload.has_motorcycle = !!updatedData.has_motorcycle;
+            if (updatedData.has_car !== undefined) dbPayload.has_car = !!updatedData.has_car;
+            if (updatedData.has_motorcycle_license !== undefined) dbPayload.has_motorcycle_license = !!updatedData.has_motorcycle_license;
+            if (updatedData.has_car_license !== undefined) dbPayload.has_car_license = !!updatedData.has_car_license;
+            if (updatedData.has_srs_accreditation !== undefined || updatedData.srs_accreditation_expiry !== undefined) {
+                const hasSrs = !!updatedData.has_srs_accreditation;
+                dbPayload.has_srs_accreditation = hasSrs;
+                dbPayload.srs_accreditation_expiry = hasSrs ? (updatedData.srs_accreditation_expiry || null) : null;
+            }
 
             if (updatedData.is_studying !== undefined) {
                 dbPayload.is_studying = !!updatedData.is_studying;

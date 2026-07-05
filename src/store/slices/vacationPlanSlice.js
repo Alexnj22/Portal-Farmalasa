@@ -204,15 +204,20 @@ export const createVacationPlanSlice = (set, get) => ({
                 }
             }
 
-            // Validar ventana de 3 meses después del aniversario
+            // Validar ventana tras el aniversario (Art. 182 Código de Trabajo): 4 meses
+            // si la plantilla tiene 100 trabajadores o menos, 6 meses si supera los 100.
+            // (Antes hardcodeado a 3 meses — más restrictivo de lo que la ley permite,
+            // bloqueaba asignaciones válidas.)
             if (emp?.hire_date) {
+                const activeHeadcount = employees.filter(e => e.status === 'ACTIVO' || e.status === 'ACTIVE').length;
+                const windowMonths = activeHeadcount > 100 ? 6 : 4;
                 const hireDate    = new Date(emp.hire_date      + 'T12:00:00');
                 const startDate   = new Date(planData.start_date + 'T12:00:00');
                 const anniversary = new Date(startDate.getFullYear(), hireDate.getMonth(), hireDate.getDate());
                 const windowEnd   = new Date(anniversary);
-                windowEnd.setMonth(windowEnd.getMonth() + 3);
+                windowEnd.setMonth(windowEnd.getMonth() + windowMonths);
                 if (startDate < anniversary || startDate > windowEnd) {
-                    throw new Error(`WINDOW_ERROR: Las vacaciones deben asignarse dentro de los 3 meses posteriores al aniversario (${anniversary.toLocaleDateString('es-VE')} — ${windowEnd.toLocaleDateString('es-VE')}).`);
+                    throw new Error(`WINDOW_ERROR: Las vacaciones deben asignarse dentro de los ${windowMonths} meses posteriores al aniversario (${anniversary.toLocaleDateString('es-VE')} — ${windowEnd.toLocaleDateString('es-VE')}).`);
                 }
             }
 

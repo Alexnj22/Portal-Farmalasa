@@ -392,6 +392,50 @@ export const createEmployeeSlice = (set, get) => ({
         }
     },
 
+    // Sube los archivos nuevos (File en memoria, elegidos en la pestaña
+    // Documentación) y conserva tal cual las entradas que ya tenían url (edición
+    // sin cambios). Devuelve el array final listo para persistir en la columna
+    // jsonb employee_documents — nunca incluye el File crudo.
+    //
+    // Tras subir, invoca el mismo edge function 'analyze-document' que ya usa
+    // el expediente de sucursal (FormAddCustomDocument) para leer la fecha de
+    // vencimiento directo de la imagen/PDF vía IA — solo rellena expiry_date si
+    // el usuario no la tecleó a mano (misma regla: !docData.expDate). Best-effort:
+    // si la IA falla, el documento se guarda igual, solo sin fecha detectada.
+    uploadEmployeeDocuments: async (employeeId, docs) => {
+        if (!Array.isArray(docs) || docs.length === 0) return [];
+        const results = [];
+        for (const doc of docs) {
+            if (!doc?.category) continue;
+            if (doc.file instanceof File) {
+                const fileExt = doc.file.name.split('.').pop();
+                const filePath = `employees/${employeeId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+                const { error: uploadError } = await supabase.storage.from('documents').upload(filePath, doc.file);
+                if (uploadError) { console.error('uploadEmployeeDocuments:', uploadError.message); continue; }
+                const { data: publicUrlData } = supabase.storage.from('documents').getPublicUrl(filePath);
+
+                let expiryDate = doc.expiry_date || null;
+                let issueDate = null;
+                try {
+                    const { data: aiResponse, error: aiError } = await supabase.functions.invoke('analyze-document', {
+                        body: { filePath, bucketName: 'documents' }
+                    });
+                    if (!aiError && aiResponse?.success && aiResponse.aiData) {
+                        if (aiResponse.aiData.expDate && !expiryDate) expiryDate = aiResponse.aiData.expDate;
+                        if (aiResponse.aiData.issueDate) issueDate = aiResponse.aiData.issueDate;
+                    }
+                } catch (aiErr) {
+                    console.warn(`analyze-document falló para "${doc.category}":`, aiErr);
+                }
+
+                results.push({ category: doc.category, title: doc.title || doc.category, url: publicUrlData.publicUrl, expiry_date: expiryDate, issue_date: issueDate, uploaded_at: new Date().toISOString() });
+            } else if (doc.url) {
+                results.push({ category: doc.category, title: doc.title || doc.category, url: doc.url, expiry_date: doc.expiry_date || null, issue_date: doc.issue_date || null, uploaded_at: doc.uploaded_at || new Date().toISOString() });
+            }
+        }
+        return results;
+    },
+
     uploadFileToStorage: async (file, bucket = 'documents', folder = '') => {
         if (!file) return null;
         try {
@@ -522,6 +566,12 @@ export const createEmployeeSlice = (set, get) => ({
                 }
             }
 
+            if (Array.isArray(formData.employee_documents) && formData.employee_documents.length > 0) {
+                const uploadedDocs = await get().uploadEmployeeDocuments(newEmp.id, formData.employee_documents);
+                await supabase.from("employees").update({ employee_documents: uploadedDocs }).eq("id", newEmp.id);
+                newEmp.employee_documents = uploadedDocs;
+            }
+
             // Asignar sucursales adicionales si aplica (empleados externos)
             const assignedBranches = Array.isArray(formData.assigned_branch_ids) ? formData.assigned_branch_ids.map(Number).filter(Boolean) : [];
             if (assignedBranches.length > 0) {
@@ -632,6 +682,10 @@ export const createEmployeeSlice = (set, get) => ({
                 // Comprimimos antes de subir
                 const compressedPhoto = await compressImage(uploadedFile);
                 dbPayload.photo_url = await get().uploadEmployeeFile(compressedPhoto, id, 'foto_perfil');
+            }
+
+            if (updatedData.employee_documents !== undefined) {
+                dbPayload.employee_documents = await get().uploadEmployeeDocuments(id, updatedData.employee_documents);
             }
 
             if (updatedData.role_id !== undefined) dbPayload.role_id = updatedData.role_id ? parseInt(updatedData.role_id, 10) : null;

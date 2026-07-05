@@ -69,15 +69,17 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     }, [type, isOpen]);
 
     const EMP_STEPS = [
-        { key: 'personal', label: 'Personal', icon: User },
-        { key: 'laboral',  label: 'Contrato', icon: Briefcase },
-        { key: 'nomina',   label: 'Nómina',   icon: CreditCard },
+        { key: 'personal',    label: 'Personal',    icon: User },
+        { key: 'laboral',     label: 'Contrato',    icon: Briefcase },
+        { key: 'nomina',      label: 'Nómina',      icon: CreditCard },
+        { key: 'documentos',  label: 'Documentos',  icon: FilePlus },
     ];
     const empStepCompletion = useMemo(() => ({
         personal: !!(formData?.first_names?.trim() && formData?.last_names?.trim()),
         laboral:  !!(formData?.branch_id && formData?.role_id),
         nomina:   !!(formData?.isss_number || formData?.afp_number || formData?.bank_name),
-    }), [formData?.first_names, formData?.last_names, formData?.branch_id, formData?.role_id, formData?.isss_number, formData?.afp_number, formData?.bank_name]);
+        documentos: !!(formData?.employee_documents?.length > 0),
+    }), [formData?.first_names, formData?.last_names, formData?.branch_id, formData?.role_id, formData?.isss_number, formData?.afp_number, formData?.bank_name, formData?.employee_documents]);
 
     useEffect(() => {
         if (validationError && scrollRef.current) {
@@ -842,8 +844,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                 {!hidesFooter && (() => {
                     const isEmpForm = type === 'newEmployee' || type === 'editEmployee';
-                    const EMP_STEP_KEYS = ['personal', 'laboral', 'nomina'];
-                    const EMP_STEP_LABELS = { personal: 'Personal', laboral: 'Contrato', nomina: 'Nómina' };
+                    const EMP_STEP_KEYS = ['personal', 'laboral', 'nomina', 'documentos'];
+                    const EMP_STEP_LABELS = { personal: 'Personal', laboral: 'Contrato', nomina: 'Nómina', documentos: 'Documentos' };
                     const empIdx = EMP_STEP_KEYS.indexOf(empActiveTab);
                     const prevStep = isEmpForm && empIdx > 0 ? EMP_STEP_KEYS[empIdx - 1] : null;
                     const nextStep = isEmpForm && empIdx < EMP_STEP_KEYS.length - 1 ? EMP_STEP_KEYS[empIdx + 1] : null;

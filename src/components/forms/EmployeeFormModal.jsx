@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
-import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert } from 'lucide-react';
+import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, Upload, FileText } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo';
@@ -55,6 +55,16 @@ const TEMPORAL_LEGAL_BASIS_OPTIONS = [
 const PROBATION_DAYS = 30;
 const PROBATION_EXEMPTION_DAYS = 365;
 const MINOR_AGE = 18;
+// Documentación del expediente — slots fijos siempre visibles; "Acreditación de
+// Enfermería" se agrega dinámicamente solo si el Cargo Principal contiene
+// "enfermer" (Regente/Auxiliar de Enfermería). El resto de documentos usa la
+// lista abierta "+ Agregar Documento" (categoría EXTRA_<timestamp>).
+const FIXED_DOCUMENT_CATEGORIES = [
+    { key: 'CV', label: 'Currículum Vitae (CV)' },
+    { key: 'CONTRATO', label: 'Contrato de Trabajo Firmado' },
+    { key: 'LICENCIA', label: 'Licencia de Conducir' },
+    { key: 'SRS', label: 'Acreditación SRS (Junta de Vigilancia de la Profesión Farmacéutica)' },
+];
 // Compartido entre "Avisar a" (Ficha Médica) y Personas Dependientes.
 const PARENTESCO_OPTIONS = [
     { value: 'CONYUGE', label: 'Cónyuge / Pareja' },
@@ -415,7 +425,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',
                 emergency_contact_relationship: '', emergency_contact_extra_phones: [], economic_dependents: [],
                 has_motorcycle: false, has_car: false, has_motorcycle_license: false, has_car_license: false,
-                has_srs_accreditation: false, srs_accreditation_expiry: '',
+                employee_documents: [],
                 department: '', municipality: '', education_level: '', profession: '',
                 education_grade_completed: '', education_specialty: '', is_studying: false,
                 study_start_date: '', study_duration_years: '', additional_skills: [],
@@ -571,9 +581,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 newData.maestria_study_start_date = '';
                 newData.maestria_study_duration_years = '';
             }
-            if (name === 'has_srs_accreditation' && !value) {
-                newData.srs_accreditation_expiry = '';
-            }
             return newData;
         });
     };
@@ -689,6 +696,57 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const removeAddress = (idx) => setFormData(prev => ({ ...prev, extra_addresses: (prev.extra_addresses || []).filter((_, i) => i !== idx) }));
 
     const handleDateChange = (name, dateString) => setFormData(prev => ({ ...prev, [name]: dateString }));
+
+    // Documentación: slots fijos + lista abierta "Otros Documentos". El archivo
+    // recién elegido queda como File en memoria (igual que la foto de perfil)
+    // hasta que addEmployee/updateEmployee lo suba tras crear/tener el id.
+    const selectedRoleName = roles?.find(r => String(r.id) === String(formData.role_id))?.name || '';
+    const isNursingRole = /enfermer/i.test(selectedRoleName);
+    const documentCategories = useMemo(() => [
+        ...FIXED_DOCUMENT_CATEGORIES,
+        ...(isNursingRole ? [{ key: 'ENFERMERIA', label: 'Acreditación de Enfermería' }] : []),
+    ], [isNursingRole]);
+
+    const getDocEntry = (category) => (formData.employee_documents || []).find(d => d.category === category)
+        || { category, title: documentCategories.find(c => c.key === category)?.label || category, file: null, url: null, expiry_date: '' };
+
+    const updateDoc = (category, patch) => setFormData(prev => {
+        const list = [...(prev.employee_documents || [])];
+        const idx = list.findIndex(d => d.category === category);
+        const base = idx >= 0 ? list[idx] : { category, title: documentCategories.find(c => c.key === category)?.label || category, file: null, url: null, expiry_date: '' };
+        const updated = { ...base, ...patch };
+        if (idx >= 0) list[idx] = updated; else list.push(updated);
+        return { ...prev, employee_documents: list };
+    });
+
+    const handleDocFileChange = (category, e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        updateDoc(category, { file, url: null });
+    };
+
+    const removeDocFile = (category) => updateDoc(category, { file: null, url: null });
+
+    const extraDocs = (formData.employee_documents || []).filter(d => d.category?.startsWith('EXTRA_'));
+    const addExtraDoc = () => setFormData(prev => ({ ...prev, employee_documents: [...(prev.employee_documents || []), { category: `EXTRA_${Date.now()}`, title: '', file: null, url: null, expiry_date: '' }] }));
+    const removeExtraDoc = (category) => setFormData(prev => ({ ...prev, employee_documents: (prev.employee_documents || []).filter(d => d.category !== category) }));
+
+    // Aviso visual de vencimiento — la fecha puede venir tecleada a mano o
+    // detectada por IA (analyze-document, se completa recién al Guardar y se
+    // ve al reabrir el expediente). Umbrales: vencido o <30 días = rojo,
+    // <60 días = ámbar.
+    const DOC_EXPIRY_WARN_DAYS = 60;
+    const DOC_EXPIRY_DANGER_DAYS = 30;
+    const getExpiryBadge = (expiryDateStr) => {
+        if (!expiryDateStr) return null;
+        const expDate = new Date(expiryDateStr + 'T00:00:00');
+        if (isNaN(expDate.getTime())) return null;
+        const daysLeft = Math.ceil((expDate - new Date()) / 86400000);
+        if (daysLeft < 0) return { label: 'Vencido', className: 'text-red-600 bg-red-100 border-red-300' };
+        if (daysLeft <= DOC_EXPIRY_DANGER_DAYS) return { label: `Vence en ${daysLeft} día${daysLeft === 1 ? '' : 's'}`, className: 'text-red-600 bg-red-100 border-red-300' };
+        if (daysLeft <= DOC_EXPIRY_WARN_DAYS) return { label: `Vence pronto (${daysLeft} días)`, className: 'text-amber-600 bg-amber-100 border-amber-300' };
+        return null;
+    };
 
     const handlePhotoUpload = (e) => {
         const file = e.target.files[0];
@@ -1487,10 +1545,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="p-2 bg-teal-50 text-teal-600 rounded-[0.8rem] border border-teal-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                                     <Car size={16} strokeWidth={2.5} />
                                 </div>
-                                <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Vehículo y Acreditaciones</h4>
+                                <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Vehículo</h4>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
                                     <input type="checkbox" checked={!!formData.has_motorcycle} onChange={(e) => handleSelectChange('has_motorcycle', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
                                     <Bike size={15} strokeWidth={2.5} className="text-slate-400" />
@@ -1511,25 +1569,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <Car size={15} strokeWidth={2.5} className="text-slate-400" />
                                     <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Licencia de Automóvil</span>
                                 </label>
-                            </div>
-
-                            <div className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" checked={!!formData.has_srs_accreditation} onChange={(e) => handleSelectChange('has_srs_accreditation', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                                    <ShieldCheck size={15} strokeWidth={2.5} className="text-slate-400" />
-                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Acreditación de la SRS</span>
-                                </label>
-                                {!!formData.has_srs_accreditation && (
-                                    <div className="mt-3 max-w-xs">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
-                                            <span>Fecha de Vencimiento</span>
-                                            {!formData.srs_accreditation_expiry && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
-                                        </label>
-                                        <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${!formData.srs_accreditation_expiry ? '!border-red-400 !bg-red-50/50' : ''}`}>
-                                            <LiquidDatePicker value={formData.srs_accreditation_expiry} onChange={(date) => handleDateChange('srs_accreditation_expiry', date)} placeholder="Seleccionar fecha" />
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </>
@@ -1774,10 +1813,107 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <Copy size={15} strokeWidth={2.5} />
                                                 </button>
                                             </div>
-                                            <p className="text-[9px] font-bold text-slate-400 mt-1.5 ml-1">Este es el valor del código de barras del carné.</p>
+                            <p className="text-[9px] font-bold text-slate-400 mt-1.5 ml-1">Este es el valor del código de barras del carné.</p>
                                         </div>
                                     )}
                                 </div>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {/* TAB 4: DOCUMENTACIÓN */}
+                {activeTab === 'documentos' && (
+                    <>
+                        <div className={`${islandClass} ${islandHoverClass}`}>
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-[#0052CC]/10 text-[#0052CC] rounded-[0.8rem] border border-[#0052CC]/20">
+                                    <FileText size={16} strokeWidth={2.5} />
+                                </div>
+                                <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Documentación del Expediente</h4>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {documentCategories.map(cat => {
+                                    const doc = getDocEntry(cat.key);
+                                    const hasFile = !!(doc.file || doc.url);
+                                    const expiryBadge = getExpiryBadge(doc.expiry_date);
+                                    return (
+                                        <div key={cat.key} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">{cat.label}</label>
+                                            {hasFile ? (
+                                                <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200/80 h-[40px] px-3">
+                                                    <FileText size={14} className="text-[#0052CC] shrink-0" />
+                                                    <span className="text-[12px] font-bold text-slate-700 truncate flex-1">{doc.file?.name || 'Documento cargado'}</span>
+                                                    <button type="button" onClick={() => removeDocFile(cat.key)} title="Quitar" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
+                                                </div>
+                                            ) : (
+                                                <label className="flex items-center justify-center gap-2 h-[40px] rounded-xl border border-dashed border-slate-300 text-slate-400 hover:border-[#0052CC]/40 hover:text-[#0052CC] cursor-pointer transition-colors">
+                                                    <Upload size={14} /> <span className="text-[11px] font-bold">Subir archivo</span>
+                                                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocFileChange(cat.key, e)} />
+                                                </label>
+                                            )}
+                                            {hasFile && (
+                                                <div className="mt-2">
+                                                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 flex items-center justify-between">
+                                                        <span>Fecha de Vencimiento (opcional) — se detecta al Guardar si la trae el documento</span>
+                                                        {expiryBadge && <span className={`ml-1 shrink-0 px-1.5 py-0.5 rounded-md border font-black normal-case tracking-normal ${expiryBadge.className}`}>{expiryBadge.label}</span>}
+                                                    </label>
+                                                    <div className="bg-white rounded-xl border border-slate-200/80 h-[36px] flex items-center px-1.5">
+                                                        <LiquidDatePicker value={doc.expiry_date} onChange={(date) => updateDoc(cat.key, { expiry_date: date })} placeholder="Sin vencimiento" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className={`${islandClass} ${islandHoverClass}`}>
+                            <div className="flex items-center justify-between mb-4">
+                                <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Otros Documentos</h4>
+                                <button type="button" onClick={addExtraDoc} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC] hover:text-blue-700 transition-colors">
+                                    <Plus size={12} strokeWidth={3} /> Agregar Documento
+                                </button>
+                            </div>
+                            {extraDocs.length === 0 && <p className="text-[11px] text-slate-400 font-medium">Sin documentos adicionales.</p>}
+                            <div className="flex flex-col gap-3">
+                                {extraDocs.map(doc => {
+                                    const hasFile = !!(doc.file || doc.url);
+                                    const expiryBadge = getExpiryBadge(doc.expiry_date);
+                                    return (
+                                        <div key={doc.category} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                            <div className="flex items-center justify-between mb-2 gap-2">
+                                                <input type="text" value={doc.title} onChange={(e) => updateDoc(doc.category, { title: e.target.value })} placeholder="Nombre del documento"
+                                                    className="flex-1 bg-transparent text-[12px] font-bold text-slate-700 outline-none border-b border-slate-200 pb-1" />
+                                                <button type="button" onClick={() => removeExtraDoc(doc.category)} title="Quitar documento" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
+                                            </div>
+                                            {hasFile ? (
+                                                <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200/80 h-[40px] px-3">
+                                                    <FileText size={14} className="text-[#0052CC] shrink-0" />
+                                                    <span className="text-[12px] font-bold text-slate-700 truncate flex-1">{doc.file?.name || 'Documento cargado'}</span>
+                                                    <button type="button" onClick={() => updateDoc(doc.category, { file: null, url: null })} title="Quitar archivo" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
+                                                </div>
+                                            ) : (
+                                                <label className="flex items-center justify-center gap-2 h-[40px] rounded-xl border border-dashed border-slate-300 text-slate-400 hover:border-[#0052CC]/40 hover:text-[#0052CC] cursor-pointer transition-colors">
+                                                    <Upload size={14} /> <span className="text-[11px] font-bold">Subir archivo</span>
+                                                    <input type="file" className="hidden" onChange={(e) => handleDocFileChange(doc.category, e)} />
+                                                </label>
+                                            )}
+                                            {hasFile && (
+                                                <div className="mt-2">
+                                                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 flex items-center justify-between">
+                                                        <span>Fecha de Vencimiento (opcional) — se detecta al Guardar si la trae el documento</span>
+                                                        {expiryBadge && <span className={`ml-1 shrink-0 px-1.5 py-0.5 rounded-md border font-black normal-case tracking-normal ${expiryBadge.className}`}>{expiryBadge.label}</span>}
+                                                    </label>
+                                                    <div className="bg-white rounded-xl border border-slate-200/80 h-[36px] flex items-center px-1.5">
+                                                        <LiquidDatePicker value={doc.expiry_date} onChange={(date) => updateDoc(doc.category, { expiry_date: date })} placeholder="Sin vencimiento" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </>

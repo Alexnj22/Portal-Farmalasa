@@ -916,6 +916,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // prohibido el trabajo nocturno y examen médico previo obligatorio.
     const isMinor = employeeAge !== null && employeeAge < MINOR_AGE;
     const altIdMissing = isMinor && !formData?.alt_identity_document?.trim();
+    // Nombre a mostrar para el tipo de documento elegido en Personal — si el
+    // valor no matchea ninguna opción del catálogo, es el texto libre de
+    // "Otro documento legal..." tecleado por el usuario, se muestra tal cual.
+    const altIdDocTypeLabel = (() => {
+        const val = formData?.alt_identity_document_type;
+        if (!val || val === OTRA_ESPECIALIDAD) return 'Documento de Identidad';
+        return ALT_ID_DOCUMENT_TYPE_OPTIONS.find(o => o.value === val)?.label || val;
+    })();
 
     let duiErrorMsg = null;
     if (isDuiDuplicate) duiErrorMsg = "DUI Ya Registrado";
@@ -1069,10 +1077,38 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 </div>
 
-                                <PortalInput label="DUI" name="dui" value={formData.dui} onChange={handleChange} icon={Fingerprint} placeholder="00000000-0" maskType="DUI" required={!isMinor} hasError={isDuiInvalid || isDuiDuplicate || isDuiIncomplete} errorMessage={duiErrorMsg} />
+                                {!isMinor && (
+                                    <PortalInput label="DUI" name="dui" value={formData.dui} onChange={handleChange} icon={Fingerprint} placeholder="00000000-0" maskType="DUI" required hasError={isDuiInvalid || isDuiDuplicate || isDuiIncomplete} errorMessage={duiErrorMsg} />
+                                )}
 
                                 {isMinor && (
-                                    <PortalInput label="Documento de Identidad Alternativo" name="alt_identity_document" value={formData.alt_identity_document} onChange={handleChange} icon={Fingerprint} placeholder="Partida de Nacimiento, Carné de Minoridad..." required hasError={altIdMissing} errorMessage="Requerido para menores sin DUI" colSpan={2} />
+                                    <div className="relative z-20">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Tipo de Documento</label>
+                                        <CatalogSelect
+                                            value={formData.alt_identity_document_type}
+                                            onChange={(val) => handleSelectChange('alt_identity_document_type', val)}
+                                            options={ALT_ID_DOCUMENT_TYPE_OPTIONS}
+                                            portalSelectProps={portalSelectProps}
+                                            inputHoverClass={inputHoverClass}
+                                            placeholder="Selecciona el tipo..."
+                                        />
+                                    </div>
+                                )}
+
+                                {isMinor && (
+                                    <PortalInput label="Número de Documento" name="alt_identity_document" value={formData.alt_identity_document} onChange={handleChange} icon={Fingerprint} placeholder="Número según el documento elegido" required hasError={altIdMissing} errorMessage="Requerido para menores sin DUI" />
+                                )}
+
+                                {isMinor && isCatalogOther(formData.alt_identity_document_type, ALT_ID_DOCUMENT_TYPE_OPTIONS) && (
+                                    <div className="md:col-span-2">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Especifica el Tipo de Documento</label>
+                                        <CatalogOtherInput
+                                            value={formData.alt_identity_document_type}
+                                            onChange={(val) => handleSelectChange('alt_identity_document_type', val)}
+                                            inputHoverClass={inputHoverClass}
+                                            placeholder="Ej. Carné Consular"
+                                        />
+                                    </div>
                                 )}
 
                                 {isMinor && (
@@ -1942,38 +1978,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 independientes. La imagen NO bloquea el alta del empleado (a
                                 diferencia del campo de texto DUI/documento alterno, que sí es
                                 obligatorio) — si falta, queda marcada "Pendiente". */}
-                            <div className="p-3 rounded-2xl border-2 border-[#0052CC]/20 bg-[#0052CC]/5 mb-4">
+                            <div className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60 mb-4">
                                 <div className="flex items-center justify-between mb-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#0052CC] block">{isMinor ? 'Documento de Identidad' : 'DUI'}</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 block">{isMinor ? altIdDocTypeLabel : 'DUI'}</label>
                                     {!(isMinor ? !!getDocEntry('DOCUMENTO_IDENTIDAD').url : (!!getDocEntry('DUI_FRENTE').url && !!getDocEntry('DUI_REVERSO').url)) && (
                                         <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 shrink-0">Pendiente — no bloquea el alta</span>
                                     )}
                                 </div>
                                 {isMinor ? (
-                                    <>
-                                        <div className="mb-3">
-                                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 block">Tipo de Documento</label>
-                                            <CatalogSelect
-                                                value={formData.alt_identity_document_type}
-                                                onChange={(val) => handleSelectChange('alt_identity_document_type', val)}
-                                                options={ALT_ID_DOCUMENT_TYPE_OPTIONS}
-                                                portalSelectProps={portalSelectProps}
-                                                inputHoverClass={inputHoverClass}
-                                                placeholder="Selecciona el tipo de documento..."
-                                            />
-                                            {isCatalogOther(formData.alt_identity_document_type, ALT_ID_DOCUMENT_TYPE_OPTIONS) && (
-                                                <div className="mt-2">
-                                                    <CatalogOtherInput
-                                                        value={formData.alt_identity_document_type}
-                                                        onChange={(val) => handleSelectChange('alt_identity_document_type', val)}
-                                                        inputHoverClass={inputHoverClass}
-                                                        placeholder="Especifica el documento"
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                        {renderDocUploadArea('DOCUMENTO_IDENTIDAD')}
-                                    </>
+                                    renderDocUploadArea('DOCUMENTO_IDENTIDAD')
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <div>

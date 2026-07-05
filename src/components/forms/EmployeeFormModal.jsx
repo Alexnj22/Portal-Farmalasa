@@ -1228,13 +1228,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             ...(formData.economic_dependents || [])
                                                 .map((d, i) => ({ d, i }))
                                                 .filter(({ d, i }) => i !== idx && (d.address || d.department))
-                                                .map(({ d, i }) => ({ value: `dep-${i}`, label: `Igual que ${d.name || `Dependiente ${i + 1}`}` })),
+                                                .map(({ d, i }) => ({ value: `dep-${i}`, label: `Igual que ${d.name || `Persona ${i + 1}`}` })),
                                         ];
                                         return (
                                             <div key={idx} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
                                                 <div className="flex items-center justify-between mb-3">
-                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Dependiente {idx + 1}</span>
-                                                    <button type="button" onClick={() => removeDependent(idx)} title="Quitar dependiente"
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Persona {idx + 1}</span>
+                                                    <button type="button" onClick={() => removeDependent(idx)} title="Quitar persona"
                                                         className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
                                                         <X size={13} strokeWidth={2.5} />
                                                     </button>
@@ -1297,7 +1297,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                             )}
                             <button type="button" onClick={addDependent} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC] hover:text-blue-700 transition-colors">
-                                <Plus size={12} strokeWidth={3} /> Agregar Dependiente
+                                <Plus size={12} strokeWidth={3} /> Agregar Persona
                             </button>
                         </div>
 
@@ -1307,7 +1307,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="relative z-10">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 block">Tipo de Sangre</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                        <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Vital..." clearLabel="Ninguno" {...portalSelectProps} />
+                                        <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Vital..." clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
                                 <PortalInput label="Avisar a (Nombre)" name="emergency_contact_name" value={formData.emergency_contact_name} onChange={handleChange} placeholder="Familiar o Pareja" />

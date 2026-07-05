@@ -334,6 +334,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 education_grade_completed: '', education_specialty: '', is_studying: false,
                 study_start_date: '', study_duration_years: '', additional_skills: [],
                 has_maestria: false, maestria_title: '',
+                maestria_is_studying: false, maestria_study_start_date: '', maestria_study_duration_years: '',
                 code: String(Math.floor(1000 + Math.random() * 9000)),
                 branch_id: prev?.branchId || prev?.branch_id || '', 
                 role_id: '', secondary_role_id: '', 
@@ -446,12 +447,27 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     newData.maestria_title = '';
                 }
             }
-            if (name === 'has_maestria' && !value) {
-                newData.maestria_title = '';
+            if (name === 'has_maestria') {
+                if (value) {
+                    // Tener maestría implica que la licenciatura ya finalizó — no puede
+                    // seguir "actualmente estudiando" el Universitario al mismo tiempo.
+                    newData.is_studying = false;
+                    newData.study_start_date = '';
+                    newData.study_duration_years = '';
+                } else {
+                    newData.maestria_title = '';
+                    newData.maestria_is_studying = false;
+                    newData.maestria_study_start_date = '';
+                    newData.maestria_study_duration_years = '';
+                }
             }
             if (name === 'is_studying' && !value) {
                 newData.study_start_date = '';
                 newData.study_duration_years = '';
+            }
+            if (name === 'maestria_is_studying' && !value) {
+                newData.maestria_study_start_date = '';
+                newData.maestria_study_duration_years = '';
             }
             return newData;
         });
@@ -466,18 +482,40 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         });
     };
 
-    const estimatedStudyEndDate = useMemo(() => {
-        if (!formData?.study_start_date || !formData?.study_duration_years) return null;
-        const [y, m] = formData.study_start_date.split('-').map(Number);
-        const totalMonths = (m - 1) + Math.round(Number(formData.study_duration_years) * 12);
+    const handleMaestriaStudyDateChange = (part, value) => {
+        setFormData(prev => {
+            const [y, m] = (prev.maestria_study_start_date || `${CURRENT_YEAR}-01`).split('-');
+            const newY = part === 'year' ? value : y;
+            const newM = part === 'month' ? value : m;
+            return { ...prev, maestria_study_start_date: `${newY}-${newM}-01` };
+        });
+    };
+
+    const calcEstimatedEnd = (startDate, durationYears) => {
+        if (!startDate || !durationYears) return null;
+        const [y, m] = startDate.split('-').map(Number);
+        const totalMonths = (m - 1) + Math.round(Number(durationYears) * 12);
         const endYear = y + Math.floor(totalMonths / 12);
         const endMonth = ((totalMonths % 12) + 12) % 12;
         return { date: new Date(endYear, endMonth, 1), label: `${MESES[endMonth]} ${endYear}` };
-    }, [formData?.study_start_date, formData?.study_duration_years]);
+    };
+
+    const estimatedStudyEndDate = useMemo(
+        () => calcEstimatedEnd(formData?.study_start_date, formData?.study_duration_years),
+        [formData?.study_start_date, formData?.study_duration_years]
+    );
 
     const estimatedStudyEnd = estimatedStudyEndDate?.label || null;
     // No es real seguir "actualmente estudiando" si la fecha estimada de fin ya pasó.
     const studyEndInPast = !!formData?.is_studying && !!estimatedStudyEndDate && estimatedStudyEndDate.date < new Date();
+
+    const estimatedMaestriaEndDate = useMemo(
+        () => calcEstimatedEnd(formData?.maestria_study_start_date, formData?.maestria_study_duration_years),
+        [formData?.maestria_study_start_date, formData?.maestria_study_duration_years]
+    );
+
+    const estimatedMaestriaEnd = estimatedMaestriaEndDate?.label || null;
+    const maestriaStudyEndInPast = !!formData?.maestria_is_studying && !!estimatedMaestriaEndDate && estimatedMaestriaEndDate.date < new Date();
 
     const addSkill = () => setFormData(prev => ({ ...prev, additional_skills: [...(prev.additional_skills || []), { skill: '', institution: '', hours: '' }] }));
     const updateSkill = (idx, field, value) => setFormData(prev => {
@@ -948,7 +986,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     );
                                 })()}
 
-                                {LEVELS_WITH_STUDY_TOGGLE.includes(formData.education_level) && (
+                                {LEVELS_WITH_STUDY_TOGGLE.includes(formData.education_level) && !(formData.education_level === 'UNIVERSITARIO' && formData.has_maestria) && (
                                     <div className="md:col-span-2 bg-indigo-50/40 rounded-[1.25rem] p-3.5 border border-indigo-100/60 animate-in fade-in zoom-in-95 duration-200">
                                         <label className="flex items-center gap-2 cursor-pointer">
                                             <input type="checkbox" checked={!!formData.is_studying} onChange={(e) => handleSelectChange('is_studying', e.target.checked)} className="w-4 h-4 rounded accent-[#0052CC]" />
@@ -1019,6 +1057,37 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                             />
                                                         </div>
                                                     )}
+                                                    <div className="pt-2 border-t border-purple-100/60">
+                                                        <label className="flex items-center gap-2 cursor-pointer">
+                                                            <input type="checkbox" checked={!!formData.maestria_is_studying} onChange={(e) => handleSelectChange('maestria_is_studying', e.target.checked)} className="w-4 h-4 rounded accent-purple-600" />
+                                                            <span className="text-[11px] font-black text-purple-700 uppercase tracking-wide">¿Maestría en curso?</span>
+                                                        </label>
+
+                                                        {!!formData.maestria_is_studying && (
+                                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                                                                <div>
+                                                                    <label className="text-[9px] font-black uppercase tracking-widest text-purple-500 ml-1 mb-1 block">Mes de Inicio</label>
+                                                                    <div className="rounded-[1rem] h-[38px]">
+                                                                        <LiquidSelect value={formData.maestria_study_start_date ? formData.maestria_study_start_date.split('-')[1] : ''} onChange={(val) => handleMaestriaStudyDateChange('month', val)} options={MONTH_OPTIONS} placeholder="Mes..." compact clearable={false} {...portalSelectProps} />
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-[9px] font-black uppercase tracking-widest text-purple-500 ml-1 mb-1 block">Año de Inicio</label>
+                                                                    <div className="rounded-[1rem] h-[38px]">
+                                                                        <LiquidSelect value={formData.maestria_study_start_date ? formData.maestria_study_start_date.split('-')[0] : ''} onChange={(val) => handleMaestriaStudyDateChange('year', val)} options={YEAR_OPTIONS} placeholder="Año..." compact clearable={false} {...portalSelectProps} />
+                                                                    </div>
+                                                                </div>
+                                                                <PortalInput label="Duración (años)" name="maestria_study_duration_years" value={formData.maestria_study_duration_years} onChange={handleChange} type="number" placeholder="Ej. 2" hasError={maestriaStudyEndInPast} />
+                                                            </div>
+                                                        )}
+                                                        {estimatedMaestriaEnd && (
+                                                            <p className={`text-[10px] font-bold mt-2 ml-1 ${maestriaStudyEndInPast ? 'text-red-600' : 'text-purple-600'}`}>
+                                                                {maestriaStudyEndInPast
+                                                                    ? `Finalizó en ${estimatedMaestriaEnd} — no puede seguir "en curso"`
+                                                                    : `Finaliza aprox.: ${estimatedMaestriaEnd}`}
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>

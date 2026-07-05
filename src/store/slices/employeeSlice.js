@@ -213,6 +213,21 @@ const validateOptionalFormats = (data) => {
             throw new Error('La carrera marcada como "actualmente estudiando" ya debería haber finalizado según el inicio y la duración indicados. Revisa las fechas.');
         }
     }
+
+    // Tener maestría implica que la licenciatura ya finalizó — no puede seguir
+    // "actualmente estudiando" el Universitario al mismo tiempo.
+    if (data.is_studying && data.has_maestria) {
+        throw new Error('No puede marcar "actualmente estudiando" en Universitario junto con "Tiene Maestría/Postgrado" — tener maestría implica que la licenciatura ya finalizó.');
+    }
+
+    if (data.maestria_is_studying && data.maestria_study_start_date && data.maestria_study_duration_years) {
+        const [y, m] = data.maestria_study_start_date.split('-').map(Number);
+        const totalMonths = (m - 1) + Math.round(parseFloat(data.maestria_study_duration_years) * 12);
+        const endDate = new Date(y + Math.floor(totalMonths / 12), ((totalMonths % 12) + 12) % 12, 1);
+        if (endDate < new Date()) {
+            throw new Error('La maestría/postgrado marcada como "en curso" ya debería haber finalizado según el inicio y la duración indicados. Revisa las fechas.');
+        }
+    }
 };
 
 // Valida el límite de headcount (max_limit) del cargo antes de asignarlo.
@@ -340,11 +355,14 @@ export const createEmployeeSlice = (set, get) => ({
                 profession: normalizeCatalogValue(formData.profession),
                 education_grade_completed: formData.education_grade_completed || null,
                 education_specialty: normalizeCatalogValue(formData.education_specialty),
-                is_studying: !!formData.is_studying,
-                study_start_date: formData.is_studying ? (formData.study_start_date || null) : null,
-                study_duration_years: formData.is_studying && formData.study_duration_years ? parseFloat(formData.study_duration_years) : null,
+                is_studying: !!formData.is_studying && !formData.has_maestria,
+                study_start_date: (formData.is_studying && !formData.has_maestria) ? (formData.study_start_date || null) : null,
+                study_duration_years: (formData.is_studying && !formData.has_maestria && formData.study_duration_years) ? parseFloat(formData.study_duration_years) : null,
                 has_maestria: formData.education_level === 'UNIVERSITARIO' && !!formData.has_maestria,
                 maestria_title: formData.education_level === 'UNIVERSITARIO' && formData.has_maestria ? normalizeCatalogValue(formData.maestria_title) : null,
+                maestria_is_studying: formData.education_level === 'UNIVERSITARIO' && !!formData.has_maestria && !!formData.maestria_is_studying,
+                maestria_study_start_date: (formData.education_level === 'UNIVERSITARIO' && formData.has_maestria && formData.maestria_is_studying) ? (formData.maestria_study_start_date || null) : null,
+                maestria_study_duration_years: (formData.education_level === 'UNIVERSITARIO' && formData.has_maestria && formData.maestria_is_studying && formData.maestria_study_duration_years) ? parseFloat(formData.maestria_study_duration_years) : null,
                 additional_skills: normalizeAdditionalSkills(formData.additional_skills),
                 extra_phones: Array.isArray(formData.extra_phones) ? formData.extra_phones.map(p => (p || '').trim()).filter(Boolean) : [],
                 extra_addresses: normalizeExtraAddresses(formData.extra_addresses),
@@ -524,10 +542,21 @@ export const createEmployeeSlice = (set, get) => ({
             } else if (updatedData.study_duration_years !== undefined) {
                 dbPayload.study_duration_years = updatedData.study_duration_years ? parseFloat(updatedData.study_duration_years) : null;
             }
-            if (updatedData.has_maestria !== undefined || updatedData.maestria_title !== undefined) {
+            if (updatedData.has_maestria !== undefined || updatedData.maestria_title !== undefined || updatedData.maestria_is_studying !== undefined) {
                 const isUniversitario = (updatedData.education_level ?? dbPayload.education_level) === 'UNIVERSITARIO';
-                dbPayload.has_maestria = isUniversitario && !!updatedData.has_maestria;
-                dbPayload.maestria_title = isUniversitario && updatedData.has_maestria ? normalizeCatalogValue(updatedData.maestria_title) : null;
+                const hasMaestria = isUniversitario && !!updatedData.has_maestria;
+                dbPayload.has_maestria = hasMaestria;
+                dbPayload.maestria_title = hasMaestria ? normalizeCatalogValue(updatedData.maestria_title) : null;
+                dbPayload.maestria_is_studying = hasMaestria && !!updatedData.maestria_is_studying;
+                dbPayload.maestria_study_start_date = (hasMaestria && updatedData.maestria_is_studying) ? (updatedData.maestria_study_start_date || null) : null;
+                dbPayload.maestria_study_duration_years = (hasMaestria && updatedData.maestria_is_studying && updatedData.maestria_study_duration_years) ? parseFloat(updatedData.maestria_study_duration_years) : null;
+                // Tener maestría implica licenciatura terminada — no puede seguir
+                // "actualmente estudiando" Universitario a la vez.
+                if (hasMaestria) {
+                    dbPayload.is_studying = false;
+                    dbPayload.study_start_date = null;
+                    dbPayload.study_duration_years = null;
+                }
             }
             if (updatedData.additional_skills !== undefined) {
                 dbPayload.additional_skills = normalizeAdditionalSkills(updatedData.additional_skills);

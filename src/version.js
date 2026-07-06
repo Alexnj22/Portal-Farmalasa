@@ -5,8 +5,10 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.9.18';
+export const APP_VERSION = '2.9.19';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.9.19 — fix(personal/ux): a pedido del usuario, en Ficha Médica y Emergencia el campo de contacto de emergencia decía en el placeholder "Familiar o Pareja" (sugería un tipo de relación, no lo que se debía escribir) y el label redundaba "(Nombre)". Ahora label="Avisar a", placeholder="Nombre".
 
 // v2.9.18 — feat(personal/orden) + fix(personal/dependientes-validación): a pedido del usuario, en el modal de Empleado, la sección "Vehículo y Acreditaciones" ahora aparece justo debajo de "Nivel Académico" (antes iba después de Ficha Médica y Emergencia, al final de la pestaña Personal). Además, la edad manual agregada en v2.9.17 para "Personas que Dependen Económicamente" ahora se valida de verdad: entero entre 0 y 120, sin decimales ni negativos — bloquea Guardar (`isFormFullyValid`) con badge rojo "Requerido"/"0-120" igual que el resto del formulario, y employeeSlice.js lanza error explícito si de algún modo llega inválido al guardar. Extraída la lógica de "modo edad" (`isDependentAgeOnly`/`isDependentAgeInvalid`/`getDependentAge`) a `src/utils/economicDependents.js`, compartida entre el modal y el store — cierra la duplicación que /code-review había señalado en v2.9.17 (cliente y servidor ya no pueden divergir en qué cuenta como "edad válida").
 

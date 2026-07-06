@@ -1794,7 +1794,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Vital..." clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
-                                <PortalInput label="Avisar a (Nombre)" name="emergency_contact_name" value={formData.emergency_contact_name} onChange={handleChange} placeholder="Familiar o Pareja" />
+                                <PortalInput label="Avisar a" name="emergency_contact_name" value={formData.emergency_contact_name} onChange={handleChange} placeholder="Nombre" />
                                 <div className="relative z-10">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 block">Parentesco</label>
                                     <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>

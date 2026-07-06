@@ -3,24 +3,7 @@ import { safeJsonParse, CACHE_KEYS, SENSITIVE_FIELDS, persistEmployees } from '.
 import { useToastStore } from '../toastStore';
 import { assertHeadcountAvailable } from './employeeSlice';
 import { signStorageUrls } from '../../utils/storageFiles';
-
-// PostgREST trunca en 1000 filas sin aviso (max-rows=1000). Este helper pagina
-// cualquier query hasta agotarla — usar para tablas que crecen sin tope
-// (employee_events, employee_documents, employees, employee_branches).
-const fetchAllRows = async (buildQuery) => {
-    const CHUNK = 1000;
-    let all = [];
-    for (let page = 0; ; page++) {
-        const { data, error } = await buildQuery().range(page * CHUNK, (page + 1) * CHUNK - 1);
-        if (error) {
-            console.error('fetchAllRows error:', error.message);
-            return page === 0 ? null : all;
-        }
-        all = all.concat(data || []);
-        if (!data || data.length < CHUNK) break;
-    }
-    return all;
-};
+import { fetchAllRows } from '../../utils/supabaseUtils';
 
 export const createSystemSlice = (set, get) => ({
     // 🚨 1. INICIALIZAMOS HOLIDAYS Y EL RESTO (Desde LocalStorage si existe)

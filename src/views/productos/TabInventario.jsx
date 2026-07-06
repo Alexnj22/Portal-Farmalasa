@@ -8,6 +8,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { normSearch } from '../../utils/searchUtils';
+import { fetchAllRows } from '../../utils/supabaseUtils';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4',
@@ -102,12 +103,16 @@ export default function TabInventario({ searchTerm = '' }) {
     }, []);
 
     useEffect(() => {
-        let q = supabase
-            .from('inventory')
-            .select('erp_sucursal_id, erp_product_id, cantidad, detalle')
-            .eq('is_vencidos', true);
-        if (selectedErp !== null) q = q.eq('erp_sucursal_id', selectedErp);
-        q.then(({ data }) => {
+        let cancelled = false;
+        fetchAllRows(() => {
+            let q = supabase
+                .from('inventory')
+                .select('erp_sucursal_id, erp_product_id, cantidad, detalle')
+                .eq('is_vencidos', true);
+            if (selectedErp !== null) q = q.eq('erp_sucursal_id', selectedErp);
+            return q;
+        }).then((data) => {
+            if (cancelled) return;
             const map = {};
             for (const row of (data || [])) {
                 const key = `${row.erp_sucursal_id}_${row.erp_product_id}`;
@@ -116,6 +121,7 @@ export default function TabInventario({ searchTerm = '' }) {
             }
             setVencidosMap(map);
         });
+        return () => { cancelled = true; };
     }, [selectedErp]);
 
     useEffect(() => { setPage(1); }, [selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, pageSize, sortField]);

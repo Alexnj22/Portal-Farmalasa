@@ -5,7 +5,7 @@ import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
     Megaphone, AlertTriangle, Activity, Copy, CheckCircle2,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
-    Home, Bell, FolderOpen, LayoutDashboard,
+    Home, Bell, FolderOpen, LayoutDashboard, Cake,
     TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
     PackageMinus, ShoppingCart
 } from 'lucide-react';
@@ -13,6 +13,7 @@ import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useToastStore } from '../../store/toastStore';
 import { useSyncMonitor } from '../../hooks/useSyncMonitor';
 import { useNotificationsChannel } from '../../hooks/useNotificationsChannel';
 import NotificationBell from '../common/NotificationBell';
@@ -84,6 +85,36 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const { user, hasPermission, isSU } = useAuth();
     const branches = useStaff((state) => state.branches || []);
     const announcements = useStaff((state) => state.announcements || []);
+    const employees = useStaff((state) => state.employees || []);
+
+    // ¿Hoy es el cumpleaños de quien inició sesión? — vive en el layout (no en
+    // una vista puntual como el Dashboard o Inicio) para que se note sin
+    // importar en qué módulo aterrice al entrar (admin, empleado, etc.).
+    const myEmp = useMemo(() => employees.find(e => String(e.id) === String(user?.id)), [employees, user?.id]);
+    const myBirthDate = myEmp?.birth_date;
+    const myBirthday = useMemo(() => {
+        if (!myBirthDate) return null;
+        const bDate = new Date(myBirthDate + 'T12:00:00');
+        const today = new Date();
+        if (bDate.getMonth() !== today.getMonth() || bDate.getDate() !== today.getDate()) return null;
+        return { turningAge: today.getFullYear() - bDate.getFullYear() };
+    }, [myBirthDate]);
+
+    useEffect(() => {
+        if (!myBirthday || !user?.id) return;
+        const todayKey = new Date().toLocaleDateString('en-CA');
+        const flagKey = `birthday_toast_${user.id}_${todayKey}`;
+        if (localStorage.getItem(flagKey)) return;
+        localStorage.setItem(flagKey, '1');
+        const firstName = user?.name?.split(' ')[0] || '';
+        useToastStore.getState().showToast(
+            `¡Feliz cumpleaños, ${firstName}! 🎂`,
+            `Hoy cumples ${myBirthday.turningAge} años — todo el equipo de Farmalasa te desea un día increíble.`,
+            'birthday',
+            'light',
+            10000
+        );
+    }, [myBirthday, user?.id, user?.name]);
 
     const [vpPending, setVpPending] = useState(0);
     useEffect(() => {
@@ -747,11 +778,18 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                         <button onClick={() => navigate('/profile')}
                                             className="flex-1 flex items-center gap-3 p-2 -mx-1 rounded-[1rem] text-left transition-all duration-200 active:scale-[0.98] hover:bg-white/[0.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]"
                                             type="button">
-                                            <div className="h-9 w-9 rounded-[0.85rem] overflow-hidden flex-shrink-0 flex items-center justify-center transition-all border border-white/12 shadow-[0_4px_12px_rgba(0,0,0,0.4)] bg-white/[0.08] text-white/55 group-hover/user:border-white/20">
-                                                {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
+                                            <div className="relative h-9 w-9 flex-shrink-0">
+                                                <div className="h-9 w-9 rounded-[0.85rem] overflow-hidden flex items-center justify-center transition-all border border-white/12 shadow-[0_4px_12px_rgba(0,0,0,0.4)] bg-white/[0.08] text-white/55 group-hover/user:border-white/20">
+                                                    {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} strokeWidth={1.5} />}
+                                                </div>
+                                                {myBirthday && (
+                                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-pink-500 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-10" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
+                                                        <Cake size={9} className="text-white" />
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="flex-1 overflow-hidden">
-                                                <p className="text-[13px] font-semibold truncate transition-colors leading-tight text-white/80 group-hover/user:text-white">{user?.name || 'Usuario'}</p>
+                                                <p className="text-[13px] font-semibold truncate transition-colors leading-tight text-white/80 group-hover/user:text-white">{user?.name || 'Usuario'}{myBirthday ? ' 🎂' : ''}</p>
                                             </div>
                                         </button>
                                         <button onClick={handleLogout}
@@ -805,19 +843,26 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                             )}
                                         </button>
                                     )}
-                                    <button onClick={() => navigate('/profile')} type="button"
-                                        onMouseEnter={(e) => {
-                                            const rect = e.currentTarget.getBoundingClientRect();
-                                            const x = (asideRef.current?.getBoundingClientRect().right ?? rect.right) + 10;
-                                            openFlyout({ type: 'user', x, y: rect.top + rect.height / 2 });
-                                        }}
-                                        onMouseLeave={closeFlyout}
-                                        className="w-11 h-11 rounded-[1.1rem] overflow-hidden flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
-                                            bg-white/[0.08] border border-white/[0.12] text-white/55
-                                            shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_4px_12px_rgba(0,0,0,0.4)]
-                                            hover:bg-white/[0.14] hover:border-white/[0.20] hover:shadow-[0_6px_18px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.18)]">
-                                        {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} strokeWidth={1.5} />}
-                                    </button>
+                                    <div className="relative w-11 h-11">
+                                        <button onClick={() => navigate('/profile')} type="button"
+                                            onMouseEnter={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                const x = (asideRef.current?.getBoundingClientRect().right ?? rect.right) + 10;
+                                                openFlyout({ type: 'user', x, y: rect.top + rect.height / 2 });
+                                            }}
+                                            onMouseLeave={closeFlyout}
+                                            className="w-11 h-11 rounded-[1.1rem] overflow-hidden flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
+                                                bg-white/[0.08] border border-white/[0.12] text-white/55
+                                                shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_4px_12px_rgba(0,0,0,0.4)]
+                                                hover:bg-white/[0.14] hover:border-white/[0.20] hover:shadow-[0_6px_18px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.18)]">
+                                            {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={17} strokeWidth={1.5} />}
+                                        </button>
+                                        {myBirthday && (
+                                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-pink-500 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-10 pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
+                                                <Cake size={9} className="text-white" />
+                                            </span>
+                                        )}
+                                    </div>
                                     <button onClick={handleLogout} type="button"
                                         className="w-11 h-11 rounded-[1.1rem] flex items-center justify-center transition-all hover:-translate-y-0.5 active:scale-[0.97]
                                             bg-red-500/[0.08] border border-red-500/[0.12] text-red-400/60
@@ -857,10 +902,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             </div>
                             <div className="flex items-center gap-2">
                                 <NotificationBell variant="mobile" />
-                                <button onClick={() => navigate('/profile')} className="w-11 h-11 rounded-[1.4rem] shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-white border-white">
-                                    <div className="absolute inset-0 bg-[#0052CC]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
-                                </button>
+                                <div className="relative w-11 h-11">
+                                    <button onClick={() => navigate('/profile')} className="w-11 h-11 rounded-[1.4rem] shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-white border-white">
+                                        <div className="absolute inset-0 bg-[#0052CC]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
+                                    </button>
+                                    {myBirthday && (
+                                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-pink-500 border-2 border-white shadow-sm flex items-center justify-center animate-bounce z-10 pointer-events-none" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
+                                            <Cake size={9} className="text-white" />
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

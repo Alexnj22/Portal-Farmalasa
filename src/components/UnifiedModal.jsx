@@ -51,6 +51,54 @@ const SHIELD_ICONS = new Set(["editSrsPermit", "editPharmacyRegent", "editPharma
 
 const BRANCH_SUBTITLES = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService", "editBranchLeadership", "addCustomDocument", "editCustomDocument"]);
 
+// Únicos campos que BLOQUEAN el guardado del empleado (a diferencia de los
+// "pendientes" — DUI/documento alterno en imagen, ISSS/AFP — que se pueden
+// completar después, ver getPendingItems en StaffManagementView). Misma
+// función para validar en el submit (handleLocalSubmit) y para deshabilitar
+// el botón Guardar antes de intentar guardar, para que el estado visual del
+// botón refleje si falta algo obligatorio.
+const getEmployeeValidationError = (formData, type) => {
+    if (type === 'newEmployee') {
+        if (!formData?.first_names?.trim() || !formData?.last_names?.trim() || !formData?.code?.trim() || !formData?.branch_id || !formData?.role_id) {
+            return "Faltan campos obligatorios: Nombres, Apellidos, Código, Sucursal Base o Cargo.";
+        }
+        // Art. 23.2 Código de Trabajo: DUI obligatorio en el contrato — salvo
+        // menores de edad (no se tramita antes de los 18 en El Salvador), a
+        // quienes se les acepta un documento alterno (partida de nacimiento,
+        // carné de minoridad) en su lugar.
+        let isMinor = false;
+        if (formData?.birth_date) {
+            const bd = new Date(`${formData.birth_date}T00:00:00`);
+            if (!isNaN(bd.getTime())) {
+                const today = new Date();
+                let age = today.getFullYear() - bd.getFullYear();
+                const m = today.getMonth() - bd.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+                isMinor = age < 18;
+            }
+        }
+        if (isMinor ? !formData?.alt_identity_document?.trim() : !formData?.dui?.trim()) {
+            return isMinor
+                ? "Falta el Documento de Identidad Alternativo (el empleado es menor de edad)."
+                : "El DUI es obligatorio (Art. 23.2 Código de Trabajo).";
+        }
+        if (formData?.contract_type === 'TEMPORAL' && (!formData?.contract_temporal_legal_basis || !formData?.contract_temporal_reason?.trim())) {
+            return "Falta la Base Legal y/o el Motivo Concreto del contrato Temporal (Art. 25).";
+        }
+        return null;
+    }
+    if (type === 'editEmployee') {
+        if (!formData?.first_names?.trim() || !formData?.last_names?.trim()) {
+            return "Los Nombres y Apellidos son obligatorios.";
+        }
+        if (!formData?.code?.trim()) {
+            return "El Código es obligatorio — es la credencial del carné para iniciar sesión.";
+        }
+        return null;
+    }
+    return null;
+};
+
 const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubmit, activeEmployee, setView, setActiveEmployee: setGlobalActiveEmployee }) => {
 
     const { branches, roles, shifts, saveWeeklyRoster, updateBranch, addBranch } = useStaff();
@@ -192,46 +240,11 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         // 🚨 LÓGICA: GUARDAR EMPLEADOS
         // ==========================================
         if (type === "newEmployee" || type === "editEmployee") {
-            
-            if (type === "newEmployee") {
-                if (!formData.first_names?.trim() || !formData.last_names?.trim() || !formData.code?.trim() || !formData.branch_id || !formData.role_id) {
-                    setValidationError("Faltan campos obligatorios: Nombres, Apellidos, Código, Sucursal Base o Cargo.");
-                    return;
-                }
-                // Art. 23.2 Código de Trabajo: DUI obligatorio en el contrato — salvo
-                // menores de edad (no se tramita antes de los 18 en El Salvador), a
-                // quienes se les acepta un documento alterno (partida de nacimiento,
-                // carné de minoridad) en su lugar.
-                let isMinor = false;
-                if (formData.birth_date) {
-                    const bd = new Date(`${formData.birth_date}T00:00:00`);
-                    if (!isNaN(bd.getTime())) {
-                        const today = new Date();
-                        let age = today.getFullYear() - bd.getFullYear();
-                        const m = today.getMonth() - bd.getMonth();
-                        if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
-                        isMinor = age < 18;
-                    }
-                }
-                if (isMinor ? !formData.alt_identity_document?.trim() : !formData.dui?.trim()) {
-                    setValidationError(isMinor
-                        ? "Falta el Documento de Identidad Alternativo (el empleado es menor de edad)."
-                        : "El DUI es obligatorio (Art. 23.2 Código de Trabajo).");
-                    return;
-                }
-                if (formData.contract_type === 'TEMPORAL' && (!formData.contract_temporal_legal_basis || !formData.contract_temporal_reason?.trim())) {
-                    setValidationError("Falta la Base Legal y/o el Motivo Concreto del contrato Temporal (Art. 25).");
-                    return;
-                }
-            } else {
-                if (!formData.first_names?.trim() || !formData.last_names?.trim()) {
-                    setValidationError("Los Nombres y Apellidos son obligatorios.");
-                    return;
-                }
-                if (!formData.code?.trim()) {
-                    setValidationError("El Código es obligatorio — es la credencial del carné para iniciar sesión.");
-                    return;
-                }
+
+            const empError = getEmployeeValidationError(formData, type);
+            if (empError) {
+                setValidationError(empError);
+                return;
             }
 
             setIsSaving(true);
@@ -800,8 +813,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "viewAuditDetail" && <FormAuditDetail data={formData} />}
                                 {type === "manageKiosks" && <FormDispositivos formData={formData} />}
                                 
-                                {type === "newEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} />}
-                                {type === "editEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} isEditMode={true} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} />}
+                                {type === "newEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} onValidationChange={setIsFormValid} />}
+                                {type === "editEmployee" && <FormEmpleadoNuevo formData={formData || {}} setFormData={setFormData} branches={branches} roles={roles} isEditMode={true} activeTab={empActiveTab} setActiveTab={setEmpActiveTab} onValidationChange={setIsFormValid} />}
                                 
                                 {(type === "newBranch" || type === "editBranch") && <FormSucursal formData={formData} setFormData={setFormData} section="general" />}
                                 {type === "editBranchHorarios" && <FormSucursal formData={formData} setFormData={setFormData} section="horarios" />}
@@ -844,11 +857,18 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                 {!hidesFooter && (() => {
                     const isEmpForm = type === 'newEmployee' || type === 'editEmployee';
+                    const isEditingEmp = type === 'editEmployee';
                     const EMP_STEP_KEYS = ['personal', 'laboral', 'nomina', 'documentos'];
                     const EMP_STEP_LABELS = { personal: 'Personal', laboral: 'Contrato', nomina: 'Nómina', documentos: 'Documentos' };
                     const empIdx = EMP_STEP_KEYS.indexOf(empActiveTab);
                     const prevStep = isEmpForm && empIdx > 0 ? EMP_STEP_KEYS[empIdx - 1] : null;
                     const nextStep = isEmpForm && empIdx < EMP_STEP_KEYS.length - 1 ? EMP_STEP_KEYS[empIdx + 1] : null;
+                    // Al editar, faltan campos obligatorios en CUALQUIER pestaña deben
+                    // deshabilitar Guardar — no solo los de la pestaña visible — para que
+                    // el botón refleje de verdad si se puede guardar o no.
+                    const empError = isEmpForm ? getEmployeeValidationError(formData, type) : null;
+                    const empSaveDisabled = isSaving || !isFormValid || !!empError;
+                    const empSaveTitle = empError || (!isFormValid ? 'Completa los campos marcados como "Requerido" en cualquier pestaña antes de guardar.' : undefined);
                     if (isEmpForm) {
                         return (
                             <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-white/40 flex justify-between items-center relative z-10 shrink-0">
@@ -867,19 +887,23 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     Cancelar
                                 </button>
 
-                                {/* RIGHT: Siguiente o Guardar */}
-                                {nextStep ? (
-                                    <button type="button" onClick={() => setEmpActiveTab(nextStep)} disabled={isSaving}
-                                        className="flex items-center gap-2 px-6 h-11 rounded-full bg-[#0052CC] text-white font-black text-[11px] uppercase tracking-widest shadow-[0_6px_18px_rgba(0,82,204,0.3)] hover:bg-[#003D99] hover:shadow-[0_8px_22px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-[0.97]">
-                                        {EMP_STEP_LABELS[nextStep]}
-                                        <ChevronRight size={15} strokeWidth={2.5} />
-                                    </button>
-                                ) : (
-                                    <button type="submit" form="unified-modal-form" disabled={isSaving || !isFormValid}
-                                        className={`flex items-center gap-2 px-6 h-11 font-black text-[11px] uppercase tracking-[0.2em] rounded-full transition-all duration-300 ${!isFormValid ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-emerald-500 text-white shadow-[0_6px_18px_rgba(16,185,129,0.35)] hover:bg-emerald-600 hover:shadow-[0_8px_22px_rgba(16,185,129,0.45)] hover:-translate-y-0.5 active:scale-[0.97]'}`}>
-                                        {isSaving ? <><Loader2 size={15} className="animate-spin" /> Guardando</> : <><Save size={15} strokeWidth={3} /> Guardar</>}
-                                    </button>
-                                )}
+                                {/* RIGHT: Siguiente y/o Guardar — en edición, Guardar siempre está
+                                    presente (no hace falta llegar a Documentos para guardar) */}
+                                <div className="flex items-center gap-2">
+                                    {nextStep && (
+                                        <button type="button" onClick={() => setEmpActiveTab(nextStep)} disabled={isSaving}
+                                            className="flex items-center gap-2 px-6 h-11 rounded-full bg-[#0052CC] text-white font-black text-[11px] uppercase tracking-widest shadow-[0_6px_18px_rgba(0,82,204,0.3)] hover:bg-[#003D99] hover:shadow-[0_8px_22px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-[0.97]">
+                                            {EMP_STEP_LABELS[nextStep]}
+                                            <ChevronRight size={15} strokeWidth={2.5} />
+                                        </button>
+                                    )}
+                                    {(isEditingEmp || !nextStep) && (
+                                        <button type="submit" form="unified-modal-form" disabled={empSaveDisabled} title={empSaveTitle}
+                                            className={`flex items-center gap-2 px-6 h-11 font-black text-[11px] uppercase tracking-[0.2em] rounded-full transition-all duration-300 ${empSaveDisabled && !isSaving ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-emerald-500 text-white shadow-[0_6px_18px_rgba(16,185,129,0.35)] hover:bg-emerald-600 hover:shadow-[0_8px_22px_rgba(16,185,129,0.45)] hover:-translate-y-0.5 active:scale-[0.97]'}`}>
+                                            {isSaving ? <><Loader2 size={15} className="animate-spin" /> Guardando</> : <><Save size={15} strokeWidth={3} /> Guardar</>}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         );
                     }

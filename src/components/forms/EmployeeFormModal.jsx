@@ -332,7 +332,7 @@ const LockedField = ({ label, value, colSpan = 1 }) => (
     </div>
 );
 
-const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode = false, activeTab: activeTabProp }) => {
+const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode = false, activeTab: activeTabProp, onValidationChange }) => {
 
     const employees = useStaffStore(state => state.employees);
     const [localActiveTab, setLocalActiveTab] = useState('personal');
@@ -916,6 +916,77 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // prohibido el trabajo nocturno y examen médico previo obligatorio.
     const isMinor = employeeAge !== null && employeeAge < MINOR_AGE;
     const altIdMissing = isMinor && !formData?.alt_identity_document?.trim();
+
+    // Validez integral del formulario: cualquier campo marcado en rojo en
+    // CUALQUIER pestaña (no solo la que está visible) bloquea Guardar — a
+    // pedido explícito del usuario, tras notar que el botón aparecía habilitado
+    // con el DUI vacío marcado "Requerido". Se reporta al padre (UnifiedModal)
+    // vía onValidationChange, igual que ya hace FormNovedad con isFormValid.
+    const isFormFullyValid = useMemo(() => {
+        if (!formData?.first_names?.trim() || firstNamesInvalid) return false;
+        if (!formData?.last_names?.trim() || lastNamesInvalid) return false;
+
+        if (isMinor) {
+            if (altIdMissing) return false;
+        } else if (!formData?.dui?.trim() || isDuiInvalid || isDuiDuplicate || isDuiIncomplete) {
+            return false;
+        }
+        if (birthDateInvalid) return false;
+
+        if (!formData?.gender) return false;
+        if (!formData?.marital_status) return false;
+        if (formData?.department && !formData?.municipality) return false;
+        for (const addr of (formData?.extra_addresses || [])) {
+            if (addr.department && !addr.municipality) return false;
+        }
+
+        if (phoneHasError) return false;
+        for (const ph of (formData?.extra_phones || [])) {
+            const dLen = digitsLen(ph);
+            if (!!ph && dLen > 0 && (dLen < 8 || !isValidSVPhone(ph))) return false;
+        }
+        if (emailInvalid) return false;
+
+        if (formData?.education_level === 'BASICA' && !formData?.education_grade_completed) return false;
+        if (LEVELS_WITH_SPECIALTY.includes(formData?.education_level)
+            && (!formData?.education_specialty || formData.education_specialty === OTRA_ESPECIALIDAD)) return false;
+        if (LEVELS_WITH_PROFESSION.includes(formData?.education_level)
+            && (!formData?.profession || formData.profession === OTRA_ESPECIALIDAD)) return false;
+        if (formData?.education_level === 'UNIVERSITARIO' && !formData?.is_studying && formData?.has_maestria
+            && (!formData?.maestria_title || formData.maestria_title === OTRA_ESPECIALIDAD)) return false;
+        if (studyEndInPast || maestriaStudyEndInPast) return false;
+
+        if (!formData?.branch_id) return false;
+        if (!formData?.role_id) return false;
+
+        if (salaryInvalid) return false;
+        if (hoursInvalid) return false;
+        if (contractDatesInvalid) return false;
+        if (temporalBasisMissing || temporalReasonMissing) return false;
+
+        if (isssIncomplete) return false;
+        if (afpIncomplete) return false;
+
+        if (!formData?.code?.trim()) return false;
+
+        return true;
+    }, [
+        formData?.first_names, formData?.last_names, firstNamesInvalid, lastNamesInvalid,
+        isMinor, altIdMissing, formData?.dui, isDuiInvalid, isDuiDuplicate, isDuiIncomplete,
+        birthDateInvalid, formData?.gender, formData?.marital_status,
+        formData?.department, formData?.municipality, formData?.extra_addresses,
+        phoneHasError, formData?.extra_phones, emailInvalid,
+        formData?.education_level, formData?.education_grade_completed, formData?.education_specialty,
+        formData?.profession, formData?.is_studying, formData?.has_maestria, formData?.maestria_title,
+        studyEndInPast, maestriaStudyEndInPast, formData?.branch_id, formData?.role_id,
+        salaryInvalid, hoursInvalid, contractDatesInvalid, temporalBasisMissing, temporalReasonMissing,
+        isssIncomplete, afpIncomplete, formData?.code,
+    ]);
+
+    useEffect(() => {
+        onValidationChange?.(isFormFullyValid);
+    }, [isFormFullyValid, onValidationChange]);
+
     // Nombre a mostrar para el tipo de documento elegido en Personal — si el
     // valor no matchea ninguna opción del catálogo, es el texto libre de
     // "Otro documento legal..." tecleado por el usuario, se muestra tal cual.

@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { PartyPopper, AlertCircle, Info, X } from 'lucide-react';
+import { PartyPopper, AlertCircle, Info, X, Cake } from 'lucide-react';
 import { useToastStore } from '../../store/toastStore';
 
 const LiquidToast = () => {
@@ -24,6 +24,10 @@ const LiquidToast = () => {
         info: {
             icon: <Info size={20} strokeWidth={2.5} className="text-white" />,
             iconContainer: isDark ? 'bg-slate-600 shadow-[0_4px_12px_rgba(71,85,105,0.4)]' : 'bg-slate-700 shadow-[0_4px_12px_rgba(51,65,85,0.4)]'
+        },
+        birthday: {
+            icon: <Cake size={20} strokeWidth={2.5} className="text-white animate-[bounce_2s_infinite]" />,
+            iconContainer: 'bg-pink-500 shadow-[0_4px_12px_rgba(236,72,153,0.4)]'
         }
     }[type] || {
         icon: <Info size={20} strokeWidth={2.5} className="text-white" />,

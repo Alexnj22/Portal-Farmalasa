@@ -11,7 +11,6 @@ import {
   ShieldCheck,
   X,
   Trash2,
-  User,
   Edit3,
   CheckCircle2,
   Palmtree,
@@ -40,6 +39,7 @@ import LiquidAvatar from '../components/common/LiquidAvatar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
 import { smartFilter } from '../utils/searchUtils';
+import { shortEmployeeName } from '../utils/nameUtils';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
 
@@ -58,15 +58,6 @@ const searchEmployees = (query, list, branchMap) => {
         if (byCode.length) return { results: byCode, isFuzzy: false };
     }
     return byNameRoleBranch;
-};
-
-const formatShortName = (fullName) => {
-  if (!fullName) return 'Personal';
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0];
-  if (parts.length === 2) return `${parts[0]} ${parts[1]}`;
-  if (parts.length >= 3) return `${parts[0]} ${parts[2]}`;
-  return fullName;
 };
 
 const getStatusInfo = (rawStatus) => {
@@ -110,9 +101,8 @@ const PendingBadge = ({ emp }) => {
 
   return (
     <div ref={ref} onMouseEnter={show} onMouseLeave={hide}
-      className="flex items-center gap-0.5 shrink-0 cursor-default">
-      <AlertCircle size={11} strokeWidth={2.5} className="text-amber-500" />
-      <span className="text-[8px] font-black text-amber-700 bg-amber-100 border border-amber-200 px-1 rounded">PENDIENTE</span>
+      className="flex items-center shrink-0 cursor-default">
+      <AlertCircle size={13} strokeWidth={2.5} className="text-amber-500" />
       {pos && createPortal(
         <div style={{ position: 'absolute', top: pos.top, left: pos.left, transform: 'translate(-50%, -100%)', zIndex: 99999, pointerEvents: 'none' }}
           className="animate-in fade-in duration-150">
@@ -153,7 +143,7 @@ const getBranchWeight = (branchStr) => {
 const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onRehireEmployee, canEdit = false, staggerIndex = 0 }) => {
   const computedStatus = getEffectiveStatus(emp);
   const statusInfo = getStatusInfo(computedStatus);
-  const shortName = formatShortName(emp.name);
+  const shortName = shortEmployeeName(emp);
   const isAbsent = ['INACTIVO', 'Inactivo', 'En Vacaciones', 'Incapacitado', 'Maternidad', 'Liquidado'].includes(computedStatus);
 
   // CEREBRO DE CUMPLEAÑOS PRO
@@ -224,7 +214,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
 
   return (
     <DataRow index={staggerIndex} className={`${isAbsent ? 'opacity-70' : ''} ${emp.status === 'INACTIVO' ? 'grayscale-[50%]' : ''} ${rowCelebrationClass}`}>
-      <DataCell className="w-[280px]">
+      <DataCell className="w-[360px]">
         <div className="flex items-center gap-3">
           <div className="relative shrink-0">
             <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-white border border-white/70 flex items-center justify-center text-slate-500 font-bold overflow-hidden shadow-sm group-hover:shadow transition-all group-hover:-translate-y-0.5">
@@ -316,16 +306,15 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
         </span>
       </DataCell>
 
-      <DataCell align="right">
-        <div className="flex items-center justify-end gap-2">
+      <DataCell align="right" className="w-[180px]">
+        <div className="flex items-center justify-end gap-1.5">
           {(emp.status === 'INACTIVO' || emp.status === 'Liquidado') && canEdit && (
             <button
               onClick={() => onRehireEmployee(emp)}
-              className="flex items-center gap-1.5 h-8 md:h-9 px-3 bg-white/70 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 border border-white/80 hover:border-emerald-200 rounded-full font-black text-[9px] uppercase tracking-widest shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
+              className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 border border-white/80 hover:border-emerald-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
               title="Recontratar"
             >
-              <RefreshCw size={12} strokeWidth={2.5} />
-              <span className="hidden md:inline">Recontratar</span>
+              <RefreshCw size={14} strokeWidth={2.5} />
             </button>
           )}
           <button
@@ -338,12 +327,10 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           </button>
           <button
             onClick={() => onOpenEmployee(emp)}
-            className="inline-flex items-center justify-center gap-1.5 h-8 md:h-9 px-3 md:px-4 bg-white/70 hover:bg-white text-slate-600 hover:text-[#0052CC] rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,82,204,0.15)] border border-white/80 hover:border-blue-100 hover:-translate-y-0.5 active:scale-[0.97]"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-white text-slate-600 hover:text-[#0052CC] transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,82,204,0.15)] border border-white/80 hover:border-blue-100 hover:-translate-y-0.5 active:scale-[0.97]"
             title="Ver perfil completo"
           >
-            <User size={12} strokeWidth={2.5} className="md:hidden" />
-            <span className="hidden md:inline">Ver Perfil</span>
-            <ChevronRight size={14} strokeWidth={3} className="hidden md:inline" />
+            <ChevronRight size={16} strokeWidth={3} />
           </button>
         </div>
       </DataCell>
@@ -733,7 +720,7 @@ const StaffManagementView = ({
             subtext: 'Ajusta el filtro de sucursal o limpia la búsqueda.',
             action: hasActiveFilters ? { label: 'Limpiar Filtros', onClick: clearFilters } : undefined,
           }}
-          minWidth="700px"
+          minWidth="800px"
         >
           {paginatedEmployees.map((emp, i) => (
             <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit} />

@@ -2,6 +2,7 @@ import React, { memo, useMemo, useEffect, useState } from 'react';
 import { CircleUserRound, Clock, Pencil, Flame, AlertTriangle, Building2, Plus, X as XIcon, Search } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { tokenMatch } from '../../../utils/searchUtils';
+import { shortEmployeeName } from '../../../utils/nameUtils';
 
 import { getRoleTheme, getDayConflictLocal, getTimeBlocks, calculateEmployeeWeeklyHoursLocal, timeToMins } from '../../../utils/scheduleHelpers'; 
 
@@ -47,16 +48,6 @@ const formatNames = (setOfNames) => {
     if (arr.length === 1) return arr[0];
     const last = arr.pop();
     return arr.join(', ') + ' y ' + last;
-};
-
-// 🚨 FUNCIÓN PARA ACORTAR NOMBRES LARGOS
-const formatShortName = (fullName) => {
-    if (!fullName) return 'Personal';
-    const parts = fullName.trim().split(/\s+/);
-    if (parts.length === 1) return parts[0];
-    if (parts.length === 2) return `${parts[0]} ${parts[1]}`;
-    if (parts.length >= 3) return `${parts[0]} ${parts[2]}`;
-    return fullName;
 };
 
 // ============================================================================
@@ -238,7 +229,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
         barColor = 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]'; // Falta rellenar
     }
 
-    const shortName = formatShortName(emp.name);
+    const shortName = shortEmployeeName(emp);
 
     // 🚨 PARSER INTELIGENTE DE CARGOS Y CONTRACCIONES
     const rolesArray = useMemo(() => {
@@ -513,7 +504,7 @@ const fmt12h = (t) => {
 };
 
 const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByDow, calendarDates, shifts, onEditCell, onRemove }) => {
-    const shortName = formatShortName(emp.name);
+    const shortName = shortEmployeeName(emp);
     const parsedHomeRoster = useMemo(() => {
         if (!homeRoster) return {};
         return typeof homeRoster === 'string' ? JSON.parse(homeRoster || '{}') : homeRoster;

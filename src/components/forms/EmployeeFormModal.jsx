@@ -1982,7 +1982,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="flex items-center justify-between mb-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 block">{isMinor ? altIdDocTypeLabel : 'DUI'}</label>
                                     {!(isMinor ? !!getDocEntry('DOCUMENTO_IDENTIDAD').url : (!!getDocEntry('DUI_FRENTE').url && !!getDocEntry('DUI_REVERSO').url)) && (
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 shrink-0">Pendiente — no bloquea el alta</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 shrink-0">Pendiente</span>
                                     )}
                                 </div>
                                 {isMinor ? (

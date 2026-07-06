@@ -159,6 +159,16 @@ const RouteLoadingFallback = () => (
     </div>
 );
 
+// Fallback SOLO para el área de contenido dentro de AppLayout — un Suspense
+// separado del de nivel raíz evita que cambiar de ruta ya autenticado
+// desmonte el sidebar entero (React reemplaza TODO el subárbol del Suspense
+// más cercano al suspender, no solo el componente lazy).
+const ContentLoadingFallback = () => (
+    <div className="w-full h-full flex items-center justify-center">
+        <Loader2 className="text-[#0052CC] animate-spin" size={28} strokeWidth={2.5} />
+    </div>
+);
+
 // ============================================================================
 // 🚀 APLICACIÓN PRINCIPAL
 // ============================================================================
@@ -541,6 +551,7 @@ function MainApp() {
                                 handleLogout={handleLogout}
                             >
                                 <ErrorBoundary>
+                                <Suspense fallback={<ContentLoadingFallback />}>
                                 <Routes>
                                     {/* ── Self-service ── */}
                                     <Route path="home" element={<PermissionGuard moduleKey="emp_home"><EmployeeHomeView /></PermissionGuard>} />
@@ -627,6 +638,7 @@ function MainApp() {
                                     <Route path="staff" element={<Navigate to="/dashboard" replace />} />
                                     <Route path="*" element={<Navigate to={defaultRedirect} replace />} />
                                 </Routes>
+                                </Suspense>
                                 </ErrorBoundary>
                             </AppLayout>
                         </div>

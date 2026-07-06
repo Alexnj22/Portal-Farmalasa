@@ -150,7 +150,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         const rec = deleteTimersRef.current.get(key);
         if (rec) {
             deleteTimersRef.current.delete(key);
-            if (rec.isAll) deleteAllNotifications();
+            if (rec.isAll) deleteAllNotifications(rec.cutoff);
             else deleteNotificationsByIds(rec.ids);
         }
         setPendingDeletes(prev => prev.filter(e => e.key !== key));
@@ -159,8 +159,12 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const scheduleDelete = (ids, isAll = false) => {
         if (!ids.length) return;
         const key = `${isAll ? 'all' : 'one'}-${Date.now()}`;
+        // Corte de tiempo capturado AHORA (antes de la ventana de deshacer) para
+        // que "borrar todas" no arrastre algo que llegue por realtime durante
+        // los 3s — mismo contrato que el borrado individual por IDs.
+        const cutoff = new Date().toISOString();
         setPendingDeletes(prev => [...prev, { key, ids, isAll }]);
-        deleteTimersRef.current.set(key, { ids, isAll, timer: setTimeout(() => commitDelete(key), UNDO_MS) });
+        deleteTimersRef.current.set(key, { ids, isAll, cutoff, timer: setTimeout(() => commitDelete(key), UNDO_MS) });
     };
 
     const undoDelete = (key) => {

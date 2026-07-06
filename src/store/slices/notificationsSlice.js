@@ -77,4 +77,18 @@ export const createNotificationsSlice = (set, get) => ({
             console.error('Error borrando notificaciones:', err);
         }
     },
+
+    // "Borrar todas" real: fetchNotifications solo carga las 100 más recientes,
+    // así que borrar por IDs cargados dejaba reaparecer las más viejas en el
+    // siguiente fetch. Este borra TODO lo del destinatario server-side (RLS ya
+    // limita a sus propias filas) — el filtro gte es solo para satisfacer la
+    // exigencia de PostgREST de un WHERE explícito en DELETE.
+    deleteAllNotifications: async () => {
+        set({ notifications: [] });
+        try {
+            await supabase.from('notifications').delete().gte('created_at', '1970-01-01');
+        } catch (err) {
+            console.error('Error borrando todas las notificaciones:', err);
+        }
+    },
 });

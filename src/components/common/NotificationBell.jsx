@@ -94,6 +94,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
     const markNotificationRead = useStaff(s => s.markNotificationRead);
     const markAllNotificationsRead = useStaff(s => s.markAllNotificationsRead);
     const deleteNotificationsByIds = useStaff(s => s.deleteNotificationsByIds);
+    const deleteAllNotifications = useStaff(s => s.deleteAllNotifications);
 
     const [isOpen, setIsOpen] = useState(false);
     const [confirmClear, setConfirmClear] = useState(false);
@@ -149,7 +150,8 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         const rec = deleteTimersRef.current.get(key);
         if (rec) {
             deleteTimersRef.current.delete(key);
-            deleteNotificationsByIds(rec.ids);
+            if (rec.isAll) deleteAllNotifications();
+            else deleteNotificationsByIds(rec.ids);
         }
         setPendingDeletes(prev => prev.filter(e => e.key !== key));
     };
@@ -158,7 +160,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         if (!ids.length) return;
         const key = `${isAll ? 'all' : 'one'}-${Date.now()}`;
         setPendingDeletes(prev => [...prev, { key, ids, isAll }]);
-        deleteTimersRef.current.set(key, { ids, timer: setTimeout(() => commitDelete(key), UNDO_MS) });
+        deleteTimersRef.current.set(key, { ids, isAll, timer: setTimeout(() => commitDelete(key), UNDO_MS) });
     };
 
     const undoDelete = (key) => {

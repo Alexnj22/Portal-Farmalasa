@@ -142,6 +142,35 @@ const resolveApprover = async (employeeId, branchId, roleId) => {
     }
 };
 
+// Último fallback absoluto: si resolveApprover/resolveNextApprover no encontraron
+// a nadie (o ni siquiera pudieron ejecutarse porque falló el fetch del empleado),
+// esto garantiza que la solicitud NUNCA quede con approver_id null — antes eso
+// la volvía invisible para todo aprobador, incluso admins (fetchRequests filtra
+// por eq('approver_id', ...), que nunca matchea null).
+const resolveFallbackApprover = async (excludeId) => {
+    try {
+        const { data: roleRows } = await supabase
+            .from('role_permissions')
+            .select('role_id')
+            .eq('module_key', 'requests')
+            .eq('can_approve', true);
+        const roleIds = (roleRows || []).map(r => r.role_id);
+        if (!roleIds.length) return null;
+
+        const { data: emps } = await supabase
+            .from('employees')
+            .select('id')
+            .in('role_id', roleIds)
+            .eq('status', 'ACTIVO')
+            .neq('id', excludeId)
+            .limit(1);
+        return emps?.[0]?.id || null;
+    } catch (err) {
+        console.error('Error resolviendo aprobador de último recurso:', err);
+        return null;
+    }
+};
+
 const resolveNextApprover = async (level, branchId, excludeId = null) => {
     try {
         const findBySystemRole = async (roles, sameBranch = false) => {
@@ -459,7 +488,11 @@ export const createRequestsSlice = (set, get) => ({
 
             if (employeeId) query = query.eq('employee_id', employeeId);
             if (branchEmpIds && branchEmpIds.length > 0) query = query.in('employee_id', branchEmpIds);
-            if (approverId) query = query.eq('approver_id', approverId);
+            // Incluye huérfanas (approver_id null) como red de seguridad — no deberían
+            // existir tras el fallback de createRequest, pero si alguna se cuela no
+            // debe quedar invisible para todo aprobador (RLS ya permite verlas: la
+            // policy de SELECT da acceso total a can_approve, este filtro es solo UI).
+            if (approverId) query = query.or(`approver_id.eq.${approverId},approver_id.is.null`);
 
             const { data: requests, error } = await query;
             if (error) throw error;
@@ -578,11 +611,12 @@ export const createRequestsSlice = (set, get) => ({
             }
 
             // DISABILITY: va directamente a Talento Humano, sin pasar por la jerarquía intermedia
-            const approverId = emp
+            const resolvedApproverId = emp
                 ? (type === 'DISABILITY'
                     ? await resolveNextApprover(3, emp.branch_id, employeeId)
                     : await resolveApprover(employeeId, emp.branch_id, emp.role_id))
                 : null;
+            const approverId = resolvedApproverId || await resolveFallbackApprover(employeeId);
 
             const finalMetadata = type === 'DISABILITY'
                 ? { ...payload, priority: 'URGENT' }

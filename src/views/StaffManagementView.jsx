@@ -75,27 +75,54 @@ const getStatusInfo = (rawStatus) => {
   return { text: rawStatus || 'Sin estado', icon: HelpCircle, className: 'text-slate-600 bg-slate-50/80 border-slate-200' };
 };
 
-const isPendingData = (emp) => {
-  if (emp.status === 'INACTIVO' || emp.status === 'Liquidado') return false;
-  return !emp.dui || !emp.birth_date || (!emp.isss_number && !emp.afp_number);
+// Edad real en años — misma lógica que EmployeeFormModal (calcAge) para decidir
+// si el documento de identidad esperado es DUI (adulto) o alterno (menor).
+const MINOR_AGE = 18;
+const calcAgeYears = (birthDateStr) => {
+  if (!birthDateStr) return null;
+  const bd = new Date(birthDateStr + 'T00:00:00');
+  if (isNaN(bd.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - bd.getFullYear();
+  const m = today.getMonth() - bd.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
+  return age;
 };
 
-const getPendingTooltip = (emp) => {
+// Mismos campos que el banner "Información Pendiente" del modal Empleado
+// (pendingItems en EmployeeFormModal) — incluye la imagen del documento de
+// identidad, no solo los datos de texto, para que el icono de la lista y el
+// modal nunca queden desincronizados.
+const getPendingItems = (emp) => {
   const missing = [];
-  if (!emp.dui) missing.push('DUI');
-  if (!emp.birth_date) missing.push('Fecha de nacimiento');
-  if (!emp.isss_number && !emp.afp_number) missing.push('ISSS / AFP');
-  return `Pendiente: ${missing.join(' • ')}`;
+  if (!emp.dui) missing.push({ label: 'DUI', hint: 'falta el número' });
+  if (!emp.birth_date) missing.push({ label: 'Fecha de nacimiento', hint: 'no registrada' });
+  if (!emp.isss_number && !emp.afp_number) missing.push({ label: 'ISSS / AFP', hint: 'sin número afiliado' });
+
+  const isMinor = (calcAgeYears(emp.birth_date) ?? 99) < MINOR_AGE;
+  const docs = emp.documents || [];
+  const hasIdDoc = isMinor
+    ? docs.some(d => d.category === 'DOCUMENTO_IDENTIDAD' && d.url)
+    : docs.some(d => d.category === 'DUI_FRENTE' && d.url) && docs.some(d => d.category === 'DUI_REVERSO' && d.url);
+  if (!hasIdDoc) missing.push({ label: 'Documento de identidad', hint: 'falta subir la imagen' });
+
+  return missing;
+};
+
+const isPendingData = (emp) => {
+  if (emp.status === 'INACTIVO' || emp.status === 'Liquidado') return false;
+  return getPendingItems(emp).length > 0;
 };
 
 const PendingBadge = ({ emp }) => {
   const [pos, setPos] = useState(null);
   const ref = useRef(null);
+  const items = useMemo(() => getPendingItems(emp), [emp]);
 
   const show = () => {
     if (!ref.current) return;
     const r = ref.current.getBoundingClientRect();
-    setPos({ top: r.top + window.scrollY - 8, left: r.left + window.scrollX + r.width / 2 });
+    setPos({ top: r.top + window.scrollY - 10, left: r.left + window.scrollX + r.width / 2 });
   };
   const hide = () => setPos(null);
 
@@ -105,9 +132,18 @@ const PendingBadge = ({ emp }) => {
       <AlertCircle size={13} strokeWidth={2.5} className="text-amber-500" />
       {pos && createPortal(
         <div style={{ position: 'absolute', top: pos.top, left: pos.left, transform: 'translate(-50%, -100%)', zIndex: 99999, pointerEvents: 'none' }}
-          className="animate-in fade-in duration-150">
-          <div className="bg-slate-800/95 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1.5 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
-            {getPendingTooltip(emp)}
+          className="animate-in fade-in duration-150 min-w-[190px]">
+          <div className="bg-slate-800/95 backdrop-blur-sm text-white rounded-2xl shadow-xl border border-white/10 px-3 py-2.5">
+            <p className="text-[9px] font-black uppercase tracking-widest text-amber-400 mb-1.5">Información pendiente</p>
+            <ul className="space-y-1">
+              {items.map((item, i) => (
+                <li key={i} className="flex items-baseline gap-1.5 text-[11px] whitespace-nowrap">
+                  <span className="w-1 h-1 rounded-full bg-amber-400 shrink-0 self-center" />
+                  <span className="font-bold">{item.label}</span>
+                  <span className="text-slate-400 font-medium">— {item.hint}</span>
+                </li>
+              ))}
+            </ul>
           </div>
           <div className="w-2 h-2 bg-slate-800/95 rotate-45 mx-auto -mt-1 border-r border-b border-white/10" />
         </div>,
@@ -146,16 +182,29 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
   const shortName = shortEmployeeName(emp);
   const isAbsent = ['INACTIVO', 'Inactivo', 'En Vacaciones', 'Incapacitado', 'Maternidad', 'Liquidado'].includes(computedStatus);
 
-  // CEREBRO DE CUMPLEAÑOS PRO
+  // CEREBRO DE CUMPLEAÑOS PRO — lenguaje relativo y natural (Mañana / En N días),
+  // no la fecha cruda; los que ya pasaron este mes no aportan y se ocultan.
   const birthdayInfo = useMemo(() => {
     if (!emp.birth_date) return null;
     const bDate = new Date(emp.birth_date + 'T12:00:00');
     const today = new Date();
-    
-    const isThisMonth = bDate.getMonth() === today.getMonth();
-    const isToday = isThisMonth && bDate.getDate() === today.getDate();
-    
-    return { isThisMonth, isToday, day: bDate.getDate() };
+    today.setHours(12, 0, 0, 0);
+    if (bDate.getMonth() !== today.getMonth()) return null;
+
+    const thisYearBday = new Date(today.getFullYear(), bDate.getMonth(), bDate.getDate(), 12, 0, 0, 0);
+    const diffDays = Math.round((thisYearBday - today) / 86400000);
+    if (diffDays < 0) return null;
+
+    const turningAge = today.getFullYear() - bDate.getFullYear();
+    const isToday = diffDays === 0;
+    const label = isToday ? `¡Hoy cumple ${turningAge}!` : diffDays === 1 ? 'Mañana' : `En ${diffDays} días`;
+    const tooltip = isToday
+      ? `¡Hoy cumple ${turningAge} años! 🎉`
+      : diffDays === 1
+        ? `Cumple mañana (${turningAge} años)`
+        : `Cumple en ${diffDays} días — día ${bDate.getDate()} (${turningAge} años)`;
+
+    return { isToday, day: bDate.getDate(), diffDays, turningAge, label, tooltip };
   }, [emp.birth_date]);
 
   // CEREBRO DE ANIVERSARIOS PRO
@@ -210,7 +259,9 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
     return uniqueRoles.length > 0 ? uniqueRoles : [{ original: 'Empleado', display: 'EMPLEADO' }];
   }, [emp.role, emp.secondary_role, emp.secondaryRole]);
 
-  const rowCelebrationClass = birthdayInfo?.isToday ? 'animate-in fade-in zoom-in-95 duration-700 bg-gradient-to-r from-pink-50 via-white to-pink-50 ring-2 ring-pink-100' : '';
+  const rowCelebrationClass = birthdayInfo?.isToday
+    ? 'animate-in fade-in zoom-in-95 duration-700 bg-gradient-to-r from-pink-50 via-amber-50/40 to-pink-50 ring-1 ring-pink-200/70 shadow-[0_2px_16px_rgba(236,72,153,0.10)]'
+    : '';
 
   return (
     <DataRow index={staggerIndex} className={`${isAbsent ? 'opacity-70' : ''} ${emp.status === 'INACTIVO' ? 'grayscale-[50%]' : ''} ${rowCelebrationClass}`}>
@@ -220,6 +271,11 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
             <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-white border border-white/70 flex items-center justify-center text-slate-500 font-bold overflow-hidden shadow-sm group-hover:shadow transition-all group-hover:-translate-y-0.5">
                 <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name || 'Empleado'} fallbackText={shortName} className="w-full h-full" />
             </div>
+            {birthdayInfo?.isToday && (
+                <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-pink-500 border-2 border-white shadow-sm z-20 flex items-center justify-center animate-bounce" title={`¡Hoy cumple ${birthdayInfo.turningAge} años! 🎉`}>
+                    <span className="text-[9px] leading-none">🎂</span>
+                </span>
+            )}
             {(computedStatus === 'Activo' || computedStatus === 'En Apoyo') && emp.status !== 'INACTIVO' && (
                 <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-sm z-10" title="Disponible"></span>
             )}
@@ -230,25 +286,24 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
 
           <div className="min-w-0 flex-1 relative">
             {birthdayInfo?.isToday && (
-              <div className="absolute inset-0 -translate-x-2 -translate-y-2 pointer-events-none opacity-40">
-                <div className="w-3 h-3 bg-blue-300 rounded-full animate-pulse absolute top-0 left-0"></div>
-                <div className="w-2 h-2 bg-pink-300 rounded-full animate-pulse delay-100 absolute top-3 left-6"></div>
-                <div className="w-3 h-3 bg-yellow-300 rounded-full animate-pulse delay-200 absolute top-6 left-2"></div>
-                <div className="w-2 h-2 bg-emerald-300 rounded-full animate-pulse delay-300 absolute top-2 left-10"></div>
+              <div className="absolute -top-2 left-0 right-4 h-4 pointer-events-none opacity-70 overflow-visible">
+                <span className="absolute top-0 left-1 text-[10px] animate-bounce">🎉</span>
+                <span className="absolute top-1 left-9 text-[8px] animate-bounce [animation-delay:150ms]">✨</span>
+                <span className="absolute top-0 right-2 text-[10px] animate-bounce [animation-delay:300ms]">🎊</span>
               </div>
             )}
-            
+
             <div className="flex items-center gap-1.5 relative z-10">
               <p className="font-black text-slate-800 text-[12px] md:text-[13px] truncate transition-colors group-hover:text-[#0052CC] tracking-tight" title={emp.name}>
                 {shortName}
               </p>
               {isPendingData(emp) && <PendingBadge emp={emp} />}
 
-              {birthdayInfo?.isThisMonth && (
-                <div className={`flex items-center gap-0.5 ${birthdayInfo.isToday ? 'animate-pulse' : ''}`} title={birthdayInfo.isToday ? `¡HOY cumple años! Día ${birthdayInfo.day}` : `Cumpleaños: Día ${birthdayInfo.day} de este mes`}>
+              {birthdayInfo && (
+                <div className={`flex items-center gap-0.5 ${birthdayInfo.isToday ? 'animate-pulse' : ''}`} title={birthdayInfo.tooltip}>
                   <Cake size={12} strokeWidth={2.5} className={`${birthdayInfo.isToday ? 'text-pink-600 scale-125' : 'text-pink-500'} shrink-0`} />
-                  <span className={`text-[8px] font-black ${birthdayInfo.isToday ? 'text-white bg-pink-600 px-1 rounded' : 'text-pink-600 bg-pink-100 px-1 rounded'}`}>
-                     {birthdayInfo.isToday ? 'HBD! 🔥' : `Día ${birthdayInfo.day}`}
+                  <span className={`text-[8px] font-black whitespace-nowrap ${birthdayInfo.isToday ? 'text-white bg-pink-600 px-1 rounded' : 'text-pink-600 bg-pink-100 px-1 rounded'}`}>
+                     {birthdayInfo.label}
                   </span>
                 </div>
               )}

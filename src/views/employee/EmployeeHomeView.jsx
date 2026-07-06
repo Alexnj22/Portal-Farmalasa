@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     CalendarDays, ClipboardList, Bell, Plus, ChevronLeft, ChevronRight,
-    Coffee, Loader2, Palmtree, Sparkles, Clock, Timer, Flame, Sun, Moon, Home, Utensils, Baby, X
+    Coffee, Loader2, Palmtree, Sparkles, Clock, Timer, Flame, Sun, Moon, Home, Utensils, Baby, X, Cake
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
@@ -308,10 +308,22 @@ const EmployeeHomeView = () => {
 
     const hasUrgent = unreadAnnouncements.some(a => a.priority === 'URGENT');
 
+    // ¿Hoy es el cumpleaños de quien inició sesión? — personaliza el saludo del
+    // header y muestra un banner festivo, para que se sienta que la empresa
+    // está pendiente de la fecha.
+    const empBirthDate = emp?.birth_date;
+    const myBirthday = useMemo(() => {
+        if (!empBirthDate) return null;
+        const bDate = new Date(empBirthDate + 'T12:00:00');
+        const today = new Date();
+        if (bDate.getMonth() !== today.getMonth() || bDate.getDate() !== today.getDate()) return null;
+        return { turningAge: today.getFullYear() - bDate.getFullYear() };
+    }, [empBirthDate]);
+
     // Labels
     const h         = currentTime.getHours();
-    const greeting  = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
-    const GreetIcon = h < 12 ? Sun : h < 19 ? Sparkles : Moon;
+    const greeting  = myBirthday ? '¡Feliz cumpleaños' : h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+    const GreetIcon = myBirthday ? Cake : h < 12 ? Sun : h < 19 ? Sparkles : Moon;
     const MONTHS    = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
     const D_NAMES   = { 0:'Domingo',1:'Lunes',2:'Martes',3:'Miércoles',4:'Jueves',5:'Viernes',6:'Sábado' };
     const todayLabel = `${D_NAMES[currentTime.getDay()]}, ${String(currentTime.getDate()).padStart(2,'0')} de ${MONTHS[currentTime.getMonth()]} de ${currentTime.getFullYear()}`;
@@ -342,18 +354,23 @@ const EmployeeHomeView = () => {
             headerLeft={
                 <div className="flex items-center gap-3">
                     {/* Avatar */}
-                    <div className="w-10 h-10 md:w-11 md:h-11 rounded-full overflow-hidden border-2 border-white/60 shadow-md flex-shrink-0">
+                    <div className={`relative w-10 h-10 md:w-11 md:h-11 rounded-full overflow-hidden border-2 shadow-md flex-shrink-0 ${myBirthday ? 'border-pink-300' : 'border-white/60'}`}>
                         {emp?.photo || emp?.photo_url
                             ? <img src={emp.photo || emp.photo_url} className="w-full h-full object-cover" alt="" />
                             : <div className="w-full h-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white font-black text-base">{user?.name?.charAt(0)}</div>
                         }
+                        {myBirthday && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-pink-500 border-2 border-white shadow-sm flex items-center justify-center animate-bounce">
+                                <span className="text-[8px] leading-none">🎂</span>
+                            </span>
+                        )}
                     </div>
                     {/* Nombre + cargo */}
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                            <GreetIcon size={11} className={`${tk.textMuted} flex-shrink-0`} />
-                            <span className={`text-[11px] font-bold uppercase tracking-wider ${tk.textMuted}`}>{greeting},</span>
-                            <span className={`text-[16px] md:text-[18px] font-black leading-none truncate ${tk.textStrong}`}>{user?.name?.split(' ')[0]}</span>
+                            <GreetIcon size={11} className={`${myBirthday ? 'text-pink-500' : tk.textMuted} flex-shrink-0`} />
+                            <span className={`text-[11px] font-bold uppercase tracking-wider ${myBirthday ? 'text-pink-500' : tk.textMuted}`}>{greeting},</span>
+                            <span className={`text-[16px] md:text-[18px] font-black leading-none truncate ${tk.textStrong}`}>{user?.name?.split(' ')[0]}{myBirthday ? '! 🎉' : ''}</span>
                         </div>
                         <p className={`text-[11px] mt-0.5 truncate ${tk.textMuted}`}>{emp?.role || 'Empleado'} · {branch?.name || '—'}</p>
                     </div>
@@ -437,6 +454,30 @@ const EmployeeHomeView = () => {
 
             {/* ══ SECCIÓN 3: VERTICAL ══ */}
             <div className="space-y-4">
+
+                {/* 0. Banner de cumpleaños — personal, para que se sienta que la empresa está pendiente */}
+                {myBirthday && (
+                    <div className="relative overflow-hidden rounded-[2rem] p-5 border border-pink-200/60 bg-gradient-to-br from-pink-50 via-white to-amber-50 shadow-[0_8px_30px_rgba(236,72,153,0.12)] animate-in fade-in zoom-in-95 duration-700">
+                        <div className="absolute inset-0 pointer-events-none opacity-70">
+                            <span className="absolute top-3 left-10 text-[14px] animate-bounce">🎉</span>
+                            <span className="absolute top-6 right-16 text-[12px] animate-bounce [animation-delay:150ms]">✨</span>
+                            <span className="absolute bottom-3 left-1/3 text-[13px] animate-bounce [animation-delay:300ms]">🎊</span>
+                        </div>
+                        <div className="relative z-10 flex items-center gap-3.5">
+                            <div className="w-12 h-12 rounded-2xl bg-white/90 border border-pink-200 flex items-center justify-center shadow-sm shrink-0">
+                                <Cake size={22} className="text-pink-500" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-[15px] font-black text-slate-800 truncate">
+                                    ¡Feliz cumpleaños, {user?.name?.split(' ')[0]}! 🎂 Hoy cumples {myBirthday.turningAge} años.
+                                </p>
+                                <p className="text-[11px] font-medium text-slate-500 mt-0.5">
+                                    Todo el equipo de Farmalasa te desea un día increíble. ¡Que lo disfrutes!
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* 1. Métricas + Vacaciones en una fila */}
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">

@@ -117,15 +117,21 @@ const normalizeExtraAddresses = (arr) => {
 const normalizeEconomicDependents = (arr) => {
     if (!Array.isArray(arr)) return [];
     return arr
-        .map(d => ({
-            name: (d?.name || '').trim().toUpperCase(),
-            birth_date: d?.birth_date || null,
-            relationship: (d?.relationship || '').trim(),
-            department: (d?.department || '').trim(),
-            municipality: (d?.municipality || '').trim(),
-            address: (d?.address || '').trim().toUpperCase(),
-        }))
-        .filter(d => d.name || d.birth_date || d.relationship || d.department || d.municipality || d.address);
+        .map(d => {
+            const hasAge = d?.age !== '' && d?.age != null && !Number.isNaN(parseInt(d.age, 10));
+            const ageOnly = !d?.birth_date && hasAge;
+            return {
+                name: (d?.name || '').trim().toUpperCase(),
+                birth_date: d?.birth_date || null,
+                age: ageOnly ? parseInt(d.age, 10) : null,
+                age_only: ageOnly,
+                relationship: (d?.relationship || '').trim(),
+                department: (d?.department || '').trim(),
+                municipality: (d?.municipality || '').trim(),
+                address: (d?.address || '').trim().toUpperCase(),
+            };
+        })
+        .filter(d => d.name || d.birth_date || d.age != null || d.relationship || d.department || d.municipality || d.address);
 };
 
 // DUI salvadoreño: formato 00000000-0 + dígito verificador (suma ponderada 9..2

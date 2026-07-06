@@ -5,8 +5,10 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.9.16';
+export const APP_VERSION = '2.9.17';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.9.17 — feat(personal/dependientes): a pedido del usuario, en el modal de creación/edición de empleado, sección "Personas que Dependen Económicamente", ahora se puede alternar entre "Fecha de Nacimiento" exacta y solo la "Edad" en años cuando no se conoce la fecha (link "No sé la fecha" / "Ingresar fecha" junto al label). `economic_dependents` (JSONB) gana los campos `age` y `age_only`, poblados solo cuando no hay `birth_date`; `normalizeEconomicDependents` en employeeSlice.js los persiste (age_only guardado explícitamente, no re-derivado en cada carga). Sin migración de BD (columna JSONB, sin esquema fijo). /code-review encontró y corrigió en la misma sesión: bug de "cero falsy" (`parseInt(age) || null` descartaba silenciosamente edad=0 de un bebé, tanto al guardar como al mostrar) y un guard de NaN inconsistente entre cliente/servidor para el estado age_only — ambos alineados.
 
 // v2.9.16 — fix(ventas/cache): el usuario seguía viendo "1000 productos" en /ventas?tab=productos después del fix de v2.9.15 — causa real: el caché de localStorage (`ppv2_...`, 20 min de vida) guardaba resultados escritos ANTES del fix, con los datos truncados a 1000, y como seguía "vigente" se servía sin volver a pedir nada — el fix del RPC nunca se ejecutaba mientras el caché viejo no expirara. Bump de la key a `ppv3_` para invalidar cualquier entrada vieja sin depender de que el usuario borre localStorage a mano; la limpieza automática ahora purga TODA entrada `ppv2_` que encuentre (no solo por TTL) y sigue limpiando `ppv3_` vencidas normalmente. Verificado en vivo: planté una entrada `ppv2_` falsa con datos truncados — la app la ignoró, hizo el fetch paginado completo (5 llamadas de red), y purgó la entrada vieja dejando solo la `ppv3_` fresca.
 

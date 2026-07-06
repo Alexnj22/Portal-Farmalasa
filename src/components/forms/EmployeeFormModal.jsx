@@ -692,13 +692,22 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     });
     const removeEmergencyPhone = (idx) => setFormData(prev => ({ ...prev, emergency_contact_extra_phones: (prev.emergency_contact_extra_phones || []).filter((_, i) => i !== idx) }));
 
-    const addDependent = () => setFormData(prev => ({ ...prev, economic_dependents: [...(prev.economic_dependents || []), { name: '', birth_date: '', relationship: '', address: '', department: '', municipality: '' }] }));
+    const addDependent = () => setFormData(prev => ({ ...prev, economic_dependents: [...(prev.economic_dependents || []), { name: '', birth_date: '', age: '', age_only: false, relationship: '', address: '', department: '', municipality: '' }] }));
     const updateDependent = (idx, field, value) => setFormData(prev => {
         const arr = [...(prev.economic_dependents || [])];
         const val = (field === 'name' || field === 'address') ? value.toUpperCase() : value;
         const entry = { ...(arr[idx] || {}), [field]: val };
         if (field === 'department') entry.municipality = '';
         arr[idx] = entry;
+        return { ...prev, economic_dependents: arr };
+    });
+    // Toggle entre fecha de nacimiento exacta y solo edad estimada (cuando no se conoce la fecha).
+    const toggleDependentAgeMode = (idx) => setFormData(prev => {
+        const arr = [...(prev.economic_dependents || [])];
+        const cur = arr[idx];
+        if (!cur) return prev;
+        const nextAgeOnly = !(cur.age_only ?? (!cur.birth_date && cur.age !== '' && cur.age != null && !Number.isNaN(parseInt(cur.age, 10))));
+        arr[idx] = { ...cur, age_only: nextAgeOnly, birth_date: nextAgeOnly ? '' : cur.birth_date, age: nextAgeOnly ? cur.age : '' };
         return { ...prev, economic_dependents: arr };
     });
     const removeDependent = (idx) => setFormData(prev => ({ ...prev, economic_dependents: (prev.economic_dependents || []).filter((_, i) => i !== idx) }));
@@ -1636,7 +1645,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         const depMunicipioOpts = dep.department && EL_SALVADOR_GEO[dep.department]
                                             ? EL_SALVADOR_GEO[dep.department].map(m => ({ value: m, label: m }))
                                             : [];
-                                        const depAge = calcAge(dep.birth_date);
+                                        const depAgeOnly = dep.age_only ?? (!dep.birth_date && dep.age !== '' && dep.age != null && !Number.isNaN(parseInt(dep.age, 10)));
+                                        const depAge = depAgeOnly ? (dep.age === '' || dep.age == null || Number.isNaN(parseInt(dep.age, 10)) ? null : parseInt(dep.age, 10)) : calcAge(dep.birth_date);
                                         const copyOptions = [
                                             { value: 'employee', label: 'Mi Dirección (Empleado)' },
                                             ...(formData.economic_dependents || [])
@@ -1664,12 +1674,23 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     </div>
                                                     <div>
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
-                                                            <span>Fecha de Nacimiento</span>
-                                                            {depAge !== null && <span className="text-slate-400 font-bold normal-case tracking-normal">· {depAge} años</span>}
+                                                            <span>{depAgeOnly ? 'Edad' : 'Fecha de Nacimiento'}</span>
+                                                            <button type="button" onClick={() => toggleDependentAgeMode(idx)}
+                                                                className="text-[#0052CC] font-bold normal-case tracking-normal hover:text-blue-700 transition-colors">
+                                                                {depAgeOnly ? 'Ingresar fecha' : 'No sé la fecha'}
+                                                            </button>
                                                         </label>
-                                                        <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
-                                                            <LiquidDatePicker value={dep.birth_date} onChange={(date) => updateDependent(idx, 'birth_date', date)} placeholder="Seleccionar Fecha" />
-                                                        </div>
+                                                        {depAgeOnly ? (
+                                                            <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
+                                                                <input type="number" min="0" max="120" value={dep.age ?? ''} onChange={(e) => updateDependent(idx, 'age', e.target.value)} placeholder="Edad en años"
+                                                                    className="w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none pl-4 pr-4" />
+                                                            </div>
+                                                        ) : (
+                                                            <div className={`bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass}`}>
+                                                                <LiquidDatePicker value={dep.birth_date} onChange={(date) => updateDependent(idx, 'birth_date', date)} placeholder="Seleccionar Fecha" />
+                                                            </div>
+                                                        )}
+                                                        {!depAgeOnly && depAge !== null && <span className="text-slate-400 font-bold text-[10px] ml-1 mt-1 block">· {depAge} años</span>}
                                                     </div>
                                                     <div className="relative z-10">
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Parentesco</label>

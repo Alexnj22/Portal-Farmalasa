@@ -17,6 +17,7 @@ import PeriodPicker from '../components/common/PeriodPicker';
 import { DataTable, DataRow, DataCell, useExpandStyle } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
 import { smartFilter, normSearch } from '../utils/searchUtils';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -379,30 +380,35 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
         if (hasSpecialFilter) {
             if (filterAntibiotico && abInvoiceIds === null) { setLoadingStats(false); return; } // aún cargando ids
-            let q = supabase.from('sales_invoices').select('id, total', { count: 'exact' })
-                .gte('fecha', fini).lte('fecha', ffin);
-            if (branchFilter) q = q.eq('branch_id', branchFilter);
-            if (filterAnuladas) q = q.in('estado', CANCELLED_ESTADOS);
-            else q = q.not('estado', 'in', `(${CANCELLED_ESTADOS.join(',')})`);
-            if (filterAntibiotico) {
-                if (abInvoiceIds.length === 0) {
-                    setTotalCount(0); setTotalAmount(0); setTotalPuntos(0);
-                    setPrevStats({ count: 0, sum: 0, puntos: 0 });
-                    setLoadingStats(false);
-                    return;
+            if (filterAntibiotico && abInvoiceIds.length === 0) {
+                setTotalCount(0); setTotalAmount(0); setTotalPuntos(0);
+                setPrevStats({ count: 0, sum: 0, puntos: 0 });
+                setLoadingStats(false);
+                return;
+            }
+            // fetchAllRows evita el cap silencioso de 1000 filas de PostgREST — con
+            // filtros amplios (búsqueda de texto, antibióticos en rangos largos) el
+            // total de facturas coincidentes puede superar 1000, y antes de este fix
+            // la SUMA/puntos se calculaban solo sobre las primeras 1000 aunque el
+            // conteo mostrado (count exact) sí fuera el real — monto silenciosamente
+            // incorrecto en pantalla.
+            const invoices = await fetchAllRows(() => {
+                let q = supabase.from('sales_invoices').select('id, total')
+                    .gte('fecha', fini).lte('fecha', ffin);
+                if (branchFilter) q = q.eq('branch_id', branchFilter);
+                if (filterAnuladas) q = q.in('estado', CANCELLED_ESTADOS);
+                else q = q.not('estado', 'in', `(${CANCELLED_ESTADOS.join(',')})`);
+                if (filterAntibiotico) q = q.in('id', abInvoiceIds);
+                if (isSearching) {
+                    const s = searchTerm.trim();
+                    q = q.or(`erp_invoice_id.ilike.%${s}%,correlativo.ilike.%${s}%,cliente.ilike.%${s}%`);
                 }
-                q = q.in('id', abInvoiceIds);
-            }
-            if (isSearching) {
-                const s = searchTerm.trim();
-                q = q.or(`erp_invoice_id.ilike.%${s}%,correlativo.ilike.%${s}%,cliente.ilike.%${s}%`);
-            }
-            const { data, count } = await q.limit(1000);
-            const invoices = data || [];
+                return q;
+            }) || [];
             const sum = invoices.reduce((acc, r) => acc + Number(r.total || 0), 0);
             const puntos = await sumPuntosForIds(invoices.map(r => r.id));
 
-            setTotalCount(count ?? invoices.length);
+            setTotalCount(invoices.length);
             setTotalAmount(sum);
             setTotalPuntos(puntos);
             // Sin comparativo de período anterior para vistas filtradas — evita un %
@@ -1426,20 +1432,20 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setLoading(true);
         setError(null);
         try {
-            // When searching: pass p_search so the DB filters server-side — bypasses the
-            // PostgREST 1000-row RPC cap that hides low-revenue products (e.g. rank 1403/3491).
-            // When browsing: no p_search, returns top 1000 products by neto (cacheable).
+            // get_product_sales_agg no pagina server-side — sin esto, PostgREST
+            // trunca en silencio a 1000 filas (cap conocido, ver CLAUDE.md). Con
+            // 1,618 productos vendidos solo en julio (sin filtrar sucursal), el
+            // cap ya se estaba activando: se ocultaban ~600+ productos reales
+            // (los de menor rotación, por el ORDER BY neto DESC) sin ningún aviso.
             const rpcParams = {
                 p_fini:      fini,
                 p_ffin:      ffin,
                 p_branch_id: filterBranch ? Number(filterBranch) : null,
                 ...(searchTerm ? { p_search: normSearch(searchTerm) || searchTerm } : {}),
             };
-            const { data: presData, error: fetchErr } = await supabase
-                .rpc('get_product_sales_agg', rpcParams)
-                .range(0, 999);
-            if (fetchErr) throw fetchErr;
-            if (!presData?.length) { setRows([]); setLoading(false); return; }
+            const presData = await fetchAllRows(() => supabase.rpc('get_product_sales_agg', rpcParams));
+            if (presData === null) throw new Error('No se pudo cargar productos');
+            if (!presData.length) { setRows([]); setLoading(false); return; }
 
             // Cost now comes from the RPC — no separate fetch needed
             const allRows = presData.map(item => {
@@ -1634,13 +1640,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         // includes non-product lines (discounts, adjustments, etc.).
         const prevParams = { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: filterBranch ? Number(filterBranch) : null };
         (async () => {
-            let all = [];
-            for (let offset = 0; ; offset += 1000) {
-                const { data: page } = await supabase.rpc('get_product_sales_agg', prevParams).range(offset, offset + 999);
-                all = all.concat(page || []);
-                if (!page || page.length < 1000) break;
-            }
-            setPrevProdStats({ sum: all.reduce((s, r) => s + parseFloat(r.neto || 0), 0) });
+            const all = await fetchAllRows(() => supabase.rpc('get_product_sales_agg', prevParams));
+            setPrevProdStats({ sum: (all || []).reduce((s, r) => s + parseFloat(r.neto || 0), 0) });
         })();
     }, [fini, ffin, filterBranch]);
 

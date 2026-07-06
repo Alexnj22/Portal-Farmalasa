@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { Suspense, lazy, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, useParams } from "react-router-dom";
 import { Loader2, Settings, Monitor } from "lucide-react";
 
@@ -10,49 +10,52 @@ import { isMobileOrApp } from './utils/helpers';
 import AlertModal from "./components/common/AlertModal";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 
-// Layouts y Vistas
+// Layouts (shell — necesarios en toda ruta, se quedan eager)
 import AppLayout from "./components/layout/AppLayout";
-import EmployeeHomeView from "./views/employee/EmployeeHomeView";
-import EmployeeAnnouncementsView from "./views/employee/EmployeeAnnouncementsView";
-import EmployeeRequestsView from "./views/employee/EmployeeRequestsView";
-import EmployeeProfileView from "./views/employee/EmployeeProfileView";
-import EmployeeDocumentsView from "./views/employee/EmployeeDocumentsView";
 import UnifiedModal from "./components/UnifiedModal";
-import AttendanceMonitorView from "./views/AttendanceMonitorView";
-import StaffManagementView from "./views/StaffManagementView";
-import BranchesView from "./views/BranchesView";
-import BranchDetailView from "./views/BranchDetailView";
-import RolesView from "./views/RolesView";
-import PermissionsView from "./views/PermissionsView";
-import SchedulesView from "./views/SchedulesView";
-import EmployeeDetailView from "./views/EmployeeDetailView";
-import TimeClockView from "./views/TimeClockView";
-import AnnouncementsView from "./views/AnnouncementsView";
-import AttendanceAuditView from "./views/AttendanceAuditView";
-import LoginView from "./views/LoginView";
-import AuditView from "./views/AuditView";
-import IOSTestView from "./views/IOSTestView";
-import RawTestView from "./views/RawTestView";
-import RequestsView from "./views/RequestsView";
-import VacationPlanView from "./views/VacationPlanView";
-import PayrollView from "./views/PayrollView";
-import VentasView from "./views/VentasView";
-import MetasView from "./views/MetasView";
-import ProductosView from "./views/ProductosView";
-import LaboratoriosView from "./views/LaboratoriosView";
-import PedidosView from "./views/PedidosView";
-import MinMaxView from "./views/MinMaxView";
-import VentasPperdidasView from "./views/VentasPperdidasView";
-import ComprasView from "./views/ComprasView";
-import PromocionesView from "./views/PromocionesView";
-import FacturacionView from "./views/FacturacionView";
-import CotizacionesView from "./views/CotizacionesView";
-import EncuestaView from "./views/EncuestaView";
-import EncuestaAdminView from "./views/EncuestaAdminView";
-import NoAccessView from "./views/NoAccessView";
-import AccessDeniedView from "./views/AccessDeniedView";
-import DashboardView from "./views/DashboardView";
 import LiquidToast from './components/common/LiquidToast';
+
+// Vistas — code-split por ruta (React.lazy). Antes 51 imports estáticos
+// empaquetaban las 40+ vistas en un solo chunk eager de 5.24MB/1.74MB gzip.
+const EmployeeHomeView = lazy(() => import("./views/employee/EmployeeHomeView"));
+const EmployeeAnnouncementsView = lazy(() => import("./views/employee/EmployeeAnnouncementsView"));
+const EmployeeRequestsView = lazy(() => import("./views/employee/EmployeeRequestsView"));
+const EmployeeProfileView = lazy(() => import("./views/employee/EmployeeProfileView"));
+const EmployeeDocumentsView = lazy(() => import("./views/employee/EmployeeDocumentsView"));
+const AttendanceMonitorView = lazy(() => import("./views/AttendanceMonitorView"));
+const StaffManagementView = lazy(() => import("./views/StaffManagementView"));
+const BranchesView = lazy(() => import("./views/BranchesView"));
+const BranchDetailView = lazy(() => import("./views/BranchDetailView"));
+const RolesView = lazy(() => import("./views/RolesView"));
+const PermissionsView = lazy(() => import("./views/PermissionsView"));
+const SchedulesView = lazy(() => import("./views/SchedulesView"));
+const EmployeeDetailView = lazy(() => import("./views/EmployeeDetailView"));
+const TimeClockView = lazy(() => import("./views/TimeClockView"));
+const AnnouncementsView = lazy(() => import("./views/AnnouncementsView"));
+const AttendanceAuditView = lazy(() => import("./views/AttendanceAuditView"));
+const LoginView = lazy(() => import("./views/LoginView"));
+const AuditView = lazy(() => import("./views/AuditView"));
+const IOSTestView = lazy(() => import("./views/IOSTestView"));
+const RawTestView = lazy(() => import("./views/RawTestView"));
+const RequestsView = lazy(() => import("./views/RequestsView"));
+const VacationPlanView = lazy(() => import("./views/VacationPlanView"));
+const PayrollView = lazy(() => import("./views/PayrollView"));
+const VentasView = lazy(() => import("./views/VentasView"));
+const MetasView = lazy(() => import("./views/MetasView"));
+const ProductosView = lazy(() => import("./views/ProductosView"));
+const LaboratoriosView = lazy(() => import("./views/LaboratoriosView"));
+const PedidosView = lazy(() => import("./views/PedidosView"));
+const MinMaxView = lazy(() => import("./views/MinMaxView"));
+const VentasPperdidasView = lazy(() => import("./views/VentasPperdidasView"));
+const ComprasView = lazy(() => import("./views/ComprasView"));
+const PromocionesView = lazy(() => import("./views/PromocionesView"));
+const FacturacionView = lazy(() => import("./views/FacturacionView"));
+const CotizacionesView = lazy(() => import("./views/CotizacionesView"));
+const EncuestaView = lazy(() => import("./views/EncuestaView"));
+const EncuestaAdminView = lazy(() => import("./views/EncuestaAdminView"));
+const NoAccessView = lazy(() => import("./views/NoAccessView"));
+const AccessDeniedView = lazy(() => import("./views/AccessDeniedView"));
+const DashboardView = lazy(() => import("./views/DashboardView"));
 
 // ✅ COMPONENTE DE SINCRONIZACIÓN SILENCIOSA
 const AuthSyncHelper = () => {
@@ -142,6 +145,19 @@ const PermissionGuard = ({ moduleKey, children }) => {
     if (!hasPermission(moduleKey, 'can_view')) return <AccessDeniedView />;
     return children;
 };
+
+// ============================================================================
+// ⏳ FALLBACK DE SUSPENSE — mismo lenguaje glass del loader de sesión, para
+// la carga diferida (React.lazy) de cada vista por ruta.
+// ============================================================================
+const RouteLoadingFallback = () => (
+    <div className="fixed inset-0 w-full h-[100dvh] flex items-center justify-center z-40">
+        <div className="relative bg-white/35 backdrop-blur-3xl border border-white/70 rounded-[2rem] px-10 py-8 shadow-[0_32px_80px_rgba(0,82,204,0.10),0_8px_32px_rgba(0,0,0,0.04),inset_0_2px_24px_rgba(255,255,255,0.85)] flex flex-col items-center gap-3">
+            <Loader2 className="text-[#0052CC] animate-spin" size={28} strokeWidth={2.5} />
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Cargando…</span>
+        </div>
+    </div>
+);
 
 // ============================================================================
 // 🚀 APLICACIÓN PRINCIPAL
@@ -487,6 +503,7 @@ function MainApp() {
     return (
         <>
         <ScrollToTop />
+        <Suspense fallback={<RouteLoadingFallback />}>
         <Routes>
             <Route path="/raw-test" element={<RawTestView />} />
             <Route path="/kiosk" element={
@@ -634,6 +651,7 @@ function MainApp() {
                 ) : <Navigate to="/login" replace />
             } />
         </Routes>
+        </Suspense>
         </>
     );
 }

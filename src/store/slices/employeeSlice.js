@@ -532,6 +532,8 @@ export const createEmployeeSlice = (set, get) => ({
                 has_car_license: !!formData.has_car_license,
                 has_srs_accreditation: !!formData.has_srs_accreditation,
                 srs_accreditation_expiry: formData.has_srs_accreditation ? (formData.srs_accreditation_expiry || null) : null,
+                nursing_license_number: formData.nursing_license_number || null,
+                pharmacist_license_number: formData.pharmacist_license_number || null,
                 hire_date: formData.hire_date || null,
                 afp_number: formData.afp_number || null,
                 isss_number: formData.isss_number || null,

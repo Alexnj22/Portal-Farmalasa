@@ -9,6 +9,7 @@ import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../supabaseClient';
 import { getStoragePathFromUrl } from '../../utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD } from '../../utils/educationCatalogs';
+import { getExpiryBadge, getExpiringDocuments } from '../../utils/documentExpiry';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -58,10 +59,15 @@ const PROBATION_EXEMPTION_DAYS = 365;
 const MINOR_AGE = 18;
 // Documentación del expediente — slots siempre visibles (CV, Contrato, DUI
 // frente/reverso). El resto son condicionales según lo marcado en Personal:
-// Licencia de Moto/Carro solo si se activó "Posee Licencia" respectiva,
-// Acreditación SRS solo si se activó su checkbox, y "Acreditación de
-// Enfermería" solo si el Cargo Principal contiene "enfermer". El resto de
-// documentos usa la lista abierta "+ Agregar Documento" (categoría EXTRA_<ts>).
+// Licencia de Moto/Carro solo si se activó "Posee Licencia" respectiva; el
+// carné JVPQF (Regente/Químico Farmacéutico) y su "Contrato de Regencia" se
+// muestran si el Cargo o la Profesión indican Regente/Químico Farmacéutico
+// (o si se activa el checkbox manual, que queda como override); el carné de
+// Enfermería (JVPE) se muestra si el Cargo o la Profesión contienen
+// "enfermer" — ver reference_sv_pharma_health_regulations (memoria) para el
+// porqué de JVPQF/JVPE y la distinción con la SRS (que regula el
+// establecimiento, no al profesional). El resto de documentos usa la lista
+// abierta "+ Agregar Documento" (categoría EXTRA_<ts>).
 const FIXED_DOCUMENT_CATEGORIES = [
     { key: 'CV', label: 'Currículum Vitae (CV)' },
     { key: 'CONTRATO', label: 'Contrato de Trabajo Firmado' },
@@ -436,6 +442,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',
                 emergency_contact_relationship: '', emergency_contact_extra_phones: [], economic_dependents: [],
                 has_motorcycle: false, has_car: false, has_motorcycle_license: false, has_car_license: false, has_srs_accreditation: false,
+                nursing_license_number: '', pharmacist_license_number: '',
                 employee_documents: [],
                 department: '', municipality: '', education_level: '', profession: '',
                 education_grade_completed: '', education_specialty: '', is_studying: false,
@@ -497,6 +504,13 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             ? docs.some(d => d.category === 'DOCUMENTO_IDENTIDAD' && d.url)
             : docs.some(d => d.category === 'DUI_FRENTE' && d.url) && docs.some(d => d.category === 'DUI_REVERSO' && d.url);
         if (!hasIdDoc) items.push('DUI (Documento)');
+        // Documentos por vencer/vencidos — cualquier categoría (RTS 11.02.04:24
+        // §6.3.1 exige acreditación vigente para TODO el personal, no solo
+        // Regente/Enfermería). No bloquea Guardar (es "Pendiente", no "Requerido").
+        getExpiringDocuments(docs).forEach(doc => {
+            const label = doc.daysLeft < 0 ? `${doc.title || doc.category}: vencido` : `${doc.title || doc.category}: vence en ${doc.daysLeft} día${doc.daysLeft === 1 ? '' : 's'}`;
+            items.push(label);
+        });
         return items;
     }, [isEditMode, formData?.dui, formData?.birth_date, formData?.isss_number, formData?.afp_number, formData?.employee_documents]);
 
@@ -725,14 +739,29 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // autocompleta sin tener que reabrir la ficha. Solo se pisa si el usuario
     // no había tecleado una fecha a mano.
     const selectedRoleName = roles?.find(r => String(r.id) === String(formData.role_id))?.name || '';
+    // Enfermería: por Cargo (como antes) O por Profesión — cubre tanto al
+    // "Regente de Enfermeria" (cargo) como a cualquier empleado cuya profesión
+    // universitaria sea "Licenciatura en Enfermería" aunque su cargo no lo diga.
     const isNursingRole = /enfermer/i.test(selectedRoleName);
+    const isNursingProfession = /enfermer/i.test(formData.profession || '');
+    const isNursing = isNursingRole || isNursingProfession;
+    // Regente/Químico Farmacéutico: por Cargo "Regente" (excluyendo "Regente de
+    // Enfermeria", que es otra profesión) O por Profesión "Química y Farmacia"
+    // (catálogo: "Doctorado en Química y Farmacia" — no confundir con
+    // "Ingeniería Química", que no habilita para regentar). El checkbox manual
+    // has_srs_accreditation se conserva como override para casos no cubiertos
+    // por cargo/profesión.
+    const isPharmacistRegentRole = /regente/i.test(selectedRoleName) && !/enfermer/i.test(selectedRoleName);
+    const isPharmacistProfession = /qu[ií]mic.*farmac|farmac.*qu[ií]mic/i.test(formData.profession || '');
+    const isPharmacistRegent = isPharmacistRegentRole || isPharmacistProfession || !!formData.has_srs_accreditation;
     const documentCategories = useMemo(() => [
         ...FIXED_DOCUMENT_CATEGORIES,
         ...(formData.has_motorcycle_license ? [{ key: 'LICENCIA_MOTO', label: 'Licencia de Motocicleta' }] : []),
         ...(formData.has_car_license ? [{ key: 'LICENCIA_CARRO', label: 'Licencia de Automóvil' }] : []),
-        ...(formData.has_srs_accreditation ? [{ key: 'SRS', label: 'Acreditación SRS (Junta de Vigilancia de la Profesión Farmacéutica)' }] : []),
-        ...(isNursingRole ? [{ key: 'ENFERMERIA', label: 'Acreditación de Enfermería' }] : []),
-    ], [formData.has_motorcycle_license, formData.has_car_license, formData.has_srs_accreditation, isNursingRole]);
+        ...(isPharmacistRegent ? [{ key: 'SRS', label: 'Carné JVPQF — Regente / Químico Farmacéutico (anualidad)' }] : []),
+        ...(isPharmacistRegent ? [{ key: 'CONTRATO_REGENCIA', label: 'Contrato de Regencia' }] : []),
+        ...(isNursing ? [{ key: 'ENFERMERIA', label: 'Carné de Enfermería — JVPE (anualidad)' }] : []),
+    ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing]);
 
     const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
     const [analyzingDocs, setAnalyzingDocs] = useState({});
@@ -786,20 +815,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
     // Aviso visual de vencimiento — la fecha puede venir tecleada a mano o
     // detectada por IA (analyze-document, se completa recién al Guardar y se
-    // ve al reabrir el expediente). Umbrales: vencido o <30 días = rojo,
-    // <60 días = ámbar.
-    const DOC_EXPIRY_WARN_DAYS = 60;
-    const DOC_EXPIRY_DANGER_DAYS = 30;
-    const getExpiryBadge = (expiryDateStr) => {
-        if (!expiryDateStr) return null;
-        const expDate = new Date(expiryDateStr + 'T00:00:00');
-        if (isNaN(expDate.getTime())) return null;
-        const daysLeft = Math.ceil((expDate - new Date()) / 86400000);
-        if (daysLeft < 0) return { label: 'Vencido', className: 'text-red-600 bg-red-100 border-red-300' };
-        if (daysLeft <= DOC_EXPIRY_DANGER_DAYS) return { label: `Vence en ${daysLeft} día${daysLeft === 1 ? '' : 's'}`, className: 'text-red-600 bg-red-100 border-red-300' };
-        if (daysLeft <= DOC_EXPIRY_WARN_DAYS) return { label: `Vence pronto (${daysLeft} días)`, className: 'text-amber-600 bg-amber-100 border-amber-300' };
-        return null;
-    };
+    // ve al reabrir el expediente). Umbrales y cálculo en utils/documentExpiry
+    // (compartido con StaffManagementView para no duplicar umbrales).
 
     // Bloque de subida reutilizado por los slots fijos, el documento de
     // identidad (DUI/alterno) y "Otros Documentos" — mismo estado
@@ -1774,11 +1791,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60 md:col-span-2">
                                     <input type="checkbox" checked={!!formData.has_srs_accreditation} onChange={(e) => handleSelectChange('has_srs_accreditation', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
                                     <ShieldCheck size={15} strokeWidth={2.5} className="text-slate-400" />
-                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Acreditación de la SRS</span>
+                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Carné JVPQF (Regente / Químico Farmacéutico)</span>
                                 </label>
                             </div>
-                            {(formData.has_motorcycle_license || formData.has_car_license || formData.has_srs_accreditation) && (
-                                <p className="text-[9px] text-teal-600 font-bold mt-2 ml-1">El documento correspondiente ya está disponible para subir en la pestaña Documentos.</p>
+                            {(formData.has_motorcycle_license || formData.has_car_license || isPharmacistRegent || isNursing) && (
+                                <p className="text-[9px] text-teal-600 font-bold mt-2 ml-1">El documento correspondiente ya está disponible para subir en la pestaña Documentos{(isPharmacistRegent && !formData.has_srs_accreditation) || (isNursing && !isNursingRole) ? ' (detectado automáticamente por Cargo/Profesión)' : ''}.</p>
                             )}
                         </div>
                     </>
@@ -2082,6 +2099,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 {documentCategories.map(cat => (
                                     <div key={cat.key} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">{cat.label}</label>
+                                        {cat.key === 'SRS' && (
+                                            <PortalInput label="Número de Carné JVPQF" name="pharmacist_license_number" value={formData.pharmacist_license_number} onChange={handleChange} icon={Hash} placeholder="N° JVPQF" colSpan={1} />
+                                        )}
+                                        {cat.key === 'ENFERMERIA' && (
+                                            <PortalInput label="Número de Carné JVPE" name="nursing_license_number" value={formData.nursing_license_number} onChange={handleChange} icon={Hash} placeholder="N° JVPE" colSpan={1} />
+                                        )}
                                         {renderDocUploadArea(cat.key)}
                                     </div>
                                 ))}

@@ -27,6 +27,7 @@ import {
   Cake,
   Medal,
   AlertCircle,
+  ShieldAlert,
   RefreshCw
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -39,6 +40,7 @@ import LiquidAvatar from '../components/common/LiquidAvatar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
 import { smartFilter } from '../utils/searchUtils';
+import { getExpiringDocuments } from '../utils/documentExpiry';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { useToastStore } from '../store/toastStore';
 
@@ -101,11 +103,24 @@ const getPendingItems = (emp) => {
   if (!emp.isss_number && !emp.afp_number) missing.push({ label: 'ISSS / AFP', hint: 'sin número afiliado' });
 
   const isMinor = (calcAgeYears(emp.birth_date) ?? 99) < MINOR_AGE;
-  const docs = emp.documents || [];
+  // NOTA: `emp.documents` viene de la tabla legada `employee_documents` (adjuntos
+  // de eventos RRHH, sin columna `category`, siempre vacía en producción) — NO es
+  // el expediente real. El expediente con categorías (DUI_FRENTE/SRS/etc.) vive en
+  // la columna JSONB `emp.employee_documents`, la misma que usa EmployeeFormModal.
+  const docs = emp.employee_documents || [];
   const hasIdDoc = isMinor
     ? docs.some(d => d.category === 'DOCUMENTO_IDENTIDAD' && d.url)
     : docs.some(d => d.category === 'DUI_FRENTE' && d.url) && docs.some(d => d.category === 'DUI_REVERSO' && d.url);
   if (!hasIdDoc) missing.push({ label: 'Documento de identidad', hint: 'falta subir la imagen' });
+
+  // Documentos por vencer/vencidos — cualquier categoría (RTS 11.02.04:24 §6.3.1:
+  // acreditación vigente exigida para todo el personal, no solo Regente/Enfermería).
+  getExpiringDocuments(docs).forEach(doc => {
+    missing.push({
+      label: doc.title || doc.category,
+      hint: doc.daysLeft < 0 ? 'vencido' : `vence en ${doc.daysLeft} día${doc.daysLeft === 1 ? '' : 's'}`,
+    });
+  });
 
   return missing;
 };
@@ -220,6 +235,19 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
     return { isThisMonth: true, day: hDate.getDate(), years };
   }, [emp.hire_date]);
 
+  // Documento por vencer/vencido más urgente del expediente (employee_documents
+  // JSONB) — mismo umbral/util que EmployeeFormModal, para no desincronizar.
+  const expiryInfo = useMemo(() => {
+    const next = getExpiringDocuments(emp.employee_documents)[0];
+    if (!next) return null;
+    const isExpired = next.daysLeft < 0;
+    const label = isExpired ? 'Vencido' : `${next.daysLeft}d`;
+    const tooltip = isExpired
+      ? `${next.title || next.category}: vencido`
+      : `${next.title || next.category}: vence en ${next.daysLeft} día${next.daysLeft === 1 ? '' : 's'}`;
+    return { isExpired, label, tooltip };
+  }, [emp.employee_documents]);
+
   const phoneDigits = emp.phone ? emp.phone.replace(/\D/g, '') : '';
 
   const rolesArray = useMemo(() => {
@@ -312,6 +340,12 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
                 <div className="flex items-center gap-0.5" title={`Aniversario laboral: Cumple ${anniversaryInfo.years} años el día ${anniversaryInfo.day} de este mes`}>
                   <Medal size={12} strokeWidth={2.5} className="text-amber-500 shrink-0" />
                   <span className="text-[8px] font-black text-amber-700 bg-amber-100 px-1 rounded">{anniversaryInfo.years} Años</span>
+                </div>
+              )}
+              {expiryInfo && (
+                <div className="flex items-center gap-0.5" title={expiryInfo.tooltip}>
+                  <ShieldAlert size={12} strokeWidth={2.5} className={`${expiryInfo.isExpired ? 'text-red-600' : 'text-amber-500'} shrink-0`} />
+                  <span className={`text-[8px] font-black px-1 rounded ${expiryInfo.isExpired ? 'text-red-700 bg-red-100' : 'text-amber-700 bg-amber-100'}`}>{expiryInfo.label}</span>
                 </div>
               )}
             </div>

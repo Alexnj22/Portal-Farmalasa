@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { announcementAppliesToUser } from '../../utils/announcementAudience';
 
 // ── Apariencia por tipo de notificación ──────────────────────────────────────
 const iconForType = (type = '') => {
@@ -89,6 +90,7 @@ const NotificationBell = ({ variant = 'desktop' }) => {
 
     const notifications = useStaff(s => s.notifications || []);
     const announcements = useStaff(s => s.announcements || []);
+    const roles = useStaff(s => s.roles || []);
     const markNotificationRead = useStaff(s => s.markNotificationRead);
     const markAllNotificationsRead = useStaff(s => s.markAllNotificationsRead);
     const deleteNotificationsByIds = useStaff(s => s.deleteNotificationsByIds);
@@ -129,16 +131,12 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         return announcements.filter(a => {
             if (a.isArchived) return false;
             if (a.scheduledFor && new Date(a.scheduledFor) > new Date()) return false;
-            const applies =
-                a.targetType === 'GLOBAL' ||
-                (a.targetType === 'BRANCH' && (a.targetValue || []).includes(String(user.branchId))) ||
-                (a.targetType === 'EMPLOYEE' && (a.targetValue || []).includes(String(user.id)));
-            if (!applies) return false;
+            if (!announcementAppliesToUser(a, user, roles)) return false;
             return !(a.readBy || []).some(r =>
                 String(typeof r === 'object' ? r.employeeId : r) === String(user.id)
             );
         });
-    }, [announcements, user, canSeeAnnouncements]);
+    }, [announcements, user, roles, canSeeAnnouncements]);
 
     const annUnread = unreadAnnouncements.length;
     const hasUrgentAnn = unreadAnnouncements.some(a => a.priority === 'URGENT');

@@ -13,6 +13,7 @@ import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { announcementAppliesToUser } from '../../utils/announcementAudience';
 import { useToastStore } from '../../store/toastStore';
 import { useSyncMonitor } from '../../hooks/useSyncMonitor';
 import { useNotificationsChannel } from '../../hooks/useNotificationsChannel';
@@ -85,6 +86,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const { user, hasPermission, isSU } = useAuth();
     const branches = useStaff((state) => state.branches || []);
     const announcements = useStaff((state) => state.announcements || []);
+    const roles = useStaff((state) => state.roles || []);
     const employees = useStaff((state) => state.employees || []);
 
     // ¿Hoy es el cumpleaños de quien inició sesión? — vive en el layout (no en
@@ -283,16 +285,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         return announcements.filter(a => {
             if (a.isArchived) return false;
             if (a.scheduledFor && new Date(a.scheduledFor) > new Date()) return false;
-            const applies =
-                a.targetType === 'GLOBAL' ||
-                (a.targetType === 'BRANCH' && (a.targetValue || []).includes(String(user.branchId))) ||
-                (a.targetType === 'EMPLOYEE' && (a.targetValue || []).includes(String(user.id)));
-            if (!applies) return false;
+            if (!announcementAppliesToUser(a, user, roles)) return false;
             return !(a.readBy || []).some(r =>
                 String(typeof r === 'object' ? r.employeeId : r) === String(user.id)
             );
         });
-    }, [announcements, user]);
+    }, [announcements, user, roles]);
 
     const unreadCount = unreadAnnouncements.length;
 

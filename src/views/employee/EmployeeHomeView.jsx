@@ -10,6 +10,7 @@ import { supabase } from '../../supabaseClient';
 import { formatTime12h } from '../../utils/helpers';
 import LiquidWeekPicker from '../../components/common/LiquidWeekPicker';
 import GlassViewLayout from '../../components/GlassViewLayout';
+import { announcementAppliesToUser } from '../../utils/announcementAudience';
 
 const DAYS = [
     { id: 1, name: 'Lunes',     short: 'LUN' },
@@ -56,6 +57,7 @@ const EmployeeHomeView = () => {
     const shifts        = useStaffStore(s => s.shifts);
     const employees     = useStaffStore(s => s.employees);
     const announcements = useStaffStore(s => s.announcements);
+    const roles = useStaffStore(s => s.roles || []);
     const branches      = useStaffStore(s => s.branches);
 
     const [currentTime, setCurrentTime]       = useState(new Date());
@@ -298,13 +300,10 @@ const EmployeeHomeView = () => {
         return (announcements || []).filter(a => {
             if (a.isArchived) return false;
             if (a.scheduledFor && new Date(a.scheduledFor) > new Date()) return false;
-            const applies = a.targetType === 'GLOBAL' ||
-                (a.targetType === 'BRANCH'   && (a.targetValue || []).includes(String(user.branchId))) ||
-                (a.targetType === 'EMPLOYEE' && (a.targetValue || []).includes(String(user.id)));
-            if (!applies) return false;
+            if (!announcementAppliesToUser(a, user, roles)) return false;
             return !(a.readBy || []).some(r => String(typeof r === 'object' ? r.employeeId : r) === String(user.id));
         });
-    }, [announcements, user]);
+    }, [announcements, user, roles]);
 
     const hasUrgent = unreadAnnouncements.some(a => a.priority === 'URGENT');
 

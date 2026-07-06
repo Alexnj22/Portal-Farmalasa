@@ -4,6 +4,7 @@ import { useToastStore } from '../toastStore';
 import { assertHeadcountAvailable } from './employeeSlice';
 import { signStorageUrls } from '../../utils/storageFiles';
 import { fetchAllRows } from '../../utils/supabaseUtils';
+import { announcementAppliesToUser } from '../../utils/announcementAudience';
 
 export const createSystemSlice = (set, get) => ({
     // 🚨 1. INICIALIZAMOS HOLIDAYS Y EL RESTO (Desde LocalStorage si existe)
@@ -251,16 +252,13 @@ export const createSystemSlice = (set, get) => ({
                                 if (state.announcements.some(ann => String(ann.id) === String(a.id))) return state;
                                 return { announcements: [mapAnn(a), ...state.announcements] };
                             });
-                            // Toast para anuncios dirigidos a esta sucursal
-                            if (a.target_type === 'BRANCH') {
-                                try {
-                                    const u = JSON.parse(localStorage.getItem('sb_user') || '{}');
-                                    const bid = u?.branchId;
-                                    if (bid && (a.target_value ?? []).map(String).includes(String(bid))) {
-                                        useToastStore.getState().showToast(a.title, a.message, 'info');
-                                    }
-                                } catch { /* ignore */ }
-                            }
+                            // Toast si el aviso aplica al usuario actual (cualquier target_type)
+                            try {
+                                const u = JSON.parse(localStorage.getItem('sb_user') || '{}');
+                                if (announcementAppliesToUser(a, u, get().roles)) {
+                                    useToastStore.getState().showToast(a.title, a.message, 'info');
+                                }
+                            } catch { /* ignore */ }
                         })
                         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'announcements' }, (payload) => {
                             const a = payload.new;

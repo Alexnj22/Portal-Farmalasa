@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import { smartFilter } from '../../utils/searchUtils';
+import { announcementAppliesToUser } from '../../utils/announcementAudience';
 
 const TABS = [
     { key: 'UNREAD', label: 'Sin Leer' },
@@ -33,6 +34,8 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
         ? <span className="flex items-center gap-1.5 text-[#0052CC] bg-[#0052CC]/10 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-[#0052CC]/20"><Globe size={11} strokeWidth={2} /> Global</span>
         : ann.targetType === 'BRANCH'
         ? <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-emerald-200/50"><Building2 size={11} strokeWidth={2} /> Sucursal</span>
+        : ann.targetType === 'ROLE'
+        ? <span className="flex items-center gap-1.5 text-purple-600 bg-purple-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-purple-200/50"><User size={11} strokeWidth={2} /> Cargo</span>
         : <span className="flex items-center gap-1.5 text-orange-600 bg-orange-50 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border border-orange-200/50"><User size={11} strokeWidth={2} /> Personal</span>;
 
     return (
@@ -316,6 +319,8 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
         ? <span className="flex items-center gap-1.5 text-[#0052CC] bg-[#0052CC]/10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-[#0052CC]/20"><Globe size={10} strokeWidth={2.5}/> Global</span>
         : current.targetType === 'BRANCH'
         ? <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-emerald-200/60"><Building2 size={10} strokeWidth={2.5}/> Sucursal</span>
+        : current.targetType === 'ROLE'
+        ? <span className="flex items-center gap-1.5 text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-purple-200/60"><User size={10} strokeWidth={2.5}/> Cargo</span>
         : <span className="flex items-center gap-1.5 text-orange-700 bg-orange-50 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-orange-200/60"><User size={10} strokeWidth={2.5}/> Personal</span>;
 
     return (
@@ -592,6 +597,7 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
 const EmployeeAnnouncementsView = () => {
     const { user } = useAuth();
     const announcements = useStaffStore(s => s.announcements);
+    const roles = useStaffStore(s => s.roles || []);
     const employees     = useStaffStore(s => s.employees);
     const markAnnouncementAsRead = useStaffStore(s => s.markAnnouncementAsRead);
 
@@ -613,11 +619,7 @@ const EmployeeAnnouncementsView = () => {
         return (announcements || []).filter(a => {
             if (a.isArchived) return false;
             if (a.scheduledFor && new Date(a.scheduledFor) > new Date()) return false;
-            return (
-                a.targetType === 'GLOBAL' ||
-                (a.targetType === 'BRANCH' && (a.targetValue || []).includes(String(user.branchId))) ||
-                (a.targetType === 'EMPLOYEE' && (a.targetValue || []).includes(String(user.id)))
-            );
+            return announcementAppliesToUser(a, user, roles);
         }).sort((a, b) => {
             // Urgentes primero, luego más antiguos (orden cronológico para el stack sin leer)
             const aUrgent = a.priority === 'URGENT' ? 0 : 1;
@@ -625,7 +627,7 @@ const EmployeeAnnouncementsView = () => {
             if (aUrgent !== bUrgent) return aUrgent - bUrgent;
             return new Date(a.date) - new Date(b.date);
         });
-    }, [announcements, user]);
+    }, [announcements, user, roles]);
 
     const byTab = useMemo(() => {
         let list = myAnnouncements;
@@ -658,6 +660,7 @@ const EmployeeAnnouncementsView = () => {
             { key: 'URGENT',   label: 'Urgentes',  icon: Flame,     count: list.filter(a => a.priority === 'URGENT').length },
             { key: 'GLOBAL',   label: 'Global',    icon: Globe,     count: list.filter(a => a.targetType === 'GLOBAL').length },
             { key: 'BRANCH',   label: 'Sucursal',  icon: Building2, count: list.filter(a => a.targetType === 'BRANCH').length },
+            { key: 'ROLE',     label: 'Cargo',     icon: User,      count: list.filter(a => a.targetType === 'ROLE').length },
             { key: 'EMPLOYEE', label: 'Personal',  icon: User,      count: list.filter(a => a.targetType === 'EMPLOYEE').length },
         ].filter(f => f.key === 'ALL' || f.count > 0);
     }, [tab, byTab]);

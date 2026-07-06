@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
+import { useStaffStore } from '../store/staffStore';
+import { announcementAppliesToUser } from '../utils/announcementAudience';
 
 function fireBrowserNotif(title, body, tag, onClick) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
@@ -52,11 +54,8 @@ export function useSyncMonitor() {
           if (a.scheduled_for && new Date(a.scheduled_for) > new Date()) return;
 
           // Check if this announcement targets the current user
-          const applies =
-            a.target_type === 'GLOBAL' ||
-            (a.target_type === 'BRANCH'   && (a.target_value || []).includes(String(user.branchId))) ||
-            (a.target_type === 'EMPLOYEE' && (a.target_value || []).includes(String(user.id)));
-          if (!applies) return;
+          const roles = useStaffStore.getState().roles || [];
+          if (!announcementAppliesToUser(a, user, roles)) return;
 
           const isUrgent = a.priority === 'URGENT';
           const toastTitle = isUrgent ? 'Aviso urgente' : 'Nuevo aviso';

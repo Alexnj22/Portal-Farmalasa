@@ -79,6 +79,36 @@ export const createSystemSlice = (set, get) => ({
                 monday.setHours(0, 0, 0, 0);
                 const weekStartDate = monday.toLocaleDateString('en-CA'); // YYYY-MM-DD local
 
+                // Alcance de datos de empleados: con permiso staff_list.can_view (RRHH/admin)
+                // se carga la empresa completa (comportamiento sin cambios). Sin ese permiso
+                // (self-service — hoy 44 de 47 empleados activos) se escala a "mi sucursal":
+                // las vistas self-service (Home/Perfil/Solicitudes) solo hacen
+                // employees.find(propio) o filtran por branch_id === mi sucursal para el
+                // picker de compañero de cambio de turno — nunca necesitan otra sucursal ni
+                // el historial/documentos de un compañero. Antes TODOS bajaban el roster de
+                // la empresa entera en cada login sin importar su rol. Falla ABIERTO (carga
+                // todo) ante cualquier error de red o rol sin id, para no ocultarle datos a
+                // un admin por un hipo de conexión.
+                const storedUser = safeJsonParse(localStorage.getItem('sb_user'));
+                const myId = storedUser?.id ?? null;
+                const myBranchId = storedUser?.branchId ?? null;
+                const myRoleId = storedUser?.roleId ?? (Number.isInteger(storedUser?.role) ? storedUser.role : null);
+
+                let canSeeAllStaff = true;
+                if (myRoleId) {
+                    try {
+                        const { data: perm, error: permError } = await supabase
+                            .from('role_permissions')
+                            .select('can_view')
+                            .eq('role_id', myRoleId)
+                            .eq('module_key', 'staff_list')
+                            .maybeSingle();
+                        if (!permError) canSeeAllStaff = !!perm?.can_view;
+                    } catch { /* red caída: se queda en true (comportamiento actual) */ }
+                }
+                const scopeToMyBranch = !canSeeAllStaff && myBranchId != null;
+                const scopeToMe = !canSeeAllStaff && myId != null;
+
                 // Todas las queries en paralelo — de ~3-4s secuencial a ~600ms
                 // Tablas chicas (<1000 filas garantizadas) con select directo; las que
                 // crecen sin tope (empleados, eventos, documentos, asignaciones) van
@@ -100,9 +130,21 @@ export const createSystemSlice = (set, get) => ({
                     supabase.from('roles').select('*').order('name', { ascending: true }),
                     supabase.from('shifts').select('*'),
                     supabase.from('employee_rosters').select('employee_id, schedule_data').eq('week_start_date', weekStartDate).eq('status', 'PUBLISHED'),
-                    fetchAllRows(() => supabase.from('employees_safe').select(`*, main_role:roles!employees_role_id_fkey(id, name), sec_role:roles!employees_secondary_role_id_fkey(id, name)`).order('id', { ascending: true })),
-                    fetchAllRows(() => supabase.from('employee_events').select('*').order('id', { ascending: true })),
-                    fetchAllRows(() => supabase.from('employee_documents').select('*').order('id', { ascending: true })),
+                    fetchAllRows(() => {
+                        let q = supabase.from('employees_safe').select(`*, main_role:roles!employees_role_id_fkey(id, name), sec_role:roles!employees_secondary_role_id_fkey(id, name)`).order('id', { ascending: true });
+                        if (scopeToMyBranch) q = q.eq('branch_id', myBranchId);
+                        return q;
+                    }),
+                    fetchAllRows(() => {
+                        let q = supabase.from('employee_events').select('*').order('id', { ascending: true });
+                        if (scopeToMe) q = q.eq('employee_id', myId);
+                        return q;
+                    }),
+                    fetchAllRows(() => {
+                        let q = supabase.from('employee_documents').select('*').order('id', { ascending: true });
+                        if (scopeToMe) q = q.eq('employee_id', myId);
+                        return q;
+                    }),
                     supabase.from('announcements').select('*').order('created_at', { ascending: false }),
                     fetchAllRows(() => supabase.from('employee_branches').select('employee_id, branch_id').order('employee_id', { ascending: true })),
                 ]);

@@ -40,6 +40,7 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
 import { smartFilter } from '../utils/searchUtils';
 import { shortEmployeeName } from '../utils/nameUtils';
+import { useToastStore } from '../store/toastStore';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
 
@@ -565,10 +566,27 @@ const StaffManagementView = ({
     openModal?.('newEmployee');
   };
   
+  // Justo tras un boot fresco (login, F5, pestaña nueva), `employees` arranca
+  // con el snapshot SANITIZADO de localStorage (persistEmployees quita DUI/
+  // ISSS/AFP/banco/kiosk_pin a propósito, para no guardarlos en texto plano
+  // en el navegador — ver SENSITIVE_FIELDS en store/utils.js) mientras el
+  // fetch real a employees_safe todavía no responde. Si el usuario abre
+  // "Editar" en esa ventana de milisegundos, esos campos se ven vacíos en el
+  // modal — y si guarda sin notarlo, se sobrescriben con NULL en la BD.
+  // Bloqueamos la edición hasta que el boot completo (bootStatus==='ready')
+  // haya reemplazado ese snapshot con los datos reales.
   const handleOpenEditEmployee = useCallback((emp) => {
+    if (bootStatus !== 'ready') {
+      useToastStore.getState().showToast(
+        'Cargando datos completos…',
+        'Espera un momento y vuelve a intentar — se están terminando de sincronizar los datos del empleado.',
+        'info'
+      );
+      return;
+    }
     setIsSearchActive(false);
     openModal?.('editEmployee', emp);
-  }, [openModal]);
+  }, [openModal, bootStatus]);
 
   const handleOpenRehireEmployee = useCallback((emp) => {
     setIsSearchActive(false);
@@ -778,7 +796,7 @@ const StaffManagementView = ({
           minWidth="800px"
         >
           {paginatedEmployees.map((emp, i) => (
-            <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit} />
+            <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit && bootStatus === 'ready'} />
           ))}
         </DataTable>
 

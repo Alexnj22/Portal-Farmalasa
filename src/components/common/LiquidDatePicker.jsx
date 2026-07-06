@@ -114,6 +114,16 @@ const LiquidDatePicker = ({
         }
     };
 
+    // Solo emite onChange cuando los 3 campos forman una fecha completa y
+    // válida. Antes, cualquier estado incompleto (ej. solo el día tecleado)
+    // caía al `else` y emitía onChange('') — eso disparaba el useEffect que
+    // sincroniza dVal/mVal/yVal desde `value`, y como el valor quedaba vacío,
+    // el efecto reseteaba los 3 campos locales a '' en CADA pulsación,
+    // haciendo imposible teclear una fecha manualmente (solo funcionaba
+    // eligiendo día/mes/año desde el calendario visual, que setea los 3 a la
+    // vez). Mientras la fecha esté incompleta, simplemente no se emite nada —
+    // el valor anterior del padre se conserva hasta que la nueva fecha quede
+    // completa y válida.
     const checkAndEmit = (d, m, y) => {
         if (d.length === 2 && m.length === 2 && y.length === 4) {
             const dn = parseInt(d, 10); const mn = parseInt(m, 10); const yn = parseInt(y, 10);
@@ -124,8 +134,6 @@ const LiquidDatePicker = ({
                     setIsOpen(false);
                 }
             }
-        } else {
-            onChange('');
         }
     };
 

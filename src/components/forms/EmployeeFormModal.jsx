@@ -430,7 +430,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     }, [employees, formData?.id, isEditMode]);
 
     useEffect(() => {
-        if (!formData?.code) { 
+        if (!formData?.code) {
             setFormData(prev => ({
                 first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', address: '', extra_addresses: [], dui: '', alt_identity_document: '', alt_identity_document_type: '', birth_date: '', nationality: 'Salvadoreña',
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',

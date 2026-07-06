@@ -278,9 +278,13 @@ function MainApp() {
             setFormData(ed);
         } else if (type === "newEmployee") {
             setFormData({
-                branchId: 1,
-                hireDate: new Date().toISOString().split("T")[0],
-                code: `EMP${Math.floor(1000 + Math.random() * 9000)}`,
+                hire_date: new Date().toISOString().split("T")[0],
+                // Código del carné: SOLO números (regla de negocio + trigger de BD) —
+                // el prefijo "EMP" que traía antes garantizaba que el código por
+                // defecto SIEMPRE fallara la validación al guardar. El botón de
+                // regenerar en el modal (generateUniqueCode) ya produce uno numérico
+                // único; este es solo el valor inicial visible al abrir el formulario.
+                code: String(Math.floor(1000 + Math.random() * 9000)),
                 contract_type: 'INDEFINIDO',
                 weekly_contracted_hours: '44',
                 ...(data || {}),

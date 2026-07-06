@@ -6,10 +6,10 @@ import {
     Edit, Mail, Phone, Shield,
     Clock, FileText, Paperclip,
     CheckCircle, Plus, UploadCloud, Activity, ShieldAlert,
-    MapPin, Briefcase, HeartPulse, Download,
+    MapPin, Briefcase, HeartPulse,
     Cake, AlertCircle, AlertTriangle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, Ban, Loader2,
     KeyRound, Camera, ClipboardList, Palmtree, RefreshCw, DollarSign, FileCheck, Check, X, Search, Stethoscope, ChevronLeft, ChevronRight,
-    BarChart2, Smile, ThumbsUp, Meh, Frown, Copy
+    Copy
 } from 'lucide-react';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
 import { EVENT_TYPES, WEEK_DAYS } from '../data/constants';
@@ -17,14 +17,12 @@ import { formatDate, formatTime12h, getEffectiveStatus } from '../utils/helpers'
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabaseClient';
-import { openStoredFile } from '../utils/storageFiles';
 import { useToastStore } from '../store/toastStore';
 import ShiftExceptionModal from '../components/ShiftExceptionModal';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
-import RangeDatePicker from '../components/common/RangeDatePicker';
-import LiquidDatePicker from '../components/common/LiquidDatePicker';
+import EmployeeDocumentsList from '../components/common/EmployeeDocumentsList';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
@@ -51,17 +49,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const [timelineData, setTimelineData]         = useState([]);
     const [isLoadingTimeline, setIsLoadingTimeline] = useState(false);
 
-    // ── Tab Solicitudes: estado local (no contamina store admin) ──────────────
+    // ── Tab Solicitudes: solo lectura, historial del empleado (crear/cancelar
+    // se hace desde Gestión de Solicitudes — ver botón "Nueva Solicitud" abajo) ──
     const [empRequests, setEmpRequests]       = useState([]);
     const [isLoadingEmpReqs, setIsLoadingEmpReqs] = useState(false);
-    const [reqFormType, setReqFormType]       = useState('VACATION');
-    const [reqFormNote, setReqFormNote]       = useState('');
-    const [reqPayload, setReqPayload]         = useState({});
-    const [isCreatingReq, setIsCreatingReq]   = useState(false);
-    const [showReqForm, setShowReqForm]       = useState(false);
-
-    const createRequest = useStaffStore(s => s.createRequest);
-    const cancelRequest = useStaffStore(s => s.cancelRequest);
 
     const loadEmpRequests = useCallback(async () => {
         const eid = activeEmployee?.id || user?.id;
@@ -81,23 +72,6 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     useEffect(() => {
         if (currentTab === 'requests') loadEmpRequests();
     }, [currentTab]);
-
-    // ── Encuestas de clima ────────────────────────────────────────────────────
-    const [surveyResults, setSurveyResults] = useState([]);
-    const [loadingSurvey, setLoadingSurvey] = useState(false);
-    useEffect(() => {
-        if (!activeEmployee?.id) return;
-        setLoadingSurvey(true);
-        supabase
-            .from('survey_responses')
-            .select(`*, survey:surveys(nombre, año, bloques:survey_bloques(numero, nombre, color, indices))`)
-            .eq('employee_id', activeEmployee.id)
-            .order('survey_id', { ascending: false })
-            .then(({ data }) => {
-                setSurveyResults(data || []);
-                setLoadingSurvey(false);
-            });
-    }, [activeEmployee?.id]);
 
     useEffect(() => {
         if (showCancelModal) setCancelModalRender(true);
@@ -359,14 +333,13 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             
             <div className="flex items-center relative bg-white/50 border border-white/60 rounded-full p-1 shrink-0 shadow-[inset_0_1px_4px_rgba(0,0,0,0.02)]">
                 <div
-                    className="absolute top-1 bottom-1 w-[calc(16.667%-2px)] bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
+                    className="absolute top-1 bottom-1 w-[calc(20%-2px)] bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]"
                     style={{
                         transform: currentTab === 'history'     ? 'translateX(0%)' :
                                    currentTab === 'documents'   ? 'translateX(100%)' :
                                    currentTab === 'permissions' ? 'translateX(200%)' :
                                    currentTab === 'payroll'     ? 'translateX(300%)' :
-                                   currentTab === 'requests'    ? 'translateX(400%)' :
-                                   'translateX(500%)'
+                                   'translateX(400%)'
                     }}
                 ></div>
 
@@ -385,11 +358,6 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 <button onClick={() => setCurrentTab('requests')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'requests' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
                     <ClipboardList size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Solicitudes</span>
                 </button>
-                {canEdit && (
-                    <button onClick={() => setCurrentTab('clima')} className={`relative z-10 px-4 md:px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors flex items-center gap-2 ${currentTab === 'clima' ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-700'}`}>
-                        <BarChart2 size={14} strokeWidth={2.5}/> <span className="hidden sm:inline">Clima</span>
-                    </button>
-                )}
             </div>
 
             {canEdit && <div className="w-px h-6 bg-white/50 mx-1 shrink-0"></div>}
@@ -761,26 +729,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 <FileText size={18} className="text-[#0052CC]"/> Expediente Digital
                                             </h3>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {emp.documents?.map(doc => (
-                                                <div key={doc.id} className="p-4 bg-white/60 hover:bg-white/90 rounded-[1.5rem] border border-white/80 flex items-center justify-between group cursor-pointer shadow-sm hover:shadow-[0_8px_20px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all duration-300">
-                                                    <div className="flex items-center gap-3.5">
-                                                        <div className="p-3 bg-[#0052CC]/10 rounded-xl text-[#0052CC] shadow-inner group-hover:scale-110 transition-transform"><FileText size={20} strokeWidth={2.5}/></div>
-                                                        <div className="min-w-0 pr-2">
-                                                            <p className="text-[12px] font-black text-slate-700 truncate">{doc.name}</p>
-                                                            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{doc.type || 'DOCUMENTO'}</p>
-                                                        </div>
-                                                    </div>
-                                                    <button onClick={() => openStoredFile(doc.url)} className="w-8 h-8 flex items-center justify-center shrink-0 opacity-0 group-hover:opacity-100 text-[#0052CC] bg-blue-50 rounded-full transition-all duration-300 shadow-sm border border-blue-100"><Download size={14} strokeWidth={2.5}/></button>
-                                                </div>
-                                            ))}
-                                            {(!emp.documents || emp.documents.length === 0) && (
-                                                <div className="col-span-full flex flex-col items-center justify-center py-20 opacity-50 px-4">
-                                                    <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-slate-200"><FileText size={28} className="text-slate-400" strokeWidth={2}/></div>
-                                                    <p className="font-black uppercase tracking-widest text-[11px] text-slate-600">Expediente Vacío</p>
-                                                </div>
-                                            )}
-                                        </div>
+                                        <EmployeeDocumentsList documents={emp.employee_documents} emptyLabel="Expediente vacío" />
                                     </div>
                                 )}
 
@@ -1114,126 +1063,19 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 {currentTab === 'requests' && (
                                     <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500">
 
-                                        {/* Botón nueva solicitud */}
+                                        {/* Solo lectura — crear/aprobar vive en Gestión de Solicitudes */}
                                         <div className="flex items-center justify-between">
                                             <h3 className="font-black text-slate-800 uppercase tracking-tight text-[16px] flex items-center gap-2">
-                                                <ClipboardList size={18} className="text-[#0052CC]"/> Mis Solicitudes
+                                                <ClipboardList size={18} className="text-[#0052CC]"/> Solicitudes del Empleado
                                             </h3>
                                             <button
-                                                onClick={() => setShowReqForm(v => !v)}
-                                                disabled={!canEdit}
-                                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#0052CC] to-[#003D99] text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] transition-all hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                onClick={() => navigate('/requests', { state: { prefillEmployeeId: emp.id } })}
+                                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-[#0052CC] to-[#003D99] text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] transition-all hover:-translate-y-0.5 active:scale-[0.97]"
                                             >
                                                 <Plus size={13} strokeWidth={3}/> Nueva Solicitud
                                             </button>
                                         </div>
 
-                                        {/* Formulario */}
-                                        {showReqForm && (
-                                            <div className="rounded-[1.75rem] border border-[#0052CC]/20 bg-white/80 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,82,204,0.06)] p-5 space-y-4 animate-in slide-in-from-top-3 duration-300">
-                                                <div>
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Tipo</p>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {[
-                                                            { key: 'VACATION',    icon: Palmtree },
-                                                            { key: 'PERMIT',      icon: FileText },
-                                                            { key: 'SHIFT_CHANGE',icon: RefreshCw },
-                                                            { key: 'OVERTIME',    icon: Coffee },
-                                                            { key: 'ADVANCE',     icon: DollarSign },
-                                                            { key: 'CERTIFICATE', icon: FileCheck },
-                                                        ].map(({ key, icon: Icon }) => { // eslint-disable-line no-unused-vars
-                                                            const conf = REQUEST_TYPES[key];
-                                                            return (
-                                                                <button
-                                                                    key={key}
-                                                                    type="button"
-                                                                    onClick={() => { setReqFormType(key); setReqPayload({}); }}
-                                                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[11px] font-bold transition-all ${
-                                                                        reqFormType === key
-                                                                            ? `${conf.color} ${conf.border} shadow-sm`
-                                                                            : 'border-slate-200 text-slate-500 hover:border-slate-300 bg-white'
-                                                                    }`}
-                                                                >
-                                                                    <Icon size={13} strokeWidth={2} />
-                                                                    {conf.label}
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-
-                                                <div>
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
-                                                        {reqFormType === 'VACATION' ? 'Período de Vacaciones' :
-                                                         reqFormType === 'PERMIT'   ? 'Días de Permiso' :
-                                                         'Fecha'}
-                                                    </p>
-                                                    {reqFormType === 'VACATION' ? (
-                                                        <RangeDatePicker
-                                                            startDate={reqPayload.startDate || ''}
-                                                            endDate={reqPayload.endDate || ''}
-                                                            onRangeChange={(s, e) => setReqPayload(prev => ({ ...prev, startDate: s, endDate: e }))}
-                                                            holidays={holidays}
-                                                            defaultDays={15}
-                                                            label="vacaciones"
-                                                        />
-                                                    ) : (
-                                                        <LiquidDatePicker
-                                                            value={reqPayload.date || ''}
-                                                            onChange={(v) => setReqPayload(prev => ({ ...prev, date: v }))}
-                                                            placeholder="Seleccionar fecha"
-                                                            holidays={holidays}
-                                                        />
-                                                    )}
-                                                </div>
-
-                                                <div>
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Motivo / Descripción <span className="text-red-400">*</span></p>
-                                                    <textarea
-                                                        value={reqFormNote}
-                                                        onChange={e => setReqFormNote(e.target.value)}
-                                                        rows={3}
-                                                        placeholder="Describe tu solicitud..."
-                                                        className="w-full px-4 py-3 rounded-[1.25rem] border border-slate-200 bg-white text-[13px] text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/30 focus:border-[#0052CC]/50 resize-none transition-all"
-                                                    />
-                                                </div>
-
-                                                <div className="flex gap-2 justify-end">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { setShowReqForm(false); setReqFormNote(''); setReqPayload({}); }}
-                                                        className="px-4 py-2 rounded-xl border border-slate-200 text-slate-500 text-[12px] font-medium hover:bg-slate-50 transition-all"
-                                                    >
-                                                        Cancelar
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        disabled={!canEdit || !reqFormNote.trim() || isCreatingReq}
-                                                        onClick={async () => {
-                                                            const eid = activeEmployee?.id || user?.id;
-                                                            setIsCreatingReq(true);
-                                                            const result = await createRequest(eid, reqFormType, reqPayload, reqFormNote.trim());
-                                                            setIsCreatingReq(false);
-                                                            if (result) {
-                                                                useToastStore.getState().showToast('Enviada', `Solicitud de ${REQUEST_TYPES[reqFormType]?.label} registrada.`, 'success');
-                                                                setReqFormNote('');
-                                                                setReqPayload({});
-                                                                setShowReqForm(false);
-                                                                loadEmpRequests();
-                                                            } else {
-                                                                useToastStore.getState().showToast('Error', 'No se pudo crear la solicitud.', 'error');
-                                                            }
-                                                        }}
-                                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0052CC] hover:bg-[#003D99] text-white text-[12px] font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.97]"
-                                                    >
-                                                        {isCreatingReq ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} strokeWidth={2.5} />}
-                                                        Enviar
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Lista */}
                                         {isLoadingEmpReqs ? (
                                             <div className="space-y-3">
                                                 {Array.from({ length: 4 }).map((_, i) => (
@@ -1276,18 +1118,6 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 {req.approver_note && <p className="text-[11px] text-slate-400 mt-1 italic">Nota: {req.approver_note}</p>}
                                                                 <p className="text-[10px] text-slate-400 mt-1">{new Date(req.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                                                             </div>
-                                                            {req.status === 'PENDING' && (
-                                                                <button
-                                                                    onClick={async () => {
-                                                                        await cancelRequest(req.id);
-                                                                        loadEmpRequests();
-                                                                    }}
-                                                                    className="flex-shrink-0 p-2 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
-                                                                    title="Cancelar solicitud"
-                                                                >
-                                                                    <X size={14} strokeWidth={2} />
-                                                                </button>
-                                                            )}
                                                         </div>
                                                     );
                                                 })}
@@ -1297,111 +1127,6 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 )}
 
                             </div>
-
-                                {/* ── TAB CLIMA ─────────────────────────────────────────── */}
-                                {currentTab === 'clima' && canEdit && (
-                                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
-                                        <h3 className="font-black text-slate-800 uppercase tracking-tight text-[16px] flex items-center gap-2">
-                                            <BarChart2 size={18} className="text-[#0052CC]"/> Encuestas de Clima
-                                        </h3>
-
-                                        {loadingSurvey ? (
-                                            <div className="flex items-center gap-2 text-slate-400 py-6">
-                                                <Loader2 size={16} className="animate-spin" />
-                                                <span className="text-[12px]">Cargando…</span>
-                                            </div>
-                                        ) : surveyResults.length === 0 ? (
-                                            <div className="rounded-2xl border border-slate-100 bg-white/60 p-6 text-center text-slate-400 text-[12px]">
-                                                No participó en ninguna encuesta registrada.
-                                            </div>
-                                        ) : surveyResults.map(result => {
-                                            const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
-                                            const bloques = result.survey?.bloques || result.bloques || [];
-                                            const responses = result.responses || [];
-
-                                            const bScore = (indices) => {
-                                                let total = 0, count = 0;
-                                                for (const i of indices) {
-                                                    const v = responses[i];
-                                                    const s = v && SCORE_MAP[v.toUpperCase()] ? SCORE_MAP[v.toUpperCase()] : null;
-                                                    if (s) { total += s; count++; }
-                                                }
-                                                return count > 0 ? Math.round((total / (count * 4)) * 100) : null;
-                                            };
-
-                                            const allIdx = bloques.flatMap(b => b.indices);
-                                            const global = bScore(allIdx);
-
-                                            const COLOR_MAP = {
-                                                blue: { bar: 'bg-blue-500', text: 'text-blue-700' },
-                                                emerald: { bar: 'bg-emerald-500', text: 'text-emerald-700' },
-                                                amber: { bar: 'bg-amber-500', text: 'text-amber-700' },
-                                                indigo: { bar: 'bg-indigo-500', text: 'text-indigo-700' },
-                                                purple: { bar: 'bg-purple-500', text: 'text-purple-700' },
-                                                teal: { bar: 'bg-teal-500', text: 'text-teal-700' },
-                                                rose: { bar: 'bg-rose-500', text: 'text-rose-700' },
-                                            };
-
-                                            const scoreLabel = (pct) =>
-                                                pct >= 85 ? { label: 'Excelente', Icon: Smile,     color: 'text-emerald-600' } :
-                                                pct >= 70 ? { label: 'Bueno',     Icon: ThumbsUp,  color: 'text-blue-600'    } :
-                                                pct >= 55 ? { label: 'Regular',   Icon: Meh,       color: 'text-amber-600'   } :
-                                                            { label: 'Crítico',   Icon: Frown,     color: 'text-rose-600'    };
-
-                                            return (
-                                                <div key={result.id} className="rounded-2xl border border-slate-100 bg-white shadow-sm p-4 space-y-4">
-                                                    {/* Header */}
-                                                    <div className="flex items-center justify-between">
-                                                        <div>
-                                                            <p className="text-[13px] font-black text-slate-800">{result.survey?.nombre}</p>
-                                                            <p className="text-[10px] text-slate-400">{result.survey?.año} · {result.is_jefe ? 'Jefe/a de sala' : 'Empleado/a'}</p>
-                                                        </div>
-                                                        {global != null && (() => { const sl = scoreLabel(global); return (
-                                                            <div className="text-right">
-                                                                <div className="text-[26px] font-black text-slate-800 leading-none">{global}<span className="text-[14px]">%</span></div>
-                                                                <div className={`text-[10px] font-black ${sl.color}`}>{sl.label}</div>
-                                                            </div>
-                                                        );})()}
-                                                    </div>
-
-                                                    {/* Score global bar */}
-                                                    {global != null && (
-                                                        <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                                                            <div className={`h-full rounded-full transition-all duration-700 ${global >= 85 ? 'bg-emerald-500' : global >= 70 ? 'bg-blue-500' : global >= 55 ? 'bg-amber-400' : 'bg-rose-500'}`}
-                                                                style={{ width: `${global}%` }} />
-                                                        </div>
-                                                    )}
-
-                                                    {/* Por bloque */}
-                                                    <div className="space-y-2 pt-1">
-                                                        {bloques.map(b => {
-                                                            const s = bScore(b.indices);
-                                                            if (!s) return null;
-                                                            const c = COLOR_MAP[b.color] || COLOR_MAP.blue;
-                                                            return (
-                                                                <div key={b.id} className="flex items-center gap-3">
-                                                                    <span className={`text-[9px] font-black uppercase tracking-wider w-28 shrink-0 truncate ${c.text}`}>{b.nombre}</span>
-                                                                    <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                                                                        <div className={`h-full rounded-full ${c.bar} transition-all duration-700`} style={{ width: `${s}%` }} />
-                                                                    </div>
-                                                                    <span className={`text-[11px] font-black w-8 text-right ${c.text}`}>{s}%</span>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-
-                                                    {/* Comentario */}
-                                                    {result.comentario && (
-                                                        <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5">
-                                                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Comentario</p>
-                                                            <p className="text-[11px] text-slate-600 leading-relaxed">{result.comentario}</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
 
                         </div>
                     </div>

@@ -4,7 +4,7 @@ import {
     User, Phone, HeartPulse, Briefcase, KeyRound,
     Clock, Edit3, Calendar, ArrowRightLeft, Sparkles, Palmtree,
     MapPin, CreditCard, Coffee, Zap, Award, TrendingUp, SlidersHorizontal, ChevronDown, ChevronUp, X, Stethoscope, FileText,
-    FolderOpen, Receipt, Eye
+    FolderOpen
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
@@ -13,9 +13,8 @@ import { EVENT_TYPES } from '../../data/constants';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import { formatTime12h } from '../../utils/helpers';
-import { openStoredFile } from '../../utils/storageFiles';
-import { getExpiryBadge, getExpiringDocuments } from '../../utils/documentExpiry';
 import SearchInput from '../../components/common/SearchInput';
+import EmployeeDocumentsList from '../../components/common/EmployeeDocumentsList';
 
 const formatDate = (d) => d
     ? new Date(d + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -59,51 +58,6 @@ const Field = ({ label, value, icon: Icon }) => (
         <p className="text-[13px] font-bold text-slate-700 truncate">{value || 'No registrado'}</p>
     </div>
 );
-
-// Ícono por categoría de documento — mismo expediente que EmployeeFormModal
-// (employee_documents JSONB), aquí en modo solo-lectura para el propio empleado.
-const docIcon = (category) => {
-    if (category?.startsWith('ANUALIDAD')) return Receipt;
-    if (category === 'SRS' || category === 'ENFERMERIA' || category === 'CONTRATO_REGENCIA') return Award;
-    if (category?.startsWith('DUI') || category === 'DOCUMENTO_IDENTIDAD') return CreditCard;
-    return FileText;
-};
-
-const DocumentRow = ({ doc }) => {
-    const Icon = docIcon(doc.category);
-    const badge = getExpiryBadge(doc.expiry_date);
-    const hasFile = !!doc.url;
-    return (
-        <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/80 hover:bg-white/85 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-200">
-            <div className="w-9 h-9 rounded-xl bg-slate-100/80 border border-slate-200/60 flex items-center justify-center shrink-0">
-                <Icon size={15} className="text-slate-500" strokeWidth={1.8} />
-            </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-bold text-slate-700 truncate">{doc.title || doc.category}</p>
-                {doc.expiry_date && (
-                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Vence {formatDate(doc.expiry_date)}</p>
-                )}
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-                {badge && (
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${badge.className}`}>{badge.label}</span>
-                )}
-                {hasFile ? (
-                    <button
-                        type="button"
-                        onClick={() => openStoredFile(doc.url)}
-                        className="w-8 h-8 rounded-full bg-[#0052CC]/10 text-[#0052CC] flex items-center justify-center hover:bg-[#0052CC]/20 hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.97] shrink-0"
-                        title="Ver documento"
-                    >
-                        <Eye size={13} strokeWidth={2.2} />
-                    </button>
-                ) : (
-                    <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 whitespace-nowrap">Pendiente</span>
-                )}
-            </div>
-        </div>
-    );
-};
 
 const EmployeeProfileView = ({ openModal }) => {
     const { user } = useAuth();
@@ -229,16 +183,6 @@ const EmployeeProfileView = ({ openModal }) => {
         if (diff <= 30) return `en ${diff} días`;
         return null;
     }, [emp?.birth_date]);
-
-    // Mismo expediente (employee_documents JSONB) que usa EmployeeFormModal/StaffManagementView
-    // — vencidos/por vencer primero, mismo umbral y orden de urgencia que getExpiringDocuments.
-    const orderedDocuments = useMemo(() => {
-        const docs = Array.isArray(emp?.employee_documents) ? emp.employee_documents : [];
-        const expiring = getExpiringDocuments(docs);
-        const expiringCategories = new Set(expiring.map(d => d.category));
-        const rest = docs.filter(d => !expiringCategories.has(d.category));
-        return [...expiring, ...rest];
-    }, [emp?.employee_documents]);
 
     if (!emp) return (
         <GlassViewLayout icon={User} title="Mi Perfil" transparentBody={true}>
@@ -386,25 +330,13 @@ const EmployeeProfileView = ({ openModal }) => {
                         </div>
                     </SectionCard>
 
-                    {/* Mis Documentos — expediente (employee_documents JSONB): CV, Contrato,
-                        DUI, y (si aplica por Cargo/Profesión) Carné + Anualidad JVPQF/JVPE. */}
+                    {/* Mi Expediente — credenciales (employee_documents JSONB): CV, Contrato,
+                        DUI, y (si aplica por Cargo/Profesión) Carné + Anualidad JVPQF/JVPE.
+                        Nombrado distinto de "Mis Documentos" (menú aparte, adjuntos de
+                        solicitudes) para no confundir ambos conceptos. */}
                     <SectionCard>
-                        <SectionLabel icon={FolderOpen} label="Mis Documentos" />
-                        {orderedDocuments.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center min-h-[160px] animate-in fade-in zoom-in-95 duration-700">
-                                <div className="relative flex flex-col items-center text-center">
-                                    <div className="absolute top-2 w-20 h-20 rounded-full blur-[40px] opacity-20 bg-slate-400" />
-                                    <div className="relative z-10 w-12 h-12 rounded-[1rem] flex items-center justify-center mb-3 bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-slate-400">
-                                        <FolderOpen size={22} strokeWidth={1.5} />
-                                    </div>
-                                    <h3 className="font-bold text-[14px] text-slate-700 tracking-tight">Sin documentos registrados</h3>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                                {orderedDocuments.map(doc => <DocumentRow key={doc.category} doc={doc} />)}
-                            </div>
-                        )}
+                        <SectionLabel icon={FolderOpen} label="Mi Expediente" />
+                        <EmployeeDocumentsList documents={emp.employee_documents} />
                     </SectionCard>
 
                     {/* Emergencia */}

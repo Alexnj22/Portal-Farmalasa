@@ -1,19 +1,32 @@
 import React, { useState, useEffect, memo, useRef, useMemo } from 'react';
 import ReactDOM from 'react-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
     Inbox, Check, X, ChevronRight, ChevronDown,
     User, Calendar, Loader2, ClipboardList,
     Palmtree, FileText, RefreshCw, DollarSign, FileCheck, Coffee,
     CheckCircle2, XCircle, Stethoscope, FileImage, AlertTriangle,
     Search, ArrowLeftRight, CalendarDays, Banknote, FileCheck2,
-    Ban, CreditCard, UserCog, Receipt, Contact,
+    Ban, CreditCard, UserCog, Receipt, Contact, Plus,
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
 import { smartFilter } from '../utils/searchUtils';
 import GlassViewLayout from '../components/GlassViewLayout';
+import LiquidSelect from '../components/common/LiquidSelect';
+import RangeDatePicker from '../components/common/RangeDatePicker';
+import LiquidDatePicker from '../components/common/LiquidDatePicker';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../store/slices/requestsSlice';
+
+const CREATABLE_TYPES = [
+    { key: 'VACATION',     icon: Palmtree },
+    { key: 'PERMIT',       icon: FileText },
+    { key: 'SHIFT_CHANGE', icon: RefreshCw },
+    { key: 'OVERTIME',     icon: Coffee },
+    { key: 'ADVANCE',      icon: DollarSign },
+    { key: 'CERTIFICATE',  icon: FileCheck },
+];
 
 const TYPE_ICONS = {
     VACATION:               Palmtree,
@@ -423,19 +436,31 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
 const RequestsView = () => {
     const { user, hasPermission, getScope } = useAuth();
     const canApprove = hasPermission('requests', 'can_approve');
+    const canCreate  = hasPermission('requests', 'can_edit');
+
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const requests       = useStaff(s => s.requests);
     const employees      = useStaff(s => s.employees);
+    const holidays       = useStaff(s => s.holidays);
     const isLoadingReqs  = useStaff(s => s.isLoadingRequests);
     const fetchRequests  = useStaff(s => s.fetchRequests);
     const approveRequest = useStaff(s => s.approveRequest);
     const rejectRequest  = useStaff(s => s.rejectRequest);
+    const createRequest  = useStaff(s => s.createRequest);
 
     const employeesById = useMemo(() => {
         const m = new Map();
         (employees || []).forEach(e => m.set(String(e.id), e));
         return m;
     }, [employees]);
+
+    const employeeOptions = useMemo(() =>
+        (employees || [])
+            .filter(e => e.status !== 'INACTIVO')
+            .map(e => ({ value: String(e.id), label: e.name }))
+    , [employees]);
 
     const [statusFilter,      setStatusFilter]      = useState('PENDING');
     const [isSearchMode,      setIsSearchMode]      = useState(false);
@@ -445,6 +470,43 @@ const RequestsView = () => {
     const [actionNote,        setActionNote]        = useState('');
     const [isActioning,       setIsActioning]       = useState(false);
     const searchInputRef = useRef(null);
+
+    // ── Crear solicitud a nombre de un empleado (RRHH) ──────────────────────
+    const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [createEmployeeId, setCreateEmployeeId] = useState('');
+    const [createType,      setCreateType]      = useState('VACATION');
+    const [createPayload,   setCreatePayload]   = useState({});
+    const [createNote,      setCreateNote]      = useState('');
+    const [isCreatingReq,   setIsCreatingReq]   = useState(false);
+
+    const openCreateModal = (employeeId = '') => {
+        setCreateEmployeeId(employeeId ? String(employeeId) : '');
+        setCreateType('VACATION');
+        setCreatePayload({});
+        setCreateNote('');
+        setCreateModalOpen(true);
+    };
+
+    // Deep-link desde EmployeeDetailView ("+ Nueva Solicitud" de un empleado puntual)
+    useEffect(() => {
+        if (location.state?.prefillEmployeeId) {
+            openCreateModal(location.state.prefillEmployeeId);
+            navigate(location.pathname, { replace: true });
+        }
+    }, []);
+
+    const handleCreateRequest = async () => {
+        if (!createEmployeeId || !createNote.trim()) return;
+        setIsCreatingReq(true);
+        const result = await createRequest(createEmployeeId, createType, createPayload, createNote.trim());
+        setIsCreatingReq(false);
+        if (result) {
+            useToastStore.getState().showToast('Enviada', `Solicitud de ${REQUEST_TYPES[createType]?.label} registrada.`, 'success');
+            setCreateModalOpen(false);
+        } else {
+            useToastStore.getState().showToast('Error', 'No se pudo crear la solicitud.', 'error');
+        }
+    };
 
     useEffect(() => {
         const apId = canApprove ? user?.id : null;
@@ -529,6 +591,16 @@ const RequestsView = () => {
     ];
 
     const filtersContent = (
+        <div className="flex items-center gap-2 md:gap-3">
+            {canCreate && (
+                <button onClick={() => openCreateModal()}
+                    className="group relative overflow-hidden flex items-center gap-2 h-10 md:h-11 px-4 md:px-5 bg-gradient-to-b from-[#0052CC]/72 to-[#003D99]/78 backdrop-blur-xl border border-white/22 hover:border-white/36 text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-[0_6px_22px_rgba(0,82,204,0.28),inset_0_1px_0_rgba(255,255,255,0.18)] hover:shadow-[0_12px_36px_rgba(0,82,204,0.44),inset_0_1px_0_rgba(255,255,255,0.24)] transition-all duration-200 active:scale-[0.97] shrink-0">
+                    <span className="absolute inset-0 overflow-hidden rounded-full pointer-events-none">
+                        <span className="absolute top-0 bottom-0 left-0 w-[55%] bg-gradient-to-r from-transparent via-white/[0.16] to-transparent -translate-x-full group-hover:translate-x-[220%] transition-transform duration-700 ease-out" />
+                    </span>
+                    <Plus size={14} strokeWidth={3}/> <span className="hidden sm:inline">Nueva Solicitud</span>
+                </button>
+            )}
         <div className="relative flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
 
             {/* Pending dot — outside the overflow-hidden area via outline trick */}
@@ -580,6 +652,7 @@ const RequestsView = () => {
                     {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
                 </button>
             </div>
+        </div>
         </div>
     );
 
@@ -706,6 +779,110 @@ const RequestsView = () => {
                                 }`}>
                                 {isActioning ? <Loader2 size={14} className="animate-spin" />
                                     : actionModal.mode === 'approve' ? <><Check size={14} strokeWidth={2.5} /> Aprobar</> : <><X size={14} strokeWidth={2.5} /> Rechazar</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {createModalOpen && ReactDOM.createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-md" onClick={() => !isCreatingReq && setCreateModalOpen(false)} />
+                    <div className="relative bg-white/80 backdrop-blur-2xl border border-white/80 rounded-[2.5rem] shadow-[0_32px_80px_rgba(0,0,0,0.15)] w-full max-w-lg p-6 space-y-4 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+                        <div className="flex items-center gap-3 mb-1">
+                            <div className="w-11 h-11 rounded-2xl bg-[#0052CC]/10 border border-[#0052CC]/20 flex items-center justify-center shrink-0">
+                                <ClipboardList size={20} className="text-[#0052CC]" strokeWidth={2} />
+                            </div>
+                            <div>
+                                <h3 className="text-[16px] font-bold text-slate-800">Nueva Solicitud</h3>
+                                <p className="text-[11px] text-slate-400">A nombre de un empleado</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Empleado <span className="text-red-400">*</span></p>
+                            <LiquidSelect
+                                value={createEmployeeId}
+                                onChange={setCreateEmployeeId}
+                                options={employeeOptions}
+                                placeholder="Seleccionar empleado..."
+                                icon={User}
+                                compact
+                                clearable={false}
+                            />
+                        </div>
+
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Tipo</p>
+                            <div className="flex flex-wrap gap-2">
+                                {CREATABLE_TYPES.map(({ key, icon: Icon }) => {
+                                    const conf = REQUEST_TYPES[key];
+                                    return (
+                                        <button
+                                            key={key}
+                                            type="button"
+                                            onClick={() => { setCreateType(key); setCreatePayload({}); }}
+                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[11px] font-bold transition-all ${
+                                                createType === key
+                                                    ? `${conf.color} ${conf.border} shadow-sm`
+                                                    : 'border-slate-200 text-slate-500 hover:border-slate-300 bg-white'
+                                            }`}
+                                        >
+                                            <Icon size={13} strokeWidth={2} />
+                                            {conf.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
+                                {createType === 'VACATION' ? 'Período de Vacaciones' :
+                                 createType === 'PERMIT'   ? 'Días de Permiso' :
+                                 'Fecha'}
+                            </p>
+                            {createType === 'VACATION' ? (
+                                <RangeDatePicker
+                                    startDate={createPayload.startDate || ''}
+                                    endDate={createPayload.endDate || ''}
+                                    onRangeChange={(s, e) => setCreatePayload(prev => ({ ...prev, startDate: s, endDate: e }))}
+                                    holidays={holidays}
+                                    defaultDays={15}
+                                    label="vacaciones"
+                                />
+                            ) : (
+                                <LiquidDatePicker
+                                    value={createPayload.date || ''}
+                                    onChange={(v) => setCreatePayload(prev => ({ ...prev, date: v }))}
+                                    placeholder="Seleccionar fecha"
+                                    holidays={holidays}
+                                />
+                            )}
+                        </div>
+
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Motivo / Descripción <span className="text-red-400">*</span></p>
+                            <textarea
+                                value={createNote}
+                                onChange={e => setCreateNote(e.target.value)}
+                                rows={3}
+                                placeholder="Describe la solicitud..."
+                                disabled={isCreatingReq}
+                                className="w-full px-4 py-3 rounded-[1.5rem] border border-white/80 bg-white/60 backdrop-blur-md text-[13px] text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/25 focus:border-[#0052CC]/40 resize-none transition-all disabled:opacity-50"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-1">
+                            <button onClick={() => !isCreatingReq && setCreateModalOpen(false)} disabled={isCreatingReq}
+                                className="flex-1 py-3 rounded-2xl border border-white/80 bg-white/60 text-slate-500 text-[13px] font-medium hover:bg-white/80 transition-all disabled:opacity-50">
+                                Cancelar
+                            </button>
+                            <button onClick={handleCreateRequest}
+                                disabled={!canCreate || isCreatingReq || !createEmployeeId || !createNote.trim()}
+                                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-[13px] font-bold transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 bg-[#0052CC] hover:bg-[#003D99] shadow-[0_4px_16px_rgba(0,82,204,0.3)]">
+                                {isCreatingReq ? <Loader2 size={14} className="animate-spin" /> : <><Check size={14} strokeWidth={2.5} /> Enviar</>}
                             </button>
                         </div>
                     </div>

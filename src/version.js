@@ -5,8 +5,10 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.9.17';
+export const APP_VERSION = '2.9.18';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.9.18 — feat(personal/orden) + fix(personal/dependientes-validación): a pedido del usuario, en el modal de Empleado, la sección "Vehículo y Acreditaciones" ahora aparece justo debajo de "Nivel Académico" (antes iba después de Ficha Médica y Emergencia, al final de la pestaña Personal). Además, la edad manual agregada en v2.9.17 para "Personas que Dependen Económicamente" ahora se valida de verdad: entero entre 0 y 120, sin decimales ni negativos — bloquea Guardar (`isFormFullyValid`) con badge rojo "Requerido"/"0-120" igual que el resto del formulario, y employeeSlice.js lanza error explícito si de algún modo llega inválido al guardar. Extraída la lógica de "modo edad" (`isDependentAgeOnly`/`isDependentAgeInvalid`/`getDependentAge`) a `src/utils/economicDependents.js`, compartida entre el modal y el store — cierra la duplicación que /code-review había señalado en v2.9.17 (cliente y servidor ya no pueden divergir en qué cuenta como "edad válida").
 
 // v2.9.17 — feat(personal/dependientes): a pedido del usuario, en el modal de creación/edición de empleado, sección "Personas que Dependen Económicamente", ahora se puede alternar entre "Fecha de Nacimiento" exacta y solo la "Edad" en años cuando no se conoce la fecha (link "No sé la fecha" / "Ingresar fecha" junto al label). `economic_dependents` (JSONB) gana los campos `age` y `age_only`, poblados solo cuando no hay `birth_date`; `normalizeEconomicDependents` en employeeSlice.js los persiste (age_only guardado explícitamente, no re-derivado en cada carga). Sin migración de BD (columna JSONB, sin esquema fijo). /code-review encontró y corrigió en la misma sesión: bug de "cero falsy" (`parseInt(age) || null` descartaba silenciosamente edad=0 de un bebé, tanto al guardar como al mostrar) y un guard de NaN inconsistente entre cliente/servidor para el estado age_only — ambos alineados.
 

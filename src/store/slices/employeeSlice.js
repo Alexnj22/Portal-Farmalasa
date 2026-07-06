@@ -2,6 +2,7 @@ import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS, persistEmployees } from '../utils';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 import { OTRA_ESPECIALIDAD } from '../../utils/educationCatalogs';
+import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -117,20 +118,16 @@ const normalizeExtraAddresses = (arr) => {
 const normalizeEconomicDependents = (arr) => {
     if (!Array.isArray(arr)) return [];
     return arr
-        .map(d => {
-            const hasAge = d?.age !== '' && d?.age != null && !Number.isNaN(parseInt(d.age, 10));
-            const ageOnly = !d?.birth_date && hasAge;
-            return {
-                name: (d?.name || '').trim().toUpperCase(),
-                birth_date: d?.birth_date || null,
-                age: ageOnly ? parseInt(d.age, 10) : null,
-                age_only: ageOnly,
-                relationship: (d?.relationship || '').trim(),
-                department: (d?.department || '').trim(),
-                municipality: (d?.municipality || '').trim(),
-                address: (d?.address || '').trim().toUpperCase(),
-            };
-        })
+        .map(d => ({
+            name: (d?.name || '').trim().toUpperCase(),
+            birth_date: d?.birth_date || null,
+            age: getDependentAge(d),
+            age_only: isDependentAgeOnly(d),
+            relationship: (d?.relationship || '').trim(),
+            department: (d?.department || '').trim(),
+            municipality: (d?.municipality || '').trim(),
+            address: (d?.address || '').trim().toUpperCase(),
+        }))
         .filter(d => d.name || d.birth_date || d.age != null || d.relationship || d.department || d.municipality || d.address);
 };
 
@@ -211,14 +208,19 @@ const validateOptionalFormats = (data) => {
         }
     }
 
-    // Dependientes económicos: solo se bloquea si la fecha de nacimiento es futura
-    // (sin rango de edad — a diferencia del empleado, un dependiente puede ser un bebé o un adulto mayor).
+    // Dependientes económicos: se bloquea si la fecha de nacimiento es futura, o si se
+    // eligió "solo edad" (sin fecha) y el valor no es un entero válido en rango humano
+    // (sin rango de edad para la fecha exacta — a diferencia del empleado, un dependiente
+    // puede ser un bebé o un adulto mayor).
     if (Array.isArray(data.economic_dependents)) {
         for (const dep of data.economic_dependents) {
-            if (!dep?.birth_date) continue;
-            const bd = new Date(`${dep.birth_date}T00:00:00`);
-            if (!isNaN(bd.getTime()) && bd > new Date()) {
-                throw new Error(`La Fecha de Nacimiento de "${dep.name || 'un dependiente'}" no puede ser futura.`);
+            if (dep?.birth_date) {
+                const bd = new Date(`${dep.birth_date}T00:00:00`);
+                if (!isNaN(bd.getTime()) && bd > new Date()) {
+                    throw new Error(`La Fecha de Nacimiento de "${dep.name || 'un dependiente'}" no puede ser futura.`);
+                }
+            } else if (isDependentAgeInvalid(dep)) {
+                throw new Error(`La Edad de "${dep.name || 'un dependiente'}" debe ser un número entero entre ${MIN_DEPENDENT_AGE} y ${MAX_DEPENDENT_AGE}.`);
             }
         }
     }

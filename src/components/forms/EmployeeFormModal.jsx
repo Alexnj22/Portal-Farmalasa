@@ -10,6 +10,7 @@ import { supabase } from '../../supabaseClient';
 import { getStoragePathFromUrl } from '../../utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD } from '../../utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '../../utils/documentExpiry';
+import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -706,7 +707,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         const arr = [...(prev.economic_dependents || [])];
         const cur = arr[idx];
         if (!cur) return prev;
-        const nextAgeOnly = !(cur.age_only ?? (!cur.birth_date && cur.age !== '' && cur.age != null && !Number.isNaN(parseInt(cur.age, 10))));
+        const nextAgeOnly = !isDependentAgeOnly(cur);
         arr[idx] = { ...cur, age_only: nextAgeOnly, birth_date: nextAgeOnly ? '' : cur.birth_date, age: nextAgeOnly ? cur.age : '' };
         return { ...prev, economic_dependents: arr };
     });
@@ -995,6 +996,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             && (!formData?.maestria_title || formData.maestria_title === OTRA_ESPECIALIDAD)) return false;
         if (studyEndInPast || maestriaStudyEndInPast) return false;
 
+        for (const dep of (formData?.economic_dependents || [])) {
+            if (isDependentAgeInvalid(dep)) return false;
+        }
+
         if (!formData?.branch_id) return false;
         if (!formData?.role_id) return false;
 
@@ -1017,7 +1022,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         phoneHasError, formData?.extra_phones, emailInvalid,
         formData?.education_level, formData?.education_grade_completed, formData?.education_specialty,
         formData?.profession, formData?.is_studying, formData?.has_maestria, formData?.maestria_title,
-        studyEndInPast, maestriaStudyEndInPast, formData?.branch_id, formData?.role_id,
+        studyEndInPast, maestriaStudyEndInPast, formData?.economic_dependents, formData?.branch_id, formData?.role_id,
         salaryInvalid, hoursInvalid, contractDatesInvalid, temporalBasisMissing, temporalReasonMissing,
         isssIncomplete, afpIncomplete, formData?.code,
     ]);
@@ -1633,6 +1638,46 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-teal-50 text-teal-600 rounded-[0.8rem] border border-teal-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
+                                    <Car size={16} strokeWidth={2.5} />
+                                </div>
+                                <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Vehículo y Acreditaciones</h4>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                    <input type="checkbox" checked={!!formData.has_motorcycle} onChange={(e) => handleSelectChange('has_motorcycle', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                                    <Bike size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Posee Moto</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                    <input type="checkbox" checked={!!formData.has_car} onChange={(e) => handleSelectChange('has_car', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                                    <Car size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Posee Carro</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                    <input type="checkbox" checked={!!formData.has_motorcycle_license} onChange={(e) => handleSelectChange('has_motorcycle_license', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                                    <Bike size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Licencia de Motocicleta</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
+                                    <input type="checkbox" checked={!!formData.has_car_license} onChange={(e) => handleSelectChange('has_car_license', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                                    <Car size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Licencia de Automóvil</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60 md:col-span-2">
+                                    <input type="checkbox" checked={!!formData.has_srs_accreditation} onChange={(e) => handleSelectChange('has_srs_accreditation', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
+                                    <ShieldCheck size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Carné JVPQF (Regente / Químico Farmacéutico)</span>
+                                </label>
+                            </div>
+                            {(formData.has_motorcycle_license || formData.has_car_license || isPharmacistRegent || isNursing) && (
+                                <p className="text-[9px] text-teal-600 font-bold mt-2 ml-1">El documento correspondiente ya está disponible para subir en la pestaña Documentos{(isPharmacistRegent && !formData.has_srs_accreditation) || (isNursing && !isNursingRole) ? ' (detectado automáticamente por Cargo/Profesión)' : ''}.</p>
+                            )}
+                        </div>
+
+                        <div className={`${islandClass} ${islandHoverClass}`}>
+                            <div className="flex items-center gap-3 mb-4">
                                 <div className="p-2 bg-cyan-50 text-cyan-600 rounded-[0.8rem] border border-cyan-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
                                     <Users size={16} strokeWidth={2.5} />
                                 </div>
@@ -1645,8 +1690,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         const depMunicipioOpts = dep.department && EL_SALVADOR_GEO[dep.department]
                                             ? EL_SALVADOR_GEO[dep.department].map(m => ({ value: m, label: m }))
                                             : [];
-                                        const depAgeOnly = dep.age_only ?? (!dep.birth_date && dep.age !== '' && dep.age != null && !Number.isNaN(parseInt(dep.age, 10)));
-                                        const depAge = depAgeOnly ? (dep.age === '' || dep.age == null || Number.isNaN(parseInt(dep.age, 10)) ? null : parseInt(dep.age, 10)) : calcAge(dep.birth_date);
+                                        const depAgeOnly = isDependentAgeOnly(dep);
+                                        const depAgeInvalid = isDependentAgeInvalid(dep);
+                                        const depAge = depAgeOnly ? getDependentAge(dep) : calcAge(dep.birth_date);
                                         const copyOptions = [
                                             { value: 'employee', label: 'Mi Dirección (Empleado)' },
                                             ...(formData.economic_dependents || [])
@@ -1674,15 +1720,18 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     </div>
                                                     <div>
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
-                                                            <span>{depAgeOnly ? 'Edad' : 'Fecha de Nacimiento'}</span>
+                                                            <span className="flex items-center gap-1.5">
+                                                                {depAgeOnly ? 'Edad' : 'Fecha de Nacimiento'}
+                                                                {depAgeInvalid && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200 normal-case tracking-normal">{dep.age === '' || dep.age == null ? 'Requerido' : `${MIN_DEPENDENT_AGE}-${MAX_DEPENDENT_AGE}`}</span>}
+                                                            </span>
                                                             <button type="button" onClick={() => toggleDependentAgeMode(idx)}
                                                                 className="text-[#0052CC] font-bold normal-case tracking-normal hover:text-blue-700 transition-colors">
                                                                 {depAgeOnly ? 'Ingresar fecha' : 'No sé la fecha'}
                                                             </button>
                                                         </label>
                                                         {depAgeOnly ? (
-                                                            <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
-                                                                <input type="number" min="0" max="120" value={dep.age ?? ''} onChange={(e) => updateDependent(idx, 'age', e.target.value)} placeholder="Edad en años"
+                                                            <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${depAgeInvalid ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}>
+                                                                <input type="number" min={MIN_DEPENDENT_AGE} max={MAX_DEPENDENT_AGE} step="1" value={dep.age ?? ''} onChange={(e) => updateDependent(idx, 'age', e.target.value)} placeholder="Edad en años"
                                                                     className="w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none pl-4 pr-4" />
                                                             </div>
                                                         ) : (
@@ -1791,46 +1840,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 )}
                             </div>
-                        </div>
-
-                        <div className={`${islandClass} ${islandHoverClass}`}>
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-teal-50 text-teal-600 rounded-[0.8rem] border border-teal-100/50 shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]">
-                                    <Car size={16} strokeWidth={2.5} />
-                                </div>
-                                <h4 className="text-[12px] font-black uppercase tracking-widest text-slate-800">Vehículo y Acreditaciones</h4>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
-                                    <input type="checkbox" checked={!!formData.has_motorcycle} onChange={(e) => handleSelectChange('has_motorcycle', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                                    <Bike size={15} strokeWidth={2.5} className="text-slate-400" />
-                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Posee Moto</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
-                                    <input type="checkbox" checked={!!formData.has_car} onChange={(e) => handleSelectChange('has_car', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                                    <Car size={15} strokeWidth={2.5} className="text-slate-400" />
-                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Posee Carro</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
-                                    <input type="checkbox" checked={!!formData.has_motorcycle_license} onChange={(e) => handleSelectChange('has_motorcycle_license', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                                    <Bike size={15} strokeWidth={2.5} className="text-slate-400" />
-                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Licencia de Motocicleta</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
-                                    <input type="checkbox" checked={!!formData.has_car_license} onChange={(e) => handleSelectChange('has_car_license', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                                    <Car size={15} strokeWidth={2.5} className="text-slate-400" />
-                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Licencia de Automóvil</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60 md:col-span-2">
-                                    <input type="checkbox" checked={!!formData.has_srs_accreditation} onChange={(e) => handleSelectChange('has_srs_accreditation', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                                    <ShieldCheck size={15} strokeWidth={2.5} className="text-slate-400" />
-                                    <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Carné JVPQF (Regente / Químico Farmacéutico)</span>
-                                </label>
-                            </div>
-                            {(formData.has_motorcycle_license || formData.has_car_license || isPharmacistRegent || isNursing) && (
-                                <p className="text-[9px] text-teal-600 font-bold mt-2 ml-1">El documento correspondiente ya está disponible para subir en la pestaña Documentos{(isPharmacistRegent && !formData.has_srs_accreditation) || (isNursing && !isNursingRole) ? ' (detectado automáticamente por Cargo/Profesión)' : ''}.</p>
-                            )}
                         </div>
                     </>
                 )}

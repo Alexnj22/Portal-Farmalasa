@@ -34,3 +34,19 @@ export function getExpiringDocuments(employeeDocuments) {
         .filter(d => d.daysLeft !== null && d.daysLeft <= DOC_EXPIRY_WARN_DAYS)
         .sort((a, b) => a.daysLeft - b.daysLeft);
 }
+
+// Fecha límite de pago de la anualidad CSSP (JVPQF/JVPE/cualquier profesión bajo su
+// paraguas): 31 de marzo, igual para todos los profesionales de salud inscritos —
+// confirmado por avisos recurrentes de cssp.gob.sv ("tienen los tres primeros meses
+// del año para pagar su anualidad... tienen hasta el 31 de marzo"), no es un artículo
+// del Código de Salud sino un instructivo administrativo del CSSP. Devuelve la próxima
+// ocurrencia (si ya pasó este año, la del año siguiente) como 'YYYY-MM-DD', para
+// autocompletar el expiry_date del slot de Anualidad al subir el comprobante — si el
+// usuario ya escribió/detectó una fecha distinta, esta NUNCA la pisa (solo se usa como
+// default cuando el campo está vacío).
+export function getNextAnnualidadCsspDueDate(referenceDate = new Date()) {
+    const year = referenceDate.getFullYear();
+    const thisYearDue = new Date(`${year}-03-31T12:00:00`);
+    const dueYear = referenceDate.getTime() > thisYearDue.getTime() ? year + 1 : year;
+    return `${dueYear}-03-31`;
+}

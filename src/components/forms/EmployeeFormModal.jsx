@@ -9,7 +9,7 @@ import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../supabaseClient';
 import { getStoragePathFromUrl } from '../../utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD } from '../../utils/educationCatalogs';
-import { getExpiryBadge, getExpiringDocuments } from '../../utils/documentExpiry';
+import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '../../utils/documentExpiry';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -64,10 +64,15 @@ const MINOR_AGE = 18;
 // muestran si el Cargo o la Profesión indican Regente/Químico Farmacéutico
 // (o si se activa el checkbox manual, que queda como override); el carné de
 // Enfermería (JVPE) se muestra si el Cargo o la Profesión contienen
-// "enfermer" — ver reference_sv_pharma_health_regulations (memoria) para el
-// porqué de JVPQF/JVPE y la distinción con la SRS (que regula el
-// establecimiento, no al profesional). El resto de documentos usa la lista
-// abierta "+ Agregar Documento" (categoría EXTRA_<ts>).
+// "enfermer". Carné y Anualidad son slots SEPARADOS a propósito: el carné es
+// la tarjeta física (se reemite rara vez — pérdida/deterioro/cambio de
+// categoría), la anualidad es el pago recurrente cada año calendario que
+// mantiene la autorización solvente (puede acumularse mora de varios años sin
+// que el carné físico cambie) — ver reference_sv_pharma_health_regulations
+// (memoria) para el porqué de JVPQF/JVPE, la distinción con la SRS (que
+// regula el establecimiento, no al profesional) y la corrección 2026-07-06
+// sobre carné≠anualidad. El resto de documentos usa la lista abierta
+// "+ Agregar Documento" (categoría EXTRA_<ts>).
 const FIXED_DOCUMENT_CATEGORIES = [
     { key: 'CV', label: 'Currículum Vitae (CV)' },
     { key: 'CONTRATO', label: 'Contrato de Trabajo Firmado' },
@@ -758,9 +763,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         ...FIXED_DOCUMENT_CATEGORIES,
         ...(formData.has_motorcycle_license ? [{ key: 'LICENCIA_MOTO', label: 'Licencia de Motocicleta' }] : []),
         ...(formData.has_car_license ? [{ key: 'LICENCIA_CARRO', label: 'Licencia de Automóvil' }] : []),
-        ...(isPharmacistRegent ? [{ key: 'SRS', label: 'Carné JVPQF — Regente / Químico Farmacéutico (anualidad)' }] : []),
+        ...(isPharmacistRegent ? [{ key: 'SRS', label: 'Carné JVPQF — Regente / Químico Farmacéutico' }] : []),
+        ...(isPharmacistRegent ? [{ key: 'ANUALIDAD_JVPQF', label: 'Anualidad JVPQF — solvencia del año en curso' }] : []),
         ...(isPharmacistRegent ? [{ key: 'CONTRATO_REGENCIA', label: 'Contrato de Regencia' }] : []),
-        ...(isNursing ? [{ key: 'ENFERMERIA', label: 'Carné de Enfermería — JVPE (anualidad)' }] : []),
+        ...(isNursing ? [{ key: 'ENFERMERIA', label: 'Carné de Enfermería — JVPE' }] : []),
+        ...(isNursing ? [{ key: 'ANUALIDAD_JVPE', label: 'Anualidad JVPE — solvencia del año en curso' }] : []),
     ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursing]);
 
     const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
@@ -797,6 +804,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 if (!aiError && aiResponse?.success && aiResponse.aiData?.expDate && !expiryDate) {
                     expiryDate = aiResponse.aiData.expDate;
                 }
+            }
+            // Anualidad JVPQF/JVPE: fecha límite fija del CSSP (31 de marzo, igual para
+            // todos los profesionales de salud inscritos, ver reference_sv_pharma_health_regulations)
+            // — se autocompleta solo si no hay fecha ya escrita a mano ni detectada por IA en el recibo.
+            if (!expiryDate && (category === 'ANUALIDAD_JVPQF' || category === 'ANUALIDAD_JVPE')) {
+                expiryDate = getNextAnnualidadCsspDueDate();
             }
             updateDoc(category, { url, file_name: file.name, expiry_date: expiryDate });
         } catch (err) {
@@ -2104,6 +2117,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         )}
                                         {cat.key === 'ENFERMERIA' && (
                                             <PortalInput label="Número de Carné JVPE" name="nursing_license_number" value={formData.nursing_license_number} onChange={handleChange} icon={Hash} placeholder="N° JVPE" colSpan={1} />
+                                        )}
+                                        {(cat.key === 'ANUALIDAD_JVPQF' || cat.key === 'ANUALIDAD_JVPE') && (
+                                            <p className="text-[9px] text-slate-400 font-bold mb-2">Comprobante de pago del año en curso (recibo/mandamiento de pago cancelado) — trámite distinto al carné, se renueva cada año. Fecha límite CSSP: 31 de marzo (igual para todos los profesionales de salud inscritos) — se autocompleta al subir el recibo si no escribes otra fecha.</p>
                                         )}
                                         {renderDocUploadArea(cat.key)}
                                     </div>

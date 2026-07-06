@@ -49,11 +49,18 @@ const registerCatalogEntry = (educationLevel, specialty, profession, maestriaTit
     upsertCatalogEntries(rows);
 };
 
+// Un empleado puede tener varias enfermedades crónicas a la vez — lista libre,
+// cada entrada es su propio valor de catálogo o texto libre ("Otra...").
+const normalizeChronicConditions = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    return arr.map(c => normalizeCatalogValue(c)).filter(Boolean);
+};
+
 // Enfermedad crónica / tipo de discapacidad son catálogos independientes de educación
 // (misma tabla education_catalog_entries, categorías propias) — se registran aparte.
-const registerMedicalCatalogEntries = (chronicCondition, disabilityType) => {
+const registerMedicalCatalogEntries = (chronicConditions, disabilityType) => {
     const rows = [];
-    if (chronicCondition) rows.push({ category: 'ENFERMEDAD_CRONICA', value: chronicCondition });
+    for (const c of (chronicConditions || [])) rows.push({ category: 'ENFERMEDAD_CRONICA', value: c });
     if (disabilityType) rows.push({ category: 'TIPO_DISCAPACIDAD', value: disabilityType });
     upsertCatalogEntries(rows);
 };
@@ -535,7 +542,7 @@ export const createEmployeeSlice = (set, get) => ({
                 emergency_contact_relationship: formData.emergency_contact_relationship || null,
                 emergency_contact_extra_phones: Array.isArray(formData.emergency_contact_extra_phones) ? formData.emergency_contact_extra_phones.map(p => (p || '').trim()).filter(Boolean) : [],
                 economic_dependents: normalizeEconomicDependents(formData.economic_dependents),
-                chronic_condition: normalizeCatalogValue(formData.chronic_condition),
+                chronic_conditions: normalizeChronicConditions(formData.chronic_conditions),
                 has_disability: !!formData.has_disability,
                 disability_type: formData.has_disability ? normalizeCatalogValue(formData.disability_type) : null,
                 disability_grade: formData.has_disability ? (formData.disability_grade || null) : null,
@@ -579,7 +586,7 @@ export const createEmployeeSlice = (set, get) => ({
             }
             registerCatalogEntry(dbPayload.education_level, dbPayload.education_specialty, dbPayload.profession, dbPayload.maestria_title);
             registerSkillCatalogEntries(dbPayload.additional_skills);
-            registerMedicalCatalogEntries(dbPayload.chronic_condition, dbPayload.disability_type);
+            registerMedicalCatalogEntries(dbPayload.chronic_conditions, dbPayload.disability_type);
 
             const uploadedFile = formData.file || formData.photo;
             if (uploadedFile && uploadedFile instanceof File) {
@@ -773,7 +780,7 @@ export const createEmployeeSlice = (set, get) => ({
             if (updatedData.economic_dependents !== undefined) {
                 dbPayload.economic_dependents = normalizeEconomicDependents(updatedData.economic_dependents);
             }
-            if (updatedData.chronic_condition !== undefined) dbPayload.chronic_condition = normalizeCatalogValue(updatedData.chronic_condition);
+            if (updatedData.chronic_conditions !== undefined) dbPayload.chronic_conditions = normalizeChronicConditions(updatedData.chronic_conditions);
             if (updatedData.has_disability !== undefined || updatedData.disability_type !== undefined || updatedData.disability_grade !== undefined || updatedData.disability_has_certification !== undefined) {
                 const hasDisability = !!updatedData.has_disability;
                 dbPayload.has_disability = hasDisability;
@@ -828,8 +835,8 @@ export const createEmployeeSlice = (set, get) => ({
                 registerCatalogEntry(dbPayload.education_level ?? updated.education_level, dbPayload.education_specialty, dbPayload.profession, dbPayload.maestria_title);
             }
             if (dbPayload.additional_skills !== undefined) registerSkillCatalogEntries(dbPayload.additional_skills);
-            if (dbPayload.chronic_condition !== undefined || dbPayload.disability_type !== undefined) {
-                registerMedicalCatalogEntries(dbPayload.chronic_condition, dbPayload.disability_type);
+            if (dbPayload.chronic_conditions !== undefined || dbPayload.disability_type !== undefined) {
+                registerMedicalCatalogEntries(dbPayload.chronic_conditions, dbPayload.disability_type);
             }
 
             // Sync branch assignments to junction table if provided

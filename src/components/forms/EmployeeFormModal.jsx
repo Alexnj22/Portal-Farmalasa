@@ -456,7 +456,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 first_names: '', last_names: '', username: '', phone: '', extra_phones: [], email: '', address: '', extra_addresses: [], dui: '', alt_identity_document: '', alt_identity_document_type: '', birth_date: '', nationality: 'Salvadoreña',
                 gender: '', blood_type: '', marital_status: '', emergency_contact_name: '', emergency_contact_phone: '',
                 emergency_contact_relationship: '', emergency_contact_extra_phones: [], economic_dependents: [],
-                chronic_condition: '', has_disability: false, disability_type: '', disability_grade: '', disability_has_certification: false,
+                chronic_conditions: [], has_disability: false, disability_type: '', disability_grade: '', disability_has_certification: false,
                 has_motorcycle: false, has_car: false, has_motorcycle_license: false, has_car_license: false, has_srs_accreditation: false,
                 nursing_license_number: '', pharmacist_license_number: '',
                 employee_documents: [],
@@ -707,6 +707,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         const arr = [...(prev.emergency_contact_extra_phones || [])]; arr[idx] = applyMask(value, 'PHONE'); return { ...prev, emergency_contact_extra_phones: arr };
     });
     const removeEmergencyPhone = (idx) => setFormData(prev => ({ ...prev, emergency_contact_extra_phones: (prev.emergency_contact_extra_phones || []).filter((_, i) => i !== idx) }));
+
+    // Un empleado puede tener varias enfermedades crónicas simultáneas — lista libre,
+    // cada entrada es su propio catálogo con fallback "Otra...".
+    const addChronicCondition = () => setFormData(prev => ({ ...prev, chronic_conditions: [...(prev.chronic_conditions || []), ''] }));
+    const updateChronicCondition = (idx, value) => setFormData(prev => {
+        const arr = [...(prev.chronic_conditions || [])];
+        arr[idx] = value;
+        return { ...prev, chronic_conditions: arr };
+    });
+    const removeChronicCondition = (idx) => setFormData(prev => ({ ...prev, chronic_conditions: (prev.chronic_conditions || []).filter((_, i) => i !== idx) }));
 
     const addDependent = () => setFormData(prev => ({ ...prev, economic_dependents: [...(prev.economic_dependents || []), { name: '', birth_date: '', age: '', age_only: false, relationship: '', address: '', department: '', municipality: '' }] }));
     const updateDependent = (idx, field, value) => setFormData(prev => {
@@ -1016,6 +1026,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             if (isDependentAgeInvalid(dep)) return false;
         }
 
+        if (formData?.has_disability && (!formData?.disability_type || formData.disability_type === OTRA_ESPECIALIDAD || !formData?.disability_grade)) return false;
+
         if (!formData?.branch_id) return false;
         if (!formData?.role_id) return false;
 
@@ -1038,7 +1050,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         phoneHasError, formData?.extra_phones, emailInvalid,
         formData?.education_level, formData?.education_grade_completed, formData?.education_specialty,
         formData?.profession, formData?.is_studying, formData?.has_maestria, formData?.maestria_title,
-        studyEndInPast, maestriaStudyEndInPast, formData?.economic_dependents, formData?.branch_id, formData?.role_id,
+        studyEndInPast, maestriaStudyEndInPast, formData?.economic_dependents,
+        formData?.has_disability, formData?.disability_type, formData?.disability_grade,
+        formData?.branch_id, formData?.role_id,
         salaryInvalid, hoursInvalid, contractDatesInvalid, temporalBasisMissing, temporalReasonMissing,
         isssIncomplete, afpIncomplete, formData?.code,
     ]);
@@ -1811,37 +1825,47 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         <LiquidSelect value={formData.blood_type} onChange={(val) => handleSelectChange('blood_type', val)} options={BLOOD_TYPE_OPTIONS} placeholder="Vital..." clearable={false} {...portalSelectProps} />
                                     </div>
                                 </div>
-                                {(() => {
-                                    const isOtherChronic = isCatalogOther(formData.chronic_condition, enfermedadCronicaOptions);
-                                    return (
-                                        <>
-                                            <div className="relative z-10 md:col-span-2">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 block">Enfermedad Crónica / Condición Médica</label>
-                                                <CatalogSelect
-                                                    value={formData.chronic_condition}
-                                                    onChange={(val) => handleSelectChange('chronic_condition', val)}
-                                                    options={enfermedadCronicaOptions}
-                                                    portalSelectProps={portalSelectProps}
-                                                    inputHoverClass={inputHoverClass}
-                                                    placeholder="Ninguna conocida..."
-                                                    clearable
-                                                />
-                                            </div>
-                                            {isOtherChronic && (
-                                                <div className="md:col-span-3 animate-in fade-in zoom-in-95 duration-200">
-                                                    <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 block">Especifica la Condición</label>
-                                                    <CatalogOtherInput
-                                                        value={formData.chronic_condition}
-                                                        onChange={(val) => handleSelectChange('chronic_condition', val)}
-                                                        inputHoverClass={inputHoverClass}
-                                                        placeholder="Especifica la enfermedad/condición"
-                                                    />
-                                                </div>
-                                            )}
-                                        </>
-                                    );
-                                })()}
                             </div>
+
+                            <p className="text-[10px] font-black uppercase tracking-widest text-red-400/70 mt-4 mb-3 pt-4 border-t border-red-100/70 flex items-center gap-1.5">
+                                <HeartPulse size={12} strokeWidth={2.5} /> Enfermedad Crónica / Condición Médica
+                            </p>
+                            {(formData.chronic_conditions || []).length > 0 && (
+                                <div className="flex flex-col gap-2 mb-3">
+                                    {(formData.chronic_conditions || []).map((cond, idx) => {
+                                        const isOtherChronic = isCatalogOther(cond, enfermedadCronicaOptions);
+                                        return (
+                                            <div key={idx} className="flex items-start gap-2">
+                                                <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                    <CatalogSelect
+                                                        value={cond}
+                                                        onChange={(val) => updateChronicCondition(idx, val)}
+                                                        options={enfermedadCronicaOptions}
+                                                        portalSelectProps={portalSelectProps}
+                                                        inputHoverClass={inputHoverClass}
+                                                        placeholder="Seleccionar..."
+                                                    />
+                                                    {isOtherChronic && (
+                                                        <CatalogOtherInput
+                                                            value={cond}
+                                                            onChange={(val) => updateChronicCondition(idx, val)}
+                                                            inputHoverClass={inputHoverClass}
+                                                            placeholder="Especifica la enfermedad/condición"
+                                                        />
+                                                    )}
+                                                </div>
+                                                <button type="button" onClick={() => removeChronicCondition(idx)} title="Quitar condición"
+                                                    className="w-10 h-10 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                    <X size={14} strokeWidth={2.5} />
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                            <button type="button" onClick={addChronicCondition} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#0052CC] hover:text-blue-700 transition-colors">
+                                <Plus size={12} strokeWidth={3} /> Agregar Condición
+                            </button>
 
                             <p className="text-[10px] font-black uppercase tracking-widest text-red-400/70 mt-4 mb-3 pt-4 border-t border-red-100/70 flex items-center gap-1.5">
                                 <ShieldCheck size={12} strokeWidth={2.5} /> Discapacidad
@@ -1856,38 +1880,48 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     return (
                                         <>
                                             <div className="relative z-10 animate-in fade-in zoom-in-95 duration-200">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 block">Tipo de Discapacidad</label>
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 flex items-center justify-between">
+                                                    <span>Tipo de Discapacidad</span>
+                                                    {!formData.disability_type && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200 normal-case tracking-normal">Requerido</span>}
+                                                </label>
                                                 <CatalogSelect
                                                     value={formData.disability_type}
                                                     onChange={(val) => handleSelectChange('disability_type', val)}
                                                     options={tipoDiscapacidadOptions}
                                                     portalSelectProps={portalSelectProps}
                                                     inputHoverClass={inputHoverClass}
+                                                    hasError={!formData.disability_type}
                                                     placeholder="Tipo..."
-                                                    clearable
                                                 />
                                             </div>
                                             <div className="relative z-10 animate-in fade-in zoom-in-95 duration-200">
-                                                <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 block">Grado</label>
-                                                <div className={`rounded-[1rem] h-[40px] ${inputHoverClass}`}>
-                                                    <LiquidSelect value={formData.disability_grade} onChange={(val) => handleSelectChange('disability_grade', val)} options={DISABILITY_GRADE_OPTIONS} placeholder="Grado..." {...portalSelectProps} />
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 flex items-center justify-between">
+                                                    <span>Grado</span>
+                                                    {!formData.disability_grade && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200 normal-case tracking-normal">Requerido</span>}
+                                                </label>
+                                                <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${!formData.disability_grade ? '!border-red-400 !bg-red-50/50' : ''}`}>
+                                                    <LiquidSelect value={formData.disability_grade} onChange={(val) => handleSelectChange('disability_grade', val)} options={DISABILITY_GRADE_OPTIONS} placeholder="Grado..." clearable={false} {...portalSelectProps} />
                                                 </div>
                                             </div>
+                                            <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-red-100/70 bg-white/60">
+                                                <input type="checkbox" checked={!!formData.disability_has_certification} onChange={(e) => handleSelectChange('disability_has_certification', e.target.checked)} className="w-4 h-4 rounded accent-red-500 shrink-0" />
+                                                <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Cuenta con certificación (ISRI / CONAIPD)</span>
+                                            </label>
                                             {isOtherDisability && (
                                                 <div className="md:col-span-3 animate-in fade-in zoom-in-95 duration-200">
-                                                    <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 block">Especifica el Tipo de Discapacidad</label>
+                                                    <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 flex items-center justify-between">
+                                                        <span>Especifica el Tipo de Discapacidad</span>
+                                                        {formData.disability_type === OTRA_ESPECIALIDAD && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200 normal-case tracking-normal">Requerido</span>}
+                                                    </label>
                                                     <CatalogOtherInput
                                                         value={formData.disability_type}
                                                         onChange={(val) => handleSelectChange('disability_type', val)}
                                                         inputHoverClass={inputHoverClass}
+                                                        hasError={formData.disability_type === OTRA_ESPECIALIDAD}
                                                         placeholder="Especifica el tipo de discapacidad"
                                                     />
                                                 </div>
                                             )}
-                                            <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-red-100/70 bg-white/60 md:col-span-3 animate-in fade-in zoom-in-95 duration-200">
-                                                <input type="checkbox" checked={!!formData.disability_has_certification} onChange={(e) => handleSelectChange('disability_has_certification', e.target.checked)} className="w-4 h-4 rounded accent-red-500" />
-                                                <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Cuenta con certificación de discapacidad (ISRI / CONAIPD)</span>
-                                            </label>
                                             {formData.disability_has_certification && (
                                                 <p className="text-[9px] text-red-500/80 font-bold -mt-1 ml-1 md:col-span-3">El documento correspondiente ya está disponible para subir en la pestaña Documentos.</p>
                                             )}
@@ -1908,7 +1942,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </div>
                                 </div>
 
-                                <div className="md:col-span-3">
+                                <div>
                                     <label className="text-[10px] font-black uppercase tracking-widest text-red-500/80 ml-1 mb-1.5 flex items-center justify-between">
                                         <span>Teléfono de Emergencia {emergPhoneHasError && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md ml-1">{emergPhoneErrorMsg}</span>}</span>
                                         <button type="button" onClick={addEmergencyPhone} className="text-[#0052CC] hover:text-blue-700 flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider transition-colors">

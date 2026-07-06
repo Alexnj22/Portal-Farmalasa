@@ -236,7 +236,7 @@ const LiquidSelect = ({
         >
             {/* Si se abre hacia arriba, mostramos los resultados en el mismo orden, pero invertimos la posición del botón "Limpiar/Placeholder" si es necesario. Por UX, es mejor dejarlo arriba */}
             <div className="flex flex-col gap-1 w-full">
-                {!searchTerm && clearable && value !== '' && (
+                {!searchTerm && clearable && value != null && value !== '' && (
                     <button
                         type="button"
                         onClick={() => handleSelect('')}

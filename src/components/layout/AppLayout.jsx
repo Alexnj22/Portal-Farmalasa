@@ -109,7 +109,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         const firstName = user?.name?.split(' ')[0] || '';
         useToastStore.getState().showToast(
             `¡Feliz cumpleaños, ${firstName}! 🎂`,
-            `Hoy cumples ${myBirthday.turningAge} años — todo el equipo de Farmalasa te desea un día increíble.`,
+            `Hoy cumples ${myBirthday.turningAge} años — todo el equipo de Farmacias La Popular y La Salud te desea un día increíble.`,
             'birthday',
             'light',
             10000

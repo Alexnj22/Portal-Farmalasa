@@ -403,7 +403,7 @@ export const getBirthdayAnnouncement = ({ employee, rawType, nowDate }) => {
     return {
       id: `birthday_${employee.id}`,
       title: `¡Feliz Cumpleaños, ${firstName}! 🎂`,
-      message: `Hoy cumples ${age} años. ¡Todo el equipo de Farmalasa te desea un día increíble lleno de alegría y celebración! 🎉🥳`,
+      message: `Hoy cumples ${age} años. ¡Todo el equipo de Farmacias La Popular y La Salud te desea un día increíble lleno de alegría y celebración! 🎉🥳`,
       priority: 'BIRTHDAY',
       isBirthday: true,
     };

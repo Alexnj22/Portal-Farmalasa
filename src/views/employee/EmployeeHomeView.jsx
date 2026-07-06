@@ -472,7 +472,7 @@ const EmployeeHomeView = () => {
                                     ¡Feliz cumpleaños, {user?.name?.split(' ')[0]}! 🎂 Hoy cumples {myBirthday.turningAge} años.
                                 </p>
                                 <p className="text-[11px] font-medium text-slate-500 mt-0.5">
-                                    Todo el equipo de Farmalasa te desea un día increíble. ¡Que lo disfrutes!
+                                    Todo el equipo de Farmacias La Popular y La Salud te desea un día increíble. ¡Que lo disfrutes!
                                 </p>
                             </div>
                         </div>

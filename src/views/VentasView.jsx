@@ -1402,7 +1402,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
     const fetchProductos = useCallback(async (isRetry = false) => {
         const cacheKey = `${fini}|${ffin}|${filterBranch ?? ''}`;
-        const lsKey    = `ppv2_${cacheKey}`;
+        // ppv3: bump de versión de la key — ppv2 pudo haber guardado resultados
+        // truncados en 1000 filas (bug corregido en v2.9.15); esto invalida esa
+        // caché vieja sin depender de que el usuario borre localStorage a mano.
+        const lsKey    = `ppv3_${cacheKey}`;
         const TTL_MS   = 20 * 60 * 1000; // 20 minutes
 
         // Cache only applies when not searching — search results are never cached
@@ -1480,8 +1483,11 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 productsCache.current.set(cacheKey, allRows);
                 try {
                     Object.keys(localStorage)
-                        .filter(k => k.startsWith('ppv2_') && k !== lsKey)
+                        // ppv2_ = caché vieja pre-fix (siempre se purga); ppv3_ = caché
+                        // actual, solo se purga si venció su TTL.
+                        .filter(k => k.startsWith('ppv2_') || (k.startsWith('ppv3_') && k !== lsKey))
                         .forEach(k => {
+                            if (k.startsWith('ppv2_')) { localStorage.removeItem(k); return; }
                             try { const e = JSON.parse(localStorage.getItem(k)); if (Date.now() - e.ts > TTL_MS) localStorage.removeItem(k); } catch (_) {}
                         });
                     localStorage.setItem(lsKey, JSON.stringify({ data: allRows, ts: Date.now() }));

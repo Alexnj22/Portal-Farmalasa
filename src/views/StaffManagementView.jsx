@@ -466,7 +466,9 @@ const StaffManagementView = ({
   setSelectedBranch,
 }) => {
   const navigate = useNavigate(); // 🚨 2. INICIALIZAMOS EL ROUTER
-  const { employees, branches, bootStatus } = useStaff();
+  const employees = useStaff(s => s.employees);
+  const branches = useStaff(s => s.branches);
+  const bootStatus = useStaff(s => s.bootStatus);
   const { user, hasPermission, getScope } = useAuth();
   const canEdit = hasPermission('staff_list', 'can_edit');
 

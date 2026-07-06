@@ -26,7 +26,10 @@ import EmployeeDocumentsList from '../components/common/EmployeeDocumentsList';
 
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
-    const { employees, branches, shifts, holidays } = useStaffStore();
+    const employees = useStaffStore(s => s.employees);
+    const branches = useStaffStore(s => s.branches);
+    const shifts = useStaffStore(s => s.shifts);
+    const holidays = useStaffStore(s => s.holidays);
     const { user, hasPermission } = useAuth();
     const canEdit = hasPermission('staff_detail', 'can_edit');
     

@@ -348,7 +348,13 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const EmployeeRequestsView = () => {
     const { user } = useAuth();
-    const { createRequest, cancelRequest, approvePeerRequest, rejectPeerRequest, holidays, employees, uploadFileToStorage } = useStaffStore();
+    const createRequest = useStaffStore(s => s.createRequest);
+    const cancelRequest = useStaffStore(s => s.cancelRequest);
+    const approvePeerRequest = useStaffStore(s => s.approvePeerRequest);
+    const rejectPeerRequest = useStaffStore(s => s.rejectPeerRequest);
+    const holidays = useStaffStore(s => s.holidays);
+    const employees = useStaffStore(s => s.employees);
+    const uploadFileToStorage = useStaffStore(s => s.uploadFileToStorage);
 
     const [requests, setRequests]         = useState([]);
     const [peerRequests, setPeerRequests] = useState([]);

@@ -187,7 +187,11 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
 // TAB SHIFTS — CATÁLOGO GLOBAL
 // ============================================================================
 const TabShifts = ({ branches, searchTerm = '' }) => {
-    const { shifts, addShift, updateShift, archiveShift, unarchiveShift } = useStaffStore();
+    const shifts = useStaffStore(s => s.shifts);
+    const addShift = useStaffStore(s => s.addShift);
+    const updateShift = useStaffStore(s => s.updateShift);
+    const archiveShift = useStaffStore(s => s.archiveShift);
+    const unarchiveShift = useStaffStore(s => s.unarchiveShift);
     const { showToast } = useToastStore();
 
     const [isLoading, setIsLoading]       = useState(false);

@@ -1341,7 +1341,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         if (maxIdx === -1) return DRILL_TIERS;
         return DRILL_TIERS.filter(t => DRILL_TIER_ORDER.indexOf(t.key) <= maxIdx);
     }, [maxPriceLevel]);
-    const { branches, employees } = useStaff();
+    const branches = useStaff(s => s.branches);
+    const employees = useStaff(s => s.employees);
     const [rows, setRows]           = useState([]);
     const [loading, setLoading]     = useState(true);
     const [error, setError]         = useState(null);
@@ -2145,7 +2146,8 @@ const TABS = [
 ];
 
 export default function VentasView() {
-    const { branches, employees } = useStaff();
+    const branches = useStaff(s => s.branches);
+    const employees = useStaff(s => s.employees);
     const { user: currentUser, hasPermission, getScope } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
 

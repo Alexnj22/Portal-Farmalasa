@@ -23,7 +23,10 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     const navigate = useNavigate(); // 🚨 2. INICIALIZAMOS NAVEGACIÓN
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('branches', 'can_edit');
-    const { employees, getBranchKiosks, branches, getBranchHistory } = useStaff();
+    const employees = useStaff(s => s.employees);
+    const getBranchKiosks = useStaff(s => s.getBranchKiosks);
+    const branches = useStaff(s => s.branches);
+    const getBranchHistory = useStaff(s => s.getBranchHistory);
     
     const [activeTab, setActiveTab] = useState('history');
     const [, setKioskCount] = useState(0);

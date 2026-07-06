@@ -31,7 +31,10 @@ import BranchChips from "../components/common/BranchChips";
 import { useAuth } from '../context/AuthContext';
 
 const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
-  const { employees = [], branches = [], shifts = [], loadAttendanceLastDays } = useStaff();
+  const employees = useStaff(s => s.employees) || [];
+  const branches = useStaff(s => s.branches) || [];
+  const shifts = useStaff(s => s.shifts) || [];
+  const loadAttendanceLastDays = useStaff(s => s.loadAttendanceLastDays);
   const { user, getScope } = useAuth();
 
   const [currentTime, setCurrentTime] = useState(new Date());

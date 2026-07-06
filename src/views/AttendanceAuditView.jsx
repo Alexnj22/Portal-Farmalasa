@@ -911,10 +911,12 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   const { user, hasPermission, getScope } = useAuth();
   const canEdit   = hasPermission('time_audit', 'can_edit');
   const showToast = useToastStore(s => s.showToast);
-  const {
-    employees: storeEmployees, branches: storeBranches, shifts: storeShifts,
-    appendAuditLog, loadAttendanceLastDays, insertAttendancePunchAt,
-  } = useStaff();
+  const storeEmployees = useStaff(s => s.employees);
+  const storeBranches = useStaff(s => s.branches);
+  const storeShifts = useStaff(s => s.shifts);
+  const appendAuditLog = useStaff(s => s.appendAuditLog);
+  const loadAttendanceLastDays = useStaff(s => s.loadAttendanceLastDays);
+  const insertAttendancePunchAt = useStaff(s => s.insertAttendancePunchAt);
 
   // ── Demo mode (auto — activates only when no real employees exist) ─────────
   const mockData   = useMemo(() => buildMockData(), []);

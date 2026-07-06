@@ -170,7 +170,14 @@ const AnnouncementsView = ({ openModal }) => {
   const announcements = storeAnnouncements || [];
   
   // 🚨 NUEVO: Extraemos fetchInitialData para poder recargar desde la DB
-  const { branches, employees, roles, createAnnouncement, updateAnnouncement, deleteAnnouncement, archiveAnnouncement, fetchInitialData } = useStaff();
+  const branches = useStaff(state => state.branches);
+  const employees = useStaff(state => state.employees);
+  const roles = useStaff(state => state.roles);
+  const createAnnouncement = useStaff(state => state.createAnnouncement);
+  const updateAnnouncement = useStaff(state => state.updateAnnouncement);
+  const deleteAnnouncement = useStaff(state => state.deleteAnnouncement);
+  const archiveAnnouncement = useStaff(state => state.archiveAnnouncement);
+  const fetchInitialData = useStaff(state => state.fetchInitialData);
   const { user, hasPermission, getScope } = useAuth();
   const canEdit = hasPermission('announcements', 'can_edit');
   // BRANCH scope: el usuario solo puede dirigir avisos a su propia sucursal

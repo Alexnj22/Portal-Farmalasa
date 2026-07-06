@@ -215,7 +215,15 @@ const HolidaysPanel = ({
 
 // ── SCHEDULES VIEW ─────────────────────────────────────────────────────────────
 const SchedulesView = ({ openModal, setView }) => {
-    const { employees, shifts, branches, holidays, fetchWeekRosters, publishWeekRosters, fetchBoot, addHoliday, deleteHoliday } = useStaff();
+    const employees = useStaff(s => s.employees);
+    const shifts = useStaff(s => s.shifts);
+    const branches = useStaff(s => s.branches);
+    const holidays = useStaff(s => s.holidays);
+    const fetchWeekRosters = useStaff(s => s.fetchWeekRosters);
+    const publishWeekRosters = useStaff(s => s.publishWeekRosters);
+    const fetchBoot = useStaff(s => s.fetchBoot);
+    const addHoliday = useStaff(s => s.addHoliday);
+    const deleteHoliday = useStaff(s => s.deleteHoliday);
     const { hasPermission, getScope } = useAuth();
     const canEdit  = hasPermission('schedules', 'can_edit');
     const SCHED_TABS = ALL_SCHED_TABS.filter(t => hasPermission(`schedules_tab_${t.key}`));

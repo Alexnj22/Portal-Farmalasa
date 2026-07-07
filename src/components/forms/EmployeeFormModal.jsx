@@ -1830,9 +1830,26 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <p className="text-[10px] font-black uppercase tracking-widest text-red-400/70 mt-4 mb-3 pt-4 border-t border-red-100/70 flex items-center gap-1.5">
                                 <HeartPulse size={12} strokeWidth={2.5} /> Enfermedad Crónica / Condición Médica
                             </p>
-                            {(formData.chronic_conditions || []).length > 0 && (
+                            {(formData.chronic_conditions || []).some(c => c && c !== OTRA_ESPECIALIDAD) && (
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {(formData.chronic_conditions || []).map((cond, idx) => {
+                                        if (!cond || cond === OTRA_ESPECIALIDAD) return null;
+                                        return (
+                                            <span key={idx} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full bg-white border border-red-200 text-red-600 text-[11px] font-bold shadow-sm animate-in fade-in zoom-in-95 duration-200">
+                                                {cond}
+                                                <button type="button" onClick={() => removeChronicCondition(idx)} title="Quitar condición"
+                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-red-300 hover:text-white hover:bg-red-500 transition-colors">
+                                                    <X size={11} strokeWidth={2.5} />
+                                                </button>
+                                            </span>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                            {(formData.chronic_conditions || []).some(c => !c || c === OTRA_ESPECIALIDAD) && (
                                 <div className="flex flex-col gap-2 mb-3">
                                     {(formData.chronic_conditions || []).map((cond, idx) => {
+                                        if (cond && cond !== OTRA_ESPECIALIDAD) return null;
                                         const isOtherChronic = isCatalogOther(cond, enfermedadCronicaOptions);
                                         return (
                                             <div key={idx} className="flex items-start gap-2">

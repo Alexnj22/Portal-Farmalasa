@@ -54,6 +54,7 @@ const LiquidSelect = ({
     });
 
     const isDark = theme === 'dark';
+    const lastCoordsRef = useRef(null);
 
     // --- VARIABLES DINÁMICAS SEGÚN MODO COMPACTO ---
     const textStyle = `${compact ? 'text-[12px]' : 'text-[13px]'} font-bold`;
@@ -95,14 +96,24 @@ const LiquidSelect = ({
                 finalMaxHeight = Math.min(DROPDOWN_IDEAL_HEIGHT, spaceBelow - MARGIN);
             }
 
-            setCoords({
+            const next = {
                 top: finalTop,
                 left: rect.left,
                 width: rect.width,
                 maxHeight: Math.max(finalMaxHeight, 150),
                 transformOrigin: finalOrigin,
                 isFlipped: flipped
-            });
+            };
+
+            // Evita re-renders innecesarios cuando el tracking continuo (ver
+            // abajo) recalcula cada frame pero la posición no cambió.
+            const prev = lastCoordsRef.current;
+            if (!prev || prev.top !== next.top || prev.left !== next.left ||
+                prev.width !== next.width || prev.maxHeight !== next.maxHeight ||
+                prev.transformOrigin !== next.transformOrigin) {
+                lastCoordsRef.current = next;
+                setCoords(next);
+            }
         }
     };
 
@@ -124,27 +135,48 @@ const LiquidSelect = ({
             }
         };
 
-        const handleScroll = (e) => {
-            if (dropdownRef.current && (dropdownRef.current === e.target || dropdownRef.current.contains(e.target))) {
-                return;
-            }
-            if (isOpen) {
-                setIsOpen(false);
-            }
-        };
-
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
             document.addEventListener('keydown', handleEscape);
-            window.addEventListener('scroll', handleScroll, true);
-            window.addEventListener('resize', updateCoords);
         }
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('keydown', handleEscape);
-            window.removeEventListener('scroll', handleScroll, true);
-            window.removeEventListener('resize', updateCoords);
         };
+    }, [isOpen]);
+
+    // 🚨 SEGUIMIENTO CONTINUO DE POSICIÓN (fix bug histórico de selects)
+    // Antes, la posición se calculaba UNA sola vez al abrir y luego se
+    // forzaba el cierre ante CUALQUIER scroll de la página (incluso de
+    // contenedores sin relación con este select — window.addEventListener
+    // con capture:true recibe el scroll de cualquier elemento anidado).
+    // Eso producía dos síntomas reportados como "el select no abre bien":
+    //   1) Si el trigger vive dentro de un bloque que recién apareció con
+    //      una animación (animate-in zoom-in-95, muy común en el proyecto
+    //      para campos condicionales), un click justo durante esos ~200ms
+    //      capturaba el rect a mitad de la animación → el dropdown quedaba
+    //      flotando en una posición vieja, desconectado del trigger real.
+    //   2) Un scroll en cualquier otra parte de la página cerraba el
+    //      select recién abierto, percibido como "no abre" o "se oculta".
+    // Ahora se recalcula en cada frame mientras está abierto (igual que
+    // Popper/Floating UI), así el dropdown sigue al trigger en vivo pase
+    // lo que pase (animación, scroll, resize de hermanos), y solo se
+    // cierra si el trigger deja de estar visible en el viewport.
+    useEffect(() => {
+        if (!isOpen) return;
+        let rafId;
+        const tick = () => {
+            if (!selectRef.current) return;
+            const rect = selectRef.current.getBoundingClientRect();
+            if (rect.bottom < 0 || rect.top > window.innerHeight) {
+                setIsOpen(false);
+                return;
+            }
+            updateCoords();
+            rafId = requestAnimationFrame(tick);
+        };
+        rafId = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(rafId);
     }, [isOpen]);
 
     const handleOpen = () => {

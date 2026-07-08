@@ -733,8 +733,11 @@ const CLASIF_STYLE = {
     Regular:   { bg: 'bg-blue-50 border-blue-200 text-blue-700',         Icon: Package    },
 };
 
-function PurchaseHistorySection({ purchases }) {
+function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
     const [showAll, setShowAll] = useState(false);
+
+    if (!canSeeCosts)
+        return <p className="text-[11px] text-slate-300 italic">Sin permiso para ver costos de compra.</p>;
 
     if (!purchases || purchases.length === 0)
         return <p className="text-[11px] text-slate-300 italic">Sin historial de compras registrado.</p>;
@@ -822,7 +825,8 @@ function PurchaseHistorySection({ purchases }) {
 // ── ExpandedProductRow ────────────────────────────────────────────────────────
 
 function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated }) {
-    const { maxPriceLevel } = useAuth();
+    const { maxPriceLevel, hasPermission } = useAuth();
+    const canSeeCosts = hasPermission('productos_tab_catalogo_costos');
 
     // ── Expanded-row theme tokens ────────────────────────────────────────────
     const xk = {
@@ -1249,7 +1253,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                         <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-1.5`}>
                             <Package size={9} /> Historial de compras
                         </p>
-                        <PurchaseHistorySection purchases={data?.purchases || []} />
+                        <PurchaseHistorySection purchases={data?.purchases || []} canSeeCosts={canSeeCosts} />
                     </div>
 
                     {/* ── Guardar / Cancelar ── */}
@@ -2376,7 +2380,8 @@ export default function TabCatalogo({
     catOptions        = [],
     onCategoryCreated = null,
 }) {
-    const { maxPriceLevel } = useAuth();
+    const { maxPriceLevel, hasPermission } = useAuth();
+    const canSeeCosts = hasPermission('productos_tab_catalogo_costos');
     const allowedPriceFields = useMemo(() => {
         if (!maxPriceLevel) return PRICE_FIELDS;
         const maxIdx = PRICE_LEVEL_ORDER.indexOf(maxPriceLevel);
@@ -2669,12 +2674,14 @@ export default function TabCatalogo({
                     supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                     supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                     supabase.from('product_active_principles').select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden'),
-                    supabase.from('purchase_receipt_items').select('cantidad, precio_unitario, purchase_receipts(fecha, proveedor)').eq('erp_product_id', productId).order('receipt_id', { ascending: false }).limit(60),
+                    canSeeCosts
+                    ? supabase.from('purchase_receipt_items').select('cantidad, precio_unitario, purchase_receipts(fecha, proveedor)').eq('erp_product_id', productId).order('receipt_id', { ascending: false }).limit(60)
+                    : Promise.resolve({ data: [] }),
                 ]);
                 setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [] } }));
             } catch { /* silent */ }
         }, 120);
-    }, [expandedCache]);
+    }, [expandedCache, canSeeCosts]);
 
     const cancelPrefetch = useCallback(() => { clearTimeout(prefetchTimerRef.current); }, []);
 
@@ -2691,11 +2698,13 @@ export default function TabCatalogo({
                 supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                 supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                 supabase.from('product_active_principles').select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden'),
-                supabase.from('purchase_receipt_items').select('cantidad, precio_unitario, purchase_receipts(fecha, proveedor)').eq('erp_product_id', productId).order('receipt_id', { ascending: false }).limit(60),
+                canSeeCosts
+                    ? supabase.from('purchase_receipt_items').select('cantidad, precio_unitario, purchase_receipts(fecha, proveedor)').eq('erp_product_id', productId).order('receipt_id', { ascending: false }).limit(60)
+                    : Promise.resolve({ data: [] }),
             ]);
             setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [] } }));
         } finally { setLoadingExpandedId(null); }
-    }, [expandedId, expandedCache, cancelPrefetch]);
+    }, [expandedId, expandedCache, cancelPrefetch, canSeeCosts]);
 
     const handlePhotoUpdated = useCallback((productId, url) => {
         setProducts(ps => ps.map(p => p.id === productId ? { ...p, foto_url: url } : p));

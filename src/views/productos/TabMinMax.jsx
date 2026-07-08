@@ -800,6 +800,8 @@ function AbcXyzBadge({ abc, xyz }) {
 // ─── Expanded panel — multi-branch view + current branch breakdown ────────────
 
 function ExpandedPanel({ row, cycleDays }) {
+    const { hasPermission } = useAuth();
+    const canSeeCosts  = hasPermission('minmax_ver_costos');
     const pres        = row.presentations || [];
     const stock       = Number(row.current_stock);
     const minN        = Number(row.effective_min);
@@ -844,12 +846,16 @@ function ExpandedPanel({ row, cycleDays }) {
                 .eq('erp_sucursal_id', row._erp_sucursal_id)
                 .order('captured_at', { ascending: false })
                 .limit(5),
-            supabase.from('product_cost_history')
-                .select('fecha, proveedor, precio_unitario, cantidad, lote, fecha_vencimiento')
-                .eq('erp_product_id', row.erp_product_id)
-                .order('fecha', { ascending: false })
-                .limit(6),
-            supabase.rpc('get_product_last_sales', { p_erp_product_id: row.erp_product_id, p_erp_sucursal_id: row._erp_sucursal_id === 6 ? null : row._erp_sucursal_id }),
+            canSeeCosts
+                ? supabase.from('product_cost_history')
+                    .select('fecha, proveedor, precio_unitario, cantidad, lote, fecha_vencimiento')
+                    .eq('erp_product_id', row.erp_product_id)
+                    .order('fecha', { ascending: false })
+                    .limit(6)
+                : Promise.resolve({ data: [] }),
+            canSeeCosts
+                ? supabase.rpc('get_product_last_sales', { p_erp_product_id: row.erp_product_id, p_erp_sucursal_id: row._erp_sucursal_id === 6 ? null : row._erp_sucursal_id })
+                : Promise.resolve({ data: [] }),
         ]).then(([{ data: eData }, { data: hData }, { data: pData }, { data: sData }]) => {
             setExpiryData(eData || []);
             setHistoryData(hData || []);
@@ -857,7 +863,7 @@ function ExpandedPanel({ row, cycleDays }) {
             setSaleData(sData || []);
             setDetailReady(true);
         });
-    }, [row.erp_product_id, row._erp_sucursal_id]);
+    }, [row.erp_product_id, row._erp_sucursal_id, canSeeCosts]);
 
     const netStock   = branchData?.filter(b => b.erp_sucursal_id !== 6).reduce((s, b) => s + Number(b.current_stock), 0) ?? null;
     const totalStock = branchData?.reduce((s, b) => s + Number(b.current_stock), 0) ?? null;
@@ -1093,7 +1099,9 @@ function ExpandedPanel({ row, cycleDays }) {
                                     {/* Compras */}
                                     <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
                                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
-                                        {purchaseData.length === 0
+                                        {!canSeeCosts
+                                            ? <span className="text-[10px] text-slate-400 italic">Sin permiso para ver costos de compra</span>
+                                            : purchaseData.length === 0
                                             ? <span className="text-[10px] text-slate-500 italic">Sin compras registradas</span>
                                             : <div className="flex flex-col gap-1">
                                                 {purchaseData.map((p, i) => (
@@ -1117,7 +1125,9 @@ function ExpandedPanel({ row, cycleDays }) {
                                     {/* Ventas — todas las sucursales con badge */}
                                     <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
                                         <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Últimas ventas</span>
-                                        {saleData.length === 0
+                                        {!canSeeCosts
+                                            ? <span className="text-[10px] text-slate-400 italic">Sin permiso para ver costos de compra</span>
+                                            : saleData.length === 0
                                             ? <span className="text-[10px] text-slate-500 italic">Sin ventas registradas</span>
                                             : <div className="flex flex-col gap-1">
                                                 {saleData.map((s, i) => (
@@ -1189,7 +1199,9 @@ function ExpandedPanel({ row, cycleDays }) {
                                     {/* Compras */}
                                     <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
                                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
-                                        {purchaseData.length === 0
+                                        {!canSeeCosts
+                                            ? <span className="text-[10px] text-slate-400 italic">Sin permiso para ver costos de compra</span>
+                                            : purchaseData.length === 0
                                             ? <span className="text-[10px] text-slate-500 italic">Sin compras registradas</span>
                                             : <div className="flex flex-col gap-1">
                                                 {purchaseData.map((p, i) => (
@@ -1213,7 +1225,9 @@ function ExpandedPanel({ row, cycleDays }) {
                                     {/* Ventas de la sucursal */}
                                     <div className="px-4 py-2.5 flex flex-col gap-2">
                                         <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Últimas ventas (sucursal)</span>
-                                        {saleData.length === 0
+                                        {!canSeeCosts
+                                            ? <span className="text-[10px] text-slate-400 italic">Sin permiso para ver costos de compra</span>
+                                            : saleData.length === 0
                                             ? <span className="text-[10px] text-slate-500 italic">Sin ventas registradas</span>
                                             : <div className="flex flex-col gap-1">
                                                 {saleData.map((s, i) => (

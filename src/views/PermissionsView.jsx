@@ -89,12 +89,14 @@ const MODULE_GROUPS = [
         color: 'text-teal-600',
         modules: [
             { key: 'productos', label: 'Productos', desc: 'Catálogo de productos, ubicaciones por sucursal, costos, precios e inventario en tiempo real', icon: Package, hasApprove: false, tabs: [
-                { key: 'productos_tab_catalogo',   label: 'Catálogo'   },
-                { key: 'productos_tab_inventario', label: 'Inventario' },
-                { key: 'productos_tab_sinventa',   label: 'Sin Venta'  },
+                { key: 'productos_tab_catalogo',        label: 'Catálogo'   },
+                { key: 'productos_tab_catalogo_costos', label: 'Catálogo: Costos de Compra' },
+                { key: 'productos_tab_inventario',      label: 'Inventario' },
+                { key: 'productos_tab_sinventa',        label: 'Sin Venta'  },
             ]},
             { key: 'minmax', label: 'Min / Max', desc: 'Análisis de stock mínimo y máximo por sucursal, clasificación ABC, variabilidad de demanda y ajuste manual de parámetros. Aprobar = publicar cambios y resolver solicitudes de ajuste', icon: BarChart2, hasApprove: true, hasScope: true, tabs: [
                 { key: 'minmax_tab_sucursal',    label: 'Sucursal'    },
+                { key: 'minmax_ver_costos',      label: 'Ver Costos (Compras/Ventas)' },
                 { key: 'minmax_tab_red',         label: 'Red'         },
                 { key: 'minmax_tab_solicitudes', label: 'Solicitudes' },
             ]},

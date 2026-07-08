@@ -48,6 +48,38 @@ El límite no aplica cuando el RPC devuelve un único objeto JSON/JSONB. Opción
 - Project ID: `sacecdkdmsdvgqnrsett`
 - Aplicar migraciones vía MCP tool `apply_migration` (no `supabase db push`)
 
+## REGLA CRÍTICA: migraciones sobre tablas calientes (incidente 2026-07-08)
+
+Los crons escriben en `sales_invoices`/`sales_invoice_items`/`inventory`/`products`
+**cada minuto** (sync-dte-sales × 6 sucursales + inventario × 7). Cualquier
+`CREATE/DROP POLICY`, `ALTER TABLE`, `CREATE TRIGGER` sobre esas tablas necesita
+lock ACCESS EXCLUSIVE: si en ese momento hay un sync o un RPC de analytics en
+vuelo, la migración se encola, TODA lectura posterior de la tabla se encola detrás,
+el pool de PostgREST/Auth se agota y el portal entero cae con 504 (el navegador lo
+muestra como error de CORS "access control checks" — engañoso, no es CORS).
+Eso fue exactamente el outage del 2026-07-08 15:48–16:02 UTC (migraciones RLS
+v2.9.23/24 aplicadas en horario mientras corrían los syncs).
+
+**Obligatorio en TODA migración** (DDL de cualquier tipo):
+
+```sql
+SET lock_timeout = '5s';
+-- ... el DDL ...
+```
+
+Si la migración falla con `canceling statement due to lock timeout`, NO congeló
+producción: reintentar (2-3 veces con pausa) hasta que entre. Preferible a un
+freeze global. Para DDL sobre las tablas calientes listadas arriba, además
+considerar aplicar entre 06:00–11:59 UTC (crons de sync inactivos: corren
+`12-23,0-5`).
+
+**Edge functions**: NUNCA ignorar el `error` de un query supabase-js
+(`const { data } = await ...` sin chequear `error`). Un select que falla en
+silencio deja Maps/lookups vacíos y el bug puede vivir semanas sin detectarse
+(pasó con `presentaciones.descripcion`: columna eliminada el 2026-06-08, el
+sync la siguió consultando un mes, error en logs de Postgres cada minuto).
+Al eliminar/renombrar columnas: grep en `supabase/functions/` además de `src/`.
+
 ## Estructura BD — reglas OBLIGATORIAS al crear tablas/funciones/vistas
 
 Hardening completo aplicado 2026-07-02 (`supabase/migrations/20260702_db_hardening_*`).

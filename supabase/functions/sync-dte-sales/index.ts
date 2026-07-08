@@ -74,7 +74,6 @@ async function syncBranch(
   startDate: string,
   endDate: string,
   forceItems: boolean,
-  presLookup: Map<string, number>,
   cookieCache: Map<string, string>,
 ): Promise<{ total: number; new: number; changes: number; items: number; idMin: number | null; idMax: number | null }> {
 
@@ -230,7 +229,6 @@ async function syncBranch(
     for (let lineIdx = 0; lineIdx < venta.productos.length; lineIdx++) {
       const p = venta.productos[lineIdx];
       if (p.id === 0) invoicesWithPuntos.add(invoiceId);
-      const presKey = (p.presentacion ?? '').replace(/\s+/g, ' ').toUpperCase().trim();
       itemsToInsert.push({
         invoice_id:        invoiceId,
         linea_num:         lineIdx,
@@ -238,7 +236,10 @@ async function syncBranch(
         descripcion:       p.descripcion,
         cantidad:          p.cantidad,
         presentacion:      p.presentacion,
-        id_presentacion:   presLookup.get(presKey) ?? null,
+        // id_presentacion es legacy: presentaciones.descripcion se eliminó el
+        // 2026-06-08 y el lookup quedó vacío desde entonces (todas las filas NULL).
+        // El match de presentación se hace por texto contra product_precios.
+        id_presentacion:   null,
         precio_unitario:   p.precio_unitario,
         total_linea:       p.total_linea,
         lote:              p.lote || null,
@@ -422,16 +423,6 @@ Deno.serve(async (req) => {
         ? BRANCH_MAP.filter(b => b.branchId === onlyBranch)
         : BRANCH_MAP;
 
-      // Lookup de presentaciones: "TIPO DESCRIPCION" → id (cargado una sola vez)
-      const { data: presData } = await supabase
-        .from('presentaciones')
-        .select('id, tipo, descripcion');
-      const presLookup = new Map<string, number>();
-      for (const p of (presData ?? [])) {
-        const key = `${p.tipo ?? ''} ${p.descripcion ?? ''}`.replace(/\s+/g, ' ').toUpperCase().trim();
-        presLookup.set(key, p.id);
-      }
-
       for (const { branchId, erpId, username, password } of branches) {
         let attempts = 0;
         let lastErr: string | null = null;
@@ -440,7 +431,7 @@ Deno.serve(async (req) => {
         for (let attempt = 1; attempt <= 3; attempt++) {
           attempts = attempt;
           try {
-            branchResult = await syncBranch(supabase, branchId, erpId, username, password, startDate, endDate, forceItems, presLookup, cookieCache);
+            branchResult = await syncBranch(supabase, branchId, erpId, username, password, startDate, endDate, forceItems, cookieCache);
             lastErr = null;
             break;
           } catch (e: any) {

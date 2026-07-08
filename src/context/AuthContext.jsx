@@ -555,8 +555,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem(LS_USER, JSON.stringify(su));
     writeLastActivity(true);
     setPermsLoading(true);
-    setUser(u);
-    startIdleWatcher(u);
+    setUser(su);
+    startIdleWatcher(su);
   };
 
   const completePasswordChange = async (u) => {
@@ -566,8 +566,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem(LS_USER, JSON.stringify(su));
     writeLastActivity(true);
     setPermsLoading(true);
-    setUser(u);
-    startIdleWatcher(u);
+    setUser(su);
+    startIdleWatcher(su);
   };
 
   const logout = async () => doLogout();

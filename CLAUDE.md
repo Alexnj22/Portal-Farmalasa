@@ -80,6 +80,17 @@ silencio deja Maps/lookups vacíos y el bug puede vivir semanas sin detectarse
 sync la siguió consultando un mes, error en logs de Postgres cada minuto).
 Al eliminar/renombrar columnas: grep en `supabase/functions/` además de `src/`.
 
+**Syncs recurrentes: PROHIBIDO el upsert incondicional de tablas completas.**
+Un `.upsert(todasLasFilas)` en un cron reescribe cada fila aunque nada cambie
+(inventory acumuló 935M de updates sobre 24K filas: churn de WAL, Disk IO
+budget agotado, CPU de Realtime decodificando WAL, autovacuum constante).
+Patrón obligatorio: RPC con `INSERT ... ON CONFLICT DO UPDATE ... WHERE
+(cols) IS DISTINCT FROM (EXCLUDED.cols)` — ver `sync_inventory_batch` y
+`upsert_product_precios_batch`. No usar un `synced_at` bumpeado por fila para
+detectar stale rows (obliga a escribir todo); borrar por diferencia de keys.
+Tampoco poner `updated_at: now()` en el payload del sync — hace que toda fila
+"cambie" siempre; el RPC lo asigna solo cuando el dato real cambió.
+
 ## Estructura BD — reglas OBLIGATORIAS al crear tablas/funciones/vistas
 
 Hardening completo aplicado 2026-07-02 (`supabase/migrations/20260702_db_hardening_*`).

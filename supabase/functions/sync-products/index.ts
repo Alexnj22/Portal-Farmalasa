@@ -196,19 +196,17 @@ Deno.serve(async (req) => {
           mayoreo:         precios.mayoreo ?? null,
           premium:         precios.premium ?? null,
           precio_7:        precios.precio_7 ?? null,
-          updated_at:      now,
         });
       }
     }
     const precioRows = [...precioRowsMap.values()];
 
-    // 5a. Upsert all precios directly — DB handles conflicts server-side.
-    // Avoids loading thousands of rows into memory for in-process comparison.
-    for (let i = 0; i < precioRows.length; i += CHUNK) {
-      const { error } = await supabase.from('product_precios')
-        .upsert(precioRows.slice(i, i + CHUNK), { onConflict: 'product_id,id_presentacion' });
-      if (error) upsertErrors.push(`precios[${i}]: ${error.message}`);
-    }
+    // 5a. Upsert condicional vía RPC: solo escribe filas cuyo dato cambió
+    // (antes se reescribían las ~8K filas cada 10 min solo por updated_at —
+    // 32.7M updates acumulados). updated_at lo pone el RPC solo en cambios reales.
+    const { error: preciosErr } = await supabase
+      .rpc('upsert_product_precios_batch', { p_rows: precioRows });
+    if (preciosErr) upsertErrors.push(`precios(rpc): ${preciosErr.message}`);
 
     // 5b. Deactivate presentations the ERP no longer includes — batch by product_id chunks
     // to avoid loading all 7k+ rows into memory at once.

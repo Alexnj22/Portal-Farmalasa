@@ -316,10 +316,10 @@ async function syncInventoryBranch(
     await supabase.from('products').upsert(productUpserts, { onConflict: 'id', ignoreDuplicates: true });
   }
 
-  // UPSERT en vez de DELETE+INSERT:
-  // Solo escribimos filas que cambiaron; las que no existen en ERP se eliminan
-  // al final comparando synced_at < syncStart (no fueron tocadas por este sync).
-  const syncStart = new Date().toISOString();
+  // Escritura vía RPC sync_inventory_batch (una llamada por sucursal/área):
+  // solo escribe filas cuyo dato real cambió (antes se reescribían las ~24K
+  // filas cada minuto solo para bumpear synced_at — 935M updates acumulados)
+  // y borra las que ya no existen en el ERP por diferencia de sync_keys.
   const rows: any[] = [];
 
   for (const p of productos) {
@@ -332,8 +332,6 @@ async function syncInventoryBranch(
       const pid       = productId > 0 ? productId : null;
 
       rows.push({
-        erp_sucursal_id:   erpId,
-        is_vencidos:       isVencidos,
         erp_product_id:    pid,
         descripcion:       p.producto ?? null,
         presentacion:      det.presentacion ?? null,
@@ -341,7 +339,6 @@ async function syncInventoryBranch(
         lote:              det.lote ?? null,
         fecha_vencimiento: fechaVenc,
         cantidad:          parseInt(det.cantidad) || 0,
-        synced_at:         syncStart,
         sync_key:          `${erpId}|${isVencidos}|${pid ?? ''}|${det.lote ?? ''}|${det.detalle ?? ''}|${fechaVenc ?? ''}`,
       });
     }
@@ -360,21 +357,14 @@ async function syncInventoryBranch(
   }
   const dedupedRows = Array.from(rowsByKey.values());
 
-  const CHUNK = 200;
-  for (let i = 0; i < dedupedRows.length; i += CHUNK) {
-    const { error } = await supabase.from('inventory')
-      .upsert(dedupedRows.slice(i, i + CHUNK), { onConflict: 'sync_key' });
-    if (error) throw new Error(`inventory upsert chunk ${i}: ${error.message}`);
-  }
+  const { data: result, error: rpcErr } = await supabase.rpc('sync_inventory_batch', {
+    p_erp_sucursal_id: erpId,
+    p_is_vencidos:     isVencidos,
+    p_rows:            dedupedRows,
+  });
+  if (rpcErr) throw new Error(`sync_inventory_batch: ${rpcErr.message}`);
 
-  // Eliminar filas que ya no existen en el ERP (no fueron tocadas por este sync)
-  await supabase.from('inventory')
-    .delete()
-    .eq('erp_sucursal_id', erpId)
-    .eq('is_vencidos', isVencidos)
-    .lt('synced_at', syncStart);
-
-  return { items: productos.length, rows: rows.length };
+  return { items: productos.length, rows: result?.written ?? 0 };
 }
 
 Deno.serve(async (req) => {

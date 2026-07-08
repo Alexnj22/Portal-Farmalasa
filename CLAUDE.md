@@ -93,6 +93,14 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
 3. **Policies de escritura**: usar `auth_can_edit_any(ARRAY['modulo1','modulo2'])`
    (helper que resuelve al empleado por uid/code/username y chequea can_edit en
    role_permissions) — NUNCA `USING (true)` para UPDATE/DELETE en tablas sensibles.
+   **CRÍTICO (incidente 2026-07-08): TODA llamada a funciones `auth_*` en una policy
+   debe ir envuelta en `(SELECT ...)`** — ej. `(SELECT auth_has_module_permission('x','can_view'))`,
+   nunca `auth_has_module_permission('x','can_view')` a secas. Sin el wrapper, Postgres
+   la evalúa POR FILA (cada llamada consulta employees+role_permissions): en
+   sales_invoices (548K filas) un count() de 27K filas pasó de 25,000ms a 19ms con el
+   wrapper. Fue la causa del pico de CPU 65→78% del 7-8 jul y del Disk IO budget
+   consumido. El advisor de Supabase NO detecta esto (solo linta auth.uid() directo).
+   Nota: ser STABLE no basta — solo el initplan `(SELECT fn())` garantiza 1 evaluación.
    Historial (`employee_events`, `timesheets`, etc.) es append-only: sin policy
    de DELETE (las RPCs DEFINER y service_role no la necesitan). Aplicado a las
    35 tablas expuestas el 2026-07-02 (`20260702_granular_write_policies.sql`).

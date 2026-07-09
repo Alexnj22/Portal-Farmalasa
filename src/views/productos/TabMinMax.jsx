@@ -1980,27 +1980,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         const rid = ++loadRef.current;
         setLoading(true); setError(null); setInlineDraftEdit(null); setExpandedId(null);
         try {
-            const CHUNK = 1000; // PostgREST cap: máx 1000 filas por request — 5 llamadas paralelas cubre ~5000 productos
-            // Phase 1: exact count (via MV index) + metadata — all in parallel
-            const [countRes, costRes, draftRes, cfgRes] = await Promise.all([
-                supabase.rpc('get_stock_analysis_count', { p_erp_sucursal_id: erpId }),
+            // Una sola llamada JSON (Patrón C): el patrón anterior de count +
+            // chunks con .range() RE-EJECUTABA get_stock_analysis una vez por
+            // chunk — ~6 ejecuciones por load. El wrapper devuelve todo de un
+            // solo, sin el cap de 1000 filas (json_agg, no jsonb_agg: 0.4s vs
+            // 1.9s server-side por el spill a disco del jsonb de 4.6MB).
+            const [rowsRes, costRes, draftRes, cfgRes] = await Promise.all([
+                supabase.rpc('get_stock_analysis_jsonb',   { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
                 supabase.from('stock_config').select('analysis_days,approaching_pct').eq('id', 1).single(),
             ]);
-            if (countRes.error) throw countRes.error;
-            if (costRes.error)  throw costRes.error;
-            // Phase 2: all row chunks in parallel
-            const numChunks = Math.max(1, Math.ceil((countRes.data ?? CHUNK) / CHUNK));
-            const chunkResults = await Promise.all(
-                Array.from({ length: numChunks }, (_, i) =>
-                    supabase.rpc('get_stock_analysis', { p_erp_sucursal_id: erpId })
-                        .range(i * CHUNK, (i + 1) * CHUNK - 1)
-                )
-            );
-            for (const r of chunkResults) { if (r.error) throw r.error; }
+            if (rowsRes.error) throw rowsRes.error;
+            if (costRes.error) throw costRes.error;
             if (rid !== loadRef.current) return;
-            const mapped = chunkResults.flatMap(r => r.data || []).map(r => ({ ...r, _erp_sucursal_id: erpId }));
+            const mapped = (rowsRes.data || []).map(r => ({ ...r, _erp_sucursal_id: erpId }));
             setData(mapped);
             setHiddenIds(new Set(mapped.filter(r => r.is_hidden).map(r => r.erp_product_id)));
             setCostSummary(costRes.data  || null);

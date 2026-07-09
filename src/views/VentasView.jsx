@@ -1446,7 +1446,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 p_branch_id: filterBranch ? Number(filterBranch) : null,
                 ...(searchTerm ? { p_search: normSearch(searchTerm) || searchTerm } : {}),
             };
-            const presData = await fetchAllRows(() => supabase.rpc('get_product_sales_agg', rpcParams));
+            // Una sola llamada JSONB (Patrón C): fetchAllRows re-ejecutaba el RPC
+            // completo (~1-2s) por cada página de 1000 filas.
+            const { data: presData, error: presErr } = await supabase.rpc('get_product_sales_agg_jsonb', rpcParams);
+            if (presErr) throw presErr;
             if (presData === null) throw new Error('No se pudo cargar productos');
             if (!presData.length) { setRows([]); setLoading(false); return; }
 
@@ -1640,14 +1643,16 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
     useEffect(() => {
         const { prevFini, prevFfin } = computePrevRange(fini, ffin);
-        // Use the same RPC as the current period so both totals come from
-        // the same source (sii.total_linea, erp_product_id IS NOT NULL).
-        // Using get_ventas_stats (si.total) caused a mismatch because it
-        // includes non-product lines (discounts, adjustments, etc.).
+        // Use the same source as the current period so both totals match
+        // (sii.total_linea, erp_product_id IS NOT NULL). Using get_ventas_stats
+        // (si.total) caused a mismatch because it includes non-product lines
+        // (discounts, adjustments, etc.). get_product_sales_total suma server-side
+        // sobre get_product_sales_agg — antes se descargaba el dataset completo
+        // del período anterior (~1-2MB) solo para sumar neto en el cliente.
         const prevParams = { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: filterBranch ? Number(filterBranch) : null };
         (async () => {
-            const all = await fetchAllRows(() => supabase.rpc('get_product_sales_agg', prevParams));
-            setPrevProdStats({ sum: (all || []).reduce((s, r) => s + parseFloat(r.neto || 0), 0) });
+            const { data: total } = await supabase.rpc('get_product_sales_total', prevParams);
+            setPrevProdStats({ sum: parseFloat(total || 0) });
         })();
     }, [fini, ffin, filterBranch]);
 

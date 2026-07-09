@@ -5,8 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.10.1';
+export const APP_VERSION = '2.10.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.10.2 — style(practicantes): a pedido del usuario, PracticanteModal.jsx se restiló
+// para calzar exactamente con la estructura visual de EmployeeFormModal — no solo
+// "parecido", sino el mismo componente. Se extrajo `PortalInput` (antes local a
+// EmployeeFormModal.jsx) a `src/components/common/PortalInput.jsx`, y `inputHoverClass`/
+// `applyInputMask` a `src/utils/inputStyles.js` (evita un tercer archivo con el mismo
+// estilo duplicado, mismo criterio ya aplicado a duiUtils.js). EmployeeFormModal.jsx ahora
+// importa de ahí en vez de mantener su propia copia — cero cambio de comportamiento.
+// PracticanteModal.jsx pasó de un panel único estilo Promociones (gradiente violeta,
+// inputs sin icono) a: header blanco/glass con squircle (icono violeta GraduationCap,
+// mismo squircleClass que UnifiedModal), campos agrupados en "islas" con header de
+// icono+título (mismo patrón que Nómina/Personal en Empleados), PortalInput con icono +
+// glow azul de marca (#0052CC) en cada campo, y footer idéntico (Cancelar blanco +
+// Guardar/Registrar azul de marca, deshabilitado mientras el form sea inválido). También
+// se corrigió el timing de validación: los badges "Requerido" y bordes rojos ahora se
+// muestran SIEMPRE que el campo esté vacío (como Empleados), no solo tras un intento de
+// guardar fallido — se eliminó el estado `touched` que gateaba eso.
 
 // v2.10.1 — refactor(practicantes): a pedido del usuario, se elimina la vista/ruta/menú/
 // permiso separados de "Practicantes" (v2.10.0) y se fusiona su visualización dentro de

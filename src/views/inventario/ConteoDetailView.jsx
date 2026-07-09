@@ -1,13 +1,14 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    ClipboardCheck, ChevronLeft, Search, Printer, CheckCircle2, ShieldCheck, Loader2,
-    Plus, X, Package, FlaskConical,
+    ClipboardCheck, ChevronLeft, ChevronRight, Search, Printer, CheckCircle2, ShieldCheck, Loader2,
+    Plus, X, Package, FlaskConical, History, Radio,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import LiquidModal from '../../components/common/LiquidModal';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
@@ -37,27 +38,58 @@ const fmtDate = (iso) => {
     return `${d}/${m}/${y}`;
 };
 const fmtMoney = (n) => (n == null ? '—' : `$${Number(n).toFixed(2)}`);
+const fmtDateTime = (iso) => {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleString('es-SV', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+};
 
-function ItemRow({ item, index, editable, onSave }) {
+function ItemRow({ item, index, editable, onSave, onShowHistory, currentUserName }) {
     const [fisico, setFisico] = useState(item.fisico_cantidad ?? '');
     const [nota, setNota] = useState(item.nota ?? '');
+    const [sistema, setSistema] = useState(item.sistema_cantidad);
+    const [contadoPorNombre, setContadoPorNombre] = useState(item.contado_por_nombre ?? null);
+    const [contadoAt, setContadoAt] = useState(item.contado_at ?? null);
+    const [estadoItem, setEstadoItem] = useState(item.estado_item);
     const [saving, setSaving] = useState(false);
+    // Última combinación efectivamente guardada — evita que un blur sin
+    // cambios (ej. Tab entre celdas) dispare un guardado/historial redundante.
+    const lastSaved = useRef({ fisico: item.fisico_cantidad ?? null, nota: item.nota ?? null, estado: item.estado_item });
 
-    useEffect(() => { setFisico(item.fisico_cantidad ?? ''); setNota(item.nota ?? ''); }, [item.id]);
+    useEffect(() => {
+        setFisico(item.fisico_cantidad ?? '');
+        setNota(item.nota ?? '');
+        setSistema(item.sistema_cantidad);
+        setContadoPorNombre(item.contado_por_nombre ?? null);
+        setContadoAt(item.contado_at ?? null);
+        setEstadoItem(item.estado_item);
+        lastSaved.current = { fisico: item.fisico_cantidad ?? null, nota: item.nota ?? null, estado: item.estado_item };
+    }, [item.id, item.sistema_cantidad, item.fisico_cantidad]);
 
-    const dif = fisico !== '' ? Number(fisico) - item.sistema_cantidad : null;
+    // Estimado inmediato con el "sistema" ya visible (en vivo si aún no se ha
+    // contado) — el valor definitivo llega en la respuesta de guardar_conteo_item,
+    // que releyó inventory en el instante exacto del guardado.
+    const dif = fisico !== '' ? Number(fisico) - sistema : null;
+    const isLive = item.fisico_cantidad == null && !item.es_agregado_manual;
 
     const commit = async (extra = {}) => {
         if (!editable) return;
         const nextFisico = fisico === '' ? null : Number(fisico);
+        const nextNota = nota.trim() || null;
+        const nextEstado = extra.estadoItem ?? (nextFisico !== null ? 'CONTADO' : 'PENDIENTE');
+        const prev = lastSaved.current;
+        if (prev.fisico === nextFisico && prev.nota === nextNota && prev.estado === nextEstado) return;
         setSaving(true);
         try {
-            await onSave(item.id, {
+            const result = await onSave(item.id, {
                 fisicoCantidad: nextFisico,
-                nota: nota.trim() || null,
-                estadoItem: extra.estadoItem ?? (nextFisico !== null ? 'CONTADO' : 'PENDIENTE'),
-                sistemaCantidad: item.sistema_cantidad,
+                nota: nextNota,
+                estadoItem: nextEstado,
             });
+            lastSaved.current = { fisico: nextFisico, nota: nextNota, estado: nextEstado };
+            setSistema(result.sistema_cantidad);
+            setEstadoItem(nextEstado);
+            setContadoPorNombre(currentUserName);
+            setContadoAt(new Date().toISOString());
         } finally {
             setSaving(false);
         }
@@ -81,7 +113,12 @@ function ItemRow({ item, index, editable, onSave }) {
             </DataCell>
             <DataCell hideBelow="md"><span className="text-[11px] text-slate-600 tabular-nums">{item.lote || '—'}</span></DataCell>
             <DataCell align="center" hideBelow="lg"><span className="text-[11px] text-slate-500 tabular-nums">{fmtDate(item.fecha_vencimiento)}</span></DataCell>
-            <DataCell align="center"><span className="text-[12px] font-bold text-slate-700 tabular-nums">{item.sistema_cantidad}</span></DataCell>
+            <DataCell align="center">
+                <div className="flex items-center justify-center gap-1">
+                    <span className="text-[12px] font-bold text-slate-700 tabular-nums">{sistema}</span>
+                    {isLive && <Radio size={9} className="text-emerald-500 animate-pulse shrink-0" title="En vivo — se actualiza hasta que se cuente" />}
+                </div>
+            </DataCell>
             <DataCell align="center">
                 <input
                     type="number"
@@ -110,15 +147,70 @@ function ItemRow({ item, index, editable, onSave }) {
                 />
             </DataCell>
             <DataCell align="center">
-                {item.estado_item === 'SIN_UBICAR' ? (
-                    <span className="text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full">Sin ubicar</span>
-                ) : editable ? (
-                    <button onClick={markSinUbicar} disabled={saving} className="text-[9px] font-bold text-slate-400 hover:text-red-500 underline" title="Marcar como no encontrado">No encontrado</button>
-                ) : item.estado_item === 'CONTADO' ? (
-                    <CheckCircle2 size={14} className="text-emerald-500 mx-auto" />
-                ) : <span className="text-slate-300 text-[9px]">Pendiente</span>}
+                <div className="flex flex-col items-center gap-0.5">
+                    {estadoItem === 'SIN_UBICAR' ? (
+                        <span className="text-[9px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full">Sin ubicar</span>
+                    ) : editable ? (
+                        <button onClick={markSinUbicar} disabled={saving} className="text-[9px] font-bold text-slate-400 hover:text-red-500 underline" title="Marcar como no encontrado">No encontrado</button>
+                    ) : estadoItem === 'CONTADO' ? (
+                        <CheckCircle2 size={14} className="text-emerald-500" />
+                    ) : <span className="text-slate-300 text-[9px]">Pendiente</span>}
+                    {contadoPorNombre && (
+                        <button onClick={() => onShowHistory(item)} className="flex items-center gap-1 text-[8px] font-semibold text-slate-400 hover:text-teal-600 transition-colors" title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`}>
+                            <History size={9} /> {contadoPorNombre}
+                        </button>
+                    )}
+                </div>
             </DataCell>
         </DataRow>
+    );
+}
+
+function ItemHistoryModal({ item, onClose }) {
+    const fetchConteoItemHistory = useStaffStore((s) => s.fetchConteoItemHistory);
+    const [history, setHistory] = useState(null);
+
+    useEffect(() => {
+        if (!item) return;
+        setHistory(null);
+        fetchConteoItemHistory(item.id).then(setHistory);
+    }, [item, fetchConteoItemHistory]);
+
+    return (
+        <LiquidModal open={!!item} onClose={onClose} maxWidth="max-w-lg">
+            <div className="flex-none bg-transparent px-6 py-5 border-b border-white/40 flex items-center justify-between relative z-10">
+                <div>
+                    <h3 className="font-black text-slate-800 text-[15px]">{item?.product_nombre}</h3>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Historial de conteo · {item?.lote || 'sin lote'}</p>
+                </div>
+                <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/60 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all"><X size={16} /></button>
+            </div>
+            <div className="px-6 py-5 max-h-[60vh] overflow-y-auto relative z-10">
+                {history === null ? (
+                    <div className="flex items-center justify-center py-8"><Loader2 size={18} className="animate-spin text-slate-400" /></div>
+                ) : history.length === 0 ? (
+                    <p className="text-[12px] text-slate-400 text-center py-8">Sin registros todavía.</p>
+                ) : (
+                    <div className="space-y-2">
+                        {history.map((h) => (
+                            <div key={h.id} className="bg-slate-50 rounded-xl p-3 flex items-center justify-between gap-3">
+                                <div>
+                                    <p className="text-[11px] font-bold text-slate-700">{h.contado_por_nombre || 'Desconocido'}</p>
+                                    <p className="text-[9px] text-slate-400">{fmtDateTime(h.contado_at)}</p>
+                                    {h.nota && <p className="text-[10px] text-slate-500 italic mt-0.5">"{h.nota}"</p>}
+                                </div>
+                                <div className="text-right shrink-0">
+                                    <p className="text-[11px] font-bold text-slate-700 tabular-nums">Sist. {h.sistema_cantidad} · Fís. {h.fisico_cantidad ?? '—'}</p>
+                                    {h.diferencia != null && (
+                                        <p className={`text-[10px] font-black tabular-nums ${h.diferencia === 0 ? 'text-emerald-600' : h.diferencia < 0 ? 'text-red-600' : 'text-blue-600'}`}>{h.diferencia > 0 ? `+${h.diferencia}` : h.diferencia}</p>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </LiquidModal>
     );
 }
 
@@ -149,6 +241,7 @@ export default function ConteoDetailView() {
     const [busy, setBusy] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
     const [printing, setPrinting] = useState(false);
+    const [historyItem, setHistoryItem] = useState(null);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -176,8 +269,18 @@ export default function ConteoDetailView() {
     const hasResults = conteo && ['FINALIZADO', 'APROBADO', 'CERRADO'].includes(conteo.status);
 
     const handleSaveItem = async (itemId, payload) => {
-        await guardarConteoItem(itemId, { ...payload, contadoPor: user?.id });
-        setItems((prev) => prev.map((it) => (it.id === itemId ? { ...it, fisico_cantidad: payload.fisicoCantidad, nota: payload.nota, estado_item: payload.estadoItem, diferencia: payload.fisicoCantidad != null ? payload.fisicoCantidad - payload.sistemaCantidad : it.diferencia } : it)));
+        const result = await guardarConteoItem(itemId, payload);
+        setItems((prev) => prev.map((it) => (it.id === itemId ? {
+            ...it,
+            fisico_cantidad: payload.fisicoCantidad,
+            nota: payload.nota,
+            estado_item: payload.estadoItem,
+            sistema_cantidad: result.sistema_cantidad,
+            diferencia: result.diferencia,
+            contado_por_nombre: user?.name || it.contado_por_nombre,
+            contado_at: new Date().toISOString(),
+        } : it)));
+        return result;
     };
 
     const handleFinalizar = async () => {
@@ -358,7 +461,7 @@ export default function ConteoDetailView() {
                     empty={{ icon: Package, message: 'Sin ítems para este filtro' }}
                 >
                     {items.map((item, i) => (
-                        <ItemRow key={item.id} item={item} index={i} editable={editable} onSave={handleSaveItem} />
+                        <ItemRow key={item.id} item={item} index={i} editable={editable} onSave={handleSaveItem} onShowHistory={setHistoryItem} currentUserName={user?.name} />
                     ))}
                 </DataTable>
 
@@ -366,6 +469,8 @@ export default function ConteoDetailView() {
                     <TablePagination pageSize={PAGE_SIZE} onPageSizeChange={() => {}} page={page} totalPages={totalPages} onPageChange={setPage} total={total} unit="ítems" />
                 )}
             </div>
+
+            <ItemHistoryModal item={historyItem} onClose={() => setHistoryItem(null)} />
         </GlassViewLayout>
     );
 }

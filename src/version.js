@@ -5,8 +5,36 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.11.1';
+export const APP_VERSION = '2.11.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.11.2 — feat(conteo-inventario): conteo "en caliente" + trazabilidad de quién contó.
+// Antes el "sistema" era un snapshot congelado al crear el conteo; ahora, mientras un ítem
+// no se ha contado (fisico_cantidad IS NULL y no es agregado manual), tanto la lista
+// (get_conteo_items_search) como el JSON de impresión (get_conteo_items_jsonb) muestran
+// el stock VIGENTE releído en vivo de `inventory` (ícono pulsante junto al valor), para
+// que sucursales que no cierran puedan contar sin distorsionar la comparación. El valor
+// solo se congela en el servidor, en el instante exacto del guardado — nunca lo decide el
+// cliente — vía la nueva RPC `guardar_conteo_item`, que también registra en la nueva tabla
+// append-only `conteo_inventario_item_history` (RLS SELECT-only) quién contó cada línea y
+// cada edición posterior (`get_conteo_item_history`). ConteoDetailView muestra "Contado
+// por {nombre}" con botón de historial (ItemHistoryModal). Se agrega dirty-check en
+// ItemRow.commit() (compara contra la última combinación fisico/nota/estado realmente
+// guardada) para que un blur sin cambios (ej. Tab entre celdas) no dispare un guardado ni
+// una fila de historial redundante — bug real encontrado en la verificación E2E (2
+// entradas idénticas para la misma edición).
+// fix(conteo-inventario): ChevronRight sin importar en ConteoDetailView (el botón de
+// cierre del pill de búsqueda tiraba ReferenceError y la vista de detalle quedaba en
+// ErrorBoundary permanente). fix(db): get_conteo_items_search (versión con p_limit/
+// p_offset) fallaba con "column reference \"estado_item\" is ambiguous" — al convertirse a
+// plpgsql, las columnas de RETURNS TABLE (estado_item, diferencia, lote, etc.) quedan como
+// variables implícitas que colisionan con las columnas homónimas del CTE; se resolvió
+// calificando todas las referencias con el alias de la CTE (`b.estado_item`, etc.) y
+// cast::int al SUM(cantidad) (bigint) para que coincida con el tipo integer declarado.
+// Se eliminó el overload viejo de 3 argumentos (quedaba huérfano desde la migración
+// anterior). Verificado E2E completo: crear conteo MANUAL → contar en vivo → guardar
+// (congela sistema + historial) → editar (segunda entrada de historial) → 0 duplicados
+// tras el fix → limpieza de datos de prueba (0 filas en las 3 tablas).
 
 // v2.11.1 — fix(conteo-inventario): corrige el header/buscador del módulo para que
 // siga el estándar del portal (ver BranchesView.jsx/StaffManagementView.jsx). El error:

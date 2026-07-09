@@ -49,31 +49,42 @@ export const createConteoInventarioSlice = (set, get) => ({
         return data;
     },
 
+    // p_limit/p_offset se pasan como parámetros de la función (no .range() de
+    // PostgREST) — así el LIMIT se aplica DENTRO del SQL antes del lookup en
+    // vivo a inventory, acotando ese costo al tamaño de página sin importar
+    // el tamaño total del conteo (ver comentario en la migración de la RPC).
     fetchConteoItems: async (conteoId, { page = 1, pageSize = 50, search = '', filtro = 'TODOS' } = {}) => {
         const from = (page - 1) * pageSize;
         const [{ data: count, error: countErr }, { data: rows, error: rowsErr }] = await Promise.all([
             supabase.rpc('get_conteo_items_count', { p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro }),
-            supabase.rpc('get_conteo_items_search', { p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro }).range(from, from + pageSize - 1),
+            supabase.rpc('get_conteo_items_search', { p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro, p_limit: pageSize, p_offset: from }),
         ]);
         if (countErr) throw countErr;
         if (rowsErr) throw rowsErr;
         return { rows: rows || [], total: count || 0 };
     },
 
-    guardarConteoItem: async (itemId, { fisicoCantidad, nota, estadoItem, sistemaCantidad, contadoPor }) => {
-        const payload = {
-            fisico_cantidad: fisicoCantidad,
-            nota: nota ?? null,
-            estado_item: estadoItem,
-            contado_por: contadoPor || null,
-            contado_at: new Date().toISOString(),
-        };
-        if (fisicoCantidad !== null && fisicoCantidad !== undefined && sistemaCantidad !== undefined) {
-            payload.diferencia = fisicoCantidad - sistemaCantidad;
-        }
-        const { data, error } = await supabase.from('conteo_inventario_items').update(payload).eq('id', itemId).select().single();
+    // El "sistema" se congela EN EL SERVIDOR (guardar_conteo_item relee
+    // inventory en vivo en ese instante) — el cliente nunca envía/decide ese
+    // valor, para que un conteo "en caliente" (sucursal abierta, ventas
+    // corriendo) compare contra el stock real vigente al momento de contar,
+    // no contra un snapshot viejo. También registra el guardado en el
+    // historial append-only del ítem (quién contó, incluidas ediciones).
+    guardarConteoItem: async (itemId, { fisicoCantidad, nota, estadoItem }) => {
+        const { data, error } = await supabase.rpc('guardar_conteo_item', {
+            p_item_id: itemId,
+            p_fisico_cantidad: fisicoCantidad,
+            p_nota: nota ?? null,
+            p_estado_item: estadoItem,
+        });
         if (error) throw error;
         return data;
+    },
+
+    fetchConteoItemHistory: async (itemId) => {
+        const { data, error } = await supabase.rpc('get_conteo_item_history', { p_item_id: itemId });
+        if (error) throw error;
+        return data || [];
     },
 
     agregarProductoManualConteo: async (conteoId, { erpProductId, presentacion, detalle, lote, fechaVencimiento, costoUnitario }) => {

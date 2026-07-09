@@ -6,7 +6,7 @@ import {
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
     LayoutDashboard, TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
-    Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, GraduationCap
+    Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -119,7 +119,6 @@ const MODULE_GROUPS = [
             { key: 'encuesta',       label: 'Clima Organizacional', desc: 'Dashboard de resultados de encuesta de clima 2026 con análisis por bloque, sucursal y empleado', icon: BarChart2,   hasApprove: false },
             { key: 'encuesta_admin', label: 'Gestión de Encuesta',  desc: 'Agregar y eliminar respuestas de encuestas de clima organizacional',                              icon: BarChart2,   hasApprove: false },
             { key: 'entrevistas',    label: 'Entrevistas',          desc: 'Gestión del proceso de selección y entrevistas de candidatos (próximamente)',                    icon: Briefcase,  hasApprove: false, comingSoon: true },
-            { key: 'practicantes',   label: 'Practicantes',         desc: 'Registro de estudiantes en horas sociales/pasantías no remuneradas, con convenio institucional obligatorio', icon: GraduationCap, hasApprove: false, hasScope: true },
         ],
     },
     {

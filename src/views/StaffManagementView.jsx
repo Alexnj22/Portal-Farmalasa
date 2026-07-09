@@ -28,7 +28,8 @@ import {
   Medal,
   AlertCircle,
   ShieldAlert,
-  RefreshCw
+  RefreshCw,
+  GraduationCap
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
@@ -43,6 +44,7 @@ import { smartFilter } from '../utils/searchUtils';
 import { getExpiringDocuments } from '../utils/documentExpiry';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { useToastStore } from '../store/toastStore';
+import PracticanteModal from '../components/practicantes/PracticanteModal';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
 
@@ -428,11 +430,97 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
   );
 });
 
+// Practicantes = horas sociales/pasantías no remuneradas (tabla `practicantes`,
+// separada de `employees` a propósito — ver migración 20260709). Se muestran
+// fusionados aquí (mismo DataTable, mismas columnas) pero con badge "Practicante"
+// en vez de reusar EmployeeRow: los campos de EmployeeRow (dui/isss/hire_date/
+// employee_documents...) no existen en un practicante y generarían badges de
+// "Información Pendiente" falsos si se reutilizara ese componente tal cual.
+const PRACTICANTE_ESTADO_CFG = {
+  ACTIVO:     { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', icon: CheckCircle2, label: 'Activo' },
+  FINALIZADO: { bg: 'bg-slate-100',  text: 'text-slate-600',   border: 'border-slate-200',   icon: UserMinus,    label: 'Finalizado' },
+  CANCELADO:  { bg: 'bg-red-50',     text: 'text-red-600',     border: 'border-red-200',      icon: UserX,        label: 'Cancelado' },
+};
+
+const fmtShortDate = (d) => {
+  if (!d) return '—';
+  const [y, m, day] = d.split('-');
+  return `${day}/${m}/${y}`;
+};
+
+const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, staggerIndex = 0 }) => {
+  const es = PRACTICANTE_ESTADO_CFG[p.estado] || PRACTICANTE_ESTADO_CFG.ACTIVO;
+  const fullName = `${p.first_names || ''} ${p.last_names || ''}`.trim();
+
+  return (
+    <DataRow index={staggerIndex}>
+      <DataCell className="w-[360px]">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 md:h-11 md:w-11 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-500 shrink-0">
+            <GraduationCap size={18} strokeWidth={2} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <p className="font-black text-slate-800 text-[12px] md:text-[13px] truncate tracking-tight" title={fullName}>{fullName}</p>
+              <span className="text-[8px] font-black uppercase tracking-widest text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-md shrink-0">Practicante</span>
+            </div>
+            <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest truncate mt-0.5">
+              {p.institucion_educativa} · {fmtShortDate(p.fecha_inicio)}→{fmtShortDate(p.fecha_fin)}
+            </p>
+          </div>
+        </div>
+      </DataCell>
+
+      <DataCell>
+        <div className="flex items-center gap-1.5 text-slate-600 text-[10px] md:text-[11px] font-bold uppercase tracking-widest">
+          <MapPin size={12} className="text-slate-400 shrink-0" />
+          <span className="truncate">{branchName || 'Sin Asignar'}</span>
+        </div>
+      </DataCell>
+
+      <DataCell className="max-w-[200px]">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[6px] text-[8px] md:text-[8.5px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm bg-violet-50 text-violet-700 border-violet-200">
+          <GraduationCap size={10} strokeWidth={2.5} /> Horas Sociales
+        </span>
+      </DataCell>
+
+      <DataCell>
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[8.5px] md:text-[9px] font-black uppercase tracking-widest border whitespace-nowrap shadow-sm ${es.bg} ${es.text} ${es.border}`}>
+          <es.icon size={12} strokeWidth={2.5} className="shrink-0" />
+          {es.label}
+        </span>
+      </DataCell>
+
+      <DataCell align="right" className="w-[180px]">
+        <div className="flex items-center justify-end gap-1.5">
+          <button
+            onClick={() => onEdit(p)}
+            disabled={!canEdit}
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-400 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Editar practicante"
+          >
+            <Edit3 size={14} strokeWidth={2.5} />
+          </button>
+          <button
+            onClick={() => onDelete(p)}
+            disabled={!canEdit}
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-red-50 text-slate-400 hover:text-red-500 border border-white/80 hover:border-red-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Eliminar practicante"
+          >
+            <Trash2 size={14} strokeWidth={2.5} />
+          </button>
+        </div>
+      </DataCell>
+    </DataRow>
+  );
+});
+
 const STAT_CARD_COLORS = {
   blue:    { activeBg: 'bg-blue-50 border-blue-300 shadow-md shadow-blue-100/80 -translate-y-px',       inactiveBg: 'bg-white border-slate-100 hover:border-blue-200 hover:bg-blue-50/40',       iconBg: 'bg-blue-50',    iconColor: 'text-[#0052CC]',  textColor: 'text-slate-700'   },
   emerald: { activeBg: 'bg-emerald-50 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px', inactiveBg: 'bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', textColor: 'text-emerald-600' },
   cyan:    { activeBg: 'bg-cyan-50 border-cyan-300 shadow-md shadow-cyan-100/80 -translate-y-px',       inactiveBg: 'bg-white border-slate-100 hover:border-cyan-200 hover:bg-cyan-50/40',       iconBg: 'bg-cyan-50',    iconColor: 'text-cyan-600',   textColor: 'text-cyan-600'    },
   amber:   { activeBg: 'bg-amber-50 border-amber-300 shadow-md shadow-amber-100/80 -translate-y-px',     inactiveBg: 'bg-white border-slate-100 hover:border-amber-200 hover:bg-amber-50/40',     iconBg: 'bg-amber-50',   iconColor: 'text-amber-600',  textColor: 'text-amber-600'   },
+  violet:  { activeBg: 'bg-violet-50 border-violet-300 shadow-md shadow-violet-100/80 -translate-y-px',   inactiveBg: 'bg-white border-slate-100 hover:border-violet-200 hover:bg-violet-50/40',   iconBg: 'bg-violet-50',  iconColor: 'text-violet-600', textColor: 'text-violet-600'  },
 };
 
 function StaffStatCard({ icon: Icon, label, value, active, onClick, color, loading }) {
@@ -469,6 +557,10 @@ const StaffManagementView = ({
   const employees = useStaff(s => s.employees);
   const branches = useStaff(s => s.branches);
   const bootStatus = useStaff(s => s.bootStatus);
+  const practicantes = useStaff(s => s.practicantes);
+  const practicantesLoading = useStaff(s => s.practicantesLoading);
+  const fetchPracticantes = useStaff(s => s.fetchPracticantes);
+  const deletePracticante = useStaff(s => s.deletePracticante);
   const { user, hasPermission, getScope } = useAuth();
   const canEdit = hasPermission('staff_list', 'can_edit');
 
@@ -477,8 +569,12 @@ const StaffManagementView = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [activeStatFilter, setActiveStatFilter] = useState('ALL');
+  const [showPracticanteModal, setShowPracticanteModal] = useState(false);
+  const [editingPracticante, setEditingPracticante] = useState(null);
 
   const normalizedSearch = (searchTerm || '').trim();
+
+  useEffect(() => { fetchPracticantes(); }, [fetchPracticantes]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -527,6 +623,50 @@ const StaffManagementView = ({
     ).length;
     return { total, active, support, inactive };
   }, [searchFilteredEmployees]);
+
+  // ── Practicantes (horas sociales) — misma búsqueda/alcance/sucursal que
+  // empleados, pero en pipeline propio: la tabla `practicantes` está separada
+  // a propósito (sin kiosk/ISSS-AFP/nómina) y sus campos no calzan con
+  // EmployeeRow/searchEmployees (ver PracticanteRow arriba).
+  const practicantesScopeFiltered = useMemo(() => {
+    return getScope('staff_list') === 'BRANCH'
+      ? (practicantes || []).filter(p => String(p.branch_id) === String(user?.branchId))
+      : (practicantes || []);
+  }, [practicantes, getScope, user?.branchId]);
+
+  const practicantesBranchFiltered = useMemo(() => {
+    return practicantesScopeFiltered.filter(p => selectedBranch === 'ALL' || String(p.branch_id) === String(selectedBranch));
+  }, [practicantesScopeFiltered, selectedBranch]);
+
+  const practicantesSearchFiltered = useMemo(() => {
+    if (!normalizedSearch) return practicantesBranchFiltered;
+    const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const term = norm(normalizedSearch);
+    return practicantesBranchFiltered.filter(p =>
+      norm(`${p.first_names} ${p.last_names}`).includes(term) ||
+      norm(p.institucion_educativa).includes(term) ||
+      norm(p.tutor_nombre).includes(term)
+    );
+  }, [practicantesBranchFiltered, normalizedSearch]);
+
+  const sortedPracticantes = useMemo(() => {
+    if (activeStatFilter !== 'PRACTICANTES') return [];
+    const list = [...practicantesSearchFiltered];
+    list.sort((a, b) => {
+      const branchA = (branchMap.get(Number(a.branch_id)) || '').toLowerCase();
+      const branchB = (branchMap.get(Number(b.branch_id)) || '').toLowerCase();
+      const wA = getBranchWeight(branchA);
+      const wB = getBranchWeight(branchB);
+      if (wA !== wB) return wA - wB;
+      if (branchA !== branchB) return branchA.localeCompare(branchB);
+      const nameA = `${a.first_names} ${a.last_names}`.toLowerCase();
+      const nameB = `${b.first_names} ${b.last_names}`.toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+    return list;
+  }, [practicantesSearchFiltered, activeStatFilter, branchMap]);
+
+  const isPracticantesView = activeStatFilter === 'PRACTICANTES';
 
   const filteredEmployees = useMemo(() => {
     return searchFilteredEmployees.filter(emp => {
@@ -587,7 +727,7 @@ const StaffManagementView = ({
     return list;
   }, [filteredEmployees, sortConfig, branchMap]);
 
-  const totalItems = sortedEmployees.length;
+  const totalItems = isPracticantesView ? sortedPracticantes.length : sortedEmployees.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
 
   const paginatedEmployees = useMemo(() => {
@@ -595,13 +735,41 @@ const StaffManagementView = ({
     return sortedEmployees.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedEmployees, currentPage, itemsPerPage]);
 
+  const paginatedPracticantes = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedPracticantes.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedPracticantes, currentPage, itemsPerPage]);
+
   const hasActiveFilters = normalizedSearch !== '' || selectedBranch !== 'ALL' || activeStatFilter !== 'ALL';
 
   const handleOpenNewEmployee = () => {
     setIsSearchActive(false);
     openModal?.('newEmployee');
   };
-  
+
+  const handleOpenNewPracticante = () => {
+    setIsSearchActive(false);
+    setEditingPracticante(null);
+    setShowPracticanteModal(true);
+  };
+
+  const handleEditPracticante = useCallback((p) => {
+    setIsSearchActive(false);
+    setEditingPracticante(p);
+    setShowPracticanteModal(true);
+  }, []);
+
+  const handleDeletePracticante = useCallback(async (p) => {
+    if (!window.confirm(`¿Eliminar el registro de "${p.first_names} ${p.last_names}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      await deletePracticante(p.id);
+      useToastStore.getState().showToast('Eliminado', `${p.first_names} ${p.last_names}`, 'success');
+    } catch (err) {
+      useToastStore.getState().showToast('Error', err.message, 'error');
+    }
+  }, [deletePracticante]);
+
+
   // Justo tras un boot fresco (login, F5, pestaña nueva), `employees` arranca
   // con el snapshot SANITIZADO de localStorage (persistEmployees quita DUI/
   // ISSS/AFP/banco/kiosk_pin a propósito, para no guardarlos en texto plano
@@ -715,6 +883,15 @@ const StaffManagementView = ({
             <UserPlus size={14} strokeWidth={3} />
             <span className="hidden sm:inline">Nuevo Empleado</span>
           </button>
+          <button
+            type="button"
+            onClick={handleOpenNewPracticante}
+            disabled={!canEdit}
+            className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-[0_4px_12px_rgba(124,58,237,0.3)] hover:shadow-[0_6px_20px_rgba(124,58,237,0.4)] hover:scale-105 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap hover:-translate-y-0.5 border border-violet-600/50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <GraduationCap size={14} strokeWidth={3} />
+            <span className="hidden sm:inline">Nuevo Practicante</span>
+          </button>
         </div>
 
         <div className="flex items-center shrink-0 border-l border-white/30 pl-2 ml-1">
@@ -760,6 +937,11 @@ const StaffManagementView = ({
               icon={UserMinus} color="amber" label="Otros" value={stats.inactive}
               active={activeStatFilter === 'Otros'} onClick={() => setActiveStatFilter('Otros')}
               loading={bootStatus !== 'ready' && employees.length === 0}
+            />
+            <StaffStatCard
+              icon={GraduationCap} color="violet" label="Practicantes" value={practicantesSearchFiltered.length}
+              active={isPracticantesView} onClick={() => setActiveStatFilter('PRACTICANTES')}
+              loading={practicantesLoading && practicantes.length === 0}
             />
           </div>
 
@@ -812,28 +994,33 @@ const StaffManagementView = ({
 
         <DataTable
           columns={[
-            { key: 'name',   label: 'Empleado',      sortable: true },
-            { key: 'branch', label: 'Sucursal',         sortable: true },
-            { key: 'role',   label: 'Cargos Asignados', sortable: true },
-            { key: 'status', label: 'Estado Operativo', sortable: true },
+            { key: 'name',   label: isPracticantesView ? 'Practicante' : 'Empleado', sortable: !isPracticantesView },
+            { key: 'branch', label: 'Sucursal',         sortable: !isPracticantesView },
+            { key: 'role',   label: isPracticantesView ? 'Tipo' : 'Cargos Asignados', sortable: !isPracticantesView },
+            { key: 'status', label: 'Estado Operativo', sortable: !isPracticantesView },
             { key: 'actions',label: 'Acciones',         align: 'right' },
           ]}
           sortKey={sortConfig.key}
           sortDir={sortConfig.direction}
           onSort={handleSort}
-          loading={bootStatus !== 'ready' && employees.length === 0}
+          loading={isPracticantesView ? (practicantesLoading && practicantes.length === 0) : (bootStatus !== 'ready' && employees.length === 0)}
           skeletonRows={8}
           empty={{
-            icon: Search,
-            message: 'No hay nadie aquí',
+            icon: isPracticantesView ? GraduationCap : Search,
+            message: isPracticantesView ? 'Sin practicantes registrados' : 'No hay nadie aquí',
             subtext: 'Ajusta el filtro de sucursal o limpia la búsqueda.',
             action: hasActiveFilters ? { label: 'Limpiar Filtros', onClick: clearFilters } : undefined,
           }}
           minWidth="800px"
         >
-          {paginatedEmployees.map((emp, i) => (
-            <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit && bootStatus === 'ready'} />
-          ))}
+          {isPracticantesView
+            ? paginatedPracticantes.map((p, i) => (
+                <PracticanteRow key={p.id} staggerIndex={i} p={p} branchName={branchMap.get(Number(p.branch_id))} onEdit={handleEditPracticante} onDelete={handleDeletePracticante} canEdit={canEdit} />
+              ))
+            : paginatedEmployees.map((emp, i) => (
+                <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit && bootStatus === 'ready'} />
+              ))
+          }
         </DataTable>
 
         {totalItems > 0 && (
@@ -844,10 +1031,17 @@ const StaffManagementView = ({
             totalPages={totalPages}
             onPageChange={setCurrentPage}
             total={totalItems}
-            unit="empleados"
+            unit={isPracticantesView ? 'practicantes' : 'empleados'}
           />
         )}
       </div>
+
+      <PracticanteModal
+        isOpen={showPracticanteModal}
+        onClose={() => setShowPracticanteModal(false)}
+        practicante={editingPracticante}
+        onSaved={() => fetchPracticantes()}
+      />
     </GlassViewLayout>
   );
 };

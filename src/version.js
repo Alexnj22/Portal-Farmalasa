@@ -5,9 +5,27 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.10.0';
+export const APP_VERSION = '2.10.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.10.1 — refactor(practicantes): a pedido del usuario, se elimina la vista/ruta/menú/
+// permiso separados de "Practicantes" (v2.10.0) y se fusiona su visualización dentro de
+// Gestión de Personal (StaffManagementView) — un solo punto de entrada, con badge violeta
+// "Practicante" para distinguirlos. Se agrega un 5to StaffStatCard "Practicantes" (violet)
+// que alterna la tabla entre empleados y practicantes (misma DataTable, columnas "Empleado"→
+// "Practicante" y "Cargos Asignados"→"Tipo" cuando está activo); PracticanteRow es un
+// componente nuevo (no reusa EmployeeRow: sus campos de "pendiente" — dui/isss/hire_date/
+// employee_documents — no existen en un practicante y generarían badges falsos). Botón
+// "Nuevo Practicante" junto a "Nuevo Empleado". La tabla `practicantes` y su RLS de
+// escritura ahora se gatean con auth_can_edit_any(['staff_list']) en vez de un module_key
+// 'practicantes' propio (migración 20260709_practicantes_gate_under_staff_list), ya que no
+// existe más una pantalla de Permisos separada para concederlo. Se eliminó
+// src/views/PracticantesView.jsx (código muerto tras el merge); practicantesSlice.js,
+// PracticanteModal.jsx y duiUtils.js se mantienen sin cambios (se siguen reutilizando).
+// Se preserva la separación legal de fondo (Art. 20 CT): practicantes NO tienen kiosk_pin,
+// ISSS/AFP, fichaje ni aparecen en nómina — solo cambió DÓNDE se ven en el UI, no el modelo
+// de datos.
+//
 // v2.10.0 — feat(practicantes): nuevo módulo "Practicantes" (RRHH) para horas sociales /
 // pasantías académicas NO remuneradas — separado a propósito de employees/nómina/kiosco.
 // Razón legal: el Código de Trabajo no contempla trabajo subordinado sin pago (el único

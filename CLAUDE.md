@@ -35,8 +35,20 @@ const results = await Promise.all(
 const rows = results.flatMap(r => r.data || []);
 ```
 
-**Patrón C — RPC que devuelve JSONB (no SETOF):**
-El límite no aplica cuando el RPC devuelve un único objeto JSON/JSONB. Opción válida para funciones que agregan todo server-side.
+**Patrón C — RPC que devuelve JSON (no SETOF) — PREFERIDO para cargas grandes:**
+El límite no aplica cuando el RPC devuelve un único objeto JSON. Además evita re-ejecutar
+la función por chunk (PostgREST aplica `limit/offset` SOBRE el resultado de una función:
+con Patrón B, N chunks = N ejecuciones completas). **CRÍTICO: usar `json_agg(to_json(t))`
+con `RETURNS json`, NUNCA `jsonb_agg`/`RETURNS jsonb` para payloads grandes** — jsonb
+construye el valor binario completo en memoria y spillea a disco (medido en
+`get_stock_analysis_jsonb`, 4,226 filas / 4.6MB: jsonb_agg = 1,963ms con temp spill;
+json_agg = 402ms). El cliente recibe JSON idéntico. Plantilla:
+```sql
+CREATE FUNCTION get_X_jsonb(...) RETURNS json LANGUAGE sql STABLE
+SET search_path = public, extensions AS $$
+  SELECT coalesce(json_agg(to_json(t)), '[]'::json) FROM public.get_X(...) t;
+$$;
+```
 
 **Tablas seguras para bulk load sin paginar** (siempre <1000 filas): `branches`, `roles`, `presentaciones`, `laboratorios`.
 

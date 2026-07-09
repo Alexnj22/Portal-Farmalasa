@@ -64,6 +64,48 @@ export const createConteoInventarioSlice = (set, get) => ({
         return { rows: rows || [], total: count || 0 };
     },
 
+    // Paginación por PRODUCTO (no por fila) — así un producto con muchos
+    // lotes nunca se parte entre dos páginas y el total agregado por
+    // producto (sistema/físico/diferencia) siempre es exacto.
+    fetchConteoProductsPage: async (conteoId, { page = 1, pageSize = 25, search = '', filtro = 'TODOS' } = {}) => {
+        const from = (page - 1) * pageSize;
+        const [{ data: count, error: countErr }, { data: rows, error: rowsErr }] = await Promise.all([
+            supabase.rpc('get_conteo_products_count', { p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro }),
+            supabase.rpc('get_conteo_products_page', { p_conteo_id: conteoId, p_search: search || null, p_filtro: filtro, p_limit: pageSize, p_offset: from }),
+        ]);
+        if (countErr) throw countErr;
+        if (rowsErr) throw rowsErr;
+        return { rows: rows || [], total: count || 0 };
+    },
+
+    // Líneas (lote/presentación) de UN producto dentro del conteo — se piden
+    // solo al expandir su fila de grupo. Un producto real nunca tiene miles
+    // de lotes, pero se acota igual por seguridad.
+    fetchConteoProductItems: async (conteoId, erpProductId) => {
+        const { data, error } = await supabase.rpc('get_conteo_items_search', {
+            p_conteo_id: conteoId, p_search: null, p_filtro: 'TODOS', p_limit: 500, p_offset: 0, p_erp_product_id: erpProductId,
+        });
+        if (error) throw error;
+        return data || [];
+    },
+
+    fetchConteoExistingProductIds: async (conteoId) => {
+        const { data, error } = await supabase.rpc('get_conteo_existing_product_ids', { p_conteo_id: conteoId });
+        if (error) throw error;
+        return data || [];
+    },
+
+    // Corrige la etiqueta de lote/vencimiento de una línea ya creada (ej. el
+    // físico encontrado trae un lote distinto al que copió el snapshot) —
+    // nunca toca la tabla inventory real, solo el snapshot de auditoría.
+    editarLoteConteoItem: async (itemId, { lote, fechaVencimiento }) => {
+        const { data, error } = await supabase.rpc('editar_lote_conteo_item', {
+            p_item_id: itemId, p_lote: lote, p_fecha_vencimiento: fechaVencimiento || null,
+        });
+        if (error) throw error;
+        return data;
+    },
+
     // El "sistema" se congela EN EL SERVIDOR (guardar_conteo_item relee
     // inventory en vivo en ese instante) — el cliente nunca envía/decide ese
     // valor, para que un conteo "en caliente" (sucursal abierta, ventas

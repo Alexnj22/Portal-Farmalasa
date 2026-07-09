@@ -5,8 +5,41 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.11.2';
+export const APP_VERSION = '2.12.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.12.0 — feat(conteo-inventario): agrupación por producto + catálogo en "Agregar
+// Producto" + corrección de lote. Cambios pedidos tras revisar el módulo en uso real:
+// 1) Se quitó "No encontrado"/SIN_UBICAR — un físico=0 ya comunica lo mismo, el botón
+//    era redundante (el usuario: "si en inventario hay 1 y pongo 0 es no encontrado").
+// 2) Laboratorio y Presentación pasan a columnas propias (antes subtítulo del nombre del
+//    producto) — get_conteo_items_search/count ahora también buscan por esos dos campos.
+// 3) La tabla se reestructura a fila-de-producto + hijas expandibles por lote/presentación
+//    (ProductGroupRow/ItemRow). LA PAGINACIÓN CAMBIA de fila a PRODUCTO — nuevas RPCs
+//    get_conteo_products_count/page agregan sistema/físico/diferencia por producto vía
+//    GROUP BY, con el mismo patrón live_inv (JOIN a inventory agregado por sucursal, no
+//    subquery correlacionada por fila) para acotar el costo del lookup en vivo. Así un
+//    producto con muchos lotes (ej. 9 en el caso de prueba) nunca se parte entre dos
+//    páginas y el total mostrado siempre es exacto (decisión confirmada con el usuario:
+//    paginar por producto, no cargar todo sin límite).
+// 4) Corrección de lote: ícono de lápiz junto al lote abre un modal (editar_lote_conteo_item)
+//    para cuando el físico encontrado trae un lote distinto al del snapshot (ej. ERP no
+//    sincronizó el lote nuevo) — solo corrige la etiqueta de auditoría, nunca inventory.
+// 5) "Agregar Producto/Lote": el buscador ahora excluye productos ya presentes en el
+//    conteo (get_conteo_existing_product_ids); Presentación se toma del catálogo real del
+//    producto (product_precios→presentaciones, no texto libre); Lote ofrece los lotes
+//    existentes de ese producto/sucursal en inventory + opción "+ Otro lote (nuevo)" — al
+//    elegir un lote existente la fecha de vencimiento se amarra automáticamente (deshabilitada
+//    para edición manual); "Otro" habilita fecha manual para un lote genuinamente nuevo.
+// 6) Navegación tipo Excel: flechas arriba/abajo dentro del input de Físico saltan al
+//    mismo input de la fila anterior/siguiente (recorre el DOM en orden visual, así que
+//    salta automáticamente productos colapsados).
+// 7) Indicador "en vivo" más notorio (badge "● Vivo" en vez de un punto de 9px) — se deja
+//    animate-pulse de Tailwind (opacity vía GPU, sin animation-delay por instancia, así que
+//    ya laten en fase — no cada uno a su ritmo).
+// get_conteo_items_search seguía con SUM(cantidad) correlacionado por fila; se reemplazó
+// por un JOIN a una CTE live_inv agregada una sola vez por sucursal (misma optimización
+// reutilizada en las nuevas RPCs de producto).
 
 // v2.11.2 — feat(conteo-inventario): conteo "en caliente" + trazabilidad de quién contó.
 // Antes el "sistema" era un snapshot congelado al crear el conteo; ahora, mientras un ítem

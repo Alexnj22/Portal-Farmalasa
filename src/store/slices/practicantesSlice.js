@@ -1,5 +1,16 @@
 import { supabase } from '../../supabaseClient';
 
+// Institución educativa vive en education_catalog_entries (misma tabla que
+// especialidades/profesiones de Empleados) — cada vez que se guarda un
+// practicante, la institución tecleada queda disponible como opción real
+// para el siguiente registro. onConflict ignora duplicados.
+const registerInstitucionCatalogEntry = (institucion) => {
+    if (!institucion) return;
+    supabase.from('education_catalog_entries')
+        .upsert([{ category: 'INSTITUCION_EDUCATIVA', value: institucion }], { onConflict: 'category,value', ignoreDuplicates: true })
+        .then(({ error }) => { if (error) console.warn('No se pudo registrar institución en catálogo:', error.message); });
+};
+
 export const createPracticantesSlice = (set, get) => ({
     practicantes: [],
     practicantesLoading: false,
@@ -25,6 +36,7 @@ export const createPracticantesSlice = (set, get) => ({
     createPracticante: async (payload) => {
         const { data: newRow, error } = await supabase.from('practicantes').insert([payload]).select('*, branches(name), supervisor:supervisor_employee_id(id, first_names, last_names)').single();
         if (error) throw error;
+        registerInstitucionCatalogEntry(newRow.institucion_educativa);
 
         await get().appendAuditLog('PRACTICANTE_CREADO', newRow.id, {
             timeline_title: `Practicante registrado: ${newRow.first_names} ${newRow.last_names}`,
@@ -40,6 +52,7 @@ export const createPracticantesSlice = (set, get) => ({
     updatePracticante: async (id, payload) => {
         const { data: updated, error } = await supabase.from('practicantes').update(payload).eq('id', id).select('*, branches(name), supervisor:supervisor_employee_id(id, first_names, last_names)').single();
         if (error) throw error;
+        registerInstitucionCatalogEntry(updated.institucion_educativa);
 
         await get().appendAuditLog('PRACTICANTE_EDITADO', id, {
             timeline_title: `Practicante actualizado: ${updated.first_names} ${updated.last_names}`,

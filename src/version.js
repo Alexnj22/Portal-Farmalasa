@@ -5,8 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.10.2';
+export const APP_VERSION = '2.10.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.10.3 — feat(practicantes): 5 correcciones pedidas tras revisar el modal.
+// (1) Se agregan Fecha de Nacimiento y Teléfono (propio del practicante, aparte
+// del teléfono del tutor) — antes no se pedían. (2) Con la fecha de nacimiento
+// se calcula edad/menor (calcAge/MINOR_AGE, extraído a utils/ageUtils.js — 3ra
+// duplicación de esa lógica tras Empleados y StaffManagementView, ahora
+// compartida): si es menor, DUI se reemplaza por Documento Alterno (requerido)
+// + aviso legal Art. 23.2 CT (el DUI no se tramita hasta los 18); si es
+// adulto, se pide DUI. (3) Sucursal ahora agrupa por tipo (Farmacias/Bodega/
+// Administración/Personal Externo) con separadores, igual que en Empleados —
+// mismo patrón TYPE_ORDER/AREA_LABEL + opt.isSeparator de LiquidSelect.
+// (4) Institución Educativa pasa de texto libre a catálogo (nueva categoría
+// 'INSTITUCION_EDUCATIVA' en la tabla education_catalog_entries, la misma que
+// ya usa Empleados para especialidad/profesión) con fallback "Otra...";
+// practicantesSlice.js registra el valor nuevo en el catálogo al guardar. Se
+// extrajeron CatalogSelect/CatalogOtherInput/isCatalogOther/buildCatalogOptions
+// (antes locales a EmployeeFormModal.jsx) a components/common/CatalogSelect.jsx
+// y utils/educationCatalogs.js para reusarlos sin duplicar. (5) Se elimina
+// "Horas Completadas" por completo (columna DROP en BD) — no hay fichaje para
+// practicantes por diseño legal, así que un conteo manual sin fuente de verdad
+// no aportaba; queda solo "Horas Requeridas" como meta declarada.
 
 // v2.10.2 — style(practicantes): a pedido del usuario, PracticanteModal.jsx se restiló
 // para calzar exactamente con la estructura visual de EmployeeFormModal — no solo

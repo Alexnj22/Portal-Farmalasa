@@ -3,6 +3,7 @@ import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, B
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
+import { CatalogSelect, CatalogOtherInput } from '../common/CatalogSelect';
 import { inputHoverClass } from '../../utils/inputStyles';
 import { EL_SALVADOR_GEO } from '../../data/elSalvadorGeo';
 import { NATIONALITY_OPTIONS } from '../../data/nationalities';
@@ -10,9 +11,10 @@ import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../supabaseClient';
 import { getStoragePathFromUrl } from '../../utils/storageFiles';
-import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD } from '../../utils/educationCatalogs';
+import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '../../utils/documentExpiry';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
+import { calcAge, MINOR_AGE } from '../../utils/ageUtils';
 import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
 
 // ============================================================================
@@ -67,7 +69,6 @@ const TEMPORAL_LEGAL_BASIS_OPTIONS = [
 // volver a estipularse período de prueba.
 const PROBATION_DAYS = 30;
 const PROBATION_EXEMPTION_DAYS = 365;
-const MINOR_AGE = 18;
 // Documentación del expediente — slots siempre visibles (CV, Contrato, DUI
 // frente/reverso). El resto son condicionales según lo marcado en Personal:
 // Licencia de Moto/Carro solo si se activó "Posee Licencia" respectiva; el
@@ -166,19 +167,9 @@ const isValidPersonName = (val) => {
     return /^[A-Za-zÀ-ÖØ-öø-ÿÑñ'’\-\s.]+$/.test(v);
 };
 
-// Edad real en años a partir de una fecha "YYYY-MM-DD". Rango laboral válido: 16-90.
+// Rango laboral válido: 16-90 (calcAge compartido en utils/ageUtils.js).
 const MIN_WORK_AGE = 16;
 const MAX_WORK_AGE = 90;
-const calcAge = (birthDateStr) => {
-    if (!birthDateStr) return null;
-    const bd = new Date(birthDateStr + 'T00:00:00');
-    if (isNaN(bd.getTime())) return null;
-    const today = new Date();
-    let age = today.getFullYear() - bd.getFullYear();
-    const m = today.getMonth() - bd.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
-    return age;
-};
 
 const AFP_OPTIONS = [
     { value: 'CRECER', label: 'AFP Crecer' },
@@ -233,55 +224,6 @@ const applyMask = (value, type) => {
     if (type === 'AFP' && v.length > 12) return v.substring(0, 12);
     return v;
 };
-
-// ============================================================================
-// 🚀 COMPONENTES REUTILIZABLES
-// ============================================================================
-// "Otra..." se detecta por dato, no por estado interno: si el valor guardado
-// no está en el catálogo (incluido el propio sentinel OTRA_ESPECIALIDAD
-// mientras no se ha tecleado nada), se considera "otro". Esto permite que el
-// select y el input de texto libre vivan en celdas separadas del grid
-// (el segundo debajo, a ancho completo) sin desincronizarse entre sí.
-const isCatalogOther = (value, options) => value != null && value !== '' && !options.some(o => o.value === value && o.value !== OTRA_ESPECIALIDAD);
-
-// Select con fallback a "Otra..." (solo el select — el input de texto libre
-// se renderiza aparte, en el caller, para poder ubicarlo a ancho completo).
-const CatalogSelect = ({ value, onChange, options, portalSelectProps, inputHoverClass, hasError, placeholder = 'Seleccionar...', clearable = false }) => {
-    const isOther = isCatalogOther(value, options);
-    const selectValue = isOther ? OTRA_ESPECIALIDAD : value;
-    return (
-        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${hasError && !isOther ? '!border-red-400 !bg-red-50/50' : ''}`}>
-            <LiquidSelect
-                value={selectValue}
-                onChange={(val) => onChange(val)}
-                options={options}
-                placeholder={placeholder}
-                clearable={clearable}
-                {...portalSelectProps}
-            />
-        </div>
-    );
-};
-
-// Input de texto libre para cuando se elige "Otra..." — value llega en
-// OTRA_ESPECIALIDAD (sentinel) hasta que el usuario teclea algo real.
-const CatalogOtherInput = ({ value, onChange, inputHoverClass, hasError, placeholder }) => (
-    <input
-        type="text"
-        value={value === OTRA_ESPECIALIDAD ? '' : (value || '')}
-        onChange={(e) => onChange(e.target.value.toUpperCase())}
-        placeholder={placeholder}
-        className={`w-full h-[40px] px-4 bg-white border rounded-[1rem] text-[13px] font-bold text-slate-700 outline-none shadow-sm ${inputHoverClass} ${hasError ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}
-    />
-);
-
-// Especialidades/profesiones viven en education_catalog_entries (no
-// hardcodeadas) — arma las options de un catálogo a partir de los valores
-// traídos de la BD, con "Otra..." siempre al final.
-const buildCatalogOptions = (values, otherLabel) => [
-    ...values.map(v => ({ value: v, label: v })),
-    { value: OTRA_ESPECIALIDAD, label: otherLabel },
-];
 
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL

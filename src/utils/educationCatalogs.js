@@ -22,3 +22,15 @@ export const GRADO_BASICA_OPTIONS = [
 ];
 
 export const OTRA_ESPECIALIDAD = '__OTRA__';
+
+// "Otra..." se detecta por dato, no por estado interno: si el valor guardado
+// no está en el catálogo (incluido el propio sentinel mientras no se ha
+// tecleado nada), se considera "otro".
+export const isCatalogOther = (value, options) => value != null && value !== '' && !options.some(o => o.value === value && o.value !== OTRA_ESPECIALIDAD);
+
+// Arma las options de un catálogo a partir de los valores traídos de la BD
+// (tabla education_catalog_entries), con "Otra..." siempre al final.
+export const buildCatalogOptions = (values, otherLabel) => [
+    ...values.map(v => ({ value: v, label: v })),
+    { value: OTRA_ESPECIALIDAD, label: otherLabel },
+];

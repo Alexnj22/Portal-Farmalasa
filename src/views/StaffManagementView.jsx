@@ -44,6 +44,7 @@ import { smartFilter } from '../utils/searchUtils';
 import { getExpiringDocuments } from '../utils/documentExpiry';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { useToastStore } from '../store/toastStore';
+import { calcAge, MINOR_AGE } from '../utils/ageUtils';
 import PracticanteModal from '../components/practicantes/PracticanteModal';
 
 const BRANCH_FILTER_OPTIONS = [{ value: 'ALL', label: 'Todas las Sucursales' }];
@@ -80,19 +81,9 @@ const getStatusInfo = (rawStatus) => {
   return { text: rawStatus || 'Sin estado', icon: HelpCircle, className: 'text-slate-600 bg-slate-50/80 border-slate-200' };
 };
 
-// Edad real en años — misma lógica que EmployeeFormModal (calcAge) para decidir
-// si el documento de identidad esperado es DUI (adulto) o alterno (menor).
-const MINOR_AGE = 18;
-const calcAgeYears = (birthDateStr) => {
-  if (!birthDateStr) return null;
-  const bd = new Date(birthDateStr + 'T00:00:00');
-  if (isNaN(bd.getTime())) return null;
-  const today = new Date();
-  let age = today.getFullYear() - bd.getFullYear();
-  const m = today.getMonth() - bd.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) age--;
-  return age;
-};
+// calcAgeYears decide si el documento de identidad esperado es DUI (adulto)
+// o alterno (menor) — mismo calcAge/MINOR_AGE compartido (utils/ageUtils.js).
+const calcAgeYears = calcAge;
 
 // Mismos campos que el banner "Información Pendiente" del modal Empleado
 // (pendingItems en EmployeeFormModal) — incluye la imagen del documento de

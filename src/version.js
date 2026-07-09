@@ -5,9 +5,20 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.9.34';
+export const APP_VERSION = '2.9.35';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.9.35 — feat(empleados): nuevo tipo de contrato "Prácticas / Aprendizaje" en el modal
+// de creación/edición (EmployeeFormModal). Corresponde legalmente al Contrato de Aprendizaje
+// del Código de Trabajo (Art. 61-70), no al Art. 25 (plazo fijo) que ya cubre "Temporal" —
+// por eso reutiliza fecha de inicio/fin obligatorias (como Temporal) pero NO los campos
+// Base Legal del Plazo/Motivo Concreto (exclusivos del régimen de plazo fijo). Se agregó
+// un aviso informativo con las 3 obligaciones clave del régimen de aprendices: forma
+// escrita + aprobación/inscripción ante el Ministerio de Trabajo (Art. 61), salario mínimo
+// reducido por año de aprendizaje 50%/75%/100% (Art. 69), y exención de responsabilidad
+// por terminación al llegar al fin del contrato (Art. 68). Sin migración de BD: contract_type
+// no tiene CHECK constraint (solo contract_temporal_legal_basis lo tiene, y no aplica aquí).
+//
 // v2.9.34 — fix(minmax): 2 bugs reportados por el usuario. (1) Badge "N borrador(es)" +
 // filtro "Solo borradores" desincronizados: draftCount/sparseCount/changesCount/stats se
 // calculaban sobre `data` completo, pero la tabla filtrada excluye productos ocultos

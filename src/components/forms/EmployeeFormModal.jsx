@@ -22,7 +22,14 @@ const UPPERCASE_FIELDS = new Set(['first_names', 'last_names', 'address', 'emerg
 const GENDER_OPTIONS = [{ value: 'F', label: 'Femenino' }, { value: 'M', label: 'Masculino' }];
 const BLOOD_TYPE_OPTIONS = [{ value: 'O+', label: 'O+ (Positivo)' }, { value: 'O-', label: 'O- (Negativo)' }, { value: 'A+', label: 'A+' }, { value: 'A-', label: 'A-' }, { value: 'B+', label: 'B+' }, { value: 'B-', label: 'B-' }, { value: 'AB+', label: 'AB+' }, { value: 'AB-', label: 'AB-' }];
 const MARITAL_STATUS_OPTIONS = [{ value: 'SOLTERO', label: 'Soltero/a' }, { value: 'CASADO', label: 'Casado/a' }, { value: 'DIVORCIADO', label: 'Divorciado/a' }, { value: 'VIUDO', label: 'Viudo/a' }, { value: 'ACOMPAÑADO', label: 'Acompañado/a' }];
-const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal' }, { value: 'SERVICIOS', label: 'Servicios Profesionales' }];
+const CONTRACT_TYPE_OPTIONS = [{ value: 'INDEFINIDO', label: 'Indefinido (Fijo)' }, { value: 'TEMPORAL', label: 'Temporal' }, { value: 'PRACTICAS', label: 'Prácticas / Aprendizaje' }, { value: 'SERVICIOS', label: 'Servicios Profesionales' }];
+// "Prácticas" = Contrato de Aprendizaje (Art. 61-70 CT): igual que Temporal
+// tiene fecha de fin obligatoria, pero su base legal no es el Art. 25 (plazo
+// fijo) sino el régimen especial de aprendices — por eso NO usa
+// TEMPORAL_LEGAL_BASIS_OPTIONS/contract_temporal_reason. Art. 61 exige forma
+// escrita + aprobación/inscripción ante el Ministerio de Trabajo; Art. 69 fija
+// salario mínimo reducido (50% año 1, 75% año 2, 100% desde año 3); Art. 68
+// exime de responsabilidad por terminación a ambas partes.
 // "Medio Tiempo" ya no es un tipo de contrato — es una configuración de horas
 // semanales (ver HOURS_OPTIONS), independiente del tipo de contrato.
 const HOURS_OPTIONS = [
@@ -581,8 +588,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 newData.disability_grade = '';
                 newData.disability_has_certification = false;
             }
-            if (name === 'contract_type' && value !== 'TEMPORAL') {
+            if (name === 'contract_type' && value !== 'TEMPORAL' && value !== 'PRACTICAS') {
                 newData.contract_end_date = '';
+            }
+            if (name === 'contract_type' && value !== 'TEMPORAL') {
                 newData.contract_temporal_legal_basis = '';
                 newData.contract_temporal_reason = '';
             }
@@ -963,7 +972,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const hoursMode = isCustomHours(formData?.weekly_contracted_hours) ? 'OTRO' : String(formData?.weekly_contracted_hours || '44');
     const customHoursNum = Number(formData?.weekly_contracted_hours);
     const hoursInvalid = hoursMode === 'OTRO' && (formData?.weekly_contracted_hours === '' || isNaN(customHoursNum) || customHoursNum < MIN_WEEKLY_HOURS || customHoursNum > MAX_WEEKLY_HOURS);
-    const contractDatesInvalid = formData?.contract_type === 'TEMPORAL' && !!formData?.contract_start_date && !!formData?.contract_end_date
+    const contractHasEndDate = formData?.contract_type === 'TEMPORAL' || formData?.contract_type === 'PRACTICAS';
+    const contractDatesInvalid = contractHasEndDate && !!formData?.contract_start_date && !!formData?.contract_end_date
         && new Date(`${formData.contract_end_date}T00:00:00`) <= new Date(`${formData.contract_start_date}T00:00:00`);
     // Art. 25/23.4: un contrato a plazo sin la base legal + motivo documentados
     // queda sin respaldo si se disputa — la ley presume indefinido cualquier
@@ -2071,8 +2081,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
                         )}
 
+                        {formData.contract_type === 'PRACTICAS' && (
+                            <div className="bg-blue-50/70 border border-blue-200/70 rounded-2xl p-3.5 flex items-start gap-3">
+                                <GraduationCap size={18} className="text-blue-500 shrink-0 mt-0.5" strokeWidth={2.5} />
+                                <p className="text-[11px] text-blue-700 font-medium leading-tight">
+                                    <span className="font-black">Contrato de Aprendizaje (Art. 61-70 CT).</span> Requiere forma escrita y aprobación/inscripción ante el Ministerio de Trabajo (Art. 61) para ser válido como tal — si no se tramita, se presume relación laboral ordinaria. Salario mínimo reducido: no menor al 50% del mínimo legal durante el primer año, 75% durante el segundo, 100% desde el tercero (Art. 69). Ninguna de las partes incurre en responsabilidad por la terminación del contrato al llegar a su fin (Art. 68).
+                                </p>
+                            </div>
+                        )}
+
                         <div className={`${islandClass} ${islandHoverClass}`}>
-                            <div className={`grid grid-cols-1 gap-4 ${formData.contract_type === 'TEMPORAL' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+                            <div className={`grid grid-cols-1 gap-4 ${contractHasEndDate ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                                 {isEditMode ? (
                                     <>
                                         <LockedField label="Tipo de Contrato" value={CONTRACT_TYPE_OPTIONS.find(o => o.value === formData.contract_type)?.label || formData.contract_type} />
@@ -2095,14 +2114,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </>
                                 )}
 
-                                {formData.contract_type === 'TEMPORAL' && (
+                                {contractHasEndDate && (
                                     <div className="relative z-30 animate-in fade-in zoom-in-95">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1 mb-1.5 flex items-center justify-between">
                                             <span>Fecha Fin de Contrato {contractDatesInvalid && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md ml-1">Debe ser posterior al inicio</span>}</span>
                                             {!formData.contract_end_date && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md border border-red-200">Obligatorio</span>}
                                         </label>
                                         <div className={`bg-amber-50/30 rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${contractDatesInvalid ? '!border-red-400 !bg-red-50/50' : 'border-amber-200'}`}>
-                                            <LiquidDatePicker value={formData.contract_end_date} onChange={(date) => handleDateChange('contract_end_date', date)} placeholder="Obligatorio para temporales" />
+                                            <LiquidDatePicker value={formData.contract_end_date} onChange={(date) => handleDateChange('contract_end_date', date)} placeholder="Obligatorio para temporales/prácticas" />
                                         </div>
                                     </div>
                                 )}

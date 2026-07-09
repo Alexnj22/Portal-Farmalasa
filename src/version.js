@@ -5,8 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.11.0';
+export const APP_VERSION = '2.11.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.11.1 — fix(conteo-inventario): corrige el header/buscador del módulo para que
+// siga el estándar del portal (ver BranchesView.jsx/StaffManagementView.jsx). El error:
+// ConteoInventarioView y ConteoDetailView renderizaban <ViewTabBar> como hermano suelto
+// ANTES de <GlassViewLayout>, en vez de pasarlo dentro de `filtersContent` — esto crea un
+// segundo header flotante desconectado del real (bug ya explicado por el usuario: "por
+// qué el buscador está arriba así"), y como GlassViewLayout ya tiene su propio header
+// sticky con filtersContent, el patrón correcto (igual que TODAS las demás vistas) es
+// construir un único bloque "pill deslizante" (búsqueda + botón de acción) y pasarlo como
+// filtersContent — no un ViewTabBar aparte. Se reescribió ConteoInventarioView con esa
+// pill (botón "Nuevo Conteo" ahora con el gradiente azul de marca estándar, no el botón
+// verde/no-estándar anterior). ConteoDetailView también recibió el mismo filtersContent
+// (antes no tenía ninguno, causando que el buscador general "desapareciera" al navegar
+// del listado al detalle) y se eliminó el buscador duplicado que vivía suelto en el
+// cuerpo — los pills de filtro por estado (Todos/Pendientes/Con diferencia/Sin ubicar)
+// se mantienen en el cuerpo (esos sí son filtros de contenido, no búsqueda global).
+
 
 // v2.11.0 — feat(conteo-inventario): nuevo módulo "Conteo de Inventario" (auditoría
 // física por sucursal/bodega). Grano lote+presentación (mismo grano crudo de `inventory`,

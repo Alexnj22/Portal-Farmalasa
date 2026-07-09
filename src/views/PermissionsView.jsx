@@ -6,7 +6,7 @@ import {
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
     LayoutDashboard, TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
-    Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart
+    Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
@@ -102,6 +102,7 @@ const MODULE_GROUPS = [
             ]},
             { key: 'ventas_perdidas', label: 'Ventas Perdidas', desc: 'Registro de productos solicitados sin stock; alertas de compra para logística con seguimiento de estado', icon: PackageMinus, hasApprove: false },
             { key: 'compras', label: 'Compras', desc: 'Historial de facturas de compra de Bodega desde el ERP: facturas por fecha y proveedor, detalle de ítems y resumen por producto', icon: ShoppingCart, hasApprove: false },
+            { key: 'conteo_inventario', label: 'Conteo de Inventario', desc: 'Auditoría física de stock por sucursal/bodega: snapshot del sistema, captura de conteo físico, faltantes/sobrantes, impresión de hoja y resultados. Aprobar = firmar el conteo finalizado', icon: ClipboardCheck, hasApprove: true, hasScope: true },
             { key: 'laboratorios', label: 'Laboratorios', desc: 'Lista de laboratorios con su ubicación física en bodega, editable por módulo', icon: FlaskConical, hasApprove: false },
             { key: 'pedidos', label: 'Pedidos a Sucursales', desc: 'Generación de pedidos de reposición de Bodega hacia sucursales, seguimiento en tiempo real y recepción por sucursal', icon: Package, hasApprove: false, hasScope: true, tabs: [
                 { key: 'pedidos_tab_generar',   label: 'Generar'              },

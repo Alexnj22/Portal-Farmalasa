@@ -9,6 +9,7 @@ import { createVacationPlanSlice } from './slices/vacationPlanSlice';
 import { createPayrollSlice } from './slices/payrollSlice';
 import { createNotificationsSlice } from './slices/notificationsSlice';
 import { createPracticantesSlice } from './slices/practicantesSlice';
+import { createConteoInventarioSlice } from './slices/conteoInventarioSlice';
 
 export const useStaffStore = create((...args) => ({
   ...createAuditSlice(...args),
@@ -20,4 +21,5 @@ export const useStaffStore = create((...args) => ({
   ...createPayrollSlice(...args),
   ...createNotificationsSlice(...args),
   ...createPracticantesSlice(...args),
+  ...createConteoInventarioSlice(...args),
 }));

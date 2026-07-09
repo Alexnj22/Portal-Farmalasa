@@ -48,6 +48,8 @@ const PedidosView = lazy(() => import("./views/PedidosView"));
 const MinMaxView = lazy(() => import("./views/MinMaxView"));
 const VentasPperdidasView = lazy(() => import("./views/VentasPperdidasView"));
 const ComprasView = lazy(() => import("./views/ComprasView"));
+const ConteoInventarioView = lazy(() => import("./views/ConteoInventarioView"));
+const ConteoDetailView = lazy(() => import("./views/inventario/ConteoDetailView"));
 const PromocionesView = lazy(() => import("./views/PromocionesView"));
 const FacturacionView = lazy(() => import("./views/FacturacionView"));
 const CotizacionesView = lazy(() => import("./views/CotizacionesView"));
@@ -611,6 +613,8 @@ function MainApp() {
                                     <Route path="minmax" element={<PermissionGuard moduleKey="minmax"><MinMaxView /></PermissionGuard>} />
                                     <Route path="ventas-perdidas" element={<PermissionGuard moduleKey="ventas_perdidas"><VentasPperdidasView /></PermissionGuard>} />
                                     <Route path="compras" element={<PermissionGuard moduleKey="compras"><ComprasView /></PermissionGuard>} />
+                                    <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
+                                    <Route path="conteo-inventario/:id" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoDetailView /></PermissionGuard>} />
                                     <Route path="promociones" element={<PermissionGuard moduleKey="promociones"><PromocionesView /></PermissionGuard>} />
                                     <Route path="encuesta" element={<PermissionGuard moduleKey="encuesta"><EncuestaView /></PermissionGuard>} />
                                     <Route path="encuesta-admin" element={<PermissionGuard moduleKey="encuesta_admin"><EncuestaAdminView /></PermissionGuard>} />
@@ -727,6 +731,7 @@ const ROUTE_TITLES = {
     '/encuesta':          'Encuesta',
     '/encuesta-admin':    'Encuesta',
     '/compras':           'Compras',
+    '/conteo-inventario': 'Conteo de Inventario',
     '/promociones':       'Promociones',
     '/branches':          'Sucursales',
     '/roles':             'Roles',

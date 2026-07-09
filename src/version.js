@@ -5,8 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.10.3';
+export const APP_VERSION = '2.11.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.11.0 — feat(conteo-inventario): nuevo módulo "Conteo de Inventario" (auditoría
+// física por sucursal/bodega). Grano lote+presentación (mismo grano crudo de `inventory`,
+// sin re-derivar factor/mv_product_factor — el físico se anota en la misma unidad ya
+// impresa). NO ajusta `inventory` (esa tabla la llena el sync del ERP) — solo detecta,
+// documenta y deja firma de aprobación auditable de faltantes/sobrantes; la corrección
+// real ocurre en el ERP por el proceso operativo de siempre. Flujo: crear (snapshot vía
+// INSERT...SELECT server-side desde `inventory`, alcance TOTAL/LABORATORIO/BAJO_RECETA/
+// MANUAL, filtra vencidos por defecto) → contar (autosave por fila, diferencia en vivo) →
+// finalizar (agrega totales + valor $ faltante/sobrante por SQL) → aprobar (firma,
+// gateado por can_approve). RLS con scope real por sucursal (auth_has_module_permission +
+// auth_module_scope + auth_employee_branch_id — mismo patrón que minmax_change_requests,
+// más robusto que el scope solo-cliente usado en Practicantes). 2 tablas nuevas
+// (conteos_inventario, conteo_inventario_items) + 6 RPCs (crear_conteo_inventario,
+// finalizar_conteo_inventario, aprobar_conteo_inventario, get_conteo_items_jsonb,
+// get_conteo_items_count, get_conteo_items_search — estas 2 últimas paginan con CTE
+// MATERIALIZED para evitar el plan genérico lento de "(param IS NULL OR ...)", ver
+// feedback_sql_function_generic_plans). Imprime 2 PDFs vía pdfmake (hoja de conteo en
+// blanco + reporte de resultados con firmas) en utils/conteoInventarioPrint.js —
+// autocontenido, no reusa pedidoPrint.js (trae lógica de despacho/factor que no aplica).
+// Verificado end-to-end contra Supabase real (2538 filas de snapshot en La Popular,
+// crear→contar→finalizar→aprobar→2 PDFs descargados, 3 eventos de audit_logs) y limpiado
+// por completo al terminar.
+
 
 // v2.10.3 — feat(practicantes): 5 correcciones pedidas tras revisar el modal.
 // (1) Se agregan Fecha de Nacimiento y Teléfono (propio del practicante, aparte

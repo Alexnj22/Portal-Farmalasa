@@ -5,8 +5,47 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.9.33';
+export const APP_VERSION = '2.9.34';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.9.34 — fix(minmax): 2 bugs reportados por el usuario. (1) Badge "N borrador(es)" +
+// filtro "Solo borradores" desincronizados: draftCount/sparseCount/changesCount/stats se
+// calculaban sobre `data` completo, pero la tabla filtrada excluye productos ocultos
+// (is_hidden) INCONDICIONALMENTE antes de aplicar cualquier otro filtro — repro exacto:
+// La Popular mostraba "1 borrador" (ELECTROLIT JAMAICA 625ML, is_hidden=true, draft
+// pendiente de un hide+zero-out) pero "Solo borradores" daba 0 resultados. Fix: el loop
+// de conteo ahora salta filas ocultas, igual que filteredBase. (2) Historial MIN/MAX no
+// registraba varios tipos de cambio — 4 causas encontradas y corregidas: (a) openHistory
+// filtraba por una lista de acciones vieja/incompleta (incluía 'MINMAX_MANUAL_OVERRIDE',
+// un action de un componente EditRow/EditDraftRow 100% muerto — nunca se renderiza en
+// JSX, eliminado ~200 líneas — y le faltaban MINMAX_BODEGA_MANUAL_OVERRIDE/RESET_MANUAL,
+// MINMAX_UPDATED_FROM_PEDIDO, MINMAX_RESET_CLEAR, MINMAX_DISCARD_DRAFT,
+// MINMAX_ZERO_ALL_BRANCHES); (b) las 2 llamadas a appendAuditLog('MINMAX_BODEGA_MANUAL_
+// OVERRIDE', ...) nunca incluían sucursal_id en los details, y el filtro de openHistory
+// exige `details->>sucursal_id = sucursal actual` — con NULL nunca matcheaba aunque el
+// action estuviera en la lista; (c) BUG CRÍTICO en TabPedidos.jsx doSave: el target_id
+// del audit log era `row.pedido_id` (undefined → loggeaba target_id=NULL) en vez de
+// `row.erp_product_id` — los cambios de MIN/MAX hechos desde "Revisión MIN/MAX" en
+// Pedidos JAMÁS podían aparecer en el historial de ningún producto, sin importar el
+// filtro; (d) modelo de datos fragmentado: cada guardado de una sola celda (MIN o MAX)
+// loggeaba SOLO ese campo (field:'MIN'/'MAX', old_value/new_value) — a pedido del
+// usuario ("no se debe guardar el min y max individual, sino todo junto") se unificó
+// TODA acción de historial a una sola forma {old_min,old_max,new_min,new_max,
+// sucursal_id} — una entrada por guardado con el estado completo antes/después, nunca
+// fragmentado por campo. Con eso el render del modal se simplificó a un solo path
+// (MINMAX_HISTORY_ACTION_META: label+color por acción) en vez de 3 ramas ad-hoc
+// (isReset/isZero/default) que ya no cubrían todos los casos. BACKFILL de datos
+// existentes en audit_logs (producción, verificado con SELECT antes/después): 198
+// MINMAX_UPDATED_FROM_PEDIDO con target_id NULL → corregido a target_id=product_id;
+// 39 MINMAX_BODEGA_MANUAL_OVERRIDE sin sucursal_id → sucursal_id=6 + normalizados a
+// old_min/new_min; 5,249 MINMAX_LIVE_EDIT/MINMAX_DRAFT_EDIT de una sola celda →
+// normalizados a old_min/old_max/new_min/new_max (el campo no tocado queda sin dato
+// histórico, honesto — nunca se capturó); 92 MINMAX_RESET_CALC, 138 MINMAX_ZERO_OUT/
+// LIVE_ZERO/ZERO_ALL_BRANCHES, 8 MINMAX_BODEGA_RESET_MANUAL → mismo tratamiento. Todo
+// el historial pre-existente ahora es visible y consistente con el formato nuevo.
+// Verificado con Playwright + queries directas a product_stock_params/audit_logs
+// contra producción (usuario estaba probando en vivo en simultáneo — la secuencia real
+// de sus pruebas en INDOMETACINA 25MG quedó capturada correctamente en el historial).
 
 // v2.9.33 — fix(minmax/bodega): badge "SIN SALAS" se disparaba con cualquier producto con override manual en Bodega, sin importar si las sucursales sí tenían MIN/MAX real (repro: INDOMETACINA 25MG, Σ sucursales=366/671 marcado como retirado de todas las salas). Causa: la condición leía `row.min_units`/`row.max_units`, campos que NO existen en las filas devueltas por get_stock_analysis_jsonb (el RPC expone `pub_min`/`pub_max`) — `Number(undefined ?? 0)` siempre daba 0, así que `has_manual && Σ=0` era casi siempre cierto. Fix: usar `row.pub_min`/`row.pub_max` (la Σ real de sucursales), igual que el resto del componente. De paso: se confirmó que el modelo aditivo del trigger sync_bodega_draft_from_branch (effective = Σ sucursales + manual delta) SÍ preserva manual_min/manual_max correctamente — el reporte original ("sucursal sobrescribe el manual de bodega") no se pudo reproducir en el código actual; puede haber sido este mismo bug de badge generando la confusión.
 

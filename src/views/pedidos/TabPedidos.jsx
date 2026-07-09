@@ -1276,13 +1276,22 @@ function ItemSections({ allItems, loading }) {
     const doSave = async (row, min, max) => {
         setSavingId(row.id);
         try {
+            const k = `${row.erp_product_id}_${row.erp_sucursal_id}`;
+            const prevPsp = pspMap[k];
             const { error } = await supabase.from('product_stock_params')
                 .update({ min_units: min, max_units: max, manual_min: null, manual_max: null })
                 .eq('erp_product_id', row.erp_product_id)
                 .eq('erp_sucursal_id', row.erp_sucursal_id);
             if (error) throw error;
-            useStaff.getState().appendAuditLog('MINMAX_UPDATED_FROM_PEDIDO', row.pedido_id, { product_id: row.erp_product_id, sucursal_id: row.erp_sucursal_id, min, max });
-            const k = `${row.erp_product_id}_${row.erp_sucursal_id}`;
+            // target_id debe ser el producto (no el pedido) — es lo que el historial
+            // MIN/MAX de Productos usa para buscar cambios de un producto puntual.
+            useStaff.getState().appendAuditLog('MINMAX_UPDATED_FROM_PEDIDO', String(row.erp_product_id), {
+                field: 'min+max', product: row.product_name, sucursal_id: row.erp_sucursal_id,
+                old_min: prevPsp?.manual_min ?? prevPsp?.min_units ?? 0,
+                old_max: prevPsp?.manual_max ?? prevPsp?.max_units ?? 0,
+                new_min: min, new_max: max,
+                pedido_id: row.pedido_id,
+            });
             setPspMap(prev => ({ ...prev, [k]: { ...(prev[k] ?? {}), min_units: min, max_units: max, manual_min: null, manual_max: null } }));
             setSavedId(row.id);
             setTimeout(() => setSavedId(id => id === row.id ? null : id), 2000);

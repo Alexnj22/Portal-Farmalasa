@@ -51,6 +51,22 @@ const ERP_NAMES = {
 };
 const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 
+// Historial MIN/MAX: label + color por tipo de acción. Todas comparten la misma
+// forma de datos (old_min/old_max/new_min/new_max) — un solo render las cubre.
+const MINMAX_HISTORY_ACTION_META = {
+    MINMAX_LIVE_EDIT:               { label: 'EN VIVO',        badge: 'bg-emerald-50 text-emerald-600' },
+    MINMAX_DRAFT_EDIT:              { label: 'BORRADOR',       badge: 'bg-amber-50 text-amber-600' },
+    MINMAX_BODEGA_MANUAL_OVERRIDE:  { label: 'MANUAL BODEGA',  badge: 'bg-violet-50 text-violet-600' },
+    MINMAX_BODEGA_RESET_MANUAL:     { label: 'RESTAURADO',     badge: 'bg-emerald-50 text-emerald-600' },
+    MINMAX_UPDATED_FROM_PEDIDO:     { label: 'DESDE PEDIDOS',  badge: 'bg-sky-50 text-sky-600' },
+    MINMAX_RESET_CALC:              { label: 'RESTAURADO',     badge: 'bg-emerald-50 text-emerald-600' },
+    MINMAX_RESET_CLEAR:             { label: 'LIMPIADO',       badge: 'bg-slate-100 text-slate-500' },
+    MINMAX_DISCARD_DRAFT:           { label: 'DESCARTADO',     badge: 'bg-slate-100 text-slate-500' },
+    MINMAX_ZERO_OUT:                { label: 'PUESTO EN 0',    badge: 'bg-red-50 text-red-600' },
+    MINMAX_LIVE_ZERO:               { label: 'PUESTO EN 0',    badge: 'bg-red-50 text-red-600' },
+    MINMAX_ZERO_ALL_BRANCHES:       { label: '0 EN TODA LA RED', badge: 'bg-red-50 text-red-600' },
+};
+
 const ALERT = {
     out_of_stock: { label: 'Sin stock',     pill: 'bg-slate-100/90 text-slate-600 border-slate-200', dot: 'bg-red-500',     row: 'bg-red-50/40'    },
     below_min:    { label: 'Bajo mínimo',   pill: 'bg-slate-100/90 text-slate-600 border-slate-200', dot: 'bg-orange-500',  row: 'bg-orange-50/20' },
@@ -1344,208 +1360,6 @@ function ExpandedPanel({ row, cycleDays }) {
     );
 }
 
-// ─── Inline edit row ──────────────────────────────────────────────────────────
-
-function EditRow({ row, onSave, onCancel }) {
-    const [mn,      setMn]      = useState(String(row.effective_min ?? ''));
-    const [mx,      setMx]      = useState(String(row.effective_max ?? ''));
-    const [lt,      setLt]      = useState('');
-    const [ltLoaded, setLtLoaded] = useState(false);
-    const [saving,  setSaving]  = useState(false);
-    const [err,     setErr]     = useState('');
-    const mnRef = useRef();
-    useEffect(() => { mnRef.current?.select(); }, []);
-
-    useEffect(() => {
-        supabase.from('product_stock_params')
-            .select('lead_time_days')
-            .eq('erp_product_id', row.erp_product_id)
-            .eq('erp_sucursal_id', row._erp_sucursal_id)
-            .maybeSingle()
-            .then(({ data }) => {
-                setLt(data?.lead_time_days != null ? String(data.lead_time_days) : '');
-                setLtLoaded(true);
-            });
-    }, [row.erp_product_id, row._erp_sucursal_id]);
-
-    const save = async (clearManual = false) => {
-        const newMin = clearManual ? null : (mn === '' ? null : parseInt(mn, 10));
-        const newMax = clearManual ? null : (mx === '' ? null : parseInt(mx, 10));
-        const newLt  = lt === '' ? null : parseInt(lt, 10);
-        if (!clearManual && (newMin === null) !== (newMax === null)) { setErr('Completá ambos (MIN y MAX) o dejá los dos en blanco'); return; }
-        if (!clearManual && newMin !== null && newMax !== null && newMax <= newMin) { setErr('MAX debe ser mayor al MIN'); return; }
-        if (newLt !== null && newLt < 1) { setErr('Lead time debe ser ≥ 1 día'); return; }
-        setSaving(true);
-        try {
-            const { error } = await supabase.from('product_stock_params')
-                .update({ manual_min: newMin, manual_max: newMax, lead_time_days: newLt, updated_at: new Date().toISOString() })
-                .eq('erp_product_id', row.erp_product_id)
-                .eq('erp_sucursal_id', row._erp_sucursal_id);
-            if (error) throw error;
-            useStaff.getState().appendAuditLog('MINMAX_MANUAL_OVERRIDE', String(row.erp_product_id), {
-                product: row.product_name,
-                sucursal_id: row._erp_sucursal_id,
-                action: clearManual ? 'reset' : 'override',
-                manual_min: newMin,
-                manual_max: newMax,
-                lead_time_days: newLt,
-            });
-            onSave();
-        } catch (e) { setErr(e.message); setSaving(false); }
-    };
-
-    const alert = ALERT[row.alert_status] ?? ALERT.ok;
-    const pres  = row.presentations || [];
-
-    return (
-        <div className="bg-blue-50/40 border-b border-blue-100">
-            <div className="grid items-center px-4 py-2"
-                style={{ gridTemplateColumns: '1fr 68px 100px 105px 105px 88px 56px' }}>
-                <div className="min-w-0 pr-3">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-[13px] font-semibold text-slate-800 truncate">{row.product_name || '—'}</span>
-                        {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
-                    </div>
-                    <span className="text-[10px] text-slate-400">{Number(row.daily_velocity||0).toFixed(1)} und/día</span>
-                    <StockBar current={row.current_stock} min={parseInt(mn)||row.effective_min} max={parseInt(mx)||row.effective_max} />
-                </div>
-                <div className="flex justify-center"><AbcXyzBadge abc={row.abc_class} xyz={row.demand_variability} /></div>
-                <div className="text-right">
-                    <span className={`text-[12px] font-bold tabular-nums ${Number(row.current_stock)===0?'text-red-500':'text-slate-700'}`}>
-                        {formatUnits(row.current_stock, pres)}
-                    </span>
-                </div>
-                <div className="px-1.5">
-                    <input ref={mnRef} type="number" min="0" value={mn}
-                        onChange={e => { setMn(e.target.value); setErr(''); }}
-                        onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') onCancel(); }}
-                        placeholder={String(row.effective_min)}
-                        className="w-full text-right text-[12px] font-bold text-orange-700 bg-orange-50 border border-orange-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-300" />
-                    <div className="text-[9px] text-slate-400 text-right mt-0.5">und</div>
-                </div>
-                <div className="px-1.5">
-                    <input type="number" min="0" value={mx}
-                        onChange={e => { setMx(e.target.value); setErr(''); }}
-                        onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') onCancel(); }}
-                        placeholder={String(row.effective_max)}
-                        className="w-full text-right text-[12px] font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300" />
-                    <div className="text-[9px] text-slate-400 text-right mt-0.5">und</div>
-                </div>
-                <div className="flex items-center justify-center gap-1.5">
-                    <button onClick={() => save()} disabled={saving}
-                        className="h-7 px-3 rounded-lg text-[11px] font-bold text-white bg-emerald-500 hover:bg-emerald-600 transition-colors disabled:opacity-50 flex items-center gap-1">
-                        {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Guardar
-                    </button>
-                    <button onClick={onCancel} disabled={saving}
-                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"><X size={13} /></button>
-                </div>
-                <div className="flex justify-end">
-                    {row.has_manual && (
-                        <button onClick={() => save(true)} disabled={saving} title="Restablecer valores calculados"
-                            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-300 hover:text-orange-500 hover:bg-orange-50 transition-colors"><RotateCcw size={12} /></button>
-                    )}
-                </div>
-            </div>
-            {err && <div className="px-4 pb-2 text-[11px] font-semibold text-red-500">{err}</div>}
-            {ltLoaded && (
-                <div className="flex items-center gap-3 px-4 pb-2.5">
-                    <Clock size={10} className="text-slate-400 shrink-0" />
-                    <span className="text-[10px] text-slate-500 font-medium flex-1">Lead time específico</span>
-                    <span className="text-[9px] text-slate-400">(vacío = usar clase XYZ)</span>
-                    <input type="number" min="1" value={lt}
-                        onChange={e => { setLt(e.target.value); setErr(''); }}
-                        placeholder="—"
-                        className="w-14 text-right text-[12px] font-bold text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-slate-300" />
-                    <span className="text-[10px] text-slate-400 shrink-0">días</span>
-                </div>
-            )}
-        </div>
-    );
-}
-
-// ─── Edit draft row ───────────────────────────────────────────────────────────
-
-function EditDraftRow({ row, onSave, onCancel }) {
-    const [mn,     setMn]     = useState(String(row.draft_min ?? ''));
-    const [mx,     setMx]     = useState(String(row.draft_max ?? ''));
-    const [saving, setSaving] = useState(false);
-    const [err,    setErr]    = useState('');
-    const mnRef = useRef();
-    useEffect(() => { mnRef.current?.select(); }, []);
-
-    const pres = row.presentations || [];
-
-    const save = async () => {
-        const newMin = mn === '' ? null : parseInt(mn, 10);
-        const newMax = mx === '' ? null : parseInt(mx, 10);
-        if (newMin !== null && newMax !== null && newMax <= newMin) { setErr('MAX debe ser mayor al MIN'); return; }
-        setSaving(true);
-        try {
-            const { error } = await supabase.from('product_stock_params')
-                .update({ draft_min: newMin, draft_max: newMax, updated_at: new Date().toISOString() })
-                .eq('erp_product_id', row.erp_product_id)
-                .eq('erp_sucursal_id', row._erp_sucursal_id);
-            if (error) throw error;
-            useStaff.getState().appendAuditLog('MINMAX_DRAFT_EDIT', String(row.erp_product_id), {
-                product: row.product_name, sucursal_id: row._erp_sucursal_id,
-                draft_min: newMin, draft_max: newMax,
-            });
-            onSave();
-        } catch (e) { setErr(e.message); setSaving(false); }
-    };
-
-    return (
-        <div className="bg-amber-50/30 border-b border-amber-100">
-            <div className="grid items-center px-4 py-2"
-                style={{ gridTemplateColumns: '1fr 68px 100px 105px 105px 88px 56px' }}>
-                <div className="min-w-0 pr-3">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-[13px] font-semibold text-slate-800 truncate">{row.product_name}</span>
-                        <span className="shrink-0 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400">
-                        En uso: MIN <span className="text-orange-500 font-bold">{Number(row.effective_min || 0).toLocaleString()}</span> · MAX <span className="text-blue-500 font-bold">{Number(row.effective_max || 0).toLocaleString()}</span> und
-                    </span>
-                </div>
-                <div className="flex justify-center">
-                    <AbcXyzBadge abc={row.draft_abc_class || row.abc_class} xyz={row.draft_demand_variability || row.demand_variability} />
-                </div>
-                <div className="text-right">
-                    <span className={`text-[12px] font-bold tabular-nums ${Number(row.current_stock) === 0 ? 'text-red-500' : 'text-slate-700'}`}>
-                        {formatUnits(row.current_stock, pres)}
-                    </span>
-                </div>
-                <div className="px-1.5">
-                    <input ref={mnRef} type="number" min="0" value={mn}
-                        onChange={e => { setMn(e.target.value); setErr(''); }}
-                        onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') onCancel(); }}
-                        placeholder={String(row.draft_min ?? '')}
-                        className="w-full text-right text-[12px] font-bold text-amber-800 bg-amber-50 border border-amber-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-300" />
-                    <div className="text-[9px] text-slate-400 text-right mt-0.5">MIN borrador</div>
-                </div>
-                <div className="px-1.5">
-                    <input type="number" min="0" value={mx}
-                        onChange={e => { setMx(e.target.value); setErr(''); }}
-                        onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') onCancel(); }}
-                        placeholder={String(row.draft_max ?? '')}
-                        className="w-full text-right text-[12px] font-bold text-amber-800 bg-amber-50 border border-amber-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-300" />
-                    <div className="text-[9px] text-slate-400 text-right mt-0.5">MAX borrador</div>
-                </div>
-                <div className="flex items-center justify-center gap-1.5">
-                    <button onClick={save} disabled={saving}
-                        className="h-7 px-3 rounded-lg text-[11px] font-bold text-white bg-amber-500 hover:bg-amber-600 transition-colors disabled:opacity-50 flex items-center gap-1">
-                        {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Guardar
-                    </button>
-                    <button onClick={onCancel} disabled={saving}
-                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"><X size={13} /></button>
-                </div>
-                <div />
-            </div>
-            {err && <div className="px-4 pb-2 text-[11px] font-semibold text-red-500">{err}</div>}
-        </div>
-    );
-}
-
 // ─── Config Panel ─────────────────────────────────────────────────────────────
 
 function ConfigPanel({ config, onSave, onClose }) {
@@ -2107,6 +1921,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         let firstCalc = null, firstDraftCalc = null;
         let critA = 0, critAOut = 0, critABelow = 0;
         for (const r of data) {
+            // Los ocultos nunca aparecen en la tabla filtrada (filteredBase los excluye
+            // incondicionalmente) — si se cuentan acá, el badge "N borradores" queda
+            // desincronizado del filtro "Solo borradores" (ej. "1 borrador" pero 0 resultados).
+            if (r.is_hidden) continue;
             if (r.published_by != null) hasPublished = true;
             if (r.draft_status === 'pending') {
                 if (r._erp_sucursal_id === 6) {
@@ -2162,7 +1980,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 ));
             }
             useStaff.getState().appendAuditLog('MINMAX_LIVE_ZERO', String(row.erp_product_id), {
-                product: row.product_name, sucursal_id: row._erp_sucursal_id,
+                field: 'min+max', product: row.product_name, sucursal_id: row._erp_sucursal_id,
+                old_min: row.effective_min ?? 0, old_max: row.effective_max ?? 0,
+                new_min: 0, new_max: 0,
             });
         } else {
             const { error: e } = await supabase.from('product_stock_params')
@@ -2177,7 +1997,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 ));
             }
             useStaff.getState().appendAuditLog('MINMAX_ZERO_OUT', String(row.erp_product_id), {
-                product: row.product_name, sucursal_id: row._erp_sucursal_id,
+                field: 'min+max', product: row.product_name, sucursal_id: row._erp_sucursal_id,
+                old_min: row.draft_min ?? row.effective_min ?? 0, old_max: row.draft_max ?? row.effective_max ?? 0,
+                new_min: 0, new_max: 0,
             });
         }
     }, [hasPublishedData]);
@@ -2199,7 +2021,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         ));
         useToastStore.getState().showToast(row.product_name, 'Retirado de MIN·MAX en todas las salas', 'success');
         useStaff.getState().appendAuditLog('MINMAX_ZERO_ALL_BRANCHES', String(row.erp_product_id), {
-            product: row.product_name,
+            field: 'min+max', product: row.product_name,
+            new_min: 0, new_max: 0,
         });
     }, []);
 
@@ -2250,19 +2073,22 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     { onConflict: 'erp_product_id,erp_sucursal_id' }
                 );
             if (e) { useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error'); return; }
+            const newMinEff = edit.field === 'min' ? (numVal ?? 0) : (targetRow?.effective_min ?? 0);
+            const newMaxEff = edit.field === 'max' ? (numVal ?? 0) : (targetRow?.effective_max ?? 0);
             setData(prev => prev.map(r => {
                 if (r.erp_product_id !== edit.productId || r._erp_sucursal_id !== 6) return r;
-                const newMin = edit.field === 'min' ? (numVal ?? 0) : (r.effective_min ?? 0);
-                const newMax = edit.field === 'max' ? (numVal ?? 0) : (r.effective_max ?? 0);
-                return { ...r, [effCol]: numVal ?? 0, has_manual: deltaToStore !== null, alert_status: calcAlertStatus(r.current_stock, newMin, newMax) };
+                return { ...r, [effCol]: numVal ?? 0, has_manual: deltaToStore !== null, alert_status: calcAlertStatus(r.current_stock, newMinEff, newMaxEff) };
             }));
+            // Historial: siempre MIN+MAX juntos (estado completo, no el campo suelto) —
+            // así una entrada sola alcanza para reconstruir el antes/después real.
             useStaff.getState().appendAuditLog('MINMAX_BODEGA_MANUAL_OVERRIDE', String(edit.productId), {
-                field: edit.field === 'min' ? 'MIN' : 'MAX',
-                product: targetRow?.product_name,
-                old_value: edit.field === 'min' ? (targetRow?.effective_min ?? 0) : (targetRow?.effective_max ?? 0),
-                new_value: numVal,
-                delta: deltaToStore,
-                pub_sum: floor,
+                field: 'min+max', product: targetRow?.product_name, sucursal_id: 6,
+                old_min: targetRow?.effective_min ?? 0, old_max: targetRow?.effective_max ?? 0,
+                new_min: newMinEff, new_max: newMaxEff,
+                delta_min: edit.field === 'min' ? deltaToStore : (targetRow?.manual_min ?? null),
+                delta_max: edit.field === 'max' ? deltaToStore : (targetRow?.manual_max ?? null),
+                pub_sum_min: edit.field === 'min' ? floor : (targetRow?.pub_min ?? 0),
+                pub_sum_max: edit.field === 'max' ? floor : (targetRow?.pub_max ?? 0),
             });
             return;
         }
@@ -2294,12 +2120,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 if (draft) setDraftCost(draft);
             });
             useStaff.getState().appendAuditLog('MINMAX_LIVE_EDIT', String(edit.productId), {
-                field: col,
-                field_label: edit.field === 'min' ? 'MIN' : 'MAX',
-                product: targetRow?.product_name,
-                old_value: edit.field === 'min' ? (targetRow?.effective_min ?? 0) : (targetRow?.effective_max ?? 0),
-                new_value: numVal,
-                sucursal_id: edit.sucursalId,
+                field: 'min+max', product: targetRow?.product_name, sucursal_id: edit.sucursalId,
+                old_min: targetRow?.effective_min ?? 0, old_max: targetRow?.effective_max ?? 0,
+                new_min: newMin ?? 0, new_max: newMax ?? 0,
             });
             warnIfOutrageous(edit.field, numVal, targetRow);
         } else {
@@ -2328,12 +2151,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 if (draft) setDraftCost(draft);
             });
             useStaff.getState().appendAuditLog('MINMAX_DRAFT_EDIT', String(edit.productId), {
-                field: col,
-                field_label: edit.field === 'min' ? 'MIN' : 'MAX',
-                product: targetRow?.product_name,
-                old_value: edit.field === 'min' ? (targetRow?.draft_min ?? targetRow?.effective_min ?? 0) : (targetRow?.draft_max ?? targetRow?.effective_max ?? 0),
-                new_value: numVal,
-                sucursal_id: edit.sucursalId,
+                field: 'min+max', product: targetRow?.product_name, sucursal_id: edit.sucursalId,
+                old_min: targetRow?.draft_min ?? targetRow?.effective_min ?? 0,
+                old_max: targetRow?.draft_max ?? targetRow?.effective_max ?? 0,
+                new_min: newMin ?? 0, new_max: newMax ?? 0,
             });
             warnIfOutrageous(edit.field, numVal, targetRow);
         }
@@ -2384,7 +2205,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 return { ...r, effective_min: minNum ?? 0, effective_max: maxNum ?? 0, has_manual: deltaMinStore !== null || deltaMaxStore !== null, alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
             }));
             useStaff.getState().appendAuditLog('MINMAX_BODEGA_MANUAL_OVERRIDE', String(productId), {
-                field: 'min+max', product: productName,
+                field: 'min+max', product: productName, sucursal_id: 6,
                 old_min: targetRow?.effective_min ?? 0, old_max: targetRow?.effective_max ?? 0,
                 new_min: minNum, new_max: maxNum,
                 delta_min: deltaMinStore, delta_max: deltaMaxStore,
@@ -2495,7 +2316,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             }));
             useToastStore.getState().showToast(row.product_name, 'Manual eliminado — Bodega vuelve a Σ sucursales', 'success');
             useStaff.getState().appendAuditLog('MINMAX_BODEGA_RESET_MANUAL', String(row.erp_product_id), {
-                product: row.product_name, sucursal_id: 6,
+                field: 'min+max', product: row.product_name, sucursal_id: 6,
+                old_min: row.effective_min ?? 0, old_max: row.effective_max ?? 0,
+                new_min: newEff, new_max: newEffMax,
                 restored_min: newEff, restored_max: newEffMax,
             });
             return;
@@ -2512,7 +2335,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     ? { ...r, draft_min: null, draft_max: null, draft_status: 'none', manual_min: null, manual_max: null, has_manual: false, effective_min: null, effective_max: null, alert_status: calcAlertStatus(r.current_stock, null, null) } : r
             ));
             useToastStore.getState().showToast(row.product_name, 'Valores limpiados a —', 'success');
-            useStaff.getState().appendAuditLog('MINMAX_RESET_CLEAR', String(row.erp_product_id), { sucursal_id: row._erp_sucursal_id });
+            useStaff.getState().appendAuditLog('MINMAX_RESET_CLEAR', String(row.erp_product_id), {
+                field: 'min+max', product: row.product_name, sucursal_id: row._erp_sucursal_id,
+                old_min: row.draft_min ?? row.effective_min ?? 0, old_max: row.draft_max ?? row.effective_max ?? 0,
+                new_min: null, new_max: null,
+            });
             return;
         }
         const cMin = row.calc_min ?? 0;
@@ -2533,7 +2360,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         }));
         useToastStore.getState().showToast(row.product_name, `Restaurado a MIN ${cMin} / MAX ${cMax} (calculado)`, 'success');
         useStaff.getState().appendAuditLog('MINMAX_RESET_CALC', String(row.erp_product_id), {
-            calc_min: cMin, calc_max: cMax, sucursal_id: row._erp_sucursal_id, mode: saveLive ? 'live' : 'draft',
+            field: 'min+max', product: row.product_name, sucursal_id: row._erp_sucursal_id, mode: saveLive ? 'live' : 'draft',
+            old_min: saveLive ? (row.effective_min ?? 0) : (row.draft_min ?? row.effective_min ?? 0),
+            old_max: saveLive ? (row.effective_max ?? 0) : (row.draft_max ?? row.effective_max ?? 0),
+            new_min: cMin, new_max: cMax,
+            calc_min: cMin, calc_max: cMax,
         });
     }, [hasPublishedData]);
 
@@ -2551,7 +2382,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 ? { ...r, draft_min: revertMin, draft_max: revertMax, draft_status: 'none' } : r
         ));
         useStaff.getState().appendAuditLog('MINMAX_DISCARD_DRAFT', String(row.erp_product_id), {
-            product: row.product_name, sucursal_id: row._erp_sucursal_id, reverted_to: { min: revertMin, max: revertMax },
+            field: 'min+max', product: row.product_name, sucursal_id: row._erp_sucursal_id,
+            old_min: row.draft_min ?? 0, old_max: row.draft_max ?? 0,
+            new_min: revertMin, new_max: revertMax,
         });
     }, []);
 
@@ -2572,12 +2405,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         setHistoryRow(row);
         setHistoryLogs([]);
         setHistoryLoading(true);
+        // Toda acción que cambia MIN/MAX de este producto — incluye Bodega manual,
+        // ediciones desde Pedidos y los "0 en red" (que no llevan sucursal_id propio
+        // porque tocan TODAS las sucursales a la vez, por eso van con .or() aparte).
         const [{ data: logs }, { data: emps }] = await Promise.all([
             supabase.from('audit_logs')
                 .select('id,user_name,user_id,action,details,created_at')
-                .in('action', ['MINMAX_LIVE_EDIT','MINMAX_DRAFT_EDIT','MINMAX_RESET_CALC','MINMAX_MANUAL_OVERRIDE','MINMAX_ZERO_OUT','MINMAX_LIVE_ZERO'])
+                .in('action', [
+                    'MINMAX_LIVE_EDIT', 'MINMAX_DRAFT_EDIT',
+                    'MINMAX_BODEGA_MANUAL_OVERRIDE', 'MINMAX_BODEGA_RESET_MANUAL',
+                    'MINMAX_UPDATED_FROM_PEDIDO',
+                    'MINMAX_RESET_CALC', 'MINMAX_RESET_CLEAR', 'MINMAX_DISCARD_DRAFT',
+                    'MINMAX_ZERO_OUT', 'MINMAX_LIVE_ZERO', 'MINMAX_ZERO_ALL_BRANCHES',
+                ])
                 .eq('target_id', String(row.erp_product_id))
-                .filter('details->>sucursal_id', 'eq', String(row._erp_sucursal_id))
+                .or(`details->>sucursal_id.eq.${row._erp_sucursal_id},action.eq.MINMAX_ZERO_ALL_BRANCHES`)
                 .order('created_at', { ascending: false })
                 .limit(80),
             supabase.from('employees').select('name,photo_url'),
@@ -3963,13 +3805,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             {!historyLoading && historyLogs.map(log => {
                                 const d = log.details || {};
                                 const empPhoto = empPhotoMap[log.user_name];
-                                const sucName = ERP_NAMES[d.sucursal_id] || '';
-                                const isReset = log.action === 'MINMAX_RESET_CALC';
-                                const isZero  = log.action === 'MINMAX_ZERO_OUT' || log.action === 'MINMAX_LIVE_ZERO';
-                                const fieldLabel = d.field_label || (d.field?.includes('min') ? 'MIN' : d.field?.includes('max') ? 'MAX' : d.field || '');
+                                const sucName = log.action === 'MINMAX_ZERO_ALL_BRANCHES' ? 'Toda la red' : (ERP_NAMES[d.sucursal_id] || '');
+                                const meta = MINMAX_HISTORY_ACTION_META[log.action] || { label: log.action, badge: 'bg-slate-100 text-slate-500' };
                                 const dt = new Date(log.created_at);
                                 const dateStr = dt.toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
                                 const timeStr = dt.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
+                                const fmt = v => v == null ? '—' : v;
                                 return (
                                     <div key={log.id} className="flex items-start gap-3 bg-white/70 border border-white/80 rounded-2xl px-3.5 py-3 shadow-[0_1px_4px_rgba(0,0,0,0.05)]">
                                         {/* Employee avatar */}
@@ -3983,26 +3824,20 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 <span className="text-[11px] font-bold text-slate-700 truncate">{log.user_name || 'Sistema'}</span>
                                                 <span className="text-[9px] text-slate-400 shrink-0 tabular-nums">{dateStr} · {timeStr}</span>
                                             </div>
-                                            {isReset ? (
-                                                <p className="text-[11px] text-emerald-700 font-semibold mt-0.5">
-                                                    Restaurado a calculado — MIN {d.calc_min ?? '?'} / MAX {d.calc_max ?? '?'}
-                                                </p>
-                                            ) : isZero ? (
-                                                <p className="text-[11px] text-red-600 font-semibold mt-0.5">Puesto en cero (MIN 0 / MAX 0)</p>
-                                            ) : (
-                                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${fieldLabel === 'MIN' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{fieldLabel}</span>
-                                                    {d.old_value != null && (
-                                                        <><span className="text-[11px] font-semibold text-slate-500">{d.old_value}</span>
-                                                        <span className="text-[10px] text-slate-400">→</span></>
-                                                    )}
-                                                    <span className="text-[11px] font-black text-slate-800">{d.new_value ?? d.value ?? '?'}</span>
-                                                    {sucName && <span className="text-[9px] text-slate-400 ml-1">{sucName}</span>}
-                                                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ml-auto ${log.action === 'MINMAX_LIVE_EDIT' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
-                                                        {log.action === 'MINMAX_LIVE_EDIT' ? 'EN VIVO' : 'BORRADOR'}
-                                                    </span>
-                                                </div>
-                                            )}
+                                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md shrink-0 ${meta.badge}`}>{meta.label}</span>
+                                                <span className="text-[11px] text-slate-600 tabular-nums">
+                                                    <span className="text-[9px] text-slate-400 font-bold mr-0.5">MIN</span>
+                                                    {d.old_min !== d.new_min && <span className="text-slate-400">{fmt(d.old_min)} → </span>}
+                                                    <strong className="text-slate-800">{fmt(d.new_min)}</strong>
+                                                </span>
+                                                <span className="text-[11px] text-slate-600 tabular-nums">
+                                                    <span className="text-[9px] text-slate-400 font-bold mr-0.5">MAX</span>
+                                                    {d.old_max !== d.new_max && <span className="text-slate-400">{fmt(d.old_max)} → </span>}
+                                                    <strong className="text-slate-800">{fmt(d.new_max)}</strong>
+                                                </span>
+                                                {sucName && <span className="text-[9px] text-slate-400 ml-auto shrink-0">{sucName}</span>}
+                                            </div>
                                         </div>
                                     </div>
                                 );

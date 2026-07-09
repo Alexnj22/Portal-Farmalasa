@@ -5,9 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.9.35';
+export const APP_VERSION = '2.10.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.10.0 — feat(practicantes): nuevo módulo "Practicantes" (RRHH) para horas sociales /
+// pasantías académicas NO remuneradas — separado a propósito de employees/nómina/kiosco.
+// Razón legal: el Código de Trabajo no contempla trabajo subordinado sin pago (el único
+// régimen de "prácticas" pagadas es el Contrato de Aprendizaje Art. 61-70, ya cubierto por
+// contract_type='PRACTICAS' en v2.9.35); modelar horas sociales dentro de employees (con
+// kiosk_pin, fichaje, ISSS/AFP) generaría el mismo rastro de datos que un juez usaría para
+// presumir relación laboral real (Art. 20 CT). Tabla nueva `practicantes` (RLS: SELECT
+// authenticated, escritura via auth_can_edit_any(['practicantes']) con wrapper (SELECT...)),
+// sin kiosk/ISSS-AFP/nómina, con convenio institucional OBLIGATORIO (bloqueo duro en el
+// modal, no el patrón "Pendiente" no-bloqueante de Empleados) subido al bucket privado
+// 'documents' ya existente (sin bucket/policies nuevos). Campos: sucursal, institución
+// educativa, tutor + teléfono, supervisor interno opcional, fecha inicio/fin obligatorias,
+// horas requeridas/completadas (manuales, sin timesheet), estado (activo/finalizado/
+// cancelado) con badge "Vencido" calculado en cliente. Nuevos archivos:
+// src/store/slices/practicantesSlice.js, src/components/practicantes/PracticanteModal.jsx,
+// src/views/PracticantesView.jsx. Registrado en App.jsx (ruta + PermissionGuard),
+// AppLayout.jsx (grupo RRHH) y PermissionsView.jsx (grupo RRHH, hasScope:true). Además:
+// isValidDUIAlgorithm/maskDui extraídos de EmployeeFormModal.jsx a src/utils/duiUtils.js
+// (evita un tercer duplicado del algoritmo; EmployeeFormModal ahora importa de ahí, mismo
+// comportamiento).
+//
 // v2.9.35 — feat(empleados): nuevo tipo de contrato "Prácticas / Aprendizaje" en el modal
 // de creación/edición (EmployeeFormModal). Corresponde legalmente al Contrato de Aprendizaje
 // del Código de Trabajo (Art. 61-70), no al Art. 25 (plazo fijo) que ya cubre "Temporal" —

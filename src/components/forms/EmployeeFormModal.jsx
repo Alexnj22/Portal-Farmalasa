@@ -11,6 +11,7 @@ import { getStoragePathFromUrl } from '../../utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD } from '../../utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '../../utils/documentExpiry';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
+import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -220,11 +221,8 @@ const generateHashCorto = async (valor) => {
 const applyMask = (value, type) => {
     if (!value) return '';
     if (type === 'ACCOUNT') return value.replace(/[^0-9-]/g, '').substring(0, 25);
-    let v = value.replace(/\D/g, ''); 
-    if (type === 'DUI') {
-        if (v.length > 8) return `${v.substring(0, 8)}-${v.substring(8, 9)}`;
-        return v;
-    }
+    if (type === 'DUI') return maskDui(value);
+    let v = value.replace(/\D/g, '');
     if (type === 'PHONE') {
         if (v.length > 4) return `${v.substring(0, 4)}-${v.substring(4, 8)}`;
         return v;
@@ -232,25 +230,6 @@ const applyMask = (value, type) => {
     if (type === 'ISSS' && v.length > 9) return v.substring(0, 9);
     if (type === 'AFP' && v.length > 12) return v.substring(0, 12);
     return v;
-};
-
-const isValidDUIAlgorithm = (dui) => {
-    if (!dui) return true; 
-    const cleanDui = dui.replace(/\D/g, '');
-    if (cleanDui.length !== 9) return true; 
-    
-    const digits = cleanDui.split('').map(Number);
-    const verifier = digits.pop();
-    
-    let sum = 0;
-    for (let i = 0; i < 8; i++) {
-        sum += digits[i] * (9 - i);
-    }
-    
-    let calcVerifier = 10 - (sum % 10);
-    if (calcVerifier === 10) calcVerifier = 0;
-    
-    return calcVerifier === verifier;
 };
 
 // ============================================================================

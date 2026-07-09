@@ -48,6 +48,7 @@ const PedidosView = lazy(() => import("./views/PedidosView"));
 const MinMaxView = lazy(() => import("./views/MinMaxView"));
 const VentasPperdidasView = lazy(() => import("./views/VentasPperdidasView"));
 const ComprasView = lazy(() => import("./views/ComprasView"));
+const PracticantesView = lazy(() => import("./views/PracticantesView"));
 const PromocionesView = lazy(() => import("./views/PromocionesView"));
 const FacturacionView = lazy(() => import("./views/FacturacionView"));
 const CotizacionesView = lazy(() => import("./views/CotizacionesView"));
@@ -614,6 +615,7 @@ function MainApp() {
                                     <Route path="promociones" element={<PermissionGuard moduleKey="promociones"><PromocionesView /></PermissionGuard>} />
                                     <Route path="encuesta" element={<PermissionGuard moduleKey="encuesta"><EncuestaView /></PermissionGuard>} />
                                     <Route path="encuesta-admin" element={<PermissionGuard moduleKey="encuesta_admin"><EncuestaAdminView /></PermissionGuard>} />
+                                    <Route path="practicantes" element={<PermissionGuard moduleKey="practicantes"><PracticantesView /></PermissionGuard>} />
 
                                     {/* ── Estructura ── */}
                                     <Route path="branches">
@@ -728,6 +730,7 @@ const ROUTE_TITLES = {
     '/encuesta-admin':    'Encuesta',
     '/compras':           'Compras',
     '/promociones':       'Promociones',
+    '/practicantes':      'Practicantes',
     '/branches':          'Sucursales',
     '/roles':             'Roles',
     '/permissions':       'Permisos',

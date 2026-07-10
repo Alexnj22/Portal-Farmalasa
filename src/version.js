@@ -5,8 +5,22 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.13.3';
+export const APP_VERSION = '2.13.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.13.4 — fix(ventas): la desambiguación de "Unidades" (v2.13.3) solo cubría
+// productos de UNA presentación con factor > 1. El mismo problema existe con
+// varias presentaciones si alguna tiene factor > 1 — "144" en un producto con
+// "2 presentaciones" se puede leer como 144 unidades sueltas cuando en
+// realidad fueron, ej. 13 BLISTER + 2 CAJA. La condición ahora es
+// `presentaciones.some(p => factor > 1)` en vez de exigir una sola
+// presentación: con múltiples presentaciones y algún factor > 1 se agrega el
+// desglose crudo como subtexto ("13 BLISTER + 2 CAJA"); se sigue omitiendo
+// solo cuando TODO el mix es factor 1 (sería idéntico al total, redundante).
+// Verificado contra datos reales: "NEUROBION X 120 TAB." y "DOLO NEUROBION N
+// X 120 TAB." ahora muestran el desglose; "NEUROBION 25,000 AMP" (2
+// presentaciones, ambas factor 1 en el ERP pese a llamarse "CAJA") se
+// confirmó sin ambigüedad real y se queda sin desglose correctamente.
 
 // v2.13.3 — fix(ventas): ambigüedad en "Unidades" de Ventas > Productos. Un
 // producto con una sola presentación de factor alto (ej. "REVERSAL FLEX X 20

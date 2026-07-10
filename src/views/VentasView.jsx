@@ -1851,12 +1851,16 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         <DataCell align="right" hideBelow="md" className="text-[12px] font-semibold">
                                             {(() => {
                                                 const pres = r.presentaciones || [];
-                                                // Una sola presentación con factor > 1 (ej. CAJA 1X20): mostrar
-                                                // la cantidad tal como se vendió, no solo el total en unidades
-                                                // base — "20" a secas se puede leer como "20 cajas" cuando en
-                                                // realidad fue 1 caja de 20 tabletas. Con factor 1 (UNIDAD) el
-                                                // subtexto sería igual al de arriba, así que se omite.
-                                                if (pres.length === 1 && pres[0].factor > 1) {
+                                                // Ambigüedad: cualquier presentación con factor > 1 (ej. CAJA
+                                                // 1X20) hace que el total en unidades base ya no coincida con
+                                                // "cuántas veces se vendió" — "144" se puede leer como 144
+                                                // unidades sueltas cuando en realidad fueron 5 cajas + 44
+                                                // unidades. Si TODO el mix es factor 1, el desglose sería
+                                                // idéntico al total y se omite por redundante.
+                                                const hasFactorAmbiguity = pres.some(p => (p.factor || 1) > 1);
+                                                if (!hasFactorAmbiguity) return fmtNum(r.cantidad_base);
+
+                                                if (pres.length === 1) {
                                                     const p = pres[0];
                                                     return (
                                                         <div className="leading-tight">
@@ -1865,7 +1869,19 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                         </div>
                                                     );
                                                 }
-                                                return fmtNum(r.cantidad_base);
+
+                                                // Varias presentaciones: el total base sigue siendo la cifra
+                                                // principal (comparable entre productos), con el desglose crudo
+                                                // como subtexto para no sugerir que todo vino en unidades sueltas.
+                                                const breakdown = pres
+                                                    .map(p => `${fmtQty(p.cantidad)} ${(p.presentacion || '').split(' ')[0] || 'u'}`)
+                                                    .join(' + ');
+                                                return (
+                                                    <div className="leading-tight">
+                                                        <p>{fmtNum(r.cantidad_base)}</p>
+                                                        <p className="text-[10px] text-slate-400 font-medium truncate max-w-[150px]" title={breakdown}>{breakdown}</p>
+                                                    </div>
+                                                );
                                             })()}
                                         </DataCell>
                                         <DataCell align="right" className="font-black text-[13px]">

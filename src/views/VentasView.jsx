@@ -18,6 +18,7 @@ import PeriodPicker from '../components/common/PeriodPicker';
 import { DataTable, DataRow, DataCell, useExpandStyle } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
 import { smartFilter, normSearch } from '../utils/searchUtils';
+import { shortEmployeeName } from '../utils/nameUtils';
 import { fetchAllRows } from '../utils/supabaseUtils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -1379,7 +1380,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
 }
 
 function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, setMonthRange, branchOptions, privacyMode }) {
-    const { maxPriceLevel, getScope } = useAuth();
+    const { maxPriceLevel, getScope, user: currentUser } = useAuth();
     const allowedDrillTiers = useMemo(() => {
         if (!maxPriceLevel) return DRILL_TIERS;
         const maxIdx = DRILL_TIER_ORDER.indexOf(maxPriceLevel);
@@ -1464,13 +1465,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
     const fetchProductos = useCallback(async (isRetry = false) => {
         const cacheKey = `${fini}|${ffin}|${filterBranch ?? ''}`;
-        // ppv5: bump de versión de la key — ppv4 guardaba filas sin
-        // oculto_en_ventas (columna agregada junto con el feature de ocultar
-        // producto). Mismo patrón que el bump ppv3→ppv4 de v2.13.1: sin esto,
-        // usuarios con caché ppv4 sin vencer (TTL 20 min) verían productos
-        // ocultos reaparecer en la lista tras el deploy porque su fila cacheada
-        // no trae el campo. ppv2/ppv3 son versiones de esquema aún más viejas.
-        const lsKey    = `ppv5_${cacheKey}`;
+        // ppv6: bump de versión de la key — ppv5 guardaba filas sin
+        // oculto_por/oculto_at (agregados para trackear quién ocultó cada
+        // producto). Mismo patrón que los bumps anteriores (ppv3→ppv4→ppv5):
+        // sin esto, caché sin vencer (TTL 20 min) mostraría esos campos como
+        // undefined tras el deploy. ppv2/ppv3/ppv4 son versiones aún más viejas.
+        const lsKey    = `ppv6_${cacheKey}`;
         const TTL_MS   = 20 * 60 * 1000; // 20 minutes
 
         // Cache only applies when not searching — search results are never cached
@@ -1546,6 +1546,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     ultima_venta:        item.ultima_venta        || null,
                     ultima_venta_por_suc: item.ultima_venta_por_suc || [],
                     oculto_en_ventas: !!item.oculto_en_ventas,
+                    oculto_por: item.oculto_en_ventas
+                        ? { first_names: item.oculto_por_first_names || null, last_names: item.oculto_por_last_names || null }
+                        : null,
+                    oculto_at: item.oculto_at || null,
                 };
             });
 
@@ -1554,11 +1558,11 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 productsCache.current.set(cacheKey, allRows);
                 try {
                     Object.keys(localStorage)
-                        // ppv2_/ppv3_/ppv4_ = versiones de esquema viejas (siempre se purgan);
-                        // ppv5_ = caché actual, solo se purga si venció su TTL.
-                        .filter(k => k.startsWith('ppv2_') || k.startsWith('ppv3_') || k.startsWith('ppv4_') || (k.startsWith('ppv5_') && k !== lsKey))
+                        // ppv2_/ppv3_/ppv4_/ppv5_ = versiones de esquema viejas (siempre se purgan);
+                        // ppv6_ = caché actual, solo se purga si venció su TTL.
+                        .filter(k => k.startsWith('ppv2_') || k.startsWith('ppv3_') || k.startsWith('ppv4_') || k.startsWith('ppv5_') || (k.startsWith('ppv6_') && k !== lsKey))
                         .forEach(k => {
-                            if (k.startsWith('ppv2_') || k.startsWith('ppv3_') || k.startsWith('ppv4_')) { localStorage.removeItem(k); return; }
+                            if (k.startsWith('ppv2_') || k.startsWith('ppv3_') || k.startsWith('ppv4_') || k.startsWith('ppv5_')) { localStorage.removeItem(k); return; }
                             try { const e = JSON.parse(localStorage.getItem(k)); if (Date.now() - e.ts > TTL_MS) localStorage.removeItem(k); } catch (_) {}
                         });
                     localStorage.setItem(lsKey, JSON.stringify({ data: allRows, ts: Date.now() }));
@@ -1583,22 +1587,48 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
     // Ocultar/mostrar producto en Ventas > Productos — global (para todos los
     // usuarios), vía products.oculto_en_ventas. No afecta Catálogo/Inventario.
+    // Usa un RPC (no un update directo) para que oculto_por quede resuelto
+    // server-side con auth_employee_id() — mismo patrón que created_by en
+    // crear_conteo_inventario — en vez de que el cliente pudiera enviar
+    // cualquier valor arbitrario en un update directo a la tabla.
     const toggleOculto = useCallback(async (row) => {
         const nextVal = !row.oculto_en_ventas;
-        const { error: e } = await supabase.from('products').update({ oculto_en_ventas: nextVal }).eq('id', row.erp_product_id);
+        const { error: e } = await supabase.rpc('toggle_producto_oculto_ventas', {
+            p_erp_product_id: row.erp_product_id,
+            p_oculto: nextVal,
+        });
         if (e) { useToastStore.getState().showToast('Error', e.message, 'error'); return; }
-        setRows(prev => prev.map(r => r.erp_product_id === row.erp_product_id ? { ...r, oculto_en_ventas: nextVal } : r));
-        // Mantiene la caché en memoria/localStorage consistente con lo que ya se ve —
-        // si no, un cambio de filtro que reuse la caché mostraría el estado viejo.
+        // Optimista: el nombre exacto (first_names/last_names) se confirma en el
+        // próximo fetch; mientras tanto se parte user.name igual que lo hace
+        // shortEmployeeName, así el tooltip no queda vacío hasta el reload.
+        const [firstGuess, ...restGuess] = (currentUser?.name || '').trim().split(/\s+/);
+        const oculto_por = nextVal ? { first_names: firstGuess || null, last_names: restGuess.join(' ') || null } : null;
+        const oculto_at  = nextVal ? new Date().toISOString() : null;
+        const patchRow = (r) => r.erp_product_id === row.erp_product_id ? { ...r, oculto_en_ventas: nextVal, oculto_por, oculto_at } : r;
+
+        setRows(prev => prev.map(patchRow));
+        // Mantiene la caché en memoria Y en localStorage consistente con lo que ya
+        // se ve — si no, un reload (memoria se pierde, localStorage sobrevive) o un
+        // cambio de filtro que reuse la caché mostraría el estado viejo. Bug real
+        // encontrado: el toggle solo actualizaba productsCache.current (memoria);
+        // localStorage seguía con oculto_en_ventas desactualizado, así que un F5
+        // revivía el producto oculto hasta que el TTL de 20 min expirara.
         const cacheKey = `${fini}|${ffin}|${filterBranch ?? ''}`;
         if (productsCache.current.has(cacheKey)) {
-            productsCache.current.set(cacheKey, productsCache.current.get(cacheKey).map(r =>
-                r.erp_product_id === row.erp_product_id ? { ...r, oculto_en_ventas: nextVal } : r
-            ));
+            productsCache.current.set(cacheKey, productsCache.current.get(cacheKey).map(patchRow));
         }
+        try {
+            const lsKey = `ppv6_${cacheKey}`;
+            const stored = localStorage.getItem(lsKey);
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                parsed.data = (parsed.data || []).map(patchRow);
+                localStorage.setItem(lsKey, JSON.stringify(parsed));
+            }
+        } catch (_) { /* localStorage unavailable or corrupted — in-memory cache still fixed */ }
         useStaff.getState().appendAuditLog(nextVal ? 'OCULTAR_PRODUCTO_VENTAS' : 'MOSTRAR_PRODUCTO_VENTAS', String(row.erp_product_id), { producto: row.descripcion });
         useToastStore.getState().showToast(nextVal ? 'Producto oculto' : 'Producto visible', nextVal ? 'Ya no aparecerá en Ventas > Productos.' : 'Vuelve a aparecer en Ventas > Productos.', 'success');
-    }, [fini, ffin, filterBranch]);
+    }, [fini, ffin, filterBranch, currentUser]);
 
     const fetchDrillDown = useCallback(async (productId) => {
         const cacheKey = `${productId}|${fini}|${ffin}|${filterBranch ?? ''}`;
@@ -1949,7 +1979,17 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             <UltimaVentaCell row={r} filterBranch={filterBranch} branches={branches} />
                                         </DataCell>
                                         <DataCell align="center">
-                                            <LiquidTooltip content={showHidden ? 'Mostrar de nuevo' : 'Ocultar producto (para todos)'}>
+                                            <LiquidTooltip content={
+                                                showHidden
+                                                    ? <div className="whitespace-nowrap">
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Mostrar de nuevo</p>
+                                                        <p className="text-[11px] text-slate-600">
+                                                            Oculto por <span className="font-bold text-slate-800">{shortEmployeeName(r.oculto_por)}</span>
+                                                            {r.oculto_at && ` el ${new Date(r.oculto_at).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+                                                        </p>
+                                                      </div>
+                                                    : 'Ocultar producto (para todos)'
+                                            }>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); toggleOculto(r); }}
                                                     className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0 ${

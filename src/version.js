@@ -5,8 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.14.1';
+export const APP_VERSION = '2.14.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.14.2 — fix(ventas): ocultar producto no sobrevivía a un reload (F5). El
+// toggle solo actualizaba productsCache.current (memoria) — un reload borra
+// la memoria y cae a localStorage (ppv5_...), que seguía con
+// oculto_en_ventas desactualizado hasta que el TTL de 20 min expirara. Ahora
+// también parcha el registro dentro de localStorage al ocultar/mostrar.
+// Además, a pedido: se agrega quién y cuándo ocultó cada producto —
+// products.oculto_por (FK a employees) + oculto_at, resueltos server-side vía
+// nuevo RPC toggle_producto_oculto_ventas() con auth_employee_id() (no un
+// update directo, para que el cliente no pueda enviar cualquier oculto_por).
+// get_product_sales_agg expone el nombre vía JOIN a employees; el tooltip del
+// ícono de ojo en modo "solo ocultos" muestra "Oculto por X el DD/MM".
+// Bump ppv5→ppv6 en caché (mismo motivo que bumps anteriores — nuevos campos
+// en la fila). Verificado en vivo con un F5 real: producto sigue oculto tras
+// el reload, tooltip muestra el nombre correcto resuelto del servidor. Se
+// encontró y limpió además un producto oculto residual de pruebas de una
+// sesión previa (oculto_por NULL, hide hecho con el código viejo pre-RPC).
 
 // v2.14.1 — fix(ventas): rediseña "Unidades" de Ventas > Productos (v2.13.3/
 // v2.13.4 revertidas). El subtexto con el desglose crudo ("234 BLISTER + 1

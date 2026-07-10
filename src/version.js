@@ -5,8 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.13.2';
+export const APP_VERSION = '2.13.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.13.3 — fix(ventas): ambigüedad en "Unidades" de Ventas > Productos. Un
+// producto con una sola presentación de factor alto (ej. "REVERSAL FLEX X 20
+// TABLETAS", CAJA 1X20) mostraba solo "20" en unidades base — se podía leer
+// como "20 cajas" cuando en realidad fue 1 caja de 20 tabletas (confirmado con
+// el detalle de la venta real: CANT. 1, presentación CAJA 1X20). Cuando la fila
+// tiene una única presentación y esa presentación tiene factor > 1, la celda
+// ahora muestra la cantidad tal como se vendió ("1 CAJA 1X20") con el total en
+// unidades base como subtexto ("20 u"). Con factor 1 (UNIDAD) o con múltiples
+// presentaciones se deja el número simple de siempre — el subtexto sería
+// redundante o no hay una sola presentación que mostrar como "vendida así".
+// Verificado en vivo contra 12 productos reales con las tres combinaciones
+// (single+factor>1, single+factor=1, multi-presentación).
 
 // v2.13.2 — fix+feat(ventas): KPIs de Productos acotados por laboratorio + Total
 // con IVA en hover.

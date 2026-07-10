@@ -1848,7 +1848,26 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         <DataCell hideBelow="md" className="text-[11px] text-slate-500 font-semibold truncate max-w-[140px]">
                                             {r.laboratorio_nombre || <span className="opacity-30">—</span>}
                                         </DataCell>
-                                        <DataCell align="right" hideBelow="md" className="text-[12px] font-semibold">{fmtNum(r.cantidad_base)}</DataCell>
+                                        <DataCell align="right" hideBelow="md" className="text-[12px] font-semibold">
+                                            {(() => {
+                                                const pres = r.presentaciones || [];
+                                                // Una sola presentación con factor > 1 (ej. CAJA 1X20): mostrar
+                                                // la cantidad tal como se vendió, no solo el total en unidades
+                                                // base — "20" a secas se puede leer como "20 cajas" cuando en
+                                                // realidad fue 1 caja de 20 tabletas. Con factor 1 (UNIDAD) el
+                                                // subtexto sería igual al de arriba, así que se omite.
+                                                if (pres.length === 1 && pres[0].factor > 1) {
+                                                    const p = pres[0];
+                                                    return (
+                                                        <div className="leading-tight">
+                                                            <p>{fmtQty(p.cantidad)} {p.presentacion || 'u'}</p>
+                                                            <p className="text-[10px] text-slate-400 font-medium">{fmtNum(r.cantidad_base)} u</p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return fmtNum(r.cantidad_base);
+                                            })()}
+                                        </DataCell>
                                         <DataCell align="right" className="font-black text-[13px]">
                                             {privacyMode ? (
                                                 <span className="transition-all duration-300 blur-sm select-none">••••••</span>

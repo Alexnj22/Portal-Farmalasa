@@ -5,8 +5,27 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.14.2';
+export const APP_VERSION = '2.15.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.0 — feat(productos): rediseño de "Devolutivo" en Catálogo. Se
+// descubrió que los 5,170 productos estaban en devolutivo=false (default de
+// columna, nunca clasificados) — el toggle no distinguía "no clasificado" de
+// "confirmado no devolutivo". Se confirmó con el usuario la regla real: por
+// defecto los proveedores SÍ aceptan devolución; "No Devolutivo" (ND) es la
+// excepción. Cambios: (1) badge "ND" ámbar en la fila del producto cuando
+// devolutivo=false, (2) los 34 productos de SOPHIA (laboratorio_id 216)
+// marcados ND, default de la columna volteado a true para productos nuevos,
+// (3) el toggle en el panel expandido ahora resalta en ámbar el estado ND
+// (antes resaltaba en verde "Devolutivo", lo cual invertía la lectura de cuál
+// es la excepción a vigilar), (4) se eliminó el botón "Guardar" del panel
+// expandido — Categoría y Principios Activos ahora autoguardan (igual que
+// Devolutivo y la foto, que ya autoguardaban); footer queda solo con
+// "Cerrar". Verificado en vivo: login + búsqueda "sophia" en Ventas >
+// Productos, badge ND visible en fila y panel, toggle ámbar correcto, footer
+// sin Guardar. No se probó el autoguardado de Categoría contra un producto
+// real para no escribir un valor de prueba en datos de producción; la lógica
+// replica el patrón ya en uso (devolutivo) verificado end-to-end.
 
 // v2.14.2 — fix(ventas): ocultar producto no sobrevivía a un reload (F5). El
 // toggle solo actualizaba productsCache.current (memoria) — un reload borra

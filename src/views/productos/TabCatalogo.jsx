@@ -8,7 +8,7 @@ import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
     Camera, TrendingDown, ShieldAlert, Plus, X, Building2, Tag,
-    Sparkles, History, MapPin, Search, Clipboard, Eye, RotateCcw,
+    Sparkles, History, MapPin, Search, Clipboard, Eye, RotateCcw, Ban,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -261,8 +261,11 @@ const PA_PRESETS = ['Insumo', 'No aplica'];
 const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initial, onSaved }, ref) {
     const [items, setItems] = useState([]);
     const [preset, setPreset] = useState(null); // null | 'Insumo' | 'No aplica'
+    const [savingPA, setSavingPA] = useState(false);
+    const skipNextAutosave = useRef(true);
 
     useEffect(() => {
+        skipNextAutosave.current = true;
         if (initial && initial.length > 0) {
             const first = initial[0]?.nombre;
             if (PA_PRESETS.includes(first) && initial.length === 1 && !initial[0]?.concentracion) {
@@ -296,6 +299,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
         setItems(prev => prev.map(p => p._key === key ? { ...p, [field]: value } : p));
 
     const save = async ({ quiet = false } = {}) => {
+        setSavingPA(true);
         try {
             await supabase.from('product_active_principles').delete().eq('product_id', productId);
             let text = null;
@@ -328,8 +332,17 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
         } catch (e) {
             useToastStore.getState().showToast('Error', e.message, 'error');
             throw e;
+        } finally {
+            setSavingPA(false);
         }
     };
+
+    // Autosave: persist automatically shortly after items/preset settle (no explicit Guardar).
+    useEffect(() => {
+        if (skipNextAutosave.current) { skipNextAutosave.current = false; return; }
+        const t = setTimeout(() => { save({ quiet: true }); }, 700);
+        return () => clearTimeout(t);
+    }, [items, preset]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useImperativeHandle(ref, () => ({ save }));
 
@@ -378,10 +391,17 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
                             </button>
                         </div>
                     ))}
-                    <button onClick={addItem}
-                        className={`flex items-center gap-1 text-[10px] font-bold transition-colors pt-1 ${addCls}`}>
-                        <Plus size={10} /> Agregar principio
-                    </button>
+                    <div className="flex items-center gap-2 pt-1">
+                        <button onClick={addItem}
+                            className={`flex items-center gap-1 text-[10px] font-bold transition-colors ${addCls}`}>
+                            <Plus size={10} /> Agregar principio
+                        </button>
+                        {savingPA && (
+                            <span className="flex items-center gap-1 text-[9px] font-semibold text-slate-400">
+                                <Loader2 size={9} className="animate-spin" /> Guardando…
+                            </span>
+                        )}
+                    </div>
                 </>
             )}
         </div>
@@ -390,12 +410,35 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
 
 // ── CategoryEditor ────────────────────────────────────────────────────────
 
-const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, categories, onCategoryCreated }, ref) {
+const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, categories, onCategoryCreated, onCategoryUpdated }, ref) {
     const [selected, setSelected] = useState(initial || '');
+    const [savingCat, setSavingCat] = useState(false);
+    const skipNextAutosave = useRef(true);
 
-    useEffect(() => { setSelected(initial || ''); }, [initial]);
+    useEffect(() => { skipNextAutosave.current = true; setSelected(initial || ''); }, [initial]);
 
     const catOpts = categories.map(c => ({ value: c, label: c }));
+
+    const save = async ({ quiet = false } = {}) => {
+        setSavingCat(true);
+        try {
+            await supabase.from('products').update({ tipo_medicamento: selected || null }).eq('id', productId);
+            useStaff.getState().appendAuditLog('UPDATE_PRODUCT_CATEGORY', String(productId), { categoria: selected || null });
+            if (!quiet) useToastStore.getState().showToast('Guardado', 'Categoría actualizada.', 'success');
+            onCategoryUpdated?.(productId, selected || null);
+        } catch (e) {
+            useToastStore.getState().showToast('Error', e.message, 'error');
+            throw e;
+        } finally {
+            setSavingCat(false);
+        }
+    };
+
+    // Autosave: persist immediately whenever the selection changes (no explicit Guardar).
+    useEffect(() => {
+        if (skipNextAutosave.current) { skipNextAutosave.current = false; return; }
+        save({ quiet: true });
+    }, [selected]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleCreate = async (nombre) => {
         try {
@@ -407,29 +450,25 @@ const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, 
         }
     };
 
-    const save = async ({ quiet = false } = {}) => {
-        try {
-            await supabase.from('products').update({ tipo_medicamento: selected || null }).eq('id', productId);
-            useStaff.getState().appendAuditLog('UPDATE_PRODUCT_CATEGORY', String(productId), { categoria: selected || null });
-            if (!quiet) useToastStore.getState().showToast('Guardado', 'Categoría actualizada.', 'success');
-        } catch (e) {
-            useToastStore.getState().showToast('Error', e.message, 'error');
-            throw e;
-        }
-    };
-
     useImperativeHandle(ref, () => ({ save, getValue: () => selected }));
 
     return (
-        <LiquidSelect
-            value={selected}
-            onChange={setSelected}
-            options={catOpts}
-            placeholder="Sin categoría"
-            icon={Tag}
-            creatable
-            onCreateOption={handleCreate}
-        />
+        <div>
+            <LiquidSelect
+                value={selected}
+                onChange={setSelected}
+                options={catOpts}
+                placeholder="Sin categoría"
+                icon={Tag}
+                creatable
+                onCreateOption={handleCreate}
+            />
+            {savingCat && (
+                <span className="flex items-center gap-1 text-[9px] font-semibold text-slate-400 mt-1.5">
+                    <Loader2 size={9} className="animate-spin" /> Guardando…
+                </span>
+            )}
+        </div>
     );
 });
 
@@ -883,7 +922,6 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     const [photoLoading, setPhotoLoading] = useState(false);
     const [localFoto, setLocalFoto]       = useState(product.foto_url);
     const [pendingFile, setPendingFile]   = useState(null);
-    const [saving, setSaving]             = useState(false);
     const [showSrs, setShowSrs]           = useState(false);
     const [ctxMenu, setCtxMenu]           = useState(null);
     const [showInactive, setShowInactive] = useState(false);
@@ -892,8 +930,6 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     const [devolutivo, setDevolutivo]           = useState(!!product.devolutivo);
     const [savingDevolutivo, setSavingDevolutivo] = useState(false);
     const fileRef       = useRef(null);
-    const principiosRef = useRef(null);
-    const categoryRef   = useRef(null);
 
     useEffect(() => { setDevolutivo(!!product.devolutivo); }, [product.devolutivo]);
 
@@ -909,21 +945,6 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
             useStaff.getState().appendAuditLog('PRODUCTO_DEVOLUTIVO', String(product.id), { producto: product.nombre, devolutivo: newVal });
         }
         setSavingDevolutivo(false);
-    };
-
-    const handleSave = async () => {
-        setSaving(true);
-        const newCat = categoryRef.current?.getValue() ?? null;
-        try {
-            await Promise.all([
-                principiosRef.current?.save({ quiet: true }),
-                categoryRef.current?.save({ quiet: true }),
-            ]);
-            useToastStore.getState().showToast('Guardado', 'Cambios guardados correctamente.', 'success');
-            onCategoryUpdated?.(product.id, newCat || null);
-            if (onClose) onClose();
-        } catch (_) {}
-        finally { setSaving(false); }
     };
 
     useEffect(() => { setLocalFoto(product.foto_url); }, [product.foto_url]);
@@ -1042,19 +1063,24 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                         </div>
                     )}
 
-                    {/* ── Devolutivo toggle ── */}
+                    {/* ── Devolutivo / No devolutivo (ND) toggle ── */}
+                    {/* Default esperado: Devolutivo (el proveedor acepta devolución). Activar este
+                        botón marca la EXCEPCIÓN — el producto NO se puede devolver (ND) — por eso
+                        el estado "activado" se resalta en ámbar, no en verde. */}
                     <button
                         onClick={toggleDevolutivo}
                         disabled={savingDevolutivo}
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-colors disabled:opacity-50 ${
-                            devolutivo
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                            !devolutivo
+                                ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
                                 : 'bg-slate-50 text-slate-400 border-slate-200 hover:border-slate-300'
                         }`}
-                        title="Indica si este producto puede devolverse al proveedor antes de vencer"
+                        title={devolutivo
+                            ? 'Este producto SÍ puede devolverse al proveedor antes de vencer. Clic para marcarlo como No Devolutivo (ND).'
+                            : 'Este producto NO puede devolverse al proveedor (ND). Clic para marcarlo como Devolutivo.'}
                     >
-                        {savingDevolutivo ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
-                        {devolutivo ? 'Devolutivo' : 'No devolutivo'}
+                        {savingDevolutivo ? <Loader2 size={12} className="animate-spin" /> : !devolutivo ? <Ban size={12} /> : <RotateCcw size={12} />}
+                        {!devolutivo ? 'No devolutivo (ND)' : 'Devolutivo'}
                     </button>
 
                     {/* ── Main layout: two columns ── */}
@@ -1212,11 +1238,11 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 <Tag size={9} /> Categoría
                             </p>
                             <CategoryEditor
-                                ref={categoryRef}
                                 productId={product.id}
                                 initial={product.tipo_medicamento}
                                 categories={categories}
                                 onCategoryCreated={onCategoryCreated}
+                                onCategoryUpdated={onCategoryUpdated}
                             />
                         </div>
 
@@ -1268,7 +1294,6 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                                 )}
                             </div>
                             <PrincipiosEditor
-                                ref={principiosRef}
                                 productId={product.id}
                                 initial={principles}
                                 onSaved={(saved, text) => onPrinciplesUpdated(product.id, saved, text)}
@@ -1289,16 +1314,11 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                         <PurchaseHistorySection purchases={data?.purchases || []} canSeeCosts={canSeeCosts} />
                     </div>
 
-                    {/* ── Guardar / Cancelar ── */}
+                    {/* ── Cerrar (todo autoguarda: foto, devolutivo, categoría y principios) ── */}
                     <div className={`border-t ${xk.divider} pt-4 flex items-center justify-end gap-2`}>
                         <button onClick={onClose}
                             className={`px-4 h-9 rounded-full text-[11px] font-bold border transition-all ${xk.btnCancel}`}>
-                            Cancelar
-                        </button>
-                        <button onClick={handleSave} disabled={saving}
-                            className="flex items-center gap-1.5 px-5 h-9 rounded-full text-[11px] font-black bg-[#0052CC] text-white shadow-[0_3px_8px_rgba(0,82,204,0.35)] hover:bg-[#003D99] hover:-translate-y-0.5 active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-wait disabled:translate-y-0">
-                            {saving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} strokeWidth={3} />}
-                            Guardar
+                            Cerrar
                         </button>
                     </div>
 
@@ -2916,6 +2936,7 @@ export default function TabCatalogo({
                                                         </span>
                                                     ))}
                                                     {hasChanges && <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0"><AlertTriangle size={7} /> cambios</span>}
+                                                    {!p.devolutivo && <span title="No devolutivo — no se puede devolver al proveedor" className="inline-flex items-center gap-0.5 text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full shrink-0"><Ban size={7} /> ND</span>}
                                                 </div>
                                                 {p.principio_activo && <p className="text-[10px] flex items-center gap-1 mt-0.5 text-violet-500/70"><FlaskConical size={8} className="shrink-0" /><span className="truncate max-w-[240px]">{p.principio_activo}</span></p>}
                                             </div>

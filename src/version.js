@@ -5,8 +5,26 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.13.1';
+export const APP_VERSION = '2.13.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.13.2 — fix+feat(ventas): KPIs de Productos acotados por laboratorio + Total
+// con IVA en hover.
+// 1) Las 4 stat cards (Total s/IVA, Costo, Utilidad, Margen) se calculaban sobre
+//    `rows` (dataset completo del período) ignorando el filtro de laboratorio —
+//    al filtrar por lab, las cards seguían mostrando el total global. Se agregó
+//    labFilteredRows (rows acotado por filterLab, sin tocar el buscador — ese
+//    sigue sin afectar las cards, mismo criterio ya existente) y las cards ahora
+//    se recalculan sobre ese subconjunto. La comparación vs. período anterior
+//    (prevProdStats, que viene de un RPC sin filtro por lab) se oculta mientras
+//    filterLab está activo para no comparar un total acotado contra uno global.
+// 2) Total con IVA: como get_product_sales_agg ya normaliza "neto" a s/IVA para
+//    todo tipo de documento (CCF se deja tal cual porque su total_linea ya es
+//    s/IVA; el resto se divide entre 1.13), con IVA = neto × 1.13 de forma
+//    uniforme. Se agregó como tooltip (LiquidTooltip) en hover: en la card
+//    "Total s/IVA" (con el total acotado por lab si aplica) y en la celda de
+//    cada fila. Verificado en vivo con capturas antes/después de filtrar y hover
+//    de card y fila.
 
 // v2.13.1 — fix(ventas+stock): dos bugs post-deploy.
 // 1) Columna "Laboratorio" en Ventas > Productos aparecía vacía ("—") para

@@ -247,13 +247,13 @@ function FilterControls({
 
 
 // Stat card with % change vs previous period + optional sub label
-function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, active, blurred }) {
+function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, active, blurred, conIva }) {
     const isFilter = !!onClick;
-    return (
+    const card = (
         <div
             onClick={onClick}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl border select-none transition-[box-shadow,border-color,background-color]
-                ${isFilter ? 'cursor-pointer hover:shadow-md' : 'cursor-default bg-white'}
+                ${isFilter ? 'cursor-pointer hover:shadow-md' : conIva != null ? 'cursor-help bg-white' : 'cursor-default bg-white'}
                 ${active
                     ? 'border-amber-400 ring-2 ring-amber-200 shadow-md bg-amber-50'
                     : isFilter
@@ -280,6 +280,17 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
             {isFilter && !active && <ChevronDown size={11} className="text-amber-400 ml-0.5 shrink-0" />}
             {active && <X size={11} className="text-amber-500 ml-0.5 shrink-0" />}
         </div>
+    );
+    if (conIva == null || blurred) return card;
+    return (
+        <LiquidTooltip content={
+            <div className="whitespace-nowrap">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total con IVA</p>
+                <p className="text-[13px] font-black text-slate-800">{fmt(conIva)}</p>
+            </div>
+        }>
+            {card}
+        </LiquidTooltip>
     );
 }
 
@@ -1719,12 +1730,18 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         return { results: sorted, isFuzzy };
     }, [rows, searchTerm, sortCol, sortDir, filterLab]);
 
-    // KPIs sobre el período completo (no afectados por búsqueda)
-    const maxNeto      = rows.reduce((m, r) => Math.max(m, r.neto), 0) || 1;
-    const totNeto      = rows.reduce((s, r) => s + r.neto, 0);
-    const totCosto     = rows.filter(r => r.costo_total != null).reduce((s, r) => s + r.costo_total, 0);
-    const totUtilidad  = rows.filter(r => r.utilidad    != null).reduce((s, r) => s + r.utilidad,    0);
+    // KPIs sobre el período completo, acotados por laboratorio si hay filtro activo
+    // (no afectados por búsqueda — el buscador es para encontrar, el filtro para acotar)
+    const labFilteredRows = useMemo(() =>
+        filterLab ? rows.filter(r => String(r.laboratorio_id) === String(filterLab)) : rows,
+        [rows, filterLab]
+    );
+    const maxNeto      = labFilteredRows.reduce((m, r) => Math.max(m, r.neto), 0) || 1;
+    const totNeto      = labFilteredRows.reduce((s, r) => s + r.neto, 0);
+    const totCosto     = labFilteredRows.filter(r => r.costo_total != null).reduce((s, r) => s + r.costo_total, 0);
+    const totUtilidad  = labFilteredRows.filter(r => r.utilidad    != null).reduce((s, r) => s + r.utilidad,    0);
     const margenGlobal = totNeto > 0 ? (totUtilidad / totNeto) * 100 : 0;
+    const totNetoConIva = totNeto * 1.13;
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const paginated  = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -1738,9 +1755,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     const { prevFini, prevFfin } = computePrevRange(fini, ffin);
                     const curDaysP  = countDays(fini, ffin);
                     const prevDaysP = countDays(prevFini, prevFfin);
-                    const pctIngresos = dailyPct(totNeto, curDaysP, prevProdStats.sum, prevDaysP);
+                    // La comparación vs. período anterior (prevProdStats) viene de un RPC
+                    // sin filtro por laboratorio — se oculta con filterLab activo para no
+                    // comparar un total acotado contra uno de todos los laboratorios.
+                    const pctIngresos = filterLab ? null : dailyPct(totNeto, curDaysP, prevProdStats.sum, prevDaysP);
                     return [
-                        { label: 'Total s/IVA',  value: fmt(totNeto),       icon: TrendingUp,   grad: 'from-blue-500 to-indigo-500',   text: 'text-blue-700',    pct: pctIngresos, sub: prevProdStats.sum > 0 ? `${fmt(prevProdStats.sum)} · ${fmtShort(prevFini)}→${fmtShort(prevFfin)}` : undefined },
+                        { label: 'Total s/IVA',  value: fmt(totNeto),       icon: TrendingUp,   grad: 'from-blue-500 to-indigo-500',   text: 'text-blue-700',    pct: pctIngresos, sub: !filterLab && prevProdStats.sum > 0 ? `${fmt(prevProdStats.sum)} · ${fmtShort(prevFini)}→${fmtShort(prevFfin)}` : undefined, conIva: totNetoConIva },
                         { label: 'Costo',         value: fmt(totCosto),      icon: TrendingDown, grad: 'from-red-500 to-orange-400',    text: 'text-red-700',     pct: null,        sub: undefined },
                         { label: 'Utilidad',      value: fmt(totUtilidad),   icon: TrendingUp,   grad: 'from-emerald-500 to-teal-400',  text: 'text-emerald-700', pct: null,        sub: undefined },
                         { label: 'Margen',        value: fmtPct(margenGlobal), icon: Star,       grad: 'from-amber-500 to-yellow-400',  text: 'text-amber-700',   pct: null,        sub: undefined },
@@ -1830,9 +1850,18 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         </DataCell>
                                         <DataCell align="right" hideBelow="md" className="text-[12px] font-semibold">{fmtNum(r.cantidad_base)}</DataCell>
                                         <DataCell align="right" className="font-black text-[13px]">
-                                            <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
-                                                {privacyMode ? '••••••' : fmt(r.neto)}
-                                            </span>
+                                            {privacyMode ? (
+                                                <span className="transition-all duration-300 blur-sm select-none">••••••</span>
+                                            ) : (
+                                                <LiquidTooltip content={
+                                                    <div className="whitespace-nowrap">
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total con IVA</p>
+                                                        <p className="text-[13px] font-black text-slate-800">{fmt(r.neto * 1.13)}</p>
+                                                    </div>
+                                                }>
+                                                    <span className="cursor-help">{fmt(r.neto)}</span>
+                                                </LiquidTooltip>
+                                            )}
                                         </DataCell>
                                         <DataCell align="right" hideBelow="lg" className="text-[12px]">
                                             <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>

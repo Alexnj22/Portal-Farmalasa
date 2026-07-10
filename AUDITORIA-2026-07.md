@@ -1260,7 +1260,70 @@ mismo, con prueba reproducible, sin necesitar ninguna credencial."**
 
 ### Pausa solicitada por el usuario
 Por instrucción explícita ("si encontrás algo explotable AHORA... frenás y
-me lo reportás antes de seguir acumulando hallazgos"), **Fase 3 se pausa
-acá.** Pendiente sin ejecutar: resto de tablas `anon+true` (`kiosk_devices`,
-`branches`/`roles`/`shifts`/`holidays` de solo lectura — menor severidad),
-3.3 XSS, 3.4 secretos en bundle, 3.5 CORS/rate-limiting de kiosco.
+me lo reportás antes de seguir acumulando hallazgos"), **Fase 3 se pausó
+acá y el usuario autorizó el fix inmediato** (misma clase que las 11 edge
+functions: crítico confirmado y explotable, no hallazgo latente).
+
+### 3.2.1 FIX aplicado — `attendance_insert_anon` y `kiosk_insert` (audit_logs)
+
+**Mapeo de callers reales antes de tocar nada** (grep exhaustivo en `src/` y
+`supabase/functions/`):
+- **`attendance`**: el único INSERT real de la app es `registerAttendance`
+  (`src/store/slices/employeeSlice.js:1094`), invocado desde
+  `useTimeClockEngine.js` (kiosco/reloj de tiempo). Corre con el cliente
+  supabase-js de la sesión actual — y el flujo de kiosco siempre pasa por
+  `ensure_user_by_code` (que crea/firma sesión `@staff.local`) **antes** de
+  cualquier marcaje. **Cero callers como `anon` en todo el código** — ni en
+  `src/`, ni en `supabase/functions/` (el único insert desde una edge
+  function es `consolidate-timesheets`, que usa `service_role` y bypasea RLS
+  por completo, no depende de esta policy).
+- **`audit_logs`**: el único INSERT real es `appendAuditLog`
+  (`src/store/slices/auditSlice.js:125`), llamado desde decenas de lugares
+  en `src/`, siempre con la sesión actual (`authenticated`). Igual que
+  arriba: **cero callers como `anon`** en todo el código.
+- Conclusión: `attendance_insert_anon` y `kiosk_insert` no protegen ningún
+  flujo real hoy — son resabio de un diseño anterior (probablemente
+  pre-`ensure_user_by_code`, cuando el kiosco quizás escribía antes de tener
+  sesión). Las policies `attendance_insert` y `admin_insert` (ambas
+  `authenticated`) ya cubren la vía legítima y **no se tocaron**.
+
+**Fix**: `DROP POLICY` de las dos policies `anon` (no un `WITH CHECK`
+condicionado a empleado activo — evaluado y descartado: `auth_employee_id()`
+tiene `REVOKE EXECUTE FROM anon`, así que una condición que la invoque desde
+una policy de rol `anon` fallaría con `permission denied` en vez de
+rechazar limpio por RLS; con cero callers legítimos confirmados, un `DROP`
+es más simple, más limpio, y logra exactamente lo mismo que "exigir empleado
+real y activo" — algo que `anon` estructuralmente nunca puede ser).
+Migración `close_anon_insert_attendance_audit_logs` aplicada con
+`SET lock_timeout = '5s'` (sin lock timeout — entró a la primera).
+
+**Validación**:
+- **Negativo** (`SET LOCAL ROLE anon` + `INSERT` + `ROLLBACK`, repitiendo
+  exactamente el ataque confirmado en 3.2): ambas tablas rechazan ahora con
+  `42501 new row violates row-level security policy` — cerrado.
+- **Positivo** (`SET LOCAL ROLE authenticated` + `request.jwt.claims` con un
+  `employee_id` real + `INSERT ... RETURNING` + `ROLLBACK`): el insert
+  **sigue funcionando** exactamente igual que antes (mismo motor de RLS que
+  usa PostgREST/supabase-js en producción — no una simulación aproximada).
+  No se corrió el flujo completo por Playwright en el navegador (la
+  instrucción permitía "kiosco vía Playwright **y/o** RPC real"); se optó
+  por la validación RLS directa por ser equivalente y más rápida de
+  verificar sin generar marcajes reales.
+
+**Estado**: ✅ Cerrado. Sin cambios de lógica de negocio — ninguna vía
+legítima fue tocada.
+
+### Hallazgo relacionado, NO corregido (fuera de alcance explícito de este fix)
+Las policies **`attendance_insert`** y **`admin_insert`** (`audit_logs`),
+ambas para rol `authenticated` con `WITH CHECK (true)`, quedan intactas.
+Son de severidad **Medio** (requieren una sesión válida, no la anon key
+pública sola — no "explotable ahora sin credencial") pero permiten que
+**cualquier empleado autenticado** inserte una marcación de asistencia o una
+entrada de auditoría a nombre de **cualquier otro** `employee_id`/`user_id`,
+sin que la policy lo restrinja a sí mismo. Documentado para la ronda de
+fixes de prioridad Media/Baja — no se tocó en este pase.
+
+### Pendiente de Fase 3 (retomado tras este fix)
+3.2 resto de tablas `anon+true` (`kiosk_devices`, `branches`/`roles`/
+`shifts`/`holidays` de solo lectura — menor severidad), 3.3 XSS, 3.4
+secretos en bundle, 3.5 CORS/rate-limiting de kiosco.

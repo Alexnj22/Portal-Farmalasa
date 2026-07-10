@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.13.0';
+export const APP_VERSION = '2.13.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.13.1 — fix(ventas+stock): dos bugs post-deploy.
+// 1) Columna "Laboratorio" en Ventas > Productos aparecía vacía ("—") para
+//    usuarios con la caché localStorage (ppv3_) poblada ANTES del deploy de
+//    v2.12.1 — esas filas cacheadas no tenían laboratorio_id/laboratorio_nombre
+//    y el TTL de 20 min las mantenía vigentes tras el deploy. Bump ppv3→ppv4
+//    (mismo patrón que el fix ppv2→ppv3 de v2.9.15) + purga incondicional de
+//    ppv2_/ppv3_ en vez de esperar su TTL. Verificado sembrando una caché ppv3
+//    sin esos campos y confirmando que tras el reload se ignora, se purga y se
+//    refetchea con Laboratorio poblado.
+// 2) get_products_sold_no_minmax_jsonb / get_stagnant_inventory_jsonb (Gestión
+//    de Stock, TabSinVenta) usaban RETURNS jsonb + jsonb_agg en vez de RETURNS
+//    json + json_agg — viola la regla del proyecto (jsonb_agg spillea a disco en
+//    payloads grandes, medido 4.6x más lento). Recreadas con el patrón correcto,
+//    grants revisados (anon sin acceso, authenticated sí).
 
 // v2.13.0 — feat(conteo-inventario+laboratorios): política de vencimiento. Cierra
 // el trabajo interrumpido de la sesión anterior (3/5 tareas ya estaban en BD):

@@ -438,20 +438,15 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
         const rpcName = MODES.find(mx => mx.key === m).rpc;
         try {
-            const BATCH = 1000;
-            let all = [], from = 0;
-            while (true) {
-                const { data: rows, error: e } = await supabase
-                    .rpc(rpcName, { p_erp_sucursal_id: erpId })
-                    .range(from, from + BATCH - 1);
-                if (e) throw e;
-                if (rid !== loadRefs.current[m]) return;
-                all = [...all, ...(rows || [])];
-                dataRefs.current[m] = all;
-                setter([...all]);
-                if (!rows || rows.length < BATCH) break;
-                from += BATCH;
-            }
+            // Una sola llamada JSONB (Patrón C): el paginado .range() anterior
+            // re-ejecutaba el RPC completo por cada página, en serie.
+            const { data: rows, error: e } = await supabase
+                .rpc(`${rpcName}_jsonb`, { p_erp_sucursal_id: erpId });
+            if (e) throw e;
+            if (rid !== loadRefs.current[m]) return;
+            const all = rows || [];
+            dataRefs.current[m] = all;
+            setter([...all]);
         } catch (e) {
             if (rid === loadRefs.current[m]) setErrorMap(prev => ({ ...prev, [m]: e.message }));
         } finally {

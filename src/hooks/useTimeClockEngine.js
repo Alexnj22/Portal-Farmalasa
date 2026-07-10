@@ -33,11 +33,17 @@ export function useTimeClockEngine(props = {}) {
     const storeAnnouncements = useStaff((s) => s.announcements) || [];
     const branches = useStaff((s) => s.branches) || [];
 
-    const registerAttendance = props.registerAttendance ?? useStaff((s) => s.registerAttendance);
-    const markAnnouncementAsRead = props.markAnnouncementAsRead ?? useStaff((s) => s.markAnnouncementAsRead);
-    const registerKioskDevice = props.registerKioskDevice ?? useStaff((s) => s.registerKioskDevice);
-    const appendAuditLog = props.appendAuditLog ?? useStaff((s) => s.appendAuditLog);
-    const revokeKioskDevice = props.revokeKioskDevice ?? useStaff((s) => s.revokeKioskDevice);
+    const storeRegisterAttendance = useStaff((s) => s.registerAttendance);
+    const storeMarkAnnouncementAsRead = useStaff((s) => s.markAnnouncementAsRead);
+    const storeRegisterKioskDevice = useStaff((s) => s.registerKioskDevice);
+    const storeAppendAuditLog = useStaff((s) => s.appendAuditLog);
+    const storeRevokeKioskDevice = useStaff((s) => s.revokeKioskDevice);
+
+    const registerAttendance = props.registerAttendance ?? storeRegisterAttendance;
+    const markAnnouncementAsRead = props.markAnnouncementAsRead ?? storeMarkAnnouncementAsRead;
+    const registerKioskDevice = props.registerKioskDevice ?? storeRegisterKioskDevice;
+    const appendAuditLog = props.appendAuditLog ?? storeAppendAuditLog;
+    const revokeKioskDevice = props.revokeKioskDevice ?? storeRevokeKioskDevice;
 
     const showToast = useToastStore((state) => state.showToast);
 

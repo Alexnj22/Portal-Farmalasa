@@ -5,8 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.5';
+export const APP_VERSION = '2.15.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.6 — fix: 2 bugs reales encontrados al validar el resto de errores de
+// lint (no-undef, react-hooks/rules-of-hooks) en todo el repo.
+// (1) EmployeeDetailView.jsx: la variable `isHiring` se usaba en el timeline
+// de Historial Operativo (color del punto + badge "Hito de Inicio Operativo")
+// pero nunca se declaraba — ReferenceError en CUALQUIER evento de CUALQUIER
+// empleado (no solo altas), no solo los de tipo HIRE/HIRING. Verificado en
+// vivo con el único empleado con evento real en producción (Cendy Quintanilla,
+// evento PROMOTION): antes del fix habría roto el render del historial; ahora
+// se declara `isHiring = ev.type === 'HIRE' || ev.type === 'HIRING'` junto al
+// resto del cálculo de evTheme.
+// (2) useTimeClockEngine.js: 5 llamadas a useStaff() dentro de expresiones
+// `props.x ?? useStaff(...)` — hook condicional (rules-of-hooks), no dispara
+// hoy porque el único caller (TimeClockView) nunca pasa esos props, pero
+// quedaba frágil ante cualquier caller futuro que sí los pase. Se separaron
+// las llamadas al hook (siempre incondicionales) del fallback con `??`.
 
 // v2.15.5 — chore: fix raíz de falsos positivos de lint Icon/motion + limpieza
 // de código muerto encontrado al validarlos.

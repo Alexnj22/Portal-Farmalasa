@@ -595,9 +595,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div className="relative border-l-[3px] border-slate-200/70 ml-4 md:ml-6 space-y-8 pb-4">
                                             {timeline.length > 0 ? timeline.map((ev, idx) => {
                                                 const label = ev.category || EVENT_TYPES[ev.type]?.label || ev.type;
+                                                const isHiring = ev.type === 'HIRE' || ev.type === 'HIRING';
                                                 let evTheme = { label, bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200' };
 
-                                                if (ev.type === 'HIRE' || ev.type === 'HIRING') {
+                                                if (isHiring) {
                                                     evTheme = { label, bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200' };
                                                 } else if (ev.type === 'ROSTER_PUBLISHED') {
                                                     evTheme = { label, bg: 'bg-slate-100', text: 'text-slate-500', border: 'border-slate-200' };

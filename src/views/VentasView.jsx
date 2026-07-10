@@ -1886,36 +1886,31 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         <DataCell align="right" hideBelow="md" className="text-[12px] font-semibold">
                                             {(() => {
                                                 const pres = r.presentaciones || [];
-                                                // Ambigüedad: cualquier presentación con factor > 1 (ej. CAJA
-                                                // 1X20) hace que el total en unidades base ya no coincida con
-                                                // "cuántas veces se vendió" — "144" se puede leer como 144
-                                                // unidades sueltas cuando en realidad fueron 5 cajas + 44
-                                                // unidades. Si TODO el mix es factor 1, el desglose sería
-                                                // idéntico al total y se omite por redundante.
-                                                const hasFactorAmbiguity = pres.some(p => (p.factor || 1) > 1);
-                                                if (!hasFactorAmbiguity) return fmtNum(r.cantidad_base);
-
-                                                if (pres.length === 1) {
-                                                    const p = pres[0];
-                                                    return (
-                                                        <div className="leading-tight">
-                                                            <p>{fmtQty(p.cantidad)} {p.presentacion || 'u'}</p>
-                                                            <p className="text-[10px] text-slate-400 font-medium">{fmtNum(r.cantidad_base)} u</p>
-                                                        </div>
-                                                    );
-                                                }
-
-                                                // Varias presentaciones: el total base sigue siendo la cifra
-                                                // principal (comparable entre productos), con el desglose crudo
-                                                // como subtexto para no sugerir que todo vino en unidades sueltas.
-                                                const breakdown = pres
-                                                    .map(p => `${fmtQty(p.cantidad)} ${(p.presentacion || '').split(' ')[0] || 'u'}`)
-                                                    .join(' + ');
+                                                if (pres.length === 0) return fmtNum(r.cantidad_base);
                                                 return (
-                                                    <div className="leading-tight">
-                                                        <p>{fmtNum(r.cantidad_base)}</p>
-                                                        <p className="text-[10px] text-slate-400 font-medium truncate max-w-[150px]" title={breakdown}>{breakdown}</p>
-                                                    </div>
+                                                    <LiquidTooltip content={
+                                                        <div className="space-y-1 whitespace-nowrap">
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Desglose por presentación</p>
+                                                            {pres.map((p, i) => {
+                                                                const f = p.factor || 1;
+                                                                const sub = p.cantidad * f;
+                                                                return (
+                                                                    <div key={`${p.presentacion}-${i}`} className="flex items-center justify-between gap-4 text-[11px]">
+                                                                        <span className="font-semibold text-slate-600">{fmtQty(p.cantidad)} {p.presentacion || 'u'}</span>
+                                                                        <span className="text-slate-400 tabular-nums">{f > 1 ? `× ${f} = ${fmtNum(sub)} u` : `= ${fmtNum(sub)} u`}</span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                            {pres.length > 1 && (
+                                                                <div className="flex items-center justify-between gap-4 text-[11px] font-black text-slate-800 border-t border-slate-100 pt-1 mt-1.5">
+                                                                    <span>Total</span>
+                                                                    <span className="tabular-nums">{fmtNum(r.cantidad_base)} u</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    }>
+                                                        <span className="cursor-help">{fmtNum(r.cantidad_base)}</span>
+                                                    </LiquidTooltip>
                                                 );
                                             })()}
                                         </DataCell>

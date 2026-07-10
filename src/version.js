@@ -5,8 +5,20 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.14.0';
+export const APP_VERSION = '2.14.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.14.1 — fix(ventas): rediseña "Unidades" de Ventas > Productos (v2.13.3/
+// v2.13.4 revertidas). El subtexto con el desglose crudo ("234 BLISTER + 1
+// CAJA + 1 C...") no multiplicaba por factor y no reconciliaba a simple vista
+// con el total mostrado arriba — confuso y truncado. La celda vuelve a
+// mostrar siempre el número plano en unidades base (como antes de v2.13.3,
+// consistente en single/multi-presentación y cualquier factor). El desglose
+// se movió a un tooltip (hover, mismo patrón que "Total con IVA") que sí
+// reconcilia: cada presentación como "cantidad × factor = subtotal u", con
+// línea de Total al final cuando hay más de una presentación. Verificado en
+// vivo: "ACETAMINOFEN 500MG CAJA X 100 TAB MK" (4 presentaciones) —
+// 234×10 + 1×100 + 1×100 + 35×1 = 2,575, suma exacta con la celda.
 
 // v2.14.0 — feat(ventas): ocultar producto en Ventas > Productos. Ícono de ojo
 // al final de cada fila (products.oculto_en_ventas, global — para todos los

@@ -1327,3 +1327,81 @@ fixes de prioridad Media/Baja — no se tocó en este pase.
 3.2 resto de tablas `anon+true` (`kiosk_devices`, `branches`/`roles`/
 `shifts`/`holidays` de solo lectura — menor severidad), 3.3 XSS, 3.4
 secretos en bundle, 3.5 CORS/rate-limiting de kiosco.
+
+### 3.2.2 `kiosk_devices` — FIX aplicado (INSERT) + hallazgo BLOQUEADO (SELECT)
+
+**`kiosk_register` (INSERT, anon, WITH CHECK true) — CONFIRMADO explotable y
+CERRADO.** Cualquiera con la anon key podía registrar un dispositivo kiosco
+falso (`INSERT_SUCCEEDED` confirmado vía `SET ROLE anon`). Caller real
+mapeado: `registerKioskDevice` (`src/store/slices/branchSlice.js:345`,
+invocado desde `useTimeClockEngine.js:494`, pantalla "Vincular Kiosco" en
+`TimeClockView`) — **`TimeClockView` es una ruta privada, no alcanzable sin
+sesión** (el router de la app no renderiza ninguna vista sin login). La
+policy `kiosk_devices_insert` (`authenticated`, ya existente) cubre esta vía
+y queda intacta. Cero uso legítimo de la vía `anon` confirmado. Fix:
+`DROP POLICY kiosk_register` (migración `close_anon_insert_kiosk_devices`,
+`lock_timeout='5s'`, entró a la primera). Validado: negativo (`SET ROLE
+anon` → `42501 RLS violation`) y positivo (`SET ROLE authenticated` →
+insert funciona igual). **Estado: ✅ Cerrado.**
+
+**`kiosk_verify` (SELECT, anon, `USING true`) — CONFIRMADO explotable,
+**NO se pudo cerrar sin cambiar lógica de negocio — bloqueado, reportando
+como pide la regla #4.**
+
+- **Explotación confirmada**: `SET ROLE anon; SELECT * FROM kiosk_devices;`
+  devuelve **todas las filas de todas las sucursales, incluyendo
+  `device_token` en texto plano** — el token que un kiosco físico usa como
+  credencial para `get_kiosk_boot_payload` (RPC `SECURITY DEFINER`,
+  ejecutable por `anon`, que devuelve sucursales/feriados/datos operativos
+  al validar internamente `p_device_id`+`p_device_token` contra esta misma
+  tabla). **Cualquiera que lea esta tabla puede cosechar `(id, device_token)`
+  de cualquier sucursal y hacerse pasar por un kiosco legítimo ante
+  `get_kiosk_boot_payload` sin acceso físico a ningún dispositivo.**
+- **Caller legítimo real y confirmado** (a diferencia de los 3 casos
+  anteriores): `verifyDevice()` en `src/hooks/useKioskDevice.js:77-111` →
+  `validateKioskToken` (`src/store/slices/branchSlice.js:413`) —
+  `.from('kiosk_devices').select('id, branch_id').eq('id', deviceId)
+  .eq('device_token', token)...` — esto corre **antes del login**, en cada
+  carga de la pantalla de kiosco, para confirmar que el token guardado en
+  `localStorage` del dispositivo sigue vigente (no revocado). Es
+  estructuralmente `anon` — no hay forma de que corra autenticado, porque
+  todavía no hay ningún empleado logueado en ese punto del flujo.
+- **Por qué no hay fix solo-RLS**: Postgres RLS evalúa la policy por fila
+  usando columnas de la fila + configuración de sesión — **no tiene
+  visibilidad de los valores literales del `WHERE` de la consulta del
+  cliente**. No existe una policy declarativa que diga "dejá leer esta fila
+  SOLO si el cliente ya adivinó su `device_token` en el filtro" — desde el
+  punto de vista de RLS, `SELECT * FROM kiosk_devices` y `SELECT ... WHERE
+  device_token = 'el-token-correcto'` son indistinguibles (misma fila,
+  mismo rol). Restringir el `SELECT` a nivel de columna (`REVOKE SELECT
+  (device_token) FROM anon`) tampoco sirve: Postgres exige privilegio de
+  lectura sobre una columna para poder **filtrar** por ella, no solo para
+  incluirla en el resultado — bloquearía la columna y rompería exactamente
+  el `.eq('device_token', token)` que `validateKioskToken` necesita.
+  El único cierre correcto es reemplazar el `SELECT` directo por una función
+  `SECURITY DEFINER` (mismo patrón que `get_kiosk_boot_payload`) que reciba
+  `device_id`+`device_token` como parámetros y devuelva un booleano/fila
+  mínima sin exponer la tabla — **eso es lógica nueva (una función + cambiar
+  qué llama `validateKioskToken`), fuera del mandato de "cero cambios de
+  lógica de negocio, cero refactors" de este pase.**
+- **Regla #4 aplicada**: no se aplicó ningún fix parcial. La policy
+  `kiosk_verify` queda **sin tocar**, documentada como bloqueada.
+
+**Severidad real**: Alta — es explotación de credenciales de dispositivo,
+pero acotada a lo que expone `get_kiosk_boot_payload` (branches, feriados,
+datos operativos de la sucursal para armar la UI del kiosco) — a confirmar
+en detalle qué tan sensible es ese payload exacto si se retoma este punto.
+**Recomendación para cuando se decida retomarlo**: crear una función
+`SECURITY DEFINER` `verify_kiosk_device(p_device_id, p_device_token)` que
+devuelva `boolean` (o la fila mínima que `validateKioskToken` necesita),
+revocar `kiosk_verify` de la tabla, y cambiar `validateKioskToken` para
+llamar al RPC en vez del `SELECT` directo — mismo patrón exacto que ya
+existe para `get_kiosk_boot_payload`/`get_kiosk_coverage_employees`.
+
+### 3.2.3 Resto de tablas `anon+USING(true)` de solo lectura — revisadas, sin fix (severidad baja, por diseño)
+`branches`, `roles`, `shifts`, `holidays` (policies `read_all`/`kiosk_read`):
+exponen catálogos de referencia (nombres de sucursal, nombres de rol,
+turnos, feriados) sin PII ni credenciales — necesarios para que la pantalla
+de login por carné funcione antes de autenticar (selector de sucursal,
+resolución de nombre de rol, etc.). Confirmado por diseño en CLAUDE.md.
+**No se tocan.**

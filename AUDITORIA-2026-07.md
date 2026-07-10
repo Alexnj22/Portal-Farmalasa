@@ -1180,3 +1180,87 @@ a nivel API/gate.
 **Próximo paso solicitado por el usuario**: retomar **Fase 3** (seguridad
 ofensiva) incluyendo un re-test independiente de las 11 funciones remediadas
 en este pase.
+
+---
+
+## FASE 3 — seguridad ofensiva (EN CURSO — pausada por hallazgo crítico confirmado)
+
+### 3.1 Re-test negativo independiente de las 11 funciones (2026-07-10)
+Confirmado con `curl` directo (solo anon key, sin `x-cron-secret` ni sesión),
+**las 11 devuelven 401 de forma consistente**, sin repetir ningún positivo de
+cron (para no disparar corridas duplicadas de jobs de negocio):
+
+```
+consolidate-timesheets      -> 401 {"ok":false,"error":"UNAUTHORIZED"}
+send-push-notification      -> 401 {"error":"UNAUTHORIZED"}
+check-sales-alerts          -> 401 {"error":"UNAUTHORIZED"}
+check-doc-expiry            -> 401 {"ok":false,"error":"UNAUTHORIZED"}
+check-employee-doc-expiry   -> 401 {"ok":false,"error":"UNAUTHORIZED"}
+heal-dte-sync                -> 401 {"error":"UNAUTHORIZED"}
+backfill-dte-sales           -> 401 {"error":"UNAUTHORIZED"}
+auto-copy-weekly-roster      -> 401 {"ok":false,"error":"UNAUTHORIZED"}
+analyze-branch                -> 401 {"error":"UNAUTHORIZED"}
+analyze-history                -> 401 {"error":"UNAUTHORIZED"}
+maps-proxy                     -> 401 {"error":"UNAUTHORIZED"}
+```
+La remediación de Fase 2 se sostiene, verificada de forma independiente.
+
+### 3.2 SET ROLE / RLS — **HALLAZGO CRÍTICO CONFIRMADO, EXPLOTABLE HOY**
+
+Metodología: `BEGIN; SET LOCAL ROLE anon; <INSERT>; ROLLBACK;` — ninguna
+escritura persistió (todo en transacción de solo lectura de facto, revertida
+siempre). Se probaron las dos policies `anon` + `USING/CHECK (true)` más
+sensibles marcadas en Fase 2.
+
+**`attendance` (marcaciones de asistencia/nómina) — CONFIRMADO explotable:**
+```sql
+SET LOCAL ROLE anon;
+INSERT INTO attendance (employee_id, type, timestamp)
+VALUES ((SELECT id FROM employees LIMIT 1), 'IN', now());
+-- -> INSERT_SUCCEEDED
+```
+**Cualquiera con la anon key pública (embebida en el bundle JS de cualquier
+visitante, sin ninguna sesión) puede insertar una marcación de entrada/salida
+real para CUALQUIER `employee_id` que adivine o enumere, con cualquier
+timestamp.** No hay ninguna verificación de que el llamante sea el empleado
+en cuestión, ni de que provenga de un kiosco válido. Esto contamina
+directamente los datos de asistencia que alimentan `consolidate-timesheets`
+→ nómina.
+
+**`audit_logs` (log de auditoría) — CONFIRMADO explotable:**
+```sql
+SET LOCAL ROLE anon;
+INSERT INTO audit_logs (action, target_id, details, source)
+VALUES ('FAKE_ACTION_TEST3', 'test-target', '{"forged":true}'::jsonb, 'KIOSK');
+-- -> INSERT_SUCCEEDED
+```
+**Cualquiera puede inyectar entradas falsas en el log de auditoría** (con
+`source='KIOSK'`, `source='ADMIN_PANEL'` o `source='SYSTEM'` — los tres
+valores que acepta el `CHECK` de la columna) — puede tanto ensuciar el
+registro de auditoría como, más grave, **plantar entradas falsas que
+parezcan legítimas para encubrir o desviar la atención de una acción real**.
+
+**Nota metodológica**: el primer intento de este test usaba `INSERT ...
+RETURNING` con valores inválidos para las columnas `type`/`source` (no
+pasaban los `CHECK CONSTRAINT` de la tabla) y producía errores confusos
+(`permission denied for function auth_employee_id`, `violates row-level
+security policy`) que en un primer momento parecían sugerir que el INSERT
+estaba bloqueado. **No lo estaba** — esos errores eran artefactos de
+`RETURNING` (que exige adicionalmente pasar una policy de `SELECT`, inexistente
+para `anon` en ambas tablas) combinados con valores de columna inválidos, no
+una protección real. Repetido sin `RETURNING` y con valores válidos
+(`type='IN'`, `source='KIOSK'`), **el INSERT pasa limpio.** Se documenta esto
+explícitamente para que un test futuro no repita el mismo falso negativo.
+
+**Esto no es un hallazgo nuevo** — ya estaba documentado en Fase 2 como
+`rls_policy_always_true` con roles `anon`, marcado "posible resabio del
+diseño pre-login-kiosco". Lo que cambia acá es el estado: pasa de
+"policy dice `true`, exposición probable" a **"confirmado explotable ahora
+mismo, con prueba reproducible, sin necesitar ninguna credencial."**
+
+### Pausa solicitada por el usuario
+Por instrucción explícita ("si encontrás algo explotable AHORA... frenás y
+me lo reportás antes de seguir acumulando hallazgos"), **Fase 3 se pausa
+acá.** Pendiente sin ejecutar: resto de tablas `anon+true` (`kiosk_devices`,
+`branches`/`roles`/`shifts`/`holidays` de solo lectura — menor severidad),
+3.3 XSS, 3.4 secretos en bundle, 3.5 CORS/rate-limiting de kiosco.

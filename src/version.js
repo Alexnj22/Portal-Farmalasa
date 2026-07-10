@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.0';
+export const APP_VERSION = '2.15.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.1 — feat(laboratorios): paginación en Laboratorios > Vencimiento.
+// La lista de laboratorios (acordeón con proveedores/política de devolución)
+// no paginaba y renderizaba todos los resultados de una vez. Se agregó el
+// patrón estándar de paginación cliente (page/pageSize + TablePagination),
+// igual al usado en TabSinVenta/TabGestionStock: reset de página al buscar
+// o cambiar el tamaño de página, slice de la lista filtrada.
 
 // v2.15.0 — feat(productos): rediseño de "Devolutivo" en Catálogo. Se
 // descubrió que los 5,170 productos estaban en devolutivo=false (default de

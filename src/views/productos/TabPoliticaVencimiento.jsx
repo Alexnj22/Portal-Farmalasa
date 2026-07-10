@@ -4,6 +4,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { tokenMatch } from '../../utils/searchUtils';
 import { useToastStore } from '../../store/toastStore';
+import TablePagination from '../../components/common/TablePagination';
 import {
     FlaskConical, Truck, RotateCcw, Plus, Pencil, Trash2, Check, X, Loader2, ChevronDown,
 } from 'lucide-react';
@@ -24,6 +25,8 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
     const [loading,     setLoading]     = useState(true);
     const [expanded,    setExpanded]    = useState(null);
     const [addingFor,   setAddingFor]   = useState(null); // lab_id currently adding a proveedor
+    const [page,        setPage]        = useState(1);
+    const [pageSize,    setPageSize]    = useState(25);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -44,6 +47,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
     }, []);
 
     useEffect(() => { load(); }, [load]);
+    useEffect(() => { setPage(1); }, [searchTerm, pageSize]);
 
     const toggle = (labId) => setExpanded(prev => (prev === labId ? null : labId));
 
@@ -104,6 +108,9 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
           })
         : labs;
 
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const pageRows    = filtered.slice((page - 1) * pageSize, page * pageSize);
+
     const totalProveedores  = Object.values(proveedores).reduce((s, arr) => s + arr.length, 0);
     const totalDevolutivos  = Object.values(proveedores).reduce((s, arr) => s + arr.filter(p => p.devolutivo).length, 0);
 
@@ -130,24 +137,38 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
                     {searchTerm ? 'Sin resultados.' : 'No hay laboratorios registrados.'}
                 </div>
             ) : (
-                <div className="space-y-2">
-                    {filtered.map(lab => (
-                        <LabProveedoresRow
-                            key={lab.id}
-                            lab={lab}
-                            canEdit={canEdit}
-                            proveedores={proveedores[lab.id] || []}
-                            isOpen={expanded === lab.id}
-                            onToggle={() => toggle(lab.id)}
-                            isAdding={addingFor === lab.id}
-                            onStartAdd={() => setAddingFor(lab.id)}
-                            onCancelAdd={() => setAddingFor(null)}
-                            onCreate={async (draft) => { const ok = await handleCreate(lab.id, draft); if (ok) setAddingFor(null); }}
-                            onUpdate={handleUpdate}
-                            onDelete={handleDelete}
+                <>
+                    <div className="space-y-2">
+                        {pageRows.map(lab => (
+                            <LabProveedoresRow
+                                key={lab.id}
+                                lab={lab}
+                                canEdit={canEdit}
+                                proveedores={proveedores[lab.id] || []}
+                                isOpen={expanded === lab.id}
+                                onToggle={() => toggle(lab.id)}
+                                isAdding={addingFor === lab.id}
+                                onStartAdd={() => setAddingFor(lab.id)}
+                                onCancelAdd={() => setAddingFor(null)}
+                                onCreate={async (draft) => { const ok = await handleCreate(lab.id, draft); if (ok) setAddingFor(null); }}
+                                onUpdate={handleUpdate}
+                                onDelete={handleDelete}
+                            />
+                        ))}
+                    </div>
+                    <div className="mt-4">
+                        <TablePagination
+                            pageSize={pageSize}
+                            onPageSizeChange={setPageSize}
+                            page={page}
+                            totalPages={totalPages}
+                            onPageChange={setPage}
+                            total={labs.length}
+                            unit="laboratorios"
+                            filteredTotal={filtered.length !== labs.length ? filtered.length : undefined}
                         />
-                    ))}
-                </div>
+                    </div>
+                </>
             )}
         </div>
     );

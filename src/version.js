@@ -5,8 +5,35 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.4';
+export const APP_VERSION = '2.15.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.5 — chore: fix raíz de falsos positivos de lint Icon/motion + limpieza
+// de código muerto encontrado al validarlos.
+// (1) Se agrega eslint-plugin-react (solo la regla react/jsx-uses-vars) a
+// eslint.config.js — resuelve en la raíz los 38 falsos positivos no-unused-vars
+// de "motion"/"Icon" usados en JSX (framer-motion, iconos destructurados) sin
+// tener que comentar eslint-disable archivo por archivo. Se removieron los
+// disables ahora redundantes en TabPoliticaVencimiento.jsx, DashboardView.jsx
+// y EncuestaView.jsx.
+// (2) WidgetInventorySearch.jsx: se eliminó un bloque de estado/función
+// ("reportOpen"/"reportState"/"submitReport") huérfano de un refactor previo
+// — el feature de "reportar producto no encontrado" real y funcional vive en
+// SrsCompactCard (botón "Reportar" por tarjeta), este otro nunca se llamaba.
+// (3) WidgetInventorySearch.jsx: sanitizeSrs() tenía bytes de control literales
+// pegados directo en el regex (incluye un NUL byte), lo que hacía que el
+// archivo se detectara como binario por herramientas de texto plano. Se
+// reescribió con escapes \x/\u estándar — comportamiento verificado idéntico
+// con test aislado, cero cambio funcional.
+//
+// Hallazgo documentado sin resolver (requiere decisión de producto, no es
+// lint): en TabPedidos.jsx, handleCorregirBodega/handleConfirmarCorreccion
+// (líneas ~3012-3034) están completas pero no están conectadas a ningún botón
+// — el flujo "diferencias → corregir bodega → confirmar corrección" tiene
+// backend completo (columnas + RPC desde 20260621_pedidos_diferencias_correccion_workflow.sql)
+// pero ningún punto de entrada en la UI. La notificación push a bodega dice
+// "revisá y marcalo como corregido" pero no hay dónde hacerlo. Pendiente de
+// decisión: dónde va el botón/modal y si es de uno o dos pasos.
 
 // v2.15.4 — chore(laboratorios): silencia 4 falsos positivos de lint en
 // TabPoliticaVencimiento.jsx (preexistentes en main, no introducidos por

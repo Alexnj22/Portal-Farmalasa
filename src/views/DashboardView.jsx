@@ -250,7 +250,7 @@ const SalesBranchSkeleton = () => (
   </div>
 );
 
-const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // eslint-disable-line no-unused-vars
+const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => (
   <div data-surface="card" onClick={onClick}
     className={`group animate-kpi-enter relative bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.5rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_28px_rgba(0,0,0,0.07)] p-4 flex flex-col gap-3 ${onClick ? 'cursor-pointer hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_14px_40px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 active:scale-[0.97] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]' : ''}`}>
     <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none rounded-[1.5rem]" />
@@ -270,7 +270,7 @@ const KpiCard = ({ icon: Icon, label, value, sub, color, onClick }) => ( // esli
 );
 
 // Liquid-glass widget card — fills grid cell height, content scrolls internally
-const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, category = 'general' }) => { // eslint-disable-line no-unused-vars
+const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, category = 'general' }) => {
   const cat = CATEGORY_META[category] || CATEGORY_META.general;
   return (
     <div data-surface="card" className={`h-full relative rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_16px_40px_rgba(0,0,0,0.09)] hover:-translate-y-[2px] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] flex flex-col ${noClip ? '' : 'overflow-hidden'}`}>

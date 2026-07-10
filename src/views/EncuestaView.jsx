@@ -567,7 +567,7 @@ export default function EncuestaView() {
     const filtersContent = (
         <div className="relative flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
             <div className="flex items-center h-full pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5">
-                {TABS.map(({ key, label, Icon }) => ( // eslint-disable-line no-unused-vars
+                {TABS.map(({ key, label, Icon }) => (
                     <button key={key} onClick={() => setTab(key)}
                         className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${
                             tab === key
@@ -656,7 +656,7 @@ export default function EncuestaView() {
                                 { label: 'Jefes',          value: RESPUESTAS.filter(r => r.isJefe).length,  sub: 'de sala / área', Icon: UserCheck, grad: 'from-purple-500 to-violet-500' },
                                 { label: 'Empleados',  value: RESPUESTAS.filter(r => !r.isJefe).length, sub: 'de sala / área', Icon: UserX,     grad: 'from-slate-500 to-slate-400' },
                                 { label: 'Sucursales',     value: sucursales.length, sub: 'representadas',  Icon: Building2, grad: 'from-teal-500 to-emerald-500' },
-                            ].map(({ label, value, sub, Icon, grad }) => ( // eslint-disable-line no-unused-vars
+                            ].map(({ label, value, sub, Icon, grad }) => (
                                 <div key={label} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-100 bg-white shadow-sm">
                                     <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
                                         <Icon size={14} className="text-white" />

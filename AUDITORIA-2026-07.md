@@ -1062,6 +1062,22 @@ en una ventana de baja actividad del ERP, o confiar en que el patrón es
 idéntico (mismo `checkCronSecret`) al de `heal-dte-sync`, que sí se confirmó
 end-to-end exitosamente contra el mismo `sync-dte-sales`.
 
+**Verificación post-hoc (2026-07-10, pedida explícitamente antes de Fase 3) —
+¿el rate-limit del test afectó los syncs de producción?** No.
+Confirmado con evidencia directa:
+- `sync_log`: **0 filas con `success=false`** en las últimas 3 horas — cada
+  sucursal (2,4,25,27,28,29) siguió sincronizando cada minuto sin interrupción
+  durante y después de las dos llamadas de prueba que recibieron `429`.
+- `inventory_sync_log`: **0 filas con `success=false`** en las últimas 3
+  horas — las 7 ubicaciones ERP de inventario también sin interrupción.
+- Logs de edge functions: `sync-dte-sales`, `sync-products`,
+  `sync-erp-purchases`, `check-sales-alerts` — **100% status 200** en la
+  ventana que incluye el momento del rate-limit.
+El `429` del ERP fue específico a la sesión de login que abrió la prueba de
+`backfill-dte-sales` (probablemente un límite por-credencial/por-sesión
+concurrente, no un throttle global de IP), no un throttle que haya afectado
+al resto del tráfico. No se requiere ninguna acción de seguimiento.
+
 **Nota `analyze-history`**: la navegación por Playwright hasta el botón
 "Resumen Inteligente del Historial" (dentro de `BranchDetailView` → tab
 Historial) no encontró el selector esperado en el intento con el tiempo
@@ -1085,7 +1101,57 @@ a nivel API/gate.
    `.eq('status', 'ACTIVE')` (inglés) que se corrigió en `saly-ai`, presente
    acá también, en la resolución de destinatarios de Talento Humano/fallback.
    Solo se corrigió la línea de `saly-ai` que el usuario pidió explícitamente
-   ("solo esa línea"). Candidato directo para el mismo fix.
+   ("solo esa línea"). Candidato directo para el mismo fix, **pero NO
+   aplicado — pendiente de decisión del usuario, ver investigación de
+   impacto abajo.**
+
+   **Investigación de impacto (2026-07-10, pedida antes de tocar nada)**:
+   - **Alcance real del módulo de Turnos**: solo **8 empleados en toda la
+     empresa** tienen alguna vez un roster en `employee_rosters`
+     (Adriana Ramirez, Alva Ayala, Amadeo Clemente, Juan Melendez, Katlin
+     Molina, Maribel Alberto, Rodrigo Marquez, Sergio Tobias — todos
+     `status='ACTIVO'` hoy). El módulo de horarios/turnos automatizado tiene
+     adopción mínima — esto acota de entrada el blast radius del bug.
+   - **La COPIA de rosters (el 90% de lo que hace la función) es
+     independiente del bug** — el código que decide qué copiar (pasos 1-4:
+     cargar rosters actuales, detectar quién falta la próxima semana, copiar
+     los sin conflicto) nunca filtra por `employees.status`. El bug de
+     `'ACTIVE'` vive únicamente en el paso 5 (resolución de destinatarios
+     para la notificación de conflictos). **Confirmado con datos reales**:
+     los 8 empleados tienen roster `PUBLISHED` continuo semana tras semana
+     desde 2026-06-08 (8 rosters cada semana: 06-08, 06-15, 06-22, 06-29,
+     07-06) — la copia automática **ha estado funcionando correctamente y
+     sin interrupción** todo este tiempo. Cero evidencia de rosters vacíos o
+     semanas saltadas.
+   - **La rama de conflicto (la única afectada por el bug) nunca se ha
+     activado**: `SELECT * FROM announcements WHERE metadata->>'source' =
+     'auto-copy-weekly-roster'` devuelve **0 filas** desde que la función se
+     desplegó (2026-05-21) — nunca se creó ni un solo aviso de conflicto.
+     Se verificó la causa: **ninguno de los 8 empleados con roster tiene un
+     solo evento `VACATION`/`DISABILITY`/`PERMIT` registrado desde
+     2026-05-18** (`employee_events` filtrado por esos 8 `employee_id` y esos
+     3 tipos, sin resultados). Es decir, la rama de código con el bug
+     **nunca se ejecutó en producción** porque la condición que la dispara
+     (un empleado con roster faltante Y un evento bloqueante esa semana)
+     simplemente no se ha dado — no por el bug, sino porque estos 8
+     empleados no han tenido vacaciones/incapacidades/permisos en ese
+     período.
+   - **Corridas del cron confirmadas exitosas**: `cron.job_run_details`
+     (retención 14 días) muestra jobid 144 y 146 con `status='succeeded'`
+     los sábados 2026-06-27 y 2026-07-04 (histórico anterior ya purgado).
+   - **Conclusión**: el bug es real y debe corregirse, pero su impacto
+     acumulado hasta hoy es **cero** — no hay backlog de notificaciones
+     perdidas ni rosters mal copiados que reparar. El riesgo es puramente
+     hacia adelante: el día que un empleado de estos 8 tenga vacaciones,
+     incapacidad o permiso que se cruce con la copia automática, Talento
+     Humano no se enterará del conflicto (el aviso se crea con
+     `target_type:'ALL'`, invisible por RLS — bug #1 de esta lista). Arreglar
+     el `status='ACTIVE'`→`'ACTIVO'` por sí solo tampoco alcanza: mientras
+     `target_type:'ALL'` (bug #1) siga sin corregirse, el aviso seguiría sin
+     verse aunque `recipientIds` ya no esté vacío — **los dos bugs están
+     encadenados en la misma rama de código y probablemente conviene
+     corregirlos juntos, no por separado**, cuando el usuario decida
+     retomarlo.
 3. **`SalyChatOverlay.jsx`** — confirmado que **no está montado en ningún
    lugar de la aplicación** (`grep` no encuentra ningún import fuera del
    propio archivo). Es código muerto — el único caller real y alcanzable de

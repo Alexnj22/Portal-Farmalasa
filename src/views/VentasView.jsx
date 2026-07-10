@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
+import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -1393,6 +1394,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const [sortCol, setSortCol]     = useState('neto');
     const [sortDir, setSortDir]     = useState('desc');
     const [filterLab, setFilterLab] = useState('');
+    const [showHidden, setShowHidden] = useState(false);
     const [prevProdStats, setPrevProdStats] = useState({ sum: 0 });
     const [page, setPage]           = useState(1);
     const [pageSize, setPageSize]   = useState(50);
@@ -1422,11 +1424,20 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setDrillPage(1);
     };
 
-    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, searchTerm, pageSize, filterLab]);
+    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, searchTerm, pageSize, filterLab, showHidden]);
+
+    // Ocultar producto es global y permanente (no como el buscador, que es solo
+    // para encontrar) — por defecto la vista excluye los ocultos; showHidden
+    // invierte a "solo ocultos" para poder revisarlos/destaparlos.
+    const hiddenCount = useMemo(() => rows.filter(r => r.oculto_en_ventas).length, [rows]);
+    const visibleBaseRows = useMemo(() =>
+        rows.filter(r => showHidden ? r.oculto_en_ventas : !r.oculto_en_ventas),
+        [rows, showHidden]
+    );
 
     const labOptions = useMemo(() => {
         const seen = new Map();
-        for (const r of rows) {
+        for (const r of visibleBaseRows) {
             if (r.laboratorio_id != null && !seen.has(r.laboratorio_id)) {
                 seen.set(r.laboratorio_id, r.laboratorio_nombre || `Lab. ${r.laboratorio_id}`);
             }
@@ -1434,7 +1445,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         return [...seen.entries()]
             .map(([value, label]) => ({ value: String(value), label }))
             .sort((a, b) => a.label.localeCompare(b.label));
-    }, [rows]);
+    }, [visibleBaseRows]);
 
     // Close drill-down and clear drill cache whenever period/branch changes
     useEffect(() => {
@@ -1453,13 +1464,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
     const fetchProductos = useCallback(async (isRetry = false) => {
         const cacheKey = `${fini}|${ffin}|${filterBranch ?? ''}`;
-        // ppv4: bump de versión de la key — ppv3 guardaba filas sin
-        // laboratorio_id/laboratorio_nombre (columna agregada en v2.12.1); sin este
-        // bump, usuarios con caché ppv3 sin vencer (TTL 20 min) seguían viendo la
-        // columna Laboratorio vacía tras el deploy. ppv2 pudo haber guardado
-        // resultados truncados en 1000 filas (bug corregido en v2.9.15). Este bump
-        // invalida la caché vieja sin depender de que el usuario borre localStorage.
-        const lsKey    = `ppv4_${cacheKey}`;
+        // ppv5: bump de versión de la key — ppv4 guardaba filas sin
+        // oculto_en_ventas (columna agregada junto con el feature de ocultar
+        // producto). Mismo patrón que el bump ppv3→ppv4 de v2.13.1: sin esto,
+        // usuarios con caché ppv4 sin vencer (TTL 20 min) verían productos
+        // ocultos reaparecer en la lista tras el deploy porque su fila cacheada
+        // no trae el campo. ppv2/ppv3 son versiones de esquema aún más viejas.
+        const lsKey    = `ppv5_${cacheKey}`;
         const TTL_MS   = 20 * 60 * 1000; // 20 minutes
 
         // Cache only applies when not searching — search results are never cached
@@ -1534,6 +1545,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     cantidad: qty, cantidad_base, neto, costo_total, costo_unitario, utilidad, margen, presentaciones,
                     ultima_venta:        item.ultima_venta        || null,
                     ultima_venta_por_suc: item.ultima_venta_por_suc || [],
+                    oculto_en_ventas: !!item.oculto_en_ventas,
                 };
             });
 
@@ -1542,11 +1554,11 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 productsCache.current.set(cacheKey, allRows);
                 try {
                     Object.keys(localStorage)
-                        // ppv2_/ppv3_ = versiones de esquema viejas (siempre se purgan);
-                        // ppv4_ = caché actual, solo se purga si venció su TTL.
-                        .filter(k => k.startsWith('ppv2_') || k.startsWith('ppv3_') || (k.startsWith('ppv4_') && k !== lsKey))
+                        // ppv2_/ppv3_/ppv4_ = versiones de esquema viejas (siempre se purgan);
+                        // ppv5_ = caché actual, solo se purga si venció su TTL.
+                        .filter(k => k.startsWith('ppv2_') || k.startsWith('ppv3_') || k.startsWith('ppv4_') || (k.startsWith('ppv5_') && k !== lsKey))
                         .forEach(k => {
-                            if (k.startsWith('ppv2_') || k.startsWith('ppv3_')) { localStorage.removeItem(k); return; }
+                            if (k.startsWith('ppv2_') || k.startsWith('ppv3_') || k.startsWith('ppv4_')) { localStorage.removeItem(k); return; }
                             try { const e = JSON.parse(localStorage.getItem(k)); if (Date.now() - e.ts > TTL_MS) localStorage.removeItem(k); } catch (_) {}
                         });
                     localStorage.setItem(lsKey, JSON.stringify({ data: allRows, ts: Date.now() }));
@@ -1568,6 +1580,25 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     }, [fini, ffin, filterBranch, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => { fetchProductos(); }, [fetchProductos]);
+
+    // Ocultar/mostrar producto en Ventas > Productos — global (para todos los
+    // usuarios), vía products.oculto_en_ventas. No afecta Catálogo/Inventario.
+    const toggleOculto = useCallback(async (row) => {
+        const nextVal = !row.oculto_en_ventas;
+        const { error: e } = await supabase.from('products').update({ oculto_en_ventas: nextVal }).eq('id', row.erp_product_id);
+        if (e) { useToastStore.getState().showToast('Error', e.message, 'error'); return; }
+        setRows(prev => prev.map(r => r.erp_product_id === row.erp_product_id ? { ...r, oculto_en_ventas: nextVal } : r));
+        // Mantiene la caché en memoria/localStorage consistente con lo que ya se ve —
+        // si no, un cambio de filtro que reuse la caché mostraría el estado viejo.
+        const cacheKey = `${fini}|${ffin}|${filterBranch ?? ''}`;
+        if (productsCache.current.has(cacheKey)) {
+            productsCache.current.set(cacheKey, productsCache.current.get(cacheKey).map(r =>
+                r.erp_product_id === row.erp_product_id ? { ...r, oculto_en_ventas: nextVal } : r
+            ));
+        }
+        useStaff.getState().appendAuditLog(nextVal ? 'OCULTAR_PRODUCTO_VENTAS' : 'MOSTRAR_PRODUCTO_VENTAS', String(row.erp_product_id), { producto: row.descripcion });
+        useToastStore.getState().showToast(nextVal ? 'Producto oculto' : 'Producto visible', nextVal ? 'Ya no aparecerá en Ventas > Productos.' : 'Vuelve a aparecer en Ventas > Productos.', 'success');
+    }, [fini, ffin, filterBranch]);
 
     const fetchDrillDown = useCallback(async (productId) => {
         const cacheKey = `${productId}|${fini}|${ffin}|${filterBranch ?? ''}`;
@@ -1715,8 +1746,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     // filtered + sorted — busca en TODO el dataset, no solo en la página visible
     const { results: filtered, isFuzzy: isProdFuzzy } = useMemo(() => {
         const { results, isFuzzy } = !searchTerm
-            ? { results: rows, isFuzzy: false }
-            : smartFilter(searchTerm, rows, r => [r.descripcion, ...(r.presentaciones || []).map(p => p.presentacion)]);
+            ? { results: visibleBaseRows, isFuzzy: false }
+            : smartFilter(searchTerm, visibleBaseRows, r => [r.descripcion, ...(r.presentaciones || []).map(p => p.presentacion)]);
         const labFiltered = filterLab ? results.filter(r => String(r.laboratorio_id) === String(filterLab)) : results;
         const sorted = [...labFiltered].sort((a, b) => {
             const asc = sortDir === 'asc' ? 1 : -1;
@@ -1728,13 +1759,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             return typeof av === 'string' ? av.localeCompare(bv) * asc : (av - bv) * asc;
         });
         return { results: sorted, isFuzzy };
-    }, [rows, searchTerm, sortCol, sortDir, filterLab]);
+    }, [visibleBaseRows, searchTerm, sortCol, sortDir, filterLab]);
 
     // KPIs sobre el período completo, acotados por laboratorio si hay filtro activo
     // (no afectados por búsqueda — el buscador es para encontrar, el filtro para acotar)
     const labFilteredRows = useMemo(() =>
-        filterLab ? rows.filter(r => String(r.laboratorio_id) === String(filterLab)) : rows,
-        [rows, filterLab]
+        filterLab ? visibleBaseRows.filter(r => String(r.laboratorio_id) === String(filterLab)) : visibleBaseRows,
+        [visibleBaseRows, filterLab]
     );
     const maxNeto      = labFilteredRows.reduce((m, r) => Math.max(m, r.neto), 0) || 1;
     const totNeto      = labFilteredRows.reduce((s, r) => s + r.neto, 0);
@@ -1764,7 +1795,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                         { label: 'Costo',         value: fmt(totCosto),      icon: TrendingDown, grad: 'from-red-500 to-orange-400',    text: 'text-red-700',     pct: null,        sub: undefined },
                         { label: 'Utilidad',      value: fmt(totUtilidad),   icon: TrendingUp,   grad: 'from-emerald-500 to-teal-400',  text: 'text-emerald-700', pct: null,        sub: undefined },
                         { label: 'Margen',        value: fmtPct(margenGlobal), icon: Star,       grad: 'from-amber-500 to-yellow-400',  text: 'text-amber-700',   pct: null,        sub: undefined },
-                    ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
+                        ...(hiddenCount > 0 || showHidden ? [
+                            { label: 'Ocultos', value: fmtNum(hiddenCount), icon: showHidden ? Eye : EyeOff, grad: 'from-slate-500 to-slate-400', text: 'text-slate-700', pct: null, sub: showHidden ? 'Viendo solo ocultos' : undefined, onClick: () => setShowHidden(v => !v), active: showHidden },
+                        ] : []),
+                    ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode && card.label !== 'Ocultos'} />);
                 })()}
                 </div>
                 <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} filterLab={filterLab} setFilterLab={setFilterLab} labOptions={labOptions} />
@@ -1795,13 +1829,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     { key: 'utilidad',     label: 'Utilidad',      sortable: true, align: 'right', hideBelow: 'sm' },
                     { key: 'margen',       label: 'Margen',        sortable: true, align: 'right' },
                     { key: 'ultima_venta', label: 'Última venta',  sortable: true, align: 'right', hideBelow: 'lg' },
+                    { key: '_oculto',      label: '',              align: 'center', className: 'w-10' },
                 ]}
                 sortKey={sortCol}
                 sortDir={sortDir}
                 onSort={handleSort}
                 loading={loading}
                 skeletonRows={10}
-                empty={{ icon: Package, message: searchTerm ? `Sin resultados para "${searchTerm}"` : 'Sin datos para este período' }}
+                empty={{ icon: Package, message: searchTerm ? `Sin resultados para "${searchTerm}"` : showHidden ? 'No hay productos ocultos' : 'Sin datos para este período' }}
                 minWidth="640px"
             >
                 {paginated.map((r, i) => {
@@ -1918,10 +1953,24 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         <DataCell align="right" hideBelow="lg">
                                             <UltimaVentaCell row={r} filterBranch={filterBranch} branches={branches} />
                                         </DataCell>
+                                        <DataCell align="center">
+                                            <LiquidTooltip content={showHidden ? 'Mostrar de nuevo' : 'Ocultar producto (para todos)'}>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); toggleOculto(r); }}
+                                                    className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0 ${
+                                                        showHidden
+                                                            ? 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                                                            : 'text-slate-300 hover:text-red-500 hover:bg-red-50'
+                                                    }`}
+                                                >
+                                                    {showHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                                                </button>
+                                            </LiquidTooltip>
+                                        </DataCell>
                                     </DataRow>
                                     {isExpanded && !privacyMode && (
                                         <tr className="bg-gradient-to-b from-blue-50/25 to-slate-50/10">
-                                            <td colSpan={9}
+                                            <td colSpan={10}
                                                 className="px-4 py-4">
                                                 {drillLoading ? (
                                                     <div className="flex items-center gap-2 text-[12px] text-slate-400 py-3">

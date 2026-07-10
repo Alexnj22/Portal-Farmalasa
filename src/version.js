@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.13.4';
+export const APP_VERSION = '2.14.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.14.0 — feat(ventas): ocultar producto en Ventas > Productos. Ícono de ojo
+// al final de cada fila (products.oculto_en_ventas, global — para todos los
+// usuarios, no afecta Catálogo/Inventario/MinMax). Por defecto la lista
+// excluye los ocultos; mini card "Ocultos" (aparece solo si hay ≥1) muestra el
+// conteo y, al hacer clic, invierte la vista a "solo ocultos" para revisarlos
+// o destaparlos — mismo patrón ya usado para "Pts. Canjeados" en Ventas.
+// get_product_sales_agg ahora expone oculto_en_ventas (recreada — el cambio de
+// return type exige DROP+CREATE); get_product_sales_total excluye ocultos del
+// cálculo de período anterior para que la comparación no incluya lo que ya no
+// se ve en el período actual. Bump ppv4→ppv5 en la caché localStorage (mismo
+// motivo que ppv3→ppv4 de v2.13.1: la fila cacheada no traía el campo nuevo).
+// Verificado en vivo: ocultar/destapar contra Supabase real, estado
+// persistente entre reloads, KPIs recalculados en modo "solo ocultos"; BD
+// confirmada en 0 productos ocultos al terminar la prueba.
 
 // v2.13.4 — fix(ventas): la desambiguación de "Unidades" (v2.13.3) solo cubría
 // productos de UNA presentación con factor > 1. El mismo problema existe con

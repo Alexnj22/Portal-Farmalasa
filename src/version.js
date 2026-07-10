@@ -5,8 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.12.1';
+export const APP_VERSION = '2.13.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.13.0 — feat(conteo-inventario+laboratorios): política de vencimiento. Cierra
+// el trabajo interrumpido de la sesión anterior (3/5 tareas ya estaban en BD):
+// 1) crear_conteo_inventario ya NO filtra por vencidos — el conteo físico siempre
+//    incluye TODO el inventario del alcance elegido; lo vencido/próximo a vencer se
+//    señala como aviso (badge) en vez de excluirse del snapshot. Se quitó el
+//    checkbox "Incluir productos vencidos" del modal (ya no aplica).
+// 2) ConteoDetailView: badge "Vencido"/"Por vencer" (90 días) por línea y agregado
+//    a nivel de producto (con_vencidos_count/con_proximos_count, ya calculados en
+//    get_conteo_products_page).
+// 3) Nueva tabla proveedores (laboratorio_id FK, devolutivo, meses_devolucion,
+//    notas) + products.devolutivo — permite registrar, por proveedor, si el
+//    laboratorio acepta devoluciones y con cuántos meses de anticipación, y anular
+//    esa política a nivel de producto individual cuando aplique.
+// 4) Nueva pestaña "Política de Vencimiento" en Laboratorios: lista los 355
+//    laboratorios en acordeón, permite agregar/editar/eliminar proveedores con su
+//    política de devolución (TabPoliticaVencimiento.jsx).
+// 5) TabCatalogo: toggle "Devolutivo" en el panel expandido de producto para poder
+//    marcar productos individuales (products.devolutivo, sin UI hasta ahora).
+// Verificado en vivo: modal de conteo sin el checkbox, RPCs en BD ya con los
+// campos esperados, pestaña nueva creando/mostrando proveedores contra Supabase
+// real (dato de prueba limpiado al terminar), toggle de producto persistiendo y
+// revirtiendo correctamente. Build y lint sin regresiones (ruido de lint
+// preexistente idéntico al de TabLaboratorios.jsx, no introducido por este cambio).
 
 // v2.12.1 — feat(ventas): columna "Laboratorio" en Ventas > Productos, con filtro
 // dedicado (pill LiquidSelect junto a Sucursal) para ver ventas por laboratorio. El

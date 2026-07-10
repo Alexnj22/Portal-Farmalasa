@@ -889,9 +889,27 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
     const [showInactive, setShowInactive] = useState(false);
     const [lightboxSrc, setLightboxSrc]   = useState(null);
     const [showAllLog, setShowAllLog]     = useState(false);
+    const [devolutivo, setDevolutivo]           = useState(!!product.devolutivo);
+    const [savingDevolutivo, setSavingDevolutivo] = useState(false);
     const fileRef       = useRef(null);
     const principiosRef = useRef(null);
     const categoryRef   = useRef(null);
+
+    useEffect(() => { setDevolutivo(!!product.devolutivo); }, [product.devolutivo]);
+
+    const toggleDevolutivo = async () => {
+        if (savingDevolutivo) return;
+        setSavingDevolutivo(true);
+        const newVal = !devolutivo;
+        const { error } = await supabase.from('products').update({ devolutivo: newVal }).eq('id', product.id);
+        if (error) {
+            useToastStore.getState().showToast('Error', error.message, 'error');
+        } else {
+            setDevolutivo(newVal);
+            useStaff.getState().appendAuditLog('PRODUCTO_DEVOLUTIVO', String(product.id), { producto: product.nombre, devolutivo: newVal });
+        }
+        setSavingDevolutivo(false);
+    };
 
     const handleSave = async () => {
         setSaving(true);
@@ -1023,6 +1041,21 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
                             <><strong>Pérdida en precio especial</strong> — {[...specialLossSet].map(specialLossLabel).join(' y ')} está por debajo del costo en alguna presentación.</>
                         </div>
                     )}
+
+                    {/* ── Devolutivo toggle ── */}
+                    <button
+                        onClick={toggleDevolutivo}
+                        disabled={savingDevolutivo}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-colors disabled:opacity-50 ${
+                            devolutivo
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                : 'bg-slate-50 text-slate-400 border-slate-200 hover:border-slate-300'
+                        }`}
+                        title="Indica si este producto puede devolverse al proveedor antes de vencer"
+                    >
+                        {savingDevolutivo ? <Loader2 size={12} className="animate-spin" /> : <RotateCcw size={12} />}
+                        {devolutivo ? 'Devolutivo' : 'No devolutivo'}
+                    </button>
 
                     {/* ── Main layout: two columns ── */}
                     <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-6">
@@ -2543,7 +2576,7 @@ export default function TabCatalogo({
         try {
             let qb = supabase
                 .from('products')
-                .select('id, nombre, principio_activo, tipo_medicamento, es_antibiotico, requiere_receta, activo, foto_url, laboratorios(nombre)', { count: 'exact' })
+                .select('id, nombre, principio_activo, tipo_medicamento, es_antibiotico, requiere_receta, activo, foto_url, devolutivo, laboratorios(nombre)', { count: 'exact' })
                 .range((pg - 1) * ps, pg * ps - 1);
 
             if (q.trim()) {

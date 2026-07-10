@@ -22,12 +22,11 @@ export const createConteoInventarioSlice = (set, get) => ({
         }
     },
 
-    crearConteoInventario: async ({ branchId, scopeType, scopeFilter, incluyeVencidos, erpProductIds }) => {
+    crearConteoInventario: async ({ branchId, scopeType, scopeFilter, erpProductIds }) => {
         const { data, error } = await supabase.rpc('crear_conteo_inventario', {
             p_branch_id: branchId,
             p_scope_type: scopeType,
             p_scope_filter: scopeFilter || null,
-            p_incluye_vencidos: !!incluyeVencidos,
             p_erp_product_ids: erpProductIds || null,
         });
         if (error) throw error;

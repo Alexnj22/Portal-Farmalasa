@@ -57,6 +57,24 @@ const fmtDateTime = (iso) => {
 const difClass = (dif) => (dif == null ? 'text-slate-300' : dif === 0 ? 'text-emerald-600' : dif < 0 ? 'text-red-600' : 'text-blue-600');
 const difLabel = (dif) => (dif == null ? '—' : dif > 0 ? `+${dif}` : String(dif));
 
+// Umbral "próximo a vencer" — mismo valor usado en get_conteo_products_page
+// para que el aviso a nivel de grupo (sin expandir) y el de la línea coincidan.
+const VENCE_UMBRAL_DIAS = 90;
+function vencimientoStatus(fechaVencimiento) {
+    if (!fechaVencimiento) return null;
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+    const fecha = new Date(`${fechaVencimiento}T00:00:00`);
+    const diffDias = Math.round((fecha - hoy) / 86400000);
+    if (diffDias < 0) return 'VENCIDO';
+    if (diffDias <= VENCE_UMBRAL_DIAS) return 'PROXIMO';
+    return null;
+}
+function VencimientoBadge({ status }) {
+    if (!status) return null;
+    if (status === 'VENCIDO') return <span className="text-[8px] font-black uppercase text-red-700 bg-red-50 border border-red-300 px-1.5 py-0.5 rounded-full shrink-0">Vencido</span>;
+    return <span className="text-[8px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-300 px-1.5 py-0.5 rounded-full shrink-0">Por vencer</span>;
+}
+
 // Indicador "en vivo" — animate-pulse de Tailwind usa un único keyframe
 // compartido sin animation-delay por instancia, así que todos laten en fase
 // (no c/u a su ritmo) y el costo es una sola propiedad opacity por GPU.
@@ -147,7 +165,12 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                     )}
                 </div>
             </DataCell>
-            <DataCell align="center" hideBelow="lg"><span className="text-[11px] text-slate-500 tabular-nums">{fmtDate(item.fecha_vencimiento)}</span></DataCell>
+            <DataCell align="center" hideBelow="lg">
+                <div className="flex items-center justify-center gap-1">
+                    <span className="text-[11px] text-slate-500 tabular-nums">{fmtDate(item.fecha_vencimiento)}</span>
+                    <VencimientoBadge status={vencimientoStatus(item.fecha_vencimiento)} />
+                </div>
+            </DataCell>
             <DataCell align="center">
                 <div className="flex items-center justify-center gap-1.5">
                     <span className="text-[12px] font-bold text-slate-700 tabular-nums">{sistema}</span>
@@ -215,7 +238,12 @@ function ProductGroupRow({ product, index, expanded, onToggle }) {
                 <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">{product.item_count} lote{product.item_count === 1 ? '' : 's'}</span>
             </DataCell>
             <DataCell hideBelow="md" />
-            <DataCell hideBelow="lg" />
+            <DataCell align="center" hideBelow="lg">
+                <div className="flex items-center justify-center gap-1">
+                    {product.con_vencidos_count > 0 && <VencimientoBadge status="VENCIDO" />}
+                    {product.con_proximos_count > 0 && <VencimientoBadge status="PROXIMO" />}
+                </div>
+            </DataCell>
             <DataCell align="center"><span className="text-[12px] font-black text-slate-700 tabular-nums">{product.sistema_total}</span></DataCell>
             <DataCell align="center"><span className="text-[12px] font-black text-slate-700 tabular-nums">{product.fisico_total ?? '—'}</span></DataCell>
             <DataCell align="center"><span className={`text-[12px] font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span></DataCell>

@@ -42,7 +42,6 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     const [scopeType, setScopeType] = useState('TOTAL');
     const [laboratorioId, setLaboratorioId] = useState('');
     const [laboratorios, setLaboratorios] = useState([]);
-    const [incluyeVencidos, setIncluyeVencidos] = useState(false);
     const [manualResults, setManualResults] = useState([]);
     const [manualSelected, setManualSelected] = useState([]);
     const [saving, setSaving] = useState(false);
@@ -52,7 +51,6 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
         setBranchId(isBranchScoped ? String(user?.branchId || '') : '');
         setScopeType('TOTAL');
         setLaboratorioId('');
-        setIncluyeVencidos(false);
         setManualResults([]);
         setManualSelected([]);
     }, [isOpen, isBranchScoped, user?.branchId]);
@@ -84,7 +82,6 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                 branchId: parseInt(branchId, 10),
                 scopeType,
                 scopeFilter: scopeType === 'LABORATORIO' ? { laboratorio_id: parseInt(laboratorioId, 10) } : null,
-                incluyeVencidos,
                 erpProductIds: scopeType === 'MANUAL' ? manualSelected.map((p) => p.id) : null,
             });
             showToast('Conteo iniciado', 'Se generó el snapshot de inventario', 'success');
@@ -169,11 +166,6 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                 )}
                             </div>
                         )}
-
-                        <label className="flex items-center gap-2 mt-4 cursor-pointer select-none">
-                            <input type="checkbox" checked={incluyeVencidos} onChange={(e) => setIncluyeVencidos(e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                            <span className="text-[11px] font-bold text-slate-600">Incluir productos vencidos en el conteo</span>
-                        </label>
                     </div>
                 </div>
             </div>

@@ -5,8 +5,22 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.2';
+export const APP_VERSION = '2.15.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.3 — fix(laboratorios): 3 correcciones en Política de Vencimiento.
+// (1) "Marcar laboratorio completo como ND" usaba window.confirm() nativo del
+// navegador — se reemplazó por ConfirmModal (Liquid Glass), igual que el resto
+// del portal; se agregó el mismo fix al confirm de eliminar proveedor.
+// (2) El botón "Marcar laboratorio completo como ND" ocupaba el ancho completo
+// de la fila con borde punteado — ahora es un pill pequeño alineado a la
+// derecha junto al label "PROVEEDORES".
+// (3) El formulario "Agregar proveedor" pasó de un panel apilado con botón
+// "Guardar" a una fila inline (nombre, meses, ND, notas) con autoguardado
+// (debounce 700ms, sin botón Guardar) — igual patrón que Devolutivo/Categoría
+// en TabCatalogo. El botón "+ Agregar proveedor" ya NO se oculta al agregar:
+// se pueden abrir varias filas a la vez, un laboratorio puede tener varios
+// proveedores.
 
 // v2.15.2 — feat(laboratorios): selector de proveedor/droguería + política ND
 // real en Laboratorios > Vencimiento, a pedido directo del área de Bodega.

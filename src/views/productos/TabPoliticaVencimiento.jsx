@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
@@ -6,10 +6,14 @@ import { tokenMatch } from '../../utils/searchUtils';
 import { useToastStore } from '../../store/toastStore';
 import TablePagination from '../../components/common/TablePagination';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import {
     FlaskConical, Truck, RotateCcw, Plus, Pencil, Trash2, Check, X, Loader2, ChevronDown, Ban,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+let rowIdSeq = 0;
+const nextRowId = () => `new-${Date.now()}-${rowIdSeq++}`;
 
 // Sentinel para "Otro (no está en la lista)..." — el proveedor/droguería no
 // viene del catálogo de compras del ERP (tabla suppliers) ni fue tecleado
@@ -25,6 +29,7 @@ const isCofarsal = (nombre) => /cofarsal/i.test(nombre || '');
 function emptyDraft() {
     return { nombre: '', devolutivo: true, meses_devolucion: '', notas: '' };
 }
+const draftKey = (d) => JSON.stringify([d.nombre, d.devolutivo, d.devolutivo ? d.meses_devolucion : '', d.notas]);
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -37,9 +42,10 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
     const [supplierNames, setSupplierNames] = useState([]); // catálogo base: suppliers (ERP, sync-erp-purchases)
     const [loading,       setLoading]       = useState(true);
     const [expanded,      setExpanded]      = useState(null);
-    const [addingFor,     setAddingFor]     = useState(null); // lab_id currently adding a proveedor
+    const [newRows,       setNewRows]       = useState({}); // lab_id -> array of temp row ids being added (autosave, no submit button)
     const [page,          setPage]          = useState(1);
     const [pageSize,      setPageSize]      = useState(25);
+    const [deleteTarget,  setDeleteTarget]  = useState(null); // proveedor pending delete confirmation
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -119,9 +125,15 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
         return true;
     };
 
-    const handleDelete = async (proveedor) => {
-        if (!window.confirm(`¿Eliminar el proveedor "${proveedor.nombre}"?`)) return;
+    const [deleting, setDeleting] = useState(false);
+    const handleDelete = (proveedor) => setDeleteTarget(proveedor);
+    const confirmDelete = async () => {
+        const proveedor = deleteTarget;
+        if (!proveedor) return;
+        setDeleting(true);
         const { error } = await supabase.from('proveedores').delete().eq('id', proveedor.id);
+        setDeleting(false);
+        setDeleteTarget(null);
         if (error) { useToastStore.getState().showToast('Error', error.message, 'error'); return; }
         setProveedores(prev => ({
             ...prev,
@@ -131,29 +143,44 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
         useToastStore.getState().showToast('Eliminado', 'Proveedor eliminado.', 'success');
     };
 
+    // Agregar proveedor: filas inline con autoguardado (sin botón "Guardar"),
+    // se pueden abrir varias a la vez — el botón "+ Agregar proveedor" nunca
+    // se oculta mientras se está agregando, un laboratorio puede tener varios.
+    const addRow = (labId) => setNewRows(prev => ({ ...prev, [labId]: [...(prev[labId] || []), nextRowId()] }));
+    const removeRow = (labId, rowId) => setNewRows(prev => ({ ...prev, [labId]: (prev[labId] || []).filter(id => id !== rowId) }));
+
     // Acción masiva: son raros los laboratorios 100% ND, pero cuando pasa, marcar
     // producto por producto en Catálogo es impráctico — un solo click voltea
     // products.devolutivo=false para todo el laboratorio (mismo campo/convención
     // que TabCatalogo, ND es la excepción).
     const [markingNDFor, setMarkingNDFor] = useState(null);
+    const [ndConfirm,    setNdConfirm]    = useState(null); // { lab, count } pending confirmation
+    const [ndProcessing, setNdProcessing] = useState(false);
+
     const handleMarkLabND = async (lab) => {
         setMarkingNDFor(lab.id);
         const { count, error: countError } = await supabase
             .from('products').select('id', { count: 'exact', head: true })
             .eq('laboratorio_id', lab.id).eq('devolutivo', true);
-        if (countError) { useToastStore.getState().showToast('Error', countError.message, 'error'); setMarkingNDFor(null); return; }
+        setMarkingNDFor(null);
+        if (countError) { useToastStore.getState().showToast('Error', countError.message, 'error'); return; }
         if (!count) {
             useToastStore.getState().showToast('Sin cambios', `Todos los productos de "${lab.nombre}" ya están marcados ND.`, 'info');
-            setMarkingNDFor(null);
             return;
         }
-        const ok = window.confirm(`Esto marcará los ${count} producto${count === 1 ? '' : 's'} de "${lab.nombre}" como No Devolutivo (ND). ¿Continuar?`);
-        if (!ok) { setMarkingNDFor(null); return; }
+        setNdConfirm({ lab, count });
+    };
+
+    const confirmMarkLabND = async () => {
+        if (!ndConfirm) return;
+        const { lab, count } = ndConfirm;
+        setNdProcessing(true);
         const { data, error } = await supabase.from('products')
             .update({ devolutivo: false })
             .eq('laboratorio_id', lab.id).eq('devolutivo', true)
             .select('id');
-        setMarkingNDFor(null);
+        setNdProcessing(false);
+        setNdConfirm(null);
         if (error) { useToastStore.getState().showToast('Error', error.message, 'error'); return; }
         useStaff.getState().appendAuditLog('LABORATORIO_MARCAR_ND', String(lab.id), { laboratorio: lab.nombre, productos_afectados: data?.length ?? count });
         useToastStore.getState().showToast('Marcado', `${data?.length ?? count} producto${(data?.length ?? count) === 1 ? '' : 's'} de "${lab.nombre}" marcados como ND.`, 'success');
@@ -208,10 +235,14 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
                                 onToggle={() => toggle(lab.id)}
                                 onMarkND={() => handleMarkLabND(lab)}
                                 markingND={markingNDFor === lab.id}
-                                isAdding={addingFor === lab.id}
-                                onStartAdd={() => setAddingFor(lab.id)}
-                                onCancelAdd={() => setAddingFor(null)}
-                                onCreate={async (draft) => { const ok = await handleCreate(lab.id, draft); if (ok) setAddingFor(null); }}
+                                newRowIds={newRows[lab.id] || []}
+                                onStartAdd={() => addRow(lab.id)}
+                                onCancelAdd={(rowId) => removeRow(lab.id, rowId)}
+                                onCreate={async (rowId, draft) => {
+                                    const ok = await handleCreate(lab.id, draft);
+                                    if (ok) removeRow(lab.id, rowId);
+                                    return ok;
+                                }}
                                 onUpdate={handleUpdate}
                                 onDelete={handleDelete}
                             />
@@ -231,6 +262,30 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
                     </div>
                 </>
             )}
+
+            <ConfirmModal
+                isOpen={!!ndConfirm}
+                onClose={() => setNdConfirm(null)}
+                onConfirm={confirmMarkLabND}
+                title="Marcar como No Devolutivo"
+                message={ndConfirm ? `Esto marcará los ${ndConfirm.count} producto${ndConfirm.count === 1 ? '' : 's'} de "${ndConfirm.lab.nombre}" como No Devolutivo (ND). ¿Continuar?` : ''}
+                confirmText="Marcar ND"
+                cancelText="Cancelar"
+                isDestructive={false}
+                isProcessing={ndProcessing}
+            />
+
+            <ConfirmModal
+                isOpen={!!deleteTarget}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={confirmDelete}
+                title="Eliminar proveedor"
+                message={deleteTarget ? `¿Eliminar el proveedor "${deleteTarget.nombre}"?` : ''}
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+                isDestructive
+                isProcessing={deleting}
+            />
         </div>
     );
 }
@@ -260,7 +315,7 @@ function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
 
 // ─── Lab row (accordion) ──────────────────────────────────────────────────────
 
-function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, isOpen, onToggle, onMarkND, markingND, isAdding, onStartAdd, onCancelAdd, onCreate, onUpdate, onDelete }) {
+function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, isOpen, onToggle, onMarkND, markingND, newRowIds, onStartAdd, onCancelAdd, onCreate, onUpdate, onDelete }) {
     const devolutivoCount = proveedores.filter(p => p.devolutivo).length;
 
     return (
@@ -306,30 +361,36 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                     >
                         <div className="mx-3 mb-3 rounded-xl bg-slate-50/80 border border-slate-100 p-3 space-y-2">
                             {canEdit && (
-                                <button
-                                    onClick={onMarkND}
-                                    disabled={markingND}
-                                    title="Marca todos los productos de este laboratorio como No Devolutivo (ND) — poco común, la mayoría de laboratorios tienen productos mixtos"
-                                    className="w-full flex items-center justify-center gap-1.5 py-1.5 mb-1 rounded-lg border border-dashed border-slate-200 text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-colors text-[10px] font-bold disabled:opacity-50"
-                                >
-                                    {markingND ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
-                                    Marcar laboratorio completo como ND
-                                </button>
+                                <div className="flex items-center justify-between gap-2 px-0.5 mb-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Proveedores</span>
+                                    <button
+                                        onClick={onMarkND}
+                                        disabled={markingND}
+                                        title="Marca todos los productos de este laboratorio como No Devolutivo (ND) — poco común, la mayoría de laboratorios tienen productos mixtos"
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-slate-200 bg-white/70 text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-colors text-[9px] font-bold disabled:opacity-50 shrink-0"
+                                    >
+                                        {markingND ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
+                                        Marcar todo como ND
+                                    </button>
+                                </div>
                             )}
-                            {proveedores.length === 0 && !isAdding && (
+                            {proveedores.length === 0 && newRowIds.length === 0 && (
                                 <p className="text-[11px] text-slate-400 italic px-1 py-2">Este laboratorio aún no tiene proveedores registrados.</p>
                             )}
                             {proveedores.map(p => (
                                 <ProveedorRow key={p.id} proveedor={p} canEdit={canEdit} proveedorNameOptions={proveedorNameOptions} onUpdate={onUpdate} onDelete={onDelete} />
                             ))}
 
-                            {isAdding ? (
+                            {newRowIds.map(rowId => (
                                 <ProveedorForm
+                                    key={rowId}
                                     proveedorNameOptions={proveedorNameOptions}
-                                    onCancel={onCancelAdd}
-                                    onSubmit={onCreate}
+                                    onCancel={() => onCancelAdd(rowId)}
+                                    onSave={(draft) => onCreate(rowId, draft)}
                                 />
-                            ) : canEdit && (
+                            ))}
+
+                            {canEdit && (
                                 <button
                                     onClick={onStartAdd}
                                     className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-teal-200 text-teal-600 hover:bg-teal-50 hover:border-teal-300 transition-colors text-[11px] font-bold"
@@ -356,7 +417,7 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
                 initial={proveedor}
                 proveedorNameOptions={proveedorNameOptions}
                 onCancel={() => setEditing(false)}
-                onSubmit={async (draft) => { const ok = await onUpdate(proveedor, draft); if (ok) setEditing(false); }}
+                onSave={(draft) => onUpdate(proveedor, draft)}
             />
         );
     }
@@ -396,55 +457,65 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
     );
 }
 
-// ─── Proveedor form (create/edit) ─────────────────────────────────────────────
+// ─── Proveedor form (create/edit) — fila inline con autoguardado ──────────────
+// Todo el registro cabe en una sola fila (nombre, meses, ND, notas); no hay
+// botón "Guardar" — cada cambio válido se persiste solo (debounce 700ms),
+// igual que Devolutivo/Categoría en TabCatalogo (ver memoria del proyecto).
 
-function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSubmit }) {
-    const [draft,  setDraft]  = useState({ ...emptyDraft(), ...initial });
-    const [saving, setSaving] = useState(false);
+function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
+    const [draft,     setDraft]     = useState({ ...emptyDraft(), ...initial });
+    const [saving,    setSaving]    = useState(false);
+    const [justSaved, setJustSaved] = useState(false);
+    const lastSavedKeyRef = useRef(initial ? draftKey({ ...emptyDraft(), ...initial }) : null);
+    const mountedRef = useRef(true);
+    useEffect(() => () => { mountedRef.current = false; }, []);
 
     const setF = (field, value) => setDraft(d => ({ ...d, [field]: value }));
 
-    const options    = proveedorNameOptions || [];
-    const isOtro     = isOtroProveedor(draft.nombre, options);
+    const options     = proveedorNameOptions || [];
+    const isOtro      = isOtroProveedor(draft.nombre, options);
     const nombreValid = draft.nombre.trim() !== '' && draft.nombre !== OTRO_PROVEEDOR;
     const mesesValid  = !draft.devolutivo || (draft.meses_devolucion !== '' && Number(draft.meses_devolucion) >= 0);
     const canSave     = nombreValid && mesesValid;
 
-    const save = async () => {
-        if (!canSave || saving) return;
-        setSaving(true);
-        await onSubmit(draft);
-        setSaving(false);
-    };
+    useEffect(() => {
+        if (!canSave) return;
+        const key = draftKey(draft);
+        if (key === lastSavedKeyRef.current) return;
+        const t = setTimeout(async () => {
+            setSaving(true);
+            const ok = await onSave(draft);
+            if (!mountedRef.current) return;
+            setSaving(false);
+            if (ok) {
+                lastSavedKeyRef.current = key;
+                setJustSaved(true);
+                setTimeout(() => { if (mountedRef.current) setJustSaved(false); }, 1200);
+            }
+        }, 700);
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draft.nombre, draft.devolutivo, draft.meses_devolucion, draft.notas]);
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-xl bg-white border border-teal-200/70 shadow-md shadow-teal-100/50 p-3 space-y-2.5"
+            className="rounded-xl bg-white border border-teal-200/70 shadow-md shadow-teal-100/50 p-2.5"
         >
-            <LiquidSelect
-                value={isOtro ? OTRO_PROVEEDOR : draft.nombre}
-                onChange={val => setF('nombre', val)}
-                options={options}
-                placeholder="Seleccionar proveedor/droguería..."
-                clearable={false}
-                compact
-            />
-            {isOtro && (
-                <input
-                    autoFocus
-                    value={draft.nombre === OTRO_PROVEEDOR ? '' : draft.nombre}
-                    onChange={e => setF('nombre', e.target.value)}
-                    placeholder="Nombre del proveedor/droguería"
-                    className="w-full text-[12px] font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-slate-700 placeholder-slate-300"
-                />
-            )}
-            {/* Meses antes de vencer siempre visible — es la política real que se usa
-                para calcular cuándo mandar el producto a bodega (regla g/h de bodega).
-                El check ND es la excepción, no un toggle que la esconde. */}
-            <div className="flex items-center gap-3 flex-wrap">
-                <div className={`flex items-center gap-1.5 ${draft.devolutivo ? '' : 'opacity-40 pointer-events-none'}`}>
+            <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+                <div className="flex-1 min-w-[160px]">
+                    <LiquidSelect
+                        value={isOtro ? OTRO_PROVEEDOR : draft.nombre}
+                        onChange={val => setF('nombre', val)}
+                        options={options}
+                        placeholder="Proveedor/droguería..."
+                        clearable={false}
+                        compact
+                    />
+                </div>
+
+                <div className={`flex items-center gap-1 shrink-0 ${draft.devolutivo ? '' : 'opacity-40 pointer-events-none'}`}>
                     <input
                         type="number"
                         min="0"
@@ -452,50 +523,62 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSubmit }) {
                         onChange={e => setF('meses_devolucion', e.target.value)}
                         placeholder="0"
                         disabled={!draft.devolutivo}
-                        className={`w-16 text-[12px] font-semibold px-2 py-1.5 rounded-lg border bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 text-slate-700 text-center ${
+                        title="Meses antes de vencer por política de devolución"
+                        className={`w-12 text-[12px] font-semibold px-1.5 py-1.5 rounded-lg border bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 text-slate-700 text-center ${
                             draft.devolutivo && draft.meses_devolucion === '' ? 'border-red-300 focus:border-red-300' : 'border-slate-200 focus:border-teal-300'
                         }`}
                     />
-                    <span className="text-[10px] font-semibold text-slate-400">meses antes de vencer por política de devolución</span>
-                    {draft.devolutivo && draft.meses_devolucion === '' && (
-                        <span className="text-[9px] font-black uppercase text-red-500 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full">Requerido</span>
-                    )}
+                    <span className="text-[9px] font-semibold text-slate-400 whitespace-nowrap">meses</span>
                 </div>
+
                 <button
                     onClick={() => setDraft(d => ({ ...d, devolutivo: !d.devolutivo, meses_devolucion: d.devolutivo ? '' : d.meses_devolucion }))}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-colors shrink-0 ${
+                    title={draft.devolutivo ? 'Marcar como No Devolutivo (ND)' : 'No Devolutivo (ND) — no acepta devolución'}
+                    className={`flex items-center justify-center w-7 h-7 rounded-lg border transition-colors shrink-0 ${
                         !draft.devolutivo
                             ? 'bg-amber-50 text-amber-700 border-amber-200'
                             : 'bg-slate-50 text-slate-400 border-slate-200 hover:border-slate-300'
                     }`}
-                    title="Este proveedor no acepta devolución de productos"
                 >
-                    {!draft.devolutivo ? <Ban className="w-3 h-3" /> : <RotateCcw className="w-3 h-3" />}
-                    {!draft.devolutivo ? 'No Devolutivo (ND)' : 'Marcar como ND'}
+                    {!draft.devolutivo ? <Ban className="w-3.5 h-3.5" /> : <RotateCcw className="w-3.5 h-3.5" />}
                 </button>
-            </div>
-            <input
-                value={draft.notas}
-                onChange={e => setF('notas', e.target.value)}
-                placeholder="Notas (opcional)"
-                className="w-full text-[11px] px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-slate-600 placeholder-slate-300"
-            />
-            <div className="flex gap-2">
-                <button
-                    onClick={save}
-                    disabled={saving || !canSave}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white text-[11px] font-bold shadow-sm transition-all disabled:opacity-50"
-                >
-                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Guardar
-                </button>
+
+                <input
+                    value={draft.notas}
+                    onChange={e => setF('notas', e.target.value)}
+                    placeholder="Notas (opcional)"
+                    className="flex-1 min-w-[110px] text-[11px] px-2 py-1.5 rounded-lg border border-slate-200 bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-slate-600 placeholder-slate-300"
+                />
+
+                <div className="w-4 h-4 flex items-center justify-center shrink-0">
+                    {saving ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-500" />
+                    ) : justSaved ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    ) : null}
+                </div>
+
                 <button
                     onClick={onCancel}
-                    disabled={saving}
-                    className="flex items-center justify-center w-9 rounded-lg border border-slate-200 bg-white/60 hover:bg-red-50 hover:border-red-200 text-slate-400 hover:text-red-400 transition-all"
+                    className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-white/60 hover:bg-red-50 hover:border-red-200 text-slate-400 hover:text-red-400 transition-all shrink-0"
+                    title="Cerrar"
                 >
                     <X className="w-3.5 h-3.5" />
                 </button>
             </div>
+
+            {isOtro && (
+                <input
+                    autoFocus
+                    value={draft.nombre === OTRO_PROVEEDOR ? '' : draft.nombre}
+                    onChange={e => setF('nombre', e.target.value)}
+                    placeholder="Nombre del proveedor/droguería"
+                    className="w-full mt-1.5 text-[12px] font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-slate-700 placeholder-slate-300"
+                />
+            )}
+            {draft.devolutivo && draft.meses_devolucion === '' && (
+                <p className="text-[9px] font-black uppercase text-red-500 mt-1 px-0.5">Meses requeridos para guardar</p>
+            )}
         </motion.div>
     );
 }

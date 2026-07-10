@@ -5,8 +5,38 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.1';
+export const APP_VERSION = '2.15.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.2 — feat(laboratorios): selector de proveedor/droguería + política ND
+// real en Laboratorios > Vencimiento, a pedido directo del área de Bodega.
+// (1) El campo "Nombre del proveedor" era texto libre — se reemplazó por un
+// selector (LiquidSelect + "Otro...") sobre la tabla `suppliers` real (78
+// proveedores sincronizados del ERP vía sync-erp-purchases, incluye COFARSAL),
+// combinada con cualquier nombre ya guardado en `proveedores` — mismo patrón
+// de catálogo + "Otro" que educación/especialidades (CatalogSelect), sin tocar
+// `suppliers` (espejo del ERP, RLS solo permite escritura a service_role).
+// (2) "Meses antes de vencer por política de devolución" ahora es SIEMPRE
+// visible y obligatorio (antes quedaba oculto y opcional detrás de un toggle
+// "Devolutivo") — el check "Marcar como ND" es ahora la excepción explícita
+// que lo deshabilita, no al revés; default de fila nueva es devolutivo=true,
+// igual convención que products.devolutivo (TabCatalogo, v2.15.0). (3) Punto
+// rojo junto al nombre de proveedores COFARSAL (regla de Bodega: revisar
+// primero por ese proveedor al chequear corto vence). (4) Nuevo botón "Marcar
+// laboratorio completo como ND" por laboratorio — confirma con el conteo real
+// de productos afectados y voltea products.devolutivo=false en bloque para
+// todo el laboratorio (poco común que un laboratorio sea 100% ND, pero cuando
+// pasa evita editar producto por producto en Catálogo). Reglas completas de
+// Bodega para corto vence (COFARSAL, ND 6-7 meses antes, fechas de envío
+// 25-30 de cada mes, etc.) guardadas en memoria del proyecto como spec para
+// un futuro tracker — no implementadas aún (no existe hoy un listado de
+// productos por vencer a nivel de inventario). Verificado en vivo
+// (Playwright): selector trae los 78 proveedores reales incl. COFARSAL,
+// "Otro" revela el input de texto libre, meses queda en rojo/"Requerido" con
+// Guardar deshabilitado hasta llenarlo, toggle ND lo deshabilita
+// correctamente, botón de laboratorio completo muestra el conteo real (55
+// productos) en el confirm — cancelado a propósito para no escribir sobre
+// datos de producción sin permiso explícito.
 
 // v2.15.1 — feat(laboratorios): paginación en Laboratorios > Vencimiento.
 // La lista de laboratorios (acordeón con proveedores/política de devolución)

@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import webpush from 'npm:web-push@3.6.7';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { checkCronSecret } from '../_shared/security.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +10,16 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  // Auditoría 2026-07: gate obligatorio — los 3 callers internos
+  // (notify-new-products-daily, check-sales-alerts, auto-calculate-minmax)
+  // ya envían x-cron-secret, confirmado. Ver AUDITORIA-2026-07.md.
+  if (!checkCronSecret(req)) {
+    return new Response(JSON.stringify({ error: 'UNAUTHORIZED' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
     const VAPID_PUBLIC  = Deno.env.get('VAPID_PUBLIC_KEY')!;

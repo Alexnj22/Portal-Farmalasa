@@ -1,4 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'npm:@supabase/supabase-js@2';
+import { requireActiveEmployeeUser } from '../_shared/security.ts';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +9,21 @@ const CORS = {
 
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+
+  // Auditoría 2026-07: gate obligatorio — antes cualquiera con la anon key
+  // pública podía quemar cuota de Google Maps sin ninguna sesión real.
+  // Ver AUDITORIA-2026-07.md, sección Remediado.
+  const admin = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  );
+  const employee = await requireActiveEmployeeUser(req, admin);
+  if (!employee) {
+    return new Response(JSON.stringify({ error: 'UNAUTHORIZED' }), {
+      status: 401,
+      headers: { ...CORS, 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
     const { type, params, key } = await req.json();

@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2"
 import { encode } from "https://deno.land/std@0.168.0/encoding/base64.ts"
-import { getCorsHeaders } from "../_shared/security.ts"
+import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts"
 import { callGemini } from "../_shared/gemini.ts"
 
 // SALY — Asistente de Operaciones
@@ -18,22 +18,24 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders, status: 200 })
   }
 
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+  const supabaseAdminKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const supabase = createClient(supabaseUrl, supabaseAdminKey)
+
+  // Auditoría 2026-07: gate obligatorio vía helper compartido — antes solo
+  // validaba que el JWT fuera sintácticamente válido, no que el empleado
+  // siguiera activo. Ver AUDITORIA-2026-07.md, sección Remediado.
+  const employee = await requireActiveEmployeeUser(req, supabase)
+  if (!employee) {
+    return new Response(JSON.stringify({ success: false, error: "Sesión expirada, inválida, o empleado inactivo. Por favor, inicia sesión nuevamente." }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 401,
+    })
+  }
+
   try {
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) throw new Error("Acceso denegado: Falta el token de autorización (Bearer).")
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-    const supabaseAdminKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY')?.trim()
-
     if (!geminiApiKey) throw new Error("API Key de Gemini no configurada en Supabase.")
-
-    const authClient = createClient(supabaseUrl, supabaseAnonKey)
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await authClient.auth.getUser(token)
-    
-    if (authError || !user) throw new Error("Sesión expirada o inválida. Por favor, inicia sesión nuevamente.")
 
     const payloadReq = await req.json();
     const { action, payload, userContext } = payloadReq;
@@ -45,8 +47,6 @@ Deno.serve(async (req) => {
     if (payload?.question && typeof payload.question === 'string') {
       payload.question = payload.question.slice(0, MAX_QUESTION_LEN).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
     }
-
-    const supabase = createClient(supabaseUrl, supabaseAdminKey)
 
     const isComplexTask = action === 'generate-schedule' || action === 'analyze-document';
     const temperature = action === 'generate-schedule' ? 0.1 : action === 'chat' ? 0.3 : 0.2; 
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
             { data: dbAnnouncements }
         ] = await Promise.all([
             supabase.from('branches').select('id, name, weekly_hours').limit(50), 
-            supabase.from('employees').select('id, name, branch_id, shift_id, role_id, status, weekly_schedule').eq('status', 'ACTIVE').limit(200), 
+            supabase.from('employees').select('id, name, branch_id, shift_id, role_id, status, weekly_schedule').eq('status', 'ACTIVO').limit(200),
             supabase.from('shifts').select('id, name, start_time, end_time, branch_id').limit(100),
             supabase.from('roles').select('id, name').limit(50),
             supabase.from('attendance').select('employee_id, type, timestamp').gte('timestamp', `${todayStr}T00:00:00Z`).limit(500),

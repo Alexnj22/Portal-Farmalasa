@@ -1,10 +1,26 @@
-import { getCorsHeaders } from "../_shared/security.ts"
+import { createClient } from "npm:@supabase/supabase-js@2"
+import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts"
 import { callGemini } from "../_shared/gemini.ts"
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req)
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
+  }
+
+  // Auditoría 2026-07: gate obligatorio — antes cualquiera con la anon key
+  // pública podía quemar cuota de Gemini sin ninguna sesión real.
+  // Ver AUDITORIA-2026-07.md, sección Remediado.
+  const admin = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  )
+  const employee = await requireActiveEmployeeUser(req, admin)
+  if (!employee) {
+    return new Response(JSON.stringify({ error: 'UNAUTHORIZED' }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 401,
+    })
   }
 
   try {

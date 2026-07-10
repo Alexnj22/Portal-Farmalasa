@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkCronSecret } from "../_shared/security.ts";
 
 // Event types that block a silent roster copy
 const BLOCKING_EVENT_TYPES = ['VACATION', 'DISABILITY', 'PERMIT'];
@@ -37,6 +38,15 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
       headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' },
+    });
+  }
+
+  // Auditoría 2026-07: gate obligatorio — los 2 cron.job (jobid 144, 146)
+  // ya envían x-cron-secret, confirmado. Ver AUDITORIA-2026-07.md.
+  if (!checkCronSecret(req)) {
+    return new Response(JSON.stringify({ ok: false, error: 'UNAUTHORIZED' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 

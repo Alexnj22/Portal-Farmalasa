@@ -41,6 +41,56 @@ export async function requireAuthUser(req: Request) {
   return user;
 }
 
+// ── CRON INVOKE SECRET (auditoría 2026-07: gate dedicado para funciones
+// cron/internas que hasta ahora no validaban nada). Header propio
+// (`x-cron-secret`, no Authorization) y secreto propio (`CRON_INVOKE_SECRET`,
+// distinto de ADMIN_INVOKE_SECRET — ese ya está expuesto en texto plano en
+// ~25 cron.job.command, ver AUDITORIA-2026-07.md) para no heredar esa
+// exposición en el nuevo gate. ─────────────────────────────────────────────
+export function checkCronSecret(req: Request): boolean {
+  const secret = Deno.env.get("CRON_INVOKE_SECRET");
+  if (!secret) return false; // secret not set → deny
+  const header = req.headers.get("x-cron-secret") ?? "";
+  return header === secret;
+}
+
+// ── Empleado activo real (auditoría 2026-07: requireAuthUser solo confirma
+// que el JWT es válido, no que el empleado sigue activo — una cuenta dada
+// de baja pero con un access token todavía no expirado pasaba igual).
+// Requiere el cliente admin/service_role del caller para poder leer
+// `employees` sin depender de sus policies RLS. ────────────────────────────
+export interface ActiveEmployee {
+  id: string;
+  status: string;
+  code: string;
+  name: string;
+}
+
+export async function requireActiveEmployeeUser(
+  req: Request,
+  admin: ReturnType<typeof createClient>,
+): Promise<ActiveEmployee | null> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return null;
+  const token = authHeader.replace("Bearer ", "").trim();
+  if (!token) return null;
+
+  const { data: { user }, error } = await admin.auth.getUser(token);
+  if (error || !user) return null;
+
+  const { data: rows, error: empErr } = await admin
+    .from("employees")
+    .select("id, status, code, name")
+    .eq("id", user.id)
+    .limit(1);
+  if (empErr || !rows?.length) return null;
+
+  const employee = rows[0] as ActiveEmployee;
+  if (employee.status !== "ACTIVO") return null;
+
+  return employee;
+}
+
 // ── ERP Credentials (from Supabase Secrets, never hardcoded) ─────────────────
 export interface ErpBranchEntry {
   branchId: number;

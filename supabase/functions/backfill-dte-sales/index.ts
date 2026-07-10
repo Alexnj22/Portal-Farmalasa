@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkCronSecret } from "../_shared/security.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,6 +47,15 @@ function buildRanges(
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  // Auditoría 2026-07: gate obligatorio — los 6 cron.job (dte-resync-month-*)
+  // ya envían x-cron-secret, confirmado. Ver AUDITORIA-2026-07.md.
+  if (!checkCronSecret(req)) {
+    return new Response(JSON.stringify({ error: 'UNAUTHORIZED' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
     const body = await req.json().catch(() => ({}));

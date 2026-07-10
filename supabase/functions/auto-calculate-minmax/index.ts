@@ -88,6 +88,7 @@ serve(async (req) => {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${invokeSecret}`,
+          "x-cron-secret": Deno.env.get("CRON_INVOKE_SECRET") ?? "",
         },
         body: JSON.stringify({
           title: pushTitle,

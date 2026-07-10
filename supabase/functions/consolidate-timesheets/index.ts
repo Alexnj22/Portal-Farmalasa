@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkCronSecret } from "../_shared/security.ts";
 
 // Punch types stored in the attendance table
 const ENTRY_TYPES = new Set(['PUNCH_IN', 'IN', 'IN_EARLY', 'IN_EXTRA']);
@@ -140,6 +141,15 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
       headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' },
+    });
+  }
+
+  // Auditoría 2026-07: gate obligatorio — cron.job (jobid 148) ya envía
+  // x-cron-secret, confirmado. Ver AUDITORIA-2026-07.md, sección Remediado.
+  if (!checkCronSecret(req)) {
+    return new Response(JSON.stringify({ ok: false, error: 'UNAUTHORIZED' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
     });
   }
 

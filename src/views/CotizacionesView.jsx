@@ -70,6 +70,12 @@ const calcTotals = (items, applies) => {
 };
 
 // ─── Print HTML ───────────────────────────────────────────────────────────────
+// Auditoría 2026-07 Fase 3: escapa texto libre/de negocio antes de interpolarlo
+// en el HTML crudo de impresión (document.write) — mismo patrón ya usado en
+// FormNovedad.jsx. Sin esto, un customer_name/notes con HTML/script se
+// ejecutaba en la ventana de impresión (misma origin que la app).
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
 const buildPrintHTML = (cot, itemsArr, branchName) => {
     const applies = cot.applies_retention;
     const gross   = itemsArr.reduce((s, i) => s + parseFloat(i.subtotal || 0), 0);
@@ -84,7 +90,7 @@ const buildPrintHTML = (cot, itemsArr, branchName) => {
         return `
         <tr style="border-bottom:1px solid #e5e7eb;">
             <td style="padding:7px 5px;text-align:center;color:#6b7280;font-size:12px;">${i + 1}</td>
-            <td style="padding:7px 5px;font-size:12px;font-weight:600;">${it.product_nombre}</td>
+            <td style="padding:7px 5px;font-size:12px;font-weight:600;">${esc(it.product_nombre)}</td>
             <td style="padding:7px 5px;text-align:center;font-size:11px;color:#374151;">${it.presentacion_desc || '—'}</td>
             <td style="padding:7px 5px;text-align:center;font-size:12px;">${parseFloat(it.cantidad).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</td>
             ${isCCF ? `
@@ -107,7 +113,7 @@ const buildPrintHTML = (cot, itemsArr, branchName) => {
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<title>${cot.numero}</title>
+<title>${esc(cot.numero)}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:Arial,sans-serif;color:#111827;background:#fff;font-size:12px}
@@ -141,19 +147,19 @@ const buildPrintHTML = (cot, itemsArr, branchName) => {
   <div class="hdr">
     <div>
       <div class="brand">FARMACIA LA SALUD</div>
-      <div class="brand-sub">${branchName || 'La Popular'}</div>
+      <div class="brand-sub">${esc(branchName || 'La Popular')}</div>
     </div>
     <div style="text-align:right">
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9ca3af">Cotización</div>
-      <div class="cot-num">${cot.numero}</div>
+      <div class="cot-num">${esc(cot.numero)}</div>
       <div style="font-size:11px;color:#374151;margin-top:3px">${fmtD(cot.fecha)}</div>
     </div>
   </div>
   <div class="meta">
     <div class="meta-block" style="flex:2">
       <div class="meta-title">Cliente</div>
-      <div class="meta-value">${cot.customer_name}</div>
-      ${cot.customer_nit ? `<div style="font-size:10px;color:#64748b">NIT: ${cot.customer_nit}</div>` : ''}
+      <div class="meta-value">${esc(cot.customer_name)}</div>
+      ${cot.customer_nit ? `<div style="font-size:10px;color:#64748b">NIT: ${esc(cot.customer_nit)}</div>` : ''}
     </div>
     <div class="meta-block">
       <div class="meta-title">Documento</div>
@@ -163,7 +169,7 @@ const buildPrintHTML = (cot, itemsArr, branchName) => {
       <div class="meta-title">Forma de Pago</div>
       <div class="meta-value">${{EFECTIVO:'Efectivo',TARJETA:'Tarjeta',TRANSFERENCIA:'Transferencia',CHEQUE:'Cheque'}[cot.payment_type]||cot.payment_type}</div>
     </div>
-    ${cot.created_by_name ? `<div class="meta-block"><div class="meta-title">Preparado por</div><div class="meta-value">${cot.created_by_name}</div></div>` : ''}
+    ${cot.created_by_name ? `<div class="meta-block"><div class="meta-title">Preparado por</div><div class="meta-value">${esc(cot.created_by_name)}</div></div>` : ''}
   </div>
   <table>
     <thead><tr>${headers}</tr></thead>
@@ -177,7 +183,7 @@ const buildPrintHTML = (cot, itemsArr, branchName) => {
       <tr class="grand"><td>TOTAL A PAGAR</td><td style="text-align:right">${fmt(total)}</td></tr>
     </tbody>
   </table>
-  ${cot.notes ? `<div class="notes-box"><strong>Notas:</strong> ${cot.notes}</div>` : ''}
+  ${cot.notes ? `<div class="notes-box"><strong>Notas:</strong> ${esc(cot.notes)}</div>` : ''}
   <div class="footer">
     <div class="footer-note">
       Cotización válida por 15 días. Precios ${isCCF ? 'más' : 'incluyen'} IVA 13%.
@@ -661,7 +667,7 @@ export default function CotizacionesView() {
 
     const handlePrint = (cot, itemsData) => {
         const branchName = branches.find(b => b.id === cot.branch_id)?.name || '';
-        const win = window.open('', '_blank', 'width=820,height=720');
+        const win = window.open('', '_blank', 'width=820,height=720,noopener');
         if (!win) return;
         win.document.write(buildPrintHTML(cot, itemsData, branchName));
         win.document.close();

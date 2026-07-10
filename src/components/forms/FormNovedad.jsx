@@ -586,7 +586,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         {formData?.newKioskPin && (
                             <button type="button" disabled={!!codeConflict}
                                 onClick={() => {
-                                    const win = window.open('', '_blank');
+                                    const win = window.open('', '_blank', 'noopener');
                                     const safeName = (activeEmployee?.name || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
                                     const safePin  = (formData.newKioskPin || '').replace(/[^A-Z0-9]/g, '');
                                     win.document.write(`

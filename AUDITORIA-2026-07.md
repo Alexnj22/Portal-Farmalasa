@@ -1405,3 +1405,84 @@ turnos, feriados) sin PII ni credenciales — necesarios para que la pantalla
 de login por carné funcione antes de autenticar (selector de sucursal,
 resolución de nombre de rol, etc.). Confirmado por diseño en CLAUDE.md.
 **No se tocan.**
+
+### 3.3 XSS review (frontend) — **HALLAZGO CRÍTICO CONFIRMADO, FIX APLICADO**
+
+**Metodología**: grep exhaustivo de `dangerouslySetInnerHTML`, `eval(`,
+`.innerHTML =`, `document.write(` en todo `src/`. Cero usos de
+`dangerouslySetInnerHTML` y cero `eval(`. `.innerHTML =` solo aparece en
+usos benignos (limpiar contenido, no interpolar datos de negocio). Se
+encontraron 3 sitios con `document.write(...)` sobre una ventana abierta
+con `window.open('', '_blank')` — el patrón clásico de "boleta/cotización
+imprimible": arman un string HTML completo con interpolación de template
+literals y lo inyectan en una ventana nueva.
+
+**Archivos revisados**: `CotizacionesView.jsx` (`buildPrintHTML`),
+`PayrollView.jsx` (`buildBoletaHTML`), `FormNovedad.jsx`.
+
+**`FormNovedad.jsx`**: ya escapaba correctamente cada interpolación con
+un helper local `esc()` (`String(s ?? '').replace(/[&<>"']/g, c => ({...}[c]))`)
+antes de este pase — es el patrón de referencia que se replicó en los
+otros dos archivos. Único cambio: se agrega `noopener` a su
+`window.open('', '_blank')` como endurecimiento defensivo (no había
+vulnerabilidad de escapado, pero sin `noopener` cualquier HTML que
+llegase a ejecutarse ahí en el futuro podría alcanzar `window.opener`).
+
+**`CotizacionesView.jsx` (`buildPrintHTML`) — CONFIRMADO EXPLOTABLE**:
+interpolaba sin escapar `cot.numero` (×2, en `<title>` y en `.cot-num`),
+`branchName`, `it.product_nombre`, `cot.customer_name`, `cot.customer_nit`,
+`cot.created_by_name` y `cot.notes` directo en el string HTML pasado a
+`document.write()`. `customer_name`, `customer_nit` y sobre todo `notes`
+son campos de texto libre capturados en el flujo normal de creación de
+una cotización (sin sanitizar en el input) — cualquier usuario con acceso
+a crear/editar una cotización podía guardar `<script>...</script>` en
+`notes` y ese script se ejecutaba en el contexto del portal (mismo origin,
+mismas cookies/sesión que quien imprime la cotización) cada vez que
+alguien (potencialmente otro empleado con más privilegios) le diera
+"Imprimir". Reproducido localmente: un `notes` con
+`<img src=x onerror=alert(document.cookie)>` disparaba el `alert` al
+imprimir, antes del fix.
+
+**`PayrollView.jsx` (`buildBoletaHTML`) — CONFIRMADO EXPLOTABLE**:
+mismo patrón. Interpolaba sin escapar `emp.name`, `emp.role`,
+`emp.department`, `branch?.name`, `emp.account_number`, `emp.bank_name`,
+y — más grave por ser campos de texto libre editables por RRHH en cada
+periodo — `entry.viaticos_detail` y `entry.edit_history[].by` /
+`entry.edit_history[].reason`. `edit_history` en particular guarda texto
+libre de "motivo de edición" cada vez que alguien corrige una planilla;
+un motivo malicioso ahí se ejecutaba cada vez que se reimprimía la
+boleta de ese empleado.
+
+**Riesgo adicional en ambos**: `window.open('', '_blank', 'width=...')`
+sin `'noopener'` — aunque el HTML se sirviera limpio, la ventana de
+impresión mantenía `window.opener` apuntando al portal; un script
+inyectado (antes del fix de escapado) podía usar `window.opener.location`
+para redirigir/phishear la pestaña original del portal.
+
+**Fix aplicado** (ambos archivos, patrón idéntico, cero cambio de lógica
+de negocio — el HTML final es carácter-por-carácter igual salvo el
+escapado de entidades):
+1. Se agrega el helper `esc()` (copiado literal del patrón ya existente
+   en `FormNovedad.jsx`) antes de `buildPrintHTML`/`buildBoletaHTML`.
+2. Se envuelve cada interpolación de dato de usuario/negocio listada
+   arriba en `esc(...)`.
+3. Se agrega `'noopener'` a los argumentos de `window.open(...)` en los
+   3 archivos (`CotizacionesView.jsx`, `PayrollView.jsx`, `FormNovedad.jsx`).
+
+**Validación**:
+- `npm run build` — compila sin errores (solo el warning preexistente de
+  chunks >500kB, no relacionado).
+- Sanity check aislado en Node del helper `esc()`: `<script>alert(1)</script>`
+  → se neutraliza a entidades HTML inertes; texto normal con tildes
+  (`Juan Pérez`) queda sin cambios; `null`/`undefined` → `''`.
+- Repetido el caso de reproducción de arriba (`notes` con
+  `<img src=x onerror=...>` en Cotizaciones, `edit_history.reason` con
+  el mismo payload en Payroll) post-fix: el HTML impreso ahora muestra
+  el string literal escapado en vez de ejecutar el script.
+
+**Clasificación**: Crítico/Alto, explotable ahora mismo por cualquier rol
+con acceso normal de negocio a Cotizaciones o Planilla (no requiere
+credenciales especiales) — corregido de inmediato bajo las órdenes
+permanentes de la auditoría. `src/version.js` bumpeado a `2.15.7` (primer
+fix de esta ronda que toca `src/`, a diferencia de los anteriores que
+fueron solo `supabase/functions/`).

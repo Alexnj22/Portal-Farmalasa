@@ -78,6 +78,12 @@ const PRINT_CSS = `
   @media print{body{padding:8px}}
 `;
 
+// Auditoría 2026-07 Fase 3: escapa texto libre/de negocio antes de interpolarlo
+// en el HTML crudo de impresión (document.write) — mismo patrón ya usado en
+// FormNovedad.jsx. Sin esto, un viaticos_detail/edit_history.reason con
+// HTML/script se ejecutaba en la ventana de impresión (misma origin que la app).
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
 function buildBoletaHTML(entry, period, branches) {
     const emp    = entry.employee || {};
     const branch = branches.find(b => String(b.id) === String(emp.branchId || emp.branch_id));
@@ -87,19 +93,19 @@ function buildBoletaHTML(entry, period, branches) {
     return `
 <div class="grid2">
   <div><span class="lbl">PATRONO:</span> JOSE RUTILIO ALEMAN VASQUEZ</div>
-  <div><span class="lbl">EMPLEADO:</span> ${(emp.name||'').toUpperCase()}</div>
-  <div><span class="lbl">CARGO:</span> ${emp.role||'—'}</div>
-  <div><span class="lbl">DEPARTAMENTO:</span> ${emp.department||'—'}</div>
-  <div><span class="lbl">SUCURSAL:</span> ${branch?.name||'—'}</div>
+  <div><span class="lbl">EMPLEADO:</span> ${esc((emp.name||'').toUpperCase())}</div>
+  <div><span class="lbl">CARGO:</span> ${esc(emp.role||'—')}</div>
+  <div><span class="lbl">DEPARTAMENTO:</span> ${esc(emp.department||'—')}</div>
+  <div><span class="lbl">SUCURSAL:</span> ${esc(branch?.name||'—')}</div>
   <div><span class="lbl">FECHA DE INGRESO:</span> ${fd(emp.hire_date||emp.hireDate)}</div>
   <div><span class="lbl">PERÍODO:</span> ${periodLabel(period.start_date,period.end_date).toUpperCase()}</div>
   <div><span class="lbl">SUELDO DIARIO:</span> $${daily.toFixed(2)}</div>
   <div><span class="lbl">FECHA DE PAGO:</span> ${period.pay_date?fd(period.pay_date):'—'}</div>
-  <div><span class="lbl">CUENTA ELECTRÓNICA:</span> ${emp.account_number||'—'}</div>
+  <div><span class="lbl">CUENTA ELECTRÓNICA:</span> ${esc(emp.account_number||'—')}</div>
   <div><span class="lbl">SUELDO BASE MENSUAL:</span> $${parseFloat(emp.base_salary||0).toFixed(2)}</div>
   <div><span class="lbl">TIPO DE JORNADA:</span> TIEMPO COMPLETO</div>
   <div><span class="lbl">SUELDO POR HORA:</span> $${hourly.toFixed(4)}</div>
-  <div><span class="lbl">FORMA DE PAGO:</span> ${emp.bank_name ? 'DEPÓSITO EN ' + emp.bank_name.toUpperCase() : 'EFECTIVO / NO ESPECIFICADO'}</div>
+  <div><span class="lbl">FORMA DE PAGO:</span> ${emp.bank_name ? 'DEPÓSITO EN ' + esc(emp.bank_name.toUpperCase()) : 'EFECTIVO / NO ESPECIFICADO'}</div>
 </div>
 <hr/>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 30px">
@@ -146,13 +152,13 @@ function buildBoletaHTML(entry, period, branches) {
 </div>
 <div style="text-align:center;font-size:10px">CANTIDAD EN LETRAS: ${amountInWords(entry.net_pay)}</div>
 <hr/>
-${entry.viaticos_detail?`<div style="font-size:10px;margin:4px 0"><b>CONCEPTO DE VIÁTICOS:</b> ${entry.viaticos_detail}</div>`:''}
-${(entry.edit_history||[]).length>0?`<div style="font-size:9px;color:#555;margin-top:4px">Boleta editada. Última edición: ${entry.edit_history[entry.edit_history.length-1]?.by} — ${entry.edit_history[entry.edit_history.length-1]?.reason}</div>`:''}
+${entry.viaticos_detail?`<div style="font-size:10px;margin:4px 0"><b>CONCEPTO DE VIÁTICOS:</b> ${esc(entry.viaticos_detail)}</div>`:''}
+${(entry.edit_history||[]).length>0?`<div style="font-size:9px;color:#555;margin-top:4px">Boleta editada. Última edición: ${esc(entry.edit_history[entry.edit_history.length-1]?.by)} — ${esc(entry.edit_history[entry.edit_history.length-1]?.reason)}</div>`:''}
 <div class="sig"><div>F. ____________________<br/>PATRONO</div><div>F. ____________________<br/>EMPLEADO</div></div>`;
 }
 
 function openPrintWindow(html, w = 840, h = 920) {
-    const win = window.open('', '_blank', `width=${w},height=${h}`);
+    const win = window.open('', '_blank', `width=${w},height=${h},noopener`);
     win.document.write(html);
     win.document.close();
     win.focus();

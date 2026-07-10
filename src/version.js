@@ -5,8 +5,27 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.6';
+export const APP_VERSION = '2.15.7';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.7 — security: 2 stored-XSS reales encontrados en Fase 3 de la
+// auditoría integral (AUDITORIA-2026-07.md), fix inmediato por ser
+// crítico/explotable ahora (órdenes permanentes de la auditoría).
+// (1) CotizacionesView.jsx (buildPrintHTML) y (2) PayrollView.jsx
+// (buildBoletaHTML): ambos arman HTML crudo con datos de negocio
+// (nombre/nota/nit de cliente, detalle de viáticos, historial de edición
+// de planilla, nombre de banco, etc.) interpolados sin escapar y lo
+// inyectan vía document.write() en una ventana abierta con window.open().
+// Cualquier campo de texto libre (p.ej. "Notas" de una cotización o el
+// detalle de un viático) podía contener <script> y ejecutarse en el
+// contexto del portal al imprimir. Fix: se agrega el helper esc() (mismo
+// patrón ya usado en FormNovedad.jsx) y se envuelve cada interpolación de
+// datos de usuario/negocio; además se agrega 'noopener' a los 3
+// window.open() de impresión (los 2 de arriba + FormNovedad.jsx, este
+// último ya estaba bien escapado, solo se endurece el noopener) para que
+// un HTML inyectado no pueda alcanzar el opener vía window.opener. Cero
+// cambio de lógica de negocio — el HTML resultante es idéntico salvo el
+// escapado de entidades.
 
 // v2.15.6 — fix: 2 bugs reales encontrados al validar el resto de errores de
 // lint (no-undef, react-hooks/rules-of-hooks) en todo el repo.

@@ -10,7 +10,7 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 import {
     FlaskConical, Truck, RotateCcw, Plus, Pencil, Trash2, Check, X, Loader2, ChevronDown, Ban,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars -- motion used via <motion.div>, not detected without eslint-plugin-react
 
 let rowIdSeq = 0;
 const nextRowId = () => `new-${Date.now()}-${rowIdSeq++}`;
@@ -82,8 +82,8 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
         ];
     }, [supplierNames, proveedores]);
 
-    useEffect(() => { load(); }, [load]);
-    useEffect(() => { setPage(1); }, [searchTerm, pageSize]);
+    useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
+    useEffect(() => { setPage(1); }, [searchTerm, pageSize]); // eslint-disable-line react-hooks/set-state-in-effect -- resetear paginación al buscar/cambiar tamaño de página
 
     const toggle = (labId) => setExpanded(prev => (prev === labId ? null : labId));
 
@@ -298,7 +298,7 @@ const SUMMARY_COLOR = {
     amber:  { bg: 'from-amber-50 to-white',  border: 'border-amber-100/80',  icon: 'bg-amber-100 text-amber-600',  glow: 'shadow-amber-100',  text: 'text-amber-600'  },
 };
 
-function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
+function SummaryCard({ icon: Icon, label, value, color, className = '' }) { // eslint-disable-line no-unused-vars
     const c = SUMMARY_COLOR[color];
     return (
         <div className={`relative rounded-2xl border bg-gradient-to-br ${c.bg} ${c.border} p-4 flex items-center gap-3.5 shadow-sm ${c.glow} overflow-hidden ${className}`}>

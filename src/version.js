@@ -5,8 +5,18 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.3';
+export const APP_VERSION = '2.15.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.4 — chore(laboratorios): silencia 4 falsos positivos de lint en
+// TabPoliticaVencimiento.jsx (preexistentes en main, no introducidos por
+// v2.15.3) con comentarios eslint-disable puntuales, mismo patrón usado en
+// DashboardView.jsx/EncuestaView.jsx: "motion"/"Icon" se usan en JSX pero
+// no-unused-vars no lo detecta sin eslint-plugin-react; los dos
+// useEffect (carga inicial + reset de paginación) son patrones
+// intencionales que la regla react-hooks/set-state-in-effect marca en
+// falso. No es una limpieza global — el resto del repo tiene ~150/67
+// instancias del mismo patrón sin tocar (fuera de alcance).
 
 // v2.15.3 — fix(laboratorios): 3 correcciones en Política de Vencimiento.
 // (1) "Marcar laboratorio completo como ND" usaba window.confirm() nativo del

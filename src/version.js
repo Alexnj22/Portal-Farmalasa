@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.12.0';
+export const APP_VERSION = '2.12.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.12.1 — feat(ventas): columna "Laboratorio" en Ventas > Productos, con filtro
+// dedicado (pill LiquidSelect junto a Sucursal) para ver ventas por laboratorio. El
+// backend (get_product_sales_agg / get_product_sales_agg_jsonb) ya traía
+// laboratorio_id/laboratorio_nombre vía JOIN a products/laboratorios; se agregó la
+// columna a la tabla, el estado filterLab, labOptions derivado de las filas cargadas,
+// y el filtro se aplica sobre el dataset ya descargado (sin round-trip extra).
 
 // v2.12.0 — feat(conteo-inventario): agrupación por producto + catálogo en "Agregar
 // Producto" + corrección de lote. Cambios pedidos tras revisar el módulo en uso real:

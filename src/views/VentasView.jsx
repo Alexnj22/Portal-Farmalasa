@@ -5,7 +5,7 @@ import {
     TrendingUp, TrendingDown, Users, Package, FileText,
     Clock, Building2, Loader2, ChevronDown,
     ChevronUp, Search, X, Trophy, Star, ChevronRight, ChevronLeft,
-    ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff
+    ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff, FlaskConical
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
@@ -123,6 +123,8 @@ function FilterControls({
     filterAnuladas, setFilterAnuladas,
     filterAntibiotico, setFilterAntibiotico,
     showAntibiotico,
+    filterLab, setFilterLab,
+    labOptions,
     branchLocked,
 }) {
     const defaultRange = (() => { const r = currentMonthRange(); return `${r.fini}|${r.ffin}`; })();
@@ -134,14 +136,21 @@ function FilterControls({
         setMonthRange(defaultRange);
         setFilterAnuladas(false);
         setFilterAntibiotico(false);
+        setFilterLab?.('');
     };
 
-    const hasActiveFilters = !!filterBranch || monthRange !== defaultRange || filterAnuladas || filterAntibiotico;
+    const hasActiveFilters = !!filterBranch || monthRange !== defaultRange || filterAnuladas || filterAntibiotico || !!filterLab;
 
     const selectedBranch = branchOptions.find(o => String(o.value) === String(filterBranch));
     const branchW = selectedBranch
         ? Math.max(130, Math.min(250, 86 + selectedBranch.label.length * 8))
         : 145;
+
+    const showLab = !!setFilterLab && labOptions?.length > 0;
+    const selectedLab = showLab ? labOptions.find(o => String(o.value) === String(filterLab)) : null;
+    const labW = selectedLab
+        ? Math.max(130, Math.min(250, 86 + selectedLab.label.length * 8))
+        : 165;
 
     const dateDirty = monthRange !== defaultRange;
 
@@ -161,6 +170,24 @@ function FilterControls({
                     </button>
                 )}
             </div>}
+
+            {showLab && <>
+            <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+            {/* Laboratorio select + individual clear */}
+            <div className="flex items-center">
+                <div className="px-2 py-2 overflow-visible transition-all duration-200" style={{ width: labW + 'px' }}>
+                    <LiquidSelect value={filterLab} onChange={setFilterLab}
+                        options={labOptions} placeholder="Laboratorio" icon={FlaskConical} compact bare />
+                </div>
+                {filterLab && (
+                    <button onClick={() => setFilterLab('')} title="Quitar laboratorio"
+                        className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
+                        <X size={9} strokeWidth={3} />
+                    </button>
+                )}
+            </div>
+            </>}
 
             <div className="h-5 w-px bg-slate-100 shrink-0" />
 
@@ -1354,6 +1381,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
     const [error, setError]         = useState(null);
     const [sortCol, setSortCol]     = useState('neto');
     const [sortDir, setSortDir]     = useState('desc');
+    const [filterLab, setFilterLab] = useState('');
     const [prevProdStats, setPrevProdStats] = useState({ sum: 0 });
     const [page, setPage]           = useState(1);
     const [pageSize, setPageSize]   = useState(50);
@@ -1383,7 +1411,19 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         setDrillPage(1);
     };
 
-    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, searchTerm, pageSize]);
+    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, searchTerm, pageSize, filterLab]);
+
+    const labOptions = useMemo(() => {
+        const seen = new Map();
+        for (const r of rows) {
+            if (r.laboratorio_id != null && !seen.has(r.laboratorio_id)) {
+                seen.set(r.laboratorio_id, r.laboratorio_nombre || `Lab. ${r.laboratorio_id}`);
+            }
+        }
+        return [...seen.entries()]
+            .map(([value, label]) => ({ value: String(value), label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [rows]);
 
     // Close drill-down and clear drill cache whenever period/branch changes
     useEffect(() => {
@@ -1475,6 +1515,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 return {
                     erp_product_id: item.erp_product_id,
                     descripcion:    item.descripcion,
+                    laboratorio_id:     item.laboratorio_id ?? null,
+                    laboratorio_nombre: item.laboratorio_nombre || null,
                     cantidad: qty, cantidad_base, neto, costo_total, costo_unitario, utilidad, margen, presentaciones,
                     ultima_venta:        item.ultima_venta        || null,
                     ultima_venta_por_suc: item.ultima_venta_por_suc || [],
@@ -1661,7 +1703,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         const { results, isFuzzy } = !searchTerm
             ? { results: rows, isFuzzy: false }
             : smartFilter(searchTerm, rows, r => [r.descripcion, ...(r.presentaciones || []).map(p => p.presentacion)]);
-        const sorted = [...results].sort((a, b) => {
+        const labFiltered = filterLab ? results.filter(r => String(r.laboratorio_id) === String(filterLab)) : results;
+        const sorted = [...labFiltered].sort((a, b) => {
             const asc = sortDir === 'asc' ? 1 : -1;
             const av = a[sortCol];
             const bv = b[sortCol];
@@ -1671,7 +1714,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
             return typeof av === 'string' ? av.localeCompare(bv) * asc : (av - bv) * asc;
         });
         return { results: sorted, isFuzzy };
-    }, [rows, searchTerm, sortCol, sortDir]);
+    }, [rows, searchTerm, sortCol, sortDir, filterLab]);
 
     // KPIs sobre el período completo (no afectados por búsqueda)
     const maxNeto      = rows.reduce((m, r) => Math.max(m, r.neto), 0) || 1;
@@ -1701,7 +1744,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </div>
-                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} />
+                <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} filterLab={filterLab} setFilterLab={setFilterLab} labOptions={labOptions} />
             </div>
 
             {error && (
@@ -1722,6 +1765,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 columns={[
                     { key: 'rank',         label: '#' },
                     { key: 'descripcion',  label: 'Producto',      sortable: true },
+                    { key: 'laboratorio_nombre', label: 'Laboratorio', sortable: true, hideBelow: 'md' },
                     { key: 'cantidad',     label: 'Unidades',      sortable: true, align: 'right', hideBelow: 'md' },
                     { key: 'neto',         label: 'Total s/IVA',   sortable: true, align: 'right' },
                     { key: 'costo_total',  label: 'Costo',         sortable: true, align: 'right', hideBelow: 'lg' },
@@ -1778,6 +1822,9 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                 <ChevronDown size={13} className={`shrink-0 mt-0.5 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-blue-400' : 'text-slate-300'}`} />
                                             </div>
                                         </DataCell>
+                                        <DataCell hideBelow="md" className="text-[11px] text-slate-500 font-semibold truncate max-w-[140px]">
+                                            {r.laboratorio_nombre || <span className="opacity-30">—</span>}
+                                        </DataCell>
                                         <DataCell align="right" hideBelow="md" className="text-[12px] font-semibold">{fmtNum(r.cantidad_base)}</DataCell>
                                         <DataCell align="right" className="font-black text-[13px]">
                                             <span className={`transition-all duration-300 ${privacyMode ? 'blur-sm select-none' : ''}`}>
@@ -1807,7 +1854,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                     </DataRow>
                                     {isExpanded && !privacyMode && (
                                         <tr className="bg-gradient-to-b from-blue-50/25 to-slate-50/10">
-                                            <td colSpan={8}
+                                            <td colSpan={9}
                                                 className="px-4 py-4">
                                                 {drillLoading ? (
                                                     <div className="flex items-center gap-2 text-[12px] text-slate-400 py-3">

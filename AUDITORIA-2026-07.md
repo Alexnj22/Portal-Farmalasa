@@ -2794,3 +2794,34 @@ con el mismo SET lock_timeout='5s' ya obligatorio. Motivo: outage del
    otra cosa.
 
 No se creó nada. Esperando tu decisión.
+
+---
+
+## Hallazgo estructural adicional — drift de migraciones en 2 capas (2026-07-11)
+
+Al ejecutar el plan de staging de arriba se encontró un **segundo drift**,
+distinto y más profundo que el ya documentado (tablas fundacionales sin
+migración de creación):
+
+**El directorio local `supabase/migrations/` está desincronizado del
+registro real del servidor.** El directorio local tiene **180 archivos**,
+trackeados en git, con fecha más antigua `20260516`. El registro real de
+migraciones del proyecto en Supabase (lo que `list_migrations` devuelve y
+lo que efectivamente se replaya al crear un branch) tiene **~370+
+entradas**, con fecha más antigua `20260404143525`
+(`create_approval_requests`). **El repo local no tiene ni siquiera el
+historial completo que el servidor sí tiene** — faltan ~190 migraciones
+locales, todas de abril-mayo.
+
+**Por qué importa**: confirma que el problema no es solo "las tablas
+fundacionales nunca tuvieron una migración de creación" (ya documentado
+arriba) — es que **el mecanismo de sincronización entre el repo git y el
+proyecto de Supabase real nunca fue confiable de punta a punta**. Esto es
+exactamente el tipo de deriva que el Refactor D (staging) de la Fase 6
+existe para prevenir hacia adelante, encontrado *mientras se construía*
+el propio staging.
+
+**No se tocó nada por esto** — es un hallazgo, no un fix de esta sesión.
+Queda documentado para una limpieza futura (reconciliar `supabase/migrations/`
+local contra el registro real del servidor, probablemente re-exportando
+el historial completo desde el servidor y reemplazando el directorio local).

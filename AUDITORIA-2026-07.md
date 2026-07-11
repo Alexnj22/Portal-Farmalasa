@@ -2626,3 +2626,171 @@ registro de qué se corrigió:
 
 ¿Qué grupo de fixes querés que aplique primero? No se aplicó nada de esta
 Fase 6 todavía — es intencional, según lo acordado para esta fase.
+
+---
+
+## POST-FASE 6 — Primer lote aplicado (2026-07-10)
+
+Usuario priorizó: Refactor D (staging) primero, en dos partes — un plan
+para aprobar (Parte 1, ver sección siguiente) y, en paralelo, solo los 4
+quick wins de riesgo cero que no dependen de staging (Parte 2, aplicados
+ya). Explícitamente NO se tocó: los 2 `<select>` restantes, el overflow
+del `DataTable` en móvil, el pase de contraste, ni la cuenta
+`sufarmasalud@farmalasa.app`.
+
+### Parte 2 — Quick wins aplicados
+
+1. **`eslint.config.js`**: `globalIgnores` ahora incluye `dist`, `android`,
+   `ios`, `.agents` (antes solo `dist`). Ruido de lint real: 2,746 → 379
+   problemas — la señal vuelve a ser usable. Cero cambio de reglas.
+2. **`ModalShell.jsx`**: nuevo prop opcional `ariaLabel` (default
+   `"Ventana modal"`), aplicado como `aria-label` en el `div role="dialog"`.
+   Nota honesta: `ModalShell` es un compound component — no controla el
+   título de sus `children` (cada caller compone su propio header), así
+   que un `aria-labelledby` apuntando al título real requeriría tocar cada
+   uno de los 4 callers directos (`LiquidModal`, `AlertModal`,
+   `AttendanceAuditView`, `PayrollView`) más los que usan esos wrappers.
+   Este fix cierra el gap real documentado en DESIGN.md §25 ("las pantallas
+   de lectura no anunciaban nada") sin ese refactor — cualquier modal ya
+   tiene un nombre accesible por defecto, y los callers pueden pasar uno
+   más específico cuando se toquen por otra razón.
+3. **`LiquidSelect.jsx`**: `aria-haspopup="listbox"` + `aria-expanded={isOpen}`
+   agregados al `div` trigger principal (el que abre/cierra el dropdown).
+4. **`src/components/SalyChatOverlay.jsx` eliminado** — confirmado con
+   grep que las únicas referencias al símbolo eran su propia definición y
+   export, cero imports en el resto del repo.
+5. **`supabase/config.toml`**: agregada la entrada faltante
+   `[functions.notify-new-products-daily]` con `verify_jwt = true`
+   (coincide con el valor real ya confirmado en Fase 2/3 vía
+   `list_edge_functions`). El código de la función ya gateaba
+   correctamente — solo faltaba la entrada de configuración.
+
+**Validación**: `npm run build` limpio, `npx eslint .` limpio (377
+problemas restantes, todos preexistentes y ya catalogados en Fase 1, cero
+nuevos). `APP_VERSION` bumpeado a `2.15.9`.
+
+### Parte 1 — Plan de staging (para aprobación, NADA creado todavía)
+
+Ver la sección "PLAN DE STAGING (pendiente de aprobación)" más abajo —
+investigado con `get_cost`/`get_organization`/las herramientas de branching
+de Supabase y una consulta directa al proyecto de Vercel real, pero **no
+se creó ningún proyecto/branch ni se tocó Vercel** — queda explícitamente
+para que el usuario apruebe costo y enfoque antes de ejecutar nada.
+
+---
+
+## PLAN DE STAGING (pendiente de aprobación — nada creado todavía)
+
+### Recomendación: Supabase Branching, no un segundo proyecto
+
+Investigadas ambas opciones vía `get_cost` (organización `Portal-Farmalasa`,
+plan `pro`):
+
+| Opción | Costo | Clona esquema sin datos reales | Sync de migraciones prod↔staging |
+|---|---|---|---|
+| Proyecto Supabase nuevo y separado | **$10/mes fijo** | Manual — hay que scriptear la clonación de esquema | Manual — no hay tooling nativo |
+| **Supabase Branch** (rama de desarrollo del proyecto actual) | **$0.01344/hora** (≈$9.68/mes si queda encendida 24/7, **menos si se pausa/borra entre usos**) | ✅ **Nativo** — `create_branch` aplica todas las migraciones a una base de datos nueva y vacía; la documentación de la propia herramienta dice explícitamente "production data will not carry over" | ✅ **Nativo** — `rebase_branch` trae migraciones nuevas de producción a la branch; `merge_branch` lleva migraciones + edge functions de la branch a producción cuando se aprueba |
+
+**Recomiendo Branch, no proyecto nuevo**: mismo costo aproximado, pero con
+sincronización de migraciones ya resuelta por la plataforma (exactamente el
+punto #3 que pediste resolver) en vez de tener que mantener tooling propio
+para eso. Además se puede borrar (`delete_branch`) cuando no esté en uso
+activo y volver a crear en minutos, algo que un proyecto separado no
+permite sin perder todo lo configurado.
+
+**Si preferís aislamiento más fuerte** (ej. por alguna razón de
+cumplimiento que yo no conozco — es tu decisión, no la mía), la alternativa
+de proyecto separado sigue siendo válida, cuesta ~lo mismo, y todo lo que
+sigue en este plan aplicaría igual salvo el punto 3 (habría que scriptear
+el sync de migraciones a mano, ej. corriendo `apply_migration` contra
+ambos `project_id` en cada cambio).
+
+### 1. Costo
+
+**$0.01344/hora** (Branch) — no se pidió `confirm_cost` todavía, ese es
+exactamente el paso que requiere tu OK explícito antes de crear nada.
+Si preferís proyecto separado: **$10/mes fijo**.
+
+### 2. Clonar el esquema SIN datos sensibles reales
+
+Resuelto en gran parte por el comportamiento nativo de `create_branch`
+(branch nueva = solo esquema vía migraciones, sin ninguna fila de
+producción). Falta decidir **qué datos de prueba poblarla** — una branch
+recién creada queda con tablas vacías, lo cual protege PII pero no permite
+probar nada realista. Propuesta:
+
+- **Tablas de referencia** (`branches`, `roles`, `shifts`, `holidays`,
+  `presentaciones`, `laboratorios`) — copiar tal cual desde producción.
+  Ya están catalogadas en `CLAUDE.md` como "sin PII, seguras de bulk load"
+  — no hay razón para no usar las reales.
+- **`employees` y todo lo que cuelga de un empleado** (DUI, ISSS/AFP,
+  banco, teléfono, fotos, `employee_events`, nómina) — **NUNCA copiar
+  filas reales**. Insertar 5-10 empleados sintéticos con datos
+  obviamente falsos (ej. DUI `00000000-0`, sin fotos reales) que cubran
+  las combinaciones de rol/`system_role` necesarias para probar permisos
+  (uno por cada rol relevante: EMPLEADO, JEFE, SUPERADMIN, etc.).
+- **`products`/`inventory`/`sales_invoices`** — no llevan PII de empleados,
+  pero SÍ son datos operativos reales del negocio (precios, proveedores).
+  Propuesta: una foto única (snapshot, no sync en vivo) de estas tablas al
+  crear la branch, sin re-sincronizar después — **staging nunca debe
+  conectarse al ERP real** (ni con las credenciales reales de
+  `ERP_BRANCH_MAP`/`ERP_INV_BRANCH_MAP`, para no arriesgar ninguna
+  escritura accidental sobre el sistema real).
+- **Secrets de edge functions en la branch**: dejar sin configurar (o con
+  valores dummy) `ERP_BRANCH_MAP`, `ERP_INV_BRANCH_MAP`,
+  `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` (para que ningún push de prueba
+  llegue a un dispositivo real) — el resto de secrets (`CRON_INVOKE_SECRET`,
+  etc.) sí se pueden generar valores propios de staging.
+
+### 3. Migraciones en sync prod↔staging
+
+Nativo vía las herramientas de branching:
+- Antes de probar una migración nueva: `rebase_branch` (trae lo último de
+  prod a la branch, detecta drift).
+- Se aplica la migración nueva **primero en la branch** (mismo
+  `apply_migration`, apuntando al `project_id` de la branch en vez del de
+  producción).
+- Si todo sale bien: se aplica la misma migración en producción (hoy ya
+  se hace así, solo que sin el paso intermedio de probarla antes) — o se
+  usa `merge_branch` si se quiere que Supabase lo lleve automáticamente.
+
+### 4. Separación de entornos en Vercel
+
+Confirmado contra el proyecto real (`portal-farmalasa`,
+`prj_JoZdpSXLEXabcr7B77LkAvtRrEAH`): el dominio de producción
+(`portal.farmasalud.lat`) ya está atado a `main`, y Vercel genera
+automáticamente una URL de preview por rama
+(`portal-farmalasa-git-<rama>-....vercel.app`) — la rama `dev` ya
+existente en git generaría la suya sin configuración adicional. Falta
+solo: agregar variables de entorno **scoped a "Preview"** (no a
+"Production") en la configuración del proyecto de Vercel —
+`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` apuntando a la branch de
+Supabase en vez de a producción. Esto es un cambio de configuración en el
+dashboard de Vercel, no de código.
+
+### 5. Regla nueva propuesta para `CLAUDE.md`
+
+```
+## Staging obligatorio para DDL en tablas calientes
+
+Antes de aplicar cualquier CREATE/DROP POLICY, ALTER TABLE, CREATE TRIGGER
+sobre sales_invoices/sales_invoice_items/inventory/products (las mismas
+tablas calientes de la regla de lock_timeout): probar primero contra la
+Supabase branch de staging (rebase_branch → apply_migration en el
+project_id de la branch → verificar). Solo después aplicar en producción
+con el mismo SET lock_timeout='5s' ya obligatorio. Motivo: outage del
+2026-07-08 — una migración sin probar antes fue la causa directa.
+```
+
+### Qué falta de tu parte para arrancar
+
+1. Confirmar: ¿Branch (recomendado, ~$0.01344/hora) o proyecto separado
+   ($10/mes fijo)?
+2. Confirmar el costo exacto (paso `confirm_cost`, obligatorio antes de
+   crear nada).
+3. Confirmar la estrategia de datos de prueba de arriba (empleados
+   sintéticos + tablas de referencia reales + snapshot único de
+   productos/inventario, sin sync a ERP real) — o ajustarla si preferís
+   otra cosa.
+
+No se creó nada. Esperando tu decisión.

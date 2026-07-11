@@ -9,6 +9,7 @@ export default function ModalShell({
   zClass = "z-[100]",
   closeOnEsc = true,
   lockScroll = true,
+  ariaLabel = "Ventana modal",
 }) {
   useEffect(() => {
     if (!open) return;
@@ -47,6 +48,7 @@ export default function ModalShell({
       className={`fixed inset-0 ${zClass} bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500`}
       role="dialog"
       aria-modal="true"
+      aria-label={ariaLabel}
     >
       <button
         type="button"

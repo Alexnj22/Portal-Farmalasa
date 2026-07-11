@@ -420,6 +420,8 @@ const LiquidSelect = ({
             <div
                 className={`${pillBaseClasses} relative`}
                 onClick={handleOpen}
+                aria-haspopup="listbox"
+                aria-expanded={isOpen}
             >
                 {/* Always-rendered display content — keeps container width stable */}
                 <div className={`w-full text-left ${textStyle} ${paddingStyle} whitespace-nowrap leading-tight flex items-center gap-2

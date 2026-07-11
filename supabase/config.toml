@@ -498,3 +498,6 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/set-employee-password/deno.json"
 entrypoint = "./functions/set-employee-password/index.ts"
+
+[functions.notify-new-products-daily]
+verify_jwt = true

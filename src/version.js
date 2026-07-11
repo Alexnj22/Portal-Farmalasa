@@ -5,8 +5,28 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.8';
+export const APP_VERSION = '2.15.9';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.9 — chore: 4 quick wins de la Fase 6 de la auditoría integral
+// (AUDITORIA-2026-07.md), cero riesgo, no tocan rutas calientes ni
+// dependen del entorno de staging pendiente. (1) eslint.config.js:
+// globalIgnores agrega dist/android/ios/.agents — baja el ruido de lint
+// de 2,746 a 379 problemas reales, sin cambiar ninguna regla. (2)
+// ModalShell.jsx: nuevo prop opcional ariaLabel (default "Ventana modal")
+// aplicado como aria-label en el div role="dialog" — el componente es un
+// compound component que no controla el título de sus children, así que
+// aria-labelledby real requeriría tocar cada caller; esto cierra el gap
+// real ("las pantallas de lectura no anunciaban nada") sin ese refactor.
+// LiquidSelect.jsx: aria-haspopup="listbox" + aria-expanded={isOpen} en
+// el div trigger principal (ambos gaps ya documentados en DESIGN.md §25).
+// (3) Eliminado src/components/SalyChatOverlay.jsx — confirmado con grep
+// que no tenía ningún import/uso fuera de su propio archivo (código
+// muerto, pendiente #3 de Fase 2). (4) supabase/config.toml: agregada la
+// entrada faltante [functions.notify-new-products-daily] (verify_jwt=true,
+// coincide con el valor real ya confirmado vía list_edge_functions en
+// Fase 2/3) — el código de la función ya gateaba correctamente, solo
+// faltaba la entrada de configuración (pendiente #5 de Fase 2).
 
 // v2.15.8 — design/UX: Fase 4 de la auditoría integral (AUDITORIA-2026-07.md).
 // (1) FIX de mayor impacto del pase: ~170 inputs/textareas en ~60 archivos

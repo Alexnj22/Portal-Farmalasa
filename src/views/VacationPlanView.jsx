@@ -48,7 +48,7 @@ const InputLabel = ({ children }) => (
     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full px-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.12)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
+const glassInput = "w-full px-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
 
 // ── Eligibility Banner ────────────────────────────────────────────────────────
 const EligibilityBanner = ({ info }) => {
@@ -643,7 +643,7 @@ const VacationPlanView = () => {
                         placeholder="Buscar empleado o sucursal…"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="bg-transparent outline-none text-[12px] font-semibold text-slate-700 placeholder-slate-400 w-full"
+                        className="bg-transparent outline-none text-[16px] font-semibold text-slate-700 placeholder-slate-400 w-full"
                     />
                     {searchTerm && (
                         <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600 transition-colors">

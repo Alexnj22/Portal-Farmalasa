@@ -75,7 +75,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                         placeholder="Mínimo 8 caracteres, 1 mayúscula y 1 número"
                         value={password}
                         onChange={e => { setPassword(e.target.value); setError(''); }}
-                        className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
+                        className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[16px] font-bold text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
                     />
                 </div>
             </div>
@@ -92,7 +92,7 @@ const FormSetPassword = ({ formData, onClose }) => {
                         placeholder="Repite la contraseña"
                         value={confirm}
                         onChange={e => { setConfirm(e.target.value); setError(''); }}
-                        className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-bold text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
+                        className="w-full pl-10 pr-4 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[16px] font-bold text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
                     />
                 </div>
             </div>

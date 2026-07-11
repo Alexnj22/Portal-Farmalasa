@@ -5,8 +5,35 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.7';
+export const APP_VERSION = '2.15.8';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.8 — design/UX: Fase 4 de la auditoría integral (AUDITORIA-2026-07.md).
+// (1) FIX de mayor impacto del pase: ~170 inputs/textareas en ~60 archivos
+// tenían font-size <16px, disparando el zoom automático de iOS Safari al
+// enfocar el campo — piso subido a text-[16px] en todo el proyecto (regla
+// nueva en DESIGN.md §32, recién creado: no existía estándar móvil/responsive
+// documentado antes de este pase). (2) Touch targets <44px corregidos en los
+// 2 componentes de los que depende casi toda vista: ViewTabBar.jsx (pills de
+// tab, botones de abrir/cerrar búsqueda) y AppLayout.jsx (botón hamburguesa,
+// que no tenía padding — su hit-box literal era 22×22px). (3) active:scale-90
+// /-95 → active:scale-[0.97] en 297 sitios (11 archivos, módulo pedidos/) por
+// regla DESIGN.md §31. (4) 9 <select> nativos → LiquidSelect en 6 archivos
+// (FormTurnos, EarlyExitForm, EncuestaView, AnnouncementsView, AuditView,
+// ComprasView) — verificado que el resto del código en esos archivos ya
+// coacciona a String() en sus comparaciones, así que el swap no rompe nada
+// pese a que LiquidSelect devuelve el valor tal cual (no siempre string).
+// (5) 1 fix de contraste puntual (TabCatalogo.jsx, hint "Ctrl+V" con
+// text-slate-300 + font-normal dentro de un botón clickeable). Hallazgo
+// grande documentado pero NO corregido (fuera de alcance de un pase
+// mecánico): ~1,288 violaciones reales de text-slate-300/400 sobre
+// superficie clara en 127 archivos — un find/replace ciego atraparía
+// también ~409 usos legítimos (iconos, tooltips oscuros), así que queda
+// para un pase dedicado futuro. También documentado sin tocar: Service
+// Worker sin ningún caching/fetch (PWA instalable pero sin comportamiento
+// offline real), y el <select> por celda de FormAiSchedulerPreview.jsx +
+// el stepper compuesto de TimePicker12.jsx (swaps no triviales, requieren
+// una variante nueva del componente compartido).
 
 // v2.15.7 — security: 2 stored-XSS reales encontrados en Fase 3 de la
 // auditoría integral (AUDITORIA-2026-07.md), fix inmediato por ser

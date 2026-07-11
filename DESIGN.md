@@ -1246,6 +1246,7 @@ Creating a parallel component that duplicates functionality is prohibited. Exten
 | Version | Date | Notes |
 |---|---|---|
 | v1.0 | 2026-06-24 | Initial audit — Phases A, B, C complete. 4-theme architecture, full component inventory, accessibility/performance/cross-browser audit. |
+| v1.1 | 2026-07-10 | Fase 4 design/UX audit (`AUDITORIA-2026-07.md`). Added §32 Mobile & Responsive Standard (did not exist before). Fixed project-wide: `active:scale-90/95` → `active:scale-[0.97]` (§31 compliance, ~300 sites), input font-size floor 16px (~170 inputs, iOS zoom fix), touch targets in `ViewTabBar`/`AppLayout` header to 44px, 9 native `<select>` → `LiquidSelect` swaps. Found but NOT fixed (documented only, too large/risky for a mechanical pass): ~1,288 `text-slate-300/400`-on-light-surface contrast violations across 127 files. |
 
 ---
 
@@ -1264,3 +1265,43 @@ Creating a parallel component that duplicates functionality is prohibited. Exten
 - `backdrop-filter` or surface background hardcoded in component when `[data-surface]` covers the case.
 - Web fonts loaded via `@import` or `<link>` — system font stack only.
 - Wrapping `DataTable` in a second card div (`data-surface="card"` or custom `bg-white/... backdrop-blur...`) — it already renders its own card. See §14 DataTable.
+
+---
+
+## 32. Mobile & Responsive Standard
+
+> Added 2026-07-10 during the Fase 4 design/UX audit (see `AUDITORIA-2026-07.md`). Before this, the project had no single documented mobile standard — patterns existed ad hoc per component. This section codifies what was verified and fixed during that audit, and is now the baseline for any new UI.
+
+### Breakpoints
+
+Single breakpoint: Tailwind `md:` (768px). Below it = phone layout; at/above it = tablet/desktop. There is no separate `sm:`/`lg:` tier for layout decisions — `sm:` is used only for minor spacing/type-size nudges, never for structural layout switches. Audited viewports: **390×844** (phone) and **768×1024** (tablet).
+
+### Touch targets — 44×44px minimum (WCAG 2.5.8)
+
+Applies to every `button`, `a[href]`, checkbox/radio, and any `[role="button"]`. This is now enforced in the two components nearly every view depends on:
+- `ViewTabBar.jsx` — tab pills, search-open button, search-close button all `h-11` (44px) with `min-w-[44px]` on tab pills (short single-word labels like "General"/"RRHH" would otherwise fall under 44px in width even at 44px height).
+- `AppLayout.jsx` — the header hamburger button uses the `p-3 -m-3` pattern (padding grows the hit area, negative margin cancels the visual shift) to hit 44px without changing the icon's rendered size or the header's layout.
+
+**Known residual gaps, not fixed** (see AUDITORIA-2026-07.md Fase 4 for the full list): several views hand-roll their own local filter pills/small icon buttons (26–40px) instead of reusing a shared component — e.g. `PushPromptBanner`'s "Activar" button is deliberately compact (raising it to 44px would meaningfully change that banner's low-profile character, so it was left as a documented trade-off rather than force-fixed). Sidebar indented nav items (~36px) were already a known gap before this audit (§25).
+
+### Inputs — 16px minimum font-size (iOS Safari zoom)
+
+**This was the single highest-impact bug found in the Fase 4 audit.** Any `<input>`/`<textarea>` (excluding `checkbox/radio/range/color/file`) with a computed `font-size < 16px` triggers an automatic page zoom on focus in iOS Safari — jarring, and the user has to manually zoom back out every time. This was found on ~170 inputs across ~60 files (search boxes at 13px was the single most repeated instance, via both `ViewTabBar.jsx`'s shared search input and several views that hand-roll their own duplicate search input instead of using `ViewTabBar`). Fixed project-wide: every text-entry input's font-size floor is now `text-[16px]`. **Rule going forward: never set a text-entry input below `text-[16px]`, full stop** — there is no valid reason to go smaller, since 16px is also comfortably readable at any density this app ships at.
+
+### Search pattern duplication (structural finding, not fixed)
+
+Multiple views (`BranchesView`, `ConteoDetailView`, and others) hand-roll their own local copy of the floating search-pill + input instead of using the shared `ViewTabBar` component (see [[feedback_global_search_pattern]] — this is already a documented house rule being violated in practice). Every duplicate carries its own copy of whatever bugs `ViewTabBar` has (or had) independently. This audit patched the *symptom* (font-size, button size) in each duplicate found, but the *cause* (component duplication instead of reuse) is a larger refactor out of scope for a design-pass fix — flagged for a future consolidation pass.
+
+### Table → cards pattern
+
+`DataTable` (§14) does not currently reflow into a card list on narrow viewports — it stays tabular with horizontal scroll/column hiding (`hideBelow` prop) as the primary narrow-viewport strategy. No separate card-list mobile variant exists. This was not flagged as broken in the audit (no horizontal page overflow was found on any of the 27 top-level routes checked, at either 390px or 768px — `hideBelow` columns keep tables usable), but it is worth noting as a design choice rather than an oversight: a true table→cards reflow was not built.
+
+### Safe areas / gestures
+
+No `env(safe-area-inset-*)` usage was found in the codebase. Given the app targets a native Capacitor shell (§21) as well as mobile web, notch/home-indicator safe-area handling is a gap for the native build specifically — not verified as broken (no physical-device test was performed in this audit, only Chromium viewport emulation), but also not confirmed handled. Flagged for verification on an actual device.
+
+### Viewport meta
+
+`index.html`: `width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover`. `user-scalable=no` blocks pinch-zoom entirely, which is a WCAG 1.4.4 (Resize Text) tension against native-app-feel — this is a deliberate existing choice, not something this audit changed unilaterally (removing it is a product decision with real trade-offs, not a mechanical fix). `viewport-fit=cover` is correctly set up for safe-area CSS to work, once/if that's implemented (see above).
+
+---

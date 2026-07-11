@@ -649,14 +649,14 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, nombre: e.target.value } : p))}
                                                                 placeholder="Nombre del principio"
                                                                 spellCheck={false} autoComplete="off"
-                                                                className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[11px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 bg-white placeholder:text-slate-300"
+                                                                className="flex-1 min-w-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[16px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 bg-white placeholder:text-slate-300"
                                                             />
                                                             <input
                                                                 value={item.concentracion}
                                                                 onChange={e => setManualItems(prev => prev.map(p => p._key === item._key ? { ...p, concentracion: e.target.value } : p))}
                                                                 placeholder="Cant."
                                                                 spellCheck={false} autoComplete="off"
-                                                                className="w-[58px] shrink-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[10px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 bg-white placeholder:text-slate-300 text-center"
+                                                                className="w-[58px] shrink-0 px-2 py-1.5 border border-slate-200 rounded-lg text-[16px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 bg-white placeholder:text-slate-300 text-center"
                                                             />
                                                             <button onClick={() => setManualItems(prev =>
                                                                 prev.length > 1

@@ -187,7 +187,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                     onBlur={commit}
                     onKeyDown={handleFisicoKeyDown}
                     placeholder="—"
-                    className="w-16 text-center text-[12px] font-bold bg-white border border-slate-200 rounded-lg px-1 py-1 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 disabled:bg-slate-50 disabled:text-slate-400"
+                    className="w-16 text-center text-[16px] font-bold bg-white border border-slate-200 rounded-lg px-1 py-1 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 disabled:bg-slate-50 disabled:text-slate-400"
                 />
             </DataCell>
             <DataCell align="center">
@@ -201,7 +201,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
                     onChange={(e) => setNota(e.target.value)}
                     onBlur={commit}
                     placeholder="Nota..."
-                    className="w-full text-[11px] bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 disabled:bg-slate-50"
+                    className="w-full text-[16px] bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 disabled:bg-slate-50"
                 />
             </DataCell>
             <DataCell align="center">
@@ -339,11 +339,11 @@ function EditLoteModal({ item, onClose, onSave }) {
                 <p className="text-[11px] text-slate-500">Usa esto cuando el lote físico encontrado no corresponde al de este renglón (ej. el ERP aún no sincronizó el lote nuevo). Solo corrige la etiqueta de este conteo — no modifica el inventario real.</p>
                 <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1 block">Lote</label>
-                    <input type="text" value={lote} onChange={(e) => setLote(e.target.value)} className="w-full text-[12px] bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-teal-400" />
+                    <input type="text" value={lote} onChange={(e) => setLote(e.target.value)} className="w-full text-[16px] bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-teal-400" />
                 </div>
                 <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1 block">Fecha de vencimiento</label>
-                    <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full text-[12px] bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-teal-400" />
+                    <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full text-[16px] bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-teal-400" />
                 </div>
                 <button onClick={handleSave} disabled={saving} className="mt-2 flex items-center justify-center gap-1.5 px-4 py-2.5 text-[11px] font-bold text-white bg-teal-600 rounded-xl hover:bg-teal-700 disabled:opacity-50 transition-all">
                     {saving ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Guardar corrección
@@ -527,7 +527,7 @@ export default function ConteoDetailView() {
                     ref={(el) => { if (el && isSearchActive) setTimeout(() => el.focus(), 100); }}
                     type="text"
                     placeholder="Buscar producto, laboratorio o lote..."
-                    className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[14px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-[16px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
@@ -784,13 +784,13 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
                     clearable={false}
                 />
                 {lote === '__OTRO__' && (
-                    <input value={loteOtro} onChange={(e) => setLoteOtro(e.target.value)} placeholder="Número de lote nuevo" className="text-[11px] bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-teal-400" />
+                    <input value={loteOtro} onChange={(e) => setLoteOtro(e.target.value)} placeholder="Número de lote nuevo" className="text-[16px] bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-teal-400" />
                 )}
             </div>
             <div className="flex items-center gap-2">
                 <div>
                     <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1 block">Vencimiento</label>
-                    <input type="date" value={fechaVencimiento} onChange={(e) => setFechaVencimiento(e.target.value)} disabled={lote !== '__OTRO__'} className="text-[11px] bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-teal-400 disabled:bg-slate-100 disabled:text-slate-400" />
+                    <input type="date" value={fechaVencimiento} onChange={(e) => setFechaVencimiento(e.target.value)} disabled={lote !== '__OTRO__'} className="text-[16px] bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-teal-400 disabled:bg-slate-100 disabled:text-slate-400" />
                 </div>
                 <button onClick={handleSubmit} disabled={!canSubmit || saving} className="ml-auto flex items-center gap-1.5 px-4 py-2 text-[11px] font-bold text-white bg-teal-600 rounded-xl hover:bg-teal-700 disabled:opacity-40 transition-all">
                     {saving ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} Agregar al conteo

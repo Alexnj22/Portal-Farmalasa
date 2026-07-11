@@ -539,7 +539,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
                                                                 <span className="ml-auto text-[12px] font-black text-slate-700">{fmt(r.total)}</span>
                                                             </div>
                                                             <div className="flex items-start gap-3">
-                                                                <textarea className="flex-1 bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                                <textarea className="flex-1 bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[16px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
                                                                     rows={2} autoFocus placeholder="Comentario opcional…"
                                                                     value={comment} onChange={e => setComment(e.target.value)} />
                                                                 <div className="flex flex-col gap-1.5 shrink-0">
@@ -1046,7 +1046,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                                             </div>
                                                             <div className="flex items-start gap-3">
                                                                 <textarea
-                                                                    className="flex-1 bg-white border border-emerald-200 rounded-xl px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                                    className="flex-1 bg-white border border-emerald-200 rounded-xl px-3 py-2 text-[16px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
                                                                     rows={2} autoFocus placeholder="Comentario opcional…"
                                                                     value={comment} onChange={e => setComment(e.target.value)}
                                                                 />
@@ -1363,7 +1363,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     <div className="mt-2.5 rounded-xl border border-emerald-200 bg-emerald-50/40 px-4 py-3">
                                                         <p className="font-mono text-[11px] font-black text-slate-700 mb-2.5">{pad7(g.gap_from)} → {pad7(g.gap_to)} · <span className="text-orange-600">{g.gap_count} faltante{g.gap_count !== 1 ? 's' : ''}</span></p>
                                                         <div className="flex items-start gap-3">
-                                                            <textarea className="flex-1 bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                            <textarea className="flex-1 bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[16px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
                                                                 rows={2} autoFocus placeholder="Comentario opcional…"
                                                                 value={comment} onChange={e => setComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
@@ -1469,7 +1469,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
                                                     <div className="mt-2.5 rounded-xl border border-emerald-200 bg-emerald-50/40 px-4 py-3">
                                                         <p className="font-mono text-[11px] font-black text-slate-700 mb-2.5">{n.correlativo || `#${n.erp_invoice_id}` || `ID ${n.id}`}</p>
                                                         <div className="flex items-start gap-3">
-                                                            <textarea className="flex-1 bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[12px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+                                                            <textarea className="flex-1 bg-white border border-emerald-200 rounded-lg px-3 py-2 text-[16px] text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
                                                                 rows={2} autoFocus placeholder="Comentario opcional…"
                                                                 value={nullComment} onChange={e => setNullComment(e.target.value)} />
                                                             <div className="flex flex-col gap-1.5 shrink-0">
@@ -2151,7 +2151,7 @@ export default function FacturacionView() {
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
                 <input ref={searchInputRef} type="text" placeholder={searchPlaceholder}
-                    className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-slate-400 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-slate-400 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && (
                     <button onClick={() => setRawSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>

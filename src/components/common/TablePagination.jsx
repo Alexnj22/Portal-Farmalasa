@@ -113,7 +113,7 @@ function SmartPagination({ page, total, onChange }) {
                         }}
                         onBlur={commit}
                         placeholder="—"
-                        className="w-11 h-7 text-center text-[12px] font-bold text-slate-700 bg-white/80 border border-slate-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0052CC]/25 focus:border-[#0052CC] shadow-sm transition-shadow"
+                        className="w-11 h-7 text-center text-[16px] font-bold text-slate-700 bg-white/80 border border-slate-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0052CC]/25 focus:border-[#0052CC] shadow-sm transition-shadow"
                     />
                     <span className="text-[9px] text-slate-400 tabular-nums">/ {total}</span>
                 </div>

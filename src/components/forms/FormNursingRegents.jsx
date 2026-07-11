@@ -57,7 +57,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                         <div className="transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md rounded-2xl">
                             <input 
                                 type="text" 
-                                className="w-full px-5 py-3.5 h-[50px] rounded-2xl bg-white/60 border border-slate-200/80 outline-none focus:border-[#0052CC] focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] hover:border-[#0052CC]/40 hover:bg-white transition-all text-[13px] font-bold text-slate-800 shadow-sm placeholder:text-slate-400 placeholder:font-medium" 
+                                className="w-full px-5 py-3.5 h-[50px] rounded-2xl bg-white/60 border border-slate-200/80 outline-none focus:border-[#0052CC] focus:bg-white focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] hover:border-[#0052CC]/40 hover:bg-white transition-all text-[16px] font-bold text-slate-800 shadow-sm placeholder:text-slate-400 placeholder:font-medium" 
                                 placeholder="Ej: ENF-2026-001"
                                 value={legalData.nursingServicePermit || ""} 
                                 onChange={(e) => updateLegalField('nursingServicePermit', e.target.value)} 

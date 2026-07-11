@@ -5,6 +5,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
+import LiquidSelect from '../components/common/LiquidSelect';
 import { supabase }    from '../supabaseClient';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -378,7 +379,7 @@ export default function ComprasView() {
                         type="date"
                         value={dateStart}
                         onChange={e => setDateStart(e.target.value)}
-                        className="text-[11px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer"
+                        className="text-[16px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer"
                     />
                 </div>
 
@@ -391,7 +392,7 @@ export default function ComprasView() {
                         type="date"
                         value={dateEnd}
                         onChange={e => setDateEnd(e.target.value)}
-                        className="text-[11px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer"
+                        className="text-[16px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer"
                     />
                 </div>
 
@@ -401,17 +402,17 @@ export default function ComprasView() {
                         {/* Supplier filter */}
                         <div className="flex items-center gap-1.5">
                             <Users size={12} className="text-slate-400" />
-                            <select
-                                value={sinProveedor ? '' : supplierId}
-                                onChange={e => { setSupplierId(e.target.value); setSinProveedor(false); }}
-                                disabled={sinProveedor}
-                                className="text-[11px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer max-w-[180px] disabled:opacity-40"
-                            >
-                                <option value="">Todos los proveedores</option>
-                                {suppliers.map(s => (
-                                    <option key={s.id} value={s.id}>{s.nombre}</option>
-                                ))}
-                            </select>
+                            <div className="w-[180px]">
+                                <LiquidSelect
+                                    value={sinProveedor ? '' : supplierId}
+                                    onChange={val => { setSupplierId(val); setSinProveedor(false); }}
+                                    disabled={sinProveedor}
+                                    options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
+                                    placeholder="Todos los proveedores"
+                                    compact
+                                    bare
+                                />
+                            </div>
                         </div>
                     </>
                 )}

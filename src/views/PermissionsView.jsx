@@ -273,7 +273,7 @@ const Toggle = ({ value, onChange, color = 'bg-blue-500', disabled = false, size
             disabled={disabled}
             onClick={() => !disabled && onChange(!value)}
             className={`relative ${w} rounded-full transition-all duration-300 flex-shrink-0 ${
-                disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'
+                disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-[0.97]'
             } ${value ? color : 'bg-slate-200/80'}`}
         >
             <span className={`absolute ${knob} rounded-full bg-white shadow-[0_1px_4px_rgba(0,0,0,0.2)] transition-all duration-300 ${value ? on : 'left-[3px]'}`} />
@@ -728,7 +728,7 @@ const PermissionsView = () => {
                 <input
                     type="text"
                     placeholder="Buscar cargo..."
-                    className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[200px] sm:w-[400px] md:w-[500px] placeholder:text-slate-400 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[200px] sm:w-[400px] md:w-[500px] placeholder:text-slate-400 focus:ring-0"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     ref={(input) => { if (input && isSearchMode) setTimeout(() => input.focus(), 100); }}

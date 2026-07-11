@@ -85,7 +85,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         <input 
                             type="text" 
                             placeholder="Buscar candidato..." 
-                            className="w-full bg-white/40 backdrop-blur-md border border-white/80 rounded-[1.2rem] pl-10 pr-4 py-3 text-[13px] font-bold text-slate-800 placeholder:text-slate-500 outline-none focus:border-[#0052CC] focus:bg-white/70 focus:shadow-[0_8px_30px_rgba(0,82,204,0.15)] transition-all shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]"
+                            className="w-full bg-white/40 backdrop-blur-md border border-white/80 rounded-[1.2rem] pl-10 pr-4 py-3 text-[16px] font-bold text-slate-800 placeholder:text-slate-500 outline-none focus:border-[#0052CC] focus:bg-white/70 focus:shadow-[0_8px_30px_rgba(0,82,204,0.15)] transition-all shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)]"
                             value={formData.searchQuery || ''}
                             onChange={(e) => setFormData({...formData, searchQuery: e.target.value})}
                         />
@@ -306,7 +306,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                         </label>
                                         <textarea 
                                             placeholder={formData.isPermanent === false ? "Ej. Cubre vacaciones de Mónica Castro..." : "Notas sobre la asignación (Opcional)..."}
-                                            className={`w-full h-20 bg-white/40 backdrop-blur-md border border-white/80 rounded-[1.5rem] p-4 text-[12px] font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#0052CC] focus:bg-white/70 focus:shadow-[0_8px_30px_rgba(0,82,204,0.15)] transition-all resize-none shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] ${hideScrollbarClass}`}
+                                            className={`w-full h-20 bg-white/40 backdrop-blur-md border border-white/80 rounded-[1.5rem] p-4 text-[16px] font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#0052CC] focus:bg-white/70 focus:shadow-[0_8px_30px_rgba(0,82,204,0.15)] transition-all resize-none shadow-[inset_0_2px_10px_rgba(255,255,255,0.6)] ${hideScrollbarClass}`}
                                             value={formData.notes || ''}
                                             onChange={(e) => setFormData({...formData, notes: e.target.value})}
                                         ></textarea>

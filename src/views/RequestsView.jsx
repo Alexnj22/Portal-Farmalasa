@@ -618,7 +618,7 @@ const RequestsView = () => {
                 ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
                 <input ref={searchInputRef} type="text" placeholder="Buscar empleado..."
-                    className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-slate-400 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-slate-400 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && <button onClick={() => setRawSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>}
                 <button onClick={() => { setIsSearchMode(false); setRawSearch(''); }}
@@ -764,7 +764,7 @@ const RequestsView = () => {
                         <textarea value={actionNote} onChange={e => setActionNote(e.target.value)} rows={3}
                             placeholder={actionModal.mode === 'approve' ? 'Opcional...' : 'Explica el motivo del rechazo...'}
                             disabled={isActioning}
-                            className="w-full px-4 py-3 rounded-[1.5rem] border border-white/80 bg-white/60 backdrop-blur-md text-[13px] text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/25 focus:border-[#0052CC]/40 resize-none transition-all disabled:opacity-50" />
+                            className="w-full px-4 py-3 rounded-[1.5rem] border border-white/80 bg-white/60 backdrop-blur-md text-[16px] text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/25 focus:border-[#0052CC]/40 resize-none transition-all disabled:opacity-50" />
                         <div className="flex items-center gap-2 mt-4">
                             <button onClick={() => !isActioning && setActionModal(null)} disabled={isActioning}
                                 className="flex-1 py-3 rounded-2xl border border-white/80 bg-white/60 text-slate-500 text-[13px] font-medium hover:bg-white/80 transition-all disabled:opacity-50">
@@ -870,7 +870,7 @@ const RequestsView = () => {
                                 rows={3}
                                 placeholder="Describe la solicitud..."
                                 disabled={isCreatingReq}
-                                className="w-full px-4 py-3 rounded-[1.5rem] border border-white/80 bg-white/60 backdrop-blur-md text-[13px] text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/25 focus:border-[#0052CC]/40 resize-none transition-all disabled:opacity-50"
+                                className="w-full px-4 py-3 rounded-[1.5rem] border border-white/80 bg-white/60 backdrop-blur-md text-[16px] text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/25 focus:border-[#0052CC]/40 resize-none transition-all disabled:opacity-50"
                             />
                         </div>
 

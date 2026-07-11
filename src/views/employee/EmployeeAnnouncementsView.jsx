@@ -692,7 +692,7 @@ const EmployeeAnnouncementsView = () => {
                     ref={searchInputRef}
                     type="text"
                     placeholder="Buscar avisos..."
-                    className="bg-transparent border-none outline-none text-[13px] font-bold text-slate-700 w-[200px] sm:w-[280px] placeholder:text-slate-400"
+                    className="bg-transparent border-none outline-none text-[16px] font-bold text-slate-700 w-[200px] sm:w-[280px] placeholder:text-slate-400"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                 />

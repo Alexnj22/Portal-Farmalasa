@@ -428,7 +428,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           </label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={3}
             placeholder={commentRequired ? 'Descripción detallada requerida...' : 'Descripción adicional...'}
-            className={`w-full px-3.5 py-2 rounded-2xl border bg-white text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:ring-2 transition-all resize-none ${
+            className={`w-full px-3.5 py-2 rounded-2xl border bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:ring-2 transition-all resize-none ${
               commentRequired && !comment.trim() ? 'border-red-300 focus:border-red-400 focus:ring-red-100' : 'border-slate-200 focus:border-[#0052CC] focus:ring-[#0052CC]/10'
             }`}
           />
@@ -517,7 +517,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica el motivo del cambio..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all resize-none"
           />
         </div>
         {submitError && <p className="text-[11px] text-red-500 font-medium px-1">{submitError}</p>}
@@ -633,7 +633,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica por qué se debe reasignar esta venta..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all resize-none"
           />
         </div>
         {submitError && <p className="text-[11px] text-red-500 font-medium px-1">{submitError}</p>}
@@ -753,7 +753,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
               type="text" value={query}
               onChange={e => { setQuery(e.target.value); setNewClient(null); }}
               placeholder="Nombre, NIT, DUI o teléfono..."
-              className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200 bg-white text-[11px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
+              className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
               spellCheck={false}
             />
             {query && (
@@ -810,7 +810,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={comment} onChange={e => setComment(e.target.value)} rows={2}
             placeholder="Explica por qué se debe cambiar el cliente..."
-            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all resize-none"
+            className="w-full px-3.5 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all resize-none"
           />
         </div>
         {submitError && <p className="text-[11px] text-red-500 font-medium px-1">{submitError}</p>}
@@ -956,7 +956,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Cliente, vendedor, factura..."
-            className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200 bg-white text-[11px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
+            className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
             spellCheck={false}
           />
           {search && (

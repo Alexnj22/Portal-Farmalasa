@@ -10,7 +10,7 @@ const InputLabel = ({ children }) => (
     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">{children}</p>
 );
 
-const glassInput = "w-full h-10 px-3 bg-white/60 border border-slate-200/80 hover:border-[#0052CC]/40 focus:border-[#0052CC]/50 focus:ring-4 focus:ring-[#0052CC]/10 rounded-[1rem] text-[13px] outline-none font-bold text-slate-800 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
+const glassInput = "w-full h-10 px-3 bg-white/60 border border-slate-200/80 hover:border-[#0052CC]/40 focus:border-[#0052CC]/50 focus:ring-4 focus:ring-[#0052CC]/10 rounded-[1rem] text-[16px] outline-none font-bold text-slate-800 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
 
 const NocturnalLegalInfo = () => (
     <div className="relative group inline-flex items-center ml-1.5">
@@ -129,12 +129,12 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                                 <div>
                                     <p className="text-[8px] font-black text-amber-600 mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.diurnal} value={dPayInput} onChange={e => setDPayInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-white border border-amber-200 focus:border-amber-400 rounded-lg text-[12px] font-black text-amber-900 outline-none" />
+                                        className="w-full h-8 px-2.5 bg-white border border-amber-200 focus:border-amber-400 rounded-lg text-[16px] font-black text-amber-900 outline-none" />
                                 </div>
                                 <div>
                                     <p className="text-[8px] font-black text-blue-500 mb-1 flex items-center gap-1"><CalendarOff size={8} strokeWidth={2.5} /> Compensar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.diurnal} value={dCompInput} onChange={e => setDCompInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-white border border-blue-200 focus:border-blue-400 rounded-lg text-[12px] font-black text-blue-900 outline-none" />
+                                        className="w-full h-8 px-2.5 bg-white border border-blue-200 focus:border-blue-400 rounded-lg text-[16px] font-black text-blue-900 outline-none" />
                                 </div>
                             </div>
                             {dUsed > 0 && (
@@ -156,12 +156,12 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                                 <div>
                                     <p className="text-[8px] font-black text-indigo-600 mb-1 flex items-center gap-1"><CreditCard size={8} strokeWidth={2.5} /> Pagar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.nocturnal} value={nPayInput} onChange={e => setNPayInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-white border border-indigo-200 focus:border-indigo-400 rounded-lg text-[12px] font-black text-indigo-900 outline-none" />
+                                        className="w-full h-8 px-2.5 bg-white border border-indigo-200 focus:border-indigo-400 rounded-lg text-[16px] font-black text-indigo-900 outline-none" />
                                 </div>
                                 <div>
                                     <p className="text-[8px] font-black text-blue-500 mb-1 flex items-center gap-1"><CalendarOff size={8} strokeWidth={2.5} /> Compensar (h)</p>
                                     <input type="number" step="0.5" min="0" max={otBank.nocturnal} value={nCompInput} onChange={e => setNCompInput(e.target.value)} placeholder="0"
-                                        className="w-full h-8 px-2.5 bg-white border border-blue-200 focus:border-blue-400 rounded-lg text-[12px] font-black text-blue-900 outline-none" />
+                                        className="w-full h-8 px-2.5 bg-white border border-blue-200 focus:border-blue-400 rounded-lg text-[16px] font-black text-blue-900 outline-none" />
                                 </div>
                             </div>
                             {nUsed > 0 && (
@@ -260,7 +260,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
                     value={formData._reason || ''}
                     onChange={e => setFormData(f => ({ ...f, _reason: e.target.value }))}
                     placeholder="Ej: Corrección de días por permiso autorizado"
-                    className="w-full h-10 px-3 bg-amber-50/80 border border-amber-300/60 hover:border-amber-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-300/20 rounded-[1rem] text-[13px] outline-none font-bold text-slate-800 transition-all duration-300"
+                    className="w-full h-10 px-3 bg-amber-50/80 border border-amber-300/60 hover:border-amber-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-300/20 rounded-[1rem] text-[16px] outline-none font-bold text-slate-800 transition-all duration-300"
                 />
             </div>
         </div>

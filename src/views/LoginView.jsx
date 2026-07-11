@@ -453,7 +453,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         <input ref={ref} id={id} name={id} type={type} placeholder={placeholder}
                             autoComplete={autoComplete}
                             onFocus={syncFormEngaged} onBlur={syncFormEngaged} onInput={syncFormEngaged}
-                            className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-[13px]':'pl-12 pr-5 py-4 text-[14px]'} rounded-[1.5rem]`} />
+                            className={`${inputCls} ${compact?'pl-11 pr-4 py-3 text-[16px]':'pl-12 pr-5 py-4 text-[16px]'} rounded-[1.5rem]`} />
                     </div>
                 ))}
                 {error && (
@@ -494,7 +494,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             {[{ph:'Nueva contraseña (mín. 8 caracteres)',v:newPassword,s:e=>{setNewPassword(e.target.value);setChangePassError('');}},{ph:'Confirmar contraseña',v:confirmPassword,s:e=>{setConfirmPassword(e.target.value);setChangePassError('');}}].map((f,i)=>(
                                 <div key={i} className="relative group flex items-center">
                                     <Lock size={15} strokeWidth={2.5} className="absolute left-4 text-slate-400 group-focus-within:text-[#0052CC] transition-colors pointer-events-none z-10" />
-                                    <input type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-[13px] rounded-[1.25rem]`} />
+                                    <input type="password" placeholder={f.ph} value={f.v} onChange={f.s} className={`${inputCls} pl-11 pr-4 py-3.5 text-[16px] rounded-[1.25rem]`} />
                                 </div>
                             ))}
                             {changePassError && <div className="px-4 py-2.5 bg-red-50/60 border border-red-200/80 rounded-[1rem] flex items-center gap-2"><AlertCircle size={14} className="text-red-500 shrink-0" strokeWidth={2.5}/><p className="text-[11px] font-black text-red-600">{changePassError}</p></div>}

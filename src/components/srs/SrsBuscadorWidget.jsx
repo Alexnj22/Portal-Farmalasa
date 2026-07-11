@@ -87,7 +87,7 @@ export default function SrsBuscadorWidget({
                     value={query}
                     onChange={e => handleInput(e.target.value)}
                     placeholder="Buscar en Registro SRS..."
-                    className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-slate-200 bg-white text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
+                    className="w-full pl-9 pr-8 py-2.5 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
                     autoFocus
                     spellCheck={false}
                     autoComplete="off"

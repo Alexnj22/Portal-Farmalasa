@@ -153,7 +153,7 @@ export const LazyInput = ({ value, onChange, className = "", placeholder, requir
                 minLength={minLength}
                 maxLength={maxLength}
                 // 🚨 Fusión de la clase enviada (className) con la estética base Liquidglass
-                className={`w-full py-3.5 bg-white/50 border border-white/60 rounded-[1.25rem] text-[13px] font-bold text-slate-700 placeholder-slate-400 outline-none transition-all duration-300 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] ${Icon ? 'pl-14 pr-4' : 'px-4'} ${className}`}
+                className={`w-full py-3.5 bg-white/50 border border-white/60 rounded-[1.25rem] text-[16px] font-bold text-slate-700 placeholder-slate-400 outline-none transition-all duration-300 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] ${Icon ? 'pl-14 pr-4' : 'px-4'} ${className}`}
                 placeholder={placeholder}
                 value={localValue}
                 onChange={(e) => setLocalValue(e.target.value)}

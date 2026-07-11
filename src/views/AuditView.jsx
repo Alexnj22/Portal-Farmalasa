@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
+import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { smartFilter } from '../utils/searchUtils';
 
@@ -284,7 +285,7 @@ const filtersContent = (
                 <input
                     type="text"
                     placeholder="Buscar usuario, equipo, acción..."
-                    className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0"
                     value={rawSearchTerm}
                     onChange={(e) => setRawSearchTerm(e.target.value)}
                     ref={(input) => { if (input && isSearchMode) setTimeout(() => input.focus(), 100) }}
@@ -486,16 +487,20 @@ const filtersContent = (
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
                         <div className="flex items-center gap-2 md:gap-3 w-full sm:w-auto justify-between sm:justify-start">
                             <span className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Mostrar</span>
-                            <select
-                                className="bg-white/80 backdrop-blur-md border border-white/80 rounded-full px-2 md:px-3 py-1.5 text-[10px] md:text-[11px] font-bold text-slate-700 outline-none hover:border-[#0052CC]/50 cursor-pointer shadow-sm uppercase tracking-wider transition-colors"
-                                value={itemsPerPage}
-                                onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                            >
-                                <option value={15}>15 Filas</option>
-                                <option value={30}>30 Filas</option>
-                                <option value={50}>50 Filas</option>
-                                <option value={100}>100 Filas</option>
-                            </select>
+                            <div className="w-[110px]">
+                                <LiquidSelect
+                                    value={itemsPerPage}
+                                    onChange={val => { setItemsPerPage(Number(val)); setCurrentPage(1); }}
+                                    options={[
+                                        { value: 15, label: '15 Filas' },
+                                        { value: 30, label: '30 Filas' },
+                                        { value: 50, label: '50 Filas' },
+                                        { value: 100, label: '100 Filas' },
+                                    ]}
+                                    clearable={false}
+                                    compact
+                                />
+                            </div>
                         </div>
                         <div className="flex items-center gap-4 md:gap-6 w-full sm:w-auto justify-between sm:justify-end">
                             <span className="text-[9px] md:text-[10px] font-bold text-slate-600 uppercase tracking-widest">Pág {currentPage} de {totalPages || 1}</span>

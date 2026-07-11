@@ -34,7 +34,7 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                     placeholder={placeholder}
                     readOnly={readOnly}
                     disabled={readOnly}
-                    className={`w-full h-full bg-transparent text-[13px] font-bold text-slate-700 outline-none ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
+                    className={`w-full h-full bg-transparent text-[16px] font-bold text-slate-700 outline-none ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
                 />
                 {readOnly && <Lock size={12} className="absolute right-3 text-slate-400" />}
             </div>

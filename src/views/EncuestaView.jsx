@@ -593,10 +593,16 @@ export default function EncuestaView() {
                 {surveys.length > 1 && (
                     <>
                         <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
-                        <select value={selectedSurveyId ?? ''} onChange={e => setSelectedSurveyId(Number(e.target.value))}
-                            className="h-9 px-3 rounded-full border border-white/50 text-[10px] font-bold text-slate-700 bg-white/80 shadow-sm">
-                            {surveys.map(s => <option key={s.id} value={s.id}>{s.nombre} ({s.año})</option>)}
-                        </select>
+                        <div className="py-1.5 overflow-visible w-[200px]">
+                            <LiquidSelect
+                                value={selectedSurveyId ?? ''}
+                                onChange={val => setSelectedSurveyId(Number(val))}
+                                options={surveys.map(s => ({ value: s.id, label: `${s.nombre} (${s.año})` }))}
+                                clearable={false}
+                                compact
+                                bare
+                            />
+                        </div>
                     </>
                 )}
             </div>

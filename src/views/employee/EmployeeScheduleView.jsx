@@ -435,7 +435,7 @@ const EmployeeScheduleView = () => {
                                 onChange={e => setReqNote(e.target.value)}
                                 placeholder="Explica el motivo del cambio…"
                                 rows={2}
-                                className="w-full px-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all placeholder-slate-400 placeholder:font-normal resize-none"
+                                className="w-full px-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 rounded-2xl text-[16px] outline-none font-bold text-slate-700 transition-all placeholder-slate-400 placeholder:font-normal resize-none"
                             />
                         </div>
 

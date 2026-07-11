@@ -890,7 +890,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     >
                         <div className="flex items-center justify-between px-4 py-2.5">
                             <div className="flex items-center gap-4">
-                                <button onClick={() => setIsSidebarOpen(true)} className="active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-[#0052CC]">
+                                <button onClick={() => setIsSidebarOpen(true)} className="p-3 -m-3 active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-[#0052CC]">
                                     <Menu size={22} strokeWidth={2.5} />
                                 </button>
                                 <div className="w-px h-6 rounded-full bg-slate-300/50" />

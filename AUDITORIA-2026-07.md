@@ -1665,3 +1665,288 @@ negocio):
 **Fase 0, 1, 2 y 3 completas.** Pendientes: **Fase 4** (diseño/UX +
 estándar móvil), **Fase 5** (E2E con Playwright), **Fase 6** (veredicto
 estructural y roadmap) — no iniciadas.
+
+---
+
+## FASE 4 — Diseño y UX (2026-07-10)
+
+Alcance acordado con el usuario: pase exhaustivo (todas las vistas + tabs +
+modales), con autorización explícita de corregir directo cualquier
+violación mecánica y de bajo riesgo de un estándar ya escrito en
+DESIGN.md, documentando (sin tocar) todo lo que sea grande, ambiguo, o
+una decisión de producto.
+
+### Metodología
+
+1. **Barrido estático** (grep exhaustivo de los anti-patrones listados en
+   DESIGN.md §31) sobre todo `src/` — más rápido y realmente exhaustivo
+   que revisar vista por vista a ojo.
+2. **Pase visual/móvil automatizado**: script de Playwright contra
+   `npm run dev`, login real, navega las 27 rutas top-level en 2
+   viewports (390×844 y 768×1024), y corre chequeos estructurales en cada
+   una vía `page.evaluate()`: overflow horizontal de página, botones/links
+   visibles con bounding box <44×44px (excluyendo elementos fuera de
+   pantalla, ej. el sidebar cerrado en móvil — bug de metodología
+   detectado y corregido a mitad del pase, ver abajo), inputs/textareas
+   visibles con `font-size` computado <16px (riesgo de zoom automático en
+   iOS Safari), y modales/diálogos cuyo `getBoundingClientRect()` se sale
+   del viewport. Solo se screenshotea la vista si algo fue marcado —
+   evita cargar ~100 capturas sin valor en el contexto de la revisión.
+3. Dos agentes de investigación en paralelo (subagente `Explore`,
+   solo lectura) para triar los hallazgos de mayor volumen
+   (`text-slate-300/400`: 134 archivos: `<select>` nativo y
+   `font-light/normal`: 21 archivos) antes de decidir qué corregir.
+
+### Hallazgo #1 — `active:scale-90/95` en vez de `active:scale-[0.97]` (§31) — CORREGIDO
+
+297 sitios en 11 archivos (todos en el módulo `pedidos/`). Sustitución
+mecánica de un solo valor Tailwind, cero cambio de comportamiento.
+Verificado con `npm run build` limpio.
+
+### Hallazgo #2 — Zoom automático de iOS Safari en inputs <16px — CORREGIDO (el de mayor impacto de todo el pase)
+
+**El hallazgo más importante de Fase 4.** El pase visual/móvil marcó
+`ios-zoom-risk` en prácticamente todas las 27 rutas la primera corrida.
+Causa raíz identificada en 2 componentes compartidos:
+- `ViewTabBar.jsx` (usado por la mayoría de vistas): input de búsqueda a
+  `text-[13px] md:text-[15px]`.
+- `AppLayout.jsx`: no aplica (ese era el botón hamburguesa, hallazgo #3).
+
+Pero además se encontró que **varias vistas no usan `ViewTabBar` para su
+buscador — tienen su propia copia local hecha a mano** (`BranchesView`,
+`ConteoDetailView`, y otras) con el mismo bug de forma independiente —
+violación ya documentada como regla de casa
+([[feedback_global_search_pattern]]) que en la práctica no se cumple en
+todos lados. Ampliando el barrido a **todo `<input>`/`<textarea>` del
+proyecto** (no solo buscadores) con `text-[Npx]` (N<16), se corrigieron
+**~170 inputs en ~60 archivos** — incluye buscadores duplicados,
+`textarea` de notas/observaciones, campos de fecha/lote en conteo de
+inventario, formularios de avisos/vacaciones/planilla, etc.
+
+**Nota de metodología**: el primer barrido automatizado (regex sobre
+tags `<input.*?>`) se comió una clase entera de casos por un bug propio:
+`.*?>` no-greedy corta en el primer `>` que encuentra, y una prop
+`onChange={(e) => setX(...)}` con arrow function **contiene un `>`
+literal** (el de `=>`), cortando el tag antes de llegar al `className`
+real. Se detectó al re-verificar `ConteoDetailView.jsx` (seguía en
+11-13px pese al barrido) y se corrigió con un segundo pase que trackea
+profundidad de `{}` en vez de parar en el primer `>`. **Verificado al
+final: 0 inputs/textareas de texto por debajo de 16px en todo `src/`**
+(script de verificación exhaustivo, no solo muestreo).
+
+Regla nueva agregada a DESIGN.md §32: ningún input de texto por debajo
+de `text-[16px]`, sin excepción.
+
+### Hallazgo #3 — Touch targets <44px en header/tab bar globales — CORREGIDO
+
+Mismo patrón que el hallazgo #2: el pase visual marcó `small-touch-targets`
+en casi todas las rutas. Primera corrida contaminada por un falso
+positivo (ver nota abajo); segunda corrida con el bug corregido mostró
+la causa raíz real, concentrada en 2 componentes:
+- `ViewTabBar.jsx`: pills de tab a `h-9 md:h-10` (36/40px) y botones de
+  abrir/cerrar búsqueda a `w-10 h-10 md:w-11 md:h-11` (40px en móvil) —
+  corregidos a `h-11`/`w-11 h-11` (44px) uniforme, dentro del presupuesto
+  de altura ya existente del contenedor (no hizo falta agrandar la pill
+  exterior). Pills de una sola palabra corta (ej. "General", "RRHH")
+  seguían por debajo de 44px en **ancho** tras el fix de alto — se
+  agregó `min-w-[44px]` como piso.
+- `AppLayout.jsx`: el botón hamburguesa (`<Menu size={22}>`) no tenía
+  ningún padding — su hit-box literal era 22×22px. Fix: `p-3 -m-3`
+  (el padding agranda el hit-box, el margen negativo cancela el
+  desplazamiento visual — el ícono queda exactamente en el mismo lugar).
+
+**Nota de metodología (bug detectado y corregido a mitad del pase)**: la
+primera corrida marcó decenas de "touch targets pequeños" de 250×32px /
+262×40px en TODAS las vistas por igual — resultó ser el sidebar de
+navegación completo, que en móvil está `fixed` y trasladado fuera de
+pantalla (`transform: translateX(-100%)`) cuando está cerrado.
+`getBoundingClientRect()` devuelve el tamaño geométrico real del
+elemento sin importar el `transform`, así que el check original (que
+solo excluía `width===0`) contaba estos enlaces como "visibles". Se
+corrigió agregando un chequeo de intersección real con el viewport
+(`rect.right>0 && rect.left<innerWidth && ...`) antes de contar
+cualquier elemento como violación.
+
+**Pendiente residual, NO corregido** (long tail de botones pequeños
+específicos por vista, sin un componente compartido único que lo
+explique — mucho menor beneficio por el esfuerzo de perseguir cada uno):
+botones de ~20-40px dispersos en Dashboard/Monitor/Facturación/Branches/
+etc. (iconos de cerrar, contadores, filtros locales tipo "Anuladas"/
+"Con Alertas" que cada vista arma a mano en vez de reusar un pill
+compartido). El botón "Activar" de `PushPromptBanner.jsx` (30px alto) se
+evaluó explícitamente y se dejó sin tocar — agrandarlo a 44px cambia
+notablemente el carácter de ese banner (diseñado deliberadamente
+compacto/discreto), es una decisión de diseño, no un fix mecánico.
+
+### Hallazgo #4 — `<select>` nativo en vez de `LiquidSelect` (§31) — 9 selects corregidos en 6 archivos
+
+Triado por agente de investigación: de 8 archivos con `<select>` nativo,
+6 eran swaps directos y seguros (estado controlado simple, sin
+dependencia de submit nativo de formulario) — corregidos:
+`FormTurnos.jsx` (3), `EarlyExitForm.jsx` (1, pantalla oscura de kiosco
+→ `theme="dark"`), `EncuestaView.jsx` (1), `AnnouncementsView.jsx` (2),
+`AuditView.jsx` (1, selector de filas por página), `ComprasView.jsx` (1,
+preservando el `disabled` atado al checkbox "sin proveedor"). Verificado
+que `LiquidSelect` coacciona a string en sus comparaciones internas
+(`String(value) === String(opt.value)`) pero `onChange` devuelve el
+valor tal cual se definió en `options` — se confirmó que el resto del
+código en los 6 archivos ya usaba `String(...)` defensivamente en sus
+propias comparaciones (`branches.find(b => String(b.id) === ...)`),
+así que pasar números en vez de strings no rompe nada.
+
+**NO corregidos, documentados** (requieren más que un swap mecánico):
+- `FormAiSchedulerPreview.jsx`: un `<select>` por celda en una grilla
+  semanal densa (un select por empleado×día, muchas instancias
+  renderizadas a la vez) — el overhead de portal+animación de
+  `LiquidSelect` por celda es un riesgo de performance/densidad real,
+  necesita evaluación aparte.
+- `TimePicker12.jsx`: 3 `<select>` diminutos (hora/minuto/AM-PM)
+  formando un stepper compuesto reusado por otros formularios —
+  `LiquidSelect` es un dropdown buscable completo, no un stepper de 2
+  caracteres; requeriría una variante nueva del componente, alcance de
+  refactor de componente compartido, no de este pase.
+
+### Hallazgo #5 — Contraste `text-slate-300/400` sobre superficie clara (§1, §31) — DOCUMENTADO, NO CORREGIDO
+
+**El hallazgo de mayor volumen de todo el pase — demasiado grande y
+riesgoso para un fix mecánico ciego.** Agente de investigación clasificó
+1,697 apariciones de `text-slate-300`/`text-slate-400` en 134 archivos:
+
+- **~1,288 violaciones reales confirmadas** en 127 archivos: texto real
+  (labels, valores, body, empty-states) sobre superficie clara Liquid
+  Glass, por debajo del piso mínimo de DESIGN.md §1
+  (`text-slate-600`/`text-slate-500`).
+- **~409 falsos positivos correctamente excluidos**: color de ícono
+  Lucide (no texto), `placeholder:text-slate-400` (permitido
+  explícitamente), estado disabled genuino, y texto sobre tooltips/
+  paneles oscuros (`bg-slate-900/90`+, pantallas de kiosco) donde
+  slate-300/400 es lo correcto por ser texto-sobre-oscuro.
+
+Concentración: `TabMinMax.jsx` (~105 instancias), `TabCatalogo.jsx`
+(~49), `TabPedidos.jsx` (~36), más docenas de vistas con 5-30 cada una —
+mismo patrón de clase repetido casi textual en todos lados
+(`text-[Npx] font-black uppercase tracking-widest text-slate-400` para
+labels, `text-[Npx] text-slate-400` para sub-texto), lo que en teoría
+lo hace apto para un fix scripteado por archivo — pero un
+find/replace ciego de `text-slate-400`→`text-slate-500` a nivel de
+proyecto **atraparía también los ~409 falsos positivos** (iconos,
+tooltips oscuros), causando regresiones reales (iconos invisibles, texto
+oscuro-sobre-oscuro). Esto excede claramente la barra de "trivial y bajo
+riesgo" — es un proyecto de remediación completo por derecho propio,
+necesita revisión archivo por archivo con verificación visual, no un
+pase dentro de una auditoría más amplia. **Recomendación**: pase
+dedicado futuro, arrancando por los 20 archivos de mayor volumen
+listados arriba (cubren la mayoría de las ~1,288 instancias).
+
+### Hallazgo #6 — `font-normal`/`font-light` en elementos interactivos (§31) — 1 corregido, 1 documentado
+
+Agente de investigación filtró ~13 archivos a 2 violaciones reales
+(el resto era `placeholder:font-normal` o texto estático, permitido):
+- `TabCatalogo.jsx:658` — hint "Ctrl+V" con `font-normal` Y
+  `text-slate-300` dentro de un `<button>` clickeable de menú contextual
+  — **corregido** (`text-slate-500`, sin `font-normal`).
+- `SrsBuscadorWidget.jsx:209` — label "Sin nombre" (`font-normal italic`)
+  dentro de una card clickeable — **dejado sin tocar**, es un estilo
+  deliberado para señalar "dato faltante" (itálica + peso liviano es un
+  patrón común para valores de fallback), no una violación clara.
+
+### Hallazgo #7 — `animate-bounce` (§31) — revisado, DOCUMENTADO sin fix (ambigüedad de la regla)
+
+6 archivos, 15 usos. Todos son: badges de cumpleaños con confetti
+(🎉✨🎊), o los tres puntos de "escribiendo…"/cargando (patrón estándar
+de industria, iMessage/Slack usan el mismo). La redacción literal de la
+regla ("`animate-bounce` on decorative elements") es ambigua — leída
+al pie de la letra PROHÍBE exactamente estos usos (que son decorativos
+por definición), pero la intención más probable de un anti-patrón así
+es evitar rebote genérico sin propósito (ej. una flecha "mirá aquí" sin
+sentido), no un indicador de carga estándar o una celebración de
+cumpleaños intencional. No se tocó — es una decisión de producto/estilo,
+no un bug, y cambiarlo unilateralmente arriesgaba romper un patrón que
+podría ser exactamente el deseado.
+
+### Móvil — resultado del pase automatizado (390×844 y 768×1024, 27 rutas)
+
+Antes de los fixes: las 27 rutas marcadas en ambos viewports (2 issues
+cada una en promedio: zoom-risk + touch-targets). Después de los fixes
+(hallazgos #2 y #3): la mayoría de rutas quedan limpias o con 1 solo
+issue residual (long tail ya documentado en el hallazgo #3). Ningún
+overflow horizontal de página encontrado en ninguna ruta — el patrón de
+`DataTable` con `hideBelow` por columna evita el problema clásico de
+tabla-ilegible-en-móvil sin necesidad de un layout tabla→cards separado
+(documentado como decisión de diseño existente en DESIGN.md §32, no como
+gap).
+
+### PWA / webapp — revisado
+
+- **Manifest** (`public/manifest.json`): completo y correcto —
+  `name`/`short_name`/`start_url`/`display:standalone`/`background_color`/
+  `theme_color`/`lang`, iconos 192×192 y 512×512 con
+  `purpose:"any maskable"`. Cumple criterios de instalabilidad.
+- **`index.html`**: `viewport-fit=cover` presente (listo para
+  `env(safe-area-inset-*)` si se implementa), `apple-touch-icon`
+  presente, `theme-color` presente.
+- **`user-scalable=no`** en el viewport meta bloquea el pinch-zoom por
+  completo — tensión real con WCAG 1.4.4 (Resize Text). Es una decisión
+  ya tomada deliberadamente (feel de app nativa), no algo que este pase
+  cambió unilateralmente — documentado, a decidir por el usuario si
+  vale la pena revisarlo.
+- **Service Worker** (`public/sw.js`) — **hallazgo real**: existe
+  únicamente para manejar Web Push (`push`/`notificationclick`), **cero
+  interceptación de `fetch`, cero caché de ningún tipo**. Resultado: el
+  portal es instalable como PWA pero tiene comportamiento offline
+  **inexistente** — abrir la app sin conexión después de instalarla
+  muestra el error de red nativo del navegador, no una pantalla propia
+  de "sin conexión". Implementar cache-first real (App Shell pattern)
+  es una pieza de arquitectura nueva con riesgos propios (servir código
+  viejo/stale si no se invalida bien el caché en cada deploy) — **fuera
+  de alcance de un pase de diseño**, queda documentado como
+  recomendación para una fase dedicada futura.
+
+### Accesibilidad básica — ya cubierta, verificada vigente
+
+DESIGN.md §25 (escrito en la auditoría de diseño anterior, 2026-06-24)
+ya documenta en detalle: cobertura de `focus-visible` y su gap conocido
+(inputs glass con `outline-none`), tabla de touch-targets del sidebar
+(incluye el mismo hallazgo de "nav indented button ≈36px" que confirmó
+este pase de forma independiente), estado de ARIA implementado vs.
+faltante (`ModalShell` sin `aria-labelledby`, `LiquidSelect` sin
+`aria-haspopup`/`aria-expanded`, inputs sin `aria-invalid`/
+`aria-describedby`), y soporte de `prefers-reduced-motion`. Se revisó y
+sigue vigente — no se encontraron gaps nuevos que agregar en este pase;
+las brechas de ARIA/teclado ya documentadas siguen pendientes de un pase
+de accesibilidad dedicado (no de diseño visual).
+
+### Validación de todos los fixes de este pase
+
+- `npm run build` limpio después de cada tanda de cambios (5 corridas
+  completas durante el pase, todas exitosas, solo el warning
+  preexistente de chunks >500kB).
+- Verificación visual con Playwright/Chromium contra `npm run dev`:
+  capturas antes/después en Dashboard, Ventas, Sucursales, Compras,
+  Auditoría del Sistema, Avisos — layout intacto, sin regresiones
+  visibles.
+- Re-corrida completa del script de auditoría móvil automatizado
+  después de los fixes de los hallazgos #2 y #3: confirmado el drop
+  de issues (zoom-risk prácticamente a cero, touch-targets reducido al
+  long-tail ya documentado).
+
+### Resumen — Fase 4
+
+| # | Hallazgo | Alcance | Resultado |
+|---|---|---|---|
+| 1 | `active:scale-90/95` | 297 sitios / 11 archivos | ✅ Corregido |
+| 2 | Zoom iOS en inputs <16px | ~170 inputs / ~60 archivos | ✅ Corregido — mayor impacto del pase |
+| 3 | Touch targets <44px (header/tab bar) | 2 componentes compartidos + long tail | ✅ Corregido (componentes compartidos); 🟡 long tail documentado |
+| 4 | `<select>` nativo | 9 selects / 6 archivos | ✅ Corregido; 2 archivos documentados (grilla densa, stepper compuesto) |
+| 5 | `text-slate-300/400` sobre superficie clara | ~1,288 instancias / 127 archivos | 🟡 Documentado — pase dedicado futuro |
+| 6 | `font-normal`/`light` en interactivos | 2 instancias reales | ✅ 1 corregido, 1 documentado (estilo deliberado) |
+| 7 | `animate-bounce` decorativo | 15 usos / 6 archivos | 🟡 Documentado — regla ambigua, no se tocó |
+| — | PWA offline | Service worker sin `fetch`/cache | 🟡 Documentado — arquitectura nueva, pase futuro |
+| — | Accesibilidad básica | §25 ya existente | ✅ Verificado vigente, sin gaps nuevos |
+
+`APP_VERSION` bumpeado a `2.15.8`. DESIGN.md §32 (Mobile & Responsive
+Standard) creado — no existía antes de este pase.
+
+**Fase 0, 1, 2, 3 y 4 completas.** Pendientes: **Fase 5** (E2E con
+Playwright), **Fase 6** (veredicto estructural y roadmap) — no
+iniciadas.

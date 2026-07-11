@@ -196,12 +196,12 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-black text-orange-500 uppercase tracking-widest px-1">Nuevo MIN (und) *</label>
             <input type="number" min="0" value={mn} onChange={e => { setMn(e.target.value); setErr(''); }}
-              className="w-full text-right text-[13px] font-bold text-orange-700 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300" />
+              className="w-full text-right text-[16px] font-bold text-orange-700 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-orange-300" />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest px-1">Nuevo MAX (und) *</label>
             <input type="number" min="0" value={mx} onChange={e => { setMx(e.target.value); setErr(''); }}
-              className="w-full text-right text-[13px] font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-300" />
+              className="w-full text-right text-[16px] font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-300" />
           </div>
         </div>
 
@@ -210,7 +210,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Motivo</label>
           <textarea value={reason} onChange={e => setReason(e.target.value)} rows={2}
             placeholder="¿Por qué este ajuste? (opcional)"
-            className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 resize-none" />
+            className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 resize-none" />
         </div>
 
         {err && <p className="text-[11px] text-red-500 font-semibold px-1">{err}</p>}
@@ -306,7 +306,7 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
         <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Buscar producto para ajustar Min/Max…"
-          className="w-full pl-9 pr-8 py-2 rounded-2xl border border-slate-200 bg-white text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10"
+          className="w-full pl-9 pr-8 py-2 rounded-2xl border border-slate-200 bg-white text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10"
           spellCheck={false} />
         {search && (
           <button onClick={() => setSearch('')}

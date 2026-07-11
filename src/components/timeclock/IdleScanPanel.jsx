@@ -62,7 +62,7 @@ export default function IdleScanPanel({
               autoComplete="new-password"
               spellCheck="false"
               placeholder={specialMode ? 'ESCANEE PARA AUTORIZAR' : 'ESCANEE SU CARNET'}
-              className={`relative z-20 pointer-events-auto w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white text-center py-5 rounded-3xl shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] select-none text-2xl sm:text-4xl tracking-[0.5em] sm:tracking-[0.8em] placeholder:text-[10px] placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase caret-transparent transition-all duration-300 ${specialMode ? 'placeholder:text-orange-400/50 virtual-caret-orange' : 'placeholder:text-white/40 virtual-caret-blue'}`}
+              className={`relative z-20 pointer-events-auto w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white text-center py-5 rounded-3xl shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] select-none text-2xl sm:text-4xl tracking-[0.5em] sm:tracking-[0.8em] placeholder:text-[16px] placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase caret-transparent transition-all duration-300 ${specialMode ? 'placeholder:text-orange-400/50 virtual-caret-orange' : 'placeholder:text-white/40 virtual-caret-blue'}`}
             />
             {hasValue && (
               <button type="button" onClick={clearHandler} className="absolute right-4 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-white/80 transition-all duration-300 hover:scale-110 active:scale-[0.97]">

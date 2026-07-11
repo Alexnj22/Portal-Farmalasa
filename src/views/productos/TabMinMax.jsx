@@ -1411,7 +1411,7 @@ function ConfigPanel({ config, onSave, onClose }) {
             <div className="flex items-center gap-1.5">
                 <input type="number" min={min} max={max} step={step} value={form[k] ?? 0}
                     onChange={e => set(k, e.target.value)}
-                    className="w-16 text-right text-[12px] font-bold text-slate-800 bg-white/80 border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/30 focus:border-[#0052CC]" />
+                    className="w-16 text-right text-[16px] font-bold text-slate-800 bg-white/80 border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/30 focus:border-[#0052CC]" />
                 {unit && <span className="text-[10px] text-slate-400 shrink-0 w-8">{unit}</span>}
             </div>
         </div>
@@ -1619,7 +1619,7 @@ function LabsPanel({ onClose, onChanged }) {
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             placeholder="Buscar laboratorio…"
-                            className="flex-1 text-[11px] text-slate-700 placeholder-slate-400 bg-transparent outline-none"
+                            className="flex-1 text-[16px] text-slate-700 placeholder-slate-400 bg-transparent outline-none"
                         />
                         {search && (
                             <button onClick={() => setSearch('')} className="text-slate-300 hover:text-slate-500 transition-colors shrink-0">
@@ -3359,7 +3359,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                                 }
                                                             }}
                                                             onClick={e => e.stopPropagation()}
-                                                            className={`min-w-[36px] w-14 text-center text-[12px] font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-amber-800 bg-amber-50 border-amber-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
+                                                            className={`min-w-[36px] w-14 text-center text-[16px] font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-amber-800 bg-amber-50 border-amber-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
                                                         {sep}
                                                         <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-blue-500 bg-blue-50 border-blue-300' : 'text-slate-400 bg-slate-50 border-slate-300'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
                                                     </div>
@@ -3414,7 +3414,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                                 }
                                                             }}
                                                             onClick={e => e.stopPropagation()}
-                                                            className={`min-w-[36px] w-14 text-center text-[12px] font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-blue-800 bg-blue-50 border-blue-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
+                                                            className={`min-w-[36px] w-14 text-center text-[16px] font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-blue-800 bg-blue-50 border-blue-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-blue-700' : 'text-emerald-700'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
                                                 </div>

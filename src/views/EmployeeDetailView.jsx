@@ -766,7 +766,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         <input autoFocus type="text" value={ausenciasSearch}
                                                             onChange={e => setAusenciasSearch(e.target.value)}
                                                             placeholder="Buscar..."
-                                                            className="flex-1 min-w-0 text-[11px] font-medium text-slate-700 placeholder-slate-300 outline-none bg-transparent" />
+                                                            className="flex-1 min-w-0 text-[16px] font-medium text-slate-700 placeholder-slate-300 outline-none bg-transparent" />
                                                     )}
                                                 </div>
                                             </div>
@@ -1222,7 +1222,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     onChange={e => setCancelReason(e.target.value)}
                                     placeholder="Explica el motivo de la cancelación..."
                                     rows={3}
-                                    className="w-full bg-white/60 border border-white/80 rounded-2xl p-3 text-[13px] text-slate-700 outline-none focus:ring-2 focus:ring-red-200 resize-none"
+                                    className="w-full bg-white/60 border border-white/80 rounded-2xl p-3 text-[16px] text-slate-700 outline-none focus:ring-2 focus:ring-red-200 resize-none"
                                 />
                             </>
                         )}

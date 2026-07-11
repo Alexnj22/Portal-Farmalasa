@@ -636,8 +636,8 @@ export default function RecepcionModal({
                                     className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 text-center transition-all ${
                                         isRecibida ? 'bg-emerald-50 border-emerald-200 cursor-default' :
                                         isFalta    ? 'bg-slate-50 border-slate-100 cursor-default opacity-50' :
-                                        isDanada   ? 'bg-amber-50 border-amber-300 hover:border-amber-400 active:scale-95 cursor-pointer' :
-                                                     'bg-white border-slate-200 hover:border-violet-300 hover:bg-violet-50 active:scale-95 cursor-pointer'
+                                        isDanada   ? 'bg-amber-50 border-amber-300 hover:border-amber-400 active:scale-[0.97] cursor-pointer' :
+                                                     'bg-white border-slate-200 hover:border-violet-300 hover:bg-violet-50 active:scale-[0.97] cursor-pointer'
                                     }`}>
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
                                         isRecibida ? 'bg-emerald-500' :
@@ -670,7 +670,7 @@ export default function RecepcionModal({
 
                     {!allAccessibleDone && accessibleBoxNums.length > 0 && (
                         <button onClick={handleConfirmarTodo} disabled={saving}
-                            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl border-2 border-emerald-300 bg-emerald-50 text-emerald-700 font-bold text-[13px] hover:bg-emerald-100 active:scale-95 transition-all disabled:opacity-40">
+                            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl border-2 border-emerald-300 bg-emerald-50 text-emerald-700 font-bold text-[13px] hover:bg-emerald-100 active:scale-[0.97] transition-all disabled:opacity-40">
                             {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                             Confirmar todo OK
                             {faltaCajas.length > 0 && (
@@ -718,8 +718,8 @@ export default function RecepcionModal({
                                             className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 text-center transition-all ${
                                                 isConfirmed ? 'bg-emerald-50 border-emerald-200 cursor-default' :
                                                 isFaltante  ? 'bg-slate-50 border-slate-100 cursor-default opacity-50' :
-                                                isDamaged   ? 'bg-amber-50 border-amber-300 hover:border-amber-400 active:scale-95 cursor-pointer' :
-                                                              'bg-violet-50/60 border-violet-200 hover:border-violet-400 active:scale-95 cursor-pointer'
+                                                isDamaged   ? 'bg-amber-50 border-amber-300 hover:border-amber-400 active:scale-[0.97] cursor-pointer' :
+                                                              'bg-violet-50/60 border-violet-200 hover:border-violet-400 active:scale-[0.97] cursor-pointer'
                                             }`}>
                                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
                                                 isConfirmed ? 'bg-emerald-500' :
@@ -872,7 +872,7 @@ export default function RecepcionModal({
                                             <div className="relative">
                                                 <input type="number" min={0} value={e.fQty}
                                                     onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, fQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
-                                                    className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-teal-700 focus:border-teal-400'}`}
+                                                    className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-teal-700 focus:border-teal-400'}`}
                                                 />
                                                 {eDiff && delta !== 0 && (
                                                     <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
@@ -893,7 +893,7 @@ export default function RecepcionModal({
 
                                             <input type="number" min={0} value={e.sQty}
                                                 onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, sQty: Math.max(0, parseInt(ev.target.value) || 0) } : x))}
-                                                className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-violet-700 focus:border-violet-400'}`}
+                                                className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${eDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-violet-700 focus:border-violet-400'}`}
                                             />
 
                                             <button onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))}
@@ -905,7 +905,7 @@ export default function RecepcionModal({
                                             <div className="px-5 pb-2">
                                                 <input type="text" placeholder="Nota (opcional)…" value={e.nota}
                                                     onChange={ev => setExtras(prev => prev.map((x, j) => j === ei ? { ...x, nota: ev.target.value } : x))}
-                                                    className="w-full text-[11px] border border-indigo-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-indigo-400 placeholder-slate-300"
+                                                    className="w-full text-[16px] border border-indigo-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:border-indigo-400 placeholder-slate-300"
                                                 />
                                             </div>
                                         )}
@@ -931,7 +931,7 @@ export default function RecepcionModal({
                                     setExtraDropCoords({ top: r.top, left: r.left, width: r.width });
                                 }
                             }}
-                            className="flex-1 text-[12px] bg-transparent focus:outline-none placeholder-indigo-300 text-slate-700"
+                            className="flex-1 text-[16px] bg-transparent focus:outline-none placeholder-indigo-300 text-slate-700"
                         />
                         {extraBusy
                             ? <Loader2 size={12} className="animate-spin text-indigo-400 shrink-0" />
@@ -1057,7 +1057,7 @@ export default function RecepcionModal({
                                     <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300" />
                                     <input ref={searchRef} type="text" placeholder="Buscar producto…"
                                         value={prodSearch} onChange={e => setProdSearch(e.target.value)}
-                                        className="w-full text-[12px] border border-blue-200 rounded-lg pl-8 pr-8 py-2 focus:outline-none focus:border-blue-400 bg-blue-50/40 placeholder-slate-300"
+                                        className="w-full text-[16px] border border-blue-200 rounded-lg pl-8 pr-8 py-2 focus:outline-none focus:border-blue-400 bg-blue-50/40 placeholder-slate-300"
                                     />
                                     {prodSearch && (
                                         <button onClick={() => setProdSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500">
@@ -1181,7 +1181,7 @@ export default function RecepcionModal({
                                             data-qty-row={rowIdx} data-qty-col="fqty"
                                             onChange={e => setFQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
                                             onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="fqty"]`); n?.focus(); n?.select(); } }}
-                                            className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-slate-700 focus:border-teal-400'}`}
+                                            className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-teal-200 bg-white text-slate-700 focus:border-teal-400'}`}
                                         />
                                         {hasDiff && (
                                             <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold px-1 rounded-full border border-white ${delta < 0 ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
@@ -1204,7 +1204,7 @@ export default function RecepcionModal({
                                         data-qty-row={rowIdx} data-qty-col="sqty"
                                         onChange={e => setSQtyVals(p => ({ ...p, [r.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
                                         onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const n = document.querySelector(`[data-qty-row="${rowIdx + (e.key === 'ArrowDown' ? 1 : -1)}"][data-qty-col="sqty"]`); n?.focus(); n?.select(); } }}
-                                        className={`w-full text-center border rounded-lg px-1 py-1 text-[12px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-slate-700 focus:border-violet-400'}`}
+                                        className={`w-full text-center border rounded-lg px-1 py-1 text-[16px] font-bold focus:outline-none tabular-nums ${hasDiff ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-violet-200 bg-white text-slate-700 focus:border-violet-400'}`}
                                     />
 
                                     <button onClick={toggleProblema}
@@ -1240,7 +1240,7 @@ export default function RecepcionModal({
                                                     onChange={e => setCantProblemaVals(p => ({
                                                         ...p, [r.id]: Math.max(1, Math.min(fQty, parseInt(e.target.value) || 1))
                                                     }))}
-                                                    className="w-12 text-center border border-orange-300 rounded-full px-2 py-1 text-[11px] font-bold focus:outline-none focus:border-orange-500 bg-white text-orange-700"
+                                                    className="w-12 text-center border border-orange-300 rounded-full px-2 py-1 text-[16px] font-bold focus:outline-none focus:border-orange-500 bg-white text-orange-700"
                                                 />
                                                 <span className="text-[10px] text-slate-400">de {fQty}</span>
                                             </div>
@@ -1249,7 +1249,7 @@ export default function RecepcionModal({
                                             value={notaVals[r.id] ?? ''}
                                             onChange={e => setNotaVals(p => ({ ...p, [r.id]: e.target.value }))}
                                             onKeyDown={e => e.key === 'Enter' && confirmProblema()}
-                                            className="flex-1 min-w-0 text-[11px] border border-orange-200 rounded-full px-3 py-1 focus:outline-none focus:border-orange-400 bg-white placeholder-slate-300"
+                                            className="flex-1 min-w-0 text-[16px] border border-orange-200 rounded-full px-3 py-1 focus:outline-none focus:border-orange-400 bg-white placeholder-slate-300"
                                         />
                                         <button onClick={confirmProblema}
                                             className="shrink-0 flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-orange-500 text-white hover:bg-orange-600 transition-colors">

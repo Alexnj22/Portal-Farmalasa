@@ -2410,7 +2410,7 @@ export default function VentasView() {
                 ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
                 <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
                 <input ref={(el) => { if (el && isSearchMode) setTimeout(() => el.focus(), 100) }} type="text" placeholder={searchPlaceholder}
-                    className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-slate-400 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-slate-400 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && (
                     <button onClick={() => setRawSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-colors shrink-0">

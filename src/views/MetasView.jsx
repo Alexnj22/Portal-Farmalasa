@@ -316,7 +316,7 @@ export default function MetasView() {
                     type="text"
                     defaultValue={goals[b]?.toLocaleString('en-US')}
                     onBlur={e => updateGoal(b, e.target.value)}
-                    className="w-full pl-5 pr-2 py-1.5 rounded-lg text-[11px] font-bold border focus:outline-none focus:ring-2 focus:ring-[#0052CC]/40 bg-white border-slate-200 text-slate-700"
+                    className="w-full pl-5 pr-2 py-1.5 rounded-lg text-[16px] font-bold border focus:outline-none focus:ring-2 focus:ring-[#0052CC]/40 bg-white border-slate-200 text-slate-700"
                   />
                 </div>
               </div>

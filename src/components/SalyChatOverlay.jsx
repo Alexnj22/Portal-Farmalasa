@@ -308,7 +308,7 @@ const SalyChatOverlay = () => {
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
                                 placeholder="Ingresar parámetro operativo..."
-                                className="flex-1 bg-slate-100/80 border border-slate-200 text-slate-800 text-[13px] md:text-[14px] font-medium rounded-full py-3 pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-400 transition-all placeholder:text-slate-400 shadow-inner"
+                                className="flex-1 bg-slate-100/80 border border-slate-200 text-slate-800 text-[16px] md:text-[16px] font-medium rounded-full py-3 pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-400 transition-all placeholder:text-slate-400 shadow-inner"
                             />
                             <button
                                 type="submit"

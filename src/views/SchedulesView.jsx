@@ -92,12 +92,12 @@ const HolidaysPanel = ({
                         <div>
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Nombre</label>
                             <input value={hName} onChange={e => setHName(e.target.value)} placeholder="Ej: Día del Trabajo"
-                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[13px] font-bold text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
+                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
                         </div>
                         <div>
                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Fecha</label>
                             <input type="date" value={hDate} onChange={e => setHDate(e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[13px] font-bold text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
+                                className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
                         </div>
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
@@ -113,7 +113,7 @@ const HolidaysPanel = ({
                         </div>
                         {hType === 'MUNICIPAL' && (
                             <input value={hMuni} onChange={e => setHMuni(e.target.value)} placeholder="Municipio"
-                                className="flex-1 min-w-[140px] bg-white border border-slate-200 rounded-full px-3 py-2 text-[12px] font-bold text-slate-800 outline-none focus:border-blue-400 transition-all" />
+                                className="flex-1 min-w-[140px] bg-white border border-slate-200 rounded-full px-3 py-2 text-[16px] font-bold text-slate-800 outline-none focus:border-blue-400 transition-all" />
                         )}
                         <button onClick={() => setHRecurring(v => !v)}
                             className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] font-black border transition-all ${hRecurring ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-white border-slate-200 text-slate-500 hover:border-emerald-300 hover:text-emerald-600'}`}>

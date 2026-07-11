@@ -257,7 +257,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                             const sel = assigned.includes(box);
                                             return (
                                                 <button key={box} onClick={() => toggleBox(idx, box)}
-                                                    className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border-2 transition-all active:scale-95 ${
+                                                    className={`text-[11px] font-bold px-3 py-1.5 rounded-xl border-2 transition-all active:scale-[0.97] ${
                                                         sel
                                                             ? 'bg-violet-500 border-violet-500 text-white shadow-[0_2px_8px_rgba(139,92,246,0.3)]'
                                                             : 'bg-white/80 border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50'
@@ -283,7 +283,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                 {screen === 1 ? (
                     <button onClick={handleGoScreen2}
                         disabled={loadingPages || !totalCajasInput || parsedCajas < 1 || totalPages === 0}
-                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-40 active:scale-95 transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(139,92,246,0.35)]">
+                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(139,92,246,0.35)]">
                         {loadingPages
                             ? <Loader2 size={12} className="animate-spin" />
                             : <>Siguiente <span className="opacity-60">→</span></>
@@ -291,7 +291,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                     </button>
                 ) : (
                     <button onClick={handleConfirm} disabled={submitting || !isValid}
-                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-40 active:scale-95 transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(139,92,246,0.35)]">
+                        className="text-[12px] font-bold px-5 py-2.5 rounded-xl bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-2 shadow-[0_4px_12px_rgba(139,92,246,0.35)]">
                         {submitting
                             ? <Loader2 size={12} className="animate-spin" />
                             : <PackageCheck size={13} />

@@ -641,11 +641,11 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                           </div>
                           <div className="flex flex-col gap-0.5 mt-0.5">
                             <button onClick={() => moveStop(idx, -1)} disabled={idx === 0}
-                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 disabled:opacity-0 active:scale-90 transition-all shadow-sm">
+                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
                               <ChevronUp size={13} strokeWidth={2.5} />
                             </button>
                             <button onClick={() => moveStop(idx, 1)} disabled={idx === paradas.length - 1}
-                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 disabled:opacity-0 active:scale-90 transition-all shadow-sm">
+                              className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:bg-indigo-500 hover:text-white hover:border-indigo-500 disabled:opacity-0 active:scale-[0.97] transition-all shadow-sm">
                               <ChevronDown size={13} strokeWidth={2.5} />
                             </button>
                           </div>
@@ -728,7 +728,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                           <button
                             key={id}
                             onClick={() => addEncargo(Number(id))}
-                            className="flex items-center gap-2 px-2.5 py-2 rounded-xl border border-amber-200 bg-white hover:bg-amber-50 hover:border-amber-400 text-left transition-all active:scale-95"
+                            className="flex items-center gap-2 px-2.5 py-2 rounded-xl border border-amber-200 bg-white hover:bg-amber-50 hover:border-amber-400 text-left transition-all active:scale-[0.97]"
                           >
                             <Building2 size={11} className="text-amber-500 shrink-0" />
                             <span className="text-[11px] font-semibold text-slate-700">{name}</span>

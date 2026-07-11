@@ -45,14 +45,14 @@ export default function PushPromptBanner() {
       <div className="flex items-center gap-2 flex-shrink-0">
         <button
           onClick={handleActivar}
-          className="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-400 active:scale-95
+          className="px-3 py-1.5 rounded-lg bg-violet-500 hover:bg-violet-400 active:scale-[0.97]
                      text-white text-[12px] font-semibold transition-all"
         >
           Activar
         </button>
         <button
           onClick={dismiss}
-          className="p-1.5 rounded-lg hover:bg-white/10 active:scale-95 transition-all"
+          className="p-1.5 rounded-lg hover:bg-white/10 active:scale-[0.97] transition-all"
         >
           <X size={14} className="text-white/40" />
         </button>

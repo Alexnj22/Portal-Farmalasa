@@ -341,7 +341,7 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
                             onChange={e => setComment(e.target.value)}
                             placeholder={reason?.requiresComment ? 'Describe la razón…' : 'Añade un comentario…'}
                             rows={2}
-                            className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400 bg-white resize-none transition-colors text-slate-700"
+                            className="w-full text-[16px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-amber-400 bg-white resize-none transition-colors text-slate-700"
                         />
                     </div>
                 </PedidoModal.Body>
@@ -403,7 +403,7 @@ function AnularModal({ modal, onCancel, onConfirm, busy }) {
                                 onChange={e => setMotivo(e.target.value)}
                                 placeholder="Describe el motivo de la anulación…"
                                 rows={3}
-                                className="w-full text-[13px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-red-400 bg-white resize-none transition-colors text-slate-700"
+                                className="w-full text-[16px] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-red-400 bg-white resize-none transition-colors text-slate-700"
                             />
                             {motivo.trim().length > 0 && motivo.trim().length < 5 && (
                                 <p className="text-[10px] text-red-500 mt-1">Mínimo 5 caracteres.</p>
@@ -874,7 +874,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
                                     onChange={e => { setSearch(e.target.value); setPage(1); }}
                                     onKeyDown={e => e.key === 'Escape' && closeSearch()}
                                     placeholder="Buscar…"
-                                    className="w-full pl-6 pr-5 py-1 text-[10px] bg-white border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-400 text-slate-700 placeholder:text-slate-400 shadow-sm"
+                                    className="w-full pl-6 pr-5 py-1 text-[16px] bg-white border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-400 text-slate-700 placeholder:text-slate-400 shadow-sm"
                                 />
                                 <button onClick={closeSearch} className="absolute right-1.5 text-slate-400 hover:text-slate-600">
                                     <X size={9} />
@@ -1571,12 +1571,12 @@ function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, em
                                             type="text" placeholder="Nota (opcional)…"
                                             value={notaSel[item.id] ?? ''}
                                             onChange={e => setNotaSel(p => ({ ...p, [item.id]: e.target.value }))}
-                                            className="flex-1 text-[10px] border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-violet-400 bg-white placeholder-slate-300"
+                                            className="flex-1 text-[16px] border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-violet-400 bg-white placeholder-slate-300"
                                         />
                                         <button
                                             onClick={() => onResolver(item.id, 'proponer', selTipo, notaSel[item.id] || null)}
                                             disabled={isBusy || !selTipo}
-                                            className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-50 shrink-0 active:scale-95 transition-all"
+                                            className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
                                         >
                                             {isBusy ? <Loader2 size={10} className="animate-spin" /> : res === 'rechazada' ? 'Volver a proponer' : 'Proponer'}
                                         </button>
@@ -1613,12 +1613,12 @@ function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, em
                                                         if (e.key === 'Enter') onResolver(item.id, 'rechazar', null, notaRec[item.id] || null);
                                                         if (e.key === 'Escape') setRejectOpen(p => ({ ...p, [item.id]: false }));
                                                     }}
-                                                    className="flex-1 text-[10px] border border-red-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-red-400 bg-white placeholder-slate-300"
+                                                    className="flex-1 text-[16px] border border-red-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-red-400 bg-white placeholder-slate-300"
                                                 />
                                                 <button
                                                     onClick={() => onResolver(item.id, 'rechazar', null, notaRec[item.id] || null)}
                                                     disabled={isBusy}
-                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 shrink-0 active:scale-95 transition-all"
+                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
                                                 >
                                                     {isBusy ? <Loader2 size={10} className="animate-spin" /> : 'Rechazar'}
                                                 </button>
@@ -1629,13 +1629,13 @@ function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, em
                                                 <button
                                                     onClick={() => onResolver(item.id, 'confirmar', null, null)}
                                                     disabled={isBusy}
-                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 active:scale-95 transition-all"
+                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 active:scale-[0.97] transition-all"
                                                 >
                                                     {isBusy ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar'}
                                                 </button>
                                                 <button
                                                     onClick={() => setRejectOpen(p => ({ ...p, [item.id]: true }))}
-                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 active:scale-95 transition-all"
+                                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 active:scale-[0.97] transition-all"
                                                 >
                                                     Rechazar
                                                 </button>
@@ -1799,7 +1799,7 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
     ) : null;
 
     const apoyoBtn = (
-        <button onClick={onApoyo} className="flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all shrink-0">
+        <button onClick={onApoyo} className="flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 active:scale-[0.97] transition-all shrink-0">
             <UserPlus size={10} />Apoyo
         </button>
     );
@@ -1828,7 +1828,7 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-blue-50/40 border-blue-100 text-[11px]">
                     <PackageCheck size={13} className="text-blue-500" />
                     <span className="text-blue-700">Paso 1 — Confirmar llegada de cajas</span>
-                    <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-95 transition-all disabled:opacity-50">
+                    <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-[0.97] transition-all disabled:opacity-50">
                         {busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}
                     </button>
                 </div>
@@ -1861,7 +1861,7 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
                         {(cicloEnCamino.especiales ?? []).length > 0 && ` · ${cicloEnCamino.especiales.join(', ')}`}
                     </span>
                     <button onClick={onSegundaLlegada} disabled={!!busy}
-                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shrink-0">
+                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 active:scale-[0.97] transition-all disabled:opacity-50 shrink-0">
                         {busy === 'segunda_llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar llegada'}
                     </button>
                 </div>
@@ -1873,7 +1873,7 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
                     <Database size={13} className="text-violet-500" />
                     <span className="text-violet-700">Revisar caja del reenvío en Sistema de Ventas</span>
                     <button onClick={onOpenReenvioModal} disabled={!!busy}
-                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-50">
+                        className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-[0.97] transition-all disabled:opacity-50">
                         Revisar
                     </button>
                 </div>
@@ -1890,7 +1890,7 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
                         {apoyoChips}
                         {apoyoBtn}
                         <button onClick={onOpenRecibir} disabled={!!busy}
-                            className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-95 transition-all disabled:opacity-50">
+                            className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-violet-500 text-white hover:bg-violet-600 active:scale-[0.97] transition-all disabled:opacity-50">
                             Confirmar
                         </button>
                     </div>
@@ -3466,7 +3466,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 <button
                                                     onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}
                                                     disabled={isLCBusy}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all disabled:opacity-50"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 active:scale-[0.97] transition-all disabled:opacity-50"
                                                 >
                                                     <UserPlus size={10} />Apoyo
                                                 </button>
@@ -3475,7 +3475,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 <button
                                                     onClick={e => { e.stopPropagation(); handlePrintPdf(row.pedido_id, row.numero, row.erp_sucursal_id, cardKey, row.codigo); }}
                                                     disabled={printingPdf === row.pedido_id}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all disabled:opacity-50"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 active:scale-[0.97] transition-all disabled:opacity-50"
                                                 >
                                                     {printingPdf === row.pedido_id ? <Loader2 size={10} className="animate-spin" /> : <FileDown size={10} />}PDF
                                                 </button>
@@ -3483,7 +3483,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {canActuar && !isBranch && stage === 'preparado' && (
                                                 <button
                                                     onClick={e => { e.stopPropagation(); setProgramarModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, currentAt: row.entrega_programada_at ?? null, historial: row.entrega_programada_historial ?? [] }); }}
-                                                    className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl active:scale-95 transition-all ${row.entrega_programada_at ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'}`}
+                                                    className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl active:scale-[0.97] transition-all ${row.entrega_programada_at ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border border-indigo-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'}`}
                                                 >
                                                     <CalendarClock size={10} />
                                                     {row.entrega_programada_at ? fmtEntrega(row.entrega_programada_at) : 'Programar'}
@@ -3496,24 +3496,24 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 if (!isConductorHere || !!stop?.entregado_at || ruta.status !== 'en_ruta') return null;
                                                 return (
                                                     <button onClick={e => { e.stopPropagation(); handleEntregarStop(stop.id, ruta.id, stop.erp_sucursal_id); }}
-                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all shadow-sm">
+                                                        className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-[0.97] transition-all shadow-sm">
                                                         <CheckCircle2 size={10} />Entregué
                                                     </button>
                                                 );
                                             })()}
-                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
-                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
-                                            {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-95 transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
-                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
+                                            {canIniciar      && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'iniciar', null, row.numero)}   disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-blue-500    text-white hover:bg-blue-600    active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Play     size={10} fill="currentColor" />Iniciar</>}</button>}
+                                            {canPausar       && <button onClick={() => openPauseModal(row.pedido_id, row.erp_sucursal_id)}               disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-amber-400   text-white hover:bg-amber-500   active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><Pause    size={10} fill="currentColor" />Pausar</>}</button>}
+                                            {canFinalizar    && <button onClick={() => openFinalizarModal(row.pedido_id, row.erp_sucursal_id, row.numero, cardKey)} disabled={isLCBusy || busyAction === `finalizar_load_${cardKey}`} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-violet-500  text-white hover:bg-violet-600  active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{(isLCBusy || busyAction === `finalizar_load_${cardKey}`) ? <Loader2 size={11} className="animate-spin" /> : <><Flag size={10} />Finalizar</>}</button>}
+                                            {canReanudar     && <button onClick={() => handleLifecycle(row.pedido_id, row.erp_sucursal_id, 'reanudar')}  disabled={isLCBusy}    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">{isLCBusy ? <Loader2 size={11} className="animate-spin" /> : <><RotateCcw size={10} />Reanudar</>}</button>}
                                             {canAnular && (
                                                 <button
                                                     onClick={e => { e.stopPropagation(); const st = pedidoStageMap.get(row.pedido_id) ?? {}; setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-red-100 text-red-600 hover:bg-red-500 hover:text-white border border-red-200 hover:border-red-500 active:scale-95 transition-all shadow-sm"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-red-100 text-red-600 hover:bg-red-500 hover:text-white border border-red-200 hover:border-red-500 active:scale-[0.97] transition-all shadow-sm"
                                                 >
                                                     <Ban size={10} />Anular
                                                 </button>
                                             )}
-                                            {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen([])} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
+                                            {canMarcarEnRuta && <button onClick={() => setCrearRutaOpen([])} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-[0.97] transition-all shadow-sm"><Truck size={10} />Crear Ruta</button>}
                                             {(() => {
                                                 const hasElecFaltantes = (row.electrolit_faltantes ?? 0) > 0 && row.electrolit_ok !== true;
                                                 const hasEspFaltantes  = Object.values(row.cajas_especiales_llegadas ?? {}).some(v => v === 'faltante');
@@ -3529,7 +3529,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 );
                                                 const espFaltList = Object.entries(row.cajas_especiales_llegadas ?? {}).filter(([, v]) => v === 'faltante').map(([k]) => k);
                                                 return (
-                                                    <button onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm">
+                                                    <button onClick={() => setReenviarConfirmModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, numero: row.numero, cajas: row.falta_cajas ?? [], electrolits: hasElecFaltantes ? (row.electrolit_faltantes ?? 0) : 0, especiales: espFaltList })} disabled={busyAction === 'reenvio'} className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm">
                                                         {busyAction === 'reenvio' ? <Loader2 size={10} className="animate-spin" /> : <><Truck size={10} />Reenviar caja</>}
                                                     </button>
                                                 );
@@ -3669,7 +3669,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                             loadActiveRutas();
                                                         } catch (e) { useToastStore.getState().showToast('Error', 'No se pudo iniciar la ruta. Intenta de nuevo.', 'error'); }
                                                     }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 transition-all shadow-sm"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.97] transition-all shadow-sm"
                                                 >
                                                     <Play size={9} fill="currentColor" />Iniciar
                                                 </button>
@@ -3684,7 +3684,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                             loadActiveRutas(); loadActive();
                                                         } catch (e) { useToastStore.getState().showToast('Error', 'No se pudo completar la ruta. Intenta de nuevo.', 'error'); }
                                                     }}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-700 text-white hover:bg-slate-800 active:scale-95 transition-all shadow-sm"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-700 text-white hover:bg-slate-800 active:scale-[0.97] transition-all shadow-sm"
                                                 >
                                                     <Home size={9} />Base
                                                 </button>
@@ -3692,7 +3692,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {!isCompletada && (
                                                 <button
                                                     onClick={() => setRutaMapOpen(ruta)}
-                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200 active:scale-95 transition-all"
+                                                    className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200 active:scale-[0.97] transition-all"
                                                 >
                                                     <MapIcon size={9} />Mapa
                                                 </button>
@@ -3902,7 +3902,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 setReenviarConfirmModal(null);
                                 handleReenviarCaja(pedidoId, sucId, numero, cajas, electrolits, especiales);
                             }}
-                            className="flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm"
+                            className="flex items-center gap-1.5 text-[12px] font-bold px-4 py-2 rounded-xl bg-rose-500 text-white hover:bg-rose-600 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                         >
                             {busyAction === 'reenvio' ? <Loader2 size={12} className="animate-spin" /> : <><Truck size={12} />Confirmar reenvío</>}
                         </button>

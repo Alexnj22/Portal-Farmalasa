@@ -4,6 +4,7 @@ import {
     Save, Package, ListFilter, AlertTriangle, Eye, EyeOff, Loader2
 } from 'lucide-react';
 import TimePicker12 from '../common/TimePicker12';
+import LiquidSelect from '../common/LiquidSelect';
 import { formatTime12h } from '../../utils/helpers';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
@@ -263,15 +264,15 @@ const FormTurnos = ({ branches }) => {
                 <div className="flex-1 space-y-6">
                     <div>
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sucursal Asignada</label>
-                        <select 
-                            required 
-                            className="mt-2 w-full p-3.5 rounded-2xl border border-slate-200 outline-none focus:border-[#0052CC] bg-white shadow-sm text-[12px] md:text-[13px] font-bold text-slate-700 hover:bg-slate-50 transition-colors" 
-                            value={currentForm.branchId} 
-                            onChange={e => setCurrentForm({ ...currentForm, branchId: e.target.value })}
-                        >
-                            <option value="" disabled>Seleccionar Sucursal</option>
-                            {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                        </select>
+                        <div className="mt-2">
+                            <LiquidSelect
+                                value={currentForm.branchId}
+                                onChange={val => setCurrentForm({ ...currentForm, branchId: val })}
+                                options={branches.map(b => ({ value: b.id, label: b.name }))}
+                                placeholder="Seleccionar Sucursal"
+                                clearable={false}
+                            />
+                        </div>
                     </div>
                     
                     <div>
@@ -280,7 +281,7 @@ const FormTurnos = ({ branches }) => {
                             required 
                             type="text"
                             placeholder="Ej: Mañana 8am-4pm" 
-                            className="mt-2 w-full p-3.5 rounded-2xl border border-slate-200 outline-none focus:border-[#0052CC] shadow-sm text-[12px] md:text-[13px] font-bold text-slate-700 placeholder:text-slate-300" 
+                            className="mt-2 w-full p-3.5 rounded-2xl border border-slate-200 outline-none focus:border-[#0052CC] shadow-sm text-[16px] md:text-[16px] font-bold text-slate-700 placeholder:text-slate-300" 
                             value={currentForm.name} 
                             onChange={e => setCurrentForm({ ...currentForm, name: e.target.value })} 
                         />
@@ -328,24 +329,25 @@ const FormTurnos = ({ branches }) => {
                     
                     {/* FILTROS DE SUCURSAL Y ESTADO (Minificados) */}
                     <div className="flex items-center gap-2">
-                        <select 
-                            className="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 outline-none shadow-sm hover:border-[#0052CC]/20 transition-colors"
+                        <LiquidSelect
                             value={listBranchFilter}
-                            onChange={(e) => setListBranchFilter(e.target.value)}
-                        >
-                            <option value="ALL">Todas</option>
-                            {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                        </select>
-                        
-                        <select 
-                            className="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 outline-none shadow-sm hover:border-[#0052CC]/20 transition-colors"
+                            onChange={setListBranchFilter}
+                            options={[{ value: 'ALL', label: 'Todas' }, ...branches.map(b => ({ value: b.id, label: b.name }))]}
+                            clearable={false}
+                            compact
+                        />
+
+                        <LiquidSelect
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                        >
-                            <option value="ACTIVE">Activos</option>
-                            <option value="ARCHIVED">Histórico</option>
-                            <option value="ALL">Ver Todos</option>
-                        </select>
+                            onChange={setStatusFilter}
+                            options={[
+                                { value: 'ACTIVE', label: 'Activos' },
+                                { value: 'ARCHIVED', label: 'Histórico' },
+                                { value: 'ALL', label: 'Ver Todos' },
+                            ]}
+                            clearable={false}
+                            compact
+                        />
                     </div>
                 </div>
 

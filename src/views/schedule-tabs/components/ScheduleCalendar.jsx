@@ -852,7 +852,7 @@ const ScheduleCalendar = memo(({
                                                         value={coverageSearchTerm}
                                                         onChange={e => setCoverageSearchTerm(e.target.value)}
                                                         placeholder="Buscar empleado de otra sucursal..."
-                                                        className="flex-1 bg-transparent text-[12px] text-slate-700 outline-none placeholder:text-slate-400"
+                                                        className="flex-1 bg-transparent text-[16px] text-slate-700 outline-none placeholder:text-slate-400"
                                                     />
                                                 </div>
                                                 <button onClick={() => { setShowCoverageSearch(false); setCoverageSearchTerm(''); }}

@@ -337,7 +337,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                 value={form.notas}
                                 onChange={(e) => set('notas', e.target.value)}
                                 placeholder="Contexto adicional..."
-                                className={`w-full h-20 resize-none bg-white rounded-[1rem] border border-slate-200/80 shadow-sm px-4 py-2.5 text-[13px] font-bold text-slate-700 outline-none ${inputHoverClass}`}
+                                className={`w-full h-20 resize-none bg-white rounded-[1rem] border border-slate-200/80 shadow-sm px-4 py-2.5 text-[16px] font-bold text-slate-700 outline-none ${inputHoverClass}`}
                             />
                         </div>
                     </div>

@@ -369,14 +369,14 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
               <LiquidSelect value={newType} onChange={setNewType} options={availablePunchTypes} placeholder="Tipo" compact clearable={false} />
               <input
                 type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
-                className="bg-white border border-black/[0.09] rounded-2xl px-3 py-2 text-[13px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC]/40 transition-all"
+                className="bg-white border border-black/[0.09] rounded-2xl px-3 py-2 text-[16px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC]/40 transition-all"
               />
             </div>
             <textarea
               value={reason} onChange={e => setReason(e.target.value)}
               placeholder="Razón de la corrección (opcional)"
               rows={2}
-              className="w-full bg-white border border-black/[0.09] rounded-2xl px-3.5 py-2.5 text-[12px] font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC]/40 transition-all resize-none"
+              className="w-full bg-white border border-black/[0.09] rounded-2xl px-3.5 py-2.5 text-[16px] font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC]/40 transition-all resize-none"
             />
             <div className="flex items-center justify-between gap-2">
               <p className="text-[10px] font-bold text-slate-400">

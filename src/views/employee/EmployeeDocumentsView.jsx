@@ -248,7 +248,7 @@ const EmployeeDocumentsView = () => {
                     ref={(input) => { searchInputRef.current = input; if (input && searchOpen) setTimeout(() => input.focus(), 100); }}
                     type="text"
                     placeholder="Buscar documento..."
-                    className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[200px] sm:w-[350px] md:w-[500px] placeholder:text-slate-400 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[200px] sm:w-[350px] md:w-[500px] placeholder:text-slate-400 focus:ring-0"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                 />

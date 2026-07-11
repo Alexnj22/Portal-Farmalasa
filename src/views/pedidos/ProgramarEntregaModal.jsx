@@ -59,7 +59,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                         type="datetime-local"
                         value={value}
                         onChange={e => setValue(e.target.value)}
-                        className="w-full text-[13px] text-slate-700 bg-white/70 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-300"
+                        className="w-full text-[16px] text-slate-700 bg-white/70 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-300"
                     />
                 </div>
 
@@ -93,13 +93,13 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
 
             <LiquidModal.Footer>
                 <div className="flex gap-2">
-                    <button onClick={onClose} className="flex-1 text-[12px] font-semibold px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95 transition-all">
+                    <button onClick={onClose} className="flex-1 text-[12px] font-semibold px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-[0.97] transition-all">
                         Cancelar
                     </button>
                     <button
                         onClick={() => value && onConfirm(new Date(value).toISOString())}
                         disabled={!value || saving}
-                        className="flex-1 flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 shadow-sm"
+                        className="flex-1 flex items-center justify-center gap-1.5 text-[12px] font-bold px-4 py-2.5 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 active:scale-[0.97] transition-all disabled:opacity-50 shadow-sm"
                     >
                         <Check size={13} />
                         {saving ? 'Guardando…' : isEditing ? 'Actualizar' : 'Confirmar'}

@@ -445,7 +445,7 @@ const RolesView = ({ openModal }) => {
                         ref={searchInputRef}
                         type="text"
                         placeholder="Buscar cargo..."
-                        className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[200px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0"
+                        className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[200px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -606,7 +606,7 @@ const RolesView = ({ openModal }) => {
                                             <input
                                                 type="text"
                                                 placeholder="Ej: Gerente General..."
-                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-[1.25rem] text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400"
+                                                className="w-full pl-14 pr-4 py-3 h-[44px] bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-[1.25rem] text-[16px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400"
                                                 value={newRole}
                                                 onChange={(e) => { setNewRole(e.target.value); if (error) setError(''); }}
                                             />
@@ -642,7 +642,7 @@ const RolesView = ({ openModal }) => {
                                                     type="number"
                                                     min="1"
                                                     max="99"
-                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-[1.25rem] text-[13px] outline-none font-bold text-[#0052CC] transition-all duration-300 relative z-0"
+                                                    className="w-full pl-10 pr-4 py-3 h-[44px] bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-[1.25rem] text-[16px] outline-none font-bold text-[#0052CC] transition-all duration-300 relative z-0"
                                                     value={maxLimit}
                                                     onChange={(e) => setMaxLimit(e.target.value)}
                                                 />

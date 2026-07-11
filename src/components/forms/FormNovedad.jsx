@@ -229,7 +229,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
         { value: 'Abandono', label: 'Abandono de Trabajo' }
     ];
 
-    const inputClasses = "w-full bg-white/50 border border-white/80 rounded-[1rem] h-[40px] px-4 text-[13px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50 placeholder:text-slate-400";
+    const inputClasses = "w-full bg-white/50 border border-white/80 rounded-[1rem] h-[40px] px-4 text-[16px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50 placeholder:text-slate-400";
     const labelClasses = "text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block";
 
     return (
@@ -469,7 +469,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                                 : '';
                                             setFormData(prev => ({ ...prev, disabilityDays: days, endDate: end || null }));
                                         }}
-                                        className="w-full bg-white/60 border border-white/80 rounded-[1rem] h-[40px] px-4 pr-12 text-[13px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
+                                        className="w-full bg-white/60 border border-white/80 rounded-[1rem] h-[40px] px-4 pr-12 text-[16px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
                                         placeholder="Ej: 3"
                                     />
                                     <span className="absolute right-4 text-slate-400 text-[11px] font-black uppercase tracking-widest">días</span>
@@ -673,7 +673,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <label className={labelClasses}>Observaciones o Justificación</label>
                         <div className="relative">
                             <FileText className="absolute left-3 top-3 text-slate-400" size={14} strokeWidth={2.5}/>
-                            <textarea rows="3" className="w-full bg-white/50 border border-white/80 rounded-[1.25rem] p-3 pl-9 text-[13px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50 placeholder:text-slate-400 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
+                            <textarea rows="3" className="w-full bg-white/50 border border-white/80 rounded-[1.25rem] p-3 pl-9 text-[16px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50 placeholder:text-slate-400 resize-none hide-scrollbar" placeholder={isDisability ? "Diagnóstico o detalles breves..." : isTermination ? "Notas de entrega de activos o pendientes..." : "Detalle los motivos de esta acción..."} value={formData?.note || ''} onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))} />
                         </div>
                     </div>
 

@@ -31,6 +31,6 @@ export const CatalogOtherInput = ({ value, onChange, inputHoverClass, hasError, 
         value={value === OTRA_ESPECIALIDAD ? '' : (value || '')}
         onChange={(e) => onChange(e.target.value.toUpperCase())}
         placeholder={placeholder}
-        className={`w-full h-[40px] px-4 bg-white border rounded-[1rem] text-[13px] font-bold text-slate-700 outline-none shadow-sm ${inputHoverClass} ${hasError ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}
+        className={`w-full h-[40px] px-4 bg-white border rounded-[1rem] text-[16px] font-bold text-slate-700 outline-none shadow-sm ${inputHoverClass} ${hasError ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}
     />
 );

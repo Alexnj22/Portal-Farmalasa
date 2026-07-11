@@ -77,7 +77,7 @@ function PayModal({ bonif, onClose, onPaid }) {
                         <label className="text-[10px] font-medium text-slate-500 mb-0.5 block">Monto ($)</label>
                         <input
                             type="number" step="0.01" min="0.01" max={pending}
-                            className="w-full text-[12px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400"
+                            className="w-full text-[16px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400"
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
                         />
@@ -85,7 +85,7 @@ function PayModal({ bonif, onClose, onPaid }) {
                     <div>
                         <label className="text-[10px] font-medium text-slate-500 mb-0.5 block">Notas (opcional)</label>
                         <textarea
-                            className="w-full text-[11px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 h-16 resize-none"
+                            className="w-full text-[16px] bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400 h-16 resize-none"
                             value={notes}
                             onChange={e => setNotes(e.target.value)}
                             placeholder="Ej: Pago quincenal, efectivo..."

@@ -10,6 +10,7 @@ import { tokenMatch, smartFilter } from '../utils/searchUtils';
 import AlertModal from '../components/common/AlertModal';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
+import LiquidSelect from '../components/common/LiquidSelect';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
 
@@ -550,7 +551,7 @@ const AnnouncementsView = ({ openModal }) => {
     <div className={`flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu overflow-hidden animate-in fade-in slide-in-from-right-8 w-max max-w-full`}>
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
         <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
-        <input ref={searchInputRef} type="text" placeholder="Buscar en avisos, sucursales o roles..." className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0" value={announcementSearch} onChange={(e) => setAnnouncementSearch(e.target.value)} />
+        <input ref={searchInputRef} type="text" placeholder="Buscar en avisos, sucursales o roles..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0" value={announcementSearch} onChange={(e) => setAnnouncementSearch(e.target.value)} />
         {announcementSearch && <button onClick={() => setAnnouncementSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:scale-110 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
         <button onClick={() => setIsSearchMode(false)} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
@@ -622,12 +623,12 @@ const AnnouncementsView = ({ openModal }) => {
 
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">Título del Mensaje</label>
-                  <input type="text" placeholder="Ej: Mantenimiento de servidores..." className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[13px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal ${error && !title.trim() ? 'border-amber-300 focus:ring-amber-500/20' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isSubmitting} />
+                  <input type="text" placeholder="Ej: Mantenimiento de servidores..." className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal ${error && !title.trim() ? 'border-amber-300 focus:ring-amber-500/20' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isSubmitting} />
                 </div>
 
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">Contenido</label>
-                  <textarea placeholder="Escribe los detalles de tu anuncio aquí..." className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[13px] outline-none font-medium text-slate-700 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed custom-scrollbar ${error && !message.trim() ? 'border-amber-300 focus:ring-amber-500/20' : ''}`} value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting} />
+                  <textarea placeholder="Escribe los detalles de tu anuncio aquí..." className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-slate-700 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed custom-scrollbar ${error && !message.trim() ? 'border-amber-300 focus:ring-amber-500/20' : ''}`} value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting} />
                 </div>
 
                 <div className="pt-3 border-t border-white/50">
@@ -647,8 +648,26 @@ const AnnouncementsView = ({ openModal }) => {
                           );
                         })}
                       </div>
-                      {targetType === 'BRANCH' && ( <select className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 rounded-2xl text-[13px] outline-none font-bold text-slate-700 appearance-none cursor-pointer" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} disabled={isSubmitting}><option value="" disabled>-- Seleccionar Sucursal --</option>{(branches || []).map((b) => (<option key={b.id} value={b.id}>{b.name}</option>))}</select>)}
-                      {targetType === 'ROLE' && ( <select className="w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 rounded-2xl text-[13px] outline-none font-bold text-slate-700 appearance-none cursor-pointer" value={targetValue} onChange={(e) => setTargetValue(e.target.value)} disabled={isSubmitting}><option value="" disabled>-- Seleccionar Cargo --</option>{uniqueRoles.map((r) => (<option key={r} value={r}>{r}</option>))}</select>)}
+                      {targetType === 'BRANCH' && (
+                        <LiquidSelect
+                          value={targetValue}
+                          onChange={setTargetValue}
+                          options={(branches || []).map((b) => ({ value: b.id, label: b.name }))}
+                          placeholder="-- Seleccionar Sucursal --"
+                          disabled={isSubmitting}
+                          clearable={false}
+                        />
+                      )}
+                      {targetType === 'ROLE' && (
+                        <LiquidSelect
+                          value={targetValue}
+                          onChange={setTargetValue}
+                          options={uniqueRoles.map((r) => ({ value: r, label: r }))}
+                          placeholder="-- Seleccionar Cargo --"
+                          disabled={isSubmitting}
+                          clearable={false}
+                        />
+                      )}
                   {targetType === 'EMPLOYEE' && (
                     <div className="space-y-3">
                       {selectedEmployees.length > 0 && (
@@ -663,7 +682,7 @@ const AnnouncementsView = ({ openModal }) => {
                       )}
                       <div className="relative">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                        <input type="text" placeholder="Buscar persona por nombre..." className="w-full pl-11 pr-4 py-3.5 bg-white/50 border border-white/60 focus:bg-white rounded-2xl text-[13px] outline-none font-bold text-slate-700" value={empSearch} onChange={(e) => setEmpSearch(e.target.value)} disabled={isSubmitting} />
+                        <input type="text" placeholder="Buscar persona por nombre..." className="w-full pl-11 pr-4 py-3.5 bg-white/50 border border-white/60 focus:bg-white rounded-2xl text-[16px] outline-none font-bold text-slate-700" value={empSearch} onChange={(e) => setEmpSearch(e.target.value)} disabled={isSubmitting} />
                         {empSearch.trim() && (
                           <div className="absolute z-20 w-full mt-2 bg-white/90 backdrop-blur-xl border border-white/90 rounded-[1.25rem] shadow-[0_12px_40px_rgba(0,0,0,0.12)] max-h-60 overflow-y-auto p-1">
                             {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<button type="button" key={emp.id} onClick={() => addEmployee(emp.id)} className="w-full p-3 hover:bg-[#0052CC]/10 text-left flex items-center justify-between rounded-xl mx-0.5"><p className="text-[13px] font-bold text-slate-700">{emp.name}</p><Plus size={14} className="text-[#0052CC]" /></button>)) : <div className="p-3 text-[12px] text-slate-400 font-bold text-center">Sin resultados.</div>}

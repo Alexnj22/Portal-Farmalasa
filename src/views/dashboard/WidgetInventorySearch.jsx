@@ -231,7 +231,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
               type="number" min="1"
               value={qty}
               onChange={e => setQty(e.target.value)}
-              className="w-10 px-1.5 py-0.5 rounded-lg border border-slate-200 text-[10px] font-black text-slate-700 text-center outline-none focus:border-rose-400"
+              className="w-10 px-1.5 py-0.5 rounded-lg border border-slate-200 text-[16px] font-black text-slate-700 text-center outline-none focus:border-rose-400"
             />
             <button
               onClick={submit}
@@ -649,7 +649,7 @@ export default function WidgetInventorySearch() {
           value={query}
           onChange={e => handleInput(e.target.value)}
           placeholder="Buscar por nombre o principio activo..."
-          className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200/80 bg-white/80 backdrop-blur-sm text-[12px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
+          className="w-full pl-8 pr-7 py-2 rounded-2xl border border-slate-200/80 bg-white/80 backdrop-blur-sm text-[16px] font-medium text-slate-700 placeholder-slate-400 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all"
           spellCheck={false}
           autoComplete="off"
         />

@@ -113,7 +113,7 @@ export default function ReenvioLlegadaModal({
                                             const { Icon, label, active, idle } = TOGGLE_CFG[e];
                                             return (
                                                 <button key={e} onClick={() => setEst(num, e)}
-                                                    className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl border transition-all active:scale-95 ${est === e ? active : idle}`}>
+                                                    className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${est === e ? active : idle}`}>
                                                     <Icon size={14} />
                                                     <span className="text-[9px] font-bold leading-none">{label}</span>
                                                 </button>
@@ -145,14 +145,14 @@ export default function ReenvioLlegadaModal({
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setElectrolitOk(true)}
-                                className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95 ${electrolitOk === true
+                                className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === true
                                     ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
                                     : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
                                 ✓ Sí llegaron
                             </button>
                             <button
                                 onClick={() => setElectrolitOk(false)}
-                                className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95 ${electrolitOk === false
+                                className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitOk === false
                                     ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
                                     : 'bg-white text-slate-500 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
                                 ✗ Aún faltan
@@ -179,11 +179,11 @@ export default function ReenvioLlegadaModal({
                                         <span className={`text-[11px] font-black w-7 shrink-0 ${est === 'ok' ? 'text-emerald-600' : 'text-rose-600'}`}>{label}</span>
                                         <div className="flex items-center gap-1 ml-auto shrink-0">
                                             <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'ok' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-95 ${est === 'ok' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-400 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-400 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
                                                 ✓ OK
                                             </button>
                                             <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'faltante' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-95 ${est === 'faltante' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-400 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-400 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
                                                 ✗ Falta
                                             </button>
                                         </div>
@@ -200,7 +200,7 @@ export default function ReenvioLlegadaModal({
                         <textarea
                             value={nota} onChange={e => setNota(e.target.value)} rows={2}
                             placeholder="Ej. caja dañada en el fondo, caja 4 nunca llegó…"
-                            className="mt-1 w-full text-[11px] rounded-xl border border-slate-200 px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                            className="mt-1 w-full text-[16px] rounded-xl border border-slate-200 px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
                         />
                     </div>
                 )}
@@ -238,7 +238,7 @@ export default function ReenvioLlegadaModal({
                         Cancelar
                     </button>
                     <button onClick={handleConfirm} disabled={submitting || !hasContent || electrolitPending}
-                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 active:scale-95 transition-all flex items-center gap-1.5">
+                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
                         {submitting && <Loader2 size={11} className="animate-spin" />}
                         {electrolitPending ? 'Respondé el Electrolit primero' : 'Confirmar reenvío'}
                     </button>

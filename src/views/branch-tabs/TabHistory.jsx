@@ -290,7 +290,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                     {isSearchOpen ? (
                         <div className={`flex items-center w-full h-full px-4 md:px-5 gap-3 animate-in fade-in slide-in-from-right-4 duration-500`}>
                             <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
-                            <input autoFocus type="text" placeholder="Buscar en historial..." className="flex-1 bg-transparent border-none outline-none text-[13px] md:text-[15px] font-bold text-slate-700 min-w-[200px] xl:w-[600px] placeholder:text-slate-400 focus:ring-0" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                            <input autoFocus type="text" placeholder="Buscar en historial..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 min-w-[200px] xl:w-[600px] placeholder:text-slate-400 focus:ring-0" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                             {searchQuery && (<button onClick={() => setSearchQuery("")} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>)}
                             <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2">
                                 <ChevronRight size={18} strokeWidth={2.5} />

@@ -1,5 +1,6 @@
 import React from 'react';
 import { FileText, XCircle, CheckCircle2 } from 'lucide-react';
+import LiquidSelect from '../common/LiquidSelect';
 
 const EARLY_EXIT_OPTIONS = [
   'Permiso Médico / Consulta',
@@ -67,23 +68,15 @@ function EarlyExitForm({
   <label className="text-white/50 text-[8px] sm:text-[9px] font-semibold uppercase tracking-widest ml-2">
     Motivo autorizado
   </label>
-  <select
-    className="w-full bg-black/30 backdrop-blur-xl border border-white/10 text-white rounded-2xl p-3 sm:p-3.5 outline-none focus:bg-black/40 focus:border-orange-500/50 transition-all font-medium text-sm sm:text-base appearance-none shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)] cursor-pointer"
+  <LiquidSelect
     value={exitReason}
-    onChange={(e) => onChangeReason?.(e.target.value)}
-    required
+    onChange={val => onChangeReason?.(val)}
+    options={EARLY_EXIT_OPTIONS.map(option => ({ value: option, label: option }))}
+    placeholder="Seleccione un motivo..."
     disabled={isProcessing}
-    style={{ colorScheme: 'dark' }}
-  >
-    <option value="" disabled className="bg-slate-900 text-slate-400">
-      Seleccione un motivo...
-    </option>
-    {EARLY_EXIT_OPTIONS.map((option) => (
-      <option key={option} value={option} className="bg-slate-900 text-white">
-        {option}
-      </option>
-    ))}
-  </select>
+    theme="dark"
+    clearable={false}
+  />
 
   {/* 🚨 NUEVO: Feedback visual preventivo */}
   {exitReason === 'Omisión de Almuerzo' && (

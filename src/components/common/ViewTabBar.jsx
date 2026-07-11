@@ -62,7 +62,7 @@ export default function ViewTabBar({
           type="text"
           placeholder={placeholder}
           className={`flex-1 bg-transparent border-none outline-none focus:ring-0
-            text-[13px] md:text-[15px] font-bold
+            text-[16px] font-bold
             w-[180px] sm:w-[280px] md:w-[380px] ${inputCls}`}
           value={searchValue}
           onChange={e => onSearchChange?.(e.target.value)}
@@ -74,7 +74,7 @@ export default function ViewTabBar({
           </button>
         )}
         <button onClick={closeSearch}
-          className={`w-10 h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center
+          className={`w-11 h-11 rounded-full flex items-center justify-center
             shrink-0 transition-all hover:shadow-md hover:-translate-y-0.5 ml-2 ${closeBtnCls}`}>
           <ChevronRight size={18} strokeWidth={2.5} />
         </button>
@@ -93,7 +93,7 @@ export default function ViewTabBar({
           return (
             <button key={tab.key}
               onClick={() => { onTabChange?.(tab.key); setIsSearchMode(false); }}
-              className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black
+              className={`px-3 md:px-4 h-11 min-w-[44px] justify-center rounded-full text-[9px] md:text-[10px] font-black
                 uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap
                 border shrink-0 flex items-center gap-1.5
                 ${isActive ? activeTabCls : inactiveTabCls}`}>
@@ -107,7 +107,7 @@ export default function ViewTabBar({
 
         {showSearch && (
           <button onClick={openSearch}
-            className="w-10 h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center shrink-0
+            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0
               transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative
               bg-[#0052CC] text-white shadow-[0_3px_8px_rgba(0,82,204,0.4)] hover:bg-[#003D99]">
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />

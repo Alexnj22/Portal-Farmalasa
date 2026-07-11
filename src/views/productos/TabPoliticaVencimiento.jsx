@@ -524,7 +524,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                         placeholder="0"
                         disabled={!draft.devolutivo}
                         title="Meses antes de vencer por política de devolución"
-                        className={`w-12 text-[12px] font-semibold px-1.5 py-1.5 rounded-lg border bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 text-slate-700 text-center ${
+                        className={`w-12 text-[16px] font-semibold px-1.5 py-1.5 rounded-lg border bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 text-slate-700 text-center ${
                             draft.devolutivo && draft.meses_devolucion === '' ? 'border-red-300 focus:border-red-300' : 'border-slate-200 focus:border-teal-300'
                         }`}
                     />
@@ -547,7 +547,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     value={draft.notas}
                     onChange={e => setF('notas', e.target.value)}
                     placeholder="Notas (opcional)"
-                    className="flex-1 min-w-[110px] text-[11px] px-2 py-1.5 rounded-lg border border-slate-200 bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-slate-600 placeholder-slate-300"
+                    className="flex-1 min-w-[110px] text-[16px] px-2 py-1.5 rounded-lg border border-slate-200 bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-slate-600 placeholder-slate-300"
                 />
 
                 <div className="w-4 h-4 flex items-center justify-center shrink-0">
@@ -573,7 +573,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     value={draft.nombre === OTRO_PROVEEDOR ? '' : draft.nombre}
                     onChange={e => setF('nombre', e.target.value)}
                     placeholder="Nombre del proveedor/droguería"
-                    className="w-full mt-1.5 text-[12px] font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-slate-700 placeholder-slate-300"
+                    className="w-full mt-1.5 text-[16px] font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 focus:border-teal-300 text-slate-700 placeholder-slate-300"
                 />
             )}
             {draft.devolutivo && draft.meses_devolucion === '' && (

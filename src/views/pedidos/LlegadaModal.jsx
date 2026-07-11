@@ -190,7 +190,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                         const { Icon, label, active, idle } = TOGGLE_CFG[e];
                                         return (
                                             <button key={e} onClick={() => setEst(c.num, e)}
-                                                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl border transition-all active:scale-95 ${est === e ? active : idle}`}>
+                                                className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${est === e ? active : idle}`}>
                                                 <Icon size={14} />
                                                 <span className="text-[9px] font-bold leading-none">{label}</span>
                                             </button>
@@ -208,7 +208,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         <textarea
                             value={nota} onChange={e => setNota(e.target.value)} rows={2}
                             placeholder="Ej. caja 3 aplastada, caja 4 nunca fue cargada…"
-                            className="mt-1 w-full text-[11px] rounded-xl border border-slate-200 px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            className="mt-1 w-full text-[16px] rounded-xl border border-slate-200 px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
                         />
                     </div>
                 )}
@@ -228,7 +228,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setElectrolitFaltantes(0)}
-                                className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95 ${electrolitFaltantes === 0
+                                className={`flex-1 text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-[0.97] ${electrolitFaltantes === 0
                                     ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
                                     : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
                                 ✓ Todas llegaron
@@ -237,7 +237,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                 <button
                                     onClick={() => setElectrolitFaltantes(f => Math.max(0, (f ?? 0) - 1))}
                                     disabled={(electrolitFaltantes ?? 0) <= 0}
-                                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 font-black text-[14px] flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all disabled:opacity-30">
+                                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 font-black text-[14px] flex items-center justify-center hover:bg-slate-50 active:scale-[0.97] transition-all disabled:opacity-30">
                                     −
                                 </button>
                                 <span className={`w-8 text-center text-[15px] font-black tabular-nums ${
@@ -249,7 +249,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                 <button
                                     onClick={() => setElectrolitFaltantes(f => Math.min(cajasElectrolit, (f ?? 0) + 1))}
                                     disabled={(electrolitFaltantes ?? 0) >= cajasElectrolit}
-                                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 font-black text-[14px] flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all disabled:opacity-30">
+                                    className="w-7 h-7 rounded-lg bg-white border border-slate-200 text-slate-600 font-black text-[14px] flex items-center justify-center hover:bg-slate-50 active:scale-[0.97] transition-all disabled:opacity-30">
                                     +
                                 </button>
                             </div>
@@ -281,11 +281,11 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                         <span className="flex-1 text-[10px] text-slate-600 leading-tight">{e.product_name}</span>
                                         <div className="flex items-center gap-1 shrink-0">
                                             <button onClick={() => setEspEstados(p => ({ ...p, [e.label]: 'ok' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-95 ${est === 'ok' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-400 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-400 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
                                                 ✓ OK
                                             </button>
                                             <button onClick={() => setEspEstados(p => ({ ...p, [e.label]: 'faltante' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-95 ${est === 'faltante' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-400 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-400 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
                                                 ✗ Falta
                                             </button>
                                         </div>
@@ -306,10 +306,10 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         <span className="text-[11px] text-slate-600 flex-1">¿Llegaron cajas de más (no esperadas)?</span>
                         <div className="flex items-center gap-1.5 shrink-0">
                             <button onClick={() => setCajasExtra(n => Math.max(0, n - 1))} disabled={cajasExtra === 0}
-                                className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-95 transition-all disabled:opacity-30">−</button>
+                                className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-[0.97] transition-all disabled:opacity-30">−</button>
                             <span className={`w-6 text-center text-[13px] font-black tabular-nums ${cajasExtra > 0 ? 'text-amber-600' : 'text-slate-300'}`}>{cajasExtra}</span>
                             <button onClick={() => setCajasExtra(n => n + 1)}
-                                className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-95 transition-all">+</button>
+                                className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-[0.97] transition-all">+</button>
                         </div>
                     </div>
                     {cajasExtra > 0 && (
@@ -346,7 +346,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                                     value={d.cajaNum ?? ''}
                                                     onChange={e => { setExtraField(i, 'cajaNum', e.target.value); setExtraError(null); }}
                                                     placeholder="# de caja"
-                                                    className={`w-32 text-[10px] rounded-lg border px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-300 bg-white ${extraError && !d.cajaNum?.trim() ? 'border-red-400' : 'border-slate-200'}`}
+                                                    className={`w-32 text-[16px] rounded-lg border px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-amber-300 bg-white ${extraError && !d.cajaNum?.trim() ? 'border-red-400' : 'border-slate-200'}`}
                                                 />
                                             </div>
                                         )}
@@ -398,7 +398,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         Cancelar
                     </button>
                     <button onClick={handleConfirm} disabled={submitting}
-                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-40 active:scale-95 transition-all flex items-center gap-1.5">
+                        className="text-[11px] font-bold px-5 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-40 active:scale-[0.97] transition-all flex items-center gap-1.5">
                         {submitting && <Loader2 size={11} className="animate-spin" />}
                         {Object.keys(estados).length === 0 && cajas.length > 0
                             ? '✓ Todas llegaron OK'

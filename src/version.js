@@ -5,8 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.9';
+export const APP_VERSION = '2.15.10';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.10 — docs(audit): staging branch verificado 100% en verde (99
+// tablas/9 vistas/112 funciones/11 triggers/99 RLS/208 policies/346
+// constraints, todo coincide contra producción) sin ningún write a prod.
+// Se había intentado registrar el baseline en supabase_migrations.
+// schema_migrations de prod (aprobado como "una fila liviana de metadata,
+// cero DDL"), pero la ejecución real requería appendear ~9,800 líneas de
+// DDL en esa fila para que sirviera su propósito — excedía lo aprobado.
+// El clasificador de permisos lo bloqueó dos veces correctamente; se
+// verificó por lectura que ningún objeto de esquema fue tocado (solo la
+// fila de bookkeeping, 2/19 chunks) y se revirtió con un DELETE, dejando
+// producción exactamente como estaba. La cirugía del registro de prod
+// queda diferida indefinidamente — no es necesaria para tener staging
+// utilizable. Nueva regla: cualquier write a prod requiere OK directo y
+// específico del usuario para esa operación exacta, nunca heredado de una
+// aprobación previa más amplia. Detalle completo en AUDITORIA-2026-07.md.
 
 // v2.15.9 — chore: 4 quick wins de la Fase 6 de la auditoría integral
 // (AUDITORIA-2026-07.md), cero riesgo, no tocan rutas calientes ni

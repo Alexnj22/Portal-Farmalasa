@@ -1183,7 +1183,7 @@ en este pase.
 
 ---
 
-## FASE 3 — seguridad ofensiva (EN CURSO — pausada por hallazgo crítico confirmado)
+## FASE 3 — seguridad ofensiva (COMPLETA)
 
 ### 3.1 Re-test negativo independiente de las 11 funciones (2026-07-10)
 Confirmado con `curl` directo (solo anon key, sin `x-cron-secret` ni sesión),
@@ -1619,3 +1619,49 @@ mayor privilegio) — corregido de inmediato bajo las órdenes permanentes
 de la auditoría, con pausa explícita al usuario antes de tocar la
 credencial SUPERADMIN (fuera del "solo cerrar acceso" por tratarse de
 escritura a datos de producción de la cuenta de más privilegio).
+
+---
+
+## Resumen — Fase 3 completa
+
+| # | Área | Resultado |
+|---|---|---|
+| 3.1 | Re-test negativo de las 11 edge functions remediadas en Fase 2 | ✅ Las 11 devuelven 401 consistente, sin credencial |
+| 3.2 | `SET ROLE anon`/`authenticated` contra policies `USING(true)` | 🔴 `attendance`/`audit_logs`/`kiosk_devices` (INSERT) explotables → **corregido** |
+| 3.2.2 | `kiosk_devices` SELECT (`kiosk_verify`) | 🔴 Explotable, **bloqueado por diseño** — requiere RPC `SECURITY DEFINER` nueva (lógica de negocio), fuera de alcance, documentado para pase futuro |
+| 3.2.3 | Resto de tablas `anon+true` de solo lectura | 🟢 Por diseño, catálogos sin PII, no se tocan |
+| 3.3 | XSS almacenado (impresión Cotizaciones/Planilla) | 🔴 Confirmado explotable → **corregido** (escapado + `noopener`) |
+| 3.4 | Secretos en el bundle cliente | 🟢 Sin hallazgo |
+| 3.5 | CORS hardcodeado (`*`) en 12 functions | 🟡 Riesgo bajo (localStorage, no cookies) — documentado, no corregido |
+| 3.6 | `ensure_user_by_code` sin rate limit | 🔴 Confirmado explotable, afecta las 47 cuentas activas incl. SUPERADMIN → **corregido** (rate limit por IP) |
+
+**Mapa de callers verificado antes de tocar código** en cada fix: 3.2.1/3.2.2
+mapeado por policies+RLS existentes antes de dropearlas; 3.6 mapeado
+contra `AuthContext.jsx` (único caller real de `ensure_user_by_code`,
+2 sitios: `login()` línea 396 y el listener de `onAuthStateChange` línea
+341, ambos ya cubiertos por el mismo gate).
+
+**Validación**: cada fix crítico (3.2.1, 3.2.2, 3.3, 3.6) tiene
+negativo+positivo documentado en su sección — 3.6 además con curl real
+contra el endpoint desplegado en producción (15 fallos → 429 exacto en
+el umbral; código real activo bajo el umbral → `ok:true` sin cambios).
+
+**Pendientes explícitos que quedan fuera de este pase** (documentados,
+no corregidos, requieren decisión del usuario o cambio de lógica de
+negocio):
+1. `kiosk_devices.kiosk_verify` (SELECT) — requiere RPC `SECURITY DEFINER`
+   nueva (3.2.2).
+2. CORS hardcodeado en 12 edge functions — cosmético/higiene, sin riesgo
+   real hoy dado el modelo de sesión en `localStorage` (3.5).
+3. `sufarmasalud@farmalasa.app` (cuenta SUPERADMIN, `id cc7a8d63-...`)
+   quedó con password aleatoria desconocida tras el incidente de 3.6 —
+   si se necesita para uso real, requiere pasar por `set-employee-password`
+   o equivalente.
+4. Todo lo ya documentado como pendiente en el cierre de la Fase 2
+   (`SalyChatOverlay` muerto, `service_role` como Bearer,
+   `notify-new-products-daily` en `config.toml`, `auto-copy-weekly-roster`
+   bug `'ACTIVE'`, `kiosk_verify`).
+
+**Fase 0, 1, 2 y 3 completas.** Pendientes: **Fase 4** (diseño/UX +
+estándar móvil), **Fase 5** (E2E con Playwright), **Fase 6** (veredicto
+estructural y roadmap) — no iniciadas.

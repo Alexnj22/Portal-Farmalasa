@@ -1486,3 +1486,136 @@ credenciales especiales) — corregido de inmediato bajo las órdenes
 permanentes de la auditoría. `src/version.js` bumpeado a `2.15.7` (primer
 fix de esta ronda que toca `src/`, a diferencia de los anteriores que
 fueron solo `supabase/functions/`).
+
+### 3.4 Secretos en el bundle cliente — revisado, sin hallazgo
+
+Grep exhaustivo de `import.meta.env` en todo `src/`: solo 4 variables
+`VITE_*` se leen del lado cliente — `VITE_SUPABASE_URL`,
+`VITE_SUPABASE_ANON_KEY` (protegida por RLS, pública por diseño),
+`VITE_GOOGLE_MAPS_API_KEY` (key de navegador para el JS SDK de Google
+Maps — `routeOptimizer.js:87` la inyecta en un `<script src=...&key=...>`;
+es pública por diseño en cualquier sitio que use el SDK de Maps, la
+única mitigación real es la restricción por HTTP referrer en Google
+Cloud Console — externa, no verificable desde código) y
+`VITE_VAPID_PUBLIC_KEY` (pública por protocolo VAPID). Cero
+`service_role`, cero JWT/token hardcodeado, cero string con forma de
+API key (`sk-`, `AIza`, `ghp_`, etc.) en `src/`. `.env` está en
+`.gitignore` y no está trackeado (`git ls-files` lo confirma);
+`.env.example` solo tiene placeholders. `dist/` local (build viejo de
+pruebas QA) tampoco expone nada — no está trackeado ni se despliega
+desde el repo. **Sin cambios.**
+
+### 3.5 CORS hardcodeado (`*`) — revisado, riesgo bajo, sin fix
+
+12 edge functions usan `Access-Control-Allow-Origin: *` hardcodeado en
+vez de `getCorsHeaders(req)` (ya señalado como pendiente en Fase 2,
+línea ~880). Verificado que esto **no reabre nada de lo ya cerrado**:
+`src/supabaseClient.js:7-12` tiene `persistSession: true` sin storage
+custom → la sesión vive en `localStorage`, no en cookies. Un origen
+cross-site no puede leer el `localStorage` del portal (Same-Origin
+Policy), así que no puede forjar el header `Authorization` de una
+víctima aunque el edge function responda con `*`. El único uso real de
+un CORS abierto sería con la anon key pública (que cualquiera ya tiene)
+o sin credencial en absoluto en las funciones cron — ambos casos ya
+estaban cubiertos por los gates de la Fase 2. Medio/Bajo — **no se
+toca**, queda como mejora de higiene para consolidar junto con el resto
+del backlog de Fase 2 (reemplazar por `getCorsHeaders(req)` en:
+`auto-copy-weekly-roster`, `backfill-dte-sales`, `check-doc-expiry`,
+`check-employee-doc-expiry`, `check-sales-alerts`, `consolidate-timesheets`,
+`heal-dte-sync`, `maps-proxy`, `oss-proxy`, `send-push-notification`,
+`set-employee-password`, `srs-proxy`).
+
+### 3.6 `ensure_user_by_code` — **HALLAZGO CRÍTICO CONFIRMADO Y EXPLOTABLE, FIX APLICADO**
+
+**El hallazgo**: el login por carné/PIN (`AuthContext.jsx:396-428`) usa
+el propio `code` del empleado como contraseña —
+`supabase.auth.signInWithPassword({ email: `${code}@staff.local`,
+password: code })` (línea 408) — y el paso previo,
+`ensure_user_by_code` (edge function, `verify_jwt:false`, anon-callable,
+sin ningún rate limit), es un oráculo público que confirma si un código
+de 5 dígitos corresponde a un empleado ACTIVO (`ok:true`) o no
+(`NOT_FOUND`/`INACTIVE`), y de paso **crea la cuenta Auth** para ese
+código si no existía. `employees.code` es numérico puro (regla
+`enforce_numeric_employee_code`); en este proyecto el rango real es
+`00000`–`71020` sobre 47 empleados, **los 47 ACTIVO**. Con solo la anon
+key pública (la misma que usa cualquier visitante del portal), un
+atacante puede iterar códigos de 5 dígitos, identificar cuáles son
+válidos, y autenticarse directo como esos empleados — sin carné físico,
+sin credencial de ningún tipo, en minutos/horas dado el tamaño del
+espacio de búsqueda.
+
+**Verificado que la restricción de "solo por escaneo de carné" es
+puramente de UI, no de servidor**: `LoginView.jsx:229-249` captura el
+código con un listener global de `keydown` (heurística de timing entre
+teclas + `Enter`, sin input visible), pero eso no protege el endpoint —
+`ensure_user_by_code` es un HTTP endpoint público invocable directo
+(`supabase.functions.invoke`) sin pasar nunca por esa pantalla; no hay
+token de dispositivo ni ninguna prueba de "esto vino de un escaneo real"
+a nivel de servidor para este flujo (a diferencia de `kiosk_devices`,
+que si valida `device_token`, ver 3.2.2).
+
+**Fix aplicado** (aditivo, cero cambio al camino de login legítimo):
+1. Tabla nueva `public.login_rate_limit` (`client_ip`, `created_at`) —
+   RLS habilitada sin policies (solo `service_role` la toca), migración
+   `create_login_rate_limit_table` con `lock_timeout='5s'`.
+2. Retención agregada al cron existente `purge-sync-logs-daily` (jobid
+   172): `DELETE ... WHERE created_at < now() - interval '7 days'`
+   (migración `purge_login_rate_limit_add_to_daily_cron`).
+3. `ensure_user_by_code/index.ts` (desplegado v44, `verify_jwt:false`
+   preservado): antes de tocar `employees`, si la llamada es
+   **no autenticada** (la única superficie de ataque real — la segunda
+   llamada del flujo, ya autenticada, nunca se limita) cuenta intentos
+   **fallidos** (`NOT_FOUND`/`INACTIVE`) de la misma IP en los últimos
+   10 minutos; a partir de 15, responde `429 RATE_LIMITED` sin consultar
+   la tabla. Los intentos **exitosos nunca suman** — un kiosco real con
+   tráfico de múltiples empleados en la misma IP no puede disparar el
+   límite. IP tomada de `x-forwarded-for`; verificado empíricamente que
+   el proxy de Supabase pisa ese header con la IP real de conexión (un
+   valor falsificado enviado por curl fue ignorado y reemplazado). Fail
+   open: si la tabla de rate-limit falla, no bloquea un login real.
+
+**Validación**:
+- Negativo: 15 intentos con código inválido desde la misma IP →
+  intento #16 devolvió `429 {"ok":false,"error":"RATE_LIMITED"}`
+  exactamente en el umbral. Confirmado con curl real contra el endpoint
+  desplegado.
+- Positivo: con la IP bajo el umbral, un código real activo
+  (`71015`, ACTIVO) devolvió `ok:true` normalmente — el camino legítimo
+  no se vio afectado por el gate.
+
+**Incidente durante la validación positiva (documentado por
+transparencia)**: el código `71015` usado para la prueba positiva
+resultó pertenecer al empleado "Administrador del Sistema",
+`system_role: SUPERADMIN`. La llamada de prueba creó (efecto colateral
+normal de la función, `isNewUser:true`) una cuenta Auth nueva
+`71015@staff.local` con password = `"71015"` — es decir, la prueba
+demostró en vivo que la ruta de explotación completa (adivinar código →
+cuenta se autocrea → login exitoso) funciona de punta a punta también
+para la cuenta de más privilegio del sistema, que hasta ese momento no
+tenía ninguna credencial de kiosco creada (estaba dormida, no
+explotada). Al rotar esa password a una aleatoria, se apuntó primero
+por error a `employees.id` (`cc7a8d63-...`), que resultó ser el `id` de
+una cuenta **distinta y preexistente** (`sufarmasalud@farmalasa.app`,
+creada 2026-05-17) — el `id` de la cuenta `@staff.local` recién creada
+por `ensure_user_by_code` es un UUID autogenerado por Supabase, no
+`employees.id` (a diferencia de `set-employee-password`, que sí crea
+con `id: employee.id` explícito). Se verificó `last_sign_in_at IS NULL`
+en ambas cuentas antes de continuar — ninguna había sido usada nunca
+para iniciar sesión, así que no se interrumpió ningún acceso activo.
+Ambas contraseñas se rotaron a valores aleatorios generados y hasheados
+en una sola sentencia SQL (`pgcrypto.crypt(..., gen_salt('bf'))`), sin
+que el texto plano pasara nunca por ningún log ni tool output. Resultado
+neto: el código `71015` ya no puede autenticar por kiosco/carné (correcto
+— un SUPERADMIN no debería ser alcanzable por una terminal física
+compartida). **Pendiente para el usuario** (no se tocó, fuera de
+alcance de este pase): `sufarmasalud@farmalasa.app` quedó con password
+aleatoria desconocida; si esa cuenta se necesita para uso real, requiere
+pasar por `set-employee-password` (o equivalente) para asignarle una
+contraseña real.
+
+**Clasificación**: Crítico, explotable ahora mismo con solo la anon key
+pública, afecta a las 47 cuentas activas del sistema (incluida la de
+mayor privilegio) — corregido de inmediato bajo las órdenes permanentes
+de la auditoría, con pausa explícita al usuario antes de tocar la
+credencial SUPERADMIN (fuera del "solo cerrar acceso" por tratarse de
+escritura a datos de producción de la cuenta de más privilegio).

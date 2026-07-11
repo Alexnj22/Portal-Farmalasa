@@ -8,6 +8,37 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const admin       = supabaseUrl && serviceKey ? createClient(supabaseUrl, serviceKey) : null;
 
+// ── Rate limit anti fuerza-bruta: el password de login es el propio código
+// (ver AuthContext.jsx signInWithPassword), así que este endpoint es el único
+// oráculo que distingue código válido/activo de inválido. Solo se cuentan
+// intentos FALLIDOS (NOT_FOUND/INACTIVE) por IP — un login exitoso nunca suma,
+// así que un kiosco con tráfico real de múltiples empleados jamás lo dispara.
+const RATE_LIMIT_WINDOW_MIN = 10;
+const RATE_LIMIT_MAX_FAILURES = 15;
+
+function getClientIp(req: Request): string {
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0].trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
+}
+
+async function isRateLimited(ip: string): Promise<boolean> {
+  if (!admin) return false;
+  const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MIN * 60_000).toISOString();
+  const { count, error } = await admin
+    .from("login_rate_limit")
+    .select("id", { count: "exact", head: true })
+    .eq("client_ip", ip)
+    .gte("created_at", since);
+  if (error) return false; // fail-open: no bloquear login real por un error de la tabla de rate-limit
+  return (count ?? 0) >= RATE_LIMIT_MAX_FAILURES;
+}
+
+function recordFailure(ip: string): void {
+  if (!admin) return;
+  admin.from("login_rate_limit").insert({ client_ip: ip }).then(() => {});
+}
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
   const json = (body: unknown, status = 200) =>
@@ -21,6 +52,7 @@ Deno.serve(async (req: Request) => {
   if (!admin)                  return json({ ok: false, error: "MISSING_ENV" }, 500);
 
   const authenticatedUser = await requireAuthUser(req);
+  const clientIp = getClientIp(req);
 
   try {
     const body = await req.json().catch(() => ({}));
@@ -29,6 +61,10 @@ Deno.serve(async (req: Request) => {
     // ── Validación de input: solo caracteres seguros (excluye % _ para evitar inyección ILIKE) ──
     if (!raw || !/^[a-zA-Z0-9.\-]+$/.test(raw)) {
       return json({ ok: false, error: "CODE_INVALID" });
+    }
+
+    if (!authenticatedUser && await isRateLimited(clientIp)) {
+      return json({ ok: false, error: "RATE_LIMITED" }, 429);
     }
 
     const clean = raw.toUpperCase();
@@ -66,11 +102,15 @@ Deno.serve(async (req: Request) => {
     }
 
     if (dbError) return json({ ok: false, error: "DB_ERROR", details: dbError.message });
-    if (!rows?.length) return json({ ok: false, error: "NOT_FOUND" });
+    if (!rows?.length) {
+      if (!authenticatedUser) recordFailure(clientIp);
+      return json({ ok: false, error: "NOT_FOUND" });
+    }
 
     const employee = rows[0];
 
     if (employee.status && employee.status !== "ACTIVO") {
+      if (!authenticatedUser) recordFailure(clientIp);
       return json({ ok: false, error: "INACTIVE" });
     }
 

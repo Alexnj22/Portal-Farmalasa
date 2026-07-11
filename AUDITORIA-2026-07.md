@@ -1950,3 +1950,161 @@ Standard) creado — no existía antes de este pase.
 **Fase 0, 1, 2, 3 y 4 completas.** Pendientes: **Fase 5** (E2E con
 Playwright), **Fase 6** (veredicto estructural y roadmap) — no
 iniciadas.
+
+---
+
+## FASE 5 — Pruebas end-to-end (2026-07-10)
+
+### Metodología
+
+`npm run build` + `vite preview --port 4173` (build de producción real,
+no `npm run dev`) + Playwright/Chromium. Un flujo de login normal se
+ejecuta una vez y su `storageState` (sesión) se reutiliza para el resto
+de flujos autenticados — evita repetir login por cada ruta y aísla mejor
+los errores de consola/red por flujo. Cada flujo tiene su propio
+listener de `console` (solo `type==='error'`) y de `requestfailed`/
+`response.status>=500`, además de screenshots en los puntos clave.
+Empleado de prueba para el login por carné: código `159` (Ronaldo
+Recinos, `EMPLEADO` activo, sin privilegios) — elegido a propósito para
+no repetir el incidente de la cuenta SUPERADMIN de Fase 3.
+
+### Flujos verificados — todos exitosos, sin errores de consola/red reales
+
+- **Login normal** (usuario/contraseña): OK, aterriza en `/overview`.
+- **Login por carné/kiosco** (escaneo simulado: keydown rápidos <250ms +
+  Enter, sin foco en ningún campo, replicando exactamente el mecanismo
+  de `LoginView.jsx`): **OK end-to-end** — autenticó como el empleado de
+  prueba, aterrizó en el menú self-service reducido correcto
+  ("Mis Avisos", "Pedidos a Sucursales", con "Bonificaciones"/
+  "Entrevistas" marcados "Próximamente" como corresponde a un empleado
+  sin esos módulos), estado vacío ("Todo al día") renderizado
+  correctamente. Confirma que el mecanismo de captura de escaneo de
+  `LoginView.jsx` (ver Fase 3, hallazgo `ensure_user_by_code`) sigue
+  funcionando tal como se documentó.
+- **Empleados — modal de edición, race condition del boot** (memoria
+  `project_sensitive_fields_boot_race`): se navegó a `/dashboard` con
+  una espera corta deliberada (800ms, menor a la usada en verificaciones
+  anteriores) antes de abrir el modal de edición rápida, para forzar el
+  peor caso de la ventana de carrera. **Resultado: sin regresión** — DUI,
+  teléfono, fecha de nacimiento y demás campos sensibles llegaron
+  poblados con datos reales, no vacíos. El fix de esa race condition
+  sigue vigente.
+- **Dashboard/Overview**: KPIs, gráficos de ventas por sucursal, ventas
+  por día, calendario y cotizaciones activas — todo renderiza con datos
+  reales, sin errores.
+- **Pedidos** (landing + tab Generar): selector de sucursales, tabs
+  (Generar/Pedidos/Historial Rutas/Métricas/Reglas de Despacho)
+  correctos.
+- **Productos** (Catálogo): filtros, pills, tabla — correcto.
+- **Laboratorios**: tabs Ubicaciones/Política de Vencimiento visibles y
+  correctos.
+- **Ventas, Notificaciones**: sin errores.
+
+### Aclaración — errores de consola que NO son bugs reales
+
+**COEP bloqueando fotos de perfil firmadas — artefacto exclusivo de
+`vite preview` local, NO reproducible en producción.** Cada foto de
+empleado (`storage/v1/object/sign/empleados/...`) falló con
+`net::ERR_BLOCKED_BY_RESPONSE.NotSameOriginAfterDefaultedToSameOriginByCoep`.
+Investigado: `vite.config.js` fija `Cross-Origin-Embedder-Policy:
+require-corp` en su bloque `server.headers` (probablemente necesario
+para el bundle WASM/WebGPU de ONNX Runtime en desarrollo local) — y
+`vite preview` hereda ese mismo header (confirmado con
+`curl -I localhost:4173`). Pero **`vercel.json`** (el config real de
+despliegue en producción) **no fija ningún header `Cross-Origin-*`** —
+solo `X-Content-Type-Options`, `X-XSS-Protection`, `Referrer-Policy`,
+`Permissions-Policy`, `Strict-Transport-Security`. Conclusión: las fotos
+de perfil rotas que se ven en este pase de pruebas son 100% un artefacto
+de cómo corre `vite preview` localmente, no algo que vaya a pasar en el
+portal real. No se tocó nada — no hay nada que corregir.
+
+**`HEAD .../ventas_perdidas?status=eq.pendiente` y `.../products?activo=eq.true`
+con `net::ERR_ABORTED` justo después del login.** Rastreado a
+`AppLayout.jsx:122-136` — un `count` de "ventas perdidas pendientes"
+para el badge del sidebar, que se dispara una vez al montar. `ERR_ABORTED`
+(no un 4xx/5xx, no un bloqueo CORS) es consistente con contención de
+conexiones del servidor local de `vite preview` (proceso único, sin
+HTTP/2 multiplexing real de un CDN de producción) durante el pico de
+peticiones simultáneas justo tras el login (boot payload + permisos +
+badges + notificaciones + suscripciones realtime, todo a la vez). No se
+confirmó como bug real de producción — **recomendación**: si se quiere
+descartar del todo, repetir este mismo login contra el dominio de
+producción real y confirmar que el badge de "Ventas Perdidas" del
+sidebar carga su número correctamente.
+
+### Hallazgo nuevo — DataTable arrastra el ancho de su contenedor compartido en móvil, dejando contenido inalcanzable (NO corregido, fuera del alcance de reporte de esta fase)
+
+**Encontrado en el pase E2E, NO en el pase estructural automatizado de
+Fase 4** (esa auditoría solo medía `document.documentElement.scrollWidth`
+a nivel de página completa en la ruta por defecto de cada vista; este
+bug es un overflow *anidado*, dentro de un contenedor que comparte una
+tabla ancha con otro contenido, invisible a ese chequeo — buena razón
+para también hacer un pase E2E real con capturas, no solo automatizado).
+
+**Reproducido y diagnosticado en `/pedidos` (tab Generar) y `/productos`
+(Catálogo)** en viewport 390×844:
+- El grid selector de sucursales (`TabGenerar.jsx:368`,
+  `grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6`) y el `DataTable`
+  de "Productos sin stock en Bodega" (o el catálogo de productos, según
+  la vista) son **hermanos dentro del mismo contenedor flex-column**
+  (`<div className="space-y-5 p-4">`). El `DataTable`, con varias
+  columnas anchas (`PRODUCTO`/`LABORATORIO`/`SOLICITAN`/`TOTAL`/
+  `VENTAS 6M`), no tiene su propio wrapper `overflow-x-auto` que aísle
+  su ancho natural — así que **arrastra a todo el contenedor padre** a
+  su ancho intrínseco (~594-628px medido), aunque el viewport sea de
+  390px.
+- Confirmado con `page.evaluate()`: `document.documentElement.scrollWidth
+  === clientWidth` (**0 de overflow a nivel de página** — coherente con
+  que el chequeo automatizado de Fase 4 no lo haya visto), pero el grid
+  de sucursales mide `scrollWidth: 528` con `clientWidth: 528` (ambos
+  iguales entre sí, pero MAYOR que los 390px del viewport) — cada
+  tarjeta de sucursal midió 260px de ancho real (contra ~175px
+  disponibles para 2 columnas a 390px), estirada por el contenedor
+  padre, no por contenido propio (ningún `white-space:nowrap` propio en
+  las tarjetas).
+- **Por qué es peor que un simple overflow horizontal común**: el
+  contenedor raíz de toda la app autenticada
+  (`App.jsx`: `<div className="fixed inset-0 w-full h-[100dvh] ...
+  overflow-hidden flex flex-col">`) tiene `overflow-hidden` **sin**
+  condicionar a desktop (`lg:`) — así que el excedente de ancho no es
+  alcanzable ni por scroll horizontal de página. En la práctica: en
+  `/pedidos` un usuario en teléfono **no puede seleccionar "Salud 1",
+  "Salud 3" ni "Salud 5"** en el selector de sucursales del tab Generar
+  — esas tarjetas existen en el DOM pero están fuera del viewport sin
+  ningún mecanismo para alcanzarlas. En `/productos` el catálogo pierde
+  columnas de la tabla de la misma forma.
+
+**No corregido en este pase** — a diferencia de Fase 4, el alcance
+acordado para Fase 5 es explícitamente de **prueba y reporte**, no de
+corrección directa; y a diferencia de los fixes mecánicos de Fase 4,
+este requiere decidir la estrategia correcta (¿envolver el `DataTable`
+en `overflow-x-auto` propio en cada vista afectada? ¿es un problema del
+componente `DataTable` en sí, dado que ya tiene un prop `hideBelow` por
+columna que en teoría debería resolver esto — por qué no lo hizo en
+estos dos casos? ¿cuántas vistas más comparten este patrón de
+contenedor?) con pruebas visuales cruzadas antes de tocar un componente
+tan ampliamente reusado. **Recomendación**: pase dedicado, empezando
+por auditar todos los usos de `DataTable` que comparten contenedor flex
+con otro contenido (no todas las vistas — `VentasView`, la vista de
+referencia en DESIGN.md §14, pone `DataTable` y `TablePagination` como
+únicos hijos directos del contenedor, sin otro contenido al lado, así
+que probablemente no tiene este problema).
+
+### Resumen — Fase 5
+
+| Flujo | Resultado |
+|---|---|
+| Login normal | ✅ OK |
+| Login carné/kiosco (escaneo simulado) | ✅ OK end-to-end |
+| Dashboard/Overview | ✅ OK |
+| Empleados — modal + race condition del boot | ✅ Sin regresión, fix de sesión anterior sigue vigente |
+| Pedidos (landing + Generar) | ✅ OK visualmente, 🔴 bug de overflow móvil encontrado (ver abajo) |
+| Productos (Catálogo) | ✅ OK visualmente, 🔴 mismo bug de overflow móvil |
+| Laboratorios, Ventas, Notificaciones | ✅ OK |
+| Móvil (390×844): login, dashboard, pedidos, productos | ✅ OK salvo el bug de overflow ya señalado |
+| Errores de consola/red "COEP fotos rotas" | 🟢 Artefacto de `vite preview` local, no reproducible en producción — descartado |
+| Errores de consola/red "HEAD ventas_perdidas/products abortado" | 🟡 Probable contención de conexión local, no confirmado como bug real — recomendación de verificar en producción |
+| **DataTable arrastra overflow del contenedor compartido en móvil** | 🔴 **Bug real confirmado, multi-vista (`/pedidos`, `/productos`, posiblemente más) — documentado, no corregido, pendiente de pase dedicado** |
+
+**Fase 0 a 5 completas.** Pendiente: **Fase 6** (veredicto estructural y
+visión 10x) — no iniciada.

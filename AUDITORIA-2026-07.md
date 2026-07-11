@@ -1,19 +1,55 @@
 # AUDITORÍA INTEGRAL — Portal Farmalasa
 
-> Estado: **FASE 0, FASE 1 y FASE 2 completas.** Fases 3-6 (seguridad
-> ofensiva/SET ROLE, diseño/UX, pruebas E2E, veredicto estructural) pendientes
-> — se ejecutan en la siguiente sesión, a pedido del usuario.
+> Estado: **COMPLETA — Fases 0 a 6.** Fecha: 2026-07-10 · Versión app al cierre:
+> v2.15.8 · Auditor: Claude (sesión de auditoría multi-fase).
 >
-> ⚠️ **ALERTA — no esperar al resto de la auditoría para esto**: 11 de las 24
-> edge functions revisadas en Fase 2 no tienen ninguna autenticación real
-> (ni secreto compartido, ni sesión de usuario válida) — 4 de ellas escriben
-> con `service_role` (bypasea RLS por completo), incluyendo
-> `consolidate-timesheets` (puede fabricar/alterar datos de nómina) y
-> `send-push-notification` (puede enviar pushes reales a cualquier empleado o
-> a toda la empresa). Ver sección "Edge functions" de Fase 2 para el detalle
-> completo y el fix propuesto por función.
->
-> Fecha: 2026-07-10 · Versión app auditada: v2.15.6 · Auditor: Claude (sesión de auditoría)
+> ⚠️ Los hallazgos Críticos/Altos que eran explotables *en el momento de
+> encontrarlos* ya fueron corregidos durante la propia auditoría (Fases 2-4),
+> bajo autorización explícita del usuario — no son una lista de pendientes,
+> son un registro de lo que se cerró y cuándo. Lo que sigue abierto (severidad
+> media/baja, o cambios de lógica de negocio/arquitectura que requieren
+> decisión del usuario) está en el Resumen Ejecutivo y el Roadmap al final de
+> este documento.
+
+---
+
+## RESUMEN EJECUTIVO
+
+**Estado general en una frase**: el portal funciona, está en uso diario real
+por 47 empleados y 8 sucursales, y la superficie de seguridad más peligrosa
+(acceso no autenticado a funciones críticas, fuerza bruta de login, XSS
+almacenado) quedó cerrada durante esta misma auditoría — pero la base de
+código creció más rápido que su arquitectura: no hay capa de datos, no hay
+tests, no hay entorno de staging, y varias vistas ya son aplicaciones de
+2,000-4,000 líneas por sí solas. El outage del 2026-07-08 no fue una
+casualidad — fue la primera vez que la ausencia de staging le costó caro a
+producción; sin cambios estructurales, va a volver a pasar con otra causa.
+
+### Score por área (/10)
+
+| Área | Score | Una línea |
+|---|---|---|
+| Seguridad (post-auditoría) | 8/10 | Cerrado lo crítico explotable hoy; quedan gaps de diseño (kiosk_verify, CORS) documentados, no urgentes |
+| Seguridad (pre-auditoría, para contexto) | 2/10 | 11 edge functions sin autenticación real, login por carné sin rate-limit, RLS con policies `anon+true` en tablas de escritura |
+| Rendimiento / DB | 8/10 | Trabajo real y medido (patrón C JSON, índices, write-churn eliminado); ya no es el cuello de botella |
+| Diseño / UX visual | 6/10 | Sistema de diseño real y documentado (Liquid Glass), pero aplicado de forma inconsistente — 127 archivos con violaciones de contraste, patrones duplicados en vez de reusados |
+| Móvil / responsive | 5/10 | Estándar recién creado en esta auditoría; los bugs más graves (zoom iOS, touch targets) ya corregidos, pero el `DataTable` compartiendo contenedor sigue rompiendo vistas completas en teléfono |
+| Arquitectura de datos | 3/10 | 390 llamadas `supabase.from()` dispersas en 58 archivos, cero capa de datos, cero caché, cada vista reinventa fetching y manejo de error |
+| Manejo de estado | 4/10 | Un solo store global de 10 slices con un `bootStatus` monolítico del que depende toda la app — la causa raíz de la race condition de campos sensibles, no sólo su síntoma |
+| Organización de código | 4/10 | 2 archivos de ~3,900 líneas, 5 más sobre 1,100 — son aplicaciones dentro de la aplicación |
+| Testing | 0/10 | Cero tests, cero librería de testing instalada como dependencia del proyecto |
+| Deployment / entornos | 2/10 | Una sola base de datos Supabase para todo — no existe staging. El outage del 2026-07-08 es la prueba directa del costo de esto |
+| Pipeline de syncs ERP→Supabase | 6/10 | Mejor de lo que parece: sí hay observabilidad (`SyncHealthBanner`, alertas de DTE a Supervisor), pero es *pull* (hay que tener la app abierta) salvo para DTE — sin alerta push genérica si un sync se cae 3 días |
+
+### Veredicto arquitectónico en una línea por capa
+
+- **Capa de datos**: mal construido, cambiar pronto — no escala más allá del tamaño actual del equipo de desarrollo.
+- **Manejo de estado**: aceptable con un defecto de diseño puntual y grave (boot monolítico) — no hace falta rehacerlo todo, hace falta partirlo.
+- **Organización de código**: aceptable en general, mal construido en los archivos top-5 — son candidatos a división, no sirven de patrón para nada nuevo.
+- **Modelo de datos**: sólido en su núcleo de negocio, con fricción real y ya documentada por el propio equipo en el ERP↔Supabase (duplicados de inventario, factor de presentación).
+- **Pipeline de syncs**: aceptable — mejor que la percepción inicial, con gaps concretos y acotados.
+- **Testing**: mal construido — no existe. Es el gap de mayor riesgo silencioso de todos.
+- **Deployment/entornos**: mal construido, cambiar ya — la falta de staging ya causó un outage documentado.
 
 ---
 
@@ -2108,3 +2144,485 @@ que probablemente no tiene este problema).
 
 **Fase 0 a 5 completas.** Pendiente: **Fase 6** (veredicto estructural y
 visión 10x) — no iniciada.
+
+---
+
+## FASE 6 — Veredicto estructural y visión 10x
+
+Esta sección no es una lista de quick wins. Es la pregunta de fondo: si este
+portal se construyera hoy desde cero sabiendo lo que esta auditoría encontró,
+¿qué se haría diferente? Se responde con evidencia concreta reunida durante
+las Fases 0-5, no con opinión genérica.
+
+### 1. Veredicto arquitectónico honesto, capa por capa
+
+#### Capa de datos — **MAL CONSTRUIDO, cambiar pronto**
+
+**Evidencia**: 390 llamadas `supabase.from()` dispersas en 58 archivos
+distintos. Cero capa de repositorios/hooks compartidos, cero librería de
+caché (no hay React Query, SWR, ni nada equivalente en `package.json`). Cada
+vista reimplementa su propio fetching, su propio manejo de error, su propia
+paginación. El resultado ya es visible en el propio código de esta sesión:
+la regla del `CLAUDE.md` sobre el límite de 1000 filas de PostgREST y sus 3
+patrones de workaround (A/B/C) existe **porque no hay un punto único donde
+resolver eso una vez** — cada desarrollador (o cada sesión de IA) tiene que
+recordarlo y reaplicarlo vista por vista. Cuando falla, falla en silencio
+(memoria: `presentaciones.descripcion` columna eliminada, el sync la siguió
+consultando un mes entero sin que nadie lo notara, porque no hay un único
+lugar donde una llamada a Supabase se valide).
+
+**Por qué es "cambiar pronto" y no "cambiar ya"**: el portal funciona hoy.
+Reescribir 390 sitios de golpe sería el tipo de "big bang" que esta misma
+auditoría evitó deliberadamente en cada fix (ver regla de oro "solo cerrar
+acceso" de Fase 2-3). El riesgo no es *si* hay que hacerlo, es *cuánto* va a
+costar cuanto más se tarde — cada vista nueva que no pase por una capa de
+datos es una vista más que migrar después.
+
+#### Manejo de estado — **ACEPTABLE, con un defecto de diseño puntual y grave**
+
+**Evidencia**: `staffStore.js` es un único store Zustand compuesto por 10
+slices (`auditSlice`, `branchSlice`, `employeeSlice`, `systemSlice`,
+`requestsSlice`, `vacationPlanSlice`, `payrollSlice`, `notificationsSlice`,
+`practicantesSlice`, `conteoInventarioSlice`) — el patrón de slices en sí es
+razonable y está bien ejecutado (separación de responsabilidades clara
+dentro de cada slice). El problema real es `systemSlice.fetchBoot`: una
+única función que dispara ~10 queries en paralelo (`Promise.all`) —
+`holidays`, `branches`, `roles`, `shifts`, `employee_rosters`,
+**`employees_safe` completa** (sin paginar, sin filtrar por lo que la
+sesión actual necesita), `employee_events`, `employee_documents`,
+`announcements`, `employee_branches` — y expone un único `bootStatus`
+(`idle`/`loading`/`ready`/`error`) del que depende **toda** la app para
+saber si es seguro leer datos sensibles.
+
+**Esto no es solo la causa de la race condition de campos sensibles
+(memoria `project_sensitive_fields_boot_race` — DUI/ISSS/AFP/banco/kiosk_pin
+vacíos si el modal de edición abre antes de `bootStatus==='ready'`), es el
+síntoma de un problema de diseño más profundo**: cualquier componente que
+necesite datos de `employees` tiene que sincronizarse manualmente contra un
+semáforo global de una sola posición, en vez de que cada pieza de datos
+tenga su propio ciclo de vida (loading/error/stale independientes). Un
+empleado que solo necesita ver su propio perfil de self-service espera al
+mismo `fetchBoot` monolítico que un admin viendo el listado completo de 47
+empleados — sobre-fetching innecesario para el caso más común (autoservicio).
+
+#### Organización de código — **ACEPTABLE en general, MAL CONSTRUIDO en los 5 archivos más grandes**
+
+**Evidencia** (líneas reales, medidas en esta sesión):
+
+| Archivo | Líneas |
+|---|---|
+| `TabMinMax.jsx` | 3,954 |
+| `TabPedidos.jsx` | 3,914 |
+| `TabCatalogo.jsx` | 2,999 |
+| `VentasView.jsx` | 2,487 |
+| `EmployeeFormModal.jsx` | 2,249 |
+| `FacturacionView.jsx` | 2,228 |
+| `DashboardView.jsx` | 2,172 |
+
+Los primeros 2 son literalmente del tamaño de una aplicación React completa
+de tamaño mediano, en un solo archivo. Esto no es un problema estético —
+tiene costo medible: `git blame`/revisión de código es más lento, el riesgo
+de colisión entre cambios simultáneos crece, y (evidencia de esta misma
+auditoría) los bugs de duplicación de patrón (`active:scale-90/95` repetido
+297 veces solo en el módulo `pedidos/`, el input de búsqueda de 13px
+reimplementado a mano en `BranchesView`/`ConteoDetailView` en vez de
+reusar `ViewTabBar`) son mucho más fáciles de introducir cuando cada
+archivo es su propio mundo en vez de componer piezas compartidas.
+
+**El resto del código base (los ~75 archivos restantes bajo 1,000 líneas)
+es razonable** — no hay evidencia de que la organización general esté rota,
+solo que los módulos más antiguos/complejos (Min/Max, Pedidos, Catálogo de
+Productos) crecieron sin un punto de división.
+
+#### Modelo de datos — **SÓLIDO en su núcleo de negocio, con fricción real documentada por el propio equipo**
+
+El esquema en general refleja bien el negocio (roles, sucursales, empleados,
+permisos granulares por módulo — no es un CRUD genérico). La fricción real
+ya está autodocumentada por el equipo mismo en `CLAUDE.md` y en la memoria
+de sesiones anteriores, no es un hallazgo nuevo de esta auditoría:
+- **Duplicados de inventario heredados del ERP** (`project_inventory_erp_duplicates.md`)
+  — filas multi-presentación del ERP que parecen duplicados pero son stock
+  legítimo; requiere lógica de deduplicación (`inv_dedup`) en cada consulta
+  que toca inventario en vez de resolverse una vez en el modelo.
+- **Factor de presentación** (`feedback_factor_product_precios.md`) — la
+  conversión de unidades del ERP (`product_precios.factor`) tiene que
+  aplicarse manualmente en cada punto que hace matemática de stock/pedidos;
+  ya causó un bug real (`project_pedidos_unit_conversion_bug.md`, resuelto
+  v2.2.51) por aplicarse en el lugar equivocado.
+- **Multi-sucursal**: bien modelado a nivel de tabla (`employee_branches`,
+  `branch_id` consistente), pero la fricción aparece en el *cliente* — el
+  boot monolítico de arriba carga todo sin filtrar por sucursal relevante.
+
+**Qué costará cambiar en 1 año lo que hoy cuesta una semana**: normalizar
+el factor de presentación y la deduplicación de inventario en la capa de
+BD (vistas o funciones que ya devuelvan los datos limpios) en vez de en 5+
+puntos de cliente distintos. Cuantas más vistas nuevas repitan la lógica de
+conversión a mano, más lugares hay que tocar cuando el ERP cambie de nuevo
+un campo.
+
+#### Pipeline de syncs (ERP → Supabase) — **ACEPTABLE, mejor que la percepción inicial**
+
+**Evidencia**: sí existe observabilidad — `SyncHealthBanner.jsx` y
+`SidebarSyncStatus.jsx` leen `sync_log`/`inventory_sync_log` y se lo
+muestran al usuario en la propia UI; `check-sales-alerts` (cron) sí alerta
+proactivamente (push) al Supervisor de Ventas ante fallos consecutivos de
+sync de DTE/CCF (`get_consecutive_mh_alerts`, `get_ccf_alerts`). El trabajo
+de resiliencia de la sesión 2026-07-08/09 (write-churn eliminado,
+`sync_inventory_batch` condicional, `heal-dte-sync` con re-detección de
+huecos) ya está aplicado y verificado en producción.
+
+**El gap real**: la observabilidad es mayormente *pull* — SyncHealthBanner
+requiere que alguien tenga el portal abierto para verlo — salvo para DTE,
+que sí tiene alerta *push*. Si un sync de `sync-products`, `sync-erp-minmax`
+o `sync-erp-purchases` empieza a fallar silenciosamente 3 días seguidos y
+nadie abre el portal a mirar el banner, nadie se entera hasta que un dato
+se ve obviamente viejo. **Qué pasa si el ERP cambia un campo**: ya pasó
+(`presentaciones.descripcion` eliminada, sync la siguió consultando un mes)
+y el mecanismo que lo detectó fue revisión manual de logs de Postgres, no
+una alerta automática.
+
+#### Testing — **MAL CONSTRUIDO — no existe**
+
+**Evidencia**: cero archivos `*.test.*`/`*.spec.*` en todo el repo, cero
+`vitest`/`jest`/`@testing-library/*` en `package.json`. Toda verificación
+de esta auditoría (y, presumiblemente, de cada sesión de desarrollo previa)
+se hizo con Playwright manual contra un build real — que funciona, pero no
+es repetible sin que alguien (humano o IA) lo vuelva a ejecutar a mano cada
+vez.
+
+**Estrategia mínima viable propuesta** (no es "escribir tests para todo",
+es proteger lo que ya rompió antes):
+1. **Vitest para lógica pura de conversión/cálculo** — exactamente las
+   funciones que ya causaron bugs reales: factor de presentación
+   (`pedidoPrint.js`/las utilidades de `TabPedidos.jsx`), el dispatch
+   rounding del 40% (`project_pedido_preview_dispatch_rounding.md`, ya
+   tuvo un bug de doble-redondeo), `inv_dedup`. Estas son funciones puras,
+   fáciles de testear, y ya demostraron que rompen en silencio.
+2. **Playwright como smoke test, no como suite exhaustiva** — los 3-4
+   flujos que esta misma Fase 5 ya cubrió a mano (login, boot race
+   condition del modal de empleado, Pedidos, Dashboard) convertidos en un
+   script versionado en el repo (`tests/e2e/smoke.spec.js`), corrido en CI
+   en cada PR a `main`. No reemplaza la verificación manual para features
+   nuevas, pero atrapa regresiones en lo que ya se sabe que es frágil.
+3. **Cómo introducirlo sin frenar el desarrollo**: no bloquear merges por
+   cobertura baja desde el día 1 — empezar con los tests de las funciones
+   que YA rompieron (arriba), y agregar un test nuevo cada vez que se
+   arregle un bug real (regla simple: "todo fix de bug viene con un test
+   que lo hubiera atrapado"). Es la forma más barata de generar cobertura
+   real sin pausar features nuevas.
+
+#### Deployment y entornos — **MAL CONSTRUIDO, cambiar ya**
+
+**Evidencia**: exactamente **un** proyecto de Supabase (`Farmalasa`,
+`sacecdkdmsdvgqnrsett`) para desarrollo, pruebas y producción — confirmado
+con `list_projects`, un solo resultado. No hay rama `staging` desplegada
+por separado (existe `origin/dev` en git, pero no hay evidencia de que
+apunte a una base de datos distinta). `vercel.json` no define entornos de
+preview con variables separadas. **Toda migración, todo deploy de edge
+function, de esta auditoría incluida, se aplicó directo a la única base de
+datos que sirve a los 47 empleados reales ahora mismo.**
+
+**Este no es un riesgo teórico — ya causó el outage del 2026-07-08**
+(documentado en `CLAUDE.md`): una migración RLS sin `lock_timeout` se
+encoló detrás de los crons de sync que corren cada minuto, el pool de
+PostgREST/Auth se agotó, y el portal completo cayó 15:48-16:02 UTC. La
+regla que `CLAUDE.md` ahora exige (`SET lock_timeout='5s'` en toda
+migración, aplicar DDL en ventanas de 06:00-11:59 UTC) es una mitigación
+del síntoma, no la solución — la solución es que ese tipo de migración se
+pruebe primero contra una base de datos que no sirva tráfico real.
+
+---
+
+### 2. Decisiones baratas hoy, caras mañana
+
+Ordenadas por ventana de oportunidad — qué se cierra primero si no se actúa:
+
+1. **Base de datos de staging** — cierra rápido: cada tabla/función nueva
+   que se agrega sin probarse primero en un entorno separado es una tabla
+   más que migrar/replicar después. Hoy son ~100 tablas; en un año, más.
+   Barato ahora (crear un segundo proyecto Supabase + pipeline de
+   migraciones que aplique a ambos) — carísimo cuando ya hay años de
+   deriva entre "lo que hay en prod" y "lo que hay en cualquier otro
+   lado".
+2. **Dividir `TabMinMax.jsx`/`TabPedidos.jsx` antes de que crezcan más** —
+   cada feature nueva que se agrega a estos 2 archivos de ~3,900 líneas
+   los hace más caros de dividir después (más estado entrelazado, más
+   funciones que dependen de closures compartidas). Hoy dividir cuesta
+   días; en un año, con el doble de líneas, cuesta semanas.
+3. **Congelar la duplicación de `ViewTabBar`/búsqueda local** — cada vista
+   nueva que hand-rolls su propio buscador en vez de reusar `ViewTabBar`
+   (ya son ≥3 confirmadas: `BranchesView`, `ConteoDetailView`, y
+   presumiblemente más sin auditar) es una copia más que sincronizar
+   manualmente cuando `ViewTabBar` cambie. Esto ya causó que el fix de
+   Fase 4 (zoom de iOS, touch targets) tuviera que aplicarse en ~60
+   archivos en vez de 1.
+4. **Empezar a normalizar `text-slate-300/400`** — 1,288 instancias hoy en
+   127 archivos; cada componente nuevo que copia el patrón visual de un
+   componente viejo (muy común en este código base, dado el nivel de
+   duplicación ya visto) hereda la violación de contraste. El costo de
+   arreglarlo crece linealmente con cada archivo nuevo que lo copia.
+5. **Los 2 `<select>` no migrados a LiquidSelect** (`FormAiSchedulerPreview.jsx`,
+   `TimePicker12.jsx`) — barato hoy porque son solo 2 casos aislados;
+   quedan "baratos" solo mientras nadie más copie ese patrón de select-en-grilla-densa
+   para otro feature.
+6. **Contratar/introducir tests antes de la próxima reescritura grande** —
+   cuanto más tiempo pase sin ningún test, más cara es la primera
+   introducción (hay que aprender el patrón Y cubrir deuda acumulada a la
+   vez). Introducirlo ahora, con solo las funciones de conversión como
+   objetivo inicial, es la ventana más barata que va a existir.
+
+---
+
+### 3. Refactors estructurales propuestos
+
+#### Refactor A — Capa de datos centralizada (hooks de dominio + caché)
+
+- **Problema**: 390 llamadas `supabase.from()` dispersas, cada vista
+  reinventa fetching/paginación/manejo de error; el límite de 1000 filas
+  de PostgREST se resuelve manualmente vista por vista (3 patrones
+  distintos documentados en `CLAUDE.md`) en vez de una vez.
+- **Diseño objetivo**: una capa `src/data/` (o `src/hooks/queries/`) con un
+  hook por entidad de dominio (`useEmployees()`, `useBranches()`,
+  `useProducts()`, etc.) que internamente resuelva paginación >1000 filas,
+  manejo de error consistente (nunca un `const { data } = await ...` sin
+  chequear `error`, regla que `CLAUDE.md` ya pide manualmente), y caché con
+  invalidación explícita (no necesariamente React Query completo — un
+  wrapper delgado sobre Zustand con TTL simple cubre el 80% del beneficio
+  con mucho menos riesgo de migración).
+- **Ruta de migración incremental**: no migrar los 390 sitios de una vez.
+  (1) Crear el hook nuevo, usarlo SOLO en vistas nuevas a partir de ahora.
+  (2) Migrar una vista por sprint, empezando por las que YA tienen bugs de
+  este tipo documentados (`WidgetInventorySearch.jsx`, ya tuvo un bug de
+  columna eliminada sin detectar). (3) Los 390 sitios existentes que
+  funcionan bien HOY no son urgencia — se migran de forma oportunista
+  cuando esa vista se toca por otra razón.
+- **Esfuerzo estimado**: diseño + primeros 3 hooks + 1 vista piloto: ~1
+  semana. Migración completa gradual: 6-12 meses a ritmo oportunista, sin
+  bloquear features.
+- **Qué pasa si no se hace**: cada vista nueva agrega más superficie que
+  migrar después; el bug de "columna eliminada, sync la siguió consultando
+  un mes" se vuelve a repetir con más frecuencia conforme el equipo crece.
+
+#### Refactor B — Partir `fetchBoot` monolítico en cargas independientes por dominio
+
+- **Problema**: un único `bootStatus` global bloquea/desbloquea acceso a
+  TODOS los datos sensibles de la app, causando la race condition conocida
+  y forzando sobre-fetching (un empleado de autoservicio carga
+  `employees_safe` completa igual que un admin).
+- **Diseño objetivo**: cada slice mantiene su propio `status` independiente
+  (`employeeSlice.status`, `branchSlice.status`, etc.) en vez de un
+  `bootStatus` compartido; los componentes esperan específicamente al
+  slice que necesitan, no a "todo listo". El self-service de un empleado
+  no dispara la carga de `employees_safe` completa — solo su propio
+  registro.
+- **Ruta de migración incremental**: (1) Agregar `status` por slice sin
+  quitar `bootStatus` todavía (coexisten). (2) Migrar los componentes que
+  ya tuvieron el bug de race condition primero (el modal de edición de
+  empleado). (3) Una vez que todos los consumidores usan el status
+  específico, deprecar `bootStatus` global.
+- **Esfuerzo estimado**: ~2-3 semanas (el riesgo no es el código nuevo, es
+  verificar que ningún consumidor existente dependía implícitamente del
+  timing del boot monolítico).
+- **Qué pasa si no se hace**: la próxima feature que toque datos sensibles
+  de empleados hereda el mismo riesgo de race condition, y hay que seguir
+  recordando manualmente "esperar a `bootStatus==='ready'`" en cada modal
+  nuevo — ya pasó una vez, va a volver a pasar.
+
+#### Refactor C — Dividir los 2 archivos de ~3,900 líneas
+
+- **Problema**: `TabMinMax.jsx` y `TabPedidos.jsx` son cada uno del tamaño
+  de una aplicación mediana en un solo archivo.
+- **Diseño objetivo**: extraer sub-componentes por responsabilidad clara ya
+  visible en el propio código (ej. en `TabPedidos.jsx`: el ciclo de vida
+  de un pedido — generar/recepción/rutas — ya vive en archivos separados
+  como `RecepcionModal.jsx`/`TabRutas.jsx`, pero el archivo principal
+  todavía concentra demasiado; separar por: tabla principal, lógica de
+  filtros, acciones de ciclo de vida, modales inline que podrían ser
+  archivos propios).
+- **Ruta de migración incremental**: extraer un sub-componente por sprint,
+  empezando por el que tenga menos acoplamiento con el resto (menos props
+  compartidas). No es un refactor de "parar todo una semana" — cada
+  extracción es un PR independiente y revisable.
+- **Esfuerzo estimado**: ~1-2 días por sub-componente extraído, 4-6
+  extracciones por archivo → ~2-3 semanas por archivo, se puede paralelizar
+  entre los 2 archivos.
+- **Qué pasa si no se hace**: cada feature nueva en Min/Max o Pedidos sigue
+  agregando líneas al mismo archivo, empeorando el costo de cualquier
+  refactor futuro y el riesgo de colisión en cambios simultáneos.
+
+#### Refactor D — Entorno de staging real
+
+- **Problema**: una sola base de datos Supabase para todo; toda migración
+  se prueba en producción por definición.
+- **Diseño objetivo**: segundo proyecto Supabase (`Farmalasa - Staging`),
+  pipeline que aplique migraciones a staging primero (automatizado o
+  manual pero obligatorio), variables de entorno de Vercel separadas por
+  rama (`main`→prod, `dev`→staging, ya existe la rama `dev` en git sin
+  usar para esto).
+- **Ruta de migración incremental**: (1) Crear el proyecto de staging,
+  clonar el esquema actual (sin datos sensibles reales). (2) Redirigir
+  `origin/dev` + su deploy de Vercel al proyecto de staging. (3) Regla
+  nueva: toda migración DDL sobre las tablas calientes (`sales_invoices`,
+  `inventory`, `products`, `sales_invoice_items` — las mismas que ya
+  tienen la regla de `lock_timeout` en `CLAUDE.md`) se aplica primero en
+  staging y se verifica antes de tocar producción.
+- **Esfuerzo estimado**: ~3-5 días de setup inicial; costo operativo
+  continuo bajo (un segundo proyecto Supabase en el free/pro tier).
+- **Qué pasa si no se hace**: el próximo outage tipo 2026-07-08 es cuestión
+  de cuándo, no de si — ya se demostró que puede pasar, y la mitigación
+  actual (`lock_timeout` + ventana horaria) reduce la probabilidad pero no
+  la elimina.
+
+---
+
+### 4. Nuevas features (fundamentadas en datos y flujos reales ya vistos)
+
+1. **Tracker de corto vence** — las reglas operativas ya están completamente
+   documentadas (`project_bodega_vencimiento_reglas.md`: COFARSAL punto
+   rojo, ND 6-7 meses, fechas de corte 25-30 del mes) pero viven solo como
+   conocimiento tribal de Bodega, no como feature. **Esfuerzo**: medio (2-3
+   semanas) — el modelo de datos de vencimiento ya existe
+   (`TabPoliticaVencimiento.jsx`), falta la vista de tracking proactivo con
+   alertas por sucursal. **Valor**: alto — reduce mermas por vencimiento,
+   que es dinero real perdido, con reglas que Bodega ya aplica manualmente.
+2. **Alertas push genéricas de fallo de sync** (extender el patrón que ya
+   existe para DTE a `sync-products`/`sync-erp-minmax`/`sync-erp-purchases`).
+   **Esfuerzo**: bajo (3-5 días) — reusa la infraestructura de
+   `send-push-notification` y el patrón de `check-sales-alerts` ya
+   probado. **Valor**: alto/barato — cierra el gap de observabilidad *pull*
+   documentado arriba con esfuerzo mínimo.
+3. **Dashboard de salud de syncs para administradores** (no solo el badge
+   del sidebar) — vista dedicada con historial de `sync_log` por sucursal,
+   tiempo desde el último sync exitoso, tendencia de fallos. **Esfuerzo**:
+   medio (1-2 semanas) — los datos ya existen en `sync_log`/
+   `inventory_sync_log`, falta la vista. **Valor**: medio-alto — reduce el
+   tiempo de detección de problemas de sync de "días" a "minutos".
+4. **Kiosk: confirmación visual/sonora tras escaneo exitoso** — el flujo de
+   login por carné ya es rápido y confiable (verificado en Fase 5), pero no
+   hay feedback inmediato de "escaneo recibido" antes de que cargue la
+   siguiente pantalla — en un kiosco físico usado por decenas de personas
+   al día, un empleado puede volver a escanear pensando que no funcionó.
+   **Esfuerzo**: bajo (1-2 días). **Valor**: medio — reduce fricción/dudas
+   en el uso diario del kiosco.
+5. **Exportación de reportes de Ventas Perdidas** — el módulo ya rastrea
+   `ventas_perdidas` con estado `pendiente`/otros (visto en el badge del
+   sidebar en esta misma auditoría), pero no hay evidencia de un export
+   consolidado para análisis fuera del portal. **Esfuerzo**: bajo-medio
+   (3-5 días). **Valor**: medio — Ventas/Gerencia ya usa estos datos
+   informalmente; un export estructurado ahorra trabajo manual.
+6. **Historial de precios visible en el catálogo de productos** — dado que
+   `product_precios` y su `factor` ya son el centro de varios bugs
+   documentados (conversión de unidades, márgenes), exponer un historial
+   de cambios de precio directamente en `TabCatalogo.jsx` (que ya tiene
+   filtros "Modificados este mes"/"Con pérdida"/"Margen bajo") ayudaría a
+   auditar cambios sin ir a SQL. **Esfuerzo**: medio (1 semana) — depende
+   de si ya existe una tabla de historial de precios (no confirmado en
+   esta auditoría, a verificar). **Valor**: medio — transparencia
+   operativa sobre un dato ya identificado como sensible.
+7. **Vista de "objetos huérfanos" para Sistema** — dado que esta misma
+   auditoría encontró código muerto real repetidamente (`SalyChatOverlay`
+   sin uso, bloque de "reportar producto" huérfano en
+   `WidgetInventorySearch.jsx`, handlers de corrección de bodega sin botón
+   en UI), una vista de admin que liste features/botones/rutas
+   registrados pero sin tráfico real (via `audit_logs`) ayudaría a
+   detectar este patrón antes de que se acumule más. **Esfuerzo**: medio
+   (1-2 semanas). **Valor**: medio — mantenimiento preventivo, no genera
+   ingreso directo pero reduce deuda técnica de forma medible.
+8. **Modo offline mínimo para el kiosco** (relacionado al hallazgo de Fase
+   4: el Service Worker actual solo maneja push, cero caché). Un kiosco
+   físico en una sucursal con conexión inestable que no puede ni mostrar
+   una pantalla de "sin conexión" propia es un riesgo operativo real para
+   el reloj de asistencia. **Esfuerzo**: alto (3-4 semanas, requiere
+   diseñar qué cachear y cómo re-sincronizar marcajes offline sin
+   duplicarlos). **Valor**: alto para las sucursales con conectividad más
+   débil — pero es el ítem de mayor esfuerzo de esta lista, evaluar
+   prioridad real primero.
+
+---
+
+### 5. Quick wins (top 10, <1 día cada uno)
+
+1. Extender el patrón de alerta push de DTE a los demás syncs (parte del
+   feature #2 de arriba, pero el primer sync adicional por sí solo es <1
+   día).
+2. Agregar `overflow-x-auto` al `DataTable`/contenedor de "Productos sin
+   stock en Bodega" en `TabGenerar.jsx` y al catálogo de `TabCatalogo.jsx`
+   — el fix puntual y acotado del bug de Fase 5 (no la investigación de
+   fondo de por qué `hideBelow` no lo resolvió solo, que sí amerita más
+   tiempo).
+3. Los 2 `<select>` restantes sin migrar (`FormAiSchedulerPreview.jsx`,
+   `TimePicker12.jsx`) — evaluar si al menos uno admite el swap directo
+   sin rediseñar el componente.
+4. Agregar `aria-labelledby` a `ModalShell` (gap ya documentado en
+   DESIGN.md §25) — una línea de código, cierra un gap de accesibilidad
+   real.
+5. `aria-haspopup`/`aria-expanded` en el trigger de `LiquidSelect` — mismo
+   tipo de fix, ya documentado, no aplicado.
+6. Revisar y confirmar `set-employee-password`/`bulk-create-employee-users`
+   (pendiente #3 de Fase 2, "service_role como Bearer") — verificación
+   puntual, no necesariamente requiere cambio de código.
+7. Agregar `PORTAL_ORIGIN` a los secrets de las funciones que todavía usan
+   `Access-Control-Allow-Origin: *` hardcodeado en vez de
+   `getCorsHeaders(req)` (12 funciones documentadas en Fase 3.5) — cambio
+   mecánico, bajo riesgo, ya identificado.
+8. Eliminar el código muerto confirmado: `SalyChatOverlay` (pendiente #3 de
+   Fase 2), el bloque huérfano de "reportar producto" en
+   `WidgetInventorySearch.jsx` (ya limpiado parcialmente en v2.15.5, si
+   queda más).
+9. Agregar el módulo faltante en `notify-new-products-daily`'s
+   `config.toml` (pendiente ya documentado en Fase 2, código correcto,
+   solo falta la entrada de configuración).
+10. Password real para `sufarmasalud@farmalasa.app` (la cuenta SUPERADMIN
+    que quedó con password aleatoria desconocida tras el incidente de
+    Fase 3.6) — vía `set-employee-password`, si esa cuenta se necesita
+    para uso real.
+
+---
+
+## ROADMAP PRIORIZADO
+
+### Semana 1 (críticos — ya cerrados durante esta auditoría, listados para trazabilidad)
+
+Todo lo de esta lista **ya está hecho**, cerrado bajo autorización explícita
+durante las Fases 2-4 de esta misma auditoría — no son pendientes, es el
+registro de qué se corrigió:
+- 11 edge functions sin autenticación real → gates cerrados (Fase 2/remediación).
+- `attendance`/`audit_logs`/`kiosk_devices` (INSERT) con policies `anon+true` → cerradas (Fase 3.2.1/3.2.2).
+- XSS almacenado en Cotizaciones/Planilla → corregido (Fase 3.3).
+- Fuerza bruta en login por carné (`ensure_user_by_code` sin rate-limit) → corregido (Fase 3.6).
+- Zoom automático de iOS + touch targets <44px en componentes globales → corregidos (Fase 4).
+
+### Mes 1 (altos + inicio de refactors estructurales)
+
+- Entorno de staging real (Refactor D) — la prioridad estructural #1, dado
+  que ya causó un outage documentado y protege contra el próximo.
+- `kiosk_devices.kiosk_verify` (SELECT) — RPC `SECURITY DEFINER` nueva
+  (bloqueado en Fase 3.2.2 por requerir cambio de lógica, ahora con
+  staging disponible es más seguro de probar).
+- Consolidar CORS hardcodeado → `getCorsHeaders()` en las 12 funciones
+  restantes (Fase 3.5).
+- Pase dedicado de `text-slate-300/400` (1,288 instancias, 127 archivos) —
+  empezar por los 20 archivos de mayor volumen ya identificados en Fase 4.
+- Fix del bug de overflow de `DataTable` en móvil (Fase 5) — con
+  diagnóstico de causa raíz ya hecho, decidir estrategia (wrapper por
+  vista vs. cambio en el componente).
+- Primeros 3 hooks de la capa de datos (Refactor A) + vista piloto.
+- Primeros tests con Vitest sobre las funciones de conversión que ya
+  rompieron antes (factor de presentación, dispatch rounding, `inv_dedup`).
+- Los 10 quick wins de la sección anterior.
+
+### Trimestre (refactors completos + features 10x)
+
+- Migración completa de la capa de datos (Refactor A) a ritmo oportunista.
+- Partir `fetchBoot` monolítico (Refactor B).
+- Dividir `TabMinMax.jsx`/`TabPedidos.jsx` (Refactor C).
+- Smoke suite de Playwright en CI (los flujos de Fase 5 versionados).
+- Tracker de corto vence (feature #1).
+- Dashboard de salud de syncs (feature #3).
+- Evaluar modo offline del kiosco (feature #8) — el de mayor esfuerzo,
+  requiere decisión explícita de prioridad frente al resto.
+
+---
+
+¿Qué grupo de fixes querés que aplique primero? No se aplicó nada de esta
+Fase 6 todavía — es intencional, según lo acordado para esta fase.

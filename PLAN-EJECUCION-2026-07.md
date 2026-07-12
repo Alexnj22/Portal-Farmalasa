@@ -113,8 +113,36 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
   Aplicado a prod (mismo bundle RPC+drop policy — usuario confirmó que los kioscos aún no están
   operativos en sucursal, sin riesgo de romper nada en el gap DB/frontend). Verificado contra un
   `kiosk_devices` real de prod: RPC devuelve el match correcto. `APP_VERSION` → v2.15.11.
-  Pendiente: deploy normal del frontend (fuera del alcance de este agente) para que
-  `branchSlice.js` actualizado llegue a producción.
+  Frontend: Vercel (`portal-farmalasa`) auto-deploya en cada push a `main` — el `git push` de
+  este commit ya disparó el deploy (`dpl_Fn3vRyKQaqtK2fUwiK9bJPJYBE5q`, estado READY, verificado
+  contra la API de Vercel). Nada pendiente de deploy manual.
+- **0B.2 — ✅ APLICADO en prod y verificado.** Creados `admin_invoke_secret` y `cron_invoke_secret`
+  en Supabase Vault (`vault.create_secret`) con los valores ya expuestos en texto plano. Reescritos
+  los 28 `cron.job.command` afectados (más que el "~21" estimado por la auditoría) para leer el
+  secreto vía `(SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name=...)` en vez de
+  literal — patrón probado primero en staging (`ewcmerxqjvludtgskuin`) con un secreto de prueba.
+  Verificado: 0 jobs con el hex plano en `cron.job.command`; dry-run de la construcción de headers
+  para una muestra (incluyendo el caso con ambos secretos, job 168) resuelve al valor correcto;
+  los ~20 jobs de cadencia 1-2min corrieron en vivo tras la migración con `status='succeeded'`
+  en `cron.job_run_details` y `200` en los logs de las edge functions.
+  **Hallazgo colateral (no causado por esta migración, preexistente):** 4 funciones invocadas por
+  cron (`check-sales-alerts` job 168, `check-employee-doc-expiry` job 177, `auto-calculate-minmax`
+  job 170, `notify-new-products-daily` job 167) tenían `verify_jwt=true` en la configuración de la
+  edge function — el gateway de Supabase exige un JWT real ANTES de que corra el código de la
+  función (`checkCronSecret` nunca llegaba a evaluarse). Como el cron les manda `x-cron-secret`/
+  `Authorization: Bearer <hex random>` (no un JWT), estas 4 llevaban fallando en silencio con 401
+  desde que se desplegaron — `cron.job_run_details` nunca lo mostraba porque solo confirma que
+  `net.http_post` se encoló bien, no la respuesta HTTP real. Confirmado que NO lo causó mi cambio
+  de hoy (mismo 401 con el secreto viejo en texto plano, antes de tocar nada). Redesplegadas las 4
+  con `--no-verify-jwt` (mismo patrón que sus hermanas `check-doc-expiry`/`heal-dte-sync`, que sí
+  funcionan). Verificado con `net.http_post` manual + `net._http_response`: `check-employee-doc-expiry`
+  → 200 `{"ok":true,"created":0}`; `check-sales-alerts` → 200 `{"ok":true,"alerts":0}`;
+  `notify-new-products-daily` → 200 `{"ok":true,"nuevos":0}`; `auto-calculate-minmax` → 200 con
+  resultado real por sucursal (necesitó el timeout de 120s del cron real, mi primer test con el
+  default de 5s de pg_net dio falso timeout, no falla real).
+  Impacto real: alertas de ventas MH/CCF, avisos de vencimiento de documentos de empleados, recálculo
+  mensual de MIN/MAX y notificación diaria de productos nuevos probablemente nunca se ejecutaron
+  exitosamente hasta este fix.
 
 ### Camino de deploy de edge functions (resuelto)
 Bash `supabase functions deploy` funciona CON permiso, pero el CLI se traga un `.env` con un nombre

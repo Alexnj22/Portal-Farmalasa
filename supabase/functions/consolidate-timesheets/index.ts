@@ -272,6 +272,7 @@ Deno.serve(async (req) => {
 
     let upserted = 0;
     let skipped  = 0;
+    let failed   = 0;
 
     for (const roster of rosters || []) {
       const empId    = String(roster.employee_id);
@@ -404,10 +405,14 @@ Deno.serve(async (req) => {
         updated_at:                new Date().toISOString(),
       };
 
-      if (existingId) {
-        await supabase.from('timesheets').update(payload).eq('id', existingId);
-      } else {
-        await supabase.from('timesheets').insert([payload]);
+      const { error: upsertErr } = existingId
+        ? await supabase.from('timesheets').update(payload).eq('id', existingId)
+        : await supabase.from('timesheets').insert([payload]);
+
+      if (upsertErr) {
+        console.error(`Timesheet upsert failed for ${empId} on ${workDate}:`, upsertErr.message);
+        failed++;
+        continue;
       }
 
       upserted++;
@@ -417,7 +422,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ ok: true, work_date: workDate, upserted, skipped }),
+      JSON.stringify({ ok: true, work_date: workDate, upserted, skipped, failed }),
       { headers: { 'Content-Type': 'application/json' } },
     );
   } catch (err) {

@@ -5,8 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.16';
+export const APP_VERSION = '2.15.17';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.17 — fix(bloque1): 1.3, 1.4, 1.5, 1.7 (edge functions + TabMinMax/TabSinVenta).
+// 1.3: consolidate-timesheets ya no ignora el error del upsert de timesheets
+// (log + contador `failed` en la respuesta); sync-promo-sales ya no ignora el
+// error del SELECT de promotion_sales_cache ni de los 2 UPDATE de auto-cierre
+// (estado='closed') — antes autoClosed++ se incrementaba aunque el UPDATE
+// fallara. 1.4: sync-promo-sales calculaba el factor de presentación con un
+// regex sobre el texto libre `presentacion` (viola CLAUDE.md §Factor de
+// Presentación) — reemplazado por lookup real contra product_precios.factor,
+// mismo patrón `pres_factors` de get_stock_analysis (MAX(factor) agrupado por
+// product_id + UPPER(descripcion)), precargado una sola vez para todos los
+// promotion_products antes del loop. 1.5: `saveHiddenTimer` en TabMinMax.jsx —
+// ref muerta, nunca asignada ni leída (comentario decía "kept for cleanup
+// safety" pero no había nada que limpiar) — eliminada. 1.7: `daysLeft` en
+// ExpandedPanel (TabMinMax) y `days`/`d` en UltimaVentaCell (TabSinVenta) se
+// calculaban con Date.now()/new Date() directo en el render — si el
+// componente no volvía a renderizar por otra razón, el badge de "días
+// restantes"/"hace Xd" quedaba congelado en el valor de cuando se montó.
+// Nuevo hook compartido `useNowTick` (src/hooks/useNowTick.js, tick cada 60s)
+// reemplaza esos 3 usos para que el badge se mantenga correcto con el tiempo.
+// Build limpio (vite build).
 
 // v2.15.16 — fix(bloque1/1.2): cierra el resto del inventario de 35 sitios —
 // los 16 archivos restantes además de requestsSlice.js/payrollSlice.js (v2.15.15):

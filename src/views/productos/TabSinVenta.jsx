@@ -11,6 +11,7 @@ import TablePagination from '../../components/common/TablePagination';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { smartFilter } from '../../utils/searchUtils';
+import { useNowTick } from '../../hooks/useNowTick';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -151,6 +152,7 @@ function getSinMinMaxSugg(row) {
 // ─── Última venta cell ────────────────────────────────────────────────────────
 
 function UltimaVentaCell({ row, allBranches }) {
+    const now = useNowTick();
     const fecha = row.ultima_venta;
     const porSuc = row.ultima_venta_por_suc || [];
 
@@ -162,7 +164,7 @@ function UltimaVentaCell({ row, allBranches }) {
         );
     }
 
-    const days  = Math.floor((new Date() - new Date(fecha)) / 86_400_000);
+    const days  = Math.floor((now - new Date(fecha)) / 86_400_000);
     const color = days > 365 ? 'text-red-500' : days > 180 ? 'text-orange-500' : 'text-slate-600';
     const label = new Date(fecha).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -204,7 +206,7 @@ function UltimaVentaCell({ row, allBranches }) {
         <div className="space-y-1.5">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Última venta por suc.</p>
             {sorted.map(s => {
-                const d = Math.floor((Date.now() - new Date(s.fecha)) / 86_400_000);
+                const d = Math.floor((now - new Date(s.fecha)) / 86_400_000);
                 const c = d > 365 ? 'text-red-500' : d > 180 ? 'text-orange-500' : 'text-[#0052CC]';
                 return (
                     <div key={s.esid} className="flex items-center justify-between gap-6 whitespace-nowrap">

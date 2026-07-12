@@ -17,6 +17,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
+import { useNowTick } from '../../hooks/useNowTick';
 
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
@@ -817,6 +818,7 @@ function AbcXyzBadge({ abc, xyz }) {
 
 function ExpandedPanel({ row, cycleDays }) {
     const { hasPermission } = useAuth();
+    const now = useNowTick();
     const canSeeCosts  = hasPermission('minmax_ver_costos');
     const pres        = row.presentations || [];
     const stock       = Number(row.current_stock);
@@ -1091,7 +1093,7 @@ function ExpandedPanel({ row, cycleDays }) {
                             <span className="text-[9px] font-black uppercase tracking-widest text-orange-500">Vencimientos próximos (60 días)</span>
                             <div className="flex flex-col gap-1">
                                 {expiryData.map((lot, i) => {
-                                    const daysLeft = Math.ceil((new Date(lot.fecha_vencimiento) - Date.now()) / 86400000);
+                                    const daysLeft = Math.ceil((new Date(lot.fecha_vencimiento) - now) / 86400000);
                                     const urgent   = daysLeft <= 30;
                                     return (
                                         <div key={i} className="flex items-center gap-3 text-[10px]">
@@ -1732,7 +1734,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     const [filterChangesOnly, setFilterChangesOnly] = useState(false);
     const [filterHidden,      setFilterHidden]      = useState(false);
     const [hiddenIds,       setHiddenIds]       = useState(new Set());
-    const saveHiddenTimer  = useRef(null); // unused, kept for cleanup safety
     const publishTimer     = useRef(null);
     const skipBlurSave     = useRef(false);
     const [publishConfirm,  setPublishConfirm]  = useState({ open: false, ids: null, count: 0 });

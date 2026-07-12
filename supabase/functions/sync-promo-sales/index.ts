@@ -52,6 +52,28 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Factor real de presentación desde product_precios (nunca regex sobre texto
+    // libre — ver CLAUDE.md §Factor de Presentación). Mismo patrón `pres_factors`
+    // usado en get_stock_analysis: MAX(factor) agrupado por (product_id, descripcion).
+    const allProductIds = [...new Set(
+      promos.flatMap((p: any) => (p.promotion_products || []).map((pp: any) => pp.product_id))
+    )];
+    const factorMap = new Map<string, number>();
+    if (allProductIds.length > 0) {
+      const precioRows = await selectAllPaged<any>((from, to) =>
+        supabase
+          .from("product_precios")
+          .select("product_id, descripcion, factor")
+          .in("product_id", allProductIds)
+          .range(from, to)
+      );
+      for (const row of (precioRows || [])) {
+        const key = `${row.product_id}__${String(row.descripcion || "").toUpperCase()}`;
+        const prev = factorMap.get(key) ?? 0;
+        if ((row.factor || 1) > prev) factorMap.set(key, row.factor || 1);
+      }
+    }
+
     for (const promo of promos) {
       const branchIds: number[] = (promo.promotion_branches || []).map((pb: any) => pb.branch_id);
       if (branchIds.length === 0) continue;
@@ -85,10 +107,9 @@ Deno.serve(async (req) => {
           for (const row of (sales || [])) {
             const inv = row.sales_invoices as any;
             if (!inv) continue;
-            const factor = (() => {
-              const m = (row.presentacion || "").match(/[0-9]+[xX]([0-9]+)/);
-              return m ? parseInt(m[1]) : 1;
-            })();
+            const factor = factorMap.get(
+              `${pp.product_id}__${String(row.presentacion || "").toUpperCase()}`
+            ) ?? 1;
             const key = `${inv.fecha}__${inv.branch_id}`;
             agg[key] = (agg[key] || 0) + (row.cantidad * factor);
           }
@@ -124,20 +145,25 @@ Deno.serve(async (req) => {
           // Sumar SOLO las ventas dentro del período de la promo — sin filtrar por
           // fecha, el cache histórico (o reuso del producto en otra promo) cerraba
           // promociones antes de tiempo.
-          const { data: cacheRows } = await supabase
+          const { data: cacheRows, error: cacheErr } = await supabase
             .from("promotion_sales_cache")
             .select("units_sold")
             .in("promotion_product_id", (promo.promotion_products || []).map((pp: any) => pp.id))
             .gte("fecha", fromDate)
             .lte("fecha", toDate);
 
-          const totalSold = (cacheRows || []).reduce((s, r) => s + (r.units_sold || 0), 0);
-          if (totalSold >= totalStock) {
-            await supabase
-              .from("promotions")
-              .update({ estado: "closed" })
-              .eq("id", promo.id);
-            autoClosed++;
+          if (cacheErr) {
+            errors.push(`load cache promo=${promo.id}: ${cacheErr.message}`);
+          } else {
+            const totalSold = (cacheRows || []).reduce((s, r) => s + (r.units_sold || 0), 0);
+            if (totalSold >= totalStock) {
+              const { error: closeErr } = await supabase
+                .from("promotions")
+                .update({ estado: "closed" })
+                .eq("id", promo.id);
+              if (closeErr) errors.push(`close promo=${promo.id}: ${closeErr.message}`);
+              else autoClosed++;
+            }
           }
         }
       }
@@ -146,8 +172,12 @@ Deno.serve(async (req) => {
       if ((promo.end_condition === "date" || promo.end_condition === "both") && promo.fecha_fin) {
         const today = new Date().toISOString().split("T")[0];
         if (promo.fecha_fin < today) {
-          await supabase.from("promotions").update({ estado: "closed" }).eq("id", promo.id);
-          autoClosed++;
+          const { error: closeErr } = await supabase
+            .from("promotions")
+            .update({ estado: "closed" })
+            .eq("id", promo.id);
+          if (closeErr) errors.push(`close promo=${promo.id}: ${closeErr.message}`);
+          else autoClosed++;
         }
       }
     }

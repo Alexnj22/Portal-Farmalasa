@@ -8,6 +8,9 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 // --------------------------------------------------------
 // HELPERS DE TIEMPO Y LÓGICA
 // --------------------------------------------------------
+const EMPTY_OBJ = {};
+const EMPTY_ARRAY = [];
+
 const formatCompactTime = (timeString) => {
     if (!timeString) return '';
     const parts = timeString.split(':');
@@ -283,8 +286,8 @@ const DayRow = memo(({
 const FormPlanificador = ({ formData, setFormData, shifts }) => {
     const { branches } = useStaff();
     const emp = formData.employee || {};
-    const schedule = formData.schedule || {};
-    const history = emp.history || [];
+    const schedule = formData.schedule || EMPTY_OBJ;
+    const history = emp.history || EMPTY_ARRAY;
 
     const isMonthlyLimitedRole = emp.role && (emp.role.toUpperCase().includes('REGENTE') || emp.role.toUpperCase().includes('FARMACOVIGILANCIA') || emp.role.toUpperCase().includes('AUDITOR'));
     const isMultiBranch = isMonthlyLimitedRole || (emp.assigned_branches && emp.assigned_branches.length > 1);

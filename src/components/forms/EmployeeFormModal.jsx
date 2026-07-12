@@ -42,6 +42,7 @@ const HOURS_OPTIONS = [
     { value: '22', label: 'Medio Tiempo 22h' },
     { value: 'OTRO', label: 'Otro' },
 ];
+const CATALOG_CATEGORIES = ['BACHILLERATO_TECNICO_ESPECIALIDAD', 'TECNICO_SUPERIOR_ESPECIALIDAD', 'PROFESION_UNIVERSITARIA', 'MAESTRIA_POSTGRADO', 'CURSO_HABILIDAD', 'INSTITUCION_CAPACITACION', 'ENFERMEDAD_CRONICA', 'TIPO_DISCAPACIDAD'];
 // weekly_contracted_hours llega como number desde Postgres (integer) pero como
 // string mientras se edita en el input — comparar siempre vía String() para
 // que "Tiempo Completo 44h"/"Medio Tiempo 22h" se detecten sin importar el tipo.
@@ -254,7 +255,6 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // Especialidades/profesiones viven en education_catalog_entries — se
     // traen una vez al abrir el modal; "Otra..." agrega filas nuevas ahí
     // (employeeSlice.js) y quedan disponibles como opción real de inmediato.
-    const CATALOG_CATEGORIES = ['BACHILLERATO_TECNICO_ESPECIALIDAD', 'TECNICO_SUPERIOR_ESPECIALIDAD', 'PROFESION_UNIVERSITARIA', 'MAESTRIA_POSTGRADO', 'CURSO_HABILIDAD', 'INSTITUCION_CAPACITACION', 'ENFERMEDAD_CRONICA', 'TIPO_DISCAPACIDAD'];
     const [educationCatalog, setEducationCatalog] = useState(() => Object.fromEntries(CATALOG_CATEGORIES.map(c => [c, []])));
     useEffect(() => {
         let cancelled = false;
@@ -380,7 +380,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             delete dataToSave.photoPreview; 
             localStorage.setItem('wfm_employee_draft', JSON.stringify(dataToSave));
         }
-    }, [formData]);
+    }, [formData, isEditMode]);
 
     const restoreDraft = () => {
         try {
@@ -448,6 +448,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
             }
         };
         updatePin();
+        // formData.kiosk_pin queda fuera a propósito: el guard `pin !== formData.kiosk_pin`
+        // ya evita bucles, pero incluirlo dispararía el efecto también cuando ESTE mismo
+        // efecto acaba de escribirlo — solo debe re-derivar el pin cuando cambia el code.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData?.code]);
 
     const handleChange = (e) => {

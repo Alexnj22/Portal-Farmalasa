@@ -26,9 +26,11 @@ const NocturnalLegalInfo = () => (
     </div>
 );
 
+const EMPTY_OBJ = {};
+
 const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
-    const entry = formData._entry || {};
-    const emp   = entry.employee || {};
+    const entry = formData._entry || EMPTY_OBJ;
+    const emp   = entry.employee || EMPTY_OBJ;
     const daily = round2((emp.base_salary || 0) / 30);
 
     // Bank state per subtype: { diurnal: number|null, nocturnal: number|null }
@@ -99,7 +101,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
 
     const preview = useMemo(() =>
         calcPayrollEntry(emp, formData.days_worked ?? entry.days_worked ?? 15, formData),
-    [emp, formData]);
+    [emp, formData, entry.days_worked]);
 
     return (
         <div className="grid grid-cols-2 gap-4">

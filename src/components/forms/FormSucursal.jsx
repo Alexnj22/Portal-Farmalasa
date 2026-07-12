@@ -53,17 +53,20 @@ const calculateEndDate = (startDateStr, durationMonths) => {
     return `${y}-${m}-${d}`;
 };
 
+const EMPTY_EMPLOYEES = [];
+const EMPTY_OBJ = {};
+
 const FormSucursal = ({ formData, setFormData, section = "general" }) => {
-    
-    const employees = useStaff(state => state.employees) || [];
-    
+
+    const employees = useStaff(state => state.employees) || EMPTY_EMPLOYEES;
+
     const name = formData.name || formData.branchName || "";
     const openingDate = (formData.openingDate || formData.opening_date || "").split('T')[0];
 
     const currentSettings = useMemo(() => purifySettings(formData.settings), [formData.settings]);
     const schedule = useMemo(() => purifyHours(formData.weeklyHours || formData.weekly_hours), [formData.weeklyHours, formData.weekly_hours]);
-    
-    const location = currentSettings.location || {};
+
+    const location = currentSettings.location || EMPTY_OBJ;
     const legal = currentSettings.legal || {};
     const rent = currentSettings.rent || { contract: {} };
     const services = currentSettings.services || {};

@@ -5,8 +5,37 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.20';
+export const APP_VERSION = '2.15.21';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.21 — fix(bloque1/1.6, parte 4): react-hooks/exhaustive-deps, primeros
+// 16/89 cerrados (2 categorías de bajo riesgo primero):
+// (a) "unnecessary dependency" — AnnouncementsView.jsx/EncuestaView.jsx:
+// quitado `employees`/`invertedIndices` de un useMemo que no los usa
+// (limpieza directa, cero riesgo).
+// (b) "logical expression podría cambiar cada render" — fallback `|| []`/`|| {}`
+// evaluado directo en el cuerpo del render y usado como dep de useMemo/
+// useCallback aguas abajo: crea una referencia nueva cada render mientras el
+// valor real es null/undefined, rompiendo la memoización real (no es un bug
+// de comportamiento, es un problema de performance/exhaustive-deps).
+// Arreglado con constantes de módulo estables (`EMPTY_OBJ`/`EMPTY_EMPLOYEES`/
+// etc.) en FormBranchEmployees, FormSucursal (4 sitios), FormPlanificador
+// (2 sitios), FormEditPayrollEntry (colateral, ver abajo).
+// Además: EmployeeFormModal — CATALOG_CATEGORIES movida a constante de
+// módulo (vivía redeclarada dentro del componente); FormAiSchedulerPreview —
+// agregado `otherBranchEmployees` (mismo memo deps que branchEmployees, ya
+// en el array); FormEditPayrollEntry — agregado `entry.days_worked`
+// (primitivo, sin riesgo); FormLeadership — agregado `formData.selectedEmpId`;
+// FormNovedad — agregados `formData?.disabilityDays`/`formData.endDate`
+// (mismo patrón self-healing ya usado en EmployeeFormModal para kiosk_pin,
+// verificado que el guard existente evita bucle); FormTurnos —
+// handleArchiveShift/handleRestoreShift no estaban en useCallback (identidad
+// nueva cada render) — envueltos en useCallback([fetchShifts, showToast])
+// para poder incluirlos en el dep array de TurnoCard sin romper su memo.
+// Colateral: arreglar FormEditPayrollEntry.jsx:102 destapó un segundo
+// missing-dep en la misma función (`emp`/`entry` con el mismo problema de
+// fallback inline) — cerrado de paso con la misma constante EMPTY_OBJ.
+// Build limpio. Quedan 73 exhaustive-deps.
 
 // v2.15.20 — fix(bloque1/1.6, parte 3): react-hooks/set-state-in-effect
 // CERRADO — las 34 ocurrencias restantes (66/66 en total con la parte 2).

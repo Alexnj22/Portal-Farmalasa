@@ -519,7 +519,7 @@ export default function EncuestaView() {
         });
         const numericAvg = numericVals.length ? numericVals.reduce((a, b) => a + b, 0) / numericVals.length : null;
         return { dist, numericAvg };
-    }, [filteredRows, invertedIndices, selfRatingIdx]);
+    }, [filteredRows, selfRatingIdx]);
 
     // Razones de permanencia (P3 = index 2)
     const razones = useMemo(() => {

@@ -494,7 +494,7 @@ const AnnouncementsView = ({ openModal }) => {
         badgeText, badgeType: ann.targetType
       };
     });
-  }, [announcements, employees, getTargetAudience, branchNameById]);
+  }, [announcements, getTargetAudience, branchNameById]);
 
   // 🚨 LÓGICA DE SEPARACIÓN EN PESTAÑAS MEJORADA
   const currentListRaw = useMemo(() => {

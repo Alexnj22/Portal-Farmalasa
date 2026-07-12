@@ -18,6 +18,8 @@ const COLOR_MAP = {
     violet: "bg-gradient-to-br from-violet-100 to-violet-200 border-violet-300 text-violet-700",
 };
 
+const EMPTY_EMPLOYEES = [];
+
 const getTimeAgo = (dateString) => {
     if (!dateString) return 'Dato no disponible';
     const diff = new Date() - new Date(dateString);
@@ -28,7 +30,7 @@ const getTimeAgo = (dateString) => {
 };
 
 const FormBranchEmployees = ({ formData, onClose, setView, setActiveEmployee }) => {
-    const employees = useStaff(state => state.employees) || [];
+    const employees = useStaff(state => state.employees) || EMPTY_EMPLOYEES;
     const branchId = String(formData?.id);
 
     const gpuLockStyle = {

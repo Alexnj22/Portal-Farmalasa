@@ -85,7 +85,7 @@ const FormTurnos = ({ branches }) => {
         }
     };
 
-    const handleArchiveShift = async (shift) => {
+    const handleArchiveShift = useCallback(async (shift) => {
         setActionLoading(shift.id);
         try {
             // 🚨 SOFT DELETE: Archivar en lugar de eliminar
@@ -110,9 +110,9 @@ const FormTurnos = ({ branches }) => {
         } finally {
             setActionLoading(null);
         }
-    };
+    }, [fetchShifts, showToast]);
 
-    const handleRestoreShift = async (shift) => {
+    const handleRestoreShift = useCallback(async (shift) => {
         setActionLoading(shift.id);
         try {
             // Restaurar turno
@@ -136,7 +136,7 @@ const FormTurnos = ({ branches }) => {
         } finally {
             setActionLoading(null);
         }
-    };
+    }, [fetchShifts, showToast]);
 
     // --- MODOS DE EDICIÓN ---
     const startEditing = (shift) => {
@@ -237,7 +237,7 @@ const FormTurnos = ({ branches }) => {
                 </div>
             </div>
         );
-    }, [editingShiftId, actionLoading, confirmingArchiveId, branches]);
+    }, [editingShiftId, actionLoading, confirmingArchiveId, branches, handleArchiveShift, handleRestoreShift]);
 
     return (
         <div id="form-turnos-creator" className="grid grid-cols-1 lg:grid-cols-[40%,1fr] gap-8 h-[75vh] min-h-[500px]">

@@ -41,7 +41,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                 outgoingBranch: prev.branch?.id || ''
             }));
         }
-    }, [currentAssigneeObj, formData.currentAssignee, setFormData, formData.outgoingAction]);
+    }, [currentAssigneeObj, formData.currentAssignee, formData.selectedEmpId, setFormData, formData.outgoingAction]);
 
     // 3. Buscador
     const filteredEmployees = useMemo(() => {

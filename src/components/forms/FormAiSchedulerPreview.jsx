@@ -119,7 +119,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
 
         if (branchEmployees.length > 0) fetchAiProposal();
         else { setError("No hay empleados asignados a esta sucursal."); setIsLoading(false); }
-    }, [branchId, weekStartDate, branchEmployees, currentBranch, shifts]);
+    }, [branchId, weekStartDate, branchEmployees, otherBranchEmployees, currentBranch, shifts]);
 
     const handleShiftChange = (empId, dayId, newShiftId) => {
         setEditableSchedule(prev => {

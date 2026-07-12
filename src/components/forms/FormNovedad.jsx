@@ -96,7 +96,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
             // Solo limpiar si no hay días de incapacidad definidos (si hay, onChange ya calculó endDate)
             if (formData.endDate && !formData?.disabilityDays) setFormData(prev => ({ ...prev, endDate: null }));
         }
-    }, [formData?.date, isVacation, isDisability, formData?.disabilityType, formData?.manualEndDateOverride, setFormData]);
+    }, [formData?.date, isVacation, isDisability, formData?.disabilityType, formData?.manualEndDateOverride, formData?.disabilityDays, formData.endDate, setFormData]);
 
     useEffect(() => {
         if (!formData?.newCode) return;

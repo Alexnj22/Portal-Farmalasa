@@ -70,11 +70,11 @@ function monthOptions() {
 function useSortable(defaultKey, defaultDir = 'asc') {
     const [sortKey, setSortKey] = useState(defaultKey);
     const [sortDir, setSortDir] = useState(defaultDir);
-    const toggle = (key) => {
+    const toggle = useCallback((key) => {
         if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
         else { setSortKey(key); setSortDir('asc'); }
-    };
-    const sortFn = (arr, accessors) => {
+    }, [sortKey]);
+    const sortFn = useCallback((arr, accessors) => {
         const fn = accessors[sortKey];
         if (!fn) return arr;
         return [...arr].sort((a, b) => {
@@ -84,7 +84,7 @@ function useSortable(defaultKey, defaultDir = 'asc') {
             const cmp = typeof av === 'string' ? av.localeCompare(bv, 'es') : av - bv;
             return sortDir === 'asc' ? cmp : -cmp;
         });
-    };
+    }, [sortKey, sortDir]);
     return { sortKey, sortDir, toggle, sortFn };
 }
 
@@ -338,7 +338,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
         const inMonth = resolvedThisMonth.some(r => resolvedMatchesTerm(r, searchTerm));
         if (!inMonth) setShowAllResolved(true);
         setTimeout(() => resolvedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
-    }, [searchTerm]);
+    }, [searchTerm, resolved, resolvedMatchesTerm, resolvedThisMonth]);
 
     const copyErpId = (erpId) => {
         if (!erpId) return;
@@ -730,7 +730,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         const inMonth = resolvedThisMonth.some(r => resolvedMatchesTerm(r, searchTerm));
         if (!inMonth) setShowAllResolved(true);
         setTimeout(() => resolvedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
-    }, [searchTerm]);
+    }, [searchTerm, resolved, resolvedMatchesTerm, resolvedThisMonth]);
 
     const loadData = useCallback(async () => {
         if (pollingRef2.current) return;
@@ -1675,23 +1675,23 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
     // Reset pending pages when data changes
     useEffect(() => { setPendingPages({}); }, [pendingFiltered.length, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar datos/búsqueda
 
-    const CONFIRMED_SORT_ACCESSORS = {
+    const CONFIRMED_SORT_ACCESSORS = useMemo(() => ({
         correlativo:   r => r.invoice?.correlativo,
-        sucursal:      r => getBranch(r.branch_id),
+        sucursal:      r => branches.find(b => b.id === r.branch_id)?.name || `Suc. ${r.branch_id}`,
         cliente:       r => r.invoice?.cliente,
         fecha:         r => r.invoice?.fecha,
         total:         r => parseFloat(r.invoice?.total || 0),
         confirmed_by:  r => r.confirmed_by,
         confirmed_at:  r => r.confirmed_at,
         tipo_pago:     r => r.tipo_pago,
-    };
+    }), [branches]);
 
     const confirmedFiltered = useMemo(() => {
         let list = confirmed;
         if (filterConfirmedTipo) list = list.filter(r => r.tipo_pago?.toLowerCase() === filterConfirmedTipo);
         if (filterConfirmedBranch) list = list.filter(r => String(r.branch_id) === filterConfirmedBranch);
         return cSortFn(list, CONFIRMED_SORT_ACCESSORS);
-    }, [confirmed, filterConfirmedTipo, filterConfirmedBranch, cSortKey, cSortDir]);
+    }, [confirmed, filterConfirmedTipo, filterConfirmedBranch, cSortFn, CONFIRMED_SORT_ACCESSORS]);
 
     useEffect(() => { setConfirmedPage(1); }, [confirmedFiltered.length, filterConfirmedTipo, filterConfirmedBranch]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar filtros
 

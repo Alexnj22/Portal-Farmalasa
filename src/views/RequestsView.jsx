@@ -493,7 +493,7 @@ const RequestsView = () => {
             openCreateModal(location.state.prefillEmployeeId); // eslint-disable-line react-hooks/set-state-in-effect -- abre el modal por deep-link al montar
             navigate(location.pathname, { replace: true });
         }
-    }, []);
+    }, [location.state?.prefillEmployeeId, location.pathname, navigate]);
 
     const handleCreateRequest = async () => {
         if (!createEmployeeId || !createNote.trim()) return;
@@ -512,7 +512,7 @@ const RequestsView = () => {
         const apId = canApprove ? user?.id : null;
         const brId = getScope('requests') === 'BRANCH' ? user?.branchId : null;
         fetchRequests(null, brId, apId);
-    }, []);
+    }, [canApprove, user?.id, user?.branchId, getScope, fetchRequests]);
 
     useEffect(() => {
         const handler = () => {
@@ -522,7 +522,7 @@ const RequestsView = () => {
         };
         window.addEventListener('requests-updated', handler);
         return () => window.removeEventListener('requests-updated', handler);
-    }, []);
+    }, [canApprove, user?.id, user?.branchId, getScope, fetchRequests]);
 
     useEffect(() => {
         if (isSearchMode && searchInputRef.current)

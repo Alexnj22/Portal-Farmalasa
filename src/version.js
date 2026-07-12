@@ -5,8 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.24';
+export const APP_VERSION = '2.15.25';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.25 — fix(bloque1/1.6, parte 8): exhaustive-deps, siguientes 8/89
+// (FacturacionView, PayrollView, RequestsView). FacturacionView: 2 efectos
+// de auto-expandir sección al buscar ganaron sus deps reales (resolved/
+// resolvedMatchesTerm/resolvedThisMonth); CONFIRMED_SORT_ACCESSORS (objeto
+// con funciones que cerraban sobre `getBranch`, inestable) memoizado con
+// useMemo([branches]) e inlineado el lookup de sucursal directo (ya no
+// depende de `getBranch`); `useSortable()` — su `sortFn`/`toggle` no
+// estaban en useCallback, causa raíz de por qué CONFIRMED_SORT_ACCESSORS
+// no se podía estabilizar — ahora ambos son estables por (sortKey, sortDir).
+// PayrollView: agregadas fetchPayrollPeriods/activePeriod/fetchPayrollEntries
+// (acciones de store, estables).
+// **RequestsView — el hallazgo "más preocupante" que marcó la auditoría**:
+// 2 efectos de carga de solicitudes pendientes de aprobación corrían UNA
+// SOLA VEZ al montar (`[]`), sin reaccionar a `canApprove`/`user`/`getScope`
+// — si esos valores no estaban listos en el primer render (carga async de
+// permisos), el aprobador podía ver una lista de solicitudes con el scope
+// incorrecto (todas en vez de solo las de su sucursal, o viceversa) hasta
+// el próximo evento `requests-updated`. Corregido: ambos efectos ahora
+// reaccionan a canApprove/user.id/user.branchId/getScope/fetchRequests.
+// El efecto de deep-link (prefillEmployeeId) también ganó sus deps reales
+// — es auto-corrector (el propio navigate() limpia el state que dispara
+// la guarda, no hay riesgo de bucle).
+// Build limpio. Quedan 26 exhaustive-deps.
 
 // v2.15.24 — fix(bloque1/1.6, parte 7): exhaustive-deps, siguientes 11/89
 // (AttendanceMonitorView, AuditView, BranchDetailView, DashboardView,

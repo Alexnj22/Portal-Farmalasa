@@ -397,8 +397,8 @@ const PayrollView = ({ openModal }) => {
 
     const { showToast } = useToastStore();
 
-    React.useEffect(() => { fetchPayrollPeriods(); }, []);
-    React.useEffect(() => { if (activePeriod) fetchPayrollEntries(activePeriod.id); }, [activePeriod?.id]);
+    React.useEffect(() => { fetchPayrollPeriods(); }, [fetchPayrollPeriods]);
+    React.useEffect(() => { if (activePeriod) fetchPayrollEntries(activePeriod.id); }, [activePeriod, fetchPayrollEntries]);
 
     // Check unapproved timesheets whenever the active period changes
     useEffect(() => {

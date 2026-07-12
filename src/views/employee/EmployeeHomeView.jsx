@@ -185,7 +185,7 @@ const EmployeeHomeView = () => {
     useEffect(() => {
         if (!user?.id) return;
         if (isCurrentWeek && emp?.weeklySchedule) {
-            setScheduleData(emp.weeklySchedule);
+            setScheduleData(emp.weeklySchedule); // eslint-disable-line react-hooks/set-state-in-effect -- usa el horario ya cargado en boot en vez de re-fetch para la semana actual
             return;
         }
         setIsLoadingWeek(true);

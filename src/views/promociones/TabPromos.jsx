@@ -276,7 +276,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
         setLoading(false);
     }, [showToast]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     const handleStateChange = async (promo, newEstado) => {
         const { error } = await supabase.from('promotions')

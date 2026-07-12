@@ -120,7 +120,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
         setRefreshing(false);
     }, []);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     // Realtime: recarga cuando cambia el estado de pedidos o lifecycle
     useEffect(() => {

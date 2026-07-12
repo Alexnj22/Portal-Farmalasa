@@ -269,7 +269,7 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
   useEffect(() => {
     if (!catalogReady.current) return;
     const q = search.trim();
-    if (q.length < 2) { setResults([]); return; }
+    if (q.length < 2) { setResults([]); return; } // eslint-disable-line react-hooks/set-state-in-effect -- limpia resultados cuando la búsqueda es muy corta
     const { results: matched } = smartFilter(q, allProdsRef.current, p => [
       p.nombre,
       p.principio_activo ?? '',

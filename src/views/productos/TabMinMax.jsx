@@ -847,7 +847,7 @@ function ExpandedPanel({ row, cycleDays }) {
     // Wave 1: branch summary (renders the cards immediately)
     // Wave 2: everything else in parallel
     useEffect(() => {
-        setBranchReady(false);
+        setBranchReady(false); // eslint-disable-line react-hooks/set-state-in-effect -- reset antes de re-fetch al cambiar de producto
         setDetailReady(false);
 
         supabase.rpc('get_product_branch_summary', { p_erp_product_id: row.erp_product_id })

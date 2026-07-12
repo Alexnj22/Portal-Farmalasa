@@ -65,7 +65,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
         setLoading(false);
     }, []);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     const handleSave = async (labId, branchId, fields) => {
         const payload = {
@@ -324,7 +324,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
     const [section,  setSection]  = useState('sala');
 
     useEffect(() => {
-        setDraft({ ...emptyLoc(), ...initial });
+        setDraft({ ...emptyLoc(), ...initial }); // eslint-disable-line react-hooks/set-state-in-effect -- sincroniza el draft desde el prop `initial`
         setSalaType(initial.vitrina?.trim() ? 'vitrina' : 'estante');
     }, [initial]);
 

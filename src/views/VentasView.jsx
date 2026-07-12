@@ -355,7 +355,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     }, []);
 
     useEffect(() => {
-        if (!filterAntibiotico || antibioticIds.size === 0) { setAbInvoiceIds(null); return; }
+        if (!filterAntibiotico || antibioticIds.size === 0) { setAbInvoiceIds(null); return; } // eslint-disable-line react-hooks/set-state-in-effect -- reset antes de re-fetch al cambiar filtro
         const ids = [...antibioticIds];
         supabase.from('sales_invoice_items').select('invoice_id').in('erp_product_id', ids)
             .then(({ data }) => {
@@ -591,9 +591,9 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         }
     }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, abInvoiceIds, page, pageSize, sortCol, sortDir, isSearching, searchTerm]);
 
-    useEffect(() => { fetchStats(); }, [fetchStats]);
-    useEffect(() => { fetchRows(); }, [fetchRows]);
-    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, isSearching, pageSize]);
+    useEffect(() => { fetchStats(); }, [fetchStats]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar filtros
+    useEffect(() => { fetchRows(); }, [fetchRows]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar filtros
+    useEffect(() => { setPage(1); }, [fini, ffin, filterBranch, filterPuntos, filterAnuladas, filterAntibiotico, isSearching, pageSize]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar filtros
 
     const fetchPricesForIds = useCallback((erpIds) => {
         const uncachedIds = erpIds.filter(id => !(id in pricesCache));
@@ -961,7 +961,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
     const [expandedData, setExpandedData] = useState([]);
     const [loadingExpand, setLoadingExpand] = useState(false);
 
-    useEffect(() => { if (privacyMode) setExpanded(null); }, [privacyMode]);
+    useEffect(() => { if (privacyMode) setExpanded(null); }, [privacyMode]); // eslint-disable-line react-hooks/set-state-in-effect -- cierra la fila expandida al activar modo privacidad
     const [prevRankMap, setPrevRankMap]     = useState(new Map());
     const [prevVendStats, setPrevVendStats] = useState({ sum: 0, count: 0 });
 
@@ -989,7 +989,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
         setLoading(false);
     }, [fini, ffin, filterBranch]);
 
-    useEffect(() => { fetchVendedores(); }, [fetchVendedores]);
+    useEffect(() => { fetchVendedores(); }, [fetchVendedores]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar filtros
 
     useEffect(() => {
         const { prevFini, prevFfin } = computePrevRange(fini, ffin);

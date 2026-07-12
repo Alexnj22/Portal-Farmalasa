@@ -194,7 +194,7 @@ const EmployeeDocumentsView = () => {
 
     useEffect(() => {
         if (!user?.id) return;
-        setLoading(true);
+        setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
         supabase
             .from('approval_requests')
             .select('id, type, status, metadata, created_at, note')

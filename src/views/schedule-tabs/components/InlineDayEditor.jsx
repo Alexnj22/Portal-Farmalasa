@@ -191,7 +191,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
             if (shiftId && shiftId !== 'OFF' && shiftId !== 'NO_SHIFTS') {
                 const template = filteredShifts.find(s => String(s.id) === String(shiftId));
                 if (template) {
-                    setCustomStart(template.start_time?.substring(0, 5) || template.start);
+                    setCustomStart(template.start_time?.substring(0, 5) || template.start); // eslint-disable-line react-hooks/set-state-in-effect -- autocompleta horas al cambiar de turno (guardado contra prevShiftIdRef)
                     setCustomEnd(template.end_time?.substring(0, 5) || template.end);
                 }
             }
@@ -220,7 +220,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                 left = window.innerWidth - popRect.width - 10;
             }
 
-            setPos({ top, left });
+            setPos({ top, left }); // eslint-disable-line react-hooks/set-state-in-effect -- mide el popover real (getBoundingClientRect) para posicionarlo
             // Give browser one frame to paint at scale(0.96) before animating in
             requestAnimationFrame(() => requestAnimationFrame(() => setIsVisible(true)));
         }

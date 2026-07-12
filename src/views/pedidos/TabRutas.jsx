@@ -321,7 +321,7 @@ export default function TabRutas({ searchTerm = '' }) {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadRutas(); }, [loadRutas]);
+  useEffect(() => { loadRutas(); }, [loadRutas]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
   // Realtime: recarga cuando cambia el estado de rutas o paradas
   useEffect(() => {

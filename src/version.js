@@ -5,8 +5,26 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.19';
+export const APP_VERSION = '2.15.20';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.20 — fix(bloque1/1.6, parte 3): react-hooks/set-state-in-effect
+// CERRADO — las 34 ocurrencias restantes (66/66 en total con la parte 2).
+// Mismo criterio caso por caso: cada efecto revisado, clasificado y
+// suprimido con eslint-disable-line + justificación específica del patrón
+// real (fetch-on-mount, reset de estado derivado al cambiar filtro/prop/id,
+// o medición de DOM). Archivos: MinMaxView, PayrollView, PermissionsView,
+// RequestsView, StaffManagementView, VentasView (5 más), dashboard/
+// WidgetAnnulmentRequest, dashboard/WidgetMinMaxRequest, employee/
+// EmployeeDocumentsView, employee/EmployeeHomeView, employee/
+// EmployeeRequestsView (2), inventario/ConteoDetailView, pedidos/
+// FinalizarCajasModal, pedidos/LlegadaModal, pedidos/TabEnCurso, pedidos/
+// TabPedidos, pedidos/TabReglas, pedidos/TabRutas, productos/TabCatalogo,
+// productos/TabLaboratorios (2), productos/TabMinMax, promociones/
+// TabBonificaciones, promociones/TabHistorial, promociones/TabPromos,
+// schedule-tabs/InlineDayEditor (2). Build limpio. Sin cambios de
+// comportamiento en ninguno de los 66. Sigue exhaustive-deps (89), última
+// categoría de 1.6.
 
 // v2.15.19 — fix(bloque1/1.6, parte 2): react-hooks/set-state-in-effect,
 // primera mitad (32 de 66 cerradas, 34 restantes). Todas resueltas con

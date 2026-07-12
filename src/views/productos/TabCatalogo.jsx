@@ -480,7 +480,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
     useEffect(() => {
         if (!branches) return;
         const farm = branches.filter(b => ['FARMACIA', 'BODEGA'].includes(b.type));
-        setLocs(farm.map(b => {
+        setLocs(farm.map(b => { // eslint-disable-line react-hooks/set-state-in-effect -- deriva la grilla de ubicaciones desde branches/initial
             const saved = (initial || []).find(l => l.branch_id === b.id);
             return {
                 branch_id:      b.id,

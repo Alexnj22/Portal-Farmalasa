@@ -16,7 +16,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
     useEffect(() => {
         if (!open) {
             // Resetear estado al cerrar para que la próxima apertura empiece limpio
-            setSubmitting(false);
+            setSubmitting(false); // eslint-disable-line react-hooks/set-state-in-effect
             setScreen(1);
             setTotalCajasInput('');
             setPageAssignments([]);

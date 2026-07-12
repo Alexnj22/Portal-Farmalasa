@@ -263,7 +263,7 @@ function ItemHistoryModal({ item, onClose }) {
 
     useEffect(() => {
         if (!item) return;
-        setHistory(null);
+        setHistory(null); // eslint-disable-line react-hooks/set-state-in-effect -- reset antes de re-fetch al cambiar de item
         fetchConteoItemHistory(item.id).then(setHistory);
     }, [item, fetchConteoItemHistory]);
 

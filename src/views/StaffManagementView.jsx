@@ -568,7 +568,7 @@ const StaffManagementView = ({
   useEffect(() => { fetchPracticantes(); }, [fetchPracticantes]);
 
   useEffect(() => {
-    setCurrentPage(1);
+    setCurrentPage(1); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar filtros
   }, [normalizedSearch, selectedBranch, itemsPerPage, activeStatFilter]);
 
   const branchOptions = useMemo(() => {

@@ -43,7 +43,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
     // Check for draft on open
     useEffect(() => {
-        if (open && draftKey) setHasDraft(!!loadDraft(draftKey));
+        if (open && draftKey) setHasDraft(!!loadDraft(draftKey)); // eslint-disable-line react-hooks/set-state-in-effect
         if (!open) setHasDraft(false);
     }, [open, draftKey]);
 

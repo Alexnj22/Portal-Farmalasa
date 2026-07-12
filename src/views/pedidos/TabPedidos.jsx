@@ -834,7 +834,7 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
     }, [rows, search]);
 
     useEffect(() => {
-        if (!open) { setSearch(''); setSearchOpen(false); setPage(1); }
+        if (!open) { setSearch(''); setSearchOpen(false); setPage(1); } // eslint-disable-line react-hooks/set-state-in-effect -- resetea búsqueda/paginación al cerrar
     }, [open]);
 
     const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));

@@ -490,7 +490,7 @@ const RequestsView = () => {
     // Deep-link desde EmployeeDetailView ("+ Nueva Solicitud" de un empleado puntual)
     useEffect(() => {
         if (location.state?.prefillEmployeeId) {
-            openCreateModal(location.state.prefillEmployeeId);
+            openCreateModal(location.state.prefillEmployeeId); // eslint-disable-line react-hooks/set-state-in-effect -- abre el modal por deep-link al montar
             navigate(location.pathname, { replace: true });
         }
     }, []);

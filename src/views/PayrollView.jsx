@@ -402,7 +402,7 @@ const PayrollView = ({ openModal }) => {
 
     // Check unapproved timesheets whenever the active period changes
     useEffect(() => {
-        if (!activePeriod?.start_date || !activePeriod?.end_date) { setUnapprovedCount(null); return; }
+        if (!activePeriod?.start_date || !activePeriod?.end_date) { setUnapprovedCount(null); return; } // eslint-disable-line react-hooks/set-state-in-effect -- reset antes de re-fetch al cambiar de periodo
         setUnapprovedCount(null);
         supabase.from('timesheets')
             .select('id', { count: 'exact', head: true })

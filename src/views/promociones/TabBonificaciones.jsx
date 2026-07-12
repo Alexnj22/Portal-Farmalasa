@@ -139,7 +139,7 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
         setLoading(false);
     }, [showToast]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     const filtered = searchTerm

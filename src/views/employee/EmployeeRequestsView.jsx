@@ -407,7 +407,7 @@ const EmployeeRequestsView = () => {
     // Estado de incapacidad/permiso del compañero en la fecha seleccionada
     const [targetEmpStatus, setTargetEmpStatus] = useState(null); // null | { blocked: bool, reason: string }
     useEffect(() => {
-        if (!payload.targetEmployeeId || !payload.date) { setTargetEmpStatus(null); return; }
+        if (!payload.targetEmployeeId || !payload.date) { setTargetEmpStatus(null); return; } // eslint-disable-line react-hooks/set-state-in-effect -- reset antes de re-fetch al cambiar de compañero/fecha
         let cancelled = false;
         supabase.from('employee_events')
             .select('type, date, metadata')
@@ -583,7 +583,7 @@ const EmployeeRequestsView = () => {
         setIsLoading(false);
     }, [user?.id]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     useEffect(() => {
         const handler = () => load();

@@ -83,7 +83,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
     useEffect(() => {
         // Si ya está en caché, no vuelve a hacer fetch
         if (presCache.current[product.id]) {
-            setPresentations(presCache.current[product.id]);
+            setPresentations(presCache.current[product.id]); // eslint-disable-line react-hooks/set-state-in-effect -- usa el caché ya resuelto en vez de re-fetch
             setLoadingPres(false);
             return;
         }

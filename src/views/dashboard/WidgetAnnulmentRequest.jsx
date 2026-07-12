@@ -864,8 +864,8 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
     setLoading(false);
   }, [activeBranchId]);
 
-  useEffect(() => { loadInvoices(); }, [loadInvoices]);
-  useEffect(() => { setView('list'); setFocused(null); setSearch(''); setDateFilter(''); }, [propBranchId]);
+  useEffect(() => { loadInvoices(); }, [loadInvoices]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar de sucursal
+  useEffect(() => { setView('list'); setFocused(null); setSearch(''); setDateFilter(''); }, [propBranchId]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea el widget al cambiar de sucursal
 
   /* Search: by client, vendor name/code, invoice number, ID, payment type, amount */
   const buildCorpus = useCallback((inv) => {

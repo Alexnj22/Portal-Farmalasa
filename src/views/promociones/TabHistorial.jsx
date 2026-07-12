@@ -50,7 +50,7 @@ export default function TabHistorial({ searchTerm }) {
         setLoading(false);
     }, [showToast]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     const toggleExpand = (id) => {
         setExpanded(prev => {

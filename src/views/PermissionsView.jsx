@@ -460,7 +460,7 @@ const PermissionsView = () => {
 
     // ── Carga roles organizacionales + permisos desde DB ─────────────────────
     useEffect(() => {
-        setLoading(true);
+        setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
         Promise.all([
             supabase.from('roles').select('id, name, parent_role_id, max_price_level, is_su').order('id'),
             supabase.from('role_permissions').select('role_id, module_key, can_view, can_edit, can_approve, scope').not('role_id', 'is', null),

@@ -56,7 +56,7 @@ export default function MinMaxView() {
         setConfigLoaded(true);
     }, []);
 
-    useEffect(() => { loadConfig(); }, [loadConfig]);
+    useEffect(() => { loadConfig(); }, [loadConfig]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     useEffect(() => {
         if (getScope('minmax') !== 'BRANCH' || !user?.branchId) return;

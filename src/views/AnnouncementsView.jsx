@@ -166,9 +166,11 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
 // ============================================================================
 // VISTA PRINCIPAL
 // ============================================================================
+const EMPTY_ANNOUNCEMENTS = [];
+
 const AnnouncementsView = ({ openModal }) => {
   const storeAnnouncements = useStaff(state => state.announcements);
-  const announcements = storeAnnouncements || [];
+  const announcements = storeAnnouncements || EMPTY_ANNOUNCEMENTS;
   
   // 🚨 NUEVO: Extraemos fetchInitialData para poder recargar desde la DB
   const branches = useStaff(state => state.branches);
@@ -236,6 +238,19 @@ const AnnouncementsView = ({ openModal }) => {
     setCurrentPage(1);
   }, [listTab, debouncedSearchTerm]);
 
+  const handleCancelEdit = useCallback(() => {
+    setError('');
+    setEditingAnnId(null);
+    setTitle('');
+    setMessage('');
+    setTargetType(isBranchScoped ? 'BRANCH' : 'GLOBAL');
+    setTargetValue(isBranchScoped ? String(user?.branchId || '') : '');
+    setSelectedEmployees([]);
+    setPriority('NORMAL');
+    setPublishImmediately(true);
+    setScheduledDate('');
+  }, [isBranchScoped, user?.branchId]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -245,7 +260,7 @@ const AnnouncementsView = ({ openModal }) => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isSearchMode, editingAnnId]);
+  }, [isSearchMode, editingAnnId, handleCancelEdit]);
 
   const branchNameById = useMemo(() => {
     const m = new Map();
@@ -313,19 +328,6 @@ const AnnouncementsView = ({ openModal }) => {
     setListTab(ann.scheduledFor && new Date(ann.scheduledFor) > new Date() ? 'SCHEDULED' : 'ACTIVE');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
-
-  const handleCancelEdit = useCallback(() => {
-    setError('');
-    setEditingAnnId(null);
-    setTitle('');
-    setMessage('');
-    setTargetType(isBranchScoped ? 'BRANCH' : 'GLOBAL');
-    setTargetValue(isBranchScoped ? String(user?.branchId || '') : '');
-    setSelectedEmployees([]);
-    setPriority('NORMAL');
-    setPublishImmediately(true);
-    setScheduledDate('');
-  }, [isBranchScoped, user?.branchId]);
 
   const handlePublish = async (e) => {
     e.preventDefault();

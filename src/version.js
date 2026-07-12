@@ -5,8 +5,28 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.22';
+export const APP_VERSION = '2.15.23';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.23 — fix(bloque1/1.6, parte 6): exhaustive-deps, siguientes 12/89
+// (AnnouncementsView + AttendanceAuditView completo, 9 de sus 9 sitios).
+// AnnouncementsView.jsx: fallback `|| []` inestable (constante de módulo);
+// handleCancelEdit se declaraba DESPUÉS del efecto de keydown que lo usaba
+// (funcionaba en runtime por closure/hoisting de la ejecución del render,
+// pero no se podía agregar a deps sin ReferenceError) — reordenado antes
+// del efecto, cero cambio de comportamiento.
+// AttendanceAuditView.jsx (view completa cerrada): `now = new Date()` sin
+// memoizar en DayCard/EmployeeAuditRow anulaba la memoización real de 2
+// useMemo pesados (recorren todos los punches/quincenas) — cambiado a
+// `useMemo(() => new Date(), [])` (estable por instancia de card, no
+// necesita tick en vivo como los badges de v2.15.17/18); employees/branches/
+// shifts con el mismo patrón de fallback inestable ya visto (constante de
+// módulo); agregadas 2 deps reales (loadAttendanceLastDays, showToast — ya
+// en uso, solo faltaban en el array).
+// Build limpio. Verificación visual: login + nav + Ventas (BranchChips) en
+// vite preview con Playwright, sin errores de consola atribuibles a estos
+// cambios (solo warnings COEP preexistentes del modo preview).
+// Quedan 45 exhaustive-deps.
 
 // v2.15.22 — fix(bloque1/1.6, parte 5): exhaustive-deps, siguientes 16/89
 // (BranchChips, AppLayout — shell de navegación; useKioskDevice,

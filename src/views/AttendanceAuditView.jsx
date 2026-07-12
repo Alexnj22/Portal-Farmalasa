@@ -16,6 +16,7 @@ import GlassViewLayout from "../components/GlassViewLayout";
 import LiquidSelect from '../components/common/LiquidSelect';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
+const EMPTY_ARRAY = [];
 const PUNCH_TYPE_LABELS = {
   IN: 'Entrada', IN_EARLY: 'Entrada Anticipada', IN_AFTER_SHIFT: 'Entrada Fuera de Turno',
   IN_EXTRA: 'Entrada Extra', IN_RETURN: 'Regreso de Permiso',
@@ -405,7 +406,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
 
 // ── DayCard ───────────────────────────────────────────────────────────────────
 function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchNameById, onCorrect, onMarkReviewed, reviewedPunchIds }) {
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const dayD   = new Date(dateStr + 'T12:00:00Z');
   const dow    = dayD.getUTCDay();
   const isFuture   = new Date(`${dateStr}T23:59:59-06:00`) > now;
@@ -691,7 +692,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
 // ── EmployeeAuditRow ──────────────────────────────────────────────────────────
 function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchNameById, onCorrect, onApproveAll, onMarkReviewed, reviewedPunchIds }) {
   const [expanded, setExpanded] = useState(false);
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
 
   // Alert counts across the quincena
   const alerts = useMemo(() => {
@@ -921,9 +922,9 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   // ── Demo mode (auto — activates only when no real employees exist) ─────────
   const mockData   = useMemo(() => buildMockData(), []);
   const isDemoMode = !storeEmployees?.length;
-  const employees  = isDemoMode ? mockData.employees : (storeEmployees || []);
-  const branches   = isDemoMode ? mockData.branches   : (storeBranches  || []);
-  const shifts     = isDemoMode ? mockData.shifts     : (storeShifts    || []);
+  const employees  = isDemoMode ? mockData.employees : (storeEmployees || EMPTY_ARRAY);
+  const branches   = isDemoMode ? mockData.branches   : (storeBranches  || EMPTY_ARRAY);
+  const shifts     = isDemoMode ? mockData.shifts     : (storeShifts    || EMPTY_ARRAY);
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [filterBranch,      setFilterBranch]      = useState(
@@ -950,7 +951,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
   // Load attendance once — 62 days covers ~4 quincenas back
   useEffect(() => {
     if (!isDemoMode) loadAttendanceLastDays?.(62);
-  }, [isDemoMode]);
+  }, [isDemoMode, loadAttendanceLastDays]);
 
   // ── Load SHIFT_EXCEPTION requests for the quincena ──────────────────────
   useEffect(() => {
@@ -1066,7 +1067,7 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
       setQuincenaTS(prev => prev.map(ts => ids.includes(ts.id) ? { ...ts, status: 'APPROVED' } : ts));
     }
     setIsClosingQuincena(false);
-  }, [isClosingQuincena, quincenaTS]);
+  }, [isClosingQuincena, quincenaTS, showToast]);
 
   // ── Export quincena CSV ──────────────────────────────────────────────────
   const handleExportCSVQuincena = useCallback(() => {

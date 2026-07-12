@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Filter, X, Search, Download, Clock, FileText, Users, Eye, FileOutput, Printer, CheckCircle2, AlertTriangle, Settings, Building2, Wallet, Calendar, ChevronRight, Sparkles, Activity, ArrowLeft } from 'lucide-react';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -82,7 +82,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
         return combined.sort((a, b) => b.sortDate - a.sortDate);
     }, [propHistory, openDateStr]);
 
-    const getActionLabel = (item) => {
+    const getActionLabel = useCallback((item) => {
         if (item.isSynthetic) return item.action?.replace(/_/g, ' ');
         if (item.isDoc) return 'ARCHIVO HISTÓRICO';
         const parsedDetails = typeof item.details === 'string' ? safeJsonParse(item.details, {}) : (item.details || {});
@@ -90,7 +90,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
         if (item.action === 'PAGO_REGISTRADO') return 'PAGO REGISTRADO';
         if (item.action === 'EDITAR_SUCURSAL') return 'ACTUALIZACIÓN DE DATOS';
         return item.action?.replace(/_/g, ' ') || 'REGISTRO DE SISTEMA';
-    };
+    }, []);
 
     // FILTRADO MULTIPLE
     const filteredHistoryRaw = useMemo(() => {
@@ -130,7 +130,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
             const actorName = item.user_name || item.user_email || item.actor_name || 'Sistema';
             return [getActionLabel(item), itemName, actorName];
         });
-    }, [syntheticHistory, typeFilter, dateFilter, searchQuery, showAllHistory]);
+    }, [syntheticHistory, typeFilter, dateFilter, searchQuery, showAllHistory, getActionLabel]);
     const { results: filteredHistory, isFuzzy: isHistorySearchFuzzy } = filteredHistoryRaw;
 
     // AGRUPACIÓN PARA EL ACORDEÓN

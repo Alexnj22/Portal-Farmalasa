@@ -204,7 +204,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
         if (currentForm.start && !currentForm.end) {
             setCurrentForm(prev => ({ ...prev, end: '16:00' }));
         }
-    }, [currentForm.start]);
+    }, [currentForm.start, currentForm.end]);
 
     const validBranches = useMemo(() => {
         if (!branches) return [];

@@ -115,7 +115,7 @@ const EmployeeScheduleView = () => {
             .in('type', ['VACATION', 'DISABILITY', 'PERMIT'])
             .lte('date', toISO(weekEnd))
             .then(({ data }) => setActiveEvents(data || []));
-    }, [user?.id, weekStartISO]);
+    }, [user?.id, weekStartISO, weekStart]);
 
     // Load vacation plans (PRE_APPROVED, CHANGE_REQUESTED, APPROVED, CONFIRMED)
     useEffect(() => {

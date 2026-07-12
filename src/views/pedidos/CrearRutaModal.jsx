@@ -131,7 +131,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
     }).finally(() => {
       setLoadingData(false);
     });
-  }, [open, user?.id]);
+  }, [open, user?.id, user?.email, initialKeys]);
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const selectedItems = useMemo(() =>

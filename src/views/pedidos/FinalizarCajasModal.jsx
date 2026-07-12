@@ -37,7 +37,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             .then(groups => setPageGroups(groups))
             .catch(() => setPageGroups([]))
             .finally(() => setLoadingPages(false));
-    }, [open, items, sucId, paginas]);
+    }, [open, items, sucId, paginas, draftKey]);
 
     const totalPages = pageGroups.length;
     const cajaCount  = Math.max(1, parseInt(totalCajasInput, 10) || 1);

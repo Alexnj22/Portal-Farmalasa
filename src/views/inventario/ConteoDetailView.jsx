@@ -109,7 +109,7 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
         setContadoAt(item.contado_at ?? null);
         setEstadoItem(item.estado_item);
         lastSaved.current = { fisico: item.fisico_cantidad ?? null, nota: item.nota ?? null, estado: item.estado_item };
-    }, [item.id, item.sistema_cantidad, item.fisico_cantidad]);
+    }, [item.id, item.sistema_cantidad, item.fisico_cantidad, item.contado_at, item.contado_por_nombre, item.estado_item, item.nota]);
 
     // Estimado inmediato con el "sistema" ya visible (en vivo si aún no se ha
     // contado) — el valor definitivo llega en la respuesta de guardar_conteo_item,

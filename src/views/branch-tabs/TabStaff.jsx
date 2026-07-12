@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     ShieldCheck, Award, AlertTriangle, User, Edit3,
     Star, HeartPulse, Briefcase, CalendarDays, Phone, MapPin,
@@ -291,7 +291,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
     const [isGeneratingAi, setIsGeneratingAi] = useState(false);
     const [aiSummaryData, setAiSummaryData] = useState(null);
 
-    const fetchHistoricalSales = async () => {
+    const fetchHistoricalSales = useCallback(async () => {
         if (!liveBranch?.id) return;
         setIsLoadingWfm(true);
         try {
@@ -307,11 +307,11 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
         } finally {
             setIsLoadingWfm(false);
         }
-    };
+    }, [liveBranch?.id]);
 
     useEffect(() => {
         fetchHistoricalSales();
-    }, [liveBranch?.id]);
+    }, [fetchHistoricalSales]);
 
     const branchType = liveBranch?.type || 'FARMACIA';
     const isFarmacia = branchType === 'FARMACIA';

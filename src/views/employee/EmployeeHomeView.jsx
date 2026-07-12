@@ -208,7 +208,7 @@ const EmployeeHomeView = () => {
             .in('type', ['VACATION', 'DISABILITY', 'PERMIT'])
             .lte('date', toISO(weekEnd))
             .then(({ data }) => setWeekEvents(data || []));
-    }, [user?.id, weekStartISO]);
+    }, [user?.id, weekStartISO, weekStart]);
 
     // Horario de compañeros de sucursal
     useEffect(() => {

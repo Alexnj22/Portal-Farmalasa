@@ -137,10 +137,12 @@ const CustomTooltip = ({ active, payload, label }) => {
 // ============================================================================
 // COMPONENTE PRINCIPAL DE LA PESTAÑA
 // ============================================================================
+const EMPTY_OBJ = {};
+
 const TabExpenses = ({ liveBranch, openModal, branchType }) => {
     const hasServices = !branchType || branchType === 'FARMACIA';
-    const rentData = liveBranch?.settings?.rent || {};
-    const svcData = liveBranch?.settings?.services || {};
+    const rentData = liveBranch?.settings?.rent || EMPTY_OBJ;
+    const svcData = liveBranch?.settings?.services || EMPTY_OBJ;
 
     const [historicalData, setHistoricalData] = useState([]);
     const [isLoadingData, setIsLoadingData] = useState(true);
@@ -225,7 +227,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
         if (svcData.taxes?.amount) total += Number(svcData.taxes.amount) || 0;
 
         return total;
-    }, [rentData, svcData, liveBranch]);
+    }, [rentData, svcData, liveBranch, hasServices]);
 
 
     // Cálculo de estadísticas basado en datos reales

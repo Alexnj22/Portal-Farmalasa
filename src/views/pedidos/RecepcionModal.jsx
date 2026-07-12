@@ -562,7 +562,7 @@ export default function RecepcionModal({
         }
     }, [accessibleBoxNums, allRecibidas, itemIdsByCaja, sortedRows, pedido, sucursalId, user,
         anyHasDiff, initCajasRecibidas, saveExtras, extras, onConfirmed, onClose,
-        especialItems, confirmedEspecialIds]);
+        especialItems, confirmedEspecialIds, faltaCajas.length, hasFaltaItems]);
 
     // ── Finalizar desde la pantalla de cajas (cuando todas ya están recibidas) ──
     const handleFinalizar = useCallback(async () => {

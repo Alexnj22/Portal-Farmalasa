@@ -5,8 +5,37 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.26';
+export const APP_VERSION = '2.15.27';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.27 — fix(bloque1/1.6, parte 10 — CIERRE): exhaustive-deps, últimos
+// 17/89 → **1.6 completo: 0/173 ocurrencias reales de lint restantes**
+// (react-hooks/exhaustive-deps + set-state-in-effect + purity +
+// static-components + immutability + refs, las 6 categorías de "riesgo
+// real" que catalogó la auditoría, de 379 problemas de lint totales a 186 —
+// el resto son cosméticos: no-unused-vars 102, no-empty 36, etc., fuera del
+// alcance de 1.6).
+// TabExpenses/TabHistory/TabStaff/TabMinMax: mismos patrones ya vistos
+// (fallback inestable, función sin useCallback, constante redeclarada por
+// render). EmployeeAnnouncementsView: readCheck (dependía solo de user.id)
+// envuelto en useCallback, reutilizado en 2 memos. EmployeeHomeView/
+// EmployeeScheduleView: agregado `weekStart` junto a weekStartISO (mismo
+// origen, cambian juntos). ConteoDetailView: 4 campos del item (contado_at/
+// contado_por_nombre/estado_item/nota) agregados — sin ellos, un update
+// concurrente de metadata del item no refrescaba el editor local (bug real
+// de prop-sync, no solo cosmético). CrearRutaModal/FinalizarCajasModal:
+// deps de modal reset-on-open agregadas. RecepcionModal/TabPedidos (x2):
+// deps primitivas agregadas. TabPedidos — un `// eslint-disable-line
+// (loadActiveRutas es estable [])` preexistente estaba mal formado (el
+// paréntesis se interpretaba como nombre de regla inválido, no suprimía
+// nada) — corregido a `eslint-disable-next-line react-hooks/exhaustive-deps`
+// con justificación real: fetchItems/loadActiveRutas son forward-references
+// (declaradas más abajo en el archivo de 3900+ líneas) cuyas propias deps
+// casi nunca cambian en la vida del componente — mover su declaración queda
+// fuera de alcance de este barrido. TabShifts: currentForm.end agregado
+// (auto-corrector, el propio efecto lo setea).
+// Build limpio. Verificación visual adicional en VentasView (parte 9) ya
+// cubrió el patrón de refs más riesgoso de esta serie.
 
 // v2.15.26 — fix(bloque1/1.6, parte 9): exhaustive-deps, siguientes 9/89
 // (RolesView, SchedulesView, VacationPlanView completo, VentasView

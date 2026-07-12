@@ -323,11 +323,10 @@ function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {},
 }
 
 // ─── ABC × XYZ Matrix ────────────────────────────────────────────────────────
+const XYZ_KEYS = ['X', 'Y', 'Z'];
+const ABC_KEYS = ['A', 'B', 'C'];
 
 function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, loading }) {
-    const XYZ_KEYS = ['X', 'Y', 'Z'];
-    const ABC_KEYS = ['A', 'B', 'C'];
-
     const matrix = useMemo(() => {
         const m = {};
         for (const abc of ABC_KEYS)

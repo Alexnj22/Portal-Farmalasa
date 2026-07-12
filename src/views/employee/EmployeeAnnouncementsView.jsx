@@ -610,9 +610,9 @@ const EmployeeAnnouncementsView = () => {
     const isStoreLoading = employees.length === 0 && announcements.length === 0;
     const currentYM = new Date().toISOString().slice(0, 7);
 
-    const readCheck = (ann) => (ann.readBy || []).some(r =>
+    const readCheck = useCallback((ann) => (ann.readBy || []).some(r =>
         String(typeof r === 'object' ? r.employeeId : r) === String(user?.id)
-    );
+    ), [user?.id]);
 
     const myAnnouncements = useMemo(() => {
         if (!user) return [];
@@ -649,7 +649,7 @@ const EmployeeAnnouncementsView = () => {
             });
         }
         return list;
-    }, [myAnnouncements, tab, user?.id, showOldRead, currentYM]);
+    }, [myAnnouncements, tab, showOldRead, currentYM, readCheck]);
 
     // Subfiltros disponibles para la tab READ
     const readFilters = useMemo(() => {
@@ -677,7 +677,7 @@ const EmployeeAnnouncementsView = () => {
 
     const hasOldRead = useMemo(() =>
         myAnnouncements.some(a => readCheck(a) && (a.date || '').slice(0, 7) !== currentYM)
-    , [myAnnouncements, user?.id, currentYM]);
+    , [myAnnouncements, currentYM, readCheck]);
 
     const handleRead = (id) => {
         if (user?.id) markAnnouncementAsRead(id, user.id);

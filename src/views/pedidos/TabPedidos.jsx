@@ -548,7 +548,7 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existin
             onClose();
         } catch (err) { setError(err?.message || 'Error al registrar apoyo.'); }
         finally  { setLoading(false); }
-    }, [employee, existingApoyo, pedidoId, sucId, currentUserId, onSuccess, onClose]);
+    }, [employee, existingApoyo, pedidoId, sucId, currentUserId, tipo, onSuccess, onClose]);
 
     return (
         <PedidoModal open={open} onClose={onClose}>
@@ -2187,7 +2187,13 @@ export default function TabPedidos({ searchTerm = '' }) {
             })
             .subscribe();
         return () => supabase.removeChannel(ch);
-    }, [loadActive, isBranch, erpSucursalId]); // eslint-disable-line (loadActiveRutas es estable [])
+        // fetchItems/loadActiveRutas quedan fuera: se declaran más abajo en el archivo
+        // (forward reference) y sus propias deps (isBranch/erpSucursalId; loadActiveRutas
+        // no tiene ninguna) rara vez cambian durante la vida de este componente, así que
+        // el riesgo real de closure obsoleta es bajo — mover su declaración antes de este
+        // efecto en un archivo de 3900+ líneas queda fuera de alcance de este barrido de lint.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loadActive, isBranch, erpSucursalId, expanded]);
 
     // ── Rutas activas: mapa pedidoId → { ruta, stop, driverOnline } ──────────
     const loadingRutasRef = useRef(false);

@@ -19,6 +19,16 @@ Deno.serve(async (req) => {
   try {
     const { filePath, bucketName } = await req.json()
 
+    // Auditoría 2026-07: whitelist de buckets. La descarga usa service_role
+    // (bypasea RLS), así que sin esto cualquier usuario autenticado podía pedir
+    // el análisis de un archivo de CUALQUIER bucket, incluido 'backups' (IDOR).
+    const ALLOWED_DOC_BUCKETS = ['documents', 'empleados', 'payment-proofs']
+    if (!ALLOWED_DOC_BUCKETS.includes(bucketName)) {
+      return new Response(JSON.stringify({ error: "BUCKET_NOT_ALLOWED" }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,

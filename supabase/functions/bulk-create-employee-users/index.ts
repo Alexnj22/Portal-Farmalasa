@@ -3,6 +3,19 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
 
+// Contraseña temporal aleatoria (sin caracteres ambiguos), igual que en
+// set-employee-password. Reemplaza el literal "1234" que (a) permitía tomar
+// cuentas nunca usadas con un username predecible y (b) fallaba en silencio
+// porque GoTrue exige mínimo 6 caracteres.
+function randomTempPassword(len = 10): string {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  const arr = new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  let out = "";
+  arr.forEach(b => (out += chars[b % chars.length]));
+  return out;
+}
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
   const json = (body: unknown, status = 200) =>
@@ -36,14 +49,16 @@ Deno.serve(async (req: Request) => {
     let skipped = 0;
     const errors: { username: string; error: string }[] = [];
 
-    // 2. Intentar crear usuario Auth para cada empleado
+    // 2. Intentar crear usuario Auth para cada empleado.
+    // La temporal aleatoria NO se devuelve: el admin la establece por empleado
+    // con "Establecer Contraseña" (set-employee-password), que sí la muestra.
     for (const emp of employees) {
       const email = `${emp.username.toLowerCase().trim()}@farmalasa.app`;
 
       const { error } = await admin.auth.admin.createUser({
         id: emp.id,
         email,
-        password: "1234",
+        password: randomTempPassword(),
         email_confirm: true,
         user_metadata: {
           must_change_password: true,

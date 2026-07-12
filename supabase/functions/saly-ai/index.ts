@@ -68,6 +68,10 @@ Deno.serve(async (req) => {
         break;
       }
       case 'analyze-document': {
+        // Auditoría 2026-07: whitelist de buckets (misma razón que la función
+        // standalone analyze-document — descarga con service_role, sin esto es IDOR).
+        const ALLOWED_DOC_BUCKETS = ['documents', 'empleados', 'payment-proofs'];
+        if (!ALLOWED_DOC_BUCKETS.includes(payload.bucketName)) throw new Error("BUCKET_NOT_ALLOWED");
         const { data: fileData, error: downloadError } = await supabase.storage.from(payload.bucketName).download(payload.filePath)
         if (downloadError) throw downloadError
         inlineData = [{ mimeType: fileData.type || 'application/pdf', data: encode(await fileData.arrayBuffer()) }];
@@ -121,7 +125,7 @@ Deno.serve(async (req) => {
             supabase.from('shifts').select('id, name, start_time, end_time, branch_id').limit(100),
             supabase.from('roles').select('id, name').limit(50),
             supabase.from('attendance').select('employee_id, type, timestamp').gte('timestamp', `${todayStr}T00:00:00Z`).limit(500),
-            supabase.from('employee_events').select('employee_id, type, date, note').gte('date', thirtyDaysAgoStr).limit(100),
+            supabase.from('employee_events').select('employee_id, type, date').gte('date', thirtyDaysAgoStr).limit(100),
             supabase.from('wfm_snapshots').select('branch_id, recommended_staff, peak_day_name, peak_hour').gte('snapshot_date', thirtyDaysAgoStr).limit(10),
             supabase.from('announcements').select('title, message, priority, target_type').eq('is_archived', false).limit(10) // 🚨 FIX Aplicado aquí
         ]);

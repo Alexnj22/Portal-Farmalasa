@@ -703,7 +703,8 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
 
     const handleSearch = async (q) => {
         if (!q || q.trim().length < 2) { setResults([]); return; }
-        const { data } = await supabase.from('products').select('id, nombre, laboratorios(nombre)').eq('activo', true).ilike('nombre', `%${q.trim()}%`).order('nombre').limit(30);
+        const { data, error } = await supabase.from('products').select('id, nombre, laboratorios(nombre)').eq('activo', true).ilike('nombre', `%${q.trim()}%`).order('nombre').limit(30);
+        if (error) console.error('handleSearch: product search failed:', error.message);
         setResults((data || []).filter((p) => !existingIds.includes(p.id)));
     };
 
@@ -718,16 +719,19 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
         setLoteOpts([]);
         if (!found) return;
 
-        const [{ data: precios }, { data: erpMap }] = await Promise.all([
+        const [{ data: precios, error: preciosErr }, { data: erpMap, error: erpMapErr }] = await Promise.all([
             supabase.from('product_precios').select('id_presentacion, presentaciones(tipo)').eq('product_id', found.id).eq('activo', true),
             supabase.from('erp_sucursal_map').select('erp_sucursal_id').eq('branch_id', branchId),
         ]);
+        if (preciosErr) console.error('handleSelectProduct: fetch product_precios failed:', preciosErr.message);
+        if (erpMapErr) console.error('handleSelectProduct: fetch erp_sucursal_map failed:', erpMapErr.message);
         const tipos = [...new Set((precios || []).map((p) => p.presentaciones?.tipo).filter(Boolean))];
         setPresentacionOpts(tipos.map((t) => ({ value: t, label: t })));
 
         const erpIds = (erpMap || []).map((m) => m.erp_sucursal_id);
         if (erpIds.length) {
-            const { data: lotes } = await supabase.from('inventory').select('lote, fecha_vencimiento').eq('erp_product_id', found.id).in('erp_sucursal_id', erpIds).not('lote', 'is', null);
+            const { data: lotes, error: lotesErr } = await supabase.from('inventory').select('lote, fecha_vencimiento').eq('erp_product_id', found.id).in('erp_sucursal_id', erpIds).not('lote', 'is', null);
+            if (lotesErr) console.error('handleSelectProduct: fetch lotes failed:', lotesErr.message);
             const seen = new Map();
             (lotes || []).forEach((l) => { if (!seen.has(l.lote)) seen.set(l.lote, l.fecha_vencimiento); });
             setLoteOpts(Array.from(seen.entries()).map(([value, fecha]) => ({ value, fecha })));
@@ -748,7 +752,8 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
         if (!canSubmit) return;
         setSaving(true);
         try {
-            const { data: precio } = await supabase.from('product_precios').select('costo').eq('product_id', selected.id).eq('activo', true).order('id').limit(1).maybeSingle();
+            const { data: precio, error: precioErr } = await supabase.from('product_precios').select('costo').eq('product_id', selected.id).eq('activo', true).order('id').limit(1).maybeSingle();
+            if (precioErr) console.error('handleSubmit: fetch costo failed:', precioErr.message);
             await onAdd({
                 erpProductId: selected.id,
                 presentacion,

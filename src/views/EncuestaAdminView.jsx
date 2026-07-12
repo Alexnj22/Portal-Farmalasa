@@ -222,12 +222,14 @@ export default function EncuestaAdminView() {
     // ── Load ──────────────────────────────────────────────────────────────────
     const loadSurveys = useCallback(async () => {
         setLoadingSurveys(true);
-        const { data } = await supabase.from('surveys').select('*').order('año', { ascending: false });
+        const { data, error } = await supabase.from('surveys').select('*').order('año', { ascending: false });
+        if (error) console.error('loadSurveys: fetch surveys failed:', error.message);
         const list = data || [];
         setSurveys(list);
         if (list.length) {
-            const { data: counts } = await supabase
+            const { data: counts, error: countsErr } = await supabase
                 .from('survey_responses').select('survey_id').in('survey_id', list.map(s => s.id));
+            if (countsErr) console.error('loadSurveys: fetch survey_responses failed:', countsErr.message);
             const map = {};
             list.forEach(s => { map[s.id] = 0; });
             (counts || []).forEach(r => { map[r.survey_id] = (map[r.survey_id] || 0) + 1; });
@@ -242,7 +244,10 @@ export default function EncuestaAdminView() {
         supabase.from('employees')
             .select('id, first_names, last_names, photo_url, role_id, hire_date, branch:branches(id, name)')
             .order('first_names')
-            .then(async ({ data }) => setEmployees(await signPhotosDeep(data || [])));
+            .then(async ({ data, error }) => {
+                if (error) console.error('EncuestaAdminView: fetch employees failed:', error.message);
+                setEmployees(await signPhotosDeep(data || []));
+            });
     }, []);
 
     const loadDetail = useCallback(async (survey) => {

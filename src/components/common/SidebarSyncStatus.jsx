@@ -20,13 +20,14 @@ export default function SidebarSyncStatus() {
 
   const fetchLatest = useCallback(async () => {
     const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('inventory_sync_log')
       .select('erp_sucursal_id, success, synced_at, error_msg')
       .gte('synced_at', since)
       .eq('is_vencidos', false)
       .order('synced_at', { ascending: false })
       .limit(60);
+    if (error) console.error('SidebarSyncStatus: fetch inventory_sync_log failed:', error.message);
 
     if (!data) return;
     const byBranch = {};

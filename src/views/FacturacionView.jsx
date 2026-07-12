@@ -272,9 +272,10 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
         const allIds = (historialRes.data || []).map(r => r.invoice_id);
         let invMap = {};
         if (allIds.length > 0) {
-            const { data: d } = await supabase.from('sales_invoices')
+            const { data: d, error: dErr } = await supabase.from('sales_invoices')
                 .select('id, correlativo, erp_invoice_id, branch_id, tipo_documento, cliente, fecha, total')
                 .in('id', allIds);
+            if (dErr) console.error('loadData: fetch resolved invoices failed:', dErr.message);
             for (const inv of (d || [])) invMap[inv.id] = inv;
         }
 
@@ -292,9 +293,10 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
     const handleSolve = async (invoiceId) => {
         setSaving(true);
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
-        const { data } = await supabase.from('sales_invoice_resolutions').insert({
+        const { data, error } = await supabase.from('sales_invoice_resolutions').insert({
             invoice_id: invoiceId, comment: comment.trim() || null, resolved_by: resolvedBy,
         }).select('id, invoice_id, comment, resolved_by, resolved_at');
+        if (error) { console.error('handleSolve: insert resolution failed:', error.message); setSaving(false); return; }
         setResolvedIds(prev => new Set([...prev, invoiceId]));
         const newRec = data?.[0];
         if (newRec) {
@@ -790,10 +792,11 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         const manuallyResolvedIds = [...resolvedIds].filter(id => !mhConfirmedIds.has(id));
         let manuallyResolvedInvs = [];
         if (manuallyResolvedIds.length > 0) {
-            const { data: mrData } = await supabase
+            const { data: mrData, error: mrErr } = await supabase
                 .from('sales_invoices')
                 .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, total')
                 .in('id', manuallyResolvedIds);
+            if (mrErr) console.error('loadData: fetch manually resolved invoices failed:', mrErr.message);
             manuallyResolvedInvs = mrData || [];
         }
 
@@ -1182,11 +1185,18 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
         let qGaps  = supabase.from('sales_invoice_gaps').select('*');
         let qNulls = supabase.from('sales_invoice_nulls').select('*');
         if (filterBranch) { qGaps = qGaps.eq('branch_id', Number(filterBranch)); qNulls = qNulls.eq('branch_id', Number(filterBranch)); }
-        const [{ data: gData }, { data: nData }, { data: rData }, { data: nrData }] = await Promise.all([
+        const [
+            { data: gData, error: gErr }, { data: nData, error: nErr },
+            { data: rData, error: rErr }, { data: nrData, error: nrErr },
+        ] = await Promise.all([
             qGaps, qNulls,
             supabase.from('sales_gap_resolutions').select('*').order('resolved_at', { ascending: false }),
             supabase.from('sales_null_resolutions').select('null_id'),
         ]);
+        if (gErr) console.error('load: fetch sales_invoice_gaps failed:', gErr.message);
+        if (nErr) console.error('load: fetch sales_invoice_nulls failed:', nErr.message);
+        if (rErr) console.error('load: fetch sales_gap_resolutions failed:', rErr.message);
+        if (nrErr) console.error('load: fetch sales_null_resolutions failed:', nrErr.message);
         setGaps(gData || []);
         setNulls(nData || []);
         setGapResolutions(rData || []);
@@ -1223,7 +1233,8 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
         setSaving(true);
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
         const payload = { branch_id: gap.branch_id, tipo_documento: gap.tipo_documento, gap_from: gap.gap_from, gap_to: gap.gap_to, comment: comment.trim() || null, resolved_by: resolvedBy };
-        const { data } = await supabase.from('sales_gap_resolutions').insert(payload).select('*');
+        const { data, error } = await supabase.from('sales_gap_resolutions').insert(payload).select('*');
+        if (error) { console.error('handleSolveGap: insert resolution failed:', error.message); setSaving(false); return; }
         if (data?.[0]) setGapResolutions(prev => [data[0], ...prev]);
         useStaff.getState().appendAuditLog('SOLVENTAR_SALTO_CORRELATIVO', String(gap.branch_id), {
             tipo_documento: gap.tipo_documento, gap_from: gap.gap_from, gap_to: gap.gap_to,
@@ -1617,15 +1628,19 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                 .select('id, invoice_id, confirmed_by, confirmed_by_photo, confirmed_at, notes, proof_url, tipo_pago, branch_id')
                 .order('confirmed_at', { ascending: false }),
         ]);
+        if (invoicesRes.error) console.error('loadData: fetch non-cash invoices failed:', invoicesRes.error.message);
+        if (confirmedIdsRes.error) console.error('loadData: fetch confirmed ids failed:', confirmedIdsRes.error.message);
+        if (historialRes.error) console.error('loadData: fetch confirmation history failed:', historialRes.error.message);
 
         const cidSet = new Set((confirmedIdsRes.data || []).map(r => r.invoice_id));
         const hData = await signPhotosDeep(historialRes.data || []);
         const hIds = hData.map(r => r.invoice_id);
         let invMap = {};
         if (hIds.length > 0) {
-            const { data: d } = await supabase.from('sales_invoices')
+            const { data: d, error: dErr } = await supabase.from('sales_invoices')
                 .select('id, correlativo, branch_id, tipo_documento, cliente, fecha, total, tipo_pago')
                 .in('id', hIds);
+            if (dErr) console.error('loadData: fetch confirmed invoices failed:', dErr.message);
             for (const inv of (d || [])) invMap[inv.id] = inv;
         }
 
@@ -1711,7 +1726,8 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
             branch_id: inv?.branch_id,
         };
 
-        const { data } = await supabase.from('sales_payment_confirmations').insert(payload).select('*');
+        const { data, error } = await supabase.from('sales_payment_confirmations').insert(payload).select('*');
+        if (error) { console.error('handleConfirm: insert confirmation failed:', error.message); setConfirmSaving(false); return; }
         setConfirmedIds(prev => new Set([...prev, invoiceId]));
         if (data?.[0]) setConfirmed(prev => [{ ...data[0], invoice: inv || null }, ...prev]);
 

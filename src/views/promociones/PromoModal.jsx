@@ -193,13 +193,14 @@ function AddProductInline({ onAdd }) {
     const handleSearch = useCallback(async (q) => {
         if (!q || q.trim().length < 2) { setSearchResults([]); return; }
         setIsSearching(true);
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('products')
             .select('id, nombre, foto_url, laboratorios(nombre)')
             .eq('activo', true)
             .ilike('nombre', `%${q.trim()}%`)
             .order('nombre')
             .limit(50);
+        if (error) console.error('PromoModal: search products failed:', error.message);
         setSearchResults((data || []).map(p => ({
             value:       String(p.id),
             label:       p.nombre,
@@ -216,10 +217,11 @@ function AddProductInline({ onAdd }) {
         setPresentOptions([]);
         if (!val) return;
         setLoadingPresent(true);
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('product_precios')
             .select('id_presentacion, descripcion, factor, presentaciones(id, tipo)')
             .eq('product_id', parseInt(val));
+        if (error) console.error('PromoModal: fetch product_precios failed:', error.message);
         const unique = [];
         const seen = new Set();
         for (const row of (data || [])) {

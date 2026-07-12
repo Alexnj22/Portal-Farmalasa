@@ -57,7 +57,10 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
 
     useEffect(() => {
         if (!isOpen || scopeType !== 'LABORATORIO') return;
-        supabase.from('laboratorios').select('id, nombre').order('nombre').then(({ data }) => setLaboratorios(data || []));
+        supabase.from('laboratorios').select('id, nombre').order('nombre').then(({ data, error }) => {
+            if (error) console.error('NuevoConteoModal: fetch laboratorios failed:', error.message);
+            setLaboratorios(data || []);
+        });
     }, [isOpen, scopeType]);
 
     const branchOpts = useMemo(() => buildBranchOpts(branches), [branches]);
@@ -65,7 +68,8 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
 
     const handleManualSearch = async (q) => {
         if (!q || q.trim().length < 2) { setManualResults([]); return; }
-        const { data } = await supabase.from('products').select('id, nombre, laboratorios(nombre)').eq('activo', true).ilike('nombre', `%${q.trim()}%`).order('nombre').limit(30);
+        const { data, error } = await supabase.from('products').select('id, nombre, laboratorios(nombre)').eq('activo', true).ilike('nombre', `%${q.trim()}%`).order('nombre').limit(30);
+        if (error) console.error('NuevoConteoModal: search products failed:', error.message);
         setManualResults((data || []).filter((p) => !manualSelected.some((s) => s.id === p.id)));
     };
 

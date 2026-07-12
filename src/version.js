@@ -5,8 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.15';
+export const APP_VERSION = '2.15.16';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.16 — fix(bloque1/1.2): cierra el resto del inventario de 35 sitios —
+// los 16 archivos restantes además de requestsSlice.js/payrollSlice.js (v2.15.15):
+// pedidoPrint.js, SidebarSyncStatus.jsx, NuevoConteoModal.jsx, EncuestaAdminView.jsx,
+// FacturacionView.jsx (7 más), VentasPperdidasView.jsx, MinMaxView.jsx,
+// SyncHealthBanner.jsx, VentasView.jsx (5 más), CotizacionesView.jsx (8),
+// RecepcionModal.jsx (4), TabPedidos.jsx (16), PromoModal.jsx, EmployeeDetailView.jsx,
+// TabCatalogo.jsx (5), ConteoDetailView.jsx (4). ~70 sitios en total. Mismo criterio
+// que v2.15.15: donde ya hay try/catch con manejo real, error real → throw (se
+// propaga al catch existente en vez de seguir con data vacía en silencio); donde
+// no hay manejo de errores previsto (varios reads de UI/prefetch), se agrega
+// console.error con contexto sin cambiar el control de flujo. 2 bugs de UX
+// reales corregidos de paso en FacturacionView.jsx (handleSolve/handleConfirm):
+// si el insert de resolución/confirmación fallaba, la UI igual marcaba la
+// factura como resuelta/confirmada — ahora aborta y loguea si el insert falla.
+// Build limpio, 0 lint nuevo (119 preexistentes antes y después, verificado
+// contra HEAD con git stash).
 
 // v2.15.15 — fix(bloque1/1.2): requestsSlice.js (22 sitios) y payrollSlice.js
 // (4 sitios) — const { data } = await supabase sin chequear error. En

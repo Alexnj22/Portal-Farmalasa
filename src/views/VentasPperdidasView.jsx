@@ -26,10 +26,12 @@ export default function VentasPperdidasView() {
     // Load reference maps once
     useEffect(() => {
         const loadMaps = async () => {
-            const [{ data: bData }, { data: eData }] = await Promise.all([
+            const [{ data: bData, error: bErr }, { data: eData, error: eErr }] = await Promise.all([
                 supabase.from('branches').select('id, name'),
                 supabase.from('employees_safe').select('id, name, photo_url'),
             ]);
+            if (bErr) console.error('VentasPperdidasView: fetch branches failed:', bErr.message);
+            if (eErr) console.error('VentasPperdidasView: fetch employees_safe failed:', eErr.message);
             const bm = {};
             for (const b of bData || []) bm[b.id] = b.name;
             setBranchMap(bm);
@@ -47,11 +49,12 @@ export default function VentasPperdidasView() {
         const load = async () => {
             setLoading(true);
             try {
-                const { data } = await supabase
+                const { data, error } = await supabase
                     .from('ventas_perdidas')
                     .select('id, producto_buscado, descripcion, principio_activo, laboratorio, cantidad, branch_id, reportado_por, status, created_at')
                     .eq('status', activeTab)
                     .order('created_at', { ascending: false });
+                if (error) console.error('VentasPperdidasView: fetch ventas_perdidas failed:', error.message);
                 if (!cancelled) setRows(data || []);
             } finally {
                 if (!cancelled) setLoading(false);

@@ -2569,10 +2569,11 @@ export default function TabCatalogo({
 
         const fetchPage = async (table, from) => {
             const isProd = table === 'products_changelog';
-            const { data } = await supabase.from(table)
+            const { data, error } = await supabase.from(table)
                 .select(isProd ? 'product_id, campo, valor_anterior' : 'product_id')
                 .gte('detected_at', startOfMonth)
                 .range(from, from + PAGE - 1);
+            if (error) throw error;
             if (cancelled) return;
             (data || []).forEach(r => {
                 if (isProd && CHANGELOG_HIDDEN.has(r.campo) && !r.valor_anterior) return;
@@ -2643,11 +2644,14 @@ export default function TabCatalogo({
 
             if (rows.length > 0) {
                 const ids = rows.map(r => r.id);
-                const [{ data: pc }, { data: prc }, { data: pp }] = await Promise.all([
+                const [{ data: pc, error: pcErr }, { data: prc, error: prcErr }, { data: pp, error: ppErr }] = await Promise.all([
                     supabase.from('product_precios_changelog').select('product_id').in('product_id', ids),
                     supabase.from('products_changelog').select('product_id, campo, valor_anterior').in('product_id', ids),
                     supabase.from('product_precios').select(`product_id, costo, ${PRICE_SELECT}`).in('product_id', ids).eq('activo', true).gt('costo', 0),
                 ]);
+                if (pcErr) throw pcErr;
+                if (prcErr) throw prcErr;
+                if (ppErr) throw ppErr;
                 if (rid !== loadRef.current) return;
                 const visiblePrc = (prc || []).filter(c => !(CHANGELOG_HIDDEN.has(c.campo) && !c.valor_anterior));
                 setChangedIds(new Set([...(pc || []).map(c => c.product_id), ...visiblePrc.map(c => c.product_id)]));
@@ -2722,7 +2726,7 @@ export default function TabCatalogo({
         prefetchTimerRef.current = setTimeout(async () => {
             prefetchingRef.current.add(productId);
             try {
-                const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }] = await Promise.all([
+                const results = await Promise.all([
                     supabase.from('product_precios').select(`id_presentacion, activo, descripcion, factor, costo, ${PRICE_SELECT}, presentaciones(tipo)`).eq('product_id', productId).order('activo', { ascending: false }),
                     supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                     supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
@@ -2731,6 +2735,9 @@ export default function TabCatalogo({
                     ? supabase.from('purchase_receipt_items').select('cantidad, precio_unitario, purchase_receipts(fecha, proveedor)').eq('erp_product_id', productId).order('receipt_id', { ascending: false }).limit(60)
                     : Promise.resolve({ data: [] }),
                 ]);
+                const firstErr = results.find(r => r.error)?.error;
+                if (firstErr) console.error('prefetchRow failed:', firstErr.message);
+                const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }] = results;
                 setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [] } }));
             } catch { /* silent */ }
         }, 120);
@@ -2746,7 +2753,7 @@ export default function TabCatalogo({
         setLoadingExpandedId(productId);
         prefetchingRef.current.add(productId);
         try {
-            const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }] = await Promise.all([
+            const results = await Promise.all([
                 supabase.from('product_precios').select(`id_presentacion, activo, descripcion, factor, costo, ${PRICE_SELECT}, presentaciones(tipo)`).eq('product_id', productId).order('activo', { ascending: false }),
                 supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
                 supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
@@ -2755,6 +2762,9 @@ export default function TabCatalogo({
                     ? supabase.from('purchase_receipt_items').select('cantidad, precio_unitario, purchase_receipts(fecha, proveedor)').eq('erp_product_id', productId).order('receipt_id', { ascending: false }).limit(60)
                     : Promise.resolve({ data: [] }),
             ]);
+            const firstErr = results.find(r => r.error)?.error;
+            if (firstErr) console.error('toggleRow: expand product failed:', firstErr.message);
+            const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }] = results;
             setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [] } }));
         } finally { setLoadingExpandedId(null); }
     }, [expandedId, expandedCache, cancelPrefetch, canSeeCosts]);

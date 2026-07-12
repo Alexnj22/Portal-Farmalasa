@@ -62,11 +62,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         if (!eid) return;
         setIsLoadingEmpReqs(true);
         try {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('approval_requests')
                 .select('id, type, status, note, approver_note, created_at, updated_at')
                 .eq('employee_id', eid)
                 .order('created_at', { ascending: false });
+            if (error) console.error('loadEmpRequests failed:', error.message);
             setEmpRequests(data || []);
         } catch { /* silencioso */ }
         finally { setIsLoadingEmpReqs(false); }
@@ -87,11 +88,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         if (!eid) return;
         setIsLoadingTimeline(true);
         try {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('employee_timeline')
                 .select('*')
                 .eq('employee_id', eid)
                 .order('event_date', { ascending: false });
+            if (error) console.error('fetchTimeline failed:', error.message);
             setTimelineData(data || []);
         } catch (e) {
             console.error('Error cargando timeline:', e);

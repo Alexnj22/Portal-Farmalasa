@@ -55,9 +55,10 @@ const GRID = 'grid-cols-[minmax(0,1fr)_2.5rem_9rem_3rem_9rem_3rem_1.75rem]';
 const EXTRAS_GRID = 'grid-cols-[minmax(0,1fr)_9rem_3rem_9rem_3rem_1.75rem]';
 
 async function fetchPresOpts(productId) {
-    const { data } = await supabase.from('product_precios')
+    const { data, error } = await supabase.from('product_precios')
         .select('product_id, factor, descripcion, presentaciones!id_presentacion(tipo)')
         .eq('product_id', productId).eq('activo', true).order('factor');
+    if (error) console.error('fetchPresOpts failed:', error.message);
     const opts = [];
     (data || []).forEach(p => {
         const f = Number(p.factor) || 1;
@@ -204,9 +205,10 @@ export default function RecepcionModal({
         setNotaVals(notas); setErrorVals(errs); setTieneProblema({}); setCantProblemaVals({});
 
         (async () => {
-            const { data } = await supabase.from('pedido_apoyo')
+            const { data, error } = await supabase.from('pedido_apoyo')
                 .select('employee_id, employees(name, photo_url)')
                 .eq('pedido_id', pedido.id).eq('erp_sucursal_id', sucursalId);
+            if (error) console.error('fetch pedido_apoyo failed:', error.message);
             setApoyo(await signPhotosDeep((data || []).map(r => ({ id: r.employee_id, ...r.employees }))));
         })();
 
@@ -216,10 +218,11 @@ export default function RecepcionModal({
                 const PAGE = 1000;
                 let allData = [], from = 0;
                 while (true) {
-                    const { data } = await supabase.from('product_precios')
+                    const { data, error } = await supabase.from('product_precios')
                         .select('product_id, factor, descripcion, presentaciones!id_presentacion(tipo)')
                         .in('product_id', productIds).eq('activo', true).order('factor')
                         .range(from, from + PAGE - 1);
+                    if (error) { console.error('fetch product_precios (paged) failed:', error.message); break; }
                     if (!data || data.length === 0) break;
                     allData = [...allData, ...data];
                     if (data.length < PAGE) break;
@@ -251,7 +254,8 @@ export default function RecepcionModal({
             let q = supabase.from('products').select('id, nombre')
                 .eq('activo', true).ilike('nombre', `%${extraSearch.trim()}%`).order('nombre').limit(10);
             if (existingIds.length > 0) q = q.not('id', 'in', `(${existingIds.join(',')})`);
-            const { data } = await q;
+            const { data, error } = await q;
+            if (error) console.error('extras search failed:', error.message);
             setExtraResults((data || []).slice(0, 8));
             setExtraBusy(false);
         }, 300);
@@ -265,11 +269,12 @@ export default function RecepcionModal({
         let opts = presMap[prod.id] ? [...presMap[prod.id]] : [];
         if (opts.length === 0) opts = await fetchPresOpts(prod.id);
 
-        const { data: lastDispatch } = await supabase.from('pedido_items')
+        const { data: lastDispatch, error: lastDispatchErr } = await supabase.from('pedido_items')
             .select('dispatch_factor, dispatch_tipo')
             .eq('erp_product_id', prod.id)
             .not('dispatch_tipo', 'is', null).not('dispatch_factor', 'is', null)
             .order('id', { ascending: false }).limit(1);
+        if (lastDispatchErr) console.error('fetch last dispatch failed:', lastDispatchErr.message);
         if (lastDispatch?.[0]) {
             const df = Number(lastDispatch[0].dispatch_factor) || 1;
             if (!opts.find(o => o.factor === df)) {

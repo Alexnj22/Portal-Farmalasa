@@ -56,9 +56,10 @@ let _addrCache = null;
 async function getAddressMap() {
     if (_addrCache) return _addrCache;
     try {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('erp_sucursal_map')
             .select('erp_sucursal_id, branches(address)');
+        if (error) console.error('getAddressMap: fetch erp_sucursal_map failed:', error.message);
         _addrCache = {};
         if (data) {
             for (const r of data) {

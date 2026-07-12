@@ -50,7 +50,8 @@ export default function MinMaxView() {
     }, [rawSearch]);
 
     const loadConfig = useCallback(async () => {
-        const { data } = await supabase.from('stock_config').select('*').eq('id', 1).maybeSingle();
+        const { data, error } = await supabase.from('stock_config').select('*').eq('id', 1).maybeSingle();
+        if (error) console.error('MinMaxView: fetch stock_config failed:', error.message);
         if (data) setConfig({ ...DEFAULT_CONFIG, ...data });
         setConfigLoaded(true);
     }, []);

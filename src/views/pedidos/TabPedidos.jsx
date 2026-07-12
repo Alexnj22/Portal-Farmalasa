@@ -470,13 +470,14 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existin
         setLoading(true);
         setError('');
         try {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('employees')
                 .select('id, name, photo_url')
                 .eq('kiosk_pin', code.toUpperCase().trim())
                 .maybeSingle();
+            if (error) console.error('lookupPin: fetch employee failed:', error.message);
             if (data) { await signPhotosDeep(data); setEmployee(data); setManualWarn(false); }
-            else       setError('No se encontró ningún empleado con ese carnet.');
+            else       setError(error ? 'Error al buscar empleado.' : 'No se encontró ningún empleado con ese carnet.');
         } catch { setError('Error al buscar empleado.'); }
         finally   { setLoading(false); }
     }, []);
@@ -1222,11 +1223,12 @@ function ItemSections({ allItems, loading }) {
         const productIds  = [...new Set(items.map(r => r.erp_product_id))];
         const sucursalIds = [...new Set(items.map(r => r.erp_sucursal_id))];
         (async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('product_stock_params')
                 .select('erp_product_id, erp_sucursal_id, units_sold_6m, daily_velocity, min_units, max_units, manual_min, manual_max, abc_class')
                 .in('erp_product_id', productIds)
                 .in('erp_sucursal_id', sucursalIds);
+            if (error) console.error('fetch product_stock_params (revision_minmax) failed:', error.message);
             if (!data) return;
             const map = {};
             for (const psp of data) map[`${psp.erp_product_id}_${psp.erp_sucursal_id}`] = psp;
@@ -2068,9 +2070,11 @@ export default function TabPedidos({ searchTerm = '' }) {
     useEffect(() => {
         if (!isBranch || !user?.id) return;
         (async () => {
-            const { data: emp } = await supabase.from('employees').select('branch_id').eq('id', user.id).maybeSingle();
+            const { data: emp, error: empErr } = await supabase.from('employees').select('branch_id').eq('id', user.id).maybeSingle();
+            if (empErr) console.error('fetch employee branch_id failed:', empErr.message);
             if (!emp?.branch_id) return;
-            const { data: mapRow } = await supabase.from('erp_sucursal_map').select('erp_sucursal_id').eq('branch_id', emp.branch_id).eq('es_bodega', false).maybeSingle();
+            const { data: mapRow, error: mapErr } = await supabase.from('erp_sucursal_map').select('erp_sucursal_id').eq('branch_id', emp.branch_id).eq('es_bodega', false).maybeSingle();
+            if (mapErr) console.error('fetch erp_sucursal_map failed:', mapErr.message);
             if (!mapRow) return;
             setErpSucursalId(mapRow.erp_sucursal_id);
             setFilterSuc(mapRow.erp_sucursal_id);
@@ -2082,7 +2086,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     const loadActive = useCallback(async () => {
         const { data, error } = await supabase.rpc('get_pedidos_en_curso');
-        if (error) return [];
+        if (error) { console.error('loadActive: get_pedidos_en_curso failed:', error.message); return []; }
         setActiveRows(data ?? []);
         const rows = data ?? [];
         const stats = {};
@@ -2091,7 +2095,8 @@ export default function TabPedidos({ searchTerm = '' }) {
         });
         const ids = [...new Set(rows.map(r => r.pedido_id))];
         if (ids.length) {
-            const { data: statRows } = await supabase.rpc('get_pedido_item_stats', { p_pedido_ids: ids });
+            const { data: statRows, error: statErr } = await supabase.rpc('get_pedido_item_stats', { p_pedido_ids: ids });
+            if (statErr) console.error('loadActive: get_pedido_item_stats failed:', statErr.message);
             (statRows ?? []).forEach(s => {
                 const k = `act_${s.pedido_id}_${s.erp_sucursal_id}`;
                 stats[k] = { enviados: s.enviados, sinStock: s.sin_stock, porRegla: s.por_regla, agotamiento: s.agotamiento ?? 0, pendientes: s.pendientes ?? 0 };
@@ -2190,23 +2195,26 @@ export default function TabPedidos({ searchTerm = '' }) {
         if (loadingRutasRef.current) return;
         loadingRutasRef.current = true;
         const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-        const { data } = await supabase.from('rutas')
+        const { data, error } = await supabase.from('rutas')
             .select(`id, numero, conductor_id, conductor_nombre, status, salida_at, vuelta_base_at,
                      ruta_pedidos(id, pedido_id, erp_sucursal_id, orden_entrega, entregado_at, entregado_por)`)
             .or(`status.in.(pendiente,en_ruta),and(status.eq.completada,created_at.gte.${todayStart.toISOString()})`)
             .order('created_at', { ascending: false });
+        if (error) console.error('loadActiveRutas: fetch rutas failed:', error.message);
         if (!data?.length) { setPedidoRutaMap(new Map()); loadingRutasRef.current = false; return; }
 
         const rutaIds = data.map(r => r.id);
         const allStops = data.flatMap(r => r.ruta_pedidos ?? []);
         const sucIds   = [...new Set(allStops.map(s => s.erp_sucursal_id))];
 
-        const [{ data: locs }, { data: sucData }] = await Promise.all([
+        const [{ data: locs, error: locsErr }, { data: sucData, error: sucErr }] = await Promise.all([
             supabase.from('ruta_locations').select('ruta_id, updated_at').in('ruta_id', rutaIds),
             sucIds.length
                 ? supabase.from('erp_sucursal_map').select('erp_sucursal_id, branch:branches!inner(name)').in('erp_sucursal_id', sucIds)
                 : Promise.resolve({ data: [] }),
         ]);
+        if (locsErr) console.error('loadActiveRutas: fetch ruta_locations failed:', locsErr.message);
+        if (sucErr) console.error('loadActiveRutas: fetch erp_sucursal_map failed:', sucErr.message);
 
         const onlineMap  = Object.fromEntries((locs ?? []).map(l => {
             const ageMin = (Date.now() - new Date(l.updated_at).getTime()) / 60000;
@@ -2332,7 +2340,8 @@ export default function TabPedidos({ searchTerm = '' }) {
             let q = supabase.from('pedido_items').select(ITEMS_SELECT)
                 .eq('pedido_id', pedidoId).range(from, from + PAGE - 1);
             if (sucFilter) q = q.eq('erp_sucursal_id', sucFilter);
-            const { data: page } = await q;
+            const { data: page, error: pageErr } = await q;
+            if (pageErr) throw pageErr;
             if (!page || page.length === 0) break;
             allItemRows = allItemRows.concat(page);
             if (page.length < PAGE) break;
@@ -2355,14 +2364,17 @@ export default function TabPedidos({ searchTerm = '' }) {
         if (sucFilter) evBase = evBase.eq('erp_sucursal_id', sucFilter);
         let allEvRows = [], evFrom = 0;
         while (true) {
-            const { data: evPage } = await evBase.range(evFrom, evFrom + 999);
+            const { data: evPage, error: evErr } = await evBase.range(evFrom, evFrom + 999);
+            if (evErr) throw evErr;
             if (!evPage || evPage.length === 0) break;
             allEvRows = allEvRows.concat(evPage);
             if (evPage.length < 1000) break;
             evFrom += 1000;
         }
 
-        const [{ data: lcRow }, { data: apoyoRows }] = await Promise.all([lcPromise, apoyoQ]);
+        const [{ data: lcRow, error: lcErr }, { data: apoyoRows, error: apoyoErr }] = await Promise.all([lcPromise, apoyoQ]);
+        if (lcErr) throw lcErr;
+        if (apoyoErr) throw apoyoErr;
         await signPhotosDeep(apoyoRows || []);
         const resolved = allItemRows.map(row => ({
             ...row,
@@ -2460,12 +2472,14 @@ export default function TabPedidos({ searchTerm = '' }) {
             const todayStart = new Date();
             todayStart.setHours(0, 0, 0, 0);
 
-            const [{ data: histData }, { data: punchData }] = await Promise.all([
+            const [{ data: histData, error: histErr }, { data: punchData, error: punchErr }] = await Promise.all([
                 supabase.from('pedido_pausa_historial').select('razon').eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId),
                 user?.id
                     ? supabase.from('attendance').select('type, timestamp').eq('employee_id', user.id).in('type', ['OUT_LUNCH', 'IN_LUNCH']).gte('timestamp', todayStart.toISOString()).order('timestamp', { ascending: false }).limit(10)
                     : Promise.resolve({ data: [] }),
             ]);
+            if (histErr) throw histErr;
+            if (punchErr) throw punchErr;
 
             const history = histData ?? [];
             const punches = punchData ?? [];
@@ -2612,11 +2626,12 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             // 2. Marcar items de cajas faltantes como falta_caja: true
             if (hasFalta) {
-                const { data: pss } = await supabase
+                const { data: pss, error: pssErr } = await supabase
                     .from('pedido_sucursal_status')
                     .select('caja_map, pagina_items')
                     .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
                     .maybeSingle();
+                if (pssErr) throw pssErr;
                 const cajaMapDb     = pss?.caja_map    ?? {};
                 const paginaItemsDb = pss?.pagina_items ?? {};
 
@@ -2636,9 +2651,10 @@ export default function TabPedidos({ searchTerm = '' }) {
                     missingIds = missingPages.flatMap(p => recomputed[String(p)] ?? []);
                 } else {
                     // Sin caja_map ni pagina_items — conservador: bloquear todos los ítems pendientes
-                    const { data: allPending } = await supabase
+                    const { data: allPending, error: allPendingErr } = await supabase
                         .from('pedido_items').select('id')
                         .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).eq('status', 'pendiente');
+                    if (allPendingErr) throw allPendingErr;
                     missingIds = (allPending || []).map(r => r.id);
                 }
                 if (missingIds.length > 0) {
@@ -2756,9 +2772,10 @@ export default function TabPedidos({ searchTerm = '' }) {
         try {
             const now = new Date().toISOString();
             // Leer historial actual para calcular ciclo
-            const { data: pss } = await supabase.from('pedido_sucursal_status')
+            const { data: pss, error: pssErr } = await supabase.from('pedido_sucursal_status')
                 .select('reenvios_historial')
                 .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
+            if (pssErr) throw pssErr;
             const historial = pss?.reenvios_historial ?? [];
             const ciclo     = historial.length + 1;
             const nuevoCiclo = { ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesFaltantes, sent_at: now, sent_by: user?.id ?? null, arrived_at: null, arrived_tipo: null, cajas_ok: [], cajas_danadas: [], cajas_aun_faltantes: [] };
@@ -2839,9 +2856,10 @@ export default function TabPedidos({ searchTerm = '' }) {
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_LLEGADA', pedidoId, { ciclo, arrived_tipo, cajasOk, cajasDanadas, cajasFaltantes });
 
             // Cargar mapa de páginas + estado actual de especiales para merge
-            const { data: pss } = await supabase.from('pedido_sucursal_status')
+            const { data: pss, error: pssErr } = await supabase.from('pedido_sucursal_status')
                 .select('caja_map, pagina_items, cajas_recibidas, cajas_danadas, cajas_especiales_llegadas')
                 .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
+            if (pssErr) throw pssErr;
             const cajaMapDb     = pss?.caja_map    ?? {};
             const paginaItemsDb = pss?.pagina_items ?? {};
 
@@ -2867,10 +2885,11 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             // Limpiar falta_caja en electrolits si llegaron en este reenvío
             if (electrolitCount > 0 && electrolitOk) {
-                const { data: faltaElec } = await supabase.from('pedido_items')
+                const { data: faltaElec, error: faltaElecErr } = await supabase.from('pedido_items')
                     .select('id, products(nombre)')
                     .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
                     .eq('falta_caja', true).eq('status', 'pendiente');
+                if (faltaElecErr) throw faltaElecErr;
                 const elecIds = (faltaElec || []).filter(r => (r.products?.nombre ?? '').toLowerCase().includes('electrolit')).map(r => r.id);
                 if (elecIds.length > 0) await supabase.from('pedido_items').update({ falta_caja: false }).in('id', elecIds);
             }
@@ -2888,10 +2907,11 @@ export default function TabPedidos({ searchTerm = '' }) {
 
                 // Limpiar falta_caja en items de especiales que sí llegaron
                 if (espLlegaron.length > 0) {
-                    const { data: faltaEsp } = await supabase.from('pedido_items')
+                    const { data: faltaEsp, error: faltaEspErr } = await supabase.from('pedido_items')
                         .select('id')
                         .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
                         .eq('falta_caja', true).eq('status', 'pendiente').eq('caja_especial', true);
+                    if (faltaEspErr) throw faltaEspErr;
                     if ((faltaEsp ?? []).length > 0) {
                         // Si todas llegaron → limpiar todos; si algunas aún faltan → limpiar solo las que llegaron (proporcionalmente)
                         const idsToClean = especialesAun.length === 0
@@ -2945,8 +2965,9 @@ export default function TabPedidos({ searchTerm = '' }) {
                 .eq('id', stopId);
             if (error) throw error;
             useStaff.getState().appendAuditLog('RUTA_PARADA_ENTREGADA', stopId, { sucursal_id: sucId });
-            const { data: mapa } = await supabase.from('erp_sucursal_map')
+            const { data: mapa, error: mapaErr } = await supabase.from('erp_sucursal_map')
                 .select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle();
+            if (mapaErr) throw mapaErr;
             if (mapa?.branch_id) {
                 // Llegada física = accionable → con push
                 notifyBranch(mapa.branch_id, { type: 'PEDIDO_LLEGADA', title: 'Conductor llegó a tu sucursal', body: 'Confirma la recepción de tu pedido.', link: '/pedidos', push: true });
@@ -2980,9 +3001,10 @@ export default function TabPedidos({ searchTerm = '' }) {
         // Load pagina_items + cajas_recibidas only when caja_map is available
         let paginaItems = {}, cajasRecibidas = [];
         if (Object.keys(cajaMap).length > 0) {
-            const { data: pss } = await supabase.from('pedido_sucursal_status')
+            const { data: pss, error: pssErr } = await supabase.from('pedido_sucursal_status')
                 .select('pagina_items, cajas_recibidas')
                 .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
+            if (pssErr) console.error('openModal: fetch pedido_sucursal_status failed:', pssErr.message);
             paginaItems    = pss?.pagina_items    ?? {};
             cajasRecibidas = pss?.cajas_recibidas ?? [];
         }

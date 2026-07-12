@@ -395,11 +395,12 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     // que el RPC get_puntos_canjeados pero sobre una lista arbitraria de IDs.
     const sumPuntosForIds = async (ids) => {
         if (!ids.length) return 0;
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('sales_invoice_items')
             .select('invoice_id, total_linea')
             .eq('erp_product_id', 0)
             .in('invoice_id', ids);
+        if (error) console.error('sumPuntosForIds: fetch sales_invoice_items failed:', error.message);
         const maxByInvoice = new Map();
         for (const r of (data || [])) {
             const cur = maxByInvoice.get(r.invoice_id);
@@ -488,7 +489,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         let fetched = [];
 
         if (filterPuntos && !isSearching) {
-            const { data } = await supabase.rpc('get_ventas_con_puntos', {
+            const { data, error } = await supabase.rpc('get_ventas_con_puntos', {
                 p_fini:      fini,
                 p_ffin:      ffin,
                 p_branch_id: filterBranch ? Number(filterBranch) : null,
@@ -497,6 +498,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                 p_sort_col:  sortCol,
                 p_sort_dir:  sortDir,
             });
+            if (error) console.error('fetchRows: get_ventas_con_puntos failed:', error.message);
             fetched = data || [];
             setPuntosCount(fetched.length > 0 ? Number(fetched[0].n) : 0);
         } else {
@@ -624,11 +626,12 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         }
 
         setLoadingItems(true);
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('sales_invoice_items')
             .select('erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')
             .eq('invoice_id', invoiceId)
             .order('total_linea', { ascending: false });
+        if (error) console.error('fetch invoice items failed:', error.message);
         setItemsCache(prev => ({ ...prev, [invoiceId]: data || [] }));
         setLoadingItems(false);
 
@@ -971,10 +974,11 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
 
     const fetchVendedores = useCallback(async () => {
         setLoading(true);
-        const { data } = await supabase.rpc('get_vendedores_resumen', {
+        const { data, error } = await supabase.rpc('get_vendedores_resumen', {
             p_fini: fini, p_ffin: ffin,
             p_branch_id: filterBranch ? Number(filterBranch) : null,
         });
+        if (error) console.error('fetchVendedores: get_vendedores_resumen failed:', error.message);
         setRows((data || []).map(r => ({
             branch_id: r.branch_id,
             cod_vendedor: r.cod_vendedor,
@@ -1029,9 +1033,10 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
         if (expanded === cod) { setExpanded(null); return; }
         setExpanded(cod);
         setLoadingExpand(true);
-        const { data } = await supabase.rpc('get_vendedor_diario', {
+        const { data, error } = await supabase.rpc('get_vendedor_diario', {
             p_cod_vendedor: cod, p_fini: fini, p_ffin: ffin,
         });
+        if (error) console.error('toggleExpand: get_vendedor_diario failed:', error.message);
         const byDate = new Map();
         for (const d of (data || [])) {
             const cur = byDate.get(d.fecha) || { fecha: d.fecha, total: 0, count: 0, branches: [] };
@@ -1768,7 +1773,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         // del período anterior (~1-2MB) solo para sumar neto en el cliente.
         const prevParams = { p_fini: prevFini, p_ffin: prevFfin, p_branch_id: filterBranch ? Number(filterBranch) : null };
         (async () => {
-            const { data: total } = await supabase.rpc('get_product_sales_total', prevParams);
+            const { data: total, error } = await supabase.rpc('get_product_sales_total', prevParams);
+            if (error) console.error('get_product_sales_total failed:', error.message);
             setPrevProdStats({ sum: parseFloat(total || 0) });
         })();
     }, [fini, ffin, filterBranch]);

@@ -329,6 +329,30 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
   seguirían apuntando al proyecto viejo en silencio. ✅ Las 5 funciones desplegadas a prod vía CLI
   con tu OK, 2026-07-12.
 
+- **1.6 — ✅ COMPLETO (2026-07-12, v2.15.18→v2.15.27, 10 sesiones de commit).**
+  Las 173 ocurrencias de "riesgo real" catalogadas por la auditoría
+  (`react-hooks/set-state-in-effect` 66, `exhaustive-deps` 89, `purity` 8,
+  `static-components` 5, `immutability` 4, `refs` 2) quedan en **0**. Total de
+  problemas de lint del proyecto: 379 → 186 (el resto, cosmético, fuera de
+  alcance: `no-unused-vars` 102, `no-empty` 36, etc.).
+  Cada ocurrencia fue revisada individualmente (no barrido ciego) y resuelta con
+  uno de 3 patrones: (a) fix real de código cuando había un bug genuino
+  (constante `useNowTick` para badges que se congelaban, refs "siempre frescas"
+  para evitar refetch en cascada en `VentasView.fetchRows`, deps agregadas en
+  `RequestsView` — el hallazgo "más preocupante" de la auditoría, un
+  `ConteoDetailView` que no refrescaba metadata concurrente); (b) constantes de
+  módulo estables (`EMPTY_ARRAY`/`EMPTY_OBJ`) para fallbacks `|| []`/`|| {}`
+  inline que rompían memoización real; (c) `eslint-disable-line` +
+  justificación puntual para patrones idiomáticos/seguros ya establecidos en
+  el propio código (`TabPoliticaVencimiento.jsx`) o donde agregar la dep real
+  habría sido peligroso (bucle de refetch). Código muerto encontrado de paso
+  y eliminado: bloque `Compat*`/`CompatTh` de TabCatalogo.jsx (~550 líneas,
+  0 callers). Verificación visual en vivo (vite preview + Playwright): login,
+  nav completo (13 rutas), AppLayout (pill/grupos), BranchChips, VentasView
+  (fila expandida con ítems/precios), Dashboard (auto-selección de sucursal)
+  — sin regresiones. Build limpio en cada paso. Detalle completo por archivo
+  en el historial de commits `fix(bloque1): 1.6 parte 1..10`.
+
 ### Camino de deploy de edge functions (resuelto)
 Bash `supabase functions deploy` funciona CON permiso, pero el CLI se traga un `.env` con un nombre
 de variable inválido (un `-`). Solución: apartar `.env` durante el deploy y restaurarlo
@@ -371,6 +395,12 @@ Detalle completo de cada fix en "PROGRESO DE EJECUCIÓN" arriba.
 
 ## BLOQUE 1 — Bugs de correctitud que fallan en silencio
 
+**Estado al 2026-07-12: BLOQUE 1 CERRADO — 8/8 ítems (1.1–1.8) aplicados y
+verificados.** Última pieza (1.6, el barrido de lint) cerrada en 10 partes de
+commit el mismo día. Ningún ítem quedó diferido o pendiente de decisión
+(a diferencia del Bloque 0, que cerró con 2 diferidos por decisión explícita).
+Siguiente en la secuencia: Bloque 2 (testing).
+
 No necesitan staging. Priorizar los que tocan nómina/dinero.
 
 | # | Ítem | Ubicación |
@@ -380,7 +410,7 @@ No necesitan staging. Priorizar los que tocan nómina/dinero.
 | 1.3 | Edge functions ignoran `error` en escrituras críticas (el `update`/`insert` de `timesheets`; auto-cierre de promos) | ✅ Aplicado y desplegado a prod 2026-07-12 (v2.15.17). |
 | 1.4 | `sync-promo-sales:88` deriva `factor` por regex en vez de `product_precios.factor` (viola regla de casa) | ✅ Aplicado y desplegado a prod 2026-07-12 (v2.15.17). |
 | 1.5 | `saveHiddenTimer` asignado pero nunca leído/limpiado — posible timer fugado | ✅ Aplicado 2026-07-12 (v2.15.17) — era código muerto, eliminado. |
-| 1.6 | 173 lint reales de riesgo (`set-state-in-effect` 65, `exhaustive-deps` ~52 reales, `purity` 8, etc.) — barrido por archivo, empezar por top-7 monstruo | Fase 1 §lint |
+| 1.6 | 173 lint reales de riesgo (`set-state-in-effect` 65, `exhaustive-deps` ~52 reales, `purity` 8, etc.) — barrido por archivo, empezar por top-7 monstruo | ✅ Completo 2026-07-12 (v2.15.18→v2.15.27). 0/173 restantes. Ver detalle arriba. |
 | 1.7 | `Date.now()`/`new Date()` en render → badges desincronizados | ✅ Aplicado 2026-07-12 (v2.15.17). Hook `useNowTick` en TabMinMax/TabSinVenta. |
 | 1.8 | Retry/timeout faltante en `fetch` saliente de varias edge functions; URL de proyecto hardcodeada | ✅ Aplicado y desplegado a prod 2026-07-12. |
 

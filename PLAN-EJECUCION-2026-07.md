@@ -144,6 +144,21 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
   mensual de MIN/MAX y notificación diaria de productos nuevos probablemente nunca se ejecutaron
   exitosamente hasta este fix.
 
+### 2026-07-12
+- **0B.5 — ✅ CERRADO, riesgo aceptado (NO se toca).** Investigado con queries directas a prod antes
+  de decidir: `pg_trgm` ya se había movido una vez (`20260517_db_audit_v13_revert_pgtrgm_to_public.sql`)
+  y se revirtió porque rompió `ILIKE` de productos — confirmado de nuevo que `anon`/`authenticated`/
+  `authenticator` (roles reales de PostgREST) NO tienen `extensions` en su `search_path` (solo
+  `postgres` sí), así que mover la extensión rompe los 6 índices GIN trigram (`products.nombre/
+  principio_activo`, `sales_invoices.cliente/correlativo/erp_invoice_id`,
+  `inventory_grouped_mv.descripcion`) para todo tráfico real. `pg_net` no es relocatable
+  (`extrelocatable=false`) — requeriría `DROP`/`CREATE` (interrumpe el worker async de
+  `notify_branch`/`notify_employees`/`notify_push_on_announcement`) y sus objetos reales ya viven
+  en el schema `net`, no en `public` — beneficio de seguridad ≈ 0. Decisión del usuario: aceptar el
+  WARN. Detalle en `AUDITORIA-2026-07.md` → "Bloque 0B — cierre final (2026-07-12)".
+- **0B.4 — ⏸️ DIFERIDO.** Toggle de Auth (HaveIBeenPwned), no requiere código. Usuario decidió no
+  activarlo todavía, sin fecha de retomado.
+
 ### Camino de deploy de edge functions (resuelto)
 Bash `supabase functions deploy` funciona CON permiso, pero el CLI se traga un `.env` con un nombre
 de variable inválido (un `-`). Solución: apartar `.env` durante el deploy y restaurarlo
@@ -169,8 +184,8 @@ Estos NO se cerraron durante la auditoría. Cada write a prod requiere tu OK.
 | 0B.1 | 3 policies de `notifications` con `auth_employee_id()` SIN `(SELECT ...)` — reintroduce el patrón del outage 2026-07-08 | Fase 2 §RLS | Envolver en `(recipient_id = (SELECT auth_employee_id()))` |
 | 0B.2 | `ADMIN_INVOKE_SECRET` en texto plano en ~25 `cron.job.command` | Fase 0 | Mover a Supabase Vault, resolver con `current_setting()` |
 | 0B.3 | `mv_product_factor` expuesta a la API (viola CLAUDE.md #6) | Advisor | REVOKE de anon/authenticated, servir solo por RPC |
-| 0B.4 | Protección de contraseñas filtradas (HaveIBeenPwned) deshabilitada | Advisor | Habilitar en Auth |
-| 0B.5 | `pg_trgm`/`pg_net` en schema `public` | Advisor | Mover a schema dedicado |
+| 0B.4 | Protección de contraseñas filtradas (HaveIBeenPwned) deshabilitada | Advisor | ⏸️ Diferido (decisión del usuario, 2026-07-12) |
+| 0B.5 | `pg_trgm`/`pg_net` en schema `public` | Advisor | ✅ Cerrado — riesgo aceptado (2026-07-12), ver progreso arriba |
 | 0B.6 | `debug_pedido_timings` (función debug leftover) | Advisor | Evaluar y borrar |
 | 0B.7 | 54 funciones SECURITY DEFINER invocables por cualquier `authenticated` sin gate de permiso; `wfm-ai-scheduler` sin chequeo de rol (Gemini caro) | Advisor; Fase 2 | Revisar caso por caso, agregar gate de permiso donde exponga datos/costo |
 | 0B.8 | `kiosk_devices.kiosk_verify` (SELECT `anon+true`) | Fase 3.2.2 | RPC SECURITY DEFINER que valide device_token (cambio de lógica) |

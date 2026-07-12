@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, Bell, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import { useNowTick } from '../../hooks/useNowTick';
 
 const WARN_MINS  = 8;
 const STALE_MINS = 15;
@@ -40,7 +41,7 @@ export default function SyncHealthBanner() {
   }, []);
 
   useEffect(() => {
-    fetchLatest();
+    fetchLatest(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
     const timer = setInterval(fetchLatest, 90_000);
     return () => clearInterval(timer);
   }, [fetchLatest]);
@@ -51,7 +52,7 @@ export default function SyncHealthBanner() {
     setNotifPerm(perm);
   };
 
-  const now = Date.now();
+  const now = useNowTick();
   const hasErrors = branches.some(b => !b.success);
   const anyStale  = branches.some(b => (now - new Date(b.synced_at).getTime()) / 60000 > STALE_MINS);
   const allGood   = branches.length > 0 && !hasErrors && !anyStale;

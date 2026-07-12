@@ -20,6 +20,7 @@ import TablePagination from '../components/common/TablePagination';
 import { smartFilter, normSearch } from '../utils/searchUtils';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { useNowTick } from '../hooks/useNowTick';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -1324,6 +1325,7 @@ function findFirstChangeSince(history, idPresentaciones, fechaStr) {
 }
 
 function UltimaVentaCell({ row, filterBranch, branches }) {
+    const now    = useNowTick();
     const fecha  = row.ultima_venta;
     const porSuc = row.ultima_venta_por_suc || [];
 
@@ -1331,7 +1333,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
         return <span className="text-[10px] text-slate-300 italic">Sin ventas</span>;
     }
 
-    const days  = Math.floor((Date.now() - new Date(fecha + 'T12:00:00')) / 86_400_000);
+    const days  = Math.floor((now - new Date(fecha + 'T12:00:00')) / 86_400_000);
     const color = days > 365 ? 'text-red-500' : days > 180 ? 'text-orange-500' : 'text-slate-600';
     const label = fmtDate(fecha);
 
@@ -1363,7 +1365,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Última venta por suc.</p>
             {byBranch.map(s => {
                 const name = branches.find(b => b.id === Number(s.branch_id))?.name || `Suc. ${s.branch_id}`;
-                const d = Math.floor((Date.now() - new Date(s.fecha + 'T12:00:00')) / 86_400_000);
+                const d = Math.floor((now - new Date(s.fecha + 'T12:00:00')) / 86_400_000);
                 const c = d > 365 ? 'text-red-500' : d > 180 ? 'text-orange-500' : 'text-[#0052CC]';
                 return (
                     <div key={s.branch_id} className="flex items-center justify-between gap-6 whitespace-nowrap">

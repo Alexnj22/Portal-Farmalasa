@@ -158,7 +158,7 @@ const GanttChart = ({ plans, year }) => {
             if (!map.has(key)) map.set(key, { emp: p.employee, branch: p.branch, bars: [] });
             map.get(key).bars.push(p);
         });
-        return Array.from(map.values()).sort((a, b) => {
+        const sorted = Array.from(map.values()).sort((a, b) => {
             const branchA = a.branch?.name || '';
             const branchB = b.branch?.name || '';
             if (branchA !== branchB) return branchA.localeCompare(branchB);
@@ -166,6 +166,15 @@ const GanttChart = ({ plans, year }) => {
             const roleB = b.emp?.role || b.emp?.position || '';
             if (roleA !== roleB) return roleA.localeCompare(roleB);
             return (a.emp?.name || '').localeCompare(b.emp?.name || '');
+        });
+
+        // showHeader por índice contra el elemento anterior (sorted ya agrupa
+        // por sucursal) — sin variable mutable capturada en el .map(), que
+        // rompe bajo memoización por-fila del React Compiler.
+        return sorted.map((row, i) => {
+            const branchName     = row.branch?.name || '';
+            const prevBranchName = i > 0 ? (sorted[i - 1].branch?.name || '') : null;
+            return { ...row, showHeader: branchName !== prevBranchName };
         });
     }, [plans]);
 
@@ -175,8 +184,6 @@ const GanttChart = ({ plans, year }) => {
             <p className="text-[13px] font-bold text-slate-500">Sin planes para este año</p>
         </div>
     );
-
-    let lastBranchName = null;
 
     return (
         <div className="overflow-x-auto">
@@ -196,10 +203,8 @@ const GanttChart = ({ plans, year }) => {
 
                 {/* Rows */}
                 <div className="space-y-1">
-                    {rows.map(({ emp, branch, bars }) => {
+                    {rows.map(({ emp, branch, bars, showHeader }) => {
                         const branchName = branch?.name || '';
-                        const showHeader = branchName !== lastBranchName;
-                        lastBranchName = branchName;
 
                         return (
                             <React.Fragment key={emp?.id || bars[0]?.employee_id}>

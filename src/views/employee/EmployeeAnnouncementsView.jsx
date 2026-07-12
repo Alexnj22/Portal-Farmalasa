@@ -219,9 +219,9 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
     // Esto evita que al volver a la tab aparezcan cartas "fantasma" que aún no
     // fueron marcadas como leídas (la ventana de undo termina al salir de la vista).
     const pendingReadsRef = useRef(pendingReads);
-    pendingReadsRef.current = pendingReads;
+    useEffect(() => { pendingReadsRef.current = pendingReads; }, [pendingReads]);
     const onReadRef = useRef(onRead);
-    onReadRef.current = onRead;
+    useEffect(() => { onReadRef.current = onRead; }, [onRead]);
 
     useEffect(() => {
         return () => {

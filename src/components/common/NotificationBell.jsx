@@ -156,9 +156,11 @@ const NotificationBell = ({ variant = 'desktop' }) => {
         setPendingDeletes(prev => prev.filter(e => e.key !== key));
     };
 
+    // Solo se invoca desde handlers de click (nunca durante el render) — el
+    // compiler no puede verificarlo estáticamente y lo marca igual.
     const scheduleDelete = (ids, isAll = false) => {
         if (!ids.length) return;
-        const key = `${isAll ? 'all' : 'one'}-${Date.now()}`;
+        const key = `${isAll ? 'all' : 'one'}-${Date.now()}`; // eslint-disable-line react-hooks/purity
         // Corte de tiempo capturado AHORA (antes de la ventana de deshacer) para
         // que "borrar todas" no arrastre algo que llegue por realtime durante
         // los 3s — mismo contrato que el borrado individual por IDs.

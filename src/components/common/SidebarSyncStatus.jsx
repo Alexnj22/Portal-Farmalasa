@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Bell, BellOff, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { usePushSubscription } from '../../hooks/usePushSubscription';
+import { useNowTick } from '../../hooks/useNowTick';
 
 const WARN_MINS  = 8;
 const STALE_MINS = 15;
@@ -38,7 +39,7 @@ export default function SidebarSyncStatus() {
   }, []);
 
   useEffect(() => {
-    fetchLatest();
+    fetchLatest(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
     const timer = setInterval(fetchLatest, 90_000);
     const channel = supabase
       .channel('sidebar-sync-status')
@@ -47,7 +48,7 @@ export default function SidebarSyncStatus() {
     return () => { clearInterval(timer); supabase.removeChannel(channel); };
   }, [fetchLatest]);
 
-  const now       = Date.now();
+  const now       = useNowTick();
   const hasErrors = branches.some(b => !b.success);
   const anyStale  = branches.some(b => (now - new Date(b.synced_at).getTime()) / 60000 > STALE_MINS);
   const allGood   = branches.length > 0 && !hasErrors && !anyStale;

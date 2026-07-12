@@ -20,6 +20,7 @@ const DocumentRow = ({ doc }) => {
     return (
         <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/80 hover:bg-white/85 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-200">
             <div className="w-9 h-9 rounded-xl bg-slate-100/80 border border-slate-200/60 flex items-center justify-center shrink-0">
+                {/* eslint-disable-next-line react-hooks/static-components -- Icon selecciona entre 4 íconos ya importados (docIcon), no crea un componente nuevo */}
                 <Icon size={15} className="text-slate-500" strokeWidth={1.8} />
             </div>
             <div className="flex-1 min-w-0">

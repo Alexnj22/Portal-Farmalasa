@@ -11,12 +11,14 @@ import { EVENT_TYPES } from '../../data/constants';
 import { formatDate } from '../../utils/helpers';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
+import { useNowTick } from '../../hooks/useNowTick';
 
 const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValidationChange }) => {
 
     const { holidays = [], employees = [], roles = [] } = useStaffStore();
     const [permPickerKey, setPermPickerKey] = useState(0);
     const [codeConflict, setCodeConflict] = useState(null);
+    const now = useNowTick();
 
     const type = formData?.type;
     const isPromotion = type === 'PROMOTION';
@@ -623,7 +625,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     const hireDate = activeEmployee?.hireDate || activeEmployee?.hire_date;
                     let tenure = '—';
                     if (hireDate) {
-                        const ms = Date.now() - new Date(hireDate).getTime();
+                        const ms = now - new Date(hireDate).getTime();
                         const years = Math.floor(ms / (1000 * 60 * 60 * 24 * 365.25));
                         const months = Math.floor((ms % (1000 * 60 * 60 * 24 * 365.25)) / (1000 * 60 * 60 * 24 * 30.44));
                         tenure = years > 0 ? `${years} año${years !== 1 ? 's' : ''} ${months > 0 ? `${months} mes${months !== 1 ? 'es' : ''}` : ''}`.trim() : `${months} mes${months !== 1 ? 'es' : ''}`;

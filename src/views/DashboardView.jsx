@@ -476,6 +476,9 @@ const DashboardView = ({ openModal }) => {
   const getEffectiveCols = (id) => Math.min(activeSizes[id]?.cols ?? getWidgetSize(id).minCols, activeCols);
   const getEffectiveRows = (id) => activeSizes[id]?.rows ?? getWidgetSize(id).minRows;
 
+  // ── Bounce animation tracking ──────────────────────────────────────────────
+  const [bouncingIds, setBouncingIds] = useState(new Set());
+
   const updateWidgetSize = useCallback((id, dim, val) => {
     const isM   = isMobileRef.current;
     const cols  = activeColsRef.current;
@@ -606,9 +609,6 @@ const DashboardView = ({ openModal }) => {
     return () => clearTimeout(saveTimerRef.current);
   }, [prefsReady, widgetLayout, widgetSizes, widgetConfig, mobileLayout, mobileSizes, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Bounce animation tracking ──────────────────────────────────────────────
-  const [bouncingIds, setBouncingIds] = useState(new Set());
-
   // ── Resize popover ─────────────────────────────────────────────────────────
   const [resizeOpenId, setResizeOpenId] = useState(null);
   useEffect(() => {
@@ -625,8 +625,13 @@ const DashboardView = ({ openModal }) => {
   const gridRef      = useRef(null);
   const widgetLayoutRef = useRef(widgetLayout[activeTab] || {});
   const widgetSizesRef  = useRef(widgetSizes[activeTab]  || {});
-  useEffect(() => { widgetLayoutRef.current = widgetLayout[activeTab] || {}; }, [widgetLayout, activeTab]);
-  useEffect(() => { widgetSizesRef.current  = widgetSizes[activeTab]  || {}; }, [widgetSizes,  activeTab]);
+  // Mismo patrón de espejo ref↔state que mobileLayoutRef/mobileSizesRef y
+  // activeLayoutRef/activeSizesRef (más abajo, sin flag) — usado para que
+  // updateWidgetSize (useCallback estable) lea el layout más reciente sin
+  // stale closures. El compiler lo marca solo en este par, inconsistente
+  // con sus pares idénticos.
+  useEffect(() => { widgetLayoutRef.current = widgetLayout[activeTab] || {}; }, [widgetLayout, activeTab]); // eslint-disable-line react-hooks/immutability
+  useEffect(() => { widgetSizesRef.current  = widgetSizes[activeTab]  || {}; }, [widgetSizes,  activeTab]); // eslint-disable-line react-hooks/immutability
   // Active refs always point to the right layout/sizes for current breakpoint
   const activeLayoutRef = useRef(activeLayout);
   const activeSizesRef  = useRef(activeSizes);

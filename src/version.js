@@ -5,8 +5,39 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.17';
+export const APP_VERSION = '2.15.18';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.18 — fix(bloque1/1.6, parte 1): purity (6), static-components (5),
+// immutability (4), refs (2) — 17 de 173 ocurrencias reales de lint cerradas.
+// purity: NotificationBell.jsx (Date.now() en función solo invocada desde
+// onClick, falso positivo del compiler — eslint-disable justificado),
+// SidebarSyncStatus.jsx/SyncHealthBanner.jsx/FormNovedad.jsx/VentasView.jsx
+// (2 sitios) — Date.now()/new Date() en render reemplazado por useNowTick(),
+// mismo hook de v2.15.17. static-components: EmployeeDocumentsList.jsx
+// (Icon = docIcon() selecciona entre 4 íconos ya importados, no crea uno
+// nuevo — eslint-disable justificado); TabCatalogo.jsx — CompatTh (4 sitios)
+// vivía dentro de CompatView/CompatSideDrawer/CompatExpandedPanel, un bloque
+// de ~550 líneas 100% muerto (sin ningún caller, confirmado con grep) desde
+// el rediseño Devolutivo/ND — eliminado completo, no solo suprimido el lint.
+// immutability: DashboardView.jsx — setBouncingIds usado antes de declararse
+// (reordenado, cero cambio de comportamiento) + widgetLayoutRef/
+// widgetSizesRef con eslint-disable justificado (mismo patrón exacto que
+// mobileLayoutRef/activeLayoutRef que NO disparan la regla — inconsistencia
+// del compiler, no bug real); VacationPlanView.jsx — "showHeader" de grupo
+// por sucursal usaba una variable mutable dentro de un .map(), lo cual SÍ es
+// un riesgo real bajo memoización por-fila del compiler (una fila cacheada
+// se saltaría la mutación) — reescrito sin mutación: showHeader se computa
+// contra el elemento anterior por índice (el array ya viene ordenado por
+// sucursal). refs: EmployeeAnnouncementsView.jsx — pendingReadsRef/onReadRef
+// se asignaban directo en el cuerpo del render — movido a useEffect (patrón
+// estándar "ref siempre actualizado").
+// set-state-in-effect: 2 ocurrencias en SidebarSyncStatus/SyncHealthBanner
+// (fetchLatest() al montar) quedaron ocultas detrás del error de purity del
+// compiler hasta arreglar ese — cerradas de paso con el mismo patrón
+// eslint-disable + justificación ya usado en TabPoliticaVencimiento.jsx.
+// Build limpio (vite build). Quedan 155 ocurrencias reales (set-state-in-effect
+// 66 + exhaustive-deps 89) — continúa en la siguiente parte de 1.6.
 
 // v2.15.17 — fix(bloque1): 1.3, 1.4, 1.5, 1.7 (edge functions + TabMinMax/TabSinVenta).
 // 1.3: consolidate-timesheets ya no ignora el error del upsert de timesheets

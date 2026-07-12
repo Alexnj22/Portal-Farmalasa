@@ -75,7 +75,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
     useEffect(() => {
         if (currentTab === 'requests') loadEmpRequests();
-    }, [currentTab]);
+    }, [currentTab, loadEmpRequests]);
 
     useEffect(() => {
         if (showCancelModal) setCancelModalRender(true);
@@ -132,7 +132,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             documentId: ev.metadata?.document_id || null,
             isSystem: ['HIRE', 'ROSTER_PUBLISHED'].includes(ev.event_type),
         }));
-    }, [timelineData, emp?.id]);
+    }, [timelineData, emp]);
 
     const ausenciasData = useMemo(() => {
         let list = timeline.filter(ev => ev.type === 'PERMIT' || ev.type === 'DISABILITY');

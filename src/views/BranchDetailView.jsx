@@ -99,7 +99,11 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
         };
         fetchHistory();
         return () => { isMounted = false; };
-    }, [liveBranch?.id, refreshKey, getBranchHistory]); 
+        // history.length queda fuera a propósito: solo se lee para decidir si mostrar
+        // el spinner (skip si ya hay datos de un refresh anterior) — incluirlo
+        // dispararía un refetch en bucle cada vez que este mismo efecto actualiza history.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [liveBranch?.id, refreshKey, getBranchHistory]);
 
     const currentStaff = useMemo(() => {
         return (employees || []).filter(e =>

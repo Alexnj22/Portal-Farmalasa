@@ -107,13 +107,15 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
     );
 });
 
+const EMPTY_ARRAY = [];
+
 const AuditView = ({ openModal }) => {
     const storeAuditLog = useStaff(state => state.auditLog);
-    const auditLog = storeAuditLog || [];
+    const auditLog = storeAuditLog || EMPTY_ARRAY;
     const fetchAuditLogs = useStaff(state => state.fetchAuditLogs);
 
     // 👇 NUEVO: Traemos empleados y creamos un diccionario rápido de fotos
-    const employees = useStaff(state => state.employees) || [];
+    const employees = useStaff(state => state.employees) || EMPTY_ARRAY;
     const employeePhotoMap = useMemo(() => {
         const map = {};
         employees.forEach(e => {

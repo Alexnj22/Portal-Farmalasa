@@ -434,7 +434,7 @@ export default function EncuestaAdminView() {
         [preguntas]
     );
 
-    const respondedIds = new Set(respuestas.map(r => r.employee_id));
+    const respondedIds = useMemo(() => new Set(respuestas.map(r => r.employee_id)), [respuestas]);
 
     const availableEmployeeOptions = useMemo(() =>
         employees.filter(e => !respondedIds.has(e.id)).map(e => ({
@@ -443,7 +443,7 @@ export default function EncuestaAdminView() {
             sublabel: e.branch?.name || '',
             avatar: e.photo_url || '',
         })),
-    [employees, respuestas]);
+    [employees, respondedIds]);
 
     const responsesByBranch = useMemo(() => {
         const groups = {};
@@ -466,7 +466,7 @@ export default function EncuestaAdminView() {
             pool = pool.filter(e => selectedSurvey.scope_ids.includes(e.id));
         else return [];
         return pool.filter(e => !respondedIds.has(e.id));
-    }, [selectedSurvey, employees, respuestas]);
+    }, [selectedSurvey, employees, respondedIds]);
 
     const formPreguntas = preguntas.filter(p => p.tipo !== 'sucursal');
     const rfAnsweredCount = formPreguntas.filter(p => rfAnswers[p.indice] !== null).length;

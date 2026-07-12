@@ -27,6 +27,7 @@ import ViewTabBar from '../components/common/ViewTabBar';
 import { getTodayAttendanceStatus } from '../utils/helpers';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
+const EMPTY_OBJ  = {};
 const ROW_H      = 120; // px per row unit
 const GAP_PX     = 16;  // gap-4
 const GRID_COLS  = 4;   // desktop columns
@@ -470,7 +471,7 @@ const DashboardView = ({ openModal }) => {
     return autoPlaceOrder(order, mobileSizes[activeTab] || {}, MOBILE_COLS);
   }, [isMobile, widgetLayout, mobileLayout, activeTab, mobileSizes]);
 
-  const activeSizes = isMobile ? (mobileSizes[activeTab] || {}) : (widgetSizes[activeTab] || {});
+  const activeSizes = isMobile ? (mobileSizes[activeTab] || EMPTY_OBJ) : (widgetSizes[activeTab] || EMPTY_OBJ);
 
   // Active cols clamped for effective size
   const getEffectiveCols = (id) => Math.min(activeSizes[id]?.cols ?? getWidgetSize(id).minCols, activeCols);
@@ -847,7 +848,7 @@ const DashboardView = ({ openModal }) => {
       const pop = salesBranches.find(b => /popular/i.test(b.name)) || salesBranches[0];
       setSalesBranch(String(pop.id));
     }
-  }, [salesBranches, salesBranch]);
+  }, [salesBranches, salesBranch, getScope, userBranchStr]);
 
   useEffect(() => {
     if (!branches.length) return;

@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.23';
+export const APP_VERSION = '2.15.24';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.24 — fix(bloque1/1.6, parte 7): exhaustive-deps, siguientes 11/89
+// (AttendanceMonitorView, AuditView, BranchDetailView, DashboardView,
+// EmployeeDetailView, EncuestaAdminView). AttendanceMonitorView:
+// evaluateEmployeeStatus no estaba en useCallback — envuelto con sus 3 deps
+// reales (todas ya trackeadas por el memo que lo llama, cero riesgo);
+// destapó 3 deps ahora redundantes (currentTime/shifts/todayStr) que se
+// quitaron del memo externo. AuditView: mismo fallback `|| []` inestable de
+// siempre. BranchDetailView: `history.length` se lee solo para decidir si
+// mostrar el spinner (skip en refresh) — incluirlo dispararía un refetch en
+// bucle sobre sí mismo — suprimido con justificación explícita, no se
+// agrega (único caso de esta tanda donde agregar la dep SÍ es peligroso).
+// DashboardView: `activeSizes` con el mismo patrón de fallback inestable
+// (constante de módulo) que alimentaba el par ref-mirror ya sospechoso de
+// la parte 5; agregadas getScope/userBranchStr (guard existente ya evita
+// efectos secundarios). EmployeeDetailView: loadEmpRequests/emp agregados
+// (funciones/objetos ya estables o ya trackeados indirectamente).
+// EncuestaAdminView: `respondedIds` (un `new Set()` inline, recalculado
+// cada render) memoizado con useMemo sobre `respuestas` — mismo patrón que
+// las constantes EMPTY_OBJ/EMPTY_ARRAY pero para un valor derivado en vez
+// de un literal fijo.
+// Build limpio. Quedan 34 exhaustive-deps.
 
 // v2.15.23 — fix(bloque1/1.6, parte 6): exhaustive-deps, siguientes 12/89
 // (AnnouncementsView + AttendanceAuditView completo, 9 de sus 9 sitios).

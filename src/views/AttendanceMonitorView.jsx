@@ -1,5 +1,5 @@
 // src/views/AttendanceMonitorView.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Clock,
   CheckCircle,
@@ -30,10 +30,12 @@ import { toLocalISODate } from "../utils/timeClock.helpers";
 import BranchChips from "../components/common/BranchChips";
 import { useAuth } from '../context/AuthContext';
 
+const EMPTY_ARRAY = [];
+
 const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
-  const employees = useStaff(s => s.employees) || [];
-  const branches = useStaff(s => s.branches) || [];
-  const shifts = useStaff(s => s.shifts) || [];
+  const employees = useStaff(s => s.employees) || EMPTY_ARRAY;
+  const branches = useStaff(s => s.branches) || EMPTY_ARRAY;
+  const shifts = useStaff(s => s.shifts) || EMPTY_ARRAY;
   const loadAttendanceLastDays = useStaff(s => s.loadAttendanceLastDays);
   const { user, getScope } = useAuth();
 
@@ -101,7 +103,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
   };
 
   // --- EVALUACIÓN DE ESTADO ---
-  const evaluateEmployeeStatus = (emp) => {
+  const evaluateEmployeeStatus = useCallback((emp) => {
     const punches = (emp.attendance || []).filter((a) =>
       a.timestamp && toLocalISODate(new Date(a.timestamp)) === todayStr
     );
@@ -199,7 +201,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         lactation: config?.lactationTime,
       },
     };
-  };
+  }, [todayStr, shifts, currentTime]);
 
   // --- PROCESAMIENTO DE DATOS CON BÚSQUEDA NORMALIZADA ---
   const { employeeDataList, stats } = useMemo(() => {
@@ -274,7 +276,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
     });
 
     return { employeeDataList: finalFiltered, stats: st };
-  }, [employees, filterBranch, searchTerm, statusTab, currentTime, todayStr, shifts]);
+  }, [employees, filterBranch, searchTerm, statusTab, evaluateEmployeeStatus]);
 
   const statCards = [
     { id: "ALL", label: "Total", count: stats.total, color: "text-slate-900", border: "border-white/70", bg: "bg-white/40" },

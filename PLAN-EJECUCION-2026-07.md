@@ -259,11 +259,16 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
     sistema tienen `can_view=true`** en ese módulo — el gate es correcto (cierra el hueco de "cualquier
     cuenta sin ningún permiso"), pero en la práctica hoy es equivalente a "cualquier empleado
     autenticado", por diseño existente del módulo, no por un error del fix.
-  - **Bug preexistente descubierto, NO corregido (fuera de alcance)**: `save_pedido_snapshot` falla
-    con `function row_to_json(jsonb) does not exist` — `get_pedido_preview()` devuelve `jsonb` (no
-    `SETOF record`), así que `row_to_json(r)` no aplica sobre ese tipo. Bug latente desde siempre,
-    invisible porque la función no tiene ningún caller de cliente hoy. El gate de permiso sí quedó
-    aplicado correctamente (se confirmó que el error ocurre DESPUÉS de pasar el gate, no por el gate).
+  - **Bug preexistente descubierto y corregido (2026-07-12, fuera del alcance original de 0B.7
+    pero trivial y aislado)**: `save_pedido_snapshot` fallaba con `function row_to_json(jsonb) does
+    not exist` — `get_pedido_preview()` devuelve un `jsonb` ya armado (patrón C de CLAUDE.md,
+    `json_agg` interno), no `SETOF record`, así que `row_to_json(r)`/`r.cantidad_asignada` no
+    aplican sobre ese tipo (`r` era el array JSON completo tratado como valor opaco, no una fila).
+    Bug latente desde que se escribió la función, invisible porque no tiene ningún caller de
+    cliente. Fix: `v_datos := get_pedido_preview(...)` directo + `jsonb_array_elements(v_datos)`
+    para contar/sumar `->>'cantidad_asignada'`. Verificado en prod con datos reales dentro de una
+    transacción `ROLLBACK` (sucursales 1+2): 899 filas, 838 packs totales, `created_by` resuelto
+    correctamente — cero escritura permanente confirmada post-rollback.
   - Verificado con tests en transacciones `ROLLBACK`: negativo con `role_id=16` (sin ningún permiso)
     → `PERMISSION_DENIED` en 5/7 (las 2 restantes, `toggle_producto_oculto_ventas` e
     `inventory_inversion`, pasaron porque ese rol SÍ tiene `can_view` real en esos módulos —

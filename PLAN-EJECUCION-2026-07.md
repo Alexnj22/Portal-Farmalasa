@@ -190,6 +190,20 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
   mecanismo de gate), y ~11 funciones de solo lectura sin PII/dinero.
   Pendiente: decidir con el usuario qué de Alto/Medio se cierra y en qué orden — no se tocó nada de
   esto todavía, es solo el inventario clasificado.
+- **`crear_ruta` (0B.7, riesgo Alto) — ✅ APLICADO en prod y verificado.** Agregado
+  `IF NOT auth_can_edit_any(ARRAY['pedidos_tab_rutas']) THEN RAISE EXCEPTION` (mismo módulo/acción
+  que ya gatea el botón en el cliente, `TabRutas.jsx:266`) + `created_by`/`enviado_por` ahora usan
+  `auth_employee_id()` real en vez del `p_creado_por` que manda el cliente (queda en la firma por
+  compatibilidad, ya no se usa para autoría). **Hallazgo colateral durante la verificación**: hoy
+  NINGÚN rol tiene `can_edit=true` en `role_permissions` para `pedidos_tab_rutas` (los 7 roles con
+  fila explícita lo tienen en `false`) — en la práctica solo `SUPERADMIN` puede usar "Crear Ruta"
+  hoy, cliente y servidor coinciden exactamente en esa restricción, así que el fix no le quita
+  acceso a nadie que lo tuviera. Si se quiere que otro rol use la feature, es un cambio de
+  `role_permissions`, no de código. Verificado con 2 tests dentro de transacciones con `ROLLBACK`
+  (cero escritura permanente): negativo — rol sin permiso → `PERMISSION_DENIED`; positivo — con
+  permiso simulado, mandando un `p_creado_por` falsificado distinto al `auth.uid()` real → la fila
+  de `rutas.created_by` quedó con el empleado real, no con el valor falsificado (confirmado
+  `match_real=true`), y se confirmó `count=0` en `rutas` tras el rollback (sin rastro).
 
 ### Camino de deploy de edge functions (resuelto)
 Bash `supabase functions deploy` funciona CON permiso, pero el CLI se traga un `.env` con un nombre

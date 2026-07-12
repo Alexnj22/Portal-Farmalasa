@@ -289,29 +289,33 @@ import_map en estas funciones — NO usarla; usar el CLI con ese workaround.
 
 ## BLOQUE 0 — Seguridad que sigue ABIERTA (máxima prioridad)
 
-Estos NO se cerraron durante la auditoría. Cada write a prod requiere tu OK.
+**Estado al 2026-07-12: Bloque 0 (0A + 0B) CERRADO** — 17 de 18 ítems aplicados y verificados
+en prod (10 de ellos en esta sesión: 0B.5, 4.1, 4.2, y las 18 funciones de 0B.7 Alto+Medio +
+1 bug encontrado de paso). Quedan 2 conscientemente sin tocar por decisión explícita del
+usuario, no por trabajo pendiente: 0B.4 (diferido) y 0B.11 (condicional a reactivar esa cuenta).
+Detalle completo de cada fix en "PROGRESO DE EJECUCIÓN" arriba.
 
 ### 0A — Explotable / alto impacto
-| # | Ítem | Ubicación | Fix |
+| # | Ítem | Ubicación | Estado |
 |---|---|---|---|
-| 0A.1 | Bucket `photos`: INSERT `anon` + sin `file_size_limit`/`allowed_mime_types` — cualquiera sin sesión sube cualquier archivo/tamaño | storage.objects "Permitir subir fotos"; Fase 2 §Storage | Agregar límites al bucket + estrechar INSERT a `authenticated` |
-| 0A.2 | `bulk-create-employee-users` crea cuentas con `password:"1234"` literal | `functions/bulk-create-employee-users/index.ts:44` | Temporal aleatoria (igual que `set-employee-password`) |
-| 0A.3 | `saly-ai` chat expone datos de toda la empresa sin scope por rol/sucursal, incl. `employee_events.note` (texto disciplinario RRHH) a cualquier autenticado; y acepta `bucketName`/`filePath` del cliente sin verificar pertenencia (IDOR) | `functions/saly-ai/index.ts:103-179,124`; `analyze-document` | Scope por rol/sucursal del llamante; validar ownership del archivo |
+| 0A.1 | Bucket `photos`: INSERT `anon` + sin `file_size_limit`/`allowed_mime_types` | storage.objects "Permitir subir fotos"; Fase 2 §Storage | ✅ Aplicado 2026-07-11 |
+| 0A.2 | `bulk-create-employee-users` crea cuentas con `password:"1234"` literal | `functions/bulk-create-employee-users/index.ts:44` | ✅ Era falso positivo — v13 desplegado ya usaba `randomTempPassword()` |
+| 0A.3 | `saly-ai` chat expone `employee_events.note` sin scope; `analyze-document` sin whitelist de buckets (IDOR) | `functions/saly-ai/index.ts`; `analyze-document` | ✅ Aplicado 2026-07-11 (whitelist buckets + nota removida) |
 
 ### 0B — Hardening (bajo riesgo, alto valor de higiene)
-| # | Ítem | Fuente | Fix |
+| # | Ítem | Fuente | Estado |
 |---|---|---|---|
-| 0B.1 | 3 policies de `notifications` con `auth_employee_id()` SIN `(SELECT ...)` — reintroduce el patrón del outage 2026-07-08 | Fase 2 §RLS | Envolver en `(recipient_id = (SELECT auth_employee_id()))` |
-| 0B.2 | `ADMIN_INVOKE_SECRET` en texto plano en ~25 `cron.job.command` | Fase 0 | Mover a Supabase Vault, resolver con `current_setting()` |
-| 0B.3 | `mv_product_factor` expuesta a la API (viola CLAUDE.md #6) | Advisor | REVOKE de anon/authenticated, servir solo por RPC |
+| 0B.1 | 3 policies de `notifications` con `auth_employee_id()` SIN `(SELECT ...)` | Fase 2 §RLS | ✅ Aplicado 2026-07-11 |
+| 0B.2 | `ADMIN_INVOKE_SECRET` en texto plano en ~25 `cron.job.command` | Fase 0 | ✅ Aplicado 2026-07-11 (Vault, 28 jobs reescritos) |
+| 0B.3 | `mv_product_factor` expuesta a la API (viola CLAUDE.md #6) | Advisor | ✅ Aplicado 2026-07-11 (REVOKE ALL + GRANT SELECT) |
 | 0B.4 | Protección de contraseñas filtradas (HaveIBeenPwned) deshabilitada | Advisor | ⏸️ Diferido (decisión del usuario, 2026-07-12) |
-| 0B.5 | `pg_trgm`/`pg_net` en schema `public` | Advisor | ✅ Cerrado — riesgo aceptado (2026-07-12), ver progreso arriba |
-| 0B.6 | `debug_pedido_timings` (función debug leftover) | Advisor | Evaluar y borrar |
-| 0B.7 | 54 funciones SECURITY DEFINER invocables por cualquier `authenticated` sin gate de permiso; `wfm-ai-scheduler` sin chequeo de rol (Gemini caro) | Advisor; Fase 2 | Revisar caso por caso, agregar gate de permiso donde exponga datos/costo |
-| 0B.8 | `kiosk_devices.kiosk_verify` (SELECT `anon+true`) | Fase 3.2.2 | RPC SECURITY DEFINER que valide device_token (cambio de lógica) |
-| 0B.9 | `check-sales-alerts:88` manda `service_role` key como Bearer | Fase 2 REMEDIADO #4 | Unificar a `ADMIN_INVOKE_SECRET` |
-| 0B.10 | CORS `*` hardcodeado en 12 functions | Fase 3.5 | `getCorsHeaders(req)` con `PORTAL_ORIGIN` |
-| 0B.11 | `sufarmasalud@farmalasa.app` (SUPERADMIN) con password aleatoria tras 3.6 | Fase 3.6 | Asignar password real vía `set-employee-password` SI se necesita la cuenta |
+| 0B.5 | `pg_trgm`/`pg_net` en schema `public` | Advisor | ✅ Cerrado — riesgo aceptado (2026-07-12) |
+| 0B.6 | `debug_pedido_timings` (función debug leftover) | Advisor | ✅ Aplicado 2026-07-11 (borrada) |
+| 0B.7 | 54 funciones SECURITY DEFINER sin gate de permiso; `wfm-ai-scheduler` sin chequeo de rol | Advisor; Fase 2 | ✅ Clasificadas las 54; cerradas las 18 de riesgo Alto+Medio 2026-07-12 (`wfm-ai-scheduler` incluida); 34 Bajo sin acción necesaria |
+| 0B.8 | `kiosk_devices.kiosk_verify` (SELECT `anon+true`) | Fase 3.2.2 | ✅ Aplicado 2026-07-11 (RPC `verify_kiosk_device`, probado en staging primero) |
+| 0B.9 | `check-sales-alerts:88` manda `service_role` key como Bearer | Fase 2 REMEDIADO #4 | ✅ Aplicado 2026-07-11 |
+| 0B.10 | CORS `*` hardcodeado en 12 functions | Fase 3.5 | ✅ Aplicado 2026-07-11 (`getCorsHeaders(req)`) |
+| 0B.11 | `sufarmasalud@farmalasa.app` (SUPERADMIN) con password aleatoria tras 3.6 | Fase 3.6 | ⏸️ Ya no explotable (password aleatoria puesta en 3.6); asignar una real queda condicional a si se reactiva la cuenta — decisión del usuario |
 
 ---
 

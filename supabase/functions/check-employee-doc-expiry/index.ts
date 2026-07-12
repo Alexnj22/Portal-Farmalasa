@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { checkCronSecret } from "../_shared/security.ts";
+import { checkCronSecret, getCorsHeaders } from "../_shared/security.ts";
 
 // Vencimiento de documentos del EXPEDIENTE de cada empleado (employees.employee_documents,
 // JSONB) — cualquier categoría (DUI, licencias, Carné JVPQF/Regente, Carné JVPE/Enfermería,
@@ -18,9 +18,7 @@ function todayCST(): Date {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', {
-      headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' },
-    });
+    return new Response('ok', { headers: getCorsHeaders(req) });
   }
 
   // Auditoría 2026-07: gate obligatorio — cron.job (jobid 177) ya envía

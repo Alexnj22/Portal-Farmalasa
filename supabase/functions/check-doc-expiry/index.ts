@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { checkCronSecret } from "../_shared/security.ts";
+import { checkCronSecret, getCorsHeaders } from "../_shared/security.ts";
 
 const DOC_FIELDS: { id: string; label: string; section: 'legal' | 'rent' }[] = [
   { id: 'srsExpiration',          label: 'Licencia CSSP / DNM',               section: 'legal' },
@@ -36,9 +36,7 @@ function todayCST(): Date {
 Deno.serve(async (req) => {
   // Allow manual triggers via POST (no body required)
   if (req.method === 'OPTIONS') {
-    return new Response('ok', {
-      headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' },
-    });
+    return new Response('ok', { headers: getCorsHeaders(req) });
   }
 
   // Auditoría 2026-07: gate obligatorio — cron.job (jobid 17) ya envía

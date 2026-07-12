@@ -5,8 +5,16 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.10';
+export const APP_VERSION = '2.15.11';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.11 — fix(security): 0B.8 — kiosk_devices.kiosk_verify permitía SELECT
+// anon+true (cualquiera sin sesión leía toda la tabla). Nueva RPC SECURITY
+// DEFINER verify_kiosk_device(device_id, device_token) valida server-side;
+// branchSlice.validateKioskToken ahora la usa en vez de un SELECT directo.
+// Policy kiosk_verify dropeada. Probado primero en staging (branch
+// ewcmerxqjvludtgskuin) con datos sintéticos, luego aplicado a prod y
+// verificado contra un kiosk_devices real existente.
 
 // v2.15.10 — docs(audit): staging branch verificado 100% en verde (99
 // tablas/9 vistas/112 funciones/11 triggers/99 RLS/208 policies/346

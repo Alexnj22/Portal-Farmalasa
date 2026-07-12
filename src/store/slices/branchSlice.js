@@ -411,14 +411,15 @@ export const createBranchSlice = (set, get) => ({
     },
 
     validateKioskToken: async (deviceId, token) => {
-        const { data, error } = await supabase.from('kiosk_devices')
-            .select('id, branch_id')
-            .eq('id', deviceId)
-            .eq('device_token', token)
-            .eq('status', 'ACTIVE')
-            .single();
+        // Auditoría 2026-07 (0B.8): antes hacía SELECT directo sobre kiosk_devices,
+        // que requería una policy anon SELECT true (cualquiera sin sesión leía toda
+        // la tabla). Ahora valida server-side vía RPC SECURITY DEFINER.
+        const { data, error } = await supabase.rpc('verify_kiosk_device', {
+            p_device_id: deviceId,
+            p_device_token: token,
+        });
 
-        return !(error || !data);
+        return !error && Array.isArray(data) && data.length > 0;
     },
 
     getBranchHistory: async (branchId) => {

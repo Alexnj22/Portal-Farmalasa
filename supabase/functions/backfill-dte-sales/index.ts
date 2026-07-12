@@ -1,10 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { checkCronSecret } from "../_shared/security.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { checkCronSecret, getCorsHeaders } from "../_shared/security.ts";
 
 const SYNC_URL = 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/sync-dte-sales';
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -46,6 +41,7 @@ function buildRanges(
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   // Auditoría 2026-07: gate obligatorio — los 6 cron.job (dte-resync-month-*)

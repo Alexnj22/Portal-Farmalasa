@@ -1,4 +1,4 @@
-import { requireAuthUser } from "../_shared/security.ts";
+import { requireAuthUser, getCorsHeaders } from "../_shared/security.ts";
 
 const TARGET      = "https://clientesdte3.oss.com.sv";
 const PROXY_PFX   = "/functions/v1/oss-proxy";
@@ -15,7 +15,7 @@ const DROP_RESP = new Set([
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = {
-    "Access-Control-Allow-Origin": req.headers.get("Origin") ?? "*",
+    ...getCorsHeaders(req),
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, cookie",
   };

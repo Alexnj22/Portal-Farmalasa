@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { checkCronSecret } from "../_shared/security.ts";
+import { checkCronSecret, getCorsHeaders } from "../_shared/security.ts";
 
 // Event types that block a silent roster copy
 const BLOCKING_EVENT_TYPES = ['VACATION', 'DISABILITY', 'PERMIT'];
@@ -36,9 +36,7 @@ function todayCST(): Date {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', {
-      headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' },
-    });
+    return new Response('ok', { headers: getCorsHeaders(req) });
   }
 
   // Auditoría 2026-07: gate obligatorio — los 2 cron.job (jobid 144, 146)

@@ -1,16 +1,12 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { checkCronSecret } from '../_shared/security.ts';
+import { checkCronSecret, getCorsHeaders } from '../_shared/security.ts';
 
 // Solo Supervisor/a de Ventas recibe alertas DTE
 const SUPERVISOR_ROLE_IDS = [13];
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   // Auditoría 2026-07: gate obligatorio — cron.job (jobid 168) ya envía
@@ -95,7 +91,7 @@ serve(async (req) => {
       // Enviar push a supervisores
       const pushRes = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceRoleKey}`, 'x-cron-secret': Deno.env.get('CRON_INVOKE_SECRET') ?? '' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`, 'x-cron-secret': Deno.env.get('CRON_INVOKE_SECRET') ?? '' },
         body: JSON.stringify({
           title:        alert.title,
           message:      alert.message,

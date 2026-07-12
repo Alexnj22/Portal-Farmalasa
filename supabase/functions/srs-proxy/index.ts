@@ -1,14 +1,9 @@
-import { requireAuthUser } from "../_shared/security.ts";
+import { requireAuthUser, getCorsHeaders } from "../_shared/security.ts";
 
 const SRS_BASE = "https://apiconsulta.srs.gob.sv/public/productos";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
 Deno.serve(async (req: Request) => {
+  const CORS = { ...getCorsHeaders(req), "Access-Control-Allow-Methods": "GET, OPTIONS" };
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   const user = await requireAuthUser(req);

@@ -1,13 +1,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { requireActiveEmployeeUser } from '../_shared/security.ts';
-
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { requireActiveEmployeeUser, getCorsHeaders } from '../_shared/security.ts';
 
 serve(async (req: Request) => {
+  const CORS = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
   // Auditoría 2026-07: gate obligatorio — antes cualquiera con la anon key

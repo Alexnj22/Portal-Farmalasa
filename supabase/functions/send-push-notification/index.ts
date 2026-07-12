@@ -1,14 +1,10 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import webpush from 'npm:web-push@3.6.7';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { checkCronSecret } from '../_shared/security.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { checkCronSecret, getCorsHeaders } from '../_shared/security.ts';
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   // Auditoría 2026-07: gate obligatorio — los 3 callers internos

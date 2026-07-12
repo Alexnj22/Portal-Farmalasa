@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, requireAuthUser } from "../_shared/security.ts";
+import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { callGemini, parseGeminiJson } from "../_shared/gemini.ts";
 
 Deno.serve(async (req) => {
@@ -8,10 +8,38 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  const user = await requireAuthUser(req);
-  if (!user) {
+  const admin = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  );
+
+  // Auditoría 2026-07 (0B.7): requireAuthUser solo confirmaba JWT válido — cualquier
+  // cuenta autenticada, incluso dada de baja, disparaba la llamada a Gemini (costo).
+  // Gate alineado con el mismo permiso que ya exige el cliente para editar Turnos
+  // (SchedulesView.jsx: hasPermission('schedules', 'can_edit')).
+  const employee = await requireActiveEmployeeUser(req, admin);
+  if (!employee) {
     return new Response(JSON.stringify({ error: "UNAUTHORIZED" }), {
       status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const { data: empRole } = await admin
+    .from('employees')
+    .select('role_id')
+    .eq('id', employee.id)
+    .single();
+
+  const { data: perm } = await admin
+    .from('role_permissions')
+    .select('can_edit')
+    .eq('role_id', empRole?.role_id ?? -1)
+    .eq('module_key', 'schedules')
+    .single();
+
+  if (perm?.can_edit !== true) {
+    return new Response(JSON.stringify({ error: "FORBIDDEN" }), {
+      status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 

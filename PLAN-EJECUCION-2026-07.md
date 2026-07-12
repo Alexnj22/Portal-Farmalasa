@@ -286,8 +286,8 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
   `autoClosed++` se ejecutaba igual aunque el UPDATE fallara. Ahora los 3 chequean `error` y lo
   agregan al array `errors` ya existente en la respuesta; `autoClosed` solo sube si el UPDATE
   realmente tuvo éxito. Sin caller de cliente que dependa de este comportamiento — solo cron
-  (`sync-promo-sales`) y cron (`consolidate-timesheets`, jobid 148). Pendiente: redeploy vía CLI
-  (workaround `.env`) para que el fix llegue a prod — no desplegado todavía en esta sesión.
+  (`sync-promo-sales`) y cron (`consolidate-timesheets`, jobid 148). ✅ Desplegado a prod vía CLI
+  (workaround `.env`) con tu OK, 2026-07-12.
 - **1.4 — ✅ APLICADO (v2.15.17).** `sync-promo-sales:88` derivaba el factor de presentación con
   un regex (`/[0-9]+[xX]([0-9]+)/`) sobre el texto libre `sales_invoice_items.presentacion` —
   viola la regla de casa (usar siempre `product_precios.factor`). Reemplazado por un lookup real:
@@ -296,7 +296,7 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
   `product_id__UPPER(descripcion) → MAX(factor)` — mismo patrón `pres_factors` que usa
   `get_stock_analysis` en SQL (necesario porque `sales_invoice_items.id_presentacion` está NULL
   desde el 2026-06-08, ver nota en `sync-dte-sales`). Fallback a `1` si no hay match, igual que el
-  regex viejo. Pendiente: redeploy vía CLI (mismo bundle que 1.3, no desplegado todavía).
+  regex viejo. ✅ Desplegado a prod vía CLI con tu OK, 2026-07-12 (mismo bundle que 1.3).
 - **1.5 — ✅ APLICADO (v2.15.17).** `saveHiddenTimer` (`TabMinMax.jsx:1735`, `useRef(null)`) nunca
   se asignaba ni se leía en ningún otro punto del archivo (confirmado con grep) — el comentario
   "unused, kept for cleanup safety" no correspondía a nada real que limpiar. Eliminado (código
@@ -359,8 +359,8 @@ No necesitan staging. Priorizar los que tocan nómina/dinero.
 |---|---|---|
 | 1.1 | 4 selects sobre tablas >1000 filas sin paginar (truncado silencioso) | ✅ Aplicado 2026-07-12 (v2.15.14). 3 reales corregidos con `fetchAllRows` (`FacturacionView.jsx` 2 `loadData`, `WidgetInventorySearch.jsx`); `VentasView.jsx:503` resultó ya corregido por trabajo previo no relacionado (`fetchStats` usa `fetchAllRows` desde v2.9.15, `fetchRows` ya tenía `.range()`/`.limit(200)`) — falso positivo hoy, sin cambios. Build limpio. |
 | 1.2 | 35 `const { data } = await supabase` sin chequear `error` (empezar por nómina/aprobador) | ✅ Completo 2026-07-12 (v2.15.15 + v2.15.16). Los 18 archivos del inventario original cerrados: `requestsSlice.js` (22), `payrollSlice.js` (4), `pedidoPrint.js`, `SidebarSyncStatus.jsx`, `NuevoConteoModal.jsx`, `EncuestaAdminView.jsx`, `FacturacionView.jsx` (7), `VentasPperdidasView.jsx`, `MinMaxView.jsx`, `SyncHealthBanner.jsx`, `VentasView.jsx` (5), `CotizacionesView.jsx` (8), `RecepcionModal.jsx` (4), `TabPedidos.jsx` (16), `PromoModal.jsx`, `EmployeeDetailView.jsx`, `TabCatalogo.jsx` (5), `ConteoDetailView.jsx` (4) — ~70 sitios reales en total. Ver detalle abajo. |
-| 1.3 | Edge functions ignoran `error` en escrituras críticas (el `update`/`insert` de `timesheets`; auto-cierre de promos) | ✅ Aplicado 2026-07-12 (v2.15.17). Pendiente redeploy vía CLI. |
-| 1.4 | `sync-promo-sales:88` deriva `factor` por regex en vez de `product_precios.factor` (viola regla de casa) | ✅ Aplicado 2026-07-12 (v2.15.17). Pendiente redeploy vía CLI. |
+| 1.3 | Edge functions ignoran `error` en escrituras críticas (el `update`/`insert` de `timesheets`; auto-cierre de promos) | ✅ Aplicado y desplegado a prod 2026-07-12 (v2.15.17). |
+| 1.4 | `sync-promo-sales:88` deriva `factor` por regex en vez de `product_precios.factor` (viola regla de casa) | ✅ Aplicado y desplegado a prod 2026-07-12 (v2.15.17). |
 | 1.5 | `saveHiddenTimer` asignado pero nunca leído/limpiado — posible timer fugado | ✅ Aplicado 2026-07-12 (v2.15.17) — era código muerto, eliminado. |
 | 1.6 | 173 lint reales de riesgo (`set-state-in-effect` 65, `exhaustive-deps` ~52 reales, `purity` 8, etc.) — barrido por archivo, empezar por top-7 monstruo | Fase 1 §lint |
 | 1.7 | `Date.now()`/`new Date()` en render → badges desincronizados | ✅ Aplicado 2026-07-12 (v2.15.17). Hook `useNowTick` en TabMinMax/TabSinVenta. |

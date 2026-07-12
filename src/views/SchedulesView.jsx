@@ -232,7 +232,7 @@ const SchedulesView = ({ openModal, setView }) => {
 
     useEffect(() => {
         if (shifts.length === 0) fetchBoot?.();
-    }, []);
+    }, [shifts.length, fetchBoot]);
 
     const [publishState, setPublishState] = useState({
         isOpen: false, isDestructive: false,

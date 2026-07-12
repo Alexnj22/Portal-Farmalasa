@@ -25,6 +25,7 @@ import { useNowTick } from '../hooks/useNowTick';
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const PAGE_SIZE = 50;
+const SPECIAL_CODES = { '1000': 'Administración', '125': 'Domicilio' };
 
 const fmt    = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtNum = (n) => parseInt(n || 0).toLocaleString('en-US');
@@ -349,6 +350,17 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const [changelogCache, setChangelogCache] = useState({});
     const fetchRowsRef = useRef(0);
 
+    // Refs "siempre frescos" para leer el estado actual de los caches dentro de
+    // fetchRows sin que su identidad (useCallback) cambie cada vez que un cache
+    // se actualiza — evitaría que el efecto que llama fetchRows() se dispare en
+    // cascada por cada prefetch de precios/changelog que completa.
+    const itemsCacheRef = useRef(itemsCache);
+    const pricesCacheRef = useRef(pricesCache);
+    const changelogCacheRef = useRef(changelogCache);
+    useEffect(() => { itemsCacheRef.current = itemsCache; }, [itemsCache]);
+    useEffect(() => { pricesCacheRef.current = pricesCache; }, [pricesCache]);
+    useEffect(() => { changelogCacheRef.current = changelogCache; }, [changelogCache]);
+
     useEffect(() => {
         supabase.from('products').select('id').eq('es_antibiotico', true)
             .then(({ data }) => { if (data) setAntibioticIds(new Set(data.map(p => p.id))); });
@@ -537,7 +549,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         const currentRid = rid;
 
         // Prefetch items for visible rows in background
-        const uncached = fetchedIds.filter(id => !itemsCache[id]);
+        const uncached = fetchedIds.filter(id => !itemsCacheRef.current[id]);
         if (uncached.length > 0) {
             supabase.from('sales_invoice_items')
                 .select('invoice_id, erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')
@@ -554,7 +566,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
 
                     // Also prefetch prices for all unique erp_product_ids in this batch
                     const erpIds = [...new Set(items.map(it => it.erp_product_id).filter(id => id && id !== -999))];
-                    const uncachedErpIds = erpIds.filter(id => !(id in pricesCache));
+                    const uncachedErpIds = erpIds.filter(id => !(id in pricesCacheRef.current));
                     if (uncachedErpIds.length) {
                         supabase.from('product_precios')
                             .select('product_id, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7')
@@ -575,7 +587,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         }
 
         // Prefetch changelog for visible rows in background
-        const uncachedChg = fetchedIds.filter(id => !(id in changelogCache));
+        const uncachedChg = fetchedIds.filter(id => !(id in changelogCacheRef.current));
         if (uncachedChg.length > 0) {
             const init = Object.fromEntries(uncachedChg.map(id => [id, []]));
             setChangelogCache(prev => ({ ...init, ...prev }));
@@ -1051,7 +1063,6 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
     };
 
     const getBranchName = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
-    const SPECIAL_CODES = { '1000': 'Administración', '125': 'Domicilio' };
 
     const { knownRows, unknownByBranch, isVendSearchFuzzy } = useMemo(() => {
         const s = searchTerm;
@@ -1743,7 +1754,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
         } finally {
             setDrillLoading(false);
         }
-    }, [fini, ffin, filterBranch]);
+    }, [fini, ffin, filterBranch, allowedDrillTiers]);
 
     const toggleExpand = (key, productId) => {
         if (expandedKey === key) { setExpandedKey(null); return; }

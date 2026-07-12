@@ -338,12 +338,12 @@ const VacationPlanView = () => {
 
     useEffect(() => {
         fetchVacationHeaders();
-    }, []);
+    }, [fetchVacationHeaders]);
 
     useEffect(() => {
         fetchVacationPlans(year, branchFilter === 'ALL' ? null : branchFilter);
         fetchVacationChangeRequests(year);
-    }, [year, branchFilter]);
+    }, [year, branchFilter, fetchVacationPlans, fetchVacationChangeRequests]);
 
     const assignedEmployeeIds = useMemo(() => {
         return new Set(
@@ -393,7 +393,7 @@ const VacationPlanView = () => {
                 disabled: !isEligible,
             };
         });
-    }, [employees, uniqueBranches, branchFilter, assignedEmployeeIds]);
+    }, [employees, uniqueBranches, branchFilter, assignedEmployeeIds, year]);
 
     const groupedOptions = useMemo(() => {
         const eligible = employeeOptions

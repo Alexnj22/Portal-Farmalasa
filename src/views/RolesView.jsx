@@ -151,7 +151,7 @@ const RolesView = ({ openModal }) => {
         return nameUpper.includes('REGENTE') || nameUpper.includes('REFERENTE') || nameUpper.includes('EXTERNO') || nameUpper.includes('CONSULTOR');
     };
 
-    const getRoleDepth = (roleId) => {
+    const getRoleDepth = useCallback((roleId) => {
         let depth = 0;
         let current = roles.find(r => r.id === roleId);
         while (current && current.parent_role_id) {
@@ -159,7 +159,7 @@ const RolesView = ({ openModal }) => {
             current = roles.find(r => r.id === current.parent_role_id);
         }
         return depth;
-    };
+    }, [roles]);
 
     const { filteredAndSortedRoles, isRoleSearchFuzzy } = useMemo(() => {
         const { results, isFuzzy } = !searchQuery.trim()
@@ -174,7 +174,7 @@ const RolesView = ({ openModal }) => {
             }),
             isRoleSearchFuzzy: isFuzzy,
         };
-    }, [roles, searchQuery]);
+    }, [roles, searchQuery, getRoleDepth]);
 
     const sortedRolesForDropdown = useMemo(() => {
         return [...roles].sort((a, b) => {
@@ -183,7 +183,7 @@ const RolesView = ({ openModal }) => {
             if (depthA !== depthB) return depthA - depthB;
             return a.name.localeCompare(b.name);
         });
-    }, [roles]);
+    }, [roles, getRoleDepth]);
 
     const roleOptions = useMemo(() => {
         return sortedRolesForDropdown

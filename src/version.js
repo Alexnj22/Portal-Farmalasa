@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.25';
+export const APP_VERSION = '2.15.26';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.26 — fix(bloque1/1.6, parte 9): exhaustive-deps, siguientes 9/89
+// (RolesView, SchedulesView, VacationPlanView completo, VentasView
+// completo). RolesView: getRoleDepth no estaba en useCallback — envuelto
+// con su dep real (roles), reutilizado por los 2 memos que lo llamaban.
+// SchedulesView/VacationPlanView: deps de store (fetchBoot,
+// fetchVacationHeaders/Plans/ChangeRequests) + `year` agregadas — todas
+// acciones estables o primitivos, sin riesgo de bucle.
+// VentasView (los 3 restantes, cierra la vista): `fetchRows` leía
+// itemsCache/pricesCache/changelogCache directo del estado para decidir
+// qué prefetchear — agregarlos a deps habría hecho que fetchRows cambiara
+// de identidad cada vez que el propio prefetch de precios/items/changelog
+// completa, dueño de un re-fetch en cascada de TODA la tabla (stats+rows)
+// cada vez que llega un precio o un changelog de fondo. Se agregaron 3 refs
+// "siempre frescas" (itemsCacheRef/pricesCacheRef/changelogCacheRef,
+// mismo patrón useEffect-mirror ya usado en el archivo) y fetchRows ahora
+// lee de los refs en vez del estado — cero cambio de comportamiento,
+// verificado en vivo (login + expandir una fila real en /ventas, ítems y
+// precios cargan igual). SPECIAL_CODES (objeto inline redeclarado cada
+// render) movido a constante de módulo; allowedDrillTiers (ya memoizado)
+// solo le faltaba estar en el array de deps de otro callback.
+// Build limpio. Quedan 17 exhaustive-deps.
 
 // v2.15.25 — fix(bloque1/1.6, parte 8): exhaustive-deps, siguientes 8/89
 // (FacturacionView, PayrollView, RequestsView). FacturacionView: 2 efectos

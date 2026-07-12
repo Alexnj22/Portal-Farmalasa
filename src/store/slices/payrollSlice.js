@@ -189,11 +189,12 @@ export const createPayrollSlice = (set, get) => ({
                 .map(e => e.name || String(e.id));
 
             // #2 — Load timesheets including nocturnal + diurnal OT columns
-            const { data: sheets } = await supabase
+            const { data: sheets, error: sheetsErr } = await supabase
                 .from('timesheets')
                 .select('employee_id, is_absent, work_date, nocturnal_hours, nocturnal_overtime_hours, overtime_hours')
                 .gte('work_date', period.start_date)
                 .lte('work_date', period.end_date);
+            if (sheetsErr) throw new Error(`No se pudieron cargar los timesheets del período: ${sheetsErr.message}`);
 
             const daysMap      = new Map();
             const noctMap      = new Map();
@@ -211,13 +212,14 @@ export const createPayrollSlice = (set, get) => ({
             }
 
             // #1 — Fix: request type is 'ADVANCE' in DB (was incorrectly querying 'ADELANTO')
-            const { data: advances } = await supabase
+            const { data: advances, error: advancesErr } = await supabase
                 .from('approval_requests')
                 .select('employee_id, metadata')
                 .eq('type', 'ADVANCE')
                 .eq('status', 'APPROVED')
                 .gte('created_at', period.start_date)
                 .lte('created_at', period.end_date + 'T23:59:59');
+            if (advancesErr) throw new Error(`No se pudieron cargar los anticipos aprobados del período: ${advancesErr.message}`);
 
             const advanceMap = new Map();
             for (const adv of advances || []) {
@@ -226,12 +228,13 @@ export const createPayrollSlice = (set, get) => ({
             }
 
             // #7 — Vacation plans overlapping period: those days are paid (not absent)
-            const { data: vacPlans } = await supabase
+            const { data: vacPlans, error: vacPlansErr } = await supabase
                 .from('vacation_plans')
                 .select('employee_id, start_date, end_date')
                 .in('status', ['CONFIRMED', 'APPROVED', 'TAKEN'])
                 .lte('start_date', period.end_date)
                 .gte('end_date', period.start_date);
+            if (vacPlansErr) throw new Error(`No se pudieron cargar los planes de vacaciones del período: ${vacPlansErr.message}`);
 
             const vacDaysMap  = new Map();
             const vacBonusMap = new Map();
@@ -318,10 +321,11 @@ export const createPayrollSlice = (set, get) => ({
     // ── OT Bank ───────────────────────────────────────────────────────────────
 
     fetchOvertimeBankBalance: async (employeeId) => {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('overtime_bank')
             .select('hours, type')
             .eq('employee_id', employeeId);
+        if (error) console.error('fetchOvertimeBankBalance failed:', error.message);
         let pending = 0;
         for (const row of data || []) {
             if (row.type === 'EARNED') pending += row.hours;

@@ -5,8 +5,20 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.14';
+export const APP_VERSION = '2.15.15';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.15 — fix(bloque1/1.2): requestsSlice.js (22 sitios) y payrollSlice.js
+// (4 sitios) — const { data } = await supabase sin chequear error. En
+// requestsSlice (resolución de aprobador/roster/cobertura) se agrega
+// console.error con contexto sin cambiar el fallback existente (preserva la
+// resiliencia de la cadena de aprobadores, pero ahora una falla real queda
+// visible en logs en vez de indistinguible de "sin resultados"). En
+// payrollSlice, generatePayrollEntries ahora aborta (throw) si fallan
+// timesheets/anticipos/planes de vacaciones — antes generaba nómina con esos
+// datos faltantes en silencio (días trabajados, deducciones de anticipo o
+// bono de vacaciones incorrectos sin ningún aviso); fetchOvertimeBankBalance
+// ahora loguea el error en vez de devolver 0 indistinguible de "sin horas".
 
 // v2.15.14 — fix(bloque1/1.1): 3 selects sobre tablas grandes sin paginar
 // (cap silencioso de 1000 filas de PostgREST) — reemplazados por

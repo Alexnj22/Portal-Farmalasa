@@ -326,7 +326,7 @@ No necesitan staging. Priorizar los que tocan nómina/dinero.
 | # | Ítem | Ubicación |
 |---|---|---|
 | 1.1 | 4 selects sobre tablas >1000 filas sin paginar (truncado silencioso) | ✅ Aplicado 2026-07-12 (v2.15.14). 3 reales corregidos con `fetchAllRows` (`FacturacionView.jsx` 2 `loadData`, `WidgetInventorySearch.jsx`); `VentasView.jsx:503` resultó ya corregido por trabajo previo no relacionado (`fetchStats` usa `fetchAllRows` desde v2.9.15, `fetchRows` ya tenía `.range()`/`.limit(200)`) — falso positivo hoy, sin cambios. Build limpio. |
-| 1.2 | 35 `const { data } = await supabase` sin chequear `error` (empezar por nómina/aprobador) | `requestsSlice.js:80,509`; `payrollSlice.js:321`; +16 archivos |
+| 1.2 | 35 `const { data } = await supabase` sin chequear `error` (empezar por nómina/aprobador) | ⏳ Parcial 2026-07-12 (v2.15.15): `requestsSlice.js` (22 sitios) y `payrollSlice.js` (4 sitios) cerrados — ver detalle abajo. Quedan ~16 archivos restantes (`pedidoPrint.js`, `SidebarSyncStatus.jsx`, `NuevoConteoModal.jsx`, `EncuestaAdminView.jsx`, `FacturacionView.jsx`, `VentasPperdidasView.jsx`, `MinMaxView.jsx`, `SyncHealthBanner.jsx`, `VentasView.jsx`, `CotizacionesView.jsx`, `RecepcionModal.jsx`, `TabPedidos.jsx`, `PromoModal.jsx`, `EmployeeDetailView.jsx`, `TabCatalogo.jsx`, `ConteoDetailView.jsx`). |
 | 1.3 | Edge functions ignoran `error` en escrituras críticas (el `update`/`insert` de `timesheets`; auto-cierre de promos) | `consolidate-timesheets:164-402`; `sync-promo-sales:127-139` |
 | 1.4 | `sync-promo-sales:88` deriva `factor` por regex en vez de `product_precios.factor` (viola regla de casa) | `functions/sync-promo-sales/index.ts:88` |
 | 1.5 | `saveHiddenTimer` asignado pero nunca leído/limpiado — posible timer fugado | `TabMinMax.jsx:1735` |

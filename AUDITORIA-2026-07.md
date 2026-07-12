@@ -2906,3 +2906,52 @@ empíricamente) → aplicar los 19 archivos del baseline en el orden verificado
 todavía). Sembrado de datos de referencia no sensibles (roles, sucursales,
 turnos, feriados, presentaciones, laboratorios) para hacer el branch
 utilizable en pruebas queda propuesto pero no ejecutado.
+
+---
+
+## Bloque 0B — cierre final (2026-07-12)
+
+Con 0B.1, 0B.2, 0B.3 (dejado como está, ver `PREPARED-0B-MIGRATIONS.md`),
+0B.6-0B.10 ya cerrados en commits previos (`ee58133`, `f1a7710`), quedaban
+dos ítems abiertos. Se investigaron ambos a fondo antes de decidir; ninguno
+se tocó en producción.
+
+### 0B.5 — `pg_trgm`/`pg_net` fuera de `public` — **riesgo aceptado, NO se toca**
+
+**`pg_trgm`**: ya se intentó mover una vez (`supabase/migrations/20260517_db_audit_v13_revert_pgtrgm_to_public.sql`)
+y se revirtió porque rompió las búsquedas `ILIKE` de productos en producción.
+Causa raíz confirmada de nuevo con queries directas a prod en esta sesión:
+el rol `postgres` tiene `search_path="$user", public, extensions` en su
+`rolconfig`, pero **`anon`/`authenticated`/`authenticator`** (los roles reales
+de PostgREST para todo el tráfico de la app) **no tienen ese override** —
+heredan el default del cluster, `"$user", public`, sin `extensions`. Mover
+`pg_trgm` deja sin resolver el operador `%`/`gin_trgm_ops` para esos roles en
+los 6 índices GIN trigram activos (`products.nombre`, `products.principio_activo`,
+`sales_invoices.cliente/correlativo/erp_invoice_id`,
+`inventory_grouped_mv.descripcion`) — el mismo 400 "Bad Request" de mayo,
+reproducible con certeza, no solo en teoría.
+
+**`pg_net`**: `pg_extension.extrelocatable = false` — `ALTER EXTENSION ... SET
+SCHEMA` ni siquiera es una operación válida; requeriría `DROP`/`CREATE`
+(interrumpe el worker async de HTTP que usan `notify_branch`/
+`notify_employees`/`notify_push_on_announcement` para push). Verificado además
+que sus objetos reales (`net.http_post`, `net.http_get`, tablas de cola)
+**ya viven en el schema `net`, no en `public`** — lo único registrado en
+`public` es la fila cosmética de `pg_extension`. Beneficio de seguridad ≈ 0
+para el riesgo/esfuerzo de un `DROP`/`CREATE` en una extensión que mueve
+notificaciones push en producción.
+
+**Decisión del usuario**: marcar ambos como riesgo aceptado, no reabrir salvo
+que cambie el diseño (ej. si algún día se fija `search_path` a nivel de rol
+para `anon`/`authenticated` por otra razón, ahí sí se puede reevaluar `pg_trgm`
+con una prueba real en staging antes de tocar prod).
+
+### 0B.4 — Protección de contraseñas filtradas (HaveIBeenPwned) — **diferido, no implementado**
+
+Es un toggle de configuración de Supabase Auth (dashboard/Management API), no
+requiere código ni migración. El usuario decidió no activarlo todavía —
+queda anotado aquí como pendiente consciente, no como olvido. Sin fecha de
+retomado definida.
+
+**Bloque 0B queda cerrado** con esto: 8 de 10 ítems aplicados, 1 aceptado como
+riesgo (0B.5) y 1 diferido a decisión del usuario (0B.4).

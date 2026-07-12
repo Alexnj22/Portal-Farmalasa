@@ -5,8 +5,33 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.21';
+export const APP_VERSION = '2.15.22';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.22 — fix(bloque1/1.6, parte 5): exhaustive-deps, siguientes 16/89
+// (BranchChips, AppLayout — shell de navegación; useKioskDevice,
+// useTimeClockEngine). BranchChips.jsx: recomputeVisibility/recomputeIndicator
+// no estaban en useCallback (identidad nueva cada render) — envueltos con
+// sus deps reales; `visibleKeys.join(",")`/`hiddenKeys.join(",")` inline en
+// el array de deps (el linter no puede analizar una expresión ahí) —
+// extraídos a variables `visibleKeysStr`/`hiddenKeysStr`. AppLayout.jsx:
+// mismo patrón para recomputePill (posición del indicador/"pill" del menú
+// activo) — envuelto en useCallback con sus 5 deps reales (activeId,
+// activePath, visibleGroups, isExpanded, openGroups); el efecto de montaje
+// único que registra el ResizeObserver + listener de resize capturaba una
+// clausura vieja de recomputePill (bug real de stale closure, no solo
+// cosmético de lint) — ahora se re-suscribe cuando cambian sus deps.
+// useKioskDevice.js/useTimeClockEngine.js: mismos fallbacks `|| []`
+// inestables ya vistos en la parte 4, resueltos con constantes de módulo;
+// useTimeClockEngine también: agregado `showToast` (ya estaba en uso, solo
+// faltaba en deps) y `registerAttendance`/`earlyPendingData?.actualTime`/
+// `earlyPendingData?.earlyMins` en handleScan — de paso apareció (mismo
+// fenómeno que en sesiones previas: un fix destapa el siguiente) una dep
+// `closeFeedback` realmente no usada en ese callback — removida.
+// Build limpio. Quedan 57 exhaustive-deps.
+// ⚠️ Pendiente: verificación visual de AppLayout (nav pill) y BranchChips —
+// son componentes compartidos de alto tráfico, no se pudo probar en browser
+// en esta sesión todavía.
 
 // v2.15.21 — fix(bloque1/1.6, parte 4): react-hooks/exhaustive-deps, primeros
 // 16/89 cerrados (2 categorías de bajo riesgo primero):

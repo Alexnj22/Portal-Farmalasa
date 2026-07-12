@@ -26,12 +26,13 @@ import { XCircle, ShieldAlert } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 const SU_ROLES = ['JEFE', 'SUBJEFE'];
+const EMPTY_ARRAY = [];
 
 export function useTimeClockEngine(props = {}) {
-    const storeEmployees = useStaff((s) => s.employees) || [];
-    const storeShifts = useStaff((s) => s.shifts) || [];
-    const storeAnnouncements = useStaff((s) => s.announcements) || [];
-    const branches = useStaff((s) => s.branches) || [];
+    const storeEmployees = useStaff((s) => s.employees) || EMPTY_ARRAY;
+    const storeShifts = useStaff((s) => s.shifts) || EMPTY_ARRAY;
+    const storeAnnouncements = useStaff((s) => s.announcements) || EMPTY_ARRAY;
+    const branches = useStaff((s) => s.branches) || EMPTY_ARRAY;
 
     const storeRegisterAttendance = useStaff((s) => s.registerAttendance);
     const storeMarkAnnouncementAsRead = useStaff((s) => s.markAnnouncementAsRead);
@@ -599,7 +600,7 @@ const submitEarlyExit = useCallback((e) => {
         setEarlyExitData(null);
         setExitReason('');
         setExitNotes('');
-    }, [earlyExitData, exitNotes, exitReason, finalizePunch, time]);
+    }, [earlyExitData, exitNotes, exitReason, finalizePunch, time, showToast]);
 
     const handleScan = useCallback(async (e) => {
         e?.preventDefault?.();
@@ -1038,14 +1039,16 @@ const submitEarlyExit = useCallback((e) => {
     }, [
         appendAuditLog,
         authPrompt,
-        closeFeedback,
         earlyExitData,
+        earlyPendingData?.actualTime,
+        earlyPendingData?.earlyMins,
         employees,
         feedback,
         finalizePunch,
         isProcessing,
         kiosk,
         openConfigurator,
+        registerAttendance,
         scanCode,
         shifts,
         specialMode,

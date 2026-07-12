@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Check } from "lucide-react";
 
 const BranchChips = ({
@@ -40,7 +40,7 @@ const BranchChips = ({
     return () => document.removeEventListener("mousedown", onDoc);
   }, [moreOpen]);
 
-  const recomputeVisibility = () => {
+  const recomputeVisibility = useCallback(() => {
     const wrapEl = containerRef.current;
     if (!wrapEl) return;
 
@@ -67,14 +67,14 @@ const BranchChips = ({
 
     setVisibleKeys(vis);
     setHiddenKeys(hid);
-  };
+  }, [items]);
 
   useLayoutEffect(() => {
     recomputeVisibility(); // eslint-disable-line react-hooks/set-state-in-effect -- mide el contenedor real (ResizeObserver) antes de pintar, patrón estándar de useLayoutEffect
     const ro = new ResizeObserver(() => recomputeVisibility());
     if (containerRef.current) ro.observe(containerRef.current);
     return () => ro.disconnect();
-  }, [items.length]);
+  }, [items.length, recomputeVisibility]);
 
   const visibleItems = useMemo(
     () => items.filter((it) => visibleKeys.includes(it.key)),
@@ -93,7 +93,7 @@ const BranchChips = ({
     setMoreOpen(false);
   };
 
-  const recomputeIndicator = () => {
+  const recomputeIndicator = useCallback(() => {
     const wrap = containerRef.current;
     const row = rowRef.current;
     const btn = btnRefs.current.get(selectedKey);
@@ -119,18 +119,21 @@ const BranchChips = ({
       width: Math.max(24, width),
       show: true,
     });
-  };
+  }, [selectedKey, visibleKeys]);
+
+  const visibleKeysStr = visibleKeys.join(",");
+  const hiddenKeysStr  = hiddenKeys.join(",");
 
   useLayoutEffect(() => {
     const raf = requestAnimationFrame(recomputeIndicator);
     return () => cancelAnimationFrame(raf);
-  }, [selectedKey, visibleKeys.join(","), hiddenKeys.join(",")]);
+  }, [selectedKey, visibleKeysStr, hiddenKeysStr, recomputeIndicator]);
 
   useEffect(() => {
     const onResize = () => recomputeIndicator();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [selectedKey, visibleKeys.join(","), hiddenKeys.join(",")]);
+  }, [selectedKey, visibleKeysStr, hiddenKeysStr, recomputeIndicator]);
 
   return (
     <div className={`w-full ${className}`}>

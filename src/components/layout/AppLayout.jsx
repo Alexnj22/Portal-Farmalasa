@@ -244,7 +244,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             }
         });
         setOpenGroups(next); // eslint-disable-line react-hooks/set-state-in-effect -- expande el grupo de menú que contiene la ruta activa
-    }, [activeId, visibleGroups]);
+    }, [activeId, activePath, visibleGroups]);
 
     const toggleGroup = (key) => setOpenGroups(prev => {
         const isOpen = !!prev[key];
@@ -318,7 +318,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const isExpanded = isSidebarOpen;
     const blurClasses = isOverlayActive ? 'pointer-events-none select-none scale-[0.98] blur-[2px]' : '';
 
-    const recomputePill = () => {
+    const recomputePill = useCallback(() => {
         const navEl = navRef.current;
         let activeEl = itemRefs.current.get(activeId);
 
@@ -360,7 +360,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         const next = { top, height, show: true };
         lastGoodPillRef.current = next;
         setPill(next);
-    };
+    }, [activeId, activePath, visibleGroups, isExpanded, openGroups]);
 
     useLayoutEffect(() => {
         const ANIM_MS = 320;
@@ -373,14 +373,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         };
         raf = requestAnimationFrame(loop);
         return () => cancelAnimationFrame(raf);
-    }, [activeId, openGroups, isExpanded]);
+    }, [activeId, openGroups, isExpanded, recomputePill]);
 
     useLayoutEffect(() => {
         const r1 = requestAnimationFrame(recomputePill);
         const r2 = requestAnimationFrame(() => requestAnimationFrame(recomputePill));
         const t = setTimeout(recomputePill, 520);
         return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); clearTimeout(t); };
-    }, [isSidebarOpen, isMobile]);
+    }, [isSidebarOpen, isMobile, recomputePill]);
 
     useEffect(() => {
         const navEl = navRef.current;
@@ -389,7 +389,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         ro.observe(navEl);
         window.addEventListener('resize', recomputePill);
         return () => { ro.disconnect(); window.removeEventListener('resize', recomputePill); };
-    }, []);
+    }, [recomputePill]);
 
     // Scroll nav to keep active item visible after submenu animation finishes
     useEffect(() => {

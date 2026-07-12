@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 
 const KIOSK_LS_KEY = 'kiosk_config';
+const EMPTY_BRANCHES = [];
 
 // 🚨 Sacamos esta función fuera del hook para usarla en el estado inicial
 // y evitar el "parpadeo" de la UI al recargar la página.
@@ -30,7 +31,7 @@ const readLocalConfigSafe = () => {
  * ✅ useKioskDevice
  */
 export default function useKioskDevice() {
-  const branches = useStaff((s) => s.branches) || [];
+  const branches = useStaff((s) => s.branches) || EMPTY_BRANCHES;
   const validateKioskToken = useStaff((s) => s.validateKioskToken);
 
   // 🚨 Inicialización perezosa: El estado arranca con el valor real, cero parpadeos.

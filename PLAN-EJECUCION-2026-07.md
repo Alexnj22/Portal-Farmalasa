@@ -326,8 +326,8 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
   env, nunca hardcodeados). Cambiado a
   `` `${Deno.env.get('SUPABASE_URL') ?? ''}/functions/v1/sync-dte-sales` ``. Riesgo real que cerraba:
   si el proyecto migra o cambia de project ref (staging, disaster recovery), estas 2 funciones
-  seguirían apuntando al proyecto viejo en silencio. Pendiente: redeploy a prod (requiere tu OK,
-  igual que 1.3/1.4).
+  seguirían apuntando al proyecto viejo en silencio. ✅ Las 5 funciones desplegadas a prod vía CLI
+  con tu OK, 2026-07-12.
 
 ### Camino de deploy de edge functions (resuelto)
 Bash `supabase functions deploy` funciona CON permiso, pero el CLI se traga un `.env` con un nombre
@@ -382,7 +382,7 @@ No necesitan staging. Priorizar los que tocan nómina/dinero.
 | 1.5 | `saveHiddenTimer` asignado pero nunca leído/limpiado — posible timer fugado | ✅ Aplicado 2026-07-12 (v2.15.17) — era código muerto, eliminado. |
 | 1.6 | 173 lint reales de riesgo (`set-state-in-effect` 65, `exhaustive-deps` ~52 reales, `purity` 8, etc.) — barrido por archivo, empezar por top-7 monstruo | Fase 1 §lint |
 | 1.7 | `Date.now()`/`new Date()` en render → badges desincronizados | ✅ Aplicado 2026-07-12 (v2.15.17). Hook `useNowTick` en TabMinMax/TabSinVenta. |
-| 1.8 | Retry/timeout faltante en `fetch` saliente de varias edge functions; URL de proyecto hardcodeada | ✅ Aplicado 2026-07-12. Pendiente redeploy a prod (tu OK). |
+| 1.8 | Retry/timeout faltante en `fetch` saliente de varias edge functions; URL de proyecto hardcodeada | ✅ Aplicado y desplegado a prod 2026-07-12. |
 
 ---
 

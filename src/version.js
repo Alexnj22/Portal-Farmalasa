@@ -5,8 +5,18 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.13';
+export const APP_VERSION = '2.15.14';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.14 — fix(bloque1/1.1): 3 selects sobre tablas grandes sin paginar
+// (cap silencioso de 1000 filas de PostgREST) — reemplazados por
+// fetchAllRows: FacturacionView.jsx dos loadData (backlog de facturas
+// estado nulo/NULA, backlog pendientes de Hacienda recibido_mh IS NULL);
+// WidgetInventorySearch.jsx (mapa de fotos de productos, se re-fetch en
+// cada búsqueda). VentasView.jsx:503 (4to ítem del audit) resultó ya
+// corregido por trabajo previo no relacionado (fetchStats usa fetchAllRows
+// desde v2.9.15; fetchRows ya tenía .range()/.limit(200)) — falso positivo
+// hoy, sin cambios.
 
 // v2.15.13 — perf(sync): Bloque 4.1/4.2 del plan de ejecución. Índice
 // CONCURRENTLY idx_inventory_sync_log_venc_synced (is_vencidos, synced_at

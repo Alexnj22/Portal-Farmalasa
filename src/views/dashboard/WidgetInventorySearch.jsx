@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Search, Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
+import { fetchAllRows } from '../../utils/supabaseUtils';
 
 const ERP_BRANCH_MAP = {
   1: 'Salud 1',
@@ -406,8 +407,10 @@ export default function WidgetInventorySearch() {
 
     try {
       // 1. Parallel: photos + products matching by principio_activo
-      const [{ data: photoData }, { data: paData }] = await Promise.all([
-        supabase.from('products').select('nombre, foto_url').not('foto_url', 'is', null),
+      // fetchAllRows evita el cap silencioso de 1000 filas de PostgREST — si
+      // más de 1000 productos tienen foto, el mapa quedaba incompleto en silencio.
+      const [photoData, { data: paData }] = await Promise.all([
+        fetchAllRows(() => supabase.from('products').select('nombre, foto_url').not('foto_url', 'is', null)),
         supabase.from('products').select('id, principio_activo')
           .ilike('principio_activo', `%${q}%`)
           .not('principio_activo', 'is', null),

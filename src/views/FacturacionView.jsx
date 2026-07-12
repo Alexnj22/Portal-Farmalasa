@@ -15,6 +15,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { openStoredFile } from '../utils/storageFiles';
 import { signPhotosDeep } from '../utils/storageFiles';
+import { fetchAllRows } from '../utils/supabaseUtils';
 
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const fmt = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -245,17 +246,22 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
         if (pollingRef.current) return;
         pollingRef.current = true;
         setLoading(true);
-        let q = supabase
-            .from('sales_invoices')
-            .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado, codigo_generacion, recibido_mh')
-            .or('estado.eq.NULA,estado.is.null,estado.eq.undefined')
-            .order('tipo_documento', { ascending: false })
-            .order('fecha', { ascending: true })
-            .order('hora', { ascending: true });
-        if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
+        // fetchAllRows evita el cap silencioso de 1000 filas de PostgREST — el
+        // backlog de facturas con estado nulo/NULA puede superarlo.
+        const buildInvoicesQuery = () => {
+            let q = supabase
+                .from('sales_invoices')
+                .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado, codigo_generacion, recibido_mh')
+                .or('estado.eq.NULA,estado.is.null,estado.eq.undefined')
+                .order('tipo_documento', { ascending: false })
+                .order('fecha', { ascending: true })
+                .order('hora', { ascending: true });
+            if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
+            return q;
+        };
 
-        const [invoicesRes, resolutionsRes, historialRes] = await Promise.all([
-            q,
+        const [invoicesData, resolutionsRes, historialRes] = await Promise.all([
+            fetchAllRows(buildInvoicesQuery),
             supabase.from('sales_invoice_resolutions').select('invoice_id'),
             supabase.from('sales_invoice_resolutions')
                 .select('id, invoice_id, comment, resolved_by, resolved_at')
@@ -272,7 +278,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
             for (const inv of (d || [])) invMap[inv.id] = inv;
         }
 
-        setRows(invoicesRes.data || []);
+        setRows(invoicesData || []);
         setResolvedIds(resolvedIdSet);
         setResolved((historialRes.data || []).map(r => ({ ...r, invoice: invMap[r.invoice_id] || null })));
         setLastRefresh(new Date());
@@ -733,15 +739,20 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         const fini = `${y}-${m}-01`;
         const ffin = `${y}-${m}-${new Date(y, n.getMonth() + 1, 0).getDate()}`;
 
-        let qPend = supabase
-            .from('sales_invoices')
-            .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado')
-            .is('recibido_mh', null)
-            .not('estado', 'eq', 'NULA')
-            .order('branch_id', { ascending: true })
-            .order('fecha',     { ascending: true })
-            .order('hora',      { ascending: true });
-        if (filterBranch) qPend = qPend.eq('branch_id', Number(filterBranch));
+        // fetchAllRows evita el cap silencioso de 1000 filas de PostgREST — el
+        // backlog de pendientes de Hacienda (recibido_mh IS NULL) puede superarlo.
+        const buildPendQuery = () => {
+            let qPend = supabase
+                .from('sales_invoices')
+                .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado')
+                .is('recibido_mh', null)
+                .not('estado', 'eq', 'NULA')
+                .order('branch_id', { ascending: true })
+                .order('fecha',     { ascending: true })
+                .order('hora',      { ascending: true });
+            if (filterBranch) qPend = qPend.eq('branch_id', Number(filterBranch));
+            return qPend;
+        };
 
         let qRes = supabase
             .from('sales_invoices')
@@ -751,8 +762,8 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             .order('fecha', { ascending: false });
         if (filterBranch) qRes = qRes.eq('branch_id', Number(filterBranch));
 
-        const [{ data: pendData }, { data: resInvs }, { data: allResolutions }, { data: nullsData }] = await Promise.all([
-            qPend, qRes,
+        const [pendData, { data: resInvs }, { data: allResolutions }, { data: nullsData }] = await Promise.all([
+            fetchAllRows(buildPendQuery), qRes,
             supabase.from('sales_invoice_resolutions')
                 .select('invoice_id, comment, resolved_by, resolved_at')
                 .order('resolved_at', { ascending: false }),

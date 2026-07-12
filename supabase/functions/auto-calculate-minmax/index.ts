@@ -98,6 +98,7 @@ serve(async (req) => {
           target_type: "EMPLOYEE",
           target_value: empIds,
         }),
+        signal: AbortSignal.timeout(10_000),
       });
       if (pushRes.ok) {
         const pushData = await pushRes.json();

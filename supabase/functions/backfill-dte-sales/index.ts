@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkCronSecret, getCorsHeaders } from "../_shared/security.ts";
 
-const SYNC_URL = 'https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/sync-dte-sales';
+const SYNC_URL = `${Deno.env.get('SUPABASE_URL') ?? ''}/functions/v1/sync-dte-sales`;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 // sync-dte-sales valida requireInvokeSecret → enviar ADMIN_INVOKE_SECRET, no el service key.
 const INVOKE_SECRET = Deno.env.get('ADMIN_INVOKE_SECRET') ?? '';

@@ -311,6 +311,24 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
   helper de sincronización de datos, no vencimientos) quedó fuera de alcance — no estaba en el
   inventario del ítem 1.7.
 
+- **1.8 — ✅ APLICADO.** Sin cambios en `src/` (solo `supabase/functions/`), sin bump de versión
+  por regla transversal #5. **Timeout faltante en `fetch` saliente** (patrón ya usado en
+  `heal-dte-sync`/`backfill-dte-sales`: `signal: AbortSignal.timeout(ms)`, sin retry — consistente
+  con lo que ya existía en el proyecto, no se introduce un framework de retry nuevo):
+  `sync-wfm-sales` (login ERP 20s, pull JSON 30s — sin esto, un ERP colgado dejaba el fetch
+  esperando hasta el timeout genérico del runtime de Edge Functions sin mensaje de error útil),
+  `maps-proxy` (Google Maps API, 15s), `auto-calculate-minmax` (push notification interna, 10s —
+  ya estaba en un `try/catch` que no rompe el cron si falla, pero podía colgar el resto de la
+  función indefinidamente sin timeout).
+  **URL de proyecto hardcodeada** (`heal-dte-sync:4`, `backfill-dte-sales:4`): `SYNC_URL` tenía el
+  literal `https://sacecdkdmsdvgqnrsett.supabase.co/...` en vez de `Deno.env.get('SUPABASE_URL')`
+  — mismo problema que estas dos funciones ya evitan para `SERVICE_KEY`/`INVOKE_SECRET` (leídos de
+  env, nunca hardcodeados). Cambiado a
+  `` `${Deno.env.get('SUPABASE_URL') ?? ''}/functions/v1/sync-dte-sales` ``. Riesgo real que cerraba:
+  si el proyecto migra o cambia de project ref (staging, disaster recovery), estas 2 funciones
+  seguirían apuntando al proyecto viejo en silencio. Pendiente: redeploy a prod (requiere tu OK,
+  igual que 1.3/1.4).
+
 ### Camino de deploy de edge functions (resuelto)
 Bash `supabase functions deploy` funciona CON permiso, pero el CLI se traga un `.env` con un nombre
 de variable inválido (un `-`). Solución: apartar `.env` durante el deploy y restaurarlo
@@ -364,7 +382,7 @@ No necesitan staging. Priorizar los que tocan nómina/dinero.
 | 1.5 | `saveHiddenTimer` asignado pero nunca leído/limpiado — posible timer fugado | ✅ Aplicado 2026-07-12 (v2.15.17) — era código muerto, eliminado. |
 | 1.6 | 173 lint reales de riesgo (`set-state-in-effect` 65, `exhaustive-deps` ~52 reales, `purity` 8, etc.) — barrido por archivo, empezar por top-7 monstruo | Fase 1 §lint |
 | 1.7 | `Date.now()`/`new Date()` en render → badges desincronizados | ✅ Aplicado 2026-07-12 (v2.15.17). Hook `useNowTick` en TabMinMax/TabSinVenta. |
-| 1.8 | Retry/timeout faltante en `fetch` saliente de varias edge functions; URL de proyecto hardcodeada | `sync-wfm-sales`, `maps-proxy`, `auto-calculate-minmax`; `heal-dte-sync:8`, `backfill-dte-sales:8` |
+| 1.8 | Retry/timeout faltante en `fetch` saliente de varias edge functions; URL de proyecto hardcodeada | ✅ Aplicado 2026-07-12. Pendiente redeploy a prod (tu OK). |
 
 ---
 

@@ -39,7 +39,8 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: loginForm.toString(),
-      redirect: "manual"
+      redirect: "manual",
+      signal: AbortSignal.timeout(20_000),
     });
 
     const sessionCookie = loginRes.headers.get("set-cookie")?.split(";")[0];
@@ -49,7 +50,8 @@ Deno.serve(async (req) => {
     const jsonUrl = `https://clientesdte3.oss.com.sv/farma_salud/ventas_vendedor_hora_json.php?fini=${startDate}&ffin=${endDate}`;
     const dataRes = await fetch(jsonUrl, {
       method: "GET",
-      headers: { "Cookie": sessionCookie }
+      headers: { "Cookie": sessionCookie },
+      signal: AbortSignal.timeout(30_000),
     });
 
     const payload = await dataRes.json();

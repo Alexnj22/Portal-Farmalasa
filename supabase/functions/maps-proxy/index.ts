@@ -45,7 +45,7 @@ serve(async (req: Request) => {
       );
     }
 
-    const res  = await fetch(url);
+    const res  = await fetch(url, { signal: AbortSignal.timeout(15_000) });
     const data = await res.json();
     return new Response(JSON.stringify(data), {
       headers: { ...CORS, 'Content-Type': 'application/json' },

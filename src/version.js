@@ -5,8 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.11';
+export const APP_VERSION = '2.15.12';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.12 — docs(search): PLAN-BUSCADORES-NORMALIZACION.md — plan completo
+// (no aplicado) para normalización total de búsqueda: norm_search() en
+// Postgres (unaccent + strip puntuación, espejo de searchUtils.normSearch),
+// índices GIN trigram sobre expresión norm, match por tokens en RPCs con
+// p_search (LIKE ALL — "alcohol 90" debe matchear "ALCOHOL-90"), columnas
+// generadas *_norm en products para los .ilike() directos, y migración de
+// las 6 vistas client-side que siguen con búsqueda naive. Hallazgo: hoy la
+// normalización es unilateral (frontend manda normSearch(q) pero el SQL
+// compara contra columna cruda) — S.S.N/ALCOHOL-90/tildes no se encuentran
+// server-side.
 
 // v2.15.11 — fix(security): 0B.8 — kiosk_devices.kiosk_verify permitía SELECT
 // anon+true (cualquiera sin sesión leía toda la tabla). Nueva RPC SECURITY

@@ -204,6 +204,40 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
   permiso simulado, mandando un `p_creado_por` falsificado distinto al `auth.uid()` real → la fila
   de `rutas.created_by` quedó con el empleado real, no con el valor falsificado (confirmado
   `match_real=true`), y se confirmó `count=0` en `rutas` tras el rollback (sin rastro).
+- **Las otras 8 funciones de riesgo Alto de 0B.7 — ✅ APLICADAS en prod y verificadas.**
+  Mismo patrón (`auth_can_edit_any([...])` + `auth_employee_id()`/`auth.email()` real
+  en vez del valor del cliente), con dos matices caso por caso:
+  - **`update_pedido_sucursal_lifecycle`**: también la invoca el trigger
+    `attendance_kiosko_pedido_lifecycle` (AFTER INSERT en `attendance`, pausa/reanuda
+    pedidos automáticamente al marcar salida/entrada de almuerzo por kiosko). Gatear
+    ese path habría roto el marcaje de asistencia. Fix: `pg_trigger_depth() = 0` para
+    distinguir RPC directo (gateado + autoría real) de la llamada interna del trigger
+    (sin gate, sigue confiando en el `p_user_id` que ya le pasa el trigger —
+    `NEW.employee_id`, valor server-side no controlado por el cliente).
+  - **`calculate_stock_params`**: también la invoca el cron `auto-calculate-minmax`
+    vía `service_role`. Gate condicionado a `(SELECT auth.role()) IS DISTINCT FROM
+    'service_role'` — confirmado que `auth.role()` resuelve a `'service_role'` bajo
+    `SET ROLE service_role` + `request.jwt.claims` con `role:service_role` (como lo
+    hace PostgREST real con la service key).
+  - Módulos usados: `pedidos` (`anular_pedido`, `confirm_pedido`,
+    `receive_pedido_sucursal`, `resolve_pedido_item`, `update_pedido_sucursal_lifecycle`)
+    — confirmado con `role_permissions` real: 8 roles con `can_edit=true`, coincide con
+    `canEdit = hasPermission('pedidos','can_edit')` ya usado en `TabPedidos.jsx`. `minmax`
+    (`calculate_stock_params`, `publish_stock_params`, `zero_out_product_all_branches`)
+    — 5 roles con `can_edit=true`, coincide con `TabMinMax.jsx`.
+  - `confirm_pedido`: `p_responsable_id`/`p_revisado_por` (antes uuid libre del cliente)
+    ahora solo pueden ser "el propio actor o NULL" — preserva exactamente la lógica
+    actual del único caller real (`esEmpleado ? user.id : null` / siempre NULL).
+  - Verificado con tests en transacciones `ROLLBACK` (cero escritura permanente,
+    confirmado con conteos post-rollback): negativo con empleado sin permiso en NINGÚN
+    módulo (`role_id=16`, Agente de Canales Digitales) → `PERMISSION_DENIED` en las 8;
+    positivo con empleado con permiso real → las 4 restantes de `pedidos` pasan el gate
+    y llegan a la validación de negocio real (`Pedido no encontrado`/`Item no
+    encontrado`/FK esperado); `confirm_pedido` con `p_created_by` falsificado → la fila
+    quedó con el empleado real, no con el uuid falsificado; `zero_out_product_all_branches`
+    con `p_published_by` falsificado (`spoofed2@evil.com`) → la fila quedó con el email
+    real de la sesión (`auth.email()`), no con el valor falsificado; `publish_stock_params`
+    ejecutó sin error con permiso real.
 
 ### Camino de deploy de edge functions (resuelto)
 Bash `supabase functions deploy` funciona CON permiso, pero el CLI se traga un `.env` con un nombre

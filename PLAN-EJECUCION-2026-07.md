@@ -158,6 +158,13 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
   WARN. Detalle en `AUDITORIA-2026-07.md` → "Bloque 0B — cierre final (2026-07-12)".
 - **0B.4 — ⏸️ DIFERIDO.** Toggle de Auth (HaveIBeenPwned), no requiere código. Usuario decidió no
   activarlo todavía, sin fecha de retomado.
+- **4.1 — ✅ APLICADO en prod y verificado.** `CREATE INDEX CONCURRENTLY idx_inventory_sync_log_venc_synced
+  ON inventory_sync_log (is_vencidos, synced_at DESC)`. Vía `execute_sql` directo (`CONCURRENTLY` no
+  puede correr dentro de la transacción de `apply_migration`); registrado en el historial de
+  migraciones con un `CREATE INDEX IF NOT EXISTS` no-op de seguimiento. `pg_index.indisvalid=true`.
+- **4.2 — ✅ APLICADO.** `SyncHealthBanner.jsx`: quitada la suscripción `postgres_changes` a
+  `inventory_sync_log` (esa tabla nunca estuvo en la publicación `supabase_realtime`, la
+  suscripción no disparaba nunca — código muerto). El polling de 90s sigue igual. `APP_VERSION` → v2.15.13.
 
 ### Camino de deploy de edge functions (resuelto)
 Bash `supabase functions deploy` funciona CON permiso, pero el CLI se traga un `.env` con un nombre
@@ -244,8 +251,8 @@ Staging ya existe (Bloque D de Fase 6, parcialmente hecho). Falta:
 
 | # | Ítem | Fuente | Fix |
 |---|---|---|---|
-| 4.1 | `inventory_sync_log` sin índice: `SyncHealthBanner` hace full scan cada 90s (10.8B tuplas leídas) | Fase 2 | `CREATE INDEX CONCURRENTLY ... (is_vencidos, synced_at DESC)` |
-| 4.2 | `SyncHealthBanner` suscrito a realtime de tabla que no está en la publicación (código muerto) | Fase 2 | Quitar la suscripción o agregar la tabla |
+| 4.1 | `inventory_sync_log` sin índice: `SyncHealthBanner` hace full scan cada 90s (10.8B tuplas leídas) | Fase 2 | ✅ Aplicado (2026-07-12), ver progreso arriba |
+| 4.2 | `SyncHealthBanner` suscrito a realtime de tabla que no está en la publicación (código muerto) | Fase 2 | ✅ Aplicado (2026-07-12), ver progreso arriba |
 | 4.3 | Realtime WAL decode = 26.7% del CPU de la DB | Fase 0 | Revisar si las 11 tablas necesitan realtime o pueden ir a polling |
 | 4.4 | `refresh_product_sales_monthly_agg()` 8.9s/call cada hora | Fase 0 | Revisar plan / refresh incremental |
 | 4.5 | 88 índices sin uso sobre tablas calientes = overhead de escritura puro | Advisor | `DROP INDEX` (lock_timeout, ventana segura) |

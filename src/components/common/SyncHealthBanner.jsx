@@ -41,11 +41,7 @@ export default function SyncHealthBanner() {
   useEffect(() => {
     fetchLatest();
     const timer = setInterval(fetchLatest, 90_000);
-    const channel = supabase
-      .channel('sync-health-widget')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'inventory_sync_log' }, fetchLatest)
-      .subscribe();
-    return () => { clearInterval(timer); supabase.removeChannel(channel); };
+    return () => clearInterval(timer);
   }, [fetchLatest]);
 
   const requestNotif = async () => {

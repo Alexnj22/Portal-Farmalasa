@@ -5,8 +5,18 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.12';
+export const APP_VERSION = '2.15.13';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.13 — perf(sync): Bloque 4.1/4.2 del plan de ejecución. Índice
+// CONCURRENTLY idx_inventory_sync_log_venc_synced (is_vencidos, synced_at
+// DESC) en prod — la tabla (468K filas) estaba en 100% sequential scan,
+// 10.8B tuplas leídas acumuladas, por el polling de SyncHealthBanner cada
+// 90s. Además se quitó la suscripción postgres_changes de
+// SyncHealthBanner.jsx a inventory_sync_log: esa tabla nunca estuvo en la
+// publicación supabase_realtime, así que la suscripción no disparaba nunca
+// — código muerto que aparentaba funcionar, el polling de 90s ya cubría el
+// refresh real.
 
 // v2.15.12 — docs(search): PLAN-BUSCADORES-NORMALIZACION.md — plan completo
 // (no aplicado) para normalización total de búsqueda: norm_search() en

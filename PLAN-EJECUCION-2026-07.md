@@ -238,6 +238,41 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
     con `p_published_by` falsificado (`spoofed2@evil.com`) → la fila quedó con el email
     real de la sesión (`auth.email()`), no con el valor falsificado; `publish_stock_params`
     ejecutó sin error con permiso real.
+- **Los 9 hallazgos de riesgo Medio de 0B.7 — ✅ APLICADOS en prod y verificados** (excepto
+  `marcar_pedido_enviado`, ya cubierta en el lote de Alto por consistencia de patrón).
+  Gates elegidos calzando EXACTO con lo que ya exige el cliente hoy (confirmado con
+  `role_permissions` real, no supuesto):
+  - `toggle_producto_oculto_ventas` → `auth_has_module_permission('ventas_tab_productos','can_view')`.
+    Autoría ya estaba correcta (`auth_employee_id()` para `oculto_por`), solo faltaba el gate.
+  - `discard_stock_drafts` → `auth_can_edit_any(ARRAY['minmax'])`.
+  - `init_pedido_sucursal_codigos` → `auth_can_edit_any(ARRAY['pedidos'])`.
+  - `get_draft_cost_estimate` → `auth_has_module_permission('minmax','can_view')` (solo lectura,
+    pero expone $ de inventario).
+  - `inventory_inversion` → `auth_has_module_permission('productos_tab_inventario','can_view')`.
+    Convertida de `LANGUAGE sql` a `plpgsql` (SQL puro no soporta `RAISE EXCEPTION`).
+  - `save_pedido_snapshot` → `auth_can_edit_any(ARRAY['pedidos'])`. Sin caller de cliente hoy.
+  - `refresh_inventory_grouped_mv` / `backfill_daily_stats_chunk` → sin caller de cliente
+    (`refresh_inventory_grouped_mv` solo la invoca `sync-dte-sales` vía `service_role`;
+    `backfill_daily_stats_chunk` solo `pg_cron` directo) → `REVOKE EXECUTE ... FROM authenticated`
+    en vez de gate condicional (más simple, no hay ningún caller legítimo autenticado que preservar).
+  - **Nota sobre `ventas_tab_productos`**: confirmado con `role_permissions` que **las 20 roles del
+    sistema tienen `can_view=true`** en ese módulo — el gate es correcto (cierra el hueco de "cualquier
+    cuenta sin ningún permiso"), pero en la práctica hoy es equivalente a "cualquier empleado
+    autenticado", por diseño existente del módulo, no por un error del fix.
+  - **Bug preexistente descubierto, NO corregido (fuera de alcance)**: `save_pedido_snapshot` falla
+    con `function row_to_json(jsonb) does not exist` — `get_pedido_preview()` devuelve `jsonb` (no
+    `SETOF record`), así que `row_to_json(r)` no aplica sobre ese tipo. Bug latente desde siempre,
+    invisible porque la función no tiene ningún caller de cliente hoy. El gate de permiso sí quedó
+    aplicado correctamente (se confirmó que el error ocurre DESPUÉS de pasar el gate, no por el gate).
+  - Verificado con tests en transacciones `ROLLBACK`: negativo con `role_id=16` (sin ningún permiso)
+    → `PERMISSION_DENIED` en 5/7 (las 2 restantes, `toggle_producto_oculto_ventas` e
+    `inventory_inversion`, pasaron porque ese rol SÍ tiene `can_view` real en esos módulos —
+    re-testeado con `role_id=30`, sin `can_view` en `productos_tab_inventario`, confirma
+    `PERMISSION_DENIED` correctamente); `refresh_inventory_grouped_mv`/`backfill_daily_stats_chunk`
+    → error nativo de Postgres "permission denied for function" (el `REVOKE` surte efecto).
+    Positivo con `role_id=13` (permiso real) → las 5 mutación/lectura pasan el gate y llegan a la
+    lógica real (incluido el bug preexistente de `save_pedido_snapshot`, confirmando que el gate no
+    es el problema). Cero escritura permanente, confirmado con conteos post-rollback.
 
 ### Camino de deploy de edge functions (resuelto)
 Bash `supabase functions deploy` funciona CON permiso, pero el CLI se traga un `.env` con un nombre

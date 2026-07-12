@@ -59,7 +59,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
             newDocData: initialDocData
         }));
 
-        setIsInitialized(true);
+        setIsInitialized(true); // eslint-disable-line react-hooks/set-state-in-effect -- inicialización única guardada por el flag isInitialized
 
     }, [formData, setFormData, type, isInitialized]);
 

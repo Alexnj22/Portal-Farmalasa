@@ -217,7 +217,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
 
     useLayoutEffect(() => {
         if (isEditMode || showProfile) {
-            setPill(p => ({ ...p, show: false }));
+            setPill(p => ({ ...p, show: false })); // eslint-disable-line react-hooks/set-state-in-effect -- mide posición real del tab activo (getBoundingClientRect) antes de pintar
             return;
         }
         const wrap = tabsRef.current;

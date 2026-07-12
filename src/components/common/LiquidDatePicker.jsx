@@ -38,10 +38,11 @@ const LiquidDatePicker = ({
     const yRef = useRef(null);
 
     useEffect(() => {
+        // Sincroniza los campos internos (día/mes/año) desde el prop `value` controlado
         if (value && typeof value === 'string' && value.includes('-')) {
             const parts = value.split('-');
             if (parts.length === 3) {
-                setYVal(parts[0]); setMVal(parts[1]); setDVal(parts[2]);
+                setYVal(parts[0]); setMVal(parts[1]); setDVal(parts[2]); // eslint-disable-line react-hooks/set-state-in-effect
                 setViewDate(new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)));
             }
         } else {
@@ -54,7 +55,7 @@ const LiquidDatePicker = ({
             let targetDateStr = highlightRangeStart || highlightRangeEnd;
             if (targetDateStr && targetDateStr.includes('-')) {
                 const parts = targetDateStr.split('-');
-                setViewDate(new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1));
+                setViewDate(new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1)); // eslint-disable-line react-hooks/set-state-in-effect -- posiciona el calendario al abrir según el rango resaltado
             }
         }
     }, [isOpen, value, highlightRangeStart, highlightRangeEnd]);

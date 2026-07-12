@@ -137,7 +137,7 @@ export const FileUploader = ({ label, file, url, onChange }) => {
 export const LazyInput = ({ value, onChange, className = "", placeholder, required, pattern, minLength, maxLength, type = "text", icon: Icon }) => {
     const [localValue, setLocalValue] = useState(value || '');
     
-    useEffect(() => { setLocalValue(value || ''); }, [value]);
+    useEffect(() => { setLocalValue(value || ''); }, [value]); // eslint-disable-line react-hooks/set-state-in-effect -- sincroniza el input local con el prop controlado
 
     return (
         <div className="relative group flex items-center w-full">

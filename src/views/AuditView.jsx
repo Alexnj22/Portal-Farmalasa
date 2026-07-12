@@ -171,7 +171,7 @@ const AuditView = ({ openModal }) => {
         return () => clearTimeout(timerId);
     }, [rawSearchTerm]);
 
-    useEffect(() => { setCurrentPage(1); }, [debouncedSearchTerm, startDate, endDate, actionFilter]);
+    useEffect(() => { setCurrentPage(1); }, [debouncedSearchTerm, startDate, endDate, actionFilter]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar filtros
 
     const handleSort = useCallback((key) => {
         setSortConfig(prev => ({

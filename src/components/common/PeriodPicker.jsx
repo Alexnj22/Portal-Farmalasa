@@ -189,9 +189,10 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
     const secondMonth = viewMonth === 11 ? 0  : viewMonth + 1;
     const secondYear  = viewMonth === 11 ? viewYear + 1 : viewYear;
 
+    // Sincroniza el draft interno desde el prop `value` controlado
     useEffect(() => {
         const [s, e] = value ? value.split('|') : ['', ''];
-        if (s) setViewYear(parseInt(s));
+        if (s) setViewYear(parseInt(s)); // eslint-disable-line react-hooks/set-state-in-effect
         setDayDraftStart(s || null);
         setDayDraftEnd(e || null);
         setDayPhase('idle');

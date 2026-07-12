@@ -235,7 +235,7 @@ const LiquidSelect = ({
     [filteredOptions]);
 
     // Reset highlight when options change or dropdown closes
-    useEffect(() => { setHighlightedIndex(-1); itemRefs.current = []; }, [filteredOptions, isOpen]);
+    useEffect(() => { setHighlightedIndex(-1); itemRefs.current = []; }, [filteredOptions, isOpen]); // eslint-disable-line react-hooks/set-state-in-effect
 
     // Scroll highlighted item into view
     useEffect(() => {

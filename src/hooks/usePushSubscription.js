@@ -41,7 +41,7 @@ export function usePushSubscription() {
 
   // On mount, check if already subscribed
   useEffect(() => {
-    refresh();
+    refresh(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de estado de suscripción
   }, [refresh]);
 
   // Sync across all hook instances when any instance subscribes/unsubscribes

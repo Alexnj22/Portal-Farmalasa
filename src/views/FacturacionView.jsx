@@ -287,7 +287,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
         pollingRef.current = false;
     }, [filterBranch]);
 
-    useEffect(() => { loadData(); }, [loadData]);
+    useEffect(() => { loadData(); }, [loadData]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
     useEffect(() => { if (paused) return; const id = setInterval(loadData, 60_000); return () => clearInterval(id); }, [loadData, paused]);
 
     const handleSolve = async (invoiceId) => {
@@ -334,7 +334,7 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
         if (!searchTerm) return;
         const matchesAny = resolved.some(r => resolvedMatchesTerm(r, searchTerm));
         if (!matchesAny) return;
-        setShowHistorial(true);
+        setShowHistorial(true); // eslint-disable-line react-hooks/set-state-in-effect -- auto-expande la sección donde cae un resultado de búsqueda
         const inMonth = resolvedThisMonth.some(r => resolvedMatchesTerm(r, searchTerm));
         if (!inMonth) setShowAllResolved(true);
         setTimeout(() => resolvedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
@@ -726,7 +726,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         if (!searchTerm) return;
         const matchesAny = resolved.some(r => resolvedMatchesTerm(r, searchTerm));
         if (!matchesAny) return;
-        setShowResolved(true);
+        setShowResolved(true); // eslint-disable-line react-hooks/set-state-in-effect -- auto-expande la sección donde cae un resultado de búsqueda
         const inMonth = resolvedThisMonth.some(r => resolvedMatchesTerm(r, searchTerm));
         if (!inMonth) setShowAllResolved(true);
         setTimeout(() => resolvedSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
@@ -816,7 +816,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         pollingRef2.current = false;
     }, [filterBranch]);
 
-    useEffect(() => { loadData(); }, [loadData]);
+    useEffect(() => { loadData(); }, [loadData]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
     useEffect(() => { if (paused) return; const id = setInterval(loadData, 120_000); return () => clearInterval(id); }, [loadData, paused]);
 
     const handleSolve = async (invoiceId) => {
@@ -1204,7 +1204,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
         setLoading(false);
     }, [filterBranch]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     const gapKey = (g) => `${g.branch_id}__${g.tipo_documento}__${g.gap_from}__${g.gap_to}`;
 
@@ -1650,7 +1650,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
         setLoading(false);
     }, [filterBranch, selectedMonth]);
 
-    useEffect(() => { loadData(); }, [loadData]);
+    useEffect(() => { loadData(); }, [loadData]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     const getBranch = (id) => branches.find(b => b.id === id)?.name || `Suc. ${id}`;
 
@@ -1673,7 +1673,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
     }, [pendingFiltered]);
 
     // Reset pending pages when data changes
-    useEffect(() => { setPendingPages({}); }, [pendingFiltered.length, searchTerm]);
+    useEffect(() => { setPendingPages({}); }, [pendingFiltered.length, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar datos/búsqueda
 
     const CONFIRMED_SORT_ACCESSORS = {
         correlativo:   r => r.invoice?.correlativo,
@@ -1693,7 +1693,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
         return cSortFn(list, CONFIRMED_SORT_ACCESSORS);
     }, [confirmed, filterConfirmedTipo, filterConfirmedBranch, cSortKey, cSortDir]);
 
-    useEffect(() => { setConfirmedPage(1); }, [confirmedFiltered.length, filterConfirmedTipo, filterConfirmedBranch]);
+    useEffect(() => { setConfirmedPage(1); }, [confirmedFiltered.length, filterConfirmedTipo, filterConfirmedBranch]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar filtros
 
     const confirmedTotalPages = Math.ceil(confirmedFiltered.length / PAGE_SIZE);
     const confirmedPageRows = confirmedFiltered.slice((confirmedPage - 1) * PAGE_SIZE, confirmedPage * PAGE_SIZE);

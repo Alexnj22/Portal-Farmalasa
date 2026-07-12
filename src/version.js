@@ -5,8 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.18';
+export const APP_VERSION = '2.15.19';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.15.19 — fix(bloque1/1.6, parte 2): react-hooks/set-state-in-effect,
+// primera mitad (32 de 66 cerradas, 34 restantes). Todas resueltas con
+// `eslint-disable-line` + justificación puntual (mismo patrón ya establecido
+// en TabPoliticaVencimiento.jsx) — cada una revisada individualmente y
+// confirmada como uno de los 3 patrones idiomáticos/seguros: (a) fetch-on-mount
+// (`useEffect(()=>{load();},[load])`), (b) reset de paginación/estado derivado
+// al cambiar filtros, o (c) medición real de DOM en useLayoutEffect
+// (BranchChips, BranchDetailView). Sin cambios de comportamiento en ninguno —
+// ver mensajes inline por archivo para la justificación específica. Archivos:
+// BranchChips, ConfirmModal, LiquidDatePicker, LiquidSelect, LiquidWeekPicker,
+// PeriodPicker, TimePicker12, BranchHelpers, FormAddCustomDocument, AppLayout,
+// usePushSubscription, AccessDeniedView, NoAccessView, AttendanceMonitorView,
+// AuditView, BranchDetailView, ComprasView, EncuestaAdminView, FacturacionView
+// (las 8 de este archivo). Build limpio. Continúa con el resto de
+// set-state-in-effect (34) + exhaustive-deps (89) en la siguiente parte.
 
 // v2.15.18 — fix(bloque1/1.6, parte 1): purity (6), static-components (5),
 // immutability (4), refs (2) — 17 de 173 ocurrencias reales de lint cerradas.

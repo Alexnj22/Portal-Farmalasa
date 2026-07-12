@@ -70,7 +70,7 @@ const BranchChips = ({
   };
 
   useLayoutEffect(() => {
-    recomputeVisibility();
+    recomputeVisibility(); // eslint-disable-line react-hooks/set-state-in-effect -- mide el contenedor real (ResizeObserver) antes de pintar, patrón estándar de useLayoutEffect
     const ro = new ResizeObserver(() => recomputeVisibility());
     if (containerRef.current) ro.observe(containerRef.current);
     return () => ro.disconnect();

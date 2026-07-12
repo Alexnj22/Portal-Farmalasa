@@ -238,7 +238,7 @@ export default function EncuestaAdminView() {
         setLoadingSurveys(false);
     }, []);
 
-    useEffect(() => { loadSurveys(); }, [loadSurveys]);
+    useEffect(() => { loadSurveys(); }, [loadSurveys]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     useEffect(() => {
         supabase.from('employees')
@@ -401,7 +401,7 @@ export default function EncuestaAdminView() {
         const p2q = preguntas.find(p => p.numero === 2);
         const tenure   = computeTenureCategory(emp.hire_date);
         const branch   = emp.branch?.name || '';
-        setRfAnswers(prev => {
+        setRfAnswers(prev => { // eslint-disable-line react-hooks/set-state-in-effect -- autocompleta respuestas P1/P2 desde datos del empleado seleccionado
             const a = [...prev];
             if (p1q != null && tenure)  a[p1q.indice] = tenure;
             if (p2q != null && branch)  a[p2q.indice] = branch;

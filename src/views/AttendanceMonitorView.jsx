@@ -69,7 +69,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
       const t = setTimeout(() => searchInputRef.current?.focus(), 100);
       return () => clearTimeout(t);
     } else {
-      setSearchTerm("");
+      setSearchTerm(""); // eslint-disable-line react-hooks/set-state-in-effect -- limpia el buscador al cerrarlo
     }
   }, [searchOpen]);
 

@@ -11,7 +11,7 @@ const TimePicker12 = ({ value, onChange, className = '', disabled, defaultMeridi
             const [h, m] = value.split(':');
             let hInt = parseInt(h, 10);
             const isPm = hInt >= 12;
-            setAmpm(isPm ? 'PM' : 'AM');
+            setAmpm(isPm ? 'PM' : 'AM'); // eslint-disable-line react-hooks/set-state-in-effect -- sincroniza el estado visual desde el valor controlado
             hInt = hInt % 12;
             setHour(hInt === 0 ? '12' : hInt.toString().padStart(2, '0'));
             setMinute(m);

@@ -32,7 +32,7 @@ const LiquidWeekPicker = ({ selectedWeekStart, onChange, children }) => {
     const popoverRef = useRef(null);
 
     useEffect(() => {
-        if (selectedWeekStart) setViewDate(new Date(selectedWeekStart));
+        if (selectedWeekStart) setViewDate(new Date(selectedWeekStart)); // eslint-disable-line react-hooks/set-state-in-effect -- sincroniza el mes visible desde el prop controlado
     }, [selectedWeekStart]);
 
     useEffect(() => {

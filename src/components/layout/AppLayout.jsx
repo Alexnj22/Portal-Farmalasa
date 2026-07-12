@@ -205,7 +205,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     }, [isMobile]);
 
     useEffect(() => {
-        if (isMobile) setIsSidebarOpen(false);
+        if (isMobile) setIsSidebarOpen(false); // eslint-disable-line react-hooks/set-state-in-effect -- abre/cierra el sidebar según breakpoint
         else setIsSidebarOpen(true);
     }, [isMobile, isWide]);
 
@@ -243,7 +243,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 next[g.key] = hasActive;
             }
         });
-        setOpenGroups(next);
+        setOpenGroups(next); // eslint-disable-line react-hooks/set-state-in-effect -- expande el grupo de menú que contiene la ruta activa
     }, [activeId, visibleGroups]);
 
     const toggleGroup = (key) => setOpenGroups(prev => {

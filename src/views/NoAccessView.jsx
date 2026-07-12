@@ -16,7 +16,7 @@ const NoAccessView = () => {
             supabase.from('roles').select('name').eq('id', roleId).single()
                 .then(({ data }) => { if (data?.name) setRoleName(data.name); });
         } else if (user?.systemRole) {
-            setRoleName(user.systemRole);
+            setRoleName(user.systemRole); // eslint-disable-line react-hooks/set-state-in-effect -- fallback síncrono cuando no hay roleId que resolver por fetch
         }
     }, [user?.roleId, user?.role, user?.systemRole]);
 

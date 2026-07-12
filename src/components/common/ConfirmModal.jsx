@@ -22,7 +22,7 @@ const ConfirmModal = ({
 
     useEffect(() => {
         if (isOpen) {
-            setRender(true);
+            setRender(true); // eslint-disable-line react-hooks/set-state-in-effect -- monta el modal en respuesta a isOpen, dispara la animación de entrada
             document.body.style.overflow = 'hidden';
         } else {
             // Espera a que termine la animación de salida antes de desmontar

@@ -168,8 +168,8 @@ function TabFacturas({ dateStart, dateEnd, supplierId, sinProveedor, searchTerm 
     }, [dateStart, dateEnd, supplierId, sinProveedor, searchTerm, page]);
 
     // Reset page when filters change
-    useEffect(() => { setPage(1); }, [dateStart, dateEnd, supplierId, sinProveedor, searchTerm]);
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { setPage(1); }, [dateStart, dateEnd, supplierId, sinProveedor, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect
+    useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar filtros
 
     const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -277,8 +277,8 @@ function TabProductos({ searchTerm }) {
         setLoading(false);
     }, [searchTerm, page]);
 
-    useEffect(() => { setPage(1); }, [searchTerm]);
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { setPage(1); }, [searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect -- resetea paginación al cambiar búsqueda
+    useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial/recarga al cambiar filtros
 
     const totalPages = Math.ceil(total / PAGE_SIZE);
 

@@ -165,6 +165,31 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
 - **4.2 — ✅ APLICADO.** `SyncHealthBanner.jsx`: quitada la suscripción `postgres_changes` a
   `inventory_sync_log` (esa tabla nunca estuvo en la publicación `supabase_realtime`, la
   suscripción no disparaba nunca — código muerto). El polling de 90s sigue igual. `APP_VERSION` → v2.15.13.
+- **0B.7 remanente — ✅ CLASIFICADO (análisis, sin fixes aplicados todavía).** Las 54 funciones
+  `SECURITY DEFINER` del advisor revisadas una por una (`pg_get_functiondef` + grep de callers en
+  `src/`/`supabase/functions/`): **9 Alto, ~9 Medio, 34 Bajo/ya-gateadas/excepciones documentadas.**
+  Hallazgo principal: **8 funciones de mutación de pedidos/inventario aceptan un parámetro
+  `p_*_por`/`p_user_id` del cliente y lo escriben tal cual en la columna de autoría, SIN comparar
+  contra `auth_employee_id()` ni chequear ningún rol** — cualquier `authenticated` puede anular
+  pedidos, aprobar recepciones, crear rutas, resolver diferencias de bodega, etc. y atribuírselo a
+  otro empleado. La más grave: `crear_ruta` (Alto) tiene caller activo confirmado en
+  `CrearRutaModal.jsx:400` y además marca pedidos como `enviado` sin ningún gate de permiso.
+  **Alto (9):** `crear_ruta`, `calculate_stock_params`, `publish_stock_params`,
+  `zero_out_product_all_branches`, `resolve_pedido_item`, `update_pedido_sucursal_lifecycle`,
+  `receive_pedido_sucursal`, `anular_pedido`, `confirm_pedido` — todas sin ningún chequeo de rol,
+  autoría falsificable vía `p_*_por`.
+  **Medio (9):** `toggle_producto_oculto_ventas`, `discard_stock_drafts`,
+  `init_pedido_sucursal_codigos`, `marcar_pedido_enviado` (mismo patrón que `crear_ruta` pero sin
+  caller activo hoy — reemplazada por `crear_ruta`), `get_draft_cost_estimate` y
+  `inventory_inversion` (exponen $ de inventario sin gate), `save_pedido_snapshot`,
+  `refresh_inventory_grouped_mv`, `backfill_daily_stats_chunk` (grant a `authenticated`
+  probablemente involuntario, sin caller de cliente, solo cron).
+  **Bajo (34):** conteos de inventario ya gateados correctamente (`aprobar_conteo_inventario`,
+  `crear_conteo_inventario`, `editar_lote_conteo_item`, `finalizar_conteo_inventario`,
+  `guardar_conteo_item`), 2 trigger functions no invocables por RPC, helpers `auth_*` (son el propio
+  mecanismo de gate), y ~11 funciones de solo lectura sin PII/dinero.
+  Pendiente: decidir con el usuario qué de Alto/Medio se cierra y en qué orden — no se tocó nada de
+  esto todavía, es solo el inventario clasificado.
 
 ### Camino de deploy de edge functions (resuelto)
 Bash `supabase functions deploy` funciona CON permiso, pero el CLI se traga un `.env` con un nombre

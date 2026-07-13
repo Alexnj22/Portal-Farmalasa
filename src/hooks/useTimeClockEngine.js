@@ -535,6 +535,7 @@ export function useTimeClockEngine(props = {}) {
         try {
             await markAnnouncementAsRead(feedback.announcement.id, feedback.employee.id);
         } catch {
+            // best-effort: si falla, el aviso se vuelve a marcar como leído en el próximo intento
         } finally {
             closeFeedback();
         }

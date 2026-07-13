@@ -10,6 +10,13 @@ jobs:
   lint-and-unit:
     name: Lint + Vitest
     runs-on: ubuntu-latest
+    env:
+      # supabaseClient.js instancia createClient() a nivel de módulo — algunos
+      # archivos importados por los tests unitarios (ej. pedidoPrint.js) lo
+      # arrastran de paso aunque los tests nunca llamen a Supabase. Valores
+      # dummy (no secrets reales): estos tests nunca hacen red.
+      VITE_SUPABASE_URL: https://placeholder.supabase.co
+      VITE_SUPABASE_ANON_KEY: placeholder-anon-key
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

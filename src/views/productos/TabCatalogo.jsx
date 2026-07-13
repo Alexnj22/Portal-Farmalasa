@@ -1381,7 +1381,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
             useToastStore.getState().showToast('Guardado', 'Cambios guardados correctamente.', 'success');
             onCategoryUpdated?.(product.id, newCat || null);
             if (onClose) onClose();
-        } catch (_) {}
+        } catch (_) { /* si algún save({quiet:true}) falla, no se muestra el toast de éxito — comportamiento preexistente, sin toast de error */ }
         finally { setSaving(false); }
     };
 

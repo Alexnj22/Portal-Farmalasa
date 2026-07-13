@@ -1581,7 +1581,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                         .filter(k => k.startsWith('ppv2_') || k.startsWith('ppv3_') || k.startsWith('ppv4_') || k.startsWith('ppv5_') || (k.startsWith('ppv6_') && k !== lsKey))
                         .forEach(k => {
                             if (k.startsWith('ppv2_') || k.startsWith('ppv3_') || k.startsWith('ppv4_') || k.startsWith('ppv5_')) { localStorage.removeItem(k); return; }
-                            try { const e = JSON.parse(localStorage.getItem(k)); if (Date.now() - e.ts > TTL_MS) localStorage.removeItem(k); } catch (_) {}
+                            try { const e = JSON.parse(localStorage.getItem(k)); if (Date.now() - e.ts > TTL_MS) localStorage.removeItem(k); } catch (_) { /* entrada corrupta — se ignora */ }
                         });
                     localStorage.setItem(lsKey, JSON.stringify({ data: allRows, ts: Date.now() }));
                 } catch (_) { /* quota exceeded or unavailable — in-memory cache still works */ }

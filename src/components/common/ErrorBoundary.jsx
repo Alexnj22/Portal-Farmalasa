@@ -22,7 +22,7 @@ export default class ErrorBoundary extends React.Component {
                     stack: info?.componentStack?.slice(0, 500),
                 });
             }
-        } catch {}
+        } catch { /* best-effort: no debe romper el error boundary si el audit log falla */ }
     }
 
     render() {

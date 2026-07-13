@@ -22,7 +22,7 @@ export function ThemeProvider({ children }) {
     const attr = DATA_ATTR_MAP[theme];
     if (attr) document.documentElement.setAttribute('data-theme', attr);
     else       document.documentElement.removeAttribute('data-theme');
-    try { localStorage.setItem('portal-theme', theme); } catch {}
+    try { localStorage.setItem('portal-theme', theme); } catch { /* localStorage no disponible (privado/cuota) */ }
   }, [theme]);
 
   const setTheme = (t) => { if (THEMES.includes(t)) setThemeState(t); };

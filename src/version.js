@@ -5,8 +5,26 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.16.1';
+export const APP_VERSION = '2.16.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.16.2 — fix(bloque2): limpieza de deuda de lint, parte 2 — no-empty
+// CERRADO (36/36). Todos eran `catch {}` legítimos alrededor de
+// localStorage/JSON.parse (puede tirar en modo privado, cuota excedida,
+// o JSON corrupto) o de limpiezas best-effort (cámara del scanner,
+// notificación del navegador, audit log de un ErrorBoundary) — ninguno
+// era un bug real. Fix: comentario explicando el motivo dentro de cada
+// bloque (ESLint no marca `no-empty` si el bloque tiene un comentario,
+// es el mecanismo estándar de la regla para "vacío a propósito").
+// DashboardView.jsx concentraba 21 de los 36 — mismo patrón exacto
+// repetido, un solo find/replace.
+// CI: agregado VITE_SUPABASE_URL/ANON_KEY dummy al job de Vitest — un
+// test importa pedidoPrint.js, que arrastra supabaseClient.js
+// (createClient() a nivel de módulo) aunque el test nunca llame a
+// Supabase; sin esos env vars el job fallaba en GitHub Actions (no
+// hay .env ahí). Verificado en vivo con el mismo valor dummy localmente.
+// Build+tests limpios. Quedan 117: no-unused-vars (102),
+// react-refresh/only-export-components (8), preserve-manual-memoization (7).
 
 // v2.16.1 — fix(bloque2): limpieza de deuda de lint para poder hacer CI
 // bloqueante (respuesta a "¿y si los corregimos?" en vez de solo marcar

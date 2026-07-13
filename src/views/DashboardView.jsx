@@ -363,7 +363,7 @@ const initTabLayouts = (userId) => {
     try {
       const saved = localStorage.getItem(`portal_dash_layout_${userId||'guest'}_${tab.id}`);
       if (saved) { const p = JSON.parse(saved); if (Object.keys(p).length) { result[tab.id] = p; return; } }
-    } catch {}
+    } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
     const order = (TAB_WIDGETS[tab.id] || []).filter(id => id !== 'kpi');
     result[tab.id] = autoPlaceOrder(order, {});
   });
@@ -375,7 +375,7 @@ const initTabSizes = (userId) => {
     try {
       const saved = localStorage.getItem(`portal_dash_sizes_${userId||'guest'}_${tab.id}`);
       if (saved) { result[tab.id] = JSON.parse(saved); return; }
-    } catch {}
+    } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
     result[tab.id] = {};
   });
   return result;
@@ -396,11 +396,11 @@ const DashboardView = ({ openModal }) => {
 
   // ── Config & order ─────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState(() => {
-    try { return localStorage.getItem(`portal_dash_tab_${user?.id||'guest'}`) || 'general'; } catch {} return 'general';
+    try { return localStorage.getItem(`portal_dash_tab_${user?.id||'guest'}`) || 'general'; } catch { /* localStorage no disponible o valor corrupto — se usa el default */ } return 'general';
   });
   const [configTab, setConfigTab] = useState(activeTab);
   const [tabDir, setTabDir] = useState('right');
-  const prevTabIndexRef = useRef(TABS.findIndex(t => t.id === ((() => { try { return localStorage.getItem(`portal_dash_tab_${user?.id||'guest'}`) || 'general'; } catch {} return 'general'; })())));
+  const prevTabIndexRef = useRef(TABS.findIndex(t => t.id === ((() => { try { return localStorage.getItem(`portal_dash_tab_${user?.id||'guest'}`) || 'general'; } catch { /* localStorage no disponible o valor corrupto — se usa el default */ } return 'general'; })())));
   const activeTabRef = useRef(activeTab);
   useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
 
@@ -413,7 +413,7 @@ const DashboardView = ({ openModal }) => {
         // Merge: add any new widgets not yet in stored config
         return [...stored, ...WIDGET_DEFS.filter(w => !storedIds.has(w.id)).map(w => ({ id: w.id, enabled: true }))];
       }
-    } catch {}
+    } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
     return WIDGET_DEFS.map(w => ({ id: w.id, enabled: true }));
   });
   const [showConfig, setShowConfig] = useState(false);
@@ -440,7 +440,7 @@ const DashboardView = ({ openModal }) => {
   const [mobileLayout, setMobileLayout] = useState(() => {
     const result = {};
     TABS.forEach(tab => {
-      try { const s = localStorage.getItem(`portal_dash_mobile_layout_${user?.id||'guest'}_${tab.id}`); if (s) result[tab.id] = JSON.parse(s); } catch {}
+      try { const s = localStorage.getItem(`portal_dash_mobile_layout_${user?.id||'guest'}_${tab.id}`); if (s) result[tab.id] = JSON.parse(s); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
       if (!result[tab.id]) result[tab.id] = {};
     });
     return result;
@@ -448,7 +448,7 @@ const DashboardView = ({ openModal }) => {
   const [mobileSizes, setMobileSizes] = useState(() => {
     const result = {};
     TABS.forEach(tab => {
-      try { const s = localStorage.getItem(`portal_dash_mobile_sizes_${user?.id||'guest'}_${tab.id}`); if (s) result[tab.id] = JSON.parse(s); } catch {}
+      try { const s = localStorage.getItem(`portal_dash_mobile_sizes_${user?.id||'guest'}_${tab.id}`); if (s) result[tab.id] = JSON.parse(s); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
       if (!result[tab.id]) result[tab.id] = {};
     });
     return result;
@@ -491,7 +491,7 @@ const DashboardView = ({ openModal }) => {
 
     const newTabSizes = { ...sizesRef.current, [id]: { ...(sizesRef.current[id]||{}), [dim]: val } };
     setSizes(prev => ({ ...prev, [tabId]: newTabSizes }));
-    try { localStorage.setItem(`portal_dash_${isM?'mobile_':''}sizes_${user?.id||'guest'}_${tabId}`, JSON.stringify(newTabSizes)); } catch {}
+    try { localStorage.setItem(`portal_dash_${isM?'mobile_':''}sizes_${user?.id||'guest'}_${tabId}`, JSON.stringify(newTabSizes)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
 
     const currentLayout = layoutRef.current;
     let pos = currentLayout[id];
@@ -510,7 +510,7 @@ const DashboardView = ({ openModal }) => {
         newTabLayout[wid].col !== currentLayout[wid]?.col || newTabLayout[wid].row !== currentLayout[wid]?.row
       );
       setLayout(prev => ({ ...prev, [tabId]: newTabLayout }));
-      try { localStorage.setItem(`portal_dash_${isM?'mobile_':''}layout_${user?.id||'guest'}_${tabId}`, JSON.stringify(newTabLayout)); } catch {}
+      try { localStorage.setItem(`portal_dash_${isM?'mobile_':''}layout_${user?.id||'guest'}_${tabId}`, JSON.stringify(newTabLayout)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
       if (movedIds.length) {
         setBouncingIds(new Set(movedIds));
         setTimeout(() => setBouncingIds(new Set()), 700);
@@ -554,7 +554,7 @@ const DashboardView = ({ openModal }) => {
                     missing.forEach(id => { tabLayout[id] = placed[id]; });
                   }
                   next[t.id] = tabLayout;
-                  try { localStorage.setItem(`portal_dash_layout_${user.id}_${t.id}`, JSON.stringify(tabLayout)); } catch {}
+                  try { localStorage.setItem(`portal_dash_layout_${user.id}_${t.id}`, JSON.stringify(tabLayout)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
                 });
                 return next;
               });
@@ -568,7 +568,7 @@ const DashboardView = ({ openModal }) => {
                 TABS.forEach(t => {
                   if (t.id in data.sizes) {
                     next[t.id] = data.sizes[t.id];
-                    try { localStorage.setItem(`portal_dash_sizes_${user.id}_${t.id}`, JSON.stringify(data.sizes[t.id])); } catch {}
+                    try { localStorage.setItem(`portal_dash_sizes_${user.id}_${t.id}`, JSON.stringify(data.sizes[t.id])); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
                   }
                 });
                 return next;
@@ -580,7 +580,7 @@ const DashboardView = ({ openModal }) => {
             const storedIds = new Set(data.widgets.map(w => w.id));
             const merged = [...data.widgets, ...WIDGET_DEFS.filter(w => !storedIds.has(w.id)).map(w => ({ id: w.id, enabled: true }))];
             setWidgetConfig(merged);
-            try { localStorage.setItem(`portal_dashboard_${user.id}`, JSON.stringify(merged)); } catch {}
+            try { localStorage.setItem(`portal_dashboard_${user.id}`, JSON.stringify(merged)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
           }
           if (data.mobile_layout && TABS.some(t => t.id in data.mobile_layout)) {
             setMobileLayout(prev => ({ ...prev, ...data.mobile_layout }));
@@ -711,10 +711,10 @@ const DashboardView = ({ openModal }) => {
         const tabId = activeTabRef.current;
         if (isM) {
           setMobileLayout(prev => ({ ...prev, [tabId]: newLayout }));
-          try { localStorage.setItem(`portal_dash_mobile_layout_${user?.id||'guest'}_${tabId}`, JSON.stringify(newLayout)); } catch {}
+          try { localStorage.setItem(`portal_dash_mobile_layout_${user?.id||'guest'}_${tabId}`, JSON.stringify(newLayout)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
         } else {
           setWidgetLayout(prev => ({ ...prev, [tabId]: newLayout }));
-          try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}_${tabId}`, JSON.stringify(newLayout)); } catch {}
+          try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}_${tabId}`, JSON.stringify(newLayout)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
         }
         // Spring-bounce the widgets that moved
         if (movedIds.length) {
@@ -812,7 +812,7 @@ const DashboardView = ({ openModal }) => {
       const newLayout = autoPlaceOrder([...existingOrder, ...missing], widgetSizesRef.current);
       const nextTabLayout = { ...tabLayout };
       missing.forEach(id => { nextTabLayout[id] = newLayout[id] || { col: 1, row: 999 }; });
-      try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}_general`, JSON.stringify(nextTabLayout)); } catch {}
+      try { localStorage.setItem(`portal_dash_layout_${user?.id||'guest'}_general`, JSON.stringify(nextTabLayout)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
       return { ...prev, general: nextTabLayout };
     });
   }, [salesBranches, user]);
@@ -984,7 +984,7 @@ const DashboardView = ({ openModal }) => {
   const toggleWidget = id => {
     const next = widgetConfig.map(w=>w.id===id?{...w,enabled:!w.enabled}:w);
     setWidgetConfig(next);
-    try { localStorage.setItem(`portal_dashboard_${user?.id||'guest'}`, JSON.stringify(next)); } catch {}
+    try { localStorage.setItem(`portal_dashboard_${user?.id||'guest'}`, JSON.stringify(next)); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
   };
 
   // ── Computed ───────────────────────────────────────────────────────────────
@@ -1062,7 +1062,7 @@ const DashboardView = ({ openModal }) => {
     prevTabIndexRef.current = nextIdx;
     setActiveTab(tabId);
     setConfigTab(tabId);
-    try { localStorage.setItem(`portal_dash_tab_${user?.id||'guest'}`, tabId); } catch {}
+    try { localStorage.setItem(`portal_dash_tab_${user?.id||'guest'}`, tabId); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
   };
 
   // activeLayout is already tab-scoped — no extra filter needed
@@ -1076,10 +1076,10 @@ const DashboardView = ({ openModal }) => {
       newSizes[tab.id] = {};
       newMobileLayouts[tab.id] = {};
       newMobileSizes[tab.id] = {};
-      try { localStorage.removeItem(`portal_dash_layout_${user?.id||'guest'}_${tab.id}`); } catch {}
-      try { localStorage.removeItem(`portal_dash_sizes_${user?.id||'guest'}_${tab.id}`); } catch {}
-      try { localStorage.removeItem(`portal_dash_mobile_layout_${user?.id||'guest'}_${tab.id}`); } catch {}
-      try { localStorage.removeItem(`portal_dash_mobile_sizes_${user?.id||'guest'}_${tab.id}`); } catch {}
+      try { localStorage.removeItem(`portal_dash_layout_${user?.id||'guest'}_${tab.id}`); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
+      try { localStorage.removeItem(`portal_dash_sizes_${user?.id||'guest'}_${tab.id}`); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
+      try { localStorage.removeItem(`portal_dash_mobile_layout_${user?.id||'guest'}_${tab.id}`); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
+      try { localStorage.removeItem(`portal_dash_mobile_sizes_${user?.id||'guest'}_${tab.id}`); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
     });
     setWidgetLayout(newLayouts);
     setWidgetSizes(newSizes);

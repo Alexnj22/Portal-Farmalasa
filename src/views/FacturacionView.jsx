@@ -233,13 +233,13 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
             const next = new Set(prev);
             const key = String(erpId);
             if (next.has(key)) next.delete(key); else next.add(key);
-            try { localStorage.setItem('facturacion_visited', JSON.stringify([...next])); } catch {}
+            try { localStorage.setItem('facturacion_visited', JSON.stringify([...next])); } catch { /* localStorage no disponible (privado/cuota) */ }
             return next;
         });
     };
     const clearVisited = () => {
         setVisitedIds(new Set());
-        try { localStorage.removeItem('facturacion_visited'); } catch {}
+        try { localStorage.removeItem('facturacion_visited'); } catch { /* localStorage no disponible (privado/cuota) */ }
     };
 
     const loadData = useCallback(async () => {
@@ -670,13 +670,13 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
             const next = new Set(prev);
             const key = String(erpId);
             if (next.has(key)) next.delete(key); else next.add(key);
-            try { localStorage.setItem('facturacion_visited', JSON.stringify([...next])); } catch {}
+            try { localStorage.setItem('facturacion_visited', JSON.stringify([...next])); } catch { /* localStorage no disponible (privado/cuota) */ }
             return next;
         });
     };
     const clearVisited = () => {
         setVisitedIds(new Set());
-        try { localStorage.removeItem('facturacion_visited'); } catch {}
+        try { localStorage.removeItem('facturacion_visited'); } catch { /* localStorage no disponible (privado/cuota) */ }
     };
 
     const now      = svNow();

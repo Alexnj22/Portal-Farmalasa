@@ -251,10 +251,10 @@ const LoginView = ({ setView, setActiveEmployee }) => {
     /* ── Cámara (scan por video) ─────────────────────────────────────────── */
 
     const stopCameraSafely = () => {
-        if (scannerRef.current) { try { scannerRef.current.reset(); } catch {} scannerRef.current = null; }
+        if (scannerRef.current) { try { scannerRef.current.reset(); } catch { /* best-effort teardown */ } scannerRef.current = null; }
         if (streamRef.current)  { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
         if (videoRef.current?.srcObject) {
-            try { videoRef.current.srcObject.getTracks().forEach(t => t.stop()); videoRef.current.srcObject = null; videoRef.current.src = ''; videoRef.current.removeAttribute('src'); } catch {}
+            try { videoRef.current.srcObject.getTracks().forEach(t => t.stop()); videoRef.current.srcObject = null; videoRef.current.src = ''; videoRef.current.removeAttribute('src'); } catch { /* best-effort teardown */ }
         }
     };
     useEffect(() => () => stopCameraSafely(), []);

@@ -9,7 +9,7 @@ function fireBrowserNotif(title, body, tag, onClick) {
     try {
         const n = new Notification(title, { body, icon: '/favicon.ico', tag });
         if (onClick) n.onclick = () => { window.focus(); onClick(); };
-    } catch {}
+    } catch { /* best-effort: notificación del navegador puede fallar (permiso revocado, etc.) */ }
 }
 
 // Montar UNA sola vez (AppLayout). Carga inicial + realtime de la tabla

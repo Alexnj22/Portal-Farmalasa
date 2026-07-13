@@ -1,7 +1,7 @@
 const PREFIX = 'pedido_draft_';
 
 export function saveDraft(key, data) {
-    try { localStorage.setItem(PREFIX + key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+    try { localStorage.setItem(PREFIX + key, JSON.stringify({ ts: Date.now(), data })); } catch { /* localStorage no disponible (privado/cuota) */ }
 }
 
 export function loadDraft(key) {
@@ -16,5 +16,5 @@ export function loadDraft(key) {
 }
 
 export function clearDraft(key) {
-    try { localStorage.removeItem(PREFIX + key); } catch {}
+    try { localStorage.removeItem(PREFIX + key); } catch { /* localStorage no disponible (privado/cuota) */ }
 }

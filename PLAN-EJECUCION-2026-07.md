@@ -420,11 +420,43 @@ No necesitan staging. Priorizar los que tocan nómina/dinero.
 
 No necesita staging. Es la red para el Bloque 6.
 
-- Instalar Vitest + testing-library. Tests para lógica pura que YA rompió:
-  factor de presentación, dispatch rounding 40%, `inv_dedup`.
-- Playwright smoke de los flujos de Fase 5 (login normal+carné, race condition del
-  modal de empleado, Pedidos, Dashboard) versionado en `tests/e2e/smoke.spec.js`.
-- CI que corra ambos en cada PR a `main`.
+**Estado al 2026-07-12: MAYORMENTE COMPLETO (v2.16.0).** Vitest + Playwright +
+CI instalados y commiteados. Falta un solo paso externo (no de código) para
+que el job de e2e pase en CI: crear la cuenta QA dedicada + configurar los
+GitHub Secrets. Detalle:
+
+- ✅ Vitest + `@testing-library/react`/`jest-dom` instalados (`vite.config.js`
+  `test:` block + `tests/setup.js`). 15 tests unitarios reales sobre lógica
+  pura que ya rompió: `applyPresRule` (regla del 40%, extraída de
+  `TabMinMax.jsx` a `src/utils/presentacion.js`) y `toDispatch`/
+  `lotesToDispatch`/`lotesAsignadosToDispatch` (`src/utils/pedidoPrint.js`,
+  exportadas). **Gap documentado, no fingido**: "dispatch rounding 40%" real
+  (`get_pedido_preview`) e `inv_dedup` viven 100% en SQL/plpgsql — Vitest no
+  puede testearlos sin escribir un espejo en JS que probaría una copia, no el
+  código desplegado. Cobertura real de esos dos requeriría pgTAP u otro
+  framework de testing SQL — no instalado, fuera del alcance de "instalar
+  Vitest" tal como estaba pedido. Queda como decisión futura si se quiere esa
+  cobertura.
+- ✅ Playwright instalado como devDependency del proyecto (antes solo se
+  usaba ad-hoc) + `tests/e2e/smoke.spec.js`: login usuario/contraseña, login
+  por carné (keydown simulado, mismo mecanismo que el lector físico), Dashboard,
+  Pedidos, y el modal de Editar Empleado (guardia contra la race condition de
+  campos sensibles — assert de que el campo DUI llega poblado, nunca vacío).
+  Credenciales siempre por env vars (`E2E_USER`/`E2E_PASSWORD`/
+  `E2E_CARNE_CODE`, ver `.env.example`), nunca hardcodeadas — los tests que
+  las necesitan se saltan solos si faltan. Verificado en verde localmente
+  contra `vite preview` real.
+- ✅ CI (`.github/workflows/ci.yml`): job `lint-and-unit` corre lint+Vitest en
+  cada PR/push a `main`, sin secrets — funciona ya mismo. Job `e2e-smoke`
+  corre el smoke de Playwright pero **necesita 4 GitHub Secrets que todavía
+  no existen**: `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` (públicos, solo
+  hace falta copiarlos) y `E2E_USER`/`E2E_PASSWORD` de una **cuenta de
+  empleado de prueba dedicada** — decisión explícita del usuario
+  (2026-07-12): nunca credenciales reales de producción en CI. Ese job
+  fallará visiblemente hasta que se resuelvan estos 2 pendientes:
+  1. Crear el empleado QA en prod (requiere tu OK explícito de write, igual
+     que cualquier otro insert — ver regla transversal #1).
+  2. Configurar los 4 secrets en GitHub (Settings → Secrets → Actions).
 
 ---
 

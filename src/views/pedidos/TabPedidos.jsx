@@ -1725,7 +1725,7 @@ function PostCompletionSection({ row, cardKey, difItems = [], empMap = new Map()
             calledRef.current = true;
             onNeedItems();
         }
-    }, [itemsLoaded, onNeedItems]); // eslint-disable-line
+    }, [itemsLoaded, onNeedItems]);
 
     const tipoInfo = LLEGADA_TIPO_INFO[row.llegada_tipo] ?? null;
     const reenvios = (row.reenvios_historial ?? []);
@@ -2150,7 +2150,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             });
             setApoyoMap(prev => ({ ...prev, ...map }));
         })();
-    }, [isBranch, erpSucursalId, activeRows]); // eslint-disable-line
+    }, [isBranch, erpSucursalId, activeRows]);
 
     // ── Realtime ──────────────────────────────────────────────────────────────
 
@@ -2249,7 +2249,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'ruta_locations' }, loadActiveRutas)
             .subscribe();
         return () => supabase.removeChannel(ch);
-    }, [loadActiveRutas, loadActive]); // eslint-disable-line
+    }, [loadActiveRutas, loadActive]);
 
     // ── GPS background persistente — conductor con ruta en_ruta ──────────────
     // Corre independiente del RutaMapModal: pantalla apagada o modal cerrado
@@ -2277,7 +2277,6 @@ export default function TabPedidos({ searchTerm = '' }) {
         const startBg = async () => {
             try {
                 if (isNative) {
-                    // eslint-disable-next-line
                     const { BackgroundGeolocation } = await import(/* @vite-ignore */ '@capacitor-community/background-geolocation');
                     bgGpsWatchRef.current = await BackgroundGeolocation.addWatcher(
                         { backgroundTitle: 'Ruta activa', backgroundMessage: 'Rastreando tu posición.', requestPermissions: true, stale: false, distanceFilter: 20 },
@@ -2305,7 +2304,6 @@ export default function TabPedidos({ searchTerm = '' }) {
         return () => {
             if (bgGpsWatchRef.current !== null) {
                 if (isNative) {
-                    // eslint-disable-next-line
                     import(/* @vite-ignore */ '@capacitor-community/background-geolocation')
                         .then(({ BackgroundGeolocation }) => BackgroundGeolocation.removeWatcher({ id: bgGpsWatchRef.current }))
                         .catch(() => {});
@@ -2316,7 +2314,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             }
             if (bgGpsIntervalRef.current) { clearInterval(bgGpsIntervalRef.current); bgGpsIntervalRef.current = null; }
         };
-    }, [pedidoRutaMap, user?.id]); // eslint-disable-line
+    }, [pedidoRutaMap, user?.id]);
 
     // ── Fetch items ───────────────────────────────────────────────────────────
 
@@ -3163,7 +3161,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             });
             return { id, name: ERP_NAMES[id] ?? `Suc. ${id}`, total: rows.length };
         }).filter(s => s.total > 0);
-    }, [activeRows, filterDate, isBranch, erpSucursalId]); // eslint-disable-line
+    }, [activeRows, filterDate, isBranch, erpSucursalId]);
 
     // Rutas únicas derivadas del pedidoRutaMap (para el header de grupo)
     const uniqueActiveRutas = useMemo(() => {

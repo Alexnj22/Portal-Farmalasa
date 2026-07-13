@@ -512,7 +512,7 @@ export default function TabReglas({ searchTerm = '' }) {
         if (loadingRules || hiddenLabIds === null) return;
         const ids = Object.keys(rulesMapRef.current).map(Number);
         loadProducts(page, pageSize, searchTerm, filterRule, ids, hiddenLabIds, sortKey, sortDir, newProductIds);
-    }, [page, pageSize, searchTerm, filterRule, hiddenLabIds, newProductIds, loadProducts, loadingRules, sortKey, sortDir]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [page, pageSize, searchTerm, filterRule, hiddenLabIds, newProductIds, loadProducts, loadingRules, sortKey, sortDir]);
 
     const handleSort = useCallback((key) => {
         setSortDir(prev => sortKey === key ? (prev === 'asc' ? 'desc' : 'asc') : 'asc');
@@ -620,7 +620,7 @@ export default function TabReglas({ searchTerm = '' }) {
             const bt = ruleTypeLabel(rulesMap[b.id] ?? null)?.text ?? '';
             return asc ? at.localeCompare(bt, 'es') : bt.localeCompare(at, 'es');
         });
-    }, [products, sortKey, sortDir, rulesMap]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [products, sortKey, sortDir, rulesMap]);
 
     return (
         <div className="px-4 lg:px-5 py-4 flex flex-col gap-4">

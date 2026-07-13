@@ -42,4 +42,19 @@ export default defineConfig([
       globals: { ...globals.browser, ...globals.node },
     },
   },
+  {
+    // Vercel serverless functions (api/) corren en Node, no en el browser.
+    files: ['api/**/*.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
+    // Service worker (public/sw.js) tiene su propio scope global (self, clients,
+    // registration...), distinto del browser normal.
+    files: ['public/sw.js'],
+    languageOptions: {
+      globals: globals.serviceworker,
+    },
+  },
 ])

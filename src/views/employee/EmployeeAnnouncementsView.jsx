@@ -230,7 +230,7 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
                 onReadRef.current(p.id);
             });
         };
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleBack = useCallback(() => {
         if (pendingReads.length === 0) return;

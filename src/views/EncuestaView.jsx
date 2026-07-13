@@ -455,7 +455,7 @@ export default function EncuestaView() {
                 generateAiSummary(seg.comments, seg.key);
             }
         });
-    }, [tab, loading, RESPUESTAS, selectedSurveyId, savedSummariesLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [tab, loading, RESPUESTAS, selectedSurveyId, savedSummariesLoading]);
 
     const sucursales = useMemo(() => [...new Set(RESPUESTAS.map(r => r.sucursal))].sort(), [RESPUESTAS]);
 

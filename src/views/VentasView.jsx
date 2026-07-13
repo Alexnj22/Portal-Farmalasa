@@ -1599,7 +1599,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 setLoading(false);
             }
         }
-    }, [fini, ffin, filterBranch, searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [fini, ffin, filterBranch, searchTerm]);
 
     useEffect(() => { fetchProductos(); }, [fetchProductos]);
 

@@ -661,7 +661,7 @@ export async function printFromPreview(grouped, sortedSucIds, getAdjusted, title
             agotamientoCount: (g.agotamiento ?? []).length,
         };
     });
-    const filename = `${(title ?? 'Vista_previa').replace(/[^a-zA-Z0-9_\-]/g,'_')}.pdf`;
+    const filename = `${(title ?? 'Vista_previa').replace(/[^a-zA-Z0-9_-]/g,'_')}.pdf`;
     downloadPdf(buildDocDefinition(sections, title ?? 'Vista previa', meta, logo, addrMap), filename);
 }
 
@@ -698,7 +698,7 @@ export async function printFromSnapshot(snapshot, meta = {}) {
         };
     });
     const nombre   = snapshot.nombre ?? 'Borrador_guardado';
-    const filename = `${nombre.replace(/[^a-zA-Z0-9_\-]/g,'_')}.pdf`;
+    const filename = `${nombre.replace(/[^a-zA-Z0-9_-]/g,'_')}.pdf`;
     downloadPdf(buildDocDefinition(sections, nombre, meta, logo, addrMap), filename);
 }
 
@@ -764,6 +764,6 @@ export async function printFromPedidoItems(pedidoNumero, sucGroups, meta = {}, t
         ?? (sucGroups.length === 1
             ? `Pedido_${(ERP_NAMES_DEFAULT[sucGroups[0][0]] ?? `Sucursal_${sucGroups[0][0]}`).replace(/ /g, '_')}_${ds}`
             : `Pedido_${String(pedidoNumero).padStart(3,'0')}_${ds}`);
-    const filename = `${title.replace(/[^a-zA-Z0-9_\-]/g,'_')}.pdf`;
+    const filename = `${title.replace(/[^a-zA-Z0-9_-]/g,'_')}.pdf`;
     downloadPdf(buildDocDefinition(sections, title, meta, logo, addrMap), filename);
 }

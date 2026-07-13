@@ -64,7 +64,14 @@ test.describe('Flujos autenticados', () => {
         // pueden verse vacíos y guardarse como NULL. Este smoke no fuerza la
         // ventana de carrera exacta, pero confirma el síntoma que dejaría: el
         // campo DUI debe llegar poblado, nunca vacío, al abrir el modal.
-        await page.getByText('Personal', { exact: true }).click();
+        // "Personal" es un grupo colapsable de sidebar SOLO si el rol tiene ≥2
+        // módulos visibles ahí (Listado + Nómina); con un solo módulo visible
+        // (ej. el rol de la cuenta QA, que no ve Nómina) el sidebar aplana el
+        // grupo y "Listado" aparece directo, sin "Personal" para hacer clic.
+        const personalGroup = page.getByText('Personal', { exact: true });
+        if (await personalGroup.isVisible({ timeout: 3_000 }).catch(() => false)) {
+            await personalGroup.click();
+        }
         await page.getByText('Listado', { exact: true }).click();
         await expect(page.locator('table tbody tr').first()).toBeVisible({ timeout: 15_000 });
 

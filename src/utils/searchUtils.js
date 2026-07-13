@@ -6,7 +6,7 @@ export function normSearch(str = '') {
     return String(str)
         .normalize('NFD')
         .replace(/[̀-ͯ]/g, '')
-        .replace(/[.\-\/,;:()'"’]/g, '')
+        .replace(/[.\-/,;:()'"’]/g, '')
         .toLowerCase()
         .trim();
 }

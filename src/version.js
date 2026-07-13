@@ -5,8 +5,27 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.16.0';
+export const APP_VERSION = '2.16.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.16.1 — fix(bloque2): limpieza de deuda de lint para poder hacer CI
+// bloqueante (respuesta a "¿y si los corregimos?" en vez de solo marcar
+// el paso de lint como no-bloqueante). 33/186 cerrados en esta tanda:
+// no-undef (5, api/oss-proxy.js y public/sw.js corrían con globals de
+// browser en vez de Node/ServiceWorker — fix de config, no de código);
+// 19 "unused eslint-disable directive" (comentarios de supresión que ya
+// no suprimían nada, confirmado por el propio ESLint antes de borrarlos —
+// varios eran míos de sesiones anteriores de Bloque 1.6, vueltos
+// innecesarios por fixes posteriores en cascada); no-useless-escape (4,
+// regex con \- y \/ innecesarios dentro de character classes);
+// no-case-declarations (1, case sin bloque); no-irregular-whitespace (2,
+// un BOM y una NBSP literales embebidos como bytes crudos en vez de
+// \uXXXX — SrsBuscadorWidget.jsx ya usaba el patrón correcto,
+// WidgetSrsInventory.jsx no); no-control-regex (2, genuinamente
+// intencional — limpia basura binaria/PUA de lectores de código de
+// barras — suprimido con justificación, no removido).
+// Build limpio. Quedan 153: no-unused-vars (102), no-empty (36),
+// react-refresh/only-export-components (8), preserve-manual-memoization (7).
 
 // v2.16.0 — feat(bloque2): fundación de testing — Vitest + Playwright + CI.
 // Vitest instalado (+ @testing-library/react/jest-dom, jsdom); 15 tests
@@ -1396,7 +1415,7 @@ export const APP_AUTHOR  = 'Edwin Nunez';
 // v2.2.108 — fix(pedidos): 3 mejoras — (1) TabGenerar: borradores cargables — sección "Borradores guardados" en dashboard lista snapshots con Cargar (carga datos+sucursales en preview) y Eliminar; ERP_NAMES/SUCURSALES ahora importados de constants/erp.js; (2) TabDiferencias: resolución de diferencias — columnas resuelta_at/resuelta_por en pedido_items (DB migration); botón "Resolver" por fila en vista Detalle marca la diferencia cerrada; toggle "Mostrar/Ocultar resueltas"; get_pedido_diferencias_stats v2 expone pedido_item_id+resuelta_at+limit 500; (3) ERP_NAMES dedup en TabRecepcion, TabDiferencias, TabGenerar → importan desde constants/erp.js
 // v2.2.107 — fix(pedidos): 6 correcciones — (1) TabRecepcion paginación aumentada a 500 pedidos (era 100); (2) TabDiferencias timezone El Salvador UTC-6 en filtros de fecha (era UTC 0); (3) RecepcionModal quita cap max en cantidad recibida (permite registrar más de lo asignado); (4) TabGenerar re-fetcha dashStats+sinBodega tras confirmar pedido (datos ya no quedan stale); (5) PedidosView lazy mount tabs (no montados hasta navegar) + recepcionKey separado de historialKey; (6) src/constants/erp.js centraliza ERP_NAMES, SUCURSALES y ERP_BODEGA_ID
 // v2.2.106 — fix(minmax): (1) DraftCostCard en Bodega cambia etiqueta a "Σ red efectiva" + icono ámbar (vs violeta en sucursales) — deja claro que es la suma auto-calculada, no un borrador manual; (2) badge "N·N" ámbar con dot pulsante reemplaza "→ N·N prev." en DataCell Bodega — más reconocible como estado accionable; title="Hover para ver sucursales pendientes" para discoverability
-// v2.2.105 — fix(minmax): (1) CSV semicolons + BOM para Excel — sep=; + ﻿ elimina el problema de columnas unidas en Excel español; (2) Bodega: oculta "Todas las sucursales" (ya estaba oculto Calcular); (3) aviso Bodega movido inline al filter bar (chip compacto con estado pendientes/al-día), elimina la fila extra; (4) canExpand incluye effective_min>0 || effective_max>0 — productos con params pero sin inventario (p.ej. Bodega) ya se pueden desplegar
+// v2.2.105 — fix(minmax): (1) CSV semicolons + BOM para Excel — sep=; + \uFEFF (BOM) elimina el problema de columnas unidas en Excel español; (2) Bodega: oculta "Todas las sucursales" (ya estaba oculto Calcular); (3) aviso Bodega movido inline al filter bar (chip compacto con estado pendientes/al-día), elimina la fila extra; (4) canExpand incluye effective_min>0 || effective_max>0 — productos con params pero sin inventario (p.ej. Bodega) ya se pueden desplegar
 // v2.2.104 — fix(minmax): pill de filtros rediseñada — glassmorphism real (rgba bg + blur(20px) saturate(180%) + border blanco) en el outer; siempre rounded-2xl completo (sin border-r-0 que dejaba el lado derecho cortado en Bodega); separador vertical antes de Calcular en lugar de border-r-0 en el inner; animaciones chipAnim/iconAnim/ctaAnim más rápidas (100ms easeOutExpo) y sin spring underdamped (ζ≈0.53→easeOut); transition-colors en todos los botones de la pill
 // v2.2.103 — fix(minmax): (1) Bodega sin botón Calcular — se actualiza sola vía trigger+publish; handleRecalcularAll excluye id=6; empty state Bodega explica flujo correcto; (2) badge "SUC. PEND." ámbar en columna producto cuando Bodega row tiene draft_status=pending (alguna sucursal no ha publicado); hover "→ N·N prev." ya muestra qué sucursales
 // v2.2.102 — fix(minmax): RowActions hover lag — elimina whileHover y:-2 (spring underdamped ζ≈0.43 que oscilaba/bounceaba); elimina delay stagger de items dropdown; apertura dropdown: spring→easeOut 100ms; queda solo whileTap con spring crítico (damping 40) para feedback de clic inmediato

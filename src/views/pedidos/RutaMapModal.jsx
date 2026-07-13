@@ -9,9 +9,7 @@ const isNative = !!(window.Capacitor?.isNativePlatform?.());
 let CapGeo = null;
 let BgGeo  = null;
 if (isNative) {
-  // eslint-disable-next-line
   import(/* @vite-ignore */ '@capacitor/geolocation').then(m => { CapGeo = m.Geolocation; }).catch(() => {});
-  // eslint-disable-next-line
   import(/* @vite-ignore */ '@capacitor-community/background-geolocation').then(m => { BgGeo = m.BackgroundGeolocation; }).catch(() => {});
 }
 

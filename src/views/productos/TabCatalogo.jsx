@@ -959,7 +959,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
         };
         document.addEventListener('paste', onPaste);
         return () => document.removeEventListener('paste', onPaste);
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     const handlePhotoContextMenu = (e) => { e.preventDefault(); setCtxMenu({ x: e.clientX + 2, y: e.clientY + 2 }); };
     const handlePasteFromMenu = async () => { setCtxMenu(null); const f = await pasteImageFromClipboard(); if (f) setPendingFile(f); };
@@ -1364,7 +1364,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
         };
         document.addEventListener('paste', onPaste);
         return () => document.removeEventListener('paste', onPaste);
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
 
     const handlePhotoContextMenu = (e) => { e.preventDefault(); setCtxMenu({ x: e.clientX + 2, y: e.clientY + 2 }); };
     const handlePasteFromMenu = async () => { setCtxMenu(null); const f = await pasteImageFromClipboard(); if (f) setPendingFile(f); };

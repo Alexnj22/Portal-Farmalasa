@@ -365,10 +365,11 @@ export const getApplicableAnnouncement = ({ announcements, employee }) => {
       case 'GLOBAL': return true;
       case 'BRANCH': return empBranchStr === String(targetVal);
       case 'ROLE': return empRoleStr === String(targetVal).toLowerCase();
-      case 'EMPLOYEE':
+      case 'EMPLOYEE': {
         if (!targetVal) return false;
         const targets = Array.isArray(targetVal) ? targetVal : [targetVal];
         return targets.map(String).includes(empIdStr);
+      }
       default: return false;
     }
   });

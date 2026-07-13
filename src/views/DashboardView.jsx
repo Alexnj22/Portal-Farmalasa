@@ -591,7 +591,7 @@ const DashboardView = ({ openModal }) => {
         }
         setPrefsReady(true); // flip → triggers save effect below to persist current state
       });
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Debounced save: fires 1.5 s after any prefs change (including the initial prefsReady flip)
   useEffect(() => {
@@ -608,7 +608,7 @@ const DashboardView = ({ openModal }) => {
       });
     }, 1500);
     return () => clearTimeout(saveTimerRef.current);
-  }, [prefsReady, widgetLayout, widgetSizes, widgetConfig, mobileLayout, mobileSizes, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [prefsReady, widgetLayout, widgetSizes, widgetConfig, mobileLayout, mobileSizes, user?.id]);
 
   // ── Resize popover ─────────────────────────────────────────────────────────
   const [resizeOpenId, setResizeOpenId] = useState(null);

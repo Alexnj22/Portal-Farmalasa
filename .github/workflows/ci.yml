@@ -17,7 +17,13 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # No bloqueante: el proyecto arrastra ~186 problemas de lint preexistentes
+      # (no-unused-vars, no-empty, etc. — ver Bloque 1.6 en PLAN-EJECUCION-2026-07.md,
+      # deuda cosmética documentada, fuera de ese barrido). Corre igual para que el
+      # resumen de CI muestre la cuenta, pero no puede tumbar el job hasta que se
+      # limpie esa deuda (Bloque 5) o se adopte un baseline de lint.
       - run: npm run lint
+        continue-on-error: true
       - run: npm run test
 
   e2e-smoke:

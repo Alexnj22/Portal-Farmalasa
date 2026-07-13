@@ -541,17 +541,17 @@ export function buildPedidoCodigo(countsBySuc, date, nSelected) {
     };
 }
 
-function toDispatch(qty, erpFactor, dispFactor) {
+export function toDispatch(qty, erpFactor, dispFactor) {
     if (!dispFactor || dispFactor === erpFactor) return qty;
     return Math.round(qty * erpFactor / dispFactor);
 }
-function lotesToDispatch(lotes, erpFactor, dispFactor) {
+export function lotesToDispatch(lotes, erpFactor, dispFactor) {
     if (!dispFactor || dispFactor === erpFactor) return lotes ?? [];
     return (lotes ?? [])
         .map(l => ({ ...l, packs: Math.floor((l.packs ?? 0) * erpFactor / dispFactor) }))
         .filter(l => l.packs > 0);
 }
-function lotesAsignadosToDispatch(lotes, erpFactor, dispFactor) {
+export function lotesAsignadosToDispatch(lotes, erpFactor, dispFactor) {
     if (!dispFactor || dispFactor === erpFactor) return lotes ?? [];
     return (lotes ?? [])
         .map(l => ({ ...l, take: toDispatch(l.take ?? l.cantidad ?? l.packs ?? 0, erpFactor, dispFactor) }))

@@ -17,6 +17,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
+import { applyPresRule } from '../../utils/presentacion';
 import { useNowTick } from '../../hooks/useNowTick';
 
 // ─── Animation presets ────────────────────────────────────────────────────────
@@ -217,15 +218,6 @@ function relativeTime(iso) {
     const hrs = Math.floor(mins / 60);
     if (hrs < 24)  return `hace ${hrs}h`;
     return new Date(iso).toLocaleDateString('es-SV', { day: 'numeric', month: 'short' });
-}
-
-// Convierte unidades a presentación usando la regla del 40%:
-// floor(units/factor) + (residuo/factor >= 0.4 ? 1 : 0)
-function applyPresRule(units, factor) {
-    if (!units || units <= 0 || !factor || factor <= 1) return units ?? 0;
-    const floor = Math.floor(units / factor);
-    const rem   = units % factor;
-    return floor + (rem / factor >= 0.4 ? 1 : 0);
 }
 
 // netStockMap: { erp_product_id → net_sucursal_stock } fetched before calling

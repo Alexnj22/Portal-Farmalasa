@@ -34,4 +34,12 @@ export default defineConfig([
       'react/jsx-uses-vars': 'error',
     },
   },
+  {
+    // Configs de build/test y specs corren en Node, no en el browser — necesitan
+    // `process`/`__dirname`/etc. en vez de (o además de) los globals de browser.
+    files: ['*.config.js', 'tests/**/*.js'],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
+    },
+  },
 ])

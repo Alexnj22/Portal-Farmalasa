@@ -18,4 +18,10 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'require-corp',
     },
   },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './tests/setup.js',
+    exclude: ['tests/e2e/**', 'node_modules/**'],
+  },
 })

@@ -29,3 +29,8 @@ dist-ssr
 .env.*
 !.env.example
 /code
+
+# Test output
+/playwright-report
+/test-results
+/coverage

@@ -5,8 +5,39 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.15.27';
+export const APP_VERSION = '2.16.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.16.0 — feat(bloque2): fundación de testing — Vitest + Playwright + CI.
+// Vitest instalado (+ @testing-library/react/jest-dom, jsdom); 15 tests
+// unitarios de regresión sobre lógica pura que YA rompió en producción:
+// `applyPresRule` (regla del 40% para convertir unidades a presentaciones,
+// extraída de TabMinMax.jsx a `src/utils/presentacion.js` para poder
+// testearla sin importar la vista completa) y `toDispatch`/
+// `lotesToDispatch`/`lotesAsignadosToDispatch` (conversión ERP↔dispatch
+// factor en pedidoPrint.js, exportadas). **Nota importante de alcance**:
+// los otros 2 ítems que pedía el plan — "dispatch rounding 40%" (la
+// decisión de redondeo real de get_pedido_preview) e "inv_dedup" — viven
+// 100% en SQL/plpgsql (supabase/migrations/*.sql), no en JS. Vitest no
+// puede testearlos directamente; escribir un "espejo" en JS de esa lógica
+// sería test theater (probaría una copia, no el código real desplegado).
+// Quedan documentados como gap conocido — cobertura real requeriría pgTAP
+// u otro framework de testing SQL, fuera del alcance de "instalar Vitest".
+// Playwright instalado como devDependency del proyecto (antes solo se usaba
+// ad-hoc en el scratchpad de sesión) + `tests/e2e/smoke.spec.js`: login
+// usuario/contraseña, login por carné (lector físico simulado vía
+// keydown), Dashboard, Pedidos, y el modal de Editar Empleado (guardia
+// contra la race condition de campos sensibles — ver
+// project_sensitive_fields_boot_race). Credenciales SIEMPRE por env vars
+// (E2E_USER/E2E_PASSWORD/E2E_CARNE_CODE), nunca hardcodeadas; tests sin
+// esas env vars se saltan solos. CI (.github/workflows/ci.yml): lint+vitest
+// en cada PR/push a main sin secrets; el job de Playwright smoke necesita
+// secrets de GitHub (E2E_USER/E2E_PASSWORD — cuenta de prueba dedicada, NO
+// credenciales reales de producción, por decisión explícita del usuario) —
+// pendiente de configurar esos secrets y crear la cuenta QA antes de que
+// ese job pase en CI. Build/lint/tests verificados en verde localmente
+// (186 problemas de lint, mismo baseline que antes de este cambio — 0
+// nuevos).
 
 // v2.15.27 — fix(bloque1/1.6, parte 10 — CIERRE): exhaustive-deps, últimos
 // 17/89 → **1.6 completo: 0/173 ocurrencias reales de lint restantes**

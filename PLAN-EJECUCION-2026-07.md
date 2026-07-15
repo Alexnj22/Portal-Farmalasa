@@ -395,6 +395,14 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
   Verificado en vivo (vite preview + Playwright): login + 5 rutas más tocadas
   (Ventas, Facturación, Pedidos, Productos, MinMax) sin errores de
   consola/página. Build + 15 tests unitarios verdes en cada parte.
+- **Bloque 2 — cuenta QA — ✅ APLICADO en prod y verificado (con tu OK
+  explícito).** Ver detalle completo en Bloque 2 arriba. Rol nuevo mínimo
+  `QA / Testing (CI)` (id 33) + empleado `code=99999`/`username=qa.test` +
+  cuenta Auth vía `bulk-create-employee-users` (mismo camino que cualquier
+  empleado real) + contraseña fijada por `UPDATE` puntual sobre
+  `encrypted_password`. Verificado con Playwright: login limpio, ve
+  Dashboard/Pedidos, no ve Nómina, sin errores. Falta solo que configures
+  los 4 GitHub Secrets — Bloque 2 queda del todo cerrado en cuanto lo hagas.
 
 ### Camino de deploy de edge functions (resuelto)
 Bash `supabase functions deploy` funciona CON permiso, pero el CLI se traga un `.env` con un nombre
@@ -463,10 +471,10 @@ No necesitan staging. Priorizar los que tocan nómina/dinero.
 
 No necesita staging. Es la red para el Bloque 6.
 
-**Estado al 2026-07-12: MAYORMENTE COMPLETO (v2.16.0).** Vitest + Playwright +
-CI instalados y commiteados. Falta un solo paso externo (no de código) para
-que el job de e2e pase en CI: crear la cuenta QA dedicada + configurar los
-GitHub Secrets. Detalle:
+**Estado al 2026-07-15: CERRADO salvo 1 acción tuya en GitHub.** Vitest +
+Playwright + CI instalados y commiteados. Cuenta QA creada y verificada en
+prod. Solo falta que configures los 4 GitHub Secrets (no requiere código).
+Detalle:
 
 - ✅ Vitest + `@testing-library/react`/`jest-dom` instalados (`vite.config.js`
   `test:` block + `tests/setup.js`). 15 tests unitarios reales sobre lógica
@@ -491,15 +499,35 @@ GitHub Secrets. Detalle:
   contra `vite preview` real.
 - ✅ CI (`.github/workflows/ci.yml`): job `lint-and-unit` corre lint+Vitest en
   cada PR/push a `main`, sin secrets — funciona ya mismo. Job `e2e-smoke`
-  corre el smoke de Playwright pero **necesita 4 GitHub Secrets que todavía
-  no existen**: `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` (públicos, solo
-  hace falta copiarlos) y `E2E_USER`/`E2E_PASSWORD` de una **cuenta de
-  empleado de prueba dedicada** — decisión explícita del usuario
-  (2026-07-12): nunca credenciales reales de producción en CI. Ese job
-  fallará visiblemente hasta que se resuelvan estos 2 pendientes:
-  1. Crear el empleado QA en prod (requiere tu OK explícito de write, igual
-     que cualquier otro insert — ver regla transversal #1).
-  2. Configurar los 4 secrets en GitHub (Settings → Secrets → Actions).
+  corre el smoke de Playwright y necesita 4 GitHub Secrets.
+- **✅ Cuenta QA creada en prod y verificada (2026-07-15, con tu OK explícito).**
+  Empleado dedicado (`code=99999`, `username=qa.test`, `branch_id=32`
+  Administración, nunca credenciales reales — decisión del usuario 2026-07-12).
+  Rol nuevo y mínimo `QA / Testing (CI)` (`role_id=33`): `can_view` en
+  `overview`/`pedidos`/`staff_detail`, `can_view+can_edit` en `staff_list`
+  (necesario para que el smoke test de "Editar Empleado" pueda abrir el
+  modal — el botón existe pero queda `disabled` sin `can_edit`), **sin
+  acceso a Nómina ni a ningún otro módulo** (mínimo privilegio: si el
+  secret de CI se filtra alguna vez, el blast radius es solo lectura +
+  edición de datos de empleado, nada de nómina/roles/permisos/pedidos-write).
+  Cuenta creada vía `bulk-create-employee-users` (mismo camino que cualquier
+  empleado real, GoTrue admin API — no inserción manual del auth.users
+  completo) invocada con `net.http_post` + el secreto de Vault (mismo patrón
+  ya usado por los cron jobs desde 0B.2, sin exponer el secreto en texto
+  plano en ningún sitio nuevo). Contraseña fijada después con un `UPDATE`
+  puntual sobre `encrypted_password` (bcrypt vía `pgcrypto`, mismo algoritmo
+  que usa GoTrue) — la única pieza que no tiene un endpoint admin invocable
+  sin un JWT de sesión real. **Verificado end-to-end con Playwright contra
+  `vite preview`**: login username/password entra directo a `/overview`
+  (sin pantalla de "cambiar contraseña" — se limpió `must_change_password`),
+  ve "Dashboard"/"Pedidos", NO ve "Nómina", cero errores de página. (No se
+  corrió la suite de Playwright del repo completa contra prod por precaución
+  de escritura de datos de prueba — ver `feedback_qa_test_data_and_db_writes`
+  — la verificación de login fue con un script aparte de solo-lectura.)
+  **Pendiente de tu parte — configurar en GitHub (Settings → Secrets → Actions)**:
+  - `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` — públicos, copiar tal cual.
+  - `E2E_USER` = `qa.test`
+  - `E2E_PASSWORD` = (te la paso aparte, no queda en este archivo ni en git)
 
 ---
 

@@ -14,6 +14,10 @@ import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
 import { printPerSucursal, buildPedidoCodigo, fefoProject, getExactPageGroups } from '../../utils/pedidoPrint';
 import { ERP_NAMES, SUCURSALES } from '../../constants/erp';
+import {
+    fetchActiveEmployeesBasic, fetchPedidoNumero, fetchPedidoIdsSinceExcluding,
+    fetchPedidoSucursalStatusForPedidos, fetchPedidoItemsForPrintCapture, updatePedidoSucursalStatus,
+} from '../../data/pedidos';
 
 function friendlyError(e) {
     const msg = e?.message || String(e);
@@ -103,10 +107,7 @@ export default function TabGenerar({ searchTerm = '' }) {
 
     // ── Empleados (para trazabilidad en handleGenerarDirecto) ──
     useEffect(() => {
-        supabase.from('employees')
-            .select('id, first_names, last_names')
-            .eq('status', 'ACTIVO')
-            .then(({ data }) => setEmployees(data || []));
+        fetchActiveEmployeesBasic().then(({ data }) => setEmployees(data || []));
     }, []);
 
     // ── Sucursal toggle ────────────────────────────────────────
@@ -164,8 +165,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 p_sucursal_ids:   [...selected],
             });
             if (confErr) throw confErr;
-            const { data: ped } = await supabase
-                .from('pedidos').select('numero').eq('id', pedidoId).single();
+            const { data: ped } = await fetchPedidoNumero(pedidoId);
             useStaff.getState().appendAuditLog('GENERAR_PEDIDO', pedidoId, {
                 sucursales:  [...selected],
                 items_count: pItems.length,
@@ -187,15 +187,12 @@ export default function TabGenerar({ searchTerm = '' }) {
 
             // Numero por sucursal por mes: cuántos pedidos previos tiene cada sucursal este mes + 1
             const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-            const { data: pedidosMes } = await supabase
-                .from('pedidos').select('id').gte('created_at', monthStart).neq('id', pedidoId);
+            const { data: pedidosMes } = await fetchPedidoIdsSinceExcluding(monthStart, pedidoId);
             const pedidoIdsMes = (pedidosMes ?? []).map(p => p.id);
             const countsBySuc = {};
             for (const id of sucIds) countsBySuc[id] = 1;
             if (pedidoIdsMes.length > 0) {
-                const { data: sucRecs } = await supabase
-                    .from('pedido_sucursal_status').select('erp_sucursal_id')
-                    .in('pedido_id', pedidoIdsMes).in('erp_sucursal_id', sucIds);
+                const { data: sucRecs } = await fetchPedidoSucursalStatusForPedidos(pedidoIdsMes, sucIds);
                 for (const r of (sucRecs ?? [])) {
                     if (countsBySuc[r.erp_sucursal_id] !== undefined) countsBySuc[r.erp_sucursal_id]++;
                 }
@@ -216,19 +213,11 @@ export default function TabGenerar({ searchTerm = '' }) {
             ;(async () => {
                 try {
                     for (const sid of sucIds) {
-                        const { data: rawItems } = await supabase
-                            .from('pedido_items')
-                            .select('id, factor, dispatch_factor, dispatch_tipo, cantidad_asignada, lotes_asignados, sin_stock, caja_especial, products(nombre, es_antibiotico, laboratorios(nombre))')
-                            .eq('pedido_id', pedidoId)
-                            .eq('erp_sucursal_id', sid)
-                            .gt('cantidad_asignada', 0);
+                        const { data: rawItems } = await fetchPedidoItemsForPrintCapture(pedidoId, sid);
                         if (!rawItems?.length) continue;
                         const groups = await getExactPageGroups(sid, rawItems);
                         if (groups.length) {
-                            await supabase.from('pedido_sucursal_status')
-                                .update({ paginas: groups })
-                                .eq('pedido_id', pedidoId)
-                                .eq('erp_sucursal_id', sid);
+                            await updatePedidoSucursalStatus(pedidoId, sid, { paginas: groups });
                         }
                     }
                 } catch { /* silencioso — Finalizar tiene fallback */ }

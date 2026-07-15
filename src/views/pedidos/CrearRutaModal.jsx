@@ -7,6 +7,10 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { notifyBranch } from '../../utils/notify';
 import PedidoModal from './PedidoModal';
 import { optimizeRoute, optimizeRouteGoogleMaps, totalRoute, haversineMeters, loadGoogleMaps, loadLeaflet, getDirectionsREST } from '../../utils/routeOptimizer';
+import {
+    fetchEmployeeDriverInfo, fetchPedidosDisponiblesParaRuta, fetchPedidoSucursalStatusFinalizados,
+    fetchSucursalesConCoords, updateRutaStatus, fetchBranchIdsForSucursales,
+} from '../../data/pedidos';
 
 function fmtDist(m) {
   if (!m) return null;
@@ -62,10 +66,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
     setLoadingData(true);
 
     if (user?.id) {
-      supabase.from('employees')
-        .select('first_names, last_names, photo_url')
-        .eq('id', user.id)
-        .maybeSingle()
+      fetchEmployeeDriverInfo(user.id)
         .then(({ data }) => {
           setConductorNombre(data ? `${data.first_names} ${data.last_names}`.trim() : (user.email ?? 'Usuario'));
           if (data?.photo_url) { signPhotosDeep(data).then(() => setConductorPhoto(data.photo_url)); } else { setConductorPhoto(null); }
@@ -73,18 +74,9 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
     }
 
     Promise.all([
-      supabase.from('pedidos')
-        .select('id, numero')
-        .in('status', ['confirmado', 'enviado', 'parcial'])
-        .order('numero'),
-
-      supabase.from('pedido_sucursal_status')
-        .select('pedido_id, erp_sucursal_id, total_cajas, cajas_electrolit, cajas_especiales, finalizado_at')
-        .not('finalizado_at', 'is', null),
-
-      supabase.from('erp_sucursal_map')
-        .select('erp_sucursal_id, es_bodega, branch:branches!inner(settings, name)')
-        .order('erp_sucursal_id'),
+      fetchPedidosDisponiblesParaRuta(),
+      fetchPedidoSucursalStatusFinalizados(),
+      fetchSucursalesConCoords(),
     ]).then(([pedRes, pssRes, coordRes]) => {
       const pedidoMap = {};
       for (const p of (pedRes.data ?? [])) pedidoMap[p.id] = p;
@@ -411,9 +403,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       const visitasData = paradas
         .filter(s => s.isEncargo)
         .map(s => ({ erp_sucursal_id: s.erp_sucursal_id, suc_name: s.suc_name, orden: s.orden, dist_m: s.dist_m ?? null, dur_min: s.dur_min ?? null }));
-      await supabase.from('rutas')
-        .update({ status: 'en_ruta', salida_at: new Date().toISOString(), ...(visitasData.length > 0 ? { visitas: visitasData } : {}) })
-        .eq('id', rutaId);
+      await updateRutaStatus(rutaId, { status: 'en_ruta', salida_at: new Date().toISOString(), ...(visitasData.length > 0 ? { visitas: visitasData } : {}) });
 
       useStaff.getState().appendAuditLog('RUTA_CREADA', rutaId, {
         conductor: conductorNombre,
@@ -424,8 +414,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
       const realStops = paradas.filter(s => !s.isEncargo);
       if (realStops.length > 0) {
         const sucIds = [...new Set(realStops.map(s => s.erp_sucursal_id))];
-        const { data: mapas } = await supabase
-          .from('erp_sucursal_map').select('erp_sucursal_id, branch_id').in('erp_sucursal_id', sucIds);
+        const { data: mapas } = await fetchBranchIdsForSucursales(sucIds);
         const branchMap = Object.fromEntries((mapas ?? []).map(m => [m.erp_sucursal_id, m.branch_id]));
 
         for (const stop of realStops) {

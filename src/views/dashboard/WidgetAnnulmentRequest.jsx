@@ -5,11 +5,13 @@ import {
   ChevronRight, Info, ShieldAlert, User, CalendarDays, Contact,
 } from 'lucide-react';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
-import { supabase } from '../../supabaseClient';
 import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
 import { notifyEmployees } from '../../utils/notify';
+import { insertApprovalRequestSilent } from '../../data/requests';
+import { fetchInvoiceItemsForInvoice, fetchBranchInvoicesForMonth } from '../../data/facturacion';
+import { searchCustomersByTokens } from '../../data/customers';
 
 const GRACE_DAYS = 3;
 
@@ -163,11 +165,7 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
 
   useEffect(() => {
     let cancelled = false;
-    supabase
-      .from('sales_invoice_items')
-      .select('descripcion, presentacion, cantidad, precio_unitario, total_linea')
-      .eq('invoice_id', inv.id)
-      .order('total_linea', { ascending: false })
+    fetchInvoiceItemsForInvoice(inv.id)
       .then(({ data }) => { if (!cancelled) { setItems(data || []); setLoading(false); } });
     return () => { cancelled = true; };
   }, [inv.id]);
@@ -333,7 +331,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
     setSubmitting(true); setSubmitError('');
     try {
       const target = findTargetEmployee(employees);
-      const { error } = await supabase.from('approval_requests').insert({
+      const { error } = await insertApprovalRequestSilent({
         employee_id: user?.id, approver_id: target?.id ?? null,
         type: 'ANNULMENT_REQUEST', status: 'PENDING',
         note: comment.trim() || null,
@@ -457,7 +455,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
     setSubmitting(true); setSubmitError('');
     try {
       const target = findTargetEmployee(employees);
-      const { error } = await supabase.from('approval_requests').insert({
+      const { error } = await insertApprovalRequestSilent({
         employee_id: user?.id, approver_id: target?.id ?? null,
         type: 'PAYMENT_CHANGE_REQUEST', status: 'PENDING',
         note: comment.trim() || null,
@@ -548,7 +546,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
     setSubmitting(true); setSubmitError('');
     try {
       const target = findTargetEmployee(employees);
-      const { error } = await supabase.from('approval_requests').insert({
+      const { error } = await insertApprovalRequestSilent({
         employee_id: user?.id, approver_id: target?.id ?? null,
         type: 'VENDOR_CHANGE_REQUEST', status: 'PENDING',
         note: comment.trim() || null,
@@ -670,15 +668,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         const tokens = q.split(/\s+/).filter(Boolean).slice(0, 5)
           .map(tok => tok.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[,%()]/g, ''))
           .filter(Boolean);
-        let req = supabase.from('customers')
-          .select('id, name, nit, dui, phone, erp_id')
-          .order('name')
-          .limit(30);
-        for (const tok of tokens) {
-          const like = `%${tok}%`;
-          req = req.or(`search_name.ilike.${like},nit.ilike.${like},dui.ilike.${like},phone.ilike.${like},erp_id.ilike.${like}`);
-        }
-        const { data } = await req;
+        const { data } = await searchCustomersByTokens(tokens);
         setResults(data || []);
       } catch { setResults([]); }
       setSearching(false);
@@ -691,7 +681,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
     setSubmitting(true); setSubmitError('');
     try {
       const target = findTargetEmployee(employees);
-      const { error } = await supabase.from('approval_requests').insert({
+      const { error } = await insertApprovalRequestSilent({
         employee_id: user?.id, approver_id: target?.id ?? null,
         type: 'CLIENT_CHANGE_REQUEST', status: 'PENDING',
         note: comment.trim() || null,
@@ -850,14 +840,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
     const from = `${y}-${m}-01`;
     const to   = `${y}-${m}-${String(new Date(y, now.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
 
-    const { data, error } = await supabase
-      .from('sales_invoices')
-      .select('id, correlativo, fecha, total, tipo_documento, cliente, tipo_pago, branch_id, cod_vendedor')
-      .eq('branch_id', Number(activeBranchId))
-      .gte('fecha', from).lte('fecha', to)
-      .order('fecha', { ascending: false })
-      .order('correlativo', { ascending: false })
-      .limit(500);
+    const { data, error } = await fetchBranchInvoicesForMonth(activeBranchId, from, to);
 
     if (error) console.error('WidgetAnnulmentRequest:', error.message);
     setInvoices(data || []);

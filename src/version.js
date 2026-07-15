@@ -5,8 +5,38 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.23';
+export const APP_VERSION = '2.17.24';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.24 — refactor(bloque6.A): WidgetAnnulmentRequest.jsx +
+// TabGenerar.jsx + CrearRutaModal.jsx — 19 supabase.from() migradas
+// (7+6+6). data/customers.js nuevo (1 fn: searchCustomersByTokens, con
+// el .or() dinámico por token intacto). data/requests.js +1 fn
+// (insertApprovalRequestSilent — variante sin .select() de vuelta,
+// reutilizada 4× por los 4 formularios de anulación/cambio de
+// pago/vendedor/cliente, que antes tenían 4 inserts idénticos en forma
+// pero con payload distinto). data/facturacion.js +2 fn
+// (fetchInvoiceItemsForInvoice, fetchBranchInvoicesForMonth).
+// data/pedidos.js +11 fn: 5 para TabGenerar (fetchActiveEmployeesBasic,
+// fetchPedidoNumero, fetchPedidoIdsSinceExcluding,
+// fetchPedidoSucursalStatusForPedidos, fetchPedidoItemsForPrintCapture
+// — esta última reutiliza updatePedidoSucursalStatus ya existente) y
+// 6 para CrearRutaModal (fetchEmployeeDriverInfo,
+// fetchPedidosDisponiblesParaRuta, fetchPedidoSucursalStatusFinalizados,
+// fetchSucursalesConCoords, fetchBranchIdsForSucursales — más 2 sitios
+// que reutilizan updateRutaStatus y fetchBranchIdForSucursal ya
+// definidos en PRs anteriores). Verificado en vivo con Playwright:
+// /pedidos?tab=generar (dashboard real de sucursales con % de
+// abastecimiento y 981 productos sin stock en Bodega), /overview
+// (widgets del dominio sales_invoices — Facturación Hoy, Top Productos —
+// con datos reales y cero errores, confirmando que las queries nuevas
+// de facturacion.js funcionan; el widget de anulación en sí no está en
+// el layout de dashboard de esta cuenta de prueba). CrearRutaModal.jsx
+// no se pudo ejercitar en vivo — el botón "Nueva Ruta" está detrás de
+// pedidos_tab_rutas.can_edit, permiso que esta cuenta no tiene (mismo
+// gap ya documentado para TabRutas.jsx en el PR anterior) — verificado
+// por sustitución 1:1 exacta de cada query. Sin errores de consola
+// atribuibles al cambio en ningún caso. Build + lint + 15 tests verdes.
 
 // v2.17.23 — refactor(bloque6.A): SchedulesView.jsx + TabRutas.jsx — 15
 // supabase.from() migradas (8+7). Módulo nuevo src/data/schedules.js (5 fn):

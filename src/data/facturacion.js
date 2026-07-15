@@ -68,6 +68,27 @@ export function fetchInvoiceResolutionIds() {
     return supabase.from('sales_invoice_resolutions').select('invoice_id');
 }
 
+// ── WidgetAnnulmentRequest.jsx (2 de sus 7 sitios; los otros 4 son inserts
+// idénticos que reutilizan insertApprovalRequestSilent de data/requests.js,
+// y 1 es búsqueda de clientes en data/customers.js) ─────────────────────────
+
+export function fetchInvoiceItemsForInvoice(invoiceId) {
+    return supabase.from('sales_invoice_items')
+        .select('descripcion, presentacion, cantidad, precio_unitario, total_linea')
+        .eq('invoice_id', invoiceId)
+        .order('total_linea', { ascending: false });
+}
+
+export function fetchBranchInvoicesForMonth(branchId, from, to) {
+    return supabase.from('sales_invoices')
+        .select('id, correlativo, fecha, total, tipo_documento, cliente, tipo_pago, branch_id, cod_vendedor')
+        .eq('branch_id', Number(branchId))
+        .gte('fecha', from).lte('fecha', to)
+        .order('fecha', { ascending: false })
+        .order('correlativo', { ascending: false })
+        .limit(500);
+}
+
 export function fetchInvoiceResolutionsHistorial(columns) {
     return supabase.from('sales_invoice_resolutions').select(columns).order('resolved_at', { ascending: false });
 }

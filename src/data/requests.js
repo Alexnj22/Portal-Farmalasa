@@ -117,6 +117,14 @@ export function insertApprovalRequest(payload) {
     return supabase.from('approval_requests').insert([payload]).select(REQUEST_SIMPLE_SELECT).single();
 }
 
+// Variante "silenciosa" (sin .select() de vuelta) — usada por
+// WidgetAnnulmentRequest.jsx en sus 4 formularios (annul/pay_change/
+// vendor_change/client_change): el caller solo chequea { error }, nunca
+// lee la fila insertada, así que no se agrega un round-trip extra.
+export function insertApprovalRequestSilent(payload) {
+    return supabase.from('approval_requests').insert(payload);
+}
+
 // ── approve/reject/cancel ────────────────────────────────────────────────────
 
 export function updateApprovalRequest(requestId, patch) {

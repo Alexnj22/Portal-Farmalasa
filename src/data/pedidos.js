@@ -192,3 +192,56 @@ export function fetchAttendancePunches(employeeId, sinceIso) {
         .eq('employee_id', employeeId).in('type', ['OUT_LUNCH', 'IN_LUNCH'])
         .gte('timestamp', sinceIso).order('timestamp', { ascending: false }).limit(10);
 }
+
+// ── TabGenerar.jsx (6 sitios) ─────────────────────────────────────────────────
+
+export function fetchActiveEmployeesBasic() {
+    return supabase.from('employees').select('id, first_names, last_names').eq('status', 'ACTIVO');
+}
+
+export function fetchPedidoNumero(pedidoId) {
+    return supabase.from('pedidos').select('numero').eq('id', pedidoId).single();
+}
+
+export function fetchPedidoIdsSinceExcluding(monthStartIso, excludeId) {
+    return supabase.from('pedidos').select('id').gte('created_at', monthStartIso).neq('id', excludeId);
+}
+
+export function fetchPedidoSucursalStatusForPedidos(pedidoIds, sucIds) {
+    return supabase.from('pedido_sucursal_status').select('erp_sucursal_id')
+        .in('pedido_id', pedidoIds).in('erp_sucursal_id', sucIds);
+}
+
+export function fetchPedidoItemsForPrintCapture(pedidoId, sucId) {
+    return supabase.from('pedido_items')
+        .select('id, factor, dispatch_factor, dispatch_tipo, cantidad_asignada, lotes_asignados, sin_stock, caja_especial, products(nombre, es_antibiotico, laboratorios(nombre))')
+        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).gt('cantidad_asignada', 0);
+}
+
+// ── CrearRutaModal.jsx (6 sitios — 2 de ellos reutilizan updateRutaStatus y
+// fetchBranchIdForSucursal ya definidos arriba) ─────────────────────────────
+
+export function fetchEmployeeDriverInfo(userId) {
+    return supabase.from('employees').select('first_names, last_names, photo_url').eq('id', userId).maybeSingle();
+}
+
+export function fetchPedidosDisponiblesParaRuta() {
+    return supabase.from('pedidos').select('id, numero')
+        .in('status', ['confirmado', 'enviado', 'parcial']).order('numero');
+}
+
+export function fetchPedidoSucursalStatusFinalizados() {
+    return supabase.from('pedido_sucursal_status')
+        .select('pedido_id, erp_sucursal_id, total_cajas, cajas_electrolit, cajas_especiales, finalizado_at')
+        .not('finalizado_at', 'is', null);
+}
+
+export function fetchSucursalesConCoords() {
+    return supabase.from('erp_sucursal_map')
+        .select('erp_sucursal_id, es_bodega, branch:branches!inner(settings, name)')
+        .order('erp_sucursal_id');
+}
+
+export function fetchBranchIdsForSucursales(sucIds) {
+    return supabase.from('erp_sucursal_map').select('erp_sucursal_id, branch_id').in('erp_sucursal_id', sucIds);
+}

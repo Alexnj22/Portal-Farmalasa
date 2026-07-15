@@ -5,9 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.3';
+export const APP_VERSION = '2.17.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.4 — refactor(bloque6.C): 3ra extracción de TabMinMax.jsx
+// (3507→2913 líneas, -594 — la extracción más grande hasta ahora).
+// `ExpandedPanel` → `tabminmax/ExpandedPanel.jsx`: el sub-componente más
+// grande y con más acoplamiento real de los 4 hechos hasta ahora — hace
+// sus propios fetches a Supabase (get_product_branch_summary,
+// get_product_expiring_lots, product_stock_params_history,
+// product_cost_history, get_product_last_sales) en 2 waves (branch
+// summary primero, resto en paralelo), usa useAuth/useNowTick, y
+// consume StockBar/AbcXyzBadge (ya extraídos en PRs anteriores —
+// primera vez que un componente extraído consume a otro).
+// De paso, quedaron compartidas por fin sin duplicar: ERP_NAMES/
+// ERP_ORDER/ALERT (usadas también en el cuerpo principal de TabMinMax,
+// ~25 sitios) → tabminmax/constants.js; sortedPres/smallestPres/
+// formatUnits/formatDominant (usadas en ambos lados) →
+// tabminmax/helpers.js. Extracción mecánica — misma lógica/JSX, solo
+// cambia el límite de archivo.
+// Verificado en vivo con Playwright expandiendo una fila real: grilla
+// de 7 sucursales con StockBar y badge "BORRADOR" ámbar, Referencia
+// pedido (cobertura 38.6d, MIN/MAX), Últimas compras/ventas con datos
+// reales (proveedor, cliente, fechas, precios), Proyección de stock
+// (+30/+60/+90d), Historial de cálculos con AbcXyzBadge anidado — todo
+// idéntico a como se veía antes de la extracción.
+// Build + lint + 15 tests unitarios verdes.
 // v2.17.3 — refactor(bloque6.C): 2da extracción de TabMinMax.jsx
 // (3800→3507 líneas, -293 líneas). `AbcXyzMatrix` (grilla ABC×XYZ
 // clicable, filtra la tabla) y `RowActions` (máx 3 botones + dropdown

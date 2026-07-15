@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { tokenMatch } from '../../utils/searchUtils';
@@ -11,6 +10,10 @@ import {
     FlaskConical, Truck, RotateCcw, Plus, Pencil, Trash2, Check, X, Loader2, ChevronDown, Ban,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+    fetchLaboratoriosBasic, fetchProveedores, fetchSuppliersNames, insertProveedor,
+    updateProveedor, deleteProveedor, fetchProductCountByLabDevolutivo, updateProductsMarkND,
+} from '../../data/laboratorios';
 
 let rowIdSeq = 0;
 const nextRowId = () => `new-${Date.now()}-${rowIdSeq++}`;
@@ -50,11 +53,9 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
     const load = useCallback(async () => {
         setLoading(true);
         const [{ data: labData }, { data: provData }, { data: supData }] = await Promise.all([
-            supabase.from('laboratorios').select('id, nombre').order('nombre'),
-            supabase.from('proveedores')
-                .select('id, laboratorio_id, nombre, devolutivo, meses_devolucion, notas')
-                .order('nombre'),
-            supabase.from('suppliers').select('nombre').order('nombre'),
+            fetchLaboratoriosBasic(),
+            fetchProveedores(),
+            fetchSuppliersNames(),
         ]);
         setLabs(labData || []);
         const map = {};
@@ -95,7 +96,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
             meses_devolucion: draft.devolutivo ? parseInt(draft.meses_devolucion, 10) : null,
             notas:            draft.notas.trim() || null,
         };
-        const { data, error } = await supabase.from('proveedores').insert(payload).select().single();
+        const { data, error } = await insertProveedor(payload);
         if (error) { useToastStore.getState().showToast('Error', error.message, 'error'); return false; }
         setProveedores(prev => ({ ...prev, [labId]: [...(prev[labId] || []), data].sort((a, b) => a.nombre.localeCompare(b.nombre)) }));
         const lab = labs.find(l => l.id === labId);
@@ -112,7 +113,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
             notas:            draft.notas.trim() || null,
             updated_at:       new Date().toISOString(),
         };
-        const { error } = await supabase.from('proveedores').update(payload).eq('id', proveedor.id);
+        const { error } = await updateProveedor(proveedor.id, payload);
         if (error) { useToastStore.getState().showToast('Error', error.message, 'error'); return false; }
         setProveedores(prev => ({
             ...prev,
@@ -131,7 +132,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
         const proveedor = deleteTarget;
         if (!proveedor) return;
         setDeleting(true);
-        const { error } = await supabase.from('proveedores').delete().eq('id', proveedor.id);
+        const { error } = await deleteProveedor(proveedor.id);
         setDeleting(false);
         setDeleteTarget(null);
         if (error) { useToastStore.getState().showToast('Error', error.message, 'error'); return; }
@@ -159,9 +160,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
 
     const handleMarkLabND = async (lab) => {
         setMarkingNDFor(lab.id);
-        const { count, error: countError } = await supabase
-            .from('products').select('id', { count: 'exact', head: true })
-            .eq('laboratorio_id', lab.id).eq('devolutivo', true);
+        const { count, error: countError } = await fetchProductCountByLabDevolutivo(lab.id);
         setMarkingNDFor(null);
         if (countError) { useToastStore.getState().showToast('Error', countError.message, 'error'); return; }
         if (!count) {
@@ -175,10 +174,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
         if (!ndConfirm) return;
         const { lab, count } = ndConfirm;
         setNdProcessing(true);
-        const { data, error } = await supabase.from('products')
-            .update({ devolutivo: false })
-            .eq('laboratorio_id', lab.id).eq('devolutivo', true)
-            .select('id');
+        const { data, error } = await updateProductsMarkND(lab.id);
         setNdProcessing(false);
         setNdConfirm(null);
         if (error) { useToastStore.getState().showToast('Error', error.message, 'error'); return; }

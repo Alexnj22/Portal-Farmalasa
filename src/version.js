@@ -5,9 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.19';
+export const APP_VERSION = '2.17.20';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.20 — refactor(bloque6.A): TabPoliticaVencimiento.jsx +
+// TabReglas.jsx + AttendanceAuditView.jsx — 25 supabase.from() migradas
+// (8+9+8; conteo real, no 21). Tres módulos nuevos: src/data/
+// laboratorios.js (8 fn), dispatchRules.js (9 fn), attendanceAudit.js
+// (5 fn) — attendanceAudit.js además reutiliza updateAttendancePunch/
+// updateEmployee de data/employees.js y updateApprovalRequest de
+// data/requests.js (mismo query exacto, no se duplica). Otro while-loop
+// manual de paginación 1000-en-1000 (dispatch_rules en TabReglas)
+// reemplazado por fetchAllRows.
+// Verificado en vivo con Playwright contra datos reales de producción:
+// Laboratorios/Política de Vencimiento (355 laboratorios, 18
+// proveedores reales), Reglas de Despacho (4,354 productos activos,
+// 845 con regla, 3,509 sin regla, filas reales), Auditoría de Tiempos
+// (8 empleados con nombres reales, 76 ausencias, quincena actual). Sin
+// errores de consola atribuibles al cambio. Build + lint + 15 tests
+// unitarios verdes.
 // v2.17.19 — refactor(bloque6.A): PermissionsView.jsx + CotizacionesView.jsx
 // — 25 supabase.from() migradas (10+15; conteo real, no 16). Dos módulos
 // nuevos: src/data/permissions.js (6 fn) y src/data/cotizaciones.js (8 fn).

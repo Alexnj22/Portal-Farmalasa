@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { normSearch } from '../../utils/searchUtils';
-import { supabase } from '../../supabaseClient';
 import {
     Loader2, Check, X, Ban, AlertTriangle, Package,
     Sparkles, FlaskConical, Box, Layers, Sigma,
@@ -9,6 +8,11 @@ import {
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination                   from '../../components/common/TablePagination';
+import {
+    fetchProductPresentacionesForDispatch, fetchLaboratoriosOcultarMinmax, fetchAllDispatchRules,
+    fetchActiveProductsCount, fetchNewProductsThisMonth, fetchProductsWithLabPage,
+    deleteDispatchRule, updateDispatchRule, insertDispatchRule,
+} from '../../data/dispatchRules';
 
 const MULTIPLO_PILLS = [1, 2, 3, 5, 10, 25, 50];
 const EASE           = [0.16, 1, 0.3, 1];
@@ -88,11 +92,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
             return;
         }
         setLoadingPres(true);
-        supabase
-            .from('product_precios')
-            .select('id, id_presentacion, factor, descripcion, presentaciones!inner(id, tipo)')
-            .eq('product_id', product.id)
-            .order('factor', { ascending: false })
+        fetchProductPresentacionesForDispatch(product.id)
             .then(({ data }) => {
                 // Deduplica por id_presentacion — queda la de mayor factor
                 const seen = new Set();
@@ -411,7 +411,7 @@ export default function TabReglas({ searchTerm = '' }) {
 
     // Carga IDs de labs ocultos en MinMax para excluirlos
     useEffect(() => {
-        supabase.from('laboratorios').select('id, ocultar_en_minmax')
+        fetchLaboratoriosOcultarMinmax()
             .then(({ data }) => {
                 setHiddenLabIds((data || []).filter(l => l.ocultar_en_minmax).map(l => l.id));
             });
@@ -424,24 +424,13 @@ export default function TabReglas({ searchTerm = '' }) {
         try {
             const now          = new Date();
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-            const SELECT_RULE  = 'id, erp_product_id, solo_cajas, multiplo, blister, multiplo_unidades, notes, dispatch_id_presentacion, dispatch_multiplo, dispatch_label, caja_especial, presentaciones(tipo)';
 
-            // Paginar dispatch_rules — PostgREST cap silencioso a 1000 filas
-            const PAGE = 1000;
-            let allRules = [], from = 0;
-            while (true) {
-                const { data, error } = await supabase.from('dispatch_rules')
-                    .select(SELECT_RULE).range(from, from + PAGE - 1);
-                if (error) throw error;
-                if (!data || data.length === 0) break;
-                allRules = allRules.concat(data);
-                if (data.length < PAGE) break;
-                from += PAGE;
-            }
+            // Paginado con fetchAllRows — PostgREST cap silencioso a 1000 filas
+            const allRules = await fetchAllDispatchRules() ?? [];
 
             const [totalRes, newRes] = await Promise.all([
-                supabase.from('products').select('id', { count: 'exact', head: true }).eq('activo', true),
-                supabase.from('products').select('id', { count: 'exact' }).eq('activo', true).gte('created_at', startOfMonth),
+                fetchActiveProductsCount(),
+                fetchNewProductsThisMonth(startOfMonth),
             ]);
 
             const map = {};
@@ -469,31 +458,12 @@ export default function TabReglas({ searchTerm = '' }) {
         try {
             const offset = (pg - 1) * pgSize;
             const dbSk = (sk === 'estado' || sk === 'despacho') ? 'laboratorio_nombre' : sk;
-            let q = supabase
-                .from('products_with_lab')
-                .select('id, nombre, es_antibiotico, laboratorio_nombre, laboratorio_id', { count: 'exact' })
-                .eq('activo', true)
-                .range(offset, offset + pgSize - 1);
-
-            if (hiddenLabs?.length > 0)
-                q = q.not('laboratorio_id', 'in', `(${hiddenLabs.join(',')})`);
-
             const asc = sd !== 'desc';
-            q = q.order(dbSk, { ascending: asc });
-            if (dbSk !== 'nombre') q = q.order('nombre', { ascending: true });
 
-            if (term.length >= 2) q = q.ilike('nombre', `%${normSearch(term) || term}%`);
-
-            if (ruleFilter === 'con') {
-                q = ruleIds.length > 0 ? q.in('id', ruleIds) : q.in('id', [0]);
-            } else if (ruleFilter === 'sin' && ruleIds.length > 0) {
-                q = q.not('id', 'in', `(${ruleIds.join(',')})`);
-            } else if (ruleFilter === 'nuevo') {
-                const arr = [...newIds];
-                q = arr.length > 0 ? q.in('id', arr) : q.in('id', [0]);
-            }
-
-            const { data, count, error } = await q;
+            const { data, count, error } = await fetchProductsWithLabPage({
+                offset, pageSize: pgSize, hiddenLabs, sortKey: dbSk, ascending: asc,
+                term: term.length >= 2 ? (normSearch(term) || term) : '', ruleFilter, ruleIds, newIds,
+            });
             if (error) throw error;
             setProducts(data || []);
             setTotalCount(count ?? 0);
@@ -547,7 +517,7 @@ export default function TabReglas({ searchTerm = '' }) {
             if (!v.dispatch_id_presentacion) {
                 // Quitar regla → delete si existe
                 if (existing) {
-                    const { error } = await supabase.from('dispatch_rules').delete().eq('id', existing.id);
+                    const { error } = await deleteDispatchRule(existing.id);
                     if (error) throw error;
                     useStaff.getState().appendAuditLog('ELIMINAR_REGLA_DESPACHO', String(existing.id), { erp_product_id: productId });
                     const next = { ...rulesMapRef.current };
@@ -571,14 +541,12 @@ export default function TabReglas({ searchTerm = '' }) {
                 };
                 let saved;
                 if (existing) {
-                    const { data, error } = await supabase.from('dispatch_rules')
-                        .update(payload).eq('id', existing.id).select().single();
+                    const { data, error } = await updateDispatchRule(existing.id, payload);
                     if (error) throw error;
                     saved = data;
                     useStaff.getState().appendAuditLog('EDITAR_REGLA_DESPACHO', String(existing.id), payload);
                 } else {
-                    const { data, error } = await supabase.from('dispatch_rules')
-                        .insert(payload).select().single();
+                    const { data, error } = await insertDispatchRule(payload);
                     if (error) throw error;
                     saved = data;
                     useStaff.getState().appendAuditLog('CREAR_REGLA_DESPACHO', String(productId), payload);

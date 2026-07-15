@@ -10,10 +10,15 @@ import {
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from "../context/AuthContext";
 import { useToastStore } from "../store/toastStore";
-import { supabase } from '../supabaseClient';
 import ModalShell from "../components/common/ModalShell";
 import GlassViewLayout from "../components/GlassViewLayout";
 import LiquidSelect from '../components/common/LiquidSelect';
+import {
+    fetchPendingShiftExceptions, fetchQuincenaTimesheets, approveTimesheetsBulk,
+    closeQuincenaTimesheets, fetchEmployeeExceptions,
+} from '../data/attendanceAudit';
+import { updateAttendancePunch, updateEmployee } from '../data/employees';
+import { updateApprovalRequest } from '../data/requests';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const EMPTY_ARRAY = [];
@@ -946,10 +951,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     if (isDemoMode) { setShiftExceptions([]); return; }
     const qEnd = getQuincenaEnd(selectedQuincena);
     let cancelled = false;
-    supabase.from('approval_requests')
-      .select('id, employee_id, status, note, metadata, created_at')
-      .eq('type', 'SHIFT_EXCEPTION')
-      .eq('status', 'PENDING')
+    fetchPendingShiftExceptions()
       .then(({ data }) => {
         if (cancelled) return;
         const inQuincena = (data || []).filter(r => {
@@ -966,9 +968,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     if (isDemoMode) return;
     let cancelled = false;
     const qEnd = getQuincenaEnd(selectedQuincena);
-    supabase.from('timesheets')
-      .select('id, employee_id, work_date, regular_hours, overtime_hours, late_minutes, is_absent, status, nocturnal_hours, nocturnal_overtime_hours, absence_type')
-      .gte('work_date', selectedQuincena).lte('work_date', qEnd)
+    fetchQuincenaTimesheets(selectedQuincena, qEnd)
       .then(({ data }) => { if (!cancelled) setQuincenaTS(data || []); });
     return () => { cancelled = true; };
   }, [selectedQuincena, isDemoMode]);
@@ -1032,9 +1032,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     const pending = quincenaTS.filter(ts => String(ts.employee_id) === String(emp.id) && ts.status !== 'APPROVED');
     if (!pending.length) return;
     const ids = pending.map(ts => ts.id);
-    const { error } = await supabase.from('timesheets')
-      .update({ status: 'APPROVED', approver_id: user?.id, updated_at: new Date().toISOString() })
-      .in('id', ids);
+    const { error } = await approveTimesheetsBulk(ids, user?.id);
     if (!error) {
       setQuincenaTS(prev => prev.map(ts => ids.includes(ts.id) ? { ...ts, status: 'APPROVED' } : ts));
       appendAuditLog?.('TIMESHEETS_BULK_APPROVED', user?.id, { empId: emp.id, count: ids.length, quincena: selectedQuincena, actorName: user?.name });
@@ -1050,7 +1048,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
     if (unapproved.length === 0) { showToast('Sin cambios', 'Todos los registros ya están aprobados.', 'info'); return; }
     setIsClosingQuincena(true);
     const ids = unapproved.map(ts => ts.id);
-    const { error } = await supabase.from('timesheets').update({ status: 'APPROVED' }).in('id', ids);
+    const { error } = await closeQuincenaTimesheets(ids);
     if (!error) {
       setQuincenaTS(prev => prev.map(ts => ids.includes(ts.id) ? { ...ts, status: 'APPROVED' } : ts));
     }
@@ -1142,7 +1140,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
       const now = new Date().toISOString();
       for (const p of pendingPunches) {
         const newDetails = { ...p.details, pendingHRReview: false, hrReviewedBy: user?.name, hrReviewedAt: now };
-        await supabase.from('attendance').update({ details: newDetails }).eq('id', p.id);
+        await updateAttendancePunch(p.id, { details: newDetails });
       }
       appendAuditLog?.('ATTENDANCE_HR_REVIEW_CLEARED', user?.id, {
         empId: emp.id, date: dateStr, count: pendingPunches.length, actorName: user?.name
@@ -1165,8 +1163,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
 
       if (action === 'APPROVE' && confirmedStart && confirmedEnd) {
         // Write exception to employee record so consolidate-timesheets uses declared hours
-        const { data: empRow } = await supabase
-          .from('employees').select('id, exceptions').eq('id', req.employee_id).single();
+        const { data: empRow } = await fetchEmployeeExceptions(req.employee_id);
         if (empRow) {
           const existing = Array.isArray(empRow.exceptions) ? empRow.exceptions : [];
           const filtered = existing.filter(ex => ex.date !== meta.date);
@@ -1178,15 +1175,11 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
             customEnd: confirmedEnd,
             note: `Turno extra confirmado por TH (${user?.name || 'supervisor'})`,
           };
-          await supabase.from('employees')
-            .update({ exceptions: [...filtered, newEx], updated_at: new Date().toISOString() })
-            .eq('id', req.employee_id);
+          await updateEmployee(req.employee_id, { exceptions: [...filtered, newEx], updated_at: new Date().toISOString() });
         }
       }
 
-      await supabase.from('approval_requests')
-        .update({ status: newStatus, approver_id: user?.id, updated_at: new Date().toISOString() })
-        .eq('id', req.id);
+      await updateApprovalRequest(req.id, { status: newStatus, approver_id: user?.id, updated_at: new Date().toISOString() });
 
       setShiftExceptions(prev => prev.filter(r => r.id !== req.id));
       setEditingExId(null);

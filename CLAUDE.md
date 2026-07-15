@@ -93,6 +93,23 @@ listadas arriba, aplicar primero ahí con `apply_migration` apuntando a ese
 Ya se usó así para 0B.8 (RPC `verify_kiosk_device`) y 0B.2 (secretos de Vault
 en `cron.job.command`) — ambos sin incidentes.
 
+**Todo `apply_migration` necesita su archivo local en el mismo commit
+(incidente descubierto 2026-07-15, Bloque 3.5).** La tool `apply_migration`
+SOLO escribe en el servidor (`supabase_migrations.schema_migrations`) —
+nunca toca el disco. Guardar el archivo en `supabase/migrations/` es un
+paso manual aparte que durante meses se hizo inconsistente (a veces con
+nombre distinto al de la migración real, a veces consolidando 3-8
+migraciones chicas de una sesión en un solo archivo resumido). Resultado:
+el servidor tiene 584 migraciones registradas, git solo 180 — no es
+trabajo perdido (el 78% de los archivos locales sí corresponden a algo
+real, solo que resumido/renombrado), pero significa que reconstruir el
+esquema desde cero solo con los archivos locales no reproduce fielmente
+la historia real aplicada, lo cual rompe cosas como crear un branch de
+staging limpio. Regla: el `name` que se le pasa a `apply_migration` DEBE
+ser el mismo nombre del archivo que se crea en `supabase/migrations/`
+(sin resumir, sin combinar varias migraciones en un archivo), y el archivo
+se crea en la misma sesión de trabajo — nunca "lo consolido después".
+
 **Edge functions**: NUNCA ignorar el `error` de un query supabase-js
 (`const { data } = await ...` sin chequear `error`). Un select que falla en
 silencio deja Maps/lookups vacíos y el bug puede vivir semanas sin detectarse

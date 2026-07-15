@@ -1,4 +1,9 @@
-import { supabase } from '../../supabaseClient';
+import {
+    fetchPayrollPeriods as fetchPayrollPeriodsData, insertPayrollPeriod, updatePayrollPeriod,
+    fetchPayrollEntriesByPeriod, deletePendingPayrollEntries, insertPayrollEntries, updatePayrollEntry as updatePayrollEntryData,
+    fetchTimesheetsForPeriod, fetchApprovedAdvances, fetchVacationPlansOverlapping,
+    fetchOvertimeBankRows, deleteEarnedOvertimeBank, insertOvertimeBank,
+} from '../../data/payroll';
 
 // ─── El Salvador ISR (Renta) biweekly table ─────────────────────────────────
 // Base: net quincena after ISSS & AFP deductions
@@ -95,10 +100,7 @@ export const createPayrollSlice = (set, get) => ({
     // ── Periods ──────────────────────────────────────────────────────────────
 
     fetchPayrollPeriods: async () => {
-        const { data, error } = await supabase
-            .from('payroll_periods')
-            .select('*')
-            .order('start_date', { ascending: false });
+        const { data, error } = await fetchPayrollPeriodsData();
         if (error) { console.error(error); return []; }
         set({ payrollPeriods: data || [] });
         return data || [];
@@ -106,20 +108,16 @@ export const createPayrollSlice = (set, get) => ({
 
     createPayrollPeriod: async (periodData) => {
         const user = get().user;
-        const { data, error } = await supabase
-            .from('payroll_periods')
-            .insert([{
-                name:        periodData.name,
-                period_type: periodData.period_type || 'QUINCENA',
-                start_date:  periodData.start_date,
-                end_date:    periodData.end_date,
-                pay_date:    periodData.pay_date || null,
-                branch_id:   periodData.branch_id || null,
-                status:      'DRAFT',
-                created_by:  user?.id || null,
-            }])
-            .select()
-            .single();
+        const { data, error } = await insertPayrollPeriod({
+            name:        periodData.name,
+            period_type: periodData.period_type || 'QUINCENA',
+            start_date:  periodData.start_date,
+            end_date:    periodData.end_date,
+            pay_date:    periodData.pay_date || null,
+            branch_id:   periodData.branch_id || null,
+            status:      'DRAFT',
+            created_by:  user?.id || null,
+        });
         if (error) throw error;
         set(s => ({ payrollPeriods: [data, ...s.payrollPeriods] }));
         return data;
@@ -136,10 +134,7 @@ export const createPayrollSlice = (set, get) => ({
             updatePayload.paid_by = user?.id;
             updatePayload.paid_at = new Date().toISOString();
         }
-        const { error } = await supabase
-            .from('payroll_periods')
-            .update(updatePayload)
-            .eq('id', periodId);
+        const { error } = await updatePayrollPeriod(periodId, updatePayload);
         if (error) throw error;
         set(s => ({
             payrollPeriods: s.payrollPeriods.map(p =>
@@ -155,11 +150,7 @@ export const createPayrollSlice = (set, get) => ({
 
     fetchPayrollEntries: async (periodId) => {
         set({ isLoadingPayroll: true });
-        const { data, error } = await supabase
-            .from('payroll_entries')
-            .select('*')
-            .eq('period_id', periodId)
-            .order('created_at', { ascending: true });
+        const { data, error } = await fetchPayrollEntriesByPeriod(periodId);
         if (error) { console.error(error); set({ isLoadingPayroll: false }); return []; }
 
         const employees = get().employees || [];
@@ -189,11 +180,7 @@ export const createPayrollSlice = (set, get) => ({
                 .map(e => e.name || String(e.id));
 
             // #2 — Load timesheets including nocturnal + diurnal OT columns
-            const { data: sheets, error: sheetsErr } = await supabase
-                .from('timesheets')
-                .select('employee_id, is_absent, work_date, nocturnal_hours, nocturnal_overtime_hours, overtime_hours')
-                .gte('work_date', period.start_date)
-                .lte('work_date', period.end_date);
+            const { data: sheets, error: sheetsErr } = await fetchTimesheetsForPeriod(period.start_date, period.end_date);
             if (sheetsErr) throw new Error(`No se pudieron cargar los timesheets del período: ${sheetsErr.message}`);
 
             const daysMap      = new Map();
@@ -212,13 +199,7 @@ export const createPayrollSlice = (set, get) => ({
             }
 
             // #1 — Fix: request type is 'ADVANCE' in DB (was incorrectly querying 'ADELANTO')
-            const { data: advances, error: advancesErr } = await supabase
-                .from('approval_requests')
-                .select('employee_id, metadata')
-                .eq('type', 'ADVANCE')
-                .eq('status', 'APPROVED')
-                .gte('created_at', period.start_date)
-                .lte('created_at', period.end_date + 'T23:59:59');
+            const { data: advances, error: advancesErr } = await fetchApprovedAdvances(period.start_date, period.end_date + 'T23:59:59');
             if (advancesErr) throw new Error(`No se pudieron cargar los anticipos aprobados del período: ${advancesErr.message}`);
 
             const advanceMap = new Map();
@@ -228,12 +209,7 @@ export const createPayrollSlice = (set, get) => ({
             }
 
             // #7 — Vacation plans overlapping period: those days are paid (not absent)
-            const { data: vacPlans, error: vacPlansErr } = await supabase
-                .from('vacation_plans')
-                .select('employee_id, start_date, end_date')
-                .in('status', ['CONFIRMED', 'APPROVED', 'TAKEN'])
-                .lte('start_date', period.end_date)
-                .gte('end_date', period.start_date);
+            const { data: vacPlans, error: vacPlansErr } = await fetchVacationPlansOverlapping(period.end_date, period.start_date);
             if (vacPlansErr) throw new Error(`No se pudieron cargar los planes de vacaciones del período: ${vacPlansErr.message}`);
 
             const vacDaysMap  = new Map();
@@ -259,11 +235,7 @@ export const createPayrollSlice = (set, get) => ({
             const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
             // Delete existing PENDING entries for this period
-            await supabase
-                .from('payroll_entries')
-                .delete()
-                .eq('period_id', periodId)
-                .eq('status', 'PENDING');
+            await deletePendingPayrollEntries(periodId);
 
             const rows = employees.map(emp => {
                 const empId      = String(emp.id);
@@ -290,13 +262,13 @@ export const createPayrollSlice = (set, get) => ({
             });
 
             if (rows.length > 0) {
-                const { error } = await supabase.from('payroll_entries').insert(rows);
+                const { error } = await insertPayrollEntries(rows);
                 if (error) throw error;
             }
 
             // OT Bank — seed EARNED entries for both diurnal and nocturnal OT.
             // Idempotent: delete prior EARNED entries for this period before re-inserting.
-            await supabase.from('overtime_bank').delete().eq('period_id', periodId).eq('type', 'EARNED');
+            await deleteEarnedOvertimeBank(periodId);
             const bankRows = [];
             for (const emp of employees) {
                 const empId    = String(emp.id);
@@ -306,7 +278,7 @@ export const createPayrollSlice = (set, get) => ({
                 if (nocturnal > 0) bankRows.push({ employee_id: emp.id, hours: nocturnal, type: 'EARNED', subtype: 'NOCTURNAL', period_id: periodId });
             }
             if (bankRows.length > 0) {
-                await supabase.from('overtime_bank').insert(bankRows);
+                await insertOvertimeBank(bankRows);
             }
 
             await get().fetchPayrollEntries(periodId);
@@ -321,10 +293,7 @@ export const createPayrollSlice = (set, get) => ({
     // ── OT Bank ───────────────────────────────────────────────────────────────
 
     fetchOvertimeBankBalance: async (employeeId) => {
-        const { data, error } = await supabase
-            .from('overtime_bank')
-            .select('hours, type')
-            .eq('employee_id', employeeId);
+        const { data, error } = await fetchOvertimeBankRows(employeeId);
         if (error) console.error('fetchOvertimeBankBalance failed:', error.message);
         let pending = 0;
         for (const row of data || []) {
@@ -335,7 +304,7 @@ export const createPayrollSlice = (set, get) => ({
     },
 
     redeemOvertimeBank: async (employeeId, hours, type, subtype, periodId, notes, createdBy) => {
-        const { error } = await supabase.from('overtime_bank').insert({
+        const { error } = await insertOvertimeBank({
             employee_id: employeeId,
             hours:       parseFloat(hours.toFixed(2)),
             type,
@@ -374,10 +343,7 @@ export const createPayrollSlice = (set, get) => ({
             updated_at:   new Date().toISOString(),
         };
 
-        const { error } = await supabase
-            .from('payroll_entries')
-            .update(payload)
-            .eq('id', entryId);
+        const { error } = await updatePayrollEntryData(entryId, payload);
         if (error) { console.error(error); return false; }
 
         set(s => ({

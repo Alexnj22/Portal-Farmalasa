@@ -1,4 +1,7 @@
-import { supabase } from '../../supabaseClient';
+import {
+    upsertInstitucionCatalogEntry, fetchPracticantes as fetchPracticantesData,
+    insertPracticante, updatePracticante as updatePracticanteData, deletePracticante as deletePracticanteData,
+} from '../../data/practicantes';
 
 // Institución educativa vive en education_catalog_entries (misma tabla que
 // especialidades/profesiones de Empleados) — cada vez que se guarda un
@@ -6,8 +9,7 @@ import { supabase } from '../../supabaseClient';
 // para el siguiente registro. onConflict ignora duplicados.
 const registerInstitucionCatalogEntry = (institucion) => {
     if (!institucion) return;
-    supabase.from('education_catalog_entries')
-        .upsert([{ category: 'INSTITUCION_EDUCATIVA', value: institucion }], { onConflict: 'category,value', ignoreDuplicates: true })
+    upsertInstitucionCatalogEntry(institucion)
         .then(({ error }) => { if (error) console.warn('No se pudo registrar institución en catálogo:', error.message); });
 };
 
@@ -18,10 +20,7 @@ export const createPracticantesSlice = (set, get) => ({
     fetchPracticantes: async () => {
         set({ practicantesLoading: true });
         try {
-            const { data, error } = await supabase
-                .from('practicantes')
-                .select('*, branches(name), supervisor:supervisor_employee_id(id, first_names, last_names)')
-                .order('created_at', { ascending: false });
+            const { data, error } = await fetchPracticantesData();
             if (error) throw error;
             set({ practicantes: data || [] });
             return data || [];
@@ -34,7 +33,7 @@ export const createPracticantesSlice = (set, get) => ({
     },
 
     createPracticante: async (payload) => {
-        const { data: newRow, error } = await supabase.from('practicantes').insert([payload]).select('*, branches(name), supervisor:supervisor_employee_id(id, first_names, last_names)').single();
+        const { data: newRow, error } = await insertPracticante(payload);
         if (error) throw error;
         registerInstitucionCatalogEntry(newRow.institucion_educativa);
 
@@ -50,7 +49,7 @@ export const createPracticantesSlice = (set, get) => ({
     },
 
     updatePracticante: async (id, payload) => {
-        const { data: updated, error } = await supabase.from('practicantes').update(payload).eq('id', id).select('*, branches(name), supervisor:supervisor_employee_id(id, first_names, last_names)').single();
+        const { data: updated, error } = await updatePracticanteData(id, payload);
         if (error) throw error;
         registerInstitucionCatalogEntry(updated.institucion_educativa);
 
@@ -67,7 +66,7 @@ export const createPracticantesSlice = (set, get) => ({
 
     deletePracticante: async (id) => {
         const target = get().practicantes.find((p) => p.id === id);
-        const { error } = await supabase.from('practicantes').delete().eq('id', id);
+        const { error } = await deletePracticanteData(id);
         if (error) throw error;
 
         await get().appendAuditLog('PRACTICANTE_ELIMINADO', id, {

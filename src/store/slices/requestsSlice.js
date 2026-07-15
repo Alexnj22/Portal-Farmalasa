@@ -1,6 +1,16 @@
-import { supabase } from '../../supabaseClient';
 import { useToastStore } from '../toastStore';
 import { notifyEmployees } from '../../utils/notify';
+import {
+    fetchEmployeeAvailabilityEvents, fetchAllRolesHierarchy, fetchRolesByNamePattern,
+    fetchActiveEmployeesInRoleAndBranch, fetchBranchAdmins, fetchGlobalAdmins, fetchAnyActiveAdmin,
+    fetchApprovalRolePermissions, fetchActiveEmployeesInRoles, fetchActiveEmployeesBySystemRoleConditional,
+    fetchActiveEmployeesByRoleIdConditional, fetchActiveBranchEmployeesExcluding, fetchRostersForWeekByEmployees,
+    fetchBranchActiveEmployeeIds, fetchApprovalRequestsList, fetchEmployeesByIds, fetchEmployeeApprovalInfo,
+    fetchEmployeeName, insertApprovalRequest, updateApprovalRequest, fetchApprovalRequestById,
+    fetchEmployeeSystemRole, fetchShiftsBasic, fetchPublishedRostersForSwap, updateEmployeeRosterById,
+} from '../../data/requests';
+import { fetchEmployeeRosterSchedule } from '../../data/employees';
+import { upsertWeeklyRoster } from '../../data/system';
 
 // ============================================================================
 // 📋 SOLICITUDES — Employee-initiated requests requiring admin approval
@@ -43,12 +53,7 @@ const parseMeta = (raw) =>
 const isUnavailable = async (employeeId) => {
     const today = new Date().toISOString().split('T')[0];
     try {
-        const { data: events, error } = await supabase
-            .from('employee_events')
-            .select('date, metadata')
-            .eq('employee_id', employeeId)
-            .in('type', ['VACATION', 'DISABILITY'])
-            .lte('date', today);
+        const { data: events, error } = await fetchEmployeeAvailabilityEvents(employeeId);
         if (error) console.error('isUnavailable: fetch employee_events failed:', error.message);
 
         if (!events?.length) return false;
@@ -70,22 +75,14 @@ const isUnavailable = async (employeeId) => {
 const resolveApprover = async (employeeId, branchId, roleId) => {
     try {
         // Cargar todos los roles de una vez para recorrer el árbol sin N queries
-        const { data: allRoles, error: rolesErr } = await supabase
-            .from('roles')
-            .select('id, name, parent_role_id, secondary_parent_role_id');
+        const { data: allRoles, error: rolesErr } = await fetchAllRolesHierarchy();
         if (rolesErr) console.error('resolveApprover: fetch roles failed:', rolesErr.message);
 
         if (!allRoles) return null;
         const roleMap = Object.fromEntries(allRoles.map(r => [r.id, r]));
 
         const findAvailableInRole = async (targetRoleId) => {
-            const { data, error } = await supabase
-                .from('employees')
-                .select('id')
-                .eq('role_id', targetRoleId)
-                .eq('branch_id', branchId)
-                .eq('status', 'ACTIVO')
-                .neq('id', employeeId);
+            const { data, error } = await fetchActiveEmployeesInRoleAndBranch(targetRoleId, branchId, employeeId);
             if (error) console.error('resolveApprover.findAvailableInRole failed:', error.message);
 
             for (const c of (data || [])) {
@@ -119,25 +116,13 @@ const resolveApprover = async (employeeId, branchId, roleId) => {
         }
 
         // Fallback: cualquier admin activo en la sucursal
-        const { data: admins, error: adminsErr } = await supabase
-            .from('employees')
-            .select('id')
-            .eq('branch_id', branchId)
-            .eq('is_admin', true)
-            .eq('status', 'ACTIVO')
-            .neq('id', employeeId);
+        const { data: admins, error: adminsErr } = await fetchBranchAdmins(branchId, employeeId);
         if (adminsErr) console.error('resolveApprover: fetch branch admins failed:', adminsErr.message);
 
         if (admins?.[0]?.id) return admins[0].id;
 
         // Último fallback: cualquier admin global
-        const { data: globalAdmins, error: globalErr } = await supabase
-            .from('employees')
-            .select('id')
-            .eq('is_admin', true)
-            .eq('status', 'ACTIVO')
-            .neq('id', employeeId)
-            .limit(1);
+        const { data: globalAdmins, error: globalErr } = await fetchGlobalAdmins(employeeId);
         if (globalErr) console.error('resolveApprover: fetch global admins failed:', globalErr.message);
 
         return globalAdmins?.[0]?.id || null;
@@ -154,22 +139,12 @@ const resolveApprover = async (employeeId, branchId, roleId) => {
 // por eq('approver_id', ...), que nunca matchea null).
 const resolveFallbackApprover = async (excludeId) => {
     try {
-        const { data: roleRows, error: roleErr } = await supabase
-            .from('role_permissions')
-            .select('role_id')
-            .eq('module_key', 'requests')
-            .eq('can_approve', true);
+        const { data: roleRows, error: roleErr } = await fetchApprovalRolePermissions();
         if (roleErr) console.error('resolveFallbackApprover: fetch role_permissions failed:', roleErr.message);
         const roleIds = (roleRows || []).map(r => r.role_id);
         if (!roleIds.length) return null;
 
-        const { data: emps, error: empsErr } = await supabase
-            .from('employees')
-            .select('id')
-            .in('role_id', roleIds)
-            .eq('status', 'ACTIVO')
-            .neq('id', excludeId)
-            .limit(1);
+        const { data: emps, error: empsErr } = await fetchActiveEmployeesInRoles(roleIds, excludeId);
         if (empsErr) console.error('resolveFallbackApprover: fetch employees failed:', empsErr.message);
         return emps?.[0]?.id || null;
     } catch (err) {
@@ -182,13 +157,7 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
     try {
         const findBySystemRole = async (roles, sameBranch = false) => {
             for (const role of roles) {
-                let q = supabase.from('employees')
-                    .select('id')
-                    .eq('system_role', role)
-                    .eq('status', 'ACTIVO');
-                if (sameBranch && branchId) q = q.eq('branch_id', branchId);
-                if (excludeId) q = q.neq('id', excludeId);
-                const { data, error } = await q;
+                const { data, error } = await fetchActiveEmployeesBySystemRoleConditional(role, branchId, excludeId, sameBranch);
                 if (error) console.error('resolveNextApprover.findBySystemRole failed:', error.message);
                 for (const c of (data || [])) {
                     if (!(await isUnavailable(c.id))) return c.id;
@@ -199,19 +168,12 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
 
         // Resuelve role IDs por nombre (ilike) para evitar IDs hardcodeados
         const findByRoleName = async (namePattern, sameBranch = false) => {
-            const { data: matchedRoles, error: rolesErr } = await supabase
-                .from('roles').select('id').ilike('name', `%${namePattern}%`);
+            const { data: matchedRoles, error: rolesErr } = await fetchRolesByNamePattern(namePattern);
             if (rolesErr) console.error('resolveNextApprover.findByRoleName: fetch roles failed:', rolesErr.message);
             const roleIds = (matchedRoles || []).map(r => r.id);
             if (!roleIds.length) return null;
             for (const roleId of roleIds) {
-                let q = supabase.from('employees')
-                    .select('id')
-                    .eq('role_id', roleId)
-                    .eq('status', 'ACTIVO');
-                if (sameBranch && branchId) q = q.eq('branch_id', branchId);
-                if (excludeId) q = q.neq('id', excludeId);
-                const { data, error } = await q;
+                const { data, error } = await fetchActiveEmployeesByRoleIdConditional(roleId, branchId, excludeId, sameBranch);
                 if (error) console.error('resolveNextApprover.findByRoleName failed:', error.message);
                 for (const c of (data || [])) {
                     if (!(await isUnavailable(c.id))) return c.id;
@@ -240,11 +202,7 @@ const resolveNextApprover = async (level, branchId, excludeId = null) => {
                 || await findBySystemRole(['SUPERADMIN']);
             if (byName) return byName;
 
-            const { data: anyAdmin, error: anyAdminErr } = await supabase.from('employees')
-                .select('id')
-                .eq('is_admin', true)
-                .eq('status', 'ACTIVO')
-                .limit(1);
+            const { data: anyAdmin, error: anyAdminErr } = await fetchAnyActiveAdmin();
             if (anyAdminErr) console.error('resolveNextApprover(level 3): fetch fallback admin failed:', anyAdminErr.message);
             return anyAdmin?.[0]?.id || null;
         }
@@ -320,12 +278,7 @@ const markDisabilityDaysInRoster = async (employeeId, startDate, endDate) => {
         }
 
         for (const [weekStart, dayIds] of Object.entries(weekMap)) {
-            const { data: roster, error: rosterErr } = await supabase
-                .from('employee_rosters')
-                .select('schedule_data')
-                .eq('employee_id', employeeId)
-                .eq('week_start_date', weekStart)
-                .maybeSingle();
+            const { data: roster, error: rosterErr } = await fetchEmployeeRosterSchedule(employeeId, weekStart);
             if (rosterErr) console.error('markDisabilityDaysInRoster: fetch roster failed:', rosterErr.message);
 
             const raw = roster?.schedule_data || {};
@@ -335,10 +288,7 @@ const markDisabilityDaysInRoster = async (employeeId, startDate, endDate) => {
                 sched[dayId] = { shiftId: 'LIBRE', note: 'Incapacidad' };
             }
 
-            await supabase.from('employee_rosters').upsert(
-                { employee_id: employeeId, week_start_date: weekStart, schedule_data: sched },
-                { onConflict: 'employee_id, week_start_date' }
-            );
+            await upsertWeeklyRoster({ employee_id: employeeId, week_start_date: weekStart, schedule_data: sched });
         }
         return true;
     } catch (err) {
@@ -360,19 +310,14 @@ const markVacationDaysInRoster = async (employeeId, startDate, endDate) => {
             weekMap[weekKey].push(dayId);
         }
         for (const [weekStart, dayIds] of Object.entries(weekMap)) {
-            const { data: roster, error: rosterErr } = await supabase
-                .from('employee_rosters').select('schedule_data')
-                .eq('employee_id', employeeId).eq('week_start_date', weekStart).maybeSingle();
+            const { data: roster, error: rosterErr } = await fetchEmployeeRosterSchedule(employeeId, weekStart);
             if (rosterErr) console.error('markVacationDaysInRoster: fetch roster failed:', rosterErr.message);
             const raw = roster?.schedule_data || {};
             const sched = typeof raw === 'string' ? JSON.parse(raw || '{}') : { ...raw };
             for (const dayId of dayIds) {
                 sched[dayId] = { shiftId: 'LIBRE', note: 'Vacaciones' };
             }
-            await supabase.from('employee_rosters').upsert(
-                { employee_id: employeeId, week_start_date: weekStart, schedule_data: sched },
-                { onConflict: 'employee_id, week_start_date' }
-            );
+            await upsertWeeklyRoster({ employee_id: employeeId, week_start_date: weekStart, schedule_data: sched });
         }
         return true;
     } catch (err) {
@@ -389,12 +334,7 @@ const checkAndAlertCoverage = async (employeeId, branchId, startDate, endDate, a
     try {
         if (!branchId) return;
 
-        const { data: branchEmps, error: branchEmpsErr } = await supabase
-            .from('employees')
-            .select('id')
-            .eq('branch_id', branchId)
-            .eq('status', 'ACTIVO')
-            .neq('id', employeeId);
+        const { data: branchEmps, error: branchEmpsErr } = await fetchActiveBranchEmployeesExcluding(branchId, employeeId);
         if (branchEmpsErr) console.error('checkAndAlertCoverage: fetch branch employees failed:', branchEmpsErr.message);
 
         const branchEmpIds = (branchEmps || []).map(e => e.id);
@@ -416,11 +356,7 @@ const checkAndAlertCoverage = async (employeeId, branchId, startDate, endDate, a
         let minCoverage = branchEmpIds.length;
 
         for (const weekStart of weekStarts) {
-            const { data: rosters, error: rostersErr } = await supabase
-                .from('employee_rosters')
-                .select('employee_id, schedule_data')
-                .eq('week_start_date', weekStart)
-                .in('employee_id', branchEmpIds);
+            const { data: rosters, error: rostersErr } = await fetchRostersForWeekByEmployees(weekStart, branchEmpIds);
             if (rostersErr) console.error('checkAndAlertCoverage: fetch rosters failed:', rostersErr.message);
 
             const weekStartDate = new Date(weekStart + 'T00:00:00');
@@ -475,8 +411,6 @@ const _sendCoverageAlert = async (branchId, startDate, endDate, approverId, empl
 
 // ── Slice ───────────────────────────────────────────────────────────────────
 
-const SIMPLE_SELECT = 'id, type, status, note, metadata, approver_note, created_at, updated_at, employee_id, approver_id, current_level, approvals';
-
 export const createRequestsSlice = (set, get) => ({
     // ── State ──────────────────────────────────────────────────────────────
     requests: [],
@@ -489,30 +423,17 @@ export const createRequestsSlice = (set, get) => ({
             // Si se pide filtro por sucursal, obtener IDs de empleados de esa sucursal
             let branchEmpIds = null;
             if (branchId) {
-                const { data: branchEmps, error: branchEmpsErr } = await supabase
-                    .from('employees')
-                    .select('id')
-                    .eq('branch_id', branchId)
-                    .eq('status', 'ACTIVO');
+                const { data: branchEmps, error: branchEmpsErr } = await fetchBranchActiveEmployeeIds(branchId);
                 if (branchEmpsErr) console.error('fetchRequests: fetch branch employees failed:', branchEmpsErr.message);
                 branchEmpIds = (branchEmps || []).map(e => e.id);
             }
 
             // 1. Fetch solicitudes sin joins
-            let query = supabase
-                .from('approval_requests')
-                .select(SIMPLE_SELECT)
-                .order('created_at', { ascending: false });
-
-            if (employeeId) query = query.eq('employee_id', employeeId);
-            if (branchEmpIds && branchEmpIds.length > 0) query = query.in('employee_id', branchEmpIds);
             // Incluye huérfanas (approver_id null) como red de seguridad — no deberían
             // existir tras el fallback de createRequest, pero si alguna se cuela no
             // debe quedar invisible para todo aprobador (RLS ya permite verlas: la
             // policy de SELECT da acceso total a can_approve, este filtro es solo UI).
-            if (approverId) query = query.or(`approver_id.eq.${approverId},approver_id.is.null`);
-
-            const { data: requests, error } = await query;
+            const { data: requests, error } = await fetchApprovalRequestsList({ employeeId, branchEmpIds, approverId });
             if (error) throw error;
 
             // 2. IDs únicos de empleados y aprobadores
@@ -524,10 +445,7 @@ export const createRequestsSlice = (set, get) => ({
             // 3. Fetch empleados por IDs
             let empRows = [];
             if (empIds.length > 0) {
-                const { data, error: empErr } = await supabase
-                    .from('employees')
-                    .select('id, name, code, role_id, branch_id, system_role')
-                    .in('id', empIds);
+                const { data, error: empErr } = await fetchEmployeesByIds(empIds, 'id, name, code, role_id, branch_id, system_role');
                 if (empErr) console.error('fetchRequests: fetch employees failed:', empErr.message);
                 empRows = data || [];
             }
@@ -540,10 +458,7 @@ export const createRequestsSlice = (set, get) => ({
                 (requests || []).map(r => r.approver_id).filter(id => id && !empMap[id])
             )];
             if (missingIds.length > 0) {
-                const { data: extra, error: extraErr } = await supabase
-                    .from('employees')
-                    .select('id, name, code, role_id, branch_id, system_role')
-                    .in('id', missingIds);
+                const { data: extra, error: extraErr } = await fetchEmployeesByIds(missingIds, 'id, name, code, role_id, branch_id, system_role');
                 if (extraErr) console.error('fetchRequests: fetch missing approvers failed:', extraErr.message);
                 (extra || []).forEach(e => { empMap[e.id] = e; });
             }
@@ -569,17 +484,12 @@ export const createRequestsSlice = (set, get) => ({
     createRequest: async (employeeId, type, payload = {}, note = '') => {
         try {
             // Obtener datos del empleado para resolver el aprobador
-            const { data: emp, error: empErr } = await supabase
-                .from('employees')
-                .select('role_id, branch_id')
-                .eq('id', employeeId)
-                .single();
+            const { data: emp, error: empErr } = await fetchEmployeeApprovalInfo(employeeId);
             if (empErr) console.error('createRequest: fetch employee failed (approver resolution will fall back):', empErr.message);
 
             // SHIFT_CHANGE: enrutar directamente al compañero para aprobación de par
             if (type === 'SHIFT_CHANGE' && payload.targetEmployeeId) {
-                const { data: peerEmp, error: peerEmpErr } = await supabase
-                    .from('employees').select('name').eq('id', payload.targetEmployeeId).single();
+                const { data: peerEmp, error: peerEmpErr } = await fetchEmployeeName(payload.targetEmployeeId);
                 if (peerEmpErr) console.error('createRequest: fetch peer employee failed:', peerEmpErr.message);
 
                 const myDayOfWeek = payload.date ? new Date(payload.date + 'T12:00:00').getDay() : null;
@@ -597,19 +507,15 @@ export const createRequestsSlice = (set, get) => ({
                     myShift:     myShift     || 'No especificado',
                     targetShift: targetShift || 'No especificado',
                 };
-                const { data: peerData, error: peerError } = await supabase
-                    .from('approval_requests')
-                    .insert([{
-                        employee_id: employeeId,
-                        approver_id: payload.targetEmployeeId,
-                        type,
-                        status: 'PENDING',
-                        note,
-                        metadata: enrichedPayload,
-                        current_level: 1,
-                    }])
-                    .select(SIMPLE_SELECT)
-                    .single();
+                const { data: peerData, error: peerError } = await insertApprovalRequest({
+                    employee_id: employeeId,
+                    approver_id: payload.targetEmployeeId,
+                    type,
+                    status: 'PENDING',
+                    note,
+                    metadata: enrichedPayload,
+                    current_level: 1,
+                });
                 if (peerError) throw peerError;
                 const enrichedPeer = {
                     ...peerData,
@@ -644,18 +550,14 @@ export const createRequestsSlice = (set, get) => ({
                 ? { ...payload, priority: 'URGENT' }
                 : payload;
 
-            const { data, error } = await supabase
-                .from('approval_requests')
-                .insert([{
-                    employee_id: employeeId,
-                    approver_id: approverId,
-                    type,
-                    status: 'PENDING',
-                    note,
-                    metadata: finalMetadata,
-                }])
-                .select(SIMPLE_SELECT)
-                .single();
+            const { data, error } = await insertApprovalRequest({
+                employee_id: employeeId,
+                approver_id: approverId,
+                type,
+                status: 'PENDING',
+                note,
+                metadata: finalMetadata,
+            });
 
             if (error) throw error;
 
@@ -697,10 +599,7 @@ export const createRequestsSlice = (set, get) => ({
     // Helper interno: ejecuta todos los efectos de una aprobación final en un solo lugar.
     // Cualquier lógica nueva por tipo (OVERTIME, ADVANCE, etc.) se agrega aquí.
     _runFinalApproval: async (requestId, req, approverId, approverNote, newApprovals, toastMsg) => {
-        const { error } = await supabase
-            .from('approval_requests')
-            .update({ status: 'APPROVED', approver_id: approverId, approver_note: approverNote, approvals: newApprovals, updated_at: new Date().toISOString() })
-            .eq('id', requestId);
+        const { error } = await updateApprovalRequest(requestId, { status: 'APPROVED', approver_id: approverId, approver_note: approverNote, approvals: newApprovals, updated_at: new Date().toISOString() });
         if (error) throw error;
 
         set(state => ({
@@ -755,12 +654,8 @@ export const createRequestsSlice = (set, get) => ({
                             const dayKey    = String(dow === 0 ? 7 : dow); // 7=Dom (matches kiosk)
 
                             const [{ data: shiftsRows, error: shiftsErr }, { data: rosters, error: rostersErr }] = await Promise.all([
-                                supabase.from('shifts').select('id, start_time, end_time'),
-                                supabase.from('employee_rosters')
-                                    .select('id, employee_id, schedule_data')
-                                    .in('employee_id', [String(req.employee.id), String(meta.targetEmployeeId)])
-                                    .eq('week_start_date', weekStart)
-                                    .eq('status', 'PUBLISHED'),
+                                fetchShiftsBasic(),
+                                fetchPublishedRostersForSwap([String(req.employee.id), String(meta.targetEmployeeId)], weekStart),
                             ]);
                             if (shiftsErr) console.error('SHIFT_CHANGE roster patch: fetch shifts failed:', shiftsErr.message);
                             if (rostersErr) console.error('SHIFT_CHANGE roster patch: fetch rosters failed:', rostersErr.message);
@@ -802,9 +697,7 @@ export const createRequestsSlice = (set, get) => ({
                                         exceptionDate: swapDate,
                                     },
                                 };
-                                await supabase.from('employee_rosters')
-                                    .update({ schedule_data: updated, updated_at: new Date().toISOString() })
-                                    .eq('id', roster.id);
+                                await updateEmployeeRosterById(roster.id, { schedule_data: updated, updated_at: new Date().toISOString() });
                             };
 
                             // A works B's hours, B works A's hours
@@ -849,7 +742,7 @@ export const createRequestsSlice = (set, get) => ({
 
             // ── SHIFT_CHANGE nivel 1: el peer acaba de aprobar ─────────────────
             if (req.type === 'SHIFT_CHANGE' && currentLevel === 1) {
-                const { data: peerEmp, error: peerEmpErr } = await supabase.from('employees').select('system_role').eq('id', approverId).maybeSingle();
+                const { data: peerEmp, error: peerEmpErr } = await fetchEmployeeSystemRole(approverId);
                 if (peerEmpErr) console.error('approveRequest: fetch peer employee failed:', peerEmpErr.message);
                 const peerIsJefe = ['JEFE', 'SUBJEFE'].includes(peerEmp?.system_role);
                 const nextApprover = peerIsJefe ? null : await resolveNextApprover('JEFE_SUCURSAL', req.employee?.branch_id, approverId);
@@ -860,9 +753,7 @@ export const createRequestsSlice = (set, get) => ({
                 }
 
                 // Avanzar a nivel 2 → jefe de sucursal
-                const { error: adv } = await supabase.from('approval_requests')
-                    .update({ current_level: 2, approver_id: nextApprover, approvals: newApprovals, updated_at: new Date().toISOString() })
-                    .eq('id', requestId);
+                const { error: adv } = await updateApprovalRequest(requestId, { current_level: 2, approver_id: nextApprover, approvals: newApprovals, updated_at: new Date().toISOString() });
                 if (adv) throw adv;
 
                 set(state => ({
@@ -893,9 +784,7 @@ export const createRequestsSlice = (set, get) => ({
                         'Solicitud aprobada (sin aprobador disponible en nivel siguiente).');
                 }
 
-                const { error } = await supabase.from('approval_requests')
-                    .update({ current_level: nextLevel, approver_id: nextApprover, approvals: newApprovals, updated_at: new Date().toISOString() })
-                    .eq('id', requestId);
+                const { error } = await updateApprovalRequest(requestId, { current_level: nextLevel, approver_id: nextApprover, approvals: newApprovals, updated_at: new Date().toISOString() });
                 if (error) throw error;
 
                 set(state => ({
@@ -933,15 +822,12 @@ export const createRequestsSlice = (set, get) => ({
         try {
             const req = get().requests.find(r => r.id === requestId);
 
-            const { error } = await supabase
-                .from('approval_requests')
-                .update({
-                    status: 'REJECTED',
-                    approver_id: approverId,
-                    approver_note: approverNote,
-                    updated_at: new Date().toISOString(),
-                })
-                .eq('id', requestId);
+            const { error } = await updateApprovalRequest(requestId, {
+                status: 'REJECTED',
+                approver_id: approverId,
+                approver_note: approverNote,
+                updated_at: new Date().toISOString(),
+            });
 
             if (error) throw error;
 
@@ -968,11 +854,7 @@ export const createRequestsSlice = (set, get) => ({
     // ── Peer approve/reject (fetch-enrich-then-delegate) ──────────────────
     approvePeerRequest: async (requestId, approverId, approverNote = '') => {
         try {
-            const { data: reqData, error: reqErr } = await supabase
-                .from('approval_requests')
-                .select(SIMPLE_SELECT)
-                .eq('id', requestId)
-                .single();
+            const { data: reqData, error: reqErr } = await fetchApprovalRequestById(requestId);
             if (reqErr) console.error('approvePeerRequest: fetch request failed:', reqErr.message);
             if (!reqData) return false;
             const allEmps = get().employees || [];
@@ -991,11 +873,7 @@ export const createRequestsSlice = (set, get) => ({
 
     rejectPeerRequest: async (requestId, approverId, approverNote = '') => {
         try {
-            const { data: reqData, error: reqErr } = await supabase
-                .from('approval_requests')
-                .select(SIMPLE_SELECT)
-                .eq('id', requestId)
-                .single();
+            const { data: reqData, error: reqErr } = await fetchApprovalRequestById(requestId);
             if (reqErr) console.error('rejectPeerRequest: fetch request failed:', reqErr.message);
             if (!reqData) return false;
             const allEmps = get().employees || [];
@@ -1015,13 +893,10 @@ export const createRequestsSlice = (set, get) => ({
     // ── Cancel (by employee) ───────────────────────────────────────────────
     cancelRequest: async (requestId) => {
         try {
-            const { error } = await supabase
-                .from('approval_requests')
-                .update({
-                    status: 'CANCELLED',
-                    updated_at: new Date().toISOString(),
-                })
-                .eq('id', requestId);
+            const { error } = await updateApprovalRequest(requestId, {
+                status: 'CANCELLED',
+                updated_at: new Date().toISOString(),
+            });
 
             if (error) throw error;
 

@@ -5,9 +5,34 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.15';
+export const APP_VERSION = '2.17.16';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.16 — refactor(bloque6.A): requestsSlice.js + slices chicos
+// (practicantesSlice, notificationsSlice, conteoInventarioSlice,
+// payrollSlice) — 63 supabase.from() migradas (36+5+5+3+14; conteo real,
+// no ~25). Cinco módulos nuevos: src/data/requests.js (25 fn),
+// practicantes.js (5 fn), notifications.js (5 fn), conteoInventario.js
+// (3 fn), payroll.js (12 fn).
+// requestsSlice.js es el motor de enrutamiento de aprobaciones (quién
+// aprueba qué solicitud, subiendo recursivamente por la jerarquía de
+// roles) — el módulo de mayor sensibilidad de este PR. Los lookups de
+// empleados que se parecen pero difieren en qué filtros son
+// condicionales vs. fijos se dejaron como funciones separadas
+// (fetchActiveEmployeesInRoleAndBranch vs.
+// fetchActiveEmployeesBySystemRoleConditional/ByRoleIdConditional) —
+// fusionarlas habría cambiado el comportamiento real de enrutamiento,
+// no solo movido el query. employee_rosters (lectura+upsert) reutiliza
+// fetchEmployeeRosterSchedule/upsertWeeklyRoster ya definidos en
+// data/employees.js y data/system.js (Bloque 6.A, PRs anteriores).
+// Verificado en vivo con Playwright: Bandeja de Aprobaciones con 2
+// solicitudes reales (CAMBIO DE VENDEDOR, nivel 1/3, nombres y fechas
+// reales), Nómina con estado vacío real ("Sin períodos aún") — cero
+// errores de consola (ni siquiera el ruido COEP habitual). Los paths de
+// escritura (crear/aprobar/rechazar solicitud, generar planilla,
+// practicantes) no se ejercitaron en vivo por no tocar datos reales de
+// RRHH sin permiso explícito — verificados por sustitución 1:1 exacta
+// de cada query. Build + lint + 15 tests unitarios verdes.
 // v2.17.15 — refactor(bloque6.A): employeeSlice.js + branchSlice.js —
 // 35 supabase.from() migradas (20 + 15; conteo real, no 29 — mismo
 // motivo de líneas partidas). Dos nuevos módulos: src/data/employees.js

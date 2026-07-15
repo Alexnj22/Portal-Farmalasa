@@ -1,4 +1,8 @@
 import { supabase } from '../../supabaseClient';
+import {
+    fetchConteosInventario as fetchConteosInventarioData, fetchConteoDetalle as fetchConteoDetalleData,
+    insertConteoItemManual,
+} from '../../data/conteoInventario';
 
 export const createConteoInventarioSlice = (set, get) => ({
     conteosInventario: [],
@@ -7,10 +11,7 @@ export const createConteoInventarioSlice = (set, get) => ({
     fetchConteosInventario: async () => {
         set({ conteosInventarioLoading: true });
         try {
-            const { data, error } = await supabase
-                .from('conteos_inventario')
-                .select('*, branches(name)')
-                .order('created_at', { ascending: false });
+            const { data, error } = await fetchConteosInventarioData();
             if (error) throw error;
             set({ conteosInventario: data || [] });
             return data || [];
@@ -43,7 +44,7 @@ export const createConteoInventarioSlice = (set, get) => ({
     },
 
     fetchConteoDetalle: async (conteoId) => {
-        const { data, error } = await supabase.from('conteos_inventario').select('*, branches(name)').eq('id', conteoId).single();
+        const { data, error } = await fetchConteoDetalleData(conteoId);
         if (error) throw error;
         return data;
     },
@@ -129,7 +130,7 @@ export const createConteoInventarioSlice = (set, get) => ({
     },
 
     agregarProductoManualConteo: async (conteoId, { erpProductId, presentacion, detalle, lote, fechaVencimiento, costoUnitario }) => {
-        const { data, error } = await supabase.from('conteo_inventario_items').insert([{
+        const { data, error } = await insertConteoItemManual({
             conteo_id: conteoId,
             erp_product_id: erpProductId,
             presentacion: presentacion || null,
@@ -141,7 +142,7 @@ export const createConteoInventarioSlice = (set, get) => ({
             costo_unitario: costoUnitario ?? null,
             estado_item: 'PENDIENTE',
             es_agregado_manual: true,
-        }]).select().single();
+        });
         if (error) throw error;
         return data;
     },

@@ -1,4 +1,8 @@
-import { supabase } from '../../supabaseClient';
+import {
+    fetchNotifications as fetchNotificationsData, markNotificationRead as markNotificationReadData,
+    markNotificationsReadBulk, deleteNotificationsByIds as deleteNotificationsByIdsData,
+    deleteNotificationsBefore,
+} from '../../data/notifications';
 
 // ============================================================================
 // 🔔 NOTIFICACIONES — mensajes automáticos 1-a-1 (sistema → empleado)
@@ -15,11 +19,7 @@ export const createNotificationsSlice = (set, get) => ({
         set({ isLoadingNotifications: true });
         try {
             // RLS filtra por destinatario; 100 más recientes bastan para la campana
-            const { data, error } = await supabase
-                .from('notifications')
-                .select('id, type, title, body, link, metadata, branch_id, created_at, read_at')
-                .order('created_at', { ascending: false })
-                .limit(100);
+            const { data, error } = await fetchNotificationsData();
             if (error) throw error;
             set({ notifications: data || [], isLoadingNotifications: false });
             return data || [];
@@ -44,7 +44,7 @@ export const createNotificationsSlice = (set, get) => ({
             notifications: state.notifications.map(n => n.id === id && !n.read_at ? { ...n, read_at: readAt } : n),
         }));
         try {
-            await supabase.from('notifications').update({ read_at: readAt }).eq('id', id).is('read_at', null);
+            await markNotificationReadData(id, readAt);
         } catch (err) {
             console.error('Error marcando notificación leída:', err);
         }
@@ -58,7 +58,7 @@ export const createNotificationsSlice = (set, get) => ({
             notifications: state.notifications.map(n => n.read_at ? n : { ...n, read_at: readAt }),
         }));
         try {
-            await supabase.from('notifications').update({ read_at: readAt }).in('id', unreadIds).is('read_at', null);
+            await markNotificationsReadBulk(unreadIds, readAt);
         } catch (err) {
             console.error('Error marcando notificaciones leídas:', err);
         }
@@ -72,7 +72,7 @@ export const createNotificationsSlice = (set, get) => ({
         if (!idSet.size) return;
         set(state => ({ notifications: state.notifications.filter(n => !idSet.has(n.id)) }));
         try {
-            await supabase.from('notifications').delete().in('id', [...idSet]);
+            await deleteNotificationsByIdsData([...idSet]);
         } catch (err) {
             console.error('Error borrando notificaciones:', err);
         }
@@ -89,7 +89,7 @@ export const createNotificationsSlice = (set, get) => ({
         const cutoffIso = cutoff || new Date().toISOString();
         set(state => ({ notifications: state.notifications.filter(n => n.created_at > cutoffIso) }));
         try {
-            await supabase.from('notifications').delete().lte('created_at', cutoffIso);
+            await deleteNotificationsBefore(cutoffIso);
         } catch (err) {
             console.error('Error borrando todas las notificaciones:', err);
         }

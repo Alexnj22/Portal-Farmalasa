@@ -1,5 +1,10 @@
 import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS } from '../utils';
+import {
+    insertBranch, updateBranch, updateBranchReturning, deleteBranch, insertBranchDocument,
+    fetchBranchDocuments, fetchAuditLogsForBranch, fetchActiveKioskDeviceCount, insertKioskDevice,
+    updateKioskDevice, fetchBranchKiosks, fetchBranchExpenseRecord, updateBranchExpense, insertBranchExpense,
+} from '../../data/branches';
 
 const persistBranches = (branches) => {
     localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(branches));
@@ -79,7 +84,7 @@ export const createBranchSlice = (set, get) => ({
                 settings: cleanSettings
             };
 
-            const { data: newBranch, error } = await supabase.from("branches").insert([dbPayload]).select().single();
+            const { data: newBranch, error } = await insertBranch(dbPayload);
             if (error) throw error;
 
             let finalSettings = typeof newBranch.settings === 'string' ? JSON.parse(newBranch.settings) : (newBranch.settings || {});
@@ -90,7 +95,7 @@ export const createBranchSlice = (set, get) => ({
                     if (!finalSettings.rent) finalSettings.rent = {};
                     if (!finalSettings.rent.contract) finalSettings.rent.contract = {};
                     finalSettings.rent.contract.documentUrl = documentUrl;
-                    await supabase.from("branches").update({ settings: finalSettings }).eq("id", newBranch.id);
+                    await updateBranch(newBranch.id, { settings: finalSettings });
                 }
             }
 
@@ -151,14 +156,14 @@ export const createBranchSlice = (set, get) => ({
 
             const archiveOldDoc = async (docType, docName, oldUrl, metadata = {}) => {
                 if (!oldUrl) return;
-                await supabase.from('branch_documents').insert([{
+                await insertBranchDocument({
                     branch_id: id,
                     document_type: docType,
                     name: docName,
                     file_url: oldUrl,
                     status: 'HISTÓRICO',
                     metadata: metadata
-                }]);
+                });
             };
 
             // 1. GESTIÓN DE ARCHIVOS DE RENTA
@@ -219,7 +224,7 @@ export const createBranchSlice = (set, get) => ({
                 settings: cleanSettingsForDB
             };
 
-            const { data: updated, error } = await supabase.from("branches").update(dbPayload).eq("id", id).select().single();
+            const { data: updated, error } = await updateBranchReturning(id, dbPayload);
             if (error) throw error;
 
             // 🚨 LÓGICA DE SINCRONIZACIÓN EN CASCADA Y AUDITORÍA INTELIGENTE
@@ -321,7 +326,7 @@ export const createBranchSlice = (set, get) => ({
             throw new Error("No se puede eliminar: Hay empleados asignados a esta farmacia.");
         }
         try {
-            const { error } = await supabase.from("branches").delete().eq("id", id);
+            const { error } = await deleteBranch(id);
             if (error) throw error;
             
             await get().appendAuditLog('ELIMINAR_SUCURSAL', id, {
@@ -344,17 +349,11 @@ export const createBranchSlice = (set, get) => ({
 
     registerKioskDevice: async (branchId, deviceName) => {
         try {
-            const { count } = await supabase.from('kiosk_devices')
-                .select('*', { count: 'exact', head: true })
-                .eq('branch_id', branchId)
-                .eq('status', 'ACTIVE');
+            const { count } = await fetchActiveKioskDeviceCount(branchId);
 
             if (count >= 3) throw new Error("Límite alcanzado: Ya existen 3 dispositivos activos.");
 
-            const { data: newDevice, error } = await supabase.from('kiosk_devices')
-                .insert([{ branch_id: branchId, device_name: deviceName, status: 'ACTIVE' }])
-                .select()
-                .single();
+            const { data: newDevice, error } = await insertKioskDevice({ branch_id: branchId, device_name: deviceName, status: 'ACTIVE' });
 
             if (error) throw error;
 
@@ -379,10 +378,7 @@ export const createBranchSlice = (set, get) => ({
 
     revokeKioskDevice: async (deviceId, deviceName) => {
         try {
-            const { error } = await supabase
-                .from('kiosk_devices')
-                .update({ status: 'REVOKED', revoked_at: new Date().toISOString() })
-                .eq('id', deviceId);
+            const { error } = await updateKioskDevice(deviceId, { status: 'REVOKED', revoked_at: new Date().toISOString() });
 
             if (error) throw error;
             
@@ -401,7 +397,7 @@ export const createBranchSlice = (set, get) => ({
 
     getBranchKiosks: async (branchId) => {
         try {
-            const { data, error } = await supabase.from('kiosk_devices').select('*').eq('branch_id', branchId);
+            const { data, error } = await fetchBranchKiosks(branchId);
             if (error) throw error;
             return data || [];
         } catch (error) {
@@ -424,8 +420,8 @@ export const createBranchSlice = (set, get) => ({
 
     getBranchHistory: async (branchId) => {
         try {
-            const { data: docs } = await supabase.from('branch_documents').select('*').eq('branch_id', branchId).order('created_at', { ascending: false });
-            const { data: logs } = await supabase.from('audit_logs').select('*').eq('target_id', branchId).order('created_at', { ascending: false });
+            const { data: docs } = await fetchBranchDocuments(branchId);
+            const { data: logs } = await fetchAuditLogsForBranch(branchId);
 
             const combined = [
                 ...(docs || []).map(d => ({ ...d, isDoc: true, sortDate: new Date(d.created_at) })),
@@ -472,19 +468,14 @@ export const createBranchSlice = (set, get) => ({
             };
 
             // 1. Verificamos si ya existe un registro en BD para este mes y servicio
-            const { data: existingRecord, error: checkError } = await supabase.from('branch_expenses')
-                .select('id')
-                .eq('branch_id', branchId)
-                .eq('expense_type', expenseData.expense_type)
-                .eq('billing_month', expenseData.billing_month)
-                .maybeSingle();
+            const { data: existingRecord, error: checkError } = await fetchBranchExpenseRecord(branchId, expenseData.expense_type, expenseData.billing_month);
             if (checkError) throw checkError;
 
             if (existingRecord) {
-                const { error: updError } = await supabase.from('branch_expenses').update(dbExpense).eq('id', existingRecord.id);
+                const { error: updError } = await updateBranchExpense(existingRecord.id, dbExpense);
                 if (updError) throw updError;
             } else {
-                const { error: insError } = await supabase.from('branch_expenses').insert([dbExpense]);
+                const { error: insError } = await insertBranchExpense(dbExpense);
                 if (insError) throw insError;
             }
 
@@ -507,7 +498,7 @@ export const createBranchSlice = (set, get) => ({
                 }
 
                 const cleanSettingsForDB = sanitizeForJsonb(newSettings);
-                await supabase.from('branches').update({ settings: cleanSettingsForDB }).eq('id', branchId);
+                await updateBranch(branchId, { settings: cleanSettingsForDB });
 
                 set((state) => {
                     const next = state.branches.map(b =>

@@ -5,9 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.14';
+export const APP_VERSION = '2.17.15';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.15 — refactor(bloque6.A): employeeSlice.js + branchSlice.js —
+// 35 supabase.from() migradas (20 + 15; conteo real, no 29 — mismo
+// motivo de líneas partidas). Dos nuevos módulos: src/data/employees.js
+// (10 fn) y src/data/branches.js (13 fn). Reutilización real entre
+// módulos de este mismo bloque: employee_branches/employee_rosters ya
+// tenían funciones equivalentes en data/system.js (Bloque 6.A,
+// systemSlice.js) — employeeSlice.js las importa en vez de duplicar
+// (insertEmployeeBranches, deleteEmployeeBranches, upsertWeeklyRoster).
+// Los supabase.storage.from() de subida de archivos (fotos, documentos,
+// contratos) quedan intactos en ambos archivos — acceso a bucket, no a
+// tabla.
+// Verificado en vivo con Playwright contra datos reales de producción:
+// Monitor en Tiempo Real (49 empleados reales, horarios/turnos/pausas
+// reales — ejercita fetchAttendanceSince), Sucursales (7 sucursales
+// reales con datos de kioscos/legal/local/servicios), Gestión de
+// Personal (48 empleados reales con roles/sucursales/estados). Los
+// paths de escritura (alta/edición/baja de empleado, marcaje de
+// asistencia, alta/edición de sucursal, gastos, kioscos) no se
+// ejercitaron en vivo por no tocar datos reales de RRHH/sucursales sin
+// permiso explícito — verificados por sustitución 1:1 exacta de cada
+// query. Build + lint + 15 tests unitarios verdes.
 // v2.17.14 — refactor(bloque6.A): FacturacionView.jsx — 23 supabase.from()
 // migradas a src/data/facturacion.js (nuevo módulo, 19 funciones). El
 // conteo real era 23, no 18 (mismo motivo que systemSlice/TabMinMax:

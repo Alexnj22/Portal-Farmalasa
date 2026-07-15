@@ -3,6 +3,12 @@ import { safeJsonParse, CACHE_KEYS, persistEmployees } from '../utils';
 import { getSignedFileUrl } from '../../utils/storageFiles';
 import { OTRA_ESPECIALIDAD } from '../../utils/educationCatalogs';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '../../utils/economicDependents';
+import {
+    upsertEducationCatalogEntries, insertEmployee, updateEmployee, updateEmployeeReturning,
+    fetchEmployeeRosterSchedule, insertEmployeeEventRaw, fetchAttendanceSince,
+    insertAttendancePunch, deleteAttendancePunch, fetchAttendancePunchDetails, updateAttendancePunch,
+} from '../../data/employees';
+import { insertEmployeeBranches, deleteEmployeeBranches, upsertWeeklyRoster } from '../../data/system';
 
 // education_specialty/profession son selects de catálogo con fallback a
 // texto libre ("Otra..."). El sentinel llega si se eligió "Otra" pero no se
@@ -32,7 +38,7 @@ const normalizeAdditionalSkills = (arr) => {
 // registro — sin importar si ya existía o se acaba de escribir en "Otra...".
 const upsertCatalogEntries = (rows) => {
     if (!rows.length) return;
-    supabase.from('education_catalog_entries').upsert(rows, { onConflict: 'category,value', ignoreDuplicates: true })
+    upsertEducationCatalogEntries(rows)
         .then(({ error }) => { if (error) console.warn('No se pudo registrar entrada de catálogo educativo:', error.message); });
 };
 
@@ -579,7 +585,7 @@ export const createEmployeeSlice = (set, get) => ({
             // Validar headcount del cargo seleccionado
             assertHeadcountAvailable(get(), dbPayload.role_id, dbPayload.branch_id);
 
-            const { data: newEmp, error } = await supabase.from("employees").insert([dbPayload]).select().single();
+            const { data: newEmp, error } = await insertEmployee(dbPayload);
             if (error) {
                 console.error('Supabase INSERT error:', error.message, error.details, error.hint);
                 throw error;
@@ -594,21 +600,21 @@ export const createEmployeeSlice = (set, get) => ({
                 const compressedPhoto = await compressImage(uploadedFile);
                 const publicPhotoUrl = await get().uploadEmployeeFile(compressedPhoto, newEmp.id, 'foto_perfil');
                 if (publicPhotoUrl) {
-                    await supabase.from("employees").update({ photo_url: publicPhotoUrl }).eq("id", newEmp.id);
+                    await updateEmployee(newEmp.id, { photo_url: publicPhotoUrl });
                     newEmp.photo_url = publicPhotoUrl;
                 }
             }
 
             if (Array.isArray(formData.employee_documents) && formData.employee_documents.length > 0) {
                 const uploadedDocs = await get().uploadEmployeeDocuments(newEmp.id, formData.employee_documents);
-                await supabase.from("employees").update({ employee_documents: uploadedDocs }).eq("id", newEmp.id);
+                await updateEmployee(newEmp.id, { employee_documents: uploadedDocs });
                 newEmp.employee_documents = uploadedDocs;
             }
 
             // Asignar sucursales adicionales si aplica (empleados externos)
             const assignedBranches = Array.isArray(formData.assigned_branch_ids) ? formData.assigned_branch_ids.map(Number).filter(Boolean) : [];
             if (assignedBranches.length > 0) {
-                await supabase.from('employee_branches').insert(
+                await insertEmployeeBranches(
                     assignedBranches.map(branch_id => ({ employee_id: newEmp.id, branch_id }))
                 );
             }
@@ -829,7 +835,7 @@ export const createEmployeeSlice = (set, get) => ({
                 assertHeadcountAvailable(get(), dbPayload.role_id, targetBranch, id);
             }
 
-            const { data: updated, error } = await supabase.from("employees").update(dbPayload).eq("id", id).select().single();
+            const { data: updated, error } = await updateEmployeeReturning(id, dbPayload);
             if (error) throw error;
             if (dbPayload.education_specialty !== undefined || dbPayload.profession !== undefined || dbPayload.maestria_title !== undefined) {
                 registerCatalogEntry(dbPayload.education_level ?? updated.education_level, dbPayload.education_specialty, dbPayload.profession, dbPayload.maestria_title);
@@ -841,9 +847,9 @@ export const createEmployeeSlice = (set, get) => ({
 
             // Sync branch assignments to junction table if provided
             if (newAssignedBranches !== null) {
-                await supabase.from('employee_branches').delete().eq('employee_id', id);
+                await deleteEmployeeBranches(id);
                 if (newAssignedBranches.length > 0) {
-                    await supabase.from('employee_branches').insert(
+                    await insertEmployeeBranches(
                         newAssignedBranches.map(branch_id => ({ employee_id: id, branch_id }))
                     );
                 }
@@ -919,7 +925,7 @@ export const createEmployeeSlice = (set, get) => ({
             kiosk_pin: newPin,
         };
 
-        const { error } = await supabase.from('employees').update(dbPayload).eq('id', id);
+        const { error } = await updateEmployee(id, dbPayload);
         if (error) throw error;
 
         // Levantar el ban de la cuenta Auth aplicado en la baja (best-effort)
@@ -930,7 +936,7 @@ export const createEmployeeSlice = (set, get) => ({
         const roles = get().roles;
         const mainRoleName = roles.find(r => String(r.id) === String(dbPayload.role_id))?.name || null;
 
-        await supabase.from('employee_events').insert([{
+        await insertEmployeeEventRaw({
             employee_id: id,
             type: 'REHIRE',
             date: rehireData.hire_date,
@@ -940,7 +946,7 @@ export const createEmployeeSlice = (set, get) => ({
                 new_role: mainRoleName,
                 target_branch_id: dbPayload.branch_id,
             }
-        }]);
+        });
 
         await get().appendAuditLog('RECONTRATACION', id, {
             timeline_title: `Recontratación: ${emp.name}`,
@@ -981,16 +987,11 @@ export const createEmployeeSlice = (set, get) => ({
         const _rawDay = new Date(date + 'T00:00:00').getDay();
         const dayId   = _rawDay === 0 ? 7 : _rawDay;
 
-        const { data: roster } = await supabase
-            .from('employee_rosters').select('schedule_data')
-            .eq('employee_id', id).eq('week_start_date', weekStart).maybeSingle();
+        const { data: roster } = await fetchEmployeeRosterSchedule(id, weekStart);
         const raw = roster?.schedule_data || {};
         const sched = typeof raw === 'string' ? JSON.parse(raw || '{}') : { ...raw };
         sched[dayId] = { shiftId: shift_id, note: 'Ingreso en vacaciones' };
-        await supabase.from('employee_rosters').upsert(
-            { employee_id: id, week_start_date: weekStart, schedule_data: sched },
-            { onConflict: 'employee_id, week_start_date' }
-        );
+        await upsertWeeklyRoster({ employee_id: id, week_start_date: weekStart, schedule_data: sched });
 
         // 2. Calcular horas del turno para sumar a hours_owed
         const shifts = get().shifts || [];
@@ -1007,10 +1008,10 @@ export const createEmployeeSlice = (set, get) => ({
         // 3. Incrementar hours_owed en employees
         const currentOwed = parseFloat(emp.hours_owed || 0);
         const newOwed = currentOwed + hoursWorked;
-        await supabase.from('employees').update({ hours_owed: newOwed }).eq('id', id);
+        await updateEmployee(id, { hours_owed: newOwed });
 
         // 4. Registrar en employee_events
-        await supabase.from('employee_events').insert([{
+        await insertEmployeeEventRaw({
             employee_id: id,
             type: 'VACATION_RECALL',
             date,
@@ -1022,7 +1023,7 @@ export const createEmployeeSlice = (set, get) => ({
                 approved_by,
                 reason,
             }
-        }]);
+        });
 
         await get().appendAuditLog('INGRESO_EN_VACACIONES', id, {
             timeline_title: `Ingreso en Vacaciones: ${emp.name}`,
@@ -1063,7 +1064,7 @@ export const createEmployeeSlice = (set, get) => ({
         if (state.attendanceLoaded) return true;
         try {
             const sinceISO = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-            const { data: attData, error } = await supabase.from("attendance").select("*").gte("timestamp", sinceISO);
+            const { data: attData, error } = await fetchAttendanceSince(sinceISO);
             if (error) return false;
 
             const byEmp = new Map();
@@ -1097,11 +1098,7 @@ export const createEmployeeSlice = (set, get) => ({
         const dbType = type;
 
         try {
-            const { data: newPunch, error } = await supabase
-                .from("attendance")
-                .insert([{ employee_id: employeeId, timestamp, type: dbType, details: metadata || {} }])
-                .select()
-                .single();
+            const { data: newPunch, error } = await insertAttendancePunch({ employee_id: employeeId, timestamp, type: dbType, details: metadata || {} });
 
             if (error) throw error;
 
@@ -1171,11 +1168,7 @@ export const createEmployeeSlice = (set, get) => ({
     },
 
     insertAttendancePunchAt: async (employeeId, timestamp, type, details = {}) => {
-        const { data: newPunch, error } = await supabase
-            .from('attendance')
-            .insert([{ employee_id: employeeId, timestamp, type, details }])
-            .select()
-            .single();
+        const { data: newPunch, error } = await insertAttendancePunch({ employee_id: employeeId, timestamp, type, details });
         if (error) throw error;
 
         set(state => ({
@@ -1199,7 +1192,7 @@ export const createEmployeeSlice = (set, get) => ({
 
         try {
             if (action === 'REJECT') {
-                const { error } = await supabase.from('attendance').delete().eq('id', punchId);
+                const { error } = await deleteAttendancePunch(punchId);
                 if (error) throw error;
 
                 set(state => ({
@@ -1211,8 +1204,7 @@ export const createEmployeeSlice = (set, get) => ({
 
             } else {
                 // CONFIRM or ADJUST — read current details first
-                const { data: row, error: fetchErr } = await supabase
-                    .from('attendance').select('details').eq('id', punchId).single();
+                const { data: row, error: fetchErr } = await fetchAttendancePunchDetails(punchId);
                 if (fetchErr) throw fetchErr;
 
                 const newDetails = {
@@ -1228,8 +1220,7 @@ export const createEmployeeSlice = (set, get) => ({
                     updatePayload.timestamp = adjustedTimestamp;
                 }
 
-                const { error: updateErr } = await supabase
-                    .from('attendance').update(updatePayload).eq('id', punchId);
+                const { error: updateErr } = await updateAttendancePunch(punchId, updatePayload);
                 if (updateErr) throw updateErr;
 
                 set(state => ({

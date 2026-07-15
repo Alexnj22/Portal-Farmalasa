@@ -5,9 +5,34 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.9';
+export const APP_VERSION = '2.17.10';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.10 — refactor(bloque6.A): TabPedidos.jsx — las 45 llamadas
+// supabase.from() del componente principal (post-6.C) migradas a
+// src/data/pedidos.js (nuevo módulo, 22 funciones). El archivo tenía
+// el perfil de riesgo más alto de los 61 archivos del inventario 6.A:
+// flujos de negocio secuenciales/ramificados (confirmación de llegada,
+// reenvío de cajas faltantes, finalizar con cajas) con múltiples
+// queries entrelazadas en el mismo handler — se optó por sustitución
+// 1:1 de cada query por su función (sin tocar el control de flujo),
+// no por extraer los handlers completos. Deduplicación real donde el
+// query era 100% idéntico entre sitios: updatePedidoSucursalStatus/
+// fetchPedidoSucursalStatus (getter/setter genéricos por
+// pedido_id+erp_sucursal_id, cubren ~15 sitios), fetchBodegaBranchId
+// (4 lookups idénticos de la sucursal de bodega), updatePedidoItemsFaltaCaja.
+// Bug de paginación corregido de paso: fetchItems tenía DOS while-loops
+// manuales de paginación 1000-en-1000 (pedido_items, pedido_item_eventos)
+// duplicando la lógica que ya existe en fetchAllRows — reemplazados por
+// fetchPedidoItemsAll/fetchPedidoItemEventosAll, mismo comportamiento,
+// sin código repetido.
+// Verificado en vivo con Playwright contra datos reales de producción:
+// tab PEDIDOS con 6 sucursales activas, expandir pedido 04-140726-1-S3
+// (474 solicitados / 151 enviados / 308 sin stock / 13 por regla) →
+// drill-down a "Productos enviados" con datos reales de producto/
+// laboratorio/presentación intactos. Sin errores de consola atribuibles
+// al cambio (el ruido de COEP/CORS/ensure_user_by_code es preexistente,
+// no relacionado). Build + lint + 15 tests unitarios verdes.
 // v2.17.9 — refactor(bloque6.A): primer módulo real de la capa de datos
 // — src/data/inventory.js (antes src/data/ solo tenía catálogos
 // estáticos: constants.js, elSalvadorGeo.js, nationalities.js).

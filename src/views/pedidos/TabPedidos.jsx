@@ -47,6 +47,14 @@ import DifSection from './tabpedidos/DifSection';
 import PostCompletionSection from './tabpedidos/PostCompletionSection';
 import ReceptionActions from './tabpedidos/ReceptionActions';
 import FilterPill from './tabpedidos/FilterPill';
+import {
+    fetchEmployeeBranchId, fetchSucursalIdForBranch, fetchBodegaBranchId, fetchBranchIdForSucursal,
+    fetchBranchInfoForSucursal, fetchBranchNamesForSucursales, fetchApoyoForPedidos, fetchApoyoForPedido,
+    fetchActiveRutas, fetchRutaLocations, upsertRutaLocation, updateRutaStatus, updateRutaPedidoEntregado,
+    fetchPedidoItemsAll, fetchPedidoItemEventosAll, fetchPedidoItemsPendientesIds,
+    fetchPedidoItemsFaltaElectrolit, fetchPedidoItemsFaltaEspeciales, updatePedidoItemsFaltaCaja,
+    fetchPedidoSucursalStatus, updatePedidoSucursalStatus, fetchPausaHistorial, fetchAttendancePunches,
+} from '../../data/pedidos';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -173,10 +181,10 @@ export default function TabPedidos({ searchTerm = '' }) {
     useEffect(() => {
         if (!isBranch || !user?.id) return;
         (async () => {
-            const { data: emp, error: empErr } = await supabase.from('employees').select('branch_id').eq('id', user.id).maybeSingle();
+            const { data: emp, error: empErr } = await fetchEmployeeBranchId(user.id);
             if (empErr) console.error('fetch employee branch_id failed:', empErr.message);
             if (!emp?.branch_id) return;
-            const { data: mapRow, error: mapErr } = await supabase.from('erp_sucursal_map').select('erp_sucursal_id').eq('branch_id', emp.branch_id).eq('es_bodega', false).maybeSingle();
+            const { data: mapRow, error: mapErr } = await fetchSucursalIdForBranch(emp.branch_id);
             if (mapErr) console.error('fetch erp_sucursal_map failed:', mapErr.message);
             if (!mapRow) return;
             setErpSucursalId(mapRow.erp_sucursal_id);
@@ -233,12 +241,8 @@ export default function TabPedidos({ searchTerm = '' }) {
         (async () => {
             const ids = [...new Set(activeRows.map(r => r.pedido_id))];
             if (!ids.length) return;
-            let q = supabase.from('pedido_apoyo')
-                .select('pedido_id, erp_sucursal_id, employee_id, tipo, employees(name, photo_url)')
-                .in('pedido_id', ids);
             // Branch: filter to their sucursal only; bodega: load all sucursales
-            if (isBranch && erpSucursalId) q = q.eq('erp_sucursal_id', erpSucursalId);
-            const { data } = await q;
+            const { data } = await fetchApoyoForPedidos(ids, isBranch && erpSucursalId ? erpSucursalId : null);
             await signPhotosDeep(data || []);
             if (!data) return;
             const map = {};
@@ -304,11 +308,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         if (loadingRutasRef.current) return;
         loadingRutasRef.current = true;
         const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-        const { data, error } = await supabase.from('rutas')
-            .select(`id, numero, conductor_id, conductor_nombre, status, salida_at, vuelta_base_at,
-                     ruta_pedidos(id, pedido_id, erp_sucursal_id, orden_entrega, entregado_at, entregado_por)`)
-            .or(`status.in.(pendiente,en_ruta),and(status.eq.completada,created_at.gte.${todayStart.toISOString()})`)
-            .order('created_at', { ascending: false });
+        const { data, error } = await fetchActiveRutas(todayStart.toISOString());
         if (error) console.error('loadActiveRutas: fetch rutas failed:', error.message);
         if (!data?.length) { setPedidoRutaMap(new Map()); loadingRutasRef.current = false; return; }
 
@@ -317,9 +317,9 @@ export default function TabPedidos({ searchTerm = '' }) {
         const sucIds   = [...new Set(allStops.map(s => s.erp_sucursal_id))];
 
         const [{ data: locs, error: locsErr }, { data: sucData, error: sucErr }] = await Promise.all([
-            supabase.from('ruta_locations').select('ruta_id, updated_at').in('ruta_id', rutaIds),
+            fetchRutaLocations(rutaIds),
             sucIds.length
-                ? supabase.from('erp_sucursal_map').select('erp_sucursal_id, branch:branches!inner(name)').in('erp_sucursal_id', sucIds)
+                ? fetchBranchNamesForSucursales(sucIds)
                 : Promise.resolve({ data: [] }),
         ]);
         if (locsErr) console.error('loadActiveRutas: fetch ruta_locations failed:', locsErr.message);
@@ -396,9 +396,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                 bgGpsIntervalRef.current = setInterval(async () => {
                     const pos = bgGpsPosRef.current;
                     if (!pos) return;
-                    await supabase.from('ruta_locations')
-                        .upsert({ ruta_id: rutaId, lat: pos.lat, lng: pos.lng, updated_at: new Date().toISOString() }, { onConflict: 'ruta_id' })
-                        .then(() => {}, () => {});
+                    await upsertRutaLocation(rutaId, pos.lat, pos.lng).then(() => {}, () => {});
                 }, 30_000);
             } catch (e) { console.warn('[BG-GPS] start error:', e); }
         };
@@ -427,57 +425,17 @@ export default function TabPedidos({ searchTerm = '' }) {
         const sucFilter = sucId ?? (isBranch && erpSucursalId ? erpSucursalId : null);
         try {
 
-        const ITEMS_SELECT = `
-            id, erp_sucursal_id, erp_product_id, cantidad_asignada, cantidad_recibida,
-            status, nota_diferencia, error_tipo, received_at, received_by, lotes_asignados, agotamiento,
-            sin_stock, revision_minmax, falta_caja, caja_especial,
-            factor, dispatch_tipo, dispatch_factor, dispatch_multiplo,
-            max_qty_snapshot, stock_packs_snapshot,
-            resolucion_status, resolucion_tipo, resolucion_nota,
-            resuelto_por, resuelto_at, confirmado_suc_por, confirmado_suc_at,
-            rechazado_por, rechazado_at, nota_rechazo,
-            products ( nombre, es_antibiotico, laboratorios ( nombre ), product_precios ( factor, activo, presentaciones!id_presentacion ( tipo ) ), dispatch_rules ( dispatch_label ) ),
-            presentaciones!erp_presentacion_id ( tipo )
-        `;
-
         // Paginated fetch — pedidos con >1000 items existen en producción
-        const PAGE = 1000;
-        let allItemRows = [], from = 0;
-        while (true) {
-            let q = supabase.from('pedido_items').select(ITEMS_SELECT)
-                .eq('pedido_id', pedidoId).range(from, from + PAGE - 1);
-            if (sucFilter) q = q.eq('erp_sucursal_id', sucFilter);
-            const { data: page, error: pageErr } = await q;
-            if (pageErr) throw pageErr;
-            if (!page || page.length === 0) break;
-            allItemRows = allItemRows.concat(page);
-            if (page.length < PAGE) break;
-            from += PAGE;
-        }
+        const allItemRows = await fetchPedidoItemsAll(pedidoId, sucFilter) ?? [];
 
         const lcPromise = (sucFilter && isBranch)
-            ? supabase.from('pedido_sucursal_status').select('recibido_erp_at, llegada_fisica_at').eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucFilter).maybeSingle()
+            ? fetchPedidoSucursalStatus(pedidoId, sucFilter, 'recibido_erp_at, llegada_fisica_at')
             : Promise.resolve({ data: null });
 
-        let apoyoQ = supabase.from('pedido_apoyo')
-            .select('id, employee_id, tipo, employees(name, photo_url)')
-            .eq('pedido_id', pedidoId);
-        if (sucFilter) apoyoQ = apoyoQ.eq('erp_sucursal_id', sucFilter);
+        const apoyoQ = fetchApoyoForPedido(pedidoId, sucFilter);
 
         // Paginated eventos fetch (cap-safe)
-        let evBase = supabase.from('pedido_item_eventos')
-            .select('id, pedido_item_id, tipo, resolucion_tipo, nota, hecho_por, created_at')
-            .eq('pedido_id', pedidoId).order('created_at', { ascending: true });
-        if (sucFilter) evBase = evBase.eq('erp_sucursal_id', sucFilter);
-        let allEvRows = [], evFrom = 0;
-        while (true) {
-            const { data: evPage, error: evErr } = await evBase.range(evFrom, evFrom + 999);
-            if (evErr) throw evErr;
-            if (!evPage || evPage.length === 0) break;
-            allEvRows = allEvRows.concat(evPage);
-            if (evPage.length < 1000) break;
-            evFrom += 1000;
-        }
+        const allEvRows = await fetchPedidoItemEventosAll(pedidoId, sucFilter) ?? [];
 
         const [{ data: lcRow, error: lcErr }, { data: apoyoRows, error: apoyoErr }] = await Promise.all([lcPromise, apoyoQ]);
         if (lcErr) throw lcErr;
@@ -531,7 +489,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             useStaff.getState().appendAuditLog(`PEDIDO_LIFECYCLE_${stage.toUpperCase()}`, pedidoId, { sucursal_id: sucId, razon });
             loadActive();
             if (stage === 'iniciar' && numero != null) {
-                supabase.from('erp_sucursal_map').select('branch_id, nombre').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
+                fetchBranchInfoForSucursal(sucId).then(({ data: m }) => {
                     if (!m?.branch_id) return;
                     // Informativo: campana sin push
                     notifyBranch(m.branch_id, { type: 'PEDIDO_TRACKING', title: `Pedido #${numero} en preparación`, body: `Bodega ha iniciado la preparación de tu pedido #${numero}. Te avisaremos cuando salga en camino.`, link: '/pedidos' });
@@ -555,9 +513,8 @@ export default function TabPedidos({ searchTerm = '' }) {
             const emp    = empMap.get(user?.id);
             const entry  = { programada_at: newIso, registrado_at: new Date().toISOString(), por: user?.id ?? null, nombre: emp?.name ?? null };
             const newHist = [...(historial ?? []), entry];
-            const { error } = await supabase.from('pedido_sucursal_status')
-                .update({ entrega_programada_at: newIso, entrega_programada_historial: newHist })
-                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+            const { error } = await updatePedidoSucursalStatus(pedidoId, sucId,
+                { entrega_programada_at: newIso, entrega_programada_historial: newHist });
             if (error) throw error;
             useStaff.getState().appendAuditLog('PEDIDO_ENTREGA_PROGRAMADA', pedidoId, { sucursal_id: sucId, entrega_at: newIso });
             setProgramarModal(null);
@@ -580,9 +537,9 @@ export default function TabPedidos({ searchTerm = '' }) {
             todayStart.setHours(0, 0, 0, 0);
 
             const [{ data: histData, error: histErr }, { data: punchData, error: punchErr }] = await Promise.all([
-                supabase.from('pedido_pausa_historial').select('razon').eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId),
+                fetchPausaHistorial(pedidoId, sucId),
                 user?.id
-                    ? supabase.from('attendance').select('type, timestamp').eq('employee_id', user.id).in('type', ['OUT_LUNCH', 'IN_LUNCH']).gte('timestamp', todayStart.toISOString()).order('timestamp', { ascending: false }).limit(10)
+                    ? fetchAttendancePunches(user.id, todayStart.toISOString())
                     : Promise.resolve({ data: [] }),
             ]);
             if (histErr) throw histErr;
@@ -657,8 +614,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         try {
             const [rowsResult, pssResult] = await Promise.all([
                 items[key] ? Promise.resolve(items[key]) : fetchItems(key, pedidoId, sucId),
-                supabase.from('pedido_sucursal_status').select('paginas')
-                    .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle(),
+                fetchPedidoSucursalStatus(pedidoId, sucId, 'paginas'),
             ]);
             setFinalizarModal({
                 pedidoId, sucId, numero, key,
@@ -698,9 +654,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                 p_pedido_id: pedidoId, p_sucursal_id: sucId,
                 p_stage: 'finalizar', p_user_id: user?.id ?? null,
             });
-            await supabase.from('pedido_sucursal_status')
-                .update({ total_cajas: totalCajas, caja_map: cajaMap, pagina_items: paginaItems, cajas_electrolit: cajasElectrolit, cajas_especiales: cajasEspeciales })
-                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+            await updatePedidoSucursalStatus(pedidoId, sucId,
+                { total_cajas: totalCajas, caja_map: cajaMap, pagina_items: paginaItems, cajas_electrolit: cajasElectrolit, cajas_especiales: cajasEspeciales });
             useStaff.getState().appendAuditLog('PEDIDO_FINALIZADO', pedidoId, { totalCajas, cajasElectrolit, cajasEspeciales: cajasEspeciales.length, cajas: Object.keys(cajaMap).length });
             await loadActive();
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
@@ -733,11 +688,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             // 2. Marcar items de cajas faltantes como falta_caja: true
             if (hasFalta) {
-                const { data: pss, error: pssErr } = await supabase
-                    .from('pedido_sucursal_status')
-                    .select('caja_map, pagina_items')
-                    .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
-                    .maybeSingle();
+                const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'caja_map, pagina_items');
                 if (pssErr) throw pssErr;
                 const cajaMapDb     = pss?.caja_map    ?? {};
                 const paginaItemsDb = pss?.pagina_items ?? {};
@@ -751,21 +702,17 @@ export default function TabPedidos({ searchTerm = '' }) {
                     const pageGroups = await getExactPageGroups(sucId, rows);
                     const recomputed = {};
                     pageGroups.forEach((pg, idx) => { recomputed[String(idx + 1)] = pg.ids; });
-                    await supabase.from('pedido_sucursal_status')
-                        .update({ pagina_items: recomputed })
-                        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+                    await updatePedidoSucursalStatus(pedidoId, sucId, { pagina_items: recomputed });
                     const missingPages = cajasFaltantes.flatMap(n => cajaMapDb[String(n)] ?? []);
                     missingIds = missingPages.flatMap(p => recomputed[String(p)] ?? []);
                 } else {
                     // Sin caja_map ni pagina_items — conservador: bloquear todos los ítems pendientes
-                    const { data: allPending, error: allPendingErr } = await supabase
-                        .from('pedido_items').select('id')
-                        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).eq('status', 'pendiente');
+                    const { data: allPending, error: allPendingErr } = await fetchPedidoItemsPendientesIds(pedidoId, sucId);
                     if (allPendingErr) throw allPendingErr;
                     missingIds = (allPending || []).map(r => r.id);
                 }
                 if (missingIds.length > 0) {
-                    await supabase.from('pedido_items').update({ falta_caja: true }).in('id', missingIds);
+                    await updatePedidoItemsFaltaCaja(missingIds, true);
                 }
             }
 
@@ -775,7 +722,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     .filter(r => (r.products?.nombre ?? '').toLowerCase().includes('electrolit') && !r.falta_caja && r.status !== 'recibido')
                     .slice(0, electrolitFaltantes);
                 if (faltaElecItems.length > 0) {
-                    await supabase.from('pedido_items').update({ falta_caja: true }).in('id', faltaElecItems.map(r => r.id));
+                    await updatePedidoItemsFaltaCaja(faltaElecItems.map(r => r.id), true);
                 }
             }
 
@@ -794,7 +741,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                         }
                     });
                 if (faltaIds.size > 0) {
-                    await supabase.from('pedido_items').update({ falta_caja: true }).in('id', [...faltaIds]);
+                    await updatePedidoItemsFaltaCaja([...faltaIds], true);
                 }
             }
 
@@ -805,7 +752,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             });
 
             // 4. Guardar metadata de llegada
-            await supabase.from('pedido_sucursal_status').update({
+            await updatePedidoSucursalStatus(pedidoId, sucId, {
                 llegada_tipo:  tipo,
                 llegada_nota:  nota || null,
                 falta_cajas:   cajasFaltantes,
@@ -816,14 +763,14 @@ export default function TabPedidos({ searchTerm = '' }) {
                     electrolit_faltantes: electrolitFaltantes,
                 } : {}),
                 ...(especialesLlegadas !== null ? { cajas_especiales_llegadas: especialesLlegadas } : {}),
-            }).eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+            });
 
             useStaff.getState().appendAuditLog('PEDIDO_LLEGADA_CONFIRMADA', pedidoId, { tipo, cajasFaltantes, cajasDanadas, cajasExtra, cajasExtraNotas });
             setLlegadaStatus(prev => ({ ...prev, [key]: true }));
 
             // 5a. Notificar bodega si hay problema en cajas físicas
             if (tipo !== 'completa') {
-                supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
+                fetchBodegaBranchId().then(({ data: b }) => {
                     if (!b?.branch_id) return;
                     const parts = [];
                     if (cajasDanadas.length > 0)  parts.push(`caja${cajasDanadas.length > 1 ? 's' : ''} dañada${cajasDanadas.length > 1 ? 's' : ''} ${cajasDanadas.map(n => `#${n}`).join(', ')}`);
@@ -837,7 +784,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             // 5b. Notificar bodega si faltan cajas de Electrolit
             if ((electrolitFaltantes ?? 0) > 0) {
-                supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
+                fetchBodegaBranchId().then(({ data: b }) => {
                     if (!b?.branch_id) return;
                     const cnt = electrolitFaltantes;
                     const title   = `Electrolit faltante — ${branchName}`;
@@ -848,7 +795,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             // 5c. Notificar si cajas de más
             if (cajasExtra > 0) {
-                supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
+                fetchBodegaBranchId().then(({ data: b }) => {
                     if (!b?.branch_id) return;
                     const notas = cajasExtraNotas ? Object.values(cajasExtraNotas).filter(Boolean) : [];
                     const title   = `Cajas de más — ${branchName}`;
@@ -860,7 +807,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             // 5d. Notificar si faltan cajas especiales
             if (especialesLlegadas && Object.values(especialesLlegadas).some(v => v === 'faltante')) {
-                supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
+                fetchBodegaBranchId().then(({ data: b }) => {
                     if (!b?.branch_id) return;
                     const faltanE = Object.entries(especialesLlegadas).filter(([, v]) => v === 'faltante').map(([k]) => k);
                     const title   = `Caja especial faltante — ${branchName}`;
@@ -879,25 +826,21 @@ export default function TabPedidos({ searchTerm = '' }) {
         try {
             const now = new Date().toISOString();
             // Leer historial actual para calcular ciclo
-            const { data: pss, error: pssErr } = await supabase.from('pedido_sucursal_status')
-                .select('reenvios_historial')
-                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
+            const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'reenvios_historial');
             if (pssErr) throw pssErr;
             const historial = pss?.reenvios_historial ?? [];
             const ciclo     = historial.length + 1;
             const nuevoCiclo = { ciclo, cajas: cajasFaltantes, electrolits: electrolitsFaltantes, especiales: especialesFaltantes, sent_at: now, sent_by: user?.id ?? null, arrived_at: null, arrived_tipo: null, cajas_ok: [], cajas_danadas: [], cajas_aun_faltantes: [] };
 
-            await supabase.from('pedido_sucursal_status')
-                .update({
-                    reenvio_bodega_at:  now,
-                    reenvio_por:        user?.id ?? null,
-                    reenvios_historial: [...historial, nuevoCiclo],
-                })
-                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+            await updatePedidoSucursalStatus(pedidoId, sucId, {
+                reenvio_bodega_at:  now,
+                reenvio_por:        user?.id ?? null,
+                reenvios_historial: [...historial, nuevoCiclo],
+            });
 
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_CAJA', pedidoId, { sucursal_id: sucId, ciclo, cajas: cajasFaltantes });
 
-            supabase.from('erp_sucursal_map').select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
+            fetchBranchIdForSucursal(sucId).then(({ data: m }) => {
                 if (!m?.branch_id) return;
                 const cajasStr = cajasFaltantes.map(n => `#${n}`).join(', ');
                 // Accionable (deben confirmar llegada) → con push
@@ -952,20 +895,19 @@ export default function TabPedidos({ searchTerm = '' }) {
                     : c
             );
 
-            await supabase.from('pedido_sucursal_status').update({
+            await updatePedidoSucursalStatus(pedidoId, sucId, {
                 segunda_llegada_at: now,
                 reenvios_historial: nuevoHistorial,
                 falta_cajas: hasFalta ? cajasFaltantes : [],
                 // Escribir estado electrolit al DB cuando estaban en este ciclo de reenvío
                 ...(electrolitCount > 0 ? { electrolit_ok: electrolitOk === true, electrolit_faltantes: electrolitOk ? 0 : electrolitCount } : {}),
-            }).eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+            });
 
             useStaff.getState().appendAuditLog('PEDIDO_REENVIO_LLEGADA', pedidoId, { ciclo, arrived_tipo, cajasOk, cajasDanadas, cajasFaltantes });
 
             // Cargar mapa de páginas + estado actual de especiales para merge
-            const { data: pss, error: pssErr } = await supabase.from('pedido_sucursal_status')
-                .select('caja_map, pagina_items, cajas_recibidas, cajas_danadas, cajas_especiales_llegadas')
-                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
+            const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId,
+                'caja_map, pagina_items, cajas_recibidas, cajas_danadas, cajas_especiales_llegadas');
             if (pssErr) throw pssErr;
             const cajaMapDb     = pss?.caja_map    ?? {};
             const paginaItemsDb = pss?.pagina_items ?? {};
@@ -980,25 +922,22 @@ export default function TabPedidos({ searchTerm = '' }) {
             if (cajasLlegaron.length > 0) {
                 const llegadaIds = getItemIds(cajasLlegaron);
                 if (llegadaIds.length > 0) {
-                    await supabase.from('pedido_items').update({ falta_caja: false }).in('id', llegadaIds);
+                    await updatePedidoItemsFaltaCaja(llegadaIds, false);
                 }
             }
 
             // Mantener falta_caja: true solo en cajas que AÚN no llegaron
             if (hasFalta) {
                 const mIds = getItemIds(cajasFaltantes);
-                if (mIds.length > 0) await supabase.from('pedido_items').update({ falta_caja: true }).in('id', mIds);
+                if (mIds.length > 0) await updatePedidoItemsFaltaCaja(mIds, true);
             }
 
             // Limpiar falta_caja en electrolits si llegaron en este reenvío
             if (electrolitCount > 0 && electrolitOk) {
-                const { data: faltaElec, error: faltaElecErr } = await supabase.from('pedido_items')
-                    .select('id, products(nombre)')
-                    .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
-                    .eq('falta_caja', true).eq('status', 'pendiente');
+                const { data: faltaElec, error: faltaElecErr } = await fetchPedidoItemsFaltaElectrolit(pedidoId, sucId);
                 if (faltaElecErr) throw faltaElecErr;
                 const elecIds = (faltaElec || []).filter(r => (r.products?.nombre ?? '').toLowerCase().includes('electrolit')).map(r => r.id);
-                if (elecIds.length > 0) await supabase.from('pedido_items').update({ falta_caja: false }).in('id', elecIds);
+                if (elecIds.length > 0) await updatePedidoItemsFaltaCaja(elecIds, false);
             }
 
             // Especiales: actualizar cajas_especiales_llegadas en DB + limpiar falta_caja en items
@@ -1008,23 +947,18 @@ export default function TabPedidos({ searchTerm = '' }) {
                 const mergedEsp = { ...(pss?.cajas_especiales_llegadas ?? {}) };
                 for (const label of espLlegaron)  mergedEsp[label] = 'ok';
                 for (const label of especialesAun) mergedEsp[label] = 'faltante';
-                await supabase.from('pedido_sucursal_status')
-                    .update({ cajas_especiales_llegadas: mergedEsp })
-                    .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId);
+                await updatePedidoSucursalStatus(pedidoId, sucId, { cajas_especiales_llegadas: mergedEsp });
 
                 // Limpiar falta_caja en items de especiales que sí llegaron
                 if (espLlegaron.length > 0) {
-                    const { data: faltaEsp, error: faltaEspErr } = await supabase.from('pedido_items')
-                        .select('id')
-                        .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId)
-                        .eq('falta_caja', true).eq('status', 'pendiente').eq('caja_especial', true);
+                    const { data: faltaEsp, error: faltaEspErr } = await fetchPedidoItemsFaltaEspeciales(pedidoId, sucId);
                     if (faltaEspErr) throw faltaEspErr;
                     if ((faltaEsp ?? []).length > 0) {
                         // Si todas llegaron → limpiar todos; si algunas aún faltan → limpiar solo las que llegaron (proporcionalmente)
                         const idsToClean = especialesAun.length === 0
                             ? faltaEsp.map(r => r.id)
                             : faltaEsp.slice(0, Math.round(faltaEsp.length * espLlegaron.length / (especialesList ?? []).length)).map(r => r.id);
-                        if (idsToClean.length > 0) await supabase.from('pedido_items').update({ falta_caja: false }).in('id', idsToClean);
+                        if (idsToClean.length > 0) await updatePedidoItemsFaltaCaja(idsToClean, false);
                     }
                 }
             }
@@ -1032,7 +966,7 @@ export default function TabPedidos({ searchTerm = '' }) {
             // Notificar bodega si aún hay pendientes de reenvío
             const hayAunPendiente = hasFalta || !electrolitOk || especialesAun.length > 0;
             if (hayAunPendiente) {
-                supabase.from('erp_sucursal_map').select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle().then(({ data: m }) => {
+                fetchBranchIdForSucursal(sucId).then(({ data: m }) => {
                     if (!m?.branch_id) return;
                     const partes = [];
                     if (hasFalta) partes.push(`Cajas: ${cajasFaltantes.map(n => `#${n}`).join(', ')}`);
@@ -1067,13 +1001,10 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     const handleEntregarStop = useCallback(async (stopId, rutaId, sucId) => {
         try {
-            const { error } = await supabase.from('ruta_pedidos')
-                .update({ entregado_at: new Date().toISOString(), entregado_por: user?.id })
-                .eq('id', stopId);
+            const { error } = await updateRutaPedidoEntregado(stopId, user?.id);
             if (error) throw error;
             useStaff.getState().appendAuditLog('RUTA_PARADA_ENTREGADA', stopId, { sucursal_id: sucId });
-            const { data: mapa, error: mapaErr } = await supabase.from('erp_sucursal_map')
-                .select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle();
+            const { data: mapa, error: mapaErr } = await fetchBranchIdForSucursal(sucId);
             if (mapaErr) throw mapaErr;
             if (mapa?.branch_id) {
                 // Llegada física = accionable → con push
@@ -1108,9 +1039,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         // Load pagina_items + cajas_recibidas only when caja_map is available
         let paginaItems = {}, cajasRecibidas = [];
         if (Object.keys(cajaMap).length > 0) {
-            const { data: pss, error: pssErr } = await supabase.from('pedido_sucursal_status')
-                .select('pagina_items, cajas_recibidas')
-                .eq('pedido_id', pedidoId).eq('erp_sucursal_id', sucId).maybeSingle();
+            const { data: pss, error: pssErr } = await fetchPedidoSucursalStatus(pedidoId, sucId, 'pagina_items, cajas_recibidas');
             if (pssErr) console.error('openModal: fetch pedido_sucursal_status failed:', pssErr.message);
             paginaItems    = pss?.pagina_items    ?? {};
             cajasRecibidas = pss?.cajas_recibidas ?? [];
@@ -1786,7 +1715,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 <button
                                                     onClick={async () => {
                                                         try {
-                                                            const { error } = await supabase.from('rutas').update({ status: 'en_ruta', salida_at: new Date().toISOString() }).eq('id', ruta.id);
+                                                            const { error } = await updateRutaStatus(ruta.id, { status: 'en_ruta', salida_at: new Date().toISOString() });
                                                             if (error) throw error;
                                                             useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
                                                             loadActiveRutas();
@@ -1801,7 +1730,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 <button
                                                     onClick={async () => {
                                                         try {
-                                                            const { error } = await supabase.from('rutas').update({ status: 'completada', vuelta_base_at: new Date().toISOString() }).eq('id', ruta.id);
+                                                            const { error } = await updateRutaStatus(ruta.id, { status: 'completada', vuelta_base_at: new Date().toISOString() });
                                                             if (error) throw error;
                                                             useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
                                                             loadActiveRutas(); loadActive();
@@ -1938,7 +1867,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const loaded = await fetchItems(key, pedido.id, sucId);
                             const realHasDiff = hasDiff || (loaded || []).some(r => r.status === 'con_diferencia');
                             if (realHasDiff) await handleReportarDiferencias(pedido.id, sucId);
-                            supabase.from('erp_sucursal_map').select('branch_id').eq('es_bodega', true).maybeSingle().then(({ data: b }) => {
+                            fetchBodegaBranchId().then(({ data: b }) => {
                                 if (!b?.branch_id) return;
                                 const title   = realHasDiff
                                     ? `Problemas en pedido #${pedido.numero} — ${branchName}`

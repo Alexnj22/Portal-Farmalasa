@@ -1227,7 +1227,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
   // ── Pill style helpers (match ViewTabBar) ────────────────────────────────
   const pillWrap    = 'flex items-center border border-white/90 bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 gap-1 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:-translate-y-[2px] transition-all duration-300';
   const pillDivider = 'h-5 w-px bg-white/40 mx-1';
-  const pillIconBtn = 'w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-sm transition-all duration-300 shrink-0';
+  const pillIconBtn = 'w-11 h-11 rounded-full flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-sm transition-all duration-300 shrink-0';
   const pillLabelText = 'text-slate-800';
   const pillSubText   = (ok) => ok ? 'text-emerald-600' : 'text-[#0052CC]';
 

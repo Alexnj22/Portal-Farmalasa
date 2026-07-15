@@ -332,7 +332,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                 <div className="flex items-center justify-between mb-1">
                     <h3 className="font-semibold text-slate-700 text-[15px]">Selecciona las sucursales a reponer</h3>
                     <button onClick={toggleAll}
-                        className="text-[12px] text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                        className="text-[12px] text-blue-600 hover:text-blue-700 font-medium transition-colors p-3.5 -m-3.5">
                         {visibleSucursales.every(id => selected.has(id)) && visibleSucursales.length > 0 ? 'Deseleccionar todas' : 'Seleccionar todas'}
                     </button>
                 </div>

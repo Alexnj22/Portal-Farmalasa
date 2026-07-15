@@ -391,7 +391,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 if (typeof setView === 'function') setView('dashboard');
                                 else navigate('/dashboard');
                             }} 
-                            className="relative group/back w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 z-50 bg-white"
+                            className="relative group/back w-11 h-11 flex items-center justify-center rounded-full shrink-0 active:scale-[0.97] transition-all duration-300 border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_20px_rgba(0,82,204,0.2)] hover:-translate-y-0.5 z-50 bg-white"
                             title="Volver a Personal"
                         >
                             <div className="absolute inset-0 bg-gradient-to-tr from-[#0052CC]/20 to-cyan-400/20 rounded-full opacity-0 group-hover/back:opacity-100 transition-opacity duration-300"></div>

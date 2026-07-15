@@ -716,7 +716,7 @@ export default function EncuestaAdminView() {
 
                                 {/* Submit */}
                                 <button type="button" onClick={handleSaveSurvey} disabled={savingSurvey || !canManage}
-                                    className={`w-full py-3 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] disabled:opacity-40 disabled:cursor-not-allowed ${
+                                    className={`w-full py-3.5 active:scale-[0.98] text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 border-none shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_24px_rgba(0,82,204,0.4)] disabled:opacity-40 disabled:cursor-not-allowed ${
                                         editingSurvey
                                             ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30'
                                             : 'bg-[#0052CC] hover:bg-[#003D99]'

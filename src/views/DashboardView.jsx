@@ -1388,7 +1388,7 @@ const DashboardView = ({ openModal }) => {
         : absences;
       return wrapWidget('absences',
         <WidgetCard title="Ausencias Activas" icon={UserX} category="personal"
-          action={canManage('dash_absences')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
+          action={canManage('dash_absences')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {absLoading?[0,1,2].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
@@ -1429,7 +1429,7 @@ const DashboardView = ({ openModal }) => {
         : pendingReqs;
       return wrapWidget('requests',
         <WidgetCard title="Solicitudes Pendientes" icon={ClipboardList} category="personal"
-          action={canManage('dash_requests')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver todas <ChevronRight size={11}/></button>}>
+          action={canManage('dash_requests')&&<button onClick={()=>navigate('/requests')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver todas <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=>(
               <div key={i} className="flex items-center gap-3 px-5 py-3">
@@ -1467,7 +1467,7 @@ const DashboardView = ({ openModal }) => {
         : branches;
       return wrapWidget('branches',
         <WidgetCard title="Alertas · Sucursales" icon={Building2} category="general"
-          action={canManage('dash_branches')&&<button onClick={()=>navigate('/branches')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
+          action={canManage('dash_branches')&&<button onClick={()=>navigate('/branches')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           <div className="p-3 flex flex-col gap-2 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {displayBranches.length === 0 ? (
               [0,1,2].map(i => (
@@ -1557,7 +1557,7 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('announcements','dash_announcements')) return null;
       return wrapWidget('announcements',
         <WidgetCard title="Avisos Recientes" icon={Megaphone} category="general"
-          action={canManage('dash_announcements')&&<button onClick={()=>navigate('/announcements')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver todos <ChevronRight size={11}/></button>}>
+          action={canManage('dash_announcements')&&<button onClick={()=>navigate('/announcements')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver todos <ChevronRight size={11}/></button>}>
           <div className="divide-y divide-slate-50 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {employees.length === 0 ? [0,1,2,3].map(i => (
               <div key={i} className="flex items-start gap-3 px-5 py-3.5">
@@ -1687,7 +1687,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       return wrapWidget('cotizaciones',
         <WidgetCard title="Cotizaciones Activas" icon={Receipt} category="ventas"
-          action={<button onClick={() => navigate('/cotizaciones')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
+          action={<button onClick={() => navigate('/cotizaciones')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           {cotizLoading ? (
             <div className="flex flex-col h-full">
               <div className="flex items-end gap-4 px-4 pt-3 pb-2 border-b border-slate-50 shrink-0">
@@ -1753,7 +1753,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => `$${Number(v).toLocaleString('es', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       return wrapWidget('facturacion',
         <WidgetCard title="Facturación Hoy" icon={FileText} category="ventas"
-          action={<button onClick={() => navigate('/facturacion')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
+          action={<button onClick={() => navigate('/facturacion')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           {factLoading ? (
             <div className="flex flex-col h-full px-4 py-3 gap-3">
               <div className="grid grid-cols-2 gap-3">
@@ -1818,7 +1818,7 @@ const DashboardView = ({ openModal }) => {
       const maxNeto = topProductos[0]?.neto ?? 1;
       return wrapWidget('top_productos',
         <WidgetCard title="Top Productos · Mes Actual" icon={Package} category="productos"
-          action={<button onClick={() => navigate('/ventas')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1">Ver <ChevronRight size={11}/></button>}>
+          action={<button onClick={() => navigate('/ventas')} className="text-[11px] font-bold text-[#0052CC] hover:underline flex items-center gap-1 p-3.5 -m-3.5">Ver <ChevronRight size={11}/></button>}>
           <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full px-3 py-2">
             {topProdLoading ? (
               <div className="space-y-0.5 py-1">

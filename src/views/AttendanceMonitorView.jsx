@@ -406,7 +406,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         type="button"
         onClick={() => setSearchOpen((v) => !v)}
         className={[
-          "w-10 h-10 flex-shrink-0 rounded-[0.875rem] border flex items-center justify-center",
+          "w-11 h-11 flex-shrink-0 rounded-[0.875rem] border flex items-center justify-center",
           "transition-all duration-200 hover:shadow-md active:scale-[0.97]",
           searchOpen
             ? "ring-2 ring-[#0052CC] bg-white border-[#0052CC]/30 text-[#0052CC]"
@@ -420,7 +420,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         type="button"
         onClick={() => setIsDarkConcept(true)}
         title="Ver concepto oscuro"
-        className="w-10 h-10 flex-shrink-0 rounded-[0.875rem] border border-white/60 bg-white/40 backdrop-blur-md text-slate-500 hover:bg-white hover:text-[#0052CC] flex items-center justify-center transition-all duration-200 hover:shadow-md active:scale-[0.97]"
+        className="w-11 h-11 flex-shrink-0 rounded-[0.875rem] border border-white/60 bg-white/40 backdrop-blur-md text-slate-500 hover:bg-white hover:text-[#0052CC] flex items-center justify-center transition-all duration-200 hover:shadow-md active:scale-[0.97]"
       >
         <Moon size={16} strokeWidth={2} />
       </button>

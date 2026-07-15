@@ -257,7 +257,7 @@ const EmployeeDocumentsView = () => {
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}
-                <button onClick={() => { setSearchOpen(false); setSearch(''); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2" title="Cerrar">
+                <button onClick={() => { setSearchOpen(false); setSearch(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2" title="Cerrar">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -281,7 +281,7 @@ const EmployeeDocumentsView = () => {
                 </button>
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                 <button onClick={() => setSearchOpen(true)}
-                    className="relative w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+                    className="relative w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                     title="Buscar documentos">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {search && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}

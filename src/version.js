@@ -5,9 +5,76 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.16.9';
+export const APP_VERSION = '2.16.10';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.16.10 — design(bloque5.3): touch targets <44px, long-tail dirigido
+// (WCAG 2.5.8). Auditoría propia con Playwright (getBoundingClientRect +
+// chequeo de intersección real con viewport, mismo fix del bug de falsos
+// positivos por sidebar transform:translateX que ya documentaba la
+// auditoría original) sobre 25 rutas × 2 viewports (390px/768px): 240
+// instancias crudas, 39 combos ruta/viewport.
+// Triado en 2 categorías:
+// (A) BUG REAL, mecánico y seguro — corregido: el botón de abrir/cerrar
+// búsqueda de ViewTabBar.jsx ya se había fijado a 44px uniforme en Fase 4
+// de la auditoría original, pero 22 vistas tienen su PROPIA copia
+// duplicada de ese mismo botón (el hallazgo "Search pattern duplication"
+// de DESIGN.md §32, ya documentado pero no cerrado) — esas copias seguían
+// con el patrón viejo `w-10 h-10 md:w-11 md:h-11`/`w-9 h-9 md:w-10
+// md:h-10` (40px en mobile). 34 instancias en 22 archivos →
+// `w-11 h-11` uniforme, igual que el componente ya-corregido. Más: 2
+// botones fijos en 40px sin variante responsive (AttendanceMonitorView,
+// "Buscar empleado"/"Ver concepto oscuro") → 44px. Total: 36 botones
+// reales, 24 archivos.
+// (B) Enlaces/CTAs de texto sin padding real (hit-box literal = tamaño
+// del texto) — corregidos con el mismo patrón `p-X -m-X` ya usado en el
+// botón hamburguesa de AppLayout (padding agranda el área de toque, el
+// margen negativo cancela el desplazamiento visual): los 7 links "Ver/Ver
+// todas/Ver todos" de las cards del Dashboard, y "Seleccionar todas" de
+// TabGenerar.jsx (Pedidos).
+// (C) CTAs primarios con altura real unos px por debajo de 44 (NO son
+// pills decorativas, son la acción principal de su vista) — bumpeados
+// directamente: "Cancelar" (búsqueda de Payroll/VacationPlan, h-10→h-11),
+// "Nueva Cotización" (py-2.5→py-3.5), "Crear Encuesta" (py-3→py-3.5),
+// "Admin Facturas" (h-9/h-10→h-11).
+// NO tocado, documentado como trade-off deliberado (mismo criterio que
+// el precedente ya sentado en la auditoría original con el botón
+// "Activar" de PushPromptBanner — agrandarlos cambia notablemente el
+// carácter visual del elemento, no es un bug oculto de hit-box):
+// - Íconos flotantes hover-reveal de tamaño fijo (Dashboard "Cambiar
+//   tamaño" 27px, ScheduleChart "Expandir Análisis" 24px) — insignias
+//   circulares pequeñas deliberadas, agrandar a 44px sería un cambio
+//   visual real, no un padding invisible (ya tienen w/h fijo 1:1 con su
+//   círculo visible).
+// - Grupos de íconos densos en cards (RolesView Editar/Eliminar/Ver
+//   Empleados, AnnouncementsView Editar/Archivar/Eliminar aviso,
+//   BranchesView Copiar/Diagnóstico/Ver Perfil/Ajustes) — agrandar el
+//   hit-box invisible arriesga solapar el área de toque de íconos
+//   vecinos muy próximos entre sí (mis-clicks), riesgo real de UX no
+//   mecánico de resolver.
+// - TODAS las pills de filtro/tab con texto (TODOS/ARCHIVO/ACTIVOS/
+//   ANULADAS/CLIMA/VISUAL/LISTADO/DÍAS/HORAS/Salud 1-5/etc., ~130
+//   instancias) — es el mismo Filter Pill Standard / Tab Bar Standard
+//   usado deliberadamente en TODA la app (ver DESIGN.md), no un
+//   accidente por vista. Agrandarlas a 44px de alto sería un rediseño
+//   sistémico del componente de pill compacta, fuera de alcance de un
+//   fix de accesibilidad puntual.
+// - Botones internos de LiquidSelect (X de limpiar, chevron) — son
+//   controles secundarios anidados DENTRO de un trigger ya de 40-44px
+//   que en sí mismo es un área de click grande (abre el dropdown); usado
+//   en ~30+ sitios de la app, cambiar su comportamiento de hit-box tiene
+//   blast radius alto para un beneficio incierto — no tocado.
+// - Toggles tipo switch (ej. announcements 40x20) — proporción estándar
+//   de industria para switches, no una violación de hit-box en el
+//   sentido de "botón sin padding".
+// Re-auditado después de los fixes: 240→210 instancias crudas (-26 firmas
+// únicas, 0 regresiones nuevas — diff de conjuntos antes/después
+// confirma cero apariciones nuevas). Verificado con Playwright en vivo
+// (desktop 1440px + mobile 390px, 8 rutas: overview/facturacion/
+// cotizaciones/branches/roles/monitor/payroll/requests) sin errores de
+// página ni regresiones visuales — el patrón padding/margen-negativo
+// deja la posición visual idéntica, los CTAs bumpeados se ven
+// proporcionados. Build + lint + 15 tests unitarios verdes.
 // v2.16.9 — design(bloque5.4): últimos 2 <select> nativos migrados a
 // LiquidSelect — TimePicker12 (stepper hora/minuto/AM-PM) y
 // FormAiSchedulerPreview (celda de turno en grilla densa). Ninguno de los

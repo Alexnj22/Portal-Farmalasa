@@ -302,7 +302,7 @@ const filtersContent = (
                 )}
                 <button
                     onClick={() => { setIsSearchMode(false); setRawSearchTerm(""); }}
-                    className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2"
+                    className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2"
                     title="Cerrar Búsqueda"
                 >
                     <ChevronRight size={18} strokeWidth={2.5} />
@@ -414,7 +414,7 @@ const filtersContent = (
                                 e.stopPropagation();
                                 clearFilters();
                             }}
-                            className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/70 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 hover:border-red-200 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300"
+                            className="w-11 h-11 rounded-full bg-white/70 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 hover:border-red-200 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300"
                             title="Limpiar todos los filtros"
                         >
                             <Trash2 size={15} strokeWidth={2.5} />
@@ -423,7 +423,7 @@ const filtersContent = (
 
                     <button
                         onClick={() => setIsSearchMode(true)}
-                        className="relative w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
+                        className="relative w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu"
                         title="Buscar por texto"
                     >
                         <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />

@@ -292,7 +292,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
                             <input autoFocus type="text" placeholder="Buscar en historial..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 min-w-[200px] xl:w-[600px] placeholder:text-slate-400 focus:ring-0" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                             {searchQuery && (<button onClick={() => setSearchQuery("")} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>)}
-                            <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2">
+                            <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="w-11 h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2">
                                 <ChevronRight size={18} strokeWidth={2.5} />
                             </button>
                         </div>
@@ -358,7 +358,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             </div>
 
                             <div className={`flex items-center transition-all duration-500 ease-in-out origin-right max-w-[100px] opacity-100 scale-100 ml-2 pl-3 md:pl-4 border-l border-slate-300/30 shrink-0`}>
-                                <button onClick={() => setIsSearchOpen(true)} className="relative w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu">
+                                <button onClick={() => setIsSearchOpen(true)} className="relative w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-105 hover:shadow-[0_6px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu">
                                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                                 </button>
                             </div>

@@ -1054,7 +1054,7 @@ export default function CotizacionesView() {
         <GlassViewLayout icon={Receipt} title="Cotizaciones"
             filtersContent={canEdit ? (
                 <button onClick={() => { resetForm(); setMode('new'); }}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#0052CC] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl shadow-[0_4px_14px_rgba(0,82,204,0.35)] hover:bg-[#003D99] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
+                    className="flex items-center gap-2 px-5 py-3.5 bg-[#0052CC] text-white text-[12px] font-black uppercase tracking-widest rounded-2xl shadow-[0_4px_14px_rgba(0,82,204,0.35)] hover:bg-[#003D99] hover:-translate-y-0.5 active:scale-[0.97] transition-all">
                     <Plus size={15} strokeWidth={3} /> Nueva Cotización
                 </button>
             ) : undefined}

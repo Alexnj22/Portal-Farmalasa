@@ -2183,7 +2183,7 @@ export default function FacturacionView() {
                 {rawSearch && (
                     <button onClick={() => setRawSearch('')} className="p-1 text-slate-500 hover:text-red-500 transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>
                 )}
-                <button onClick={closeSearch} className="w-10 h-10 md:w-11 md:h-11 rounded-full hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2">
+                <button onClick={closeSearch} className="w-11 h-11 rounded-full hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -2210,7 +2210,7 @@ export default function FacturacionView() {
 
                 <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                 <a href="https://clientesdte3.oss.com.sv/farma_salud/admin_factura_rangos.php" target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97] shrink-0 whitespace-nowrap">
+                    className="flex items-center gap-1.5 px-3 md:px-4 h-11 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-slate-700 hover:bg-slate-800 text-white shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.97] shrink-0 whitespace-nowrap">
                     <ExternalLink size={12} /> Admin Facturas
                 </a>
 
@@ -2218,7 +2218,7 @@ export default function FacturacionView() {
                     <>
                         <div className="h-6 w-px bg-white/40 mx-1 shrink-0" />
                         <button onClick={openSearch}
-                            className="w-10 h-10 md:w-11 md:h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:bg-[#003D99] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
+                            className="w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:bg-[#003D99] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                             {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
                         </button>

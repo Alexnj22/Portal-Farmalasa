@@ -1,4 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import LiquidSelect from './LiquidSelect';
+
+const HOUR_OPTIONS = [...Array(12)].map((_, i) => {
+    const v = (i + 1).toString().padStart(2, '0');
+    return { value: v, label: v };
+});
+const MINUTE_OPTIONS = ['00', '15', '30', '45'].map(m => ({ value: m, label: m }));
+const AMPM_OPTIONS = [{ value: 'AM', label: 'AM' }, { value: 'PM', label: 'PM' }];
 
 const TimePicker12 = ({ value, onChange, className = '', disabled, defaultMeridiem = 'AM' }) => {
     const [hour, setHour] = useState('');
@@ -32,8 +40,7 @@ const TimePicker12 = ({ value, onChange, className = '', disabled, defaultMeridi
         onChange(timeStr);
     };
 
-    const handleHourChange = (e) => {
-        const val = e.target.value;
+    const handleHourChange = (val) => {
         const newMin = minute || '00';
         const newAp = ampm || defaultMeridiem;
         setHour(val);
@@ -42,8 +49,7 @@ const TimePicker12 = ({ value, onChange, className = '', disabled, defaultMeridi
         updateTime(val, newMin, newAp);
     };
 
-    const handleMinuteChange = (e) => {
-        const val = e.target.value;
+    const handleMinuteChange = (val) => {
         const newHour = hour || '12';
         const newAp = ampm || defaultMeridiem;
         setMinute(val);
@@ -52,8 +58,7 @@ const TimePicker12 = ({ value, onChange, className = '', disabled, defaultMeridi
         updateTime(newHour, val, newAp);
     };
 
-    const handleAmpmChange = (e) => {
-        const val = e.target.value;
+    const handleAmpmChange = (val) => {
         const newHour = hour || '12';
         const newMin = minute || '00';
         setAmpm(val);
@@ -65,46 +70,48 @@ const TimePicker12 = ({ value, onChange, className = '', disabled, defaultMeridi
     return (
         <div className={`flex items-center justify-center p-1.5 rounded-[1rem] bg-white/50 backdrop-blur-xl border border-white/80 shadow-[0_4px_12px_rgba(0,82,204,0.06),inset_0_2px_6px_rgba(255,255,255,0.9)] transition-all ${disabled ? 'opacity-50 pointer-events-none grayscale-[0.5]' : 'hover:shadow-[0_6px_16px_rgba(0,82,204,0.12)] hover:bg-white/70'} ${className}`}>
 
-            <select
-                disabled={disabled}
-                className="w-11 py-1.5 px-1 outline-none text-[13px] font-black bg-transparent appearance-none text-center cursor-pointer text-slate-700 focus:text-[#0052CC] transition-colors rounded-lg hover:bg-black/5"
-                value={hour}
-                onChange={handleHourChange}
-            >
-                <option value="" disabled>--</option>
-                {[...Array(12)].map((_, i) => (
-                    <option key={i + 1} value={(i + 1).toString().padStart(2, '0')}>
-                        {(i + 1).toString().padStart(2, '0')}
-                    </option>
-                ))}
-            </select>
+            <div className="w-11">
+                <LiquidSelect
+                    nano
+                    bare
+                    clearable={false}
+                    disabled={disabled}
+                    value={hour}
+                    onChange={handleHourChange}
+                    options={HOUR_OPTIONS}
+                    placeholder="--"
+                />
+            </div>
 
             <span className="text-slate-500 font-black px-0.5 animate-pulse">:</span>
 
-            <select
-                disabled={disabled}
-                className="w-11 py-1.5 px-1 outline-none text-[13px] font-black bg-transparent appearance-none text-center cursor-pointer text-slate-700 focus:text-[#0052CC] transition-colors rounded-lg hover:bg-black/5"
-                value={minute}
-                onChange={handleMinuteChange}
-            >
-                <option value="" disabled>--</option>
-                {['00', '15', '30', '45'].map(m => (
-                    <option key={m} value={m}>{m}</option>
-                ))}
-            </select>
+            <div className="w-11">
+                <LiquidSelect
+                    nano
+                    bare
+                    clearable={false}
+                    disabled={disabled}
+                    value={minute}
+                    onChange={handleMinuteChange}
+                    options={MINUTE_OPTIONS}
+                    placeholder="--"
+                />
+            </div>
 
             <div className="w-[2px] h-5 bg-black/[0.04] mx-1 rounded-full"></div>
 
-            <select
-                disabled={disabled}
-                className="w-[3.25rem] py-1.5 px-1 outline-none text-[11px] font-black uppercase tracking-widest bg-transparent appearance-none text-center cursor-pointer text-[#0052CC] focus:text-[#005bb5] transition-colors rounded-lg hover:bg-[#0052CC]/10"
-                value={ampm}
-                onChange={handleAmpmChange}
-            >
-                <option value="" disabled>--</option>
-                <option value="AM">AM</option>
-                <option value="PM">PM</option>
-            </select>
+            <div className="w-[3.25rem]">
+                <LiquidSelect
+                    nano
+                    bare
+                    clearable={false}
+                    disabled={disabled}
+                    value={ampm}
+                    onChange={handleAmpmChange}
+                    options={AMPM_OPTIONS}
+                    placeholder="--"
+                />
+            </div>
         </div>
     );
 };

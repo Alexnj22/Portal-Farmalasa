@@ -5,9 +5,37 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.16.8';
+export const APP_VERSION = '2.16.9';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.16.9 — design(bloque5.4): últimos 2 <select> nativos migrados a
+// LiquidSelect — TimePicker12 (stepper hora/minuto/AM-PM) y
+// FormAiSchedulerPreview (celda de turno en grilla densa). Ninguno de los
+// dos calzaba en los tamaños existentes de LiquidSelect (min-h-[40px] fijo,
+// dropdown con piso de 170px) — se agregó una variante nueva `nano`: sin
+// ícono izquierdo (libera espacio horizontal), texto centrado, min-h-[26px],
+// piso de dropdown 120px. No se tocó compact/default — 0 regresión visual
+// en los ~30 usos existentes de LiquidSelect (confirmado por diff: solo se
+// agregaron ramas condicionales `nano ? ... : ...`, todas con fallback al
+// comportamiento previo).
+// TimePicker12: los 3 <select> (hora/minuto/AM-PM) → LiquidSelect nano+bare,
+// clearable=false (mismo comportamiento: siempre hay un valor una vez el
+// usuario empieza a elegir). Verificado en vivo con Playwright (Horarios y
+// Turnos → Catálogo → Nuevo Turno): abrir cada stepper, elegir 07/30/PM,
+// el campo ENTRADA queda "07:30 PM" y el validador SALY AI recalcula la
+// duración en vivo — el onChange sigue propagando igual que antes. Un
+// efecto secundario cosmético conocido y aceptado: el input de búsqueda
+// interno de LiquidSelect (placeholder "Buscar...") se ve recortado en
+// campos de 44-52px de ancho — no bloquea nada (las listas son de 2-12
+// ítems, no hace falta escribir para filtrar).
+// FormAiSchedulerPreview: los 2 <select> de celda de turno (con turno
+// asignado y celda "LIBRE") → LiquidSelect nano+bare; el primero con
+// clearable+clearLabel="LIBRE" replicando el <option value="">LIBRE</option>
+// que tenía antes. **No se pudo verificar en vivo**: se confirmó por grep
+// que este componente no tiene ningún caller que lo monte (el modal
+// `aiSchedulerPreview` de UnifiedModal.jsx nunca se abre desde ningún botón
+// de la UI actual — feature huérfana preexistente, fuera del alcance de
+// este ítem arreglarlo). Verificado solo por lint+build+revisión de código.
 // v2.16.8 — design(bloque5.2): contraste text-slate-300/400 sobre superficie
 // clara — 1,698 → 216 instancias, las 216 restantes verificadas una por una
 // como excepciones legítimas (íconos, placeholders, disabled, iconCls). 132

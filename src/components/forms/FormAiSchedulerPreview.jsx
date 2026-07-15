@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Loader2, Sparkles, AlertTriangle, Save, X, Utensils, Baby, Users } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import LiquidSelect from '../common/LiquidSelect';
 
 const AI_LOADING_PHRASES = [
     "Analizando horarios de apertura y cierre...",
@@ -79,6 +80,10 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
         if (!branchId || !employees) return [];
         return employees.filter(e => String(e.branchId || e.branch_id) !== String(branchId));
     }, [employees, branchId]);
+    const shiftOptions = useMemo(() => (shifts || []).map(s => ({
+        value: String(s.id),
+        label: `${s.start_time?.substring(0,5) || s.start} - ${s.end_time?.substring(0,5) || s.end}`
+    })), [shifts]);
 
     useEffect(() => {
         if (!isLoading) return;
@@ -323,18 +328,18 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                                     <div className="flex flex-col h-full bg-white border border-indigo-100 rounded-lg shadow-sm overflow-hidden hover:border-indigo-300 transition-colors group/cell">
                                                         
                                                         {/* Header de la celda (Selector) */}
-                                                        <select 
-                                                            value={shiftId || ""}
-                                                            onChange={(e) => handleShiftChange(emp.id, dayId, e.target.value)}
-                                                            className="w-full bg-indigo-50/30 hover:bg-indigo-50 text-indigo-700 text-[10px] font-black p-2 outline-none text-center border-b border-indigo-50 appearance-none cursor-pointer rounded-none"
-                                                        >
-                                                            <option value="">LIBRE</option>
-                                                            {shifts.map(s => (
-                                                                <option key={s.id} value={s.id}>
-                                                                    {s.start_time?.substring(0,5) || s.start} - {s.end_time?.substring(0,5) || s.end}
-                                                                </option>
-                                                            ))}
-                                                        </select>
+                                                        <div className="w-full bg-indigo-50/30 hover:bg-indigo-50 text-indigo-700 border-b border-indigo-50 transition-colors">
+                                                            <LiquidSelect
+                                                                nano
+                                                                bare
+                                                                clearable
+                                                                clearLabel="LIBRE"
+                                                                value={shiftId || ""}
+                                                                onChange={(val) => handleShiftChange(emp.id, dayId, val)}
+                                                                options={shiftOptions}
+                                                                placeholder="LIBRE"
+                                                            />
+                                                        </div>
 
                                                         {/* Desglose AM / PM (SOLO SI HAY ALMUERZO O LACTANCIA) */}
                                                         {(dayData.lunchTime || dayData.lactationTime) && (
@@ -384,18 +389,17 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <select 
-                                                        value=""
-                                                        onChange={(e) => handleShiftChange(emp.id, dayId, e.target.value)}
-                                                        className="w-full h-full bg-slate-50 hover:bg-slate-100 text-slate-500 text-[10px] font-black p-2 outline-none text-center border border-dashed border-slate-200 rounded-lg cursor-pointer appearance-none transition-colors"
-                                                    >
-                                                        <option value="">LIBRE</option>
-                                                        {shifts.map(s => (
-                                                            <option key={s.id} value={s.id}>
-                                                                {s.start_time?.substring(0,5) || s.start} - {s.end_time?.substring(0,5) || s.end}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                                    <div className="w-full h-full flex items-center justify-center bg-slate-50 hover:bg-slate-100 text-slate-500 border border-dashed border-slate-200 rounded-lg transition-colors">
+                                                        <LiquidSelect
+                                                            nano
+                                                            bare
+                                                            clearable={false}
+                                                            value=""
+                                                            onChange={(val) => handleShiftChange(emp.id, dayId, val)}
+                                                            options={shiftOptions}
+                                                            placeholder="LIBRE"
+                                                        />
+                                                    </div>
                                                 )}
                                             </td>
                                         );

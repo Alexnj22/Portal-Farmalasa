@@ -15,6 +15,11 @@ const LiquidSelect = ({
     clearable = true,
     theme = 'light',
     compact = false,
+    // Nano: variante ultra-angosta para steppers/celdas de grilla densa
+    // (ej. TimePicker12, FormAiSchedulerPreview) — sin ícono izquierdo,
+    // texto centrado, altura mínima reducida. No confundir con compact
+    // (que sigue reservando espacio para ícono).
+    nano = false,
     creatable = false,
     onCreateOption,
     // When options count exceeds this, require the user to type before showing results
@@ -56,12 +61,13 @@ const LiquidSelect = ({
     const isDark = theme === 'dark';
     const lastCoordsRef = useRef(null);
 
-    // --- VARIABLES DINÁMICAS SEGÚN MODO COMPACTO ---
-    const textStyle = `${compact ? 'text-[12px]' : 'text-[13px]'} font-bold`;
-    const paddingStyle = compact ? 'pl-7 pr-6 py-2' : 'pl-[3.5rem] pr-12 py-3.5';
+    // --- VARIABLES DINÁMICAS SEGÚN MODO COMPACTO/NANO ---
+    const textStyle = nano ? 'text-[11px] font-black' : `${compact ? 'text-[12px]' : 'text-[13px]'} font-bold`;
+    const paddingStyle = nano ? 'pl-2 pr-4 py-1' : compact ? 'pl-7 pr-6 py-2' : 'pl-[3.5rem] pr-12 py-3.5';
     const leftIconPos = compact ? 'left-1 w-6 h-6' : 'left-4 w-8 h-8';
-    const rightIconPos = compact ? 'right-1 w-5 h-5' : 'right-4 w-6 h-6';
-    const iconSize = compact ? 11 : 14;
+    const rightIconPos = nano ? 'right-0.5 w-3.5 h-3.5' : compact ? 'right-1 w-5 h-5' : 'right-4 w-6 h-6';
+    const iconSize = nano ? 10 : compact ? 11 : 14;
+    const minHeightClass = nano ? 'min-h-[26px]' : 'min-h-[40px]';
 
     const selectedOption = useMemo(() =>
         options.find(opt => String(opt.value) === String(value)),
@@ -252,7 +258,7 @@ const LiquidSelect = ({
             style={{
                 top: coords.top,
                 left: coords.left,
-                width: Math.max(coords.width, compact ? 170 : 200) + 'px',
+                width: Math.max(coords.width, nano ? 120 : compact ? 170 : 200) + 'px',
                 maxHeight: coords.maxHeight + 'px',
             }}
             initial={{ opacity: 0, scale: 0.97, y: coords.isFlipped ? 6 : -6 }}
@@ -382,8 +388,8 @@ const LiquidSelect = ({
     );
 
     const pillBaseClasses = bare
-        ? `w-full rounded-2xl transition-all duration-300 outline-none min-h-[40px] flex items-center ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} bg-transparent border-transparent shadow-none text-slate-700`
-        : `w-full rounded-2xl transition-all duration-300 outline-none min-h-[40px] flex items-center ${
+        ? `w-full rounded-2xl transition-all duration-300 outline-none ${minHeightClass} flex items-center ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} bg-transparent border-transparent shadow-none text-slate-700`
+        : `w-full rounded-2xl transition-all duration-300 outline-none ${minHeightClass} flex items-center ${
             disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
         } ${
             isDark
@@ -401,17 +407,19 @@ const LiquidSelect = ({
             className={`relative group w-full transition-all duration-300 transform-gpu ${(!isOpen && !disabled && !bare) ? 'hover:-translate-y-0.5' : ''}`}
             ref={selectRef}
         >
-            {/* ICONO IZQUIERDO */}
-            <div className={`absolute ${leftIconPos} top-1/2 -translate-y-1/2 rounded-[0.8rem] flex items-center justify-center transition-colors duration-300 z-10 pointer-events-none ${isOpen
-                    ? 'text-white bg-[#0052CC] shadow-sm'
-                    : bare
-                        ? 'bg-transparent text-[#0052CC]'
-                        : isDark
-                            ? 'bg-black/40 text-[#0052CC] border border-white/10 shadow-sm shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]'
-                            : 'bg-white/70 text-[#0052CC] border border-white/60 shadow-sm'
-                }`}>
-                {isOpen ? <Search size={iconSize} strokeWidth={2.5} /> : (Icon ? <Icon size={iconSize} strokeWidth={2.5} /> : <Search size={iconSize} strokeWidth={2.5} />)}
-            </div>
+            {/* ICONO IZQUIERDO — omitido en nano (steppers/grillas densas sin espacio) */}
+            {!nano && (
+                <div className={`absolute ${leftIconPos} top-1/2 -translate-y-1/2 rounded-[0.8rem] flex items-center justify-center transition-colors duration-300 z-10 pointer-events-none ${isOpen
+                        ? 'text-white bg-[#0052CC] shadow-sm'
+                        : bare
+                            ? 'bg-transparent text-[#0052CC]'
+                            : isDark
+                                ? 'bg-black/40 text-[#0052CC] border border-white/10 shadow-sm shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]'
+                                : 'bg-white/70 text-[#0052CC] border border-white/60 shadow-sm'
+                    }`}>
+                    {isOpen ? <Search size={iconSize} strokeWidth={2.5} /> : (Icon ? <Icon size={iconSize} strokeWidth={2.5} /> : <Search size={iconSize} strokeWidth={2.5} />)}
+                </div>
+            )}
 
             {/* CONTENEDOR PRINCIPAL
                 Ghost-sizer pattern: the display div is always in flow (determines width).
@@ -424,7 +432,7 @@ const LiquidSelect = ({
                 aria-expanded={isOpen}
             >
                 {/* Always-rendered display content — keeps container width stable */}
-                <div className={`w-full text-left ${textStyle} ${paddingStyle} whitespace-nowrap leading-tight flex items-center gap-2
+                <div className={`w-full ${nano ? 'text-center justify-center' : 'text-left'} ${textStyle} ${paddingStyle} whitespace-nowrap leading-tight flex items-center gap-2
                     ${isOpen ? 'invisible pointer-events-none select-none' : ''}
                     ${!selectedOption && !isOpen ? (isDark ? 'text-white/40' : 'text-slate-500') : ''}`}>
                     {selectedOption ? (
@@ -454,7 +462,7 @@ const LiquidSelect = ({
                     <input
                         ref={inputRef}
                         type="text"
-                        className={`absolute inset-0 w-full bg-transparent border-none outline-none ${textStyle} ${paddingStyle} ${isDark ? 'text-white placeholder-white/40' : 'text-slate-700 placeholder-slate-400'}`}
+                        className={`absolute inset-0 w-full bg-transparent border-none outline-none ${nano ? 'text-center' : ''} ${textStyle} ${paddingStyle} ${isDark ? 'text-white placeholder-white/40' : 'text-slate-700 placeholder-slate-400'}`}
                         onChange={(e) => {
                             const val = e.target.value;
                             setSearchTerm(val);

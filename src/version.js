@@ -5,9 +5,28 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.10';
+export const APP_VERSION = '2.17.11';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.11 — refactor(bloque6.A): TabCatalogo.jsx — las 29 llamadas
+// supabase.from() migradas a src/data/productos.js (nuevo módulo, 15
+// funciones). Dos pares de sitios eran duplicados literales,
+// consolidados en una sola función: el update de foto_url (dos
+// componentes de foto distintos con la misma lógica de guardar) y el
+// fetch de detalle expandido de un producto (prefetchRow y toggleRow
+// llamaban exactamente las mismas 5 queries en paralelo — ahora
+// fetchProductDetail). El query dinámico de la lista principal
+// (loadProducts, con .or/.eq/.order condicionales según búsqueda y
+// filtros) se consolidó en fetchProductsList(params); el control de
+// flujo (el early-return cuando effectiveBids queda vacío) se quedó en
+// el componente, solo el query builder se movió.
+// Verificado en vivo con Playwright contra datos reales: tab CATÁLOGO
+// con contadores reales (4,354 activos/818 inactivos, 11 nuevos, 6
+// modificados, 4 con pérdida, 27 margen bajo), búsqueda "electrolit" →
+// ELECTROLIT COCO 625ML con laboratorio/estado correctos, fila
+// expandida con presentaciones y precios reales (factor, costo, 7
+// niveles de precio con % de margen). Sin errores de consola
+// atribuibles al cambio. Build + lint + 15 tests unitarios verdes.
 // v2.17.10 — refactor(bloque6.A): TabPedidos.jsx — las 45 llamadas
 // supabase.from() del componente principal (post-6.C) migradas a
 // src/data/pedidos.js (nuevo módulo, 22 funciones). El archivo tenía

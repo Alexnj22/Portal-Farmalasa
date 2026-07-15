@@ -17,6 +17,12 @@ import PhotoEditorModal from '../../components/common/PhotoEditorModal';
 import { normSearch } from '../../utils/searchUtils';
 import SrsBuscadorWidget from '../../components/srs/SrsBuscadorWidget';
 import SrsEnriquecerModal from '../../components/srs/SrsEnriquecerModal';
+import {
+    deleteProductActivePrinciples, insertProductActivePrinciples, updateProductPrincipioActivo,
+    updateProductCategoria, insertProductCategory, upsertProductLocations, deleteProductLocations,
+    updateProductDevolutivo, updateProductFoto, fetchProductPreciosMarginPage, fetchProductCounts,
+    fetchChangelogPage, fetchProductsList, fetchProductChangeAndMarginData, fetchProductDetail,
+} from '../../data/productos';
 
 
 const PRICE_FIELDS = [
@@ -301,11 +307,11 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
     const save = async ({ quiet = false } = {}) => {
         setSavingPA(true);
         try {
-            await supabase.from('product_active_principles').delete().eq('product_id', productId);
+            await deleteProductActivePrinciples(productId);
             let text = null;
             let saved = [];
             if (preset) {
-                await supabase.from('product_active_principles').insert([{
+                await insertProductActivePrinciples([{
                     product_id: productId, nombre: preset, concentracion: null, orden: 0,
                 }]);
                 text = preset;
@@ -313,7 +319,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
             } else {
                 const toSave = items.filter(p => p.nombre.trim());
                 if (toSave.length > 0) {
-                    await supabase.from('product_active_principles').insert(
+                    await insertProductActivePrinciples(
                         toSave.map((p, i) => ({
                             product_id:    productId,
                             nombre:        p.nombre.trim(),
@@ -325,7 +331,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
                 }
                 saved = toSave;
             }
-            await supabase.from('products').update({ principio_activo: text || null }).eq('id', productId);
+            await updateProductPrincipioActivo(productId, text);
             useStaff.getState().appendAuditLog('UPDATE_PRODUCT_PRINCIPLES', String(productId), { count: saved.length });
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Principios activos actualizados.', 'success');
             if (onSaved) onSaved(saved, text || null);
@@ -422,7 +428,7 @@ const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, 
     const save = async ({ quiet = false } = {}) => {
         setSavingCat(true);
         try {
-            await supabase.from('products').update({ tipo_medicamento: selected || null }).eq('id', productId);
+            await updateProductCategoria(productId, selected);
             useStaff.getState().appendAuditLog('UPDATE_PRODUCT_CATEGORY', String(productId), { categoria: selected || null });
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Categoría actualizada.', 'success');
             onCategoryUpdated?.(productId, selected || null);
@@ -442,7 +448,7 @@ const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, 
 
     const handleCreate = async (nombre) => {
         try {
-            await supabase.from('product_categories').insert({ nombre });
+            await insertProductCategory(nombre);
             setSelected(nombre);
             if (onCategoryCreated) onCategoryCreated(nombre);
         } catch (e) {
@@ -519,9 +525,9 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
             }));
             const toDelete = locs.filter(l => !hasAnyData(l)).map(l => l.branch_id);
             if (toUpsert.length > 0)
-                await supabase.from('product_locations').upsert(toUpsert, { onConflict: 'product_id,branch_id' });
+                await upsertProductLocations(toUpsert);
             if (toDelete.length > 0)
-                await supabase.from('product_locations').delete().eq('product_id', productId).in('branch_id', toDelete);
+                await deleteProductLocations(productId, toDelete);
             useStaff.getState().appendAuditLog('UPDATE_PRODUCT_LOCATIONS', String(productId), { branches: toUpsert.length });
             if (!quiet) useToastStore.getState().showToast('Guardado', 'Ubicaciones actualizadas.', 'success');
         } catch (e) {
@@ -933,7 +939,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         if (savingDevolutivo) return;
         setSavingDevolutivo(true);
         const newVal = !devolutivo;
-        const { error } = await supabase.from('products').update({ devolutivo: newVal }).eq('id', product.id);
+        const { error } = await updateProductDevolutivo(product.id, newVal);
         if (error) {
             useToastStore.getState().showToast('Error', error.message, 'error');
         } else {
@@ -977,7 +983,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
             if (upErr) throw upErr;
             const { data: { publicUrl } } = supabase.storage.from('product-photos').getPublicUrl(path);
             const cacheBust = `${publicUrl}?t=${Date.now()}`;
-            await supabase.from('products').update({ foto_url: cacheBust }).eq('id', product.id);
+            await updateProductFoto(product.id, cacheBust);
             setLocalFoto(cacheBust);
             onPhotoUpdated(product.id, cacheBust);
             useToastStore.getState().showToast('Foto guardada', 'Imagen actualizada.', 'success');
@@ -1397,7 +1403,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, onPhotoUpdated, onPrin
             if (upErr) throw upErr;
             const { data: { publicUrl } } = supabase.storage.from('product-photos').getPublicUrl(path);
             const cacheBust = `${publicUrl}?t=${Date.now()}`;
-            await supabase.from('products').update({ foto_url: cacheBust }).eq('id', product.id);
+            await updateProductFoto(product.id, cacheBust);
             setLocalFoto(cacheBust);
             onPhotoUpdated(product.id, cacheBust);
             useToastStore.getState().showToast('Foto guardada', 'Imagen actualizada.', 'success');
@@ -1954,11 +1960,7 @@ export default function TabCatalogo({
         const marginCheckFields = allowedPriceFields.filter(f => f.key !== 'precio_7' && f.key !== 'premium');
 
         const fetchPage = async (from) => {
-            const { data, error } = await supabase.from('product_precios')
-                .select(`product_id, costo, ${PRICE_SELECT}`)
-                .eq('activo', true)
-                .gt('costo', 0)
-                .range(from, from + PAGE - 1);
+            const { data, error } = await fetchProductPreciosMarginPage(PRICE_SELECT, from, PAGE);
             if (cancelled) return;
             if (error || !data) {
                 setMarginStats({ perdidaIds, bajoIds });
@@ -1990,11 +1992,7 @@ export default function TabCatalogo({
         setProductStatsLoading(true);
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        Promise.all([
-            supabase.from('products').select('*', { count: 'exact', head: true }).eq('activo', true),
-            supabase.from('products').select('*', { count: 'exact', head: true }).eq('activo', false),
-            supabase.from('products').select('*', { count: 'exact', head: true }).gte('created_at', startOfMonth),
-        ]).then(([{ count: activos }, { count: inactivos }, { count: nuevos }]) => {
+        fetchProductCounts(startOfMonth).then(([{ count: activos }, { count: inactivos }, { count: nuevos }]) => {
             setProductStats({ activos: activos ?? 0, inactivos: inactivos ?? 0, nuevos: nuevos ?? 0 });
             setProductStatsLoading(false);
         });
@@ -2011,10 +2009,7 @@ export default function TabCatalogo({
 
         const fetchPage = async (table, from) => {
             const isProd = table === 'products_changelog';
-            const { data, error } = await supabase.from(table)
-                .select(isProd ? 'product_id, campo, valor_anterior' : 'product_id')
-                .gte('detected_at', startOfMonth)
-                .range(from, from + PAGE - 1);
+            const { data, error } = await fetchChangelogPage(table, isProd, startOfMonth, from, PAGE);
             if (error) throw error;
             if (cancelled) return;
             (data || []).forEach(r => {
@@ -2037,22 +2032,11 @@ export default function TabCatalogo({
         setLoading(true);
         setLoadError(null);
         try {
-            let qb = supabase
-                .from('products')
-                .select('id, nombre, principio_activo, tipo_medicamento, es_antibiotico, requiere_receta, activo, foto_url, devolutivo, laboratorios(nombre)', { count: 'exact' })
-                .range((pg - 1) * ps, pg * ps - 1);
+            const term = q.trim() ? (normSearch(q) || q.trim()).replace(/,/g, ' ') : null;
+            const fNuevosIso = fNuevos
+                ? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+                : null;
 
-            if (q.trim()) {
-                const term = (normSearch(q) || q.trim()).replace(/,/g, ' ');
-                qb = qb.or(`nombre.ilike.%${term}%,principio_activo.ilike.%${term}%`);
-            }
-            if (fa === 'activos') qb = qb.eq('activo', true);
-            if (lab)  qb = qb.eq('laboratorio_id', lab);
-            if (cat)  qb = qb.eq('tipo_medicamento', cat);
-            if (fNuevos) {
-                const now = new Date();
-                qb = qb.gte('created_at', new Date(now.getFullYear(), now.getMonth(), 1).toISOString());
-            }
             // Combine margin bids and modificados bids (intersection if both active)
             let effectiveBids = bids;
             if (modBids !== null) {
@@ -2063,21 +2047,15 @@ export default function TabCatalogo({
                     effectiveBids = modBids;
                 }
             }
-            if (effectiveBids !== null) {
-                if (effectiveBids.length === 0) {
-                    if (rid === loadRef.current) { setProducts([]); setTotal(0); setLoading(false); }
-                    return;
-                }
-                qb = qb.in('id', effectiveBids);
+            if (effectiveBids !== null && effectiveBids.length === 0) {
+                if (rid === loadRef.current) { setProducts([]); setTotal(0); setLoading(false); }
+                return;
             }
 
-            if (sField === 'nombre')          qb = qb.order('nombre', { ascending: sDir === 'asc' });
-            else if (sField === 'activo')      qb = qb.order('activo', { ascending: sDir === 'asc' }).order('nombre');
-            else if (sField === 'categoria')   qb = qb.order('tipo_medicamento', { ascending: sDir === 'asc', nullsFirst: false }).order('nombre');
-            else if (sField === 'lab')         qb = qb.order('nombre', { referencedTable: 'laboratorios', ascending: sDir === 'asc', nullsFirst: false }).order('nombre');
-            else                               qb = qb.order('nombre');
-
-            const { data, count, error } = await qb;
+            const { data, count, error } = await fetchProductsList({
+                search: term, page: pg, pageSize: ps, filterActivo: fa, laboratorioId: lab, categoria: cat,
+                filterNuevos: fNuevosIso, effectiveBids, sortField: sField, sortDir: sDir,
+            });
             if (rid !== loadRef.current) return;
             if (error) throw error;
             const rows = data || [];
@@ -2086,11 +2064,7 @@ export default function TabCatalogo({
 
             if (rows.length > 0) {
                 const ids = rows.map(r => r.id);
-                const [{ data: pc, error: pcErr }, { data: prc, error: prcErr }, { data: pp, error: ppErr }] = await Promise.all([
-                    supabase.from('product_precios_changelog').select('product_id').in('product_id', ids),
-                    supabase.from('products_changelog').select('product_id, campo, valor_anterior').in('product_id', ids),
-                    supabase.from('product_precios').select(`product_id, costo, ${PRICE_SELECT}`).in('product_id', ids).eq('activo', true).gt('costo', 0),
-                ]);
+                const [{ data: pc, error: pcErr }, { data: prc, error: prcErr }, { data: pp, error: ppErr }] = await fetchProductChangeAndMarginData(ids, PRICE_SELECT);
                 if (pcErr) throw pcErr;
                 if (prcErr) throw prcErr;
                 if (ppErr) throw ppErr;
@@ -2168,15 +2142,7 @@ export default function TabCatalogo({
         prefetchTimerRef.current = setTimeout(async () => {
             prefetchingRef.current.add(productId);
             try {
-                const results = await Promise.all([
-                    supabase.from('product_precios').select(`id_presentacion, activo, descripcion, factor, costo, ${PRICE_SELECT}, presentaciones(tipo)`).eq('product_id', productId).order('activo', { ascending: false }),
-                    supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
-                    supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
-                    supabase.from('product_active_principles').select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden'),
-                    canSeeCosts
-                    ? supabase.from('purchase_receipt_items').select('cantidad, precio_unitario, purchase_receipts(fecha, proveedor)').eq('erp_product_id', productId).order('receipt_id', { ascending: false }).limit(60)
-                    : Promise.resolve({ data: [] }),
-                ]);
+                const results = await fetchProductDetail(productId, PRICE_SELECT, canSeeCosts);
                 const firstErr = results.find(r => r.error)?.error;
                 if (firstErr) console.error('prefetchRow failed:', firstErr.message);
                 const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }] = results;
@@ -2195,15 +2161,7 @@ export default function TabCatalogo({
         setLoadingExpandedId(productId);
         prefetchingRef.current.add(productId);
         try {
-            const results = await Promise.all([
-                supabase.from('product_precios').select(`id_presentacion, activo, descripcion, factor, costo, ${PRICE_SELECT}, presentaciones(tipo)`).eq('product_id', productId).order('activo', { ascending: false }),
-                supabase.from('product_precios_changelog').select('id_presentacion, campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
-                supabase.from('products_changelog').select('campo, valor_anterior, valor_nuevo, detected_at').eq('product_id', productId).order('detected_at', { ascending: false }),
-                supabase.from('product_active_principles').select('id, nombre, concentracion, orden').eq('product_id', productId).order('orden'),
-                canSeeCosts
-                    ? supabase.from('purchase_receipt_items').select('cantidad, precio_unitario, purchase_receipts(fecha, proveedor)').eq('erp_product_id', productId).order('receipt_id', { ascending: false }).limit(60)
-                    : Promise.resolve({ data: [] }),
-            ]);
+            const results = await fetchProductDetail(productId, PRICE_SELECT, canSeeCosts);
             const firstErr = results.find(r => r.error)?.error;
             if (firstErr) console.error('toggleRow: expand product failed:', firstErr.message);
             const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }] = results;

@@ -19,8 +19,13 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
 import { smartFilter, normSearch } from '../utils/searchUtils';
 import { shortEmployeeName } from '../utils/nameUtils';
-import { fetchAllRows } from '../utils/supabaseUtils';
 import { useNowTick } from '../hooks/useNowTick';
+import {
+    fetchAntibioticProductIds, fetchInvoiceIdsByProductIds, fetchPuntosLineItems,
+    fetchInvoicesForStatsSpecial, fetchInvoicesList, fetchInvoiceItemsByIds, fetchInvoiceItemsForInvoice,
+    fetchProductPreciosActivos, fetchInvoiceChangelog, fetchVendorMonthlyStats,
+    fetchProductPreciosDetail, fetchProductPreciosHistory,
+} from '../data/ventas';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
@@ -344,14 +349,14 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     useEffect(() => { changelogCacheRef.current = changelogCache; }, [changelogCache]);
 
     useEffect(() => {
-        supabase.from('products').select('id').eq('es_antibiotico', true)
+        fetchAntibioticProductIds()
             .then(({ data }) => { if (data) setAntibioticIds(new Set(data.map(p => p.id))); });
     }, []);
 
     useEffect(() => {
         if (!filterAntibiotico || antibioticIds.size === 0) { setAbInvoiceIds(null); return; } // eslint-disable-line react-hooks/set-state-in-effect -- reset antes de re-fetch al cambiar filtro
         const ids = [...antibioticIds];
-        supabase.from('sales_invoice_items').select('invoice_id').in('erp_product_id', ids)
+        fetchInvoiceIdsByProductIds(ids)
             .then(({ data }) => {
                 const uniq = [...new Set((data || []).map(i => i.invoice_id))];
                 setAbInvoiceIds(uniq);
@@ -390,11 +395,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     // que el RPC get_puntos_canjeados pero sobre una lista arbitraria de IDs.
     const sumPuntosForIds = async (ids) => {
         if (!ids.length) return 0;
-        const { data, error } = await supabase
-            .from('sales_invoice_items')
-            .select('invoice_id, total_linea')
-            .eq('erp_product_id', 0)
-            .in('invoice_id', ids);
+        const { data, error } = await fetchPuntosLineItems(ids);
         if (error) console.error('sumPuntosForIds: fetch sales_invoice_items failed:', error.message);
         const maxByInvoice = new Map();
         for (const r of (data || [])) {
@@ -428,18 +429,9 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             // la SUMA/puntos se calculaban solo sobre las primeras 1000 aunque el
             // conteo mostrado (count exact) sí fuera el real — monto silenciosamente
             // incorrecto en pantalla.
-            const invoices = await fetchAllRows(() => {
-                let q = supabase.from('sales_invoices').select('id, total')
-                    .gte('fecha', fini).lte('fecha', ffin);
-                if (branchFilter) q = q.eq('branch_id', branchFilter);
-                if (filterAnuladas) q = q.in('estado', CANCELLED_ESTADOS);
-                else q = q.not('estado', 'in', `(${CANCELLED_ESTADOS.join(',')})`);
-                if (filterAntibiotico) q = q.in('id', abInvoiceIds);
-                if (isSearching) {
-                    const s = searchTerm.trim();
-                    q = q.or(`erp_invoice_id.ilike.%${s}%,correlativo.ilike.%${s}%,cliente.ilike.%${s}%`);
-                }
-                return q;
+            const invoices = await fetchInvoicesForStatsSpecial({
+                fini, ffin, branchFilter, filterAnuladas, cancelledEstados: CANCELLED_ESTADOS,
+                filterAntibiotico, abInvoiceIds, isSearching, searchTerm,
             }) || [];
             const sum = invoices.reduce((acc, r) => acc + Number(r.total || 0), 0);
             const puntos = await sumPuntosForIds(invoices.map(r => r.id));
@@ -498,28 +490,18 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
             setPuntosCount(fetched.length > 0 ? Number(fetched[0].n) : 0);
         } else {
             const asc = sortDir === 'asc';
-            let q = supabase
-                .from('sales_invoices')
-                .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total, estado, recibido_mh, has_puntos')
-                .gte('fecha', fini).lte('fecha', ffin)
-                .order(sortCol, { ascending: asc });
-            if (sortCol === 'fecha') q = q.order('hora', { ascending: asc });
-            if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
-            if (filterAnuladas) q = q.in('estado', CANCELLED_ESTADOS);
+            let abIdsFilter = null;
             if (filterAntibiotico && abInvoiceIds !== null) {
                 if (abInvoiceIds.length === 0) {
                     if (rid === fetchRowsRef.current) { setRows([]); setLoadingRows(false); }
                     return;
                 }
-                q = q.in('id', abInvoiceIds);
+                abIdsFilter = abInvoiceIds;
             }
-            if (isSearching) {
-                const s = searchTerm.trim();
-                q = q.or(`erp_invoice_id.ilike.%${s}%,correlativo.ilike.%${s}%,cliente.ilike.%${s}%`).limit(200);
-            } else {
-                q = q.range((page - 1) * pageSize, page * pageSize - 1);
-            }
-            const { data } = await q;
+            const { data } = await fetchInvoicesList({
+                fini, ffin, sortCol, asc, filterBranch, filterAnuladas, cancelledEstados: CANCELLED_ESTADOS,
+                abIdsFilter, isSearching, searchTerm, page, pageSize,
+            });
             fetched = data || [];
         }
 
@@ -533,10 +515,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         // Prefetch items for visible rows in background
         const uncached = fetchedIds.filter(id => !itemsCacheRef.current[id]);
         if (uncached.length > 0) {
-            supabase.from('sales_invoice_items')
-                .select('invoice_id, erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')
-                .in('invoice_id', uncached)
-                .order('total_linea', { ascending: false })
+            fetchInvoiceItemsByIds(uncached)
                 .then(({ data: items }) => {
                     if (!items || fetchRowsRef.current !== currentRid) return;
                     const grouped = {};
@@ -550,10 +529,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                     const erpIds = [...new Set(items.map(it => it.erp_product_id).filter(id => id && id !== -999))];
                     const uncachedErpIds = erpIds.filter(id => !(id in pricesCacheRef.current));
                     if (uncachedErpIds.length) {
-                        supabase.from('product_precios')
-                            .select('product_id, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7')
-                            .eq('activo', true)
-                            .in('product_id', uncachedErpIds)
+                        fetchProductPreciosActivos(uncachedErpIds)
                             .then(({ data: priceRows }) => {
                                 const pg = {};
                                 // Pre-seed so IDs with no rows are marked "attempted" and won't re-fetch
@@ -573,9 +549,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         if (uncachedChg.length > 0) {
             const init = Object.fromEntries(uncachedChg.map(id => [id, []]));
             setChangelogCache(prev => ({ ...init, ...prev }));
-            supabase.from('sales_invoice_changelog')
-                .select('invoice_id, campo, valor_anterior, valor_nuevo')
-                .in('invoice_id', uncachedChg)
+            fetchInvoiceChangelog(uncachedChg)
                 .then(({ data: logs }) => {
                     if (!logs || fetchRowsRef.current !== currentRid) return;
                     const grouped = Object.fromEntries(uncachedChg.map(id => [id, []]));
@@ -592,10 +566,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
     const fetchPricesForIds = useCallback((erpIds) => {
         const uncachedIds = erpIds.filter(id => !(id in pricesCache));
         if (!uncachedIds.length) return;
-        supabase.from('product_precios')
-            .select('product_id, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7')
-            .eq('activo', true)
-            .in('product_id', uncachedIds)
+        fetchProductPreciosActivos(uncachedIds)
             .then(({ data: priceRows }) => {
                 const grouped = {};
                 // Pre-seed with empty arrays so IDs with no rows are marked as "attempted"
@@ -621,11 +592,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
         }
 
         setLoadingItems(true);
-        const { data, error } = await supabase
-            .from('sales_invoice_items')
-            .select('erp_product_id, descripcion, presentacion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')
-            .eq('invoice_id', invoiceId)
-            .order('total_linea', { ascending: false });
+        const { data, error } = await fetchInvoiceItemsForInvoice(invoiceId);
         if (error) console.error('fetch invoice items failed:', error.message);
         setItemsCache(prev => ({ ...prev, [invoiceId]: data || [] }));
         setLoadingItems(false);
@@ -1005,9 +972,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
         const prevMes = d.toISOString().split('T')[0].slice(0, 7) + '-01';
         const branchId = filterBranch ? Number(filterBranch) : -1;
         const SKIP = new Set(['1000', '125']);
-        supabase.from('ventas_monthly_stats')
-            .select('cod_vendedor, total_sum')
-            .eq('mes', prevMes).eq('branch_id', branchId).neq('cod_vendedor', '')
+        fetchVendorMonthlyStats(prevMes, branchId)
             .then(({ data }) => {
                 const byVend = new Map();
                 for (const r of (data || [])) {
@@ -1656,14 +1621,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     p_ffin:           ffin,
                     p_branch_id:      filterBranch ? Number(filterBranch) : null,
                 }),
-                supabase.from('product_precios')
-                    .select('id_presentacion, descripcion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, presentaciones(tipo)')
-                    .eq('product_id', productId)
-                    .eq('activo', true),
-                supabase.from('product_precios_history')
-                    .select('id_presentacion, vineta, vip, clinica, mayoreo, premium, descuento_1, precio_7, valid_from, valid_until, presentaciones(tipo)')
-                    .eq('product_id', productId)
-                    .order('valid_from', { ascending: false }),
+                fetchProductPreciosDetail(productId),
+                fetchProductPreciosHistory(productId),
                 supabase.rpc('get_product_trend', {
                     p_erp_product_id: productId,
                     p_branch_id:      filterBranch ? Number(filterBranch) : null,

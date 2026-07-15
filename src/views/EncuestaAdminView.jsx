@@ -10,11 +10,15 @@ import {
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidDatePicker from '../components/common/LiquidDatePicker';
-import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { useAuth } from '../context/AuthContext';
+import {
+    fetchSurveys, fetchSurveyResponseCounts, fetchEmployeesForSurvey, fetchSurveyBloques,
+    fetchSurveyPreguntas, fetchSurveyResponses, updateSurvey, insertSurvey,
+    updateSurveyResponse, insertSurveyResponse, deleteSurveyResponse,
+} from '../data/encuestas';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
@@ -222,13 +226,12 @@ export default function EncuestaAdminView() {
     // ── Load ──────────────────────────────────────────────────────────────────
     const loadSurveys = useCallback(async () => {
         setLoadingSurveys(true);
-        const { data, error } = await supabase.from('surveys').select('*').order('año', { ascending: false });
+        const { data, error } = await fetchSurveys();
         if (error) console.error('loadSurveys: fetch surveys failed:', error.message);
         const list = data || [];
         setSurveys(list);
         if (list.length) {
-            const { data: counts, error: countsErr } = await supabase
-                .from('survey_responses').select('survey_id').in('survey_id', list.map(s => s.id));
+            const { data: counts, error: countsErr } = await fetchSurveyResponseCounts(list.map(s => s.id));
             if (countsErr) console.error('loadSurveys: fetch survey_responses failed:', countsErr.message);
             const map = {};
             list.forEach(s => { map[s.id] = 0; });
@@ -241,9 +244,7 @@ export default function EncuestaAdminView() {
     useEffect(() => { loadSurveys(); }, [loadSurveys]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     useEffect(() => {
-        supabase.from('employees')
-            .select('id, first_names, last_names, photo_url, role_id, hire_date, branch:branches(id, name)')
-            .order('first_names')
+        fetchEmployeesForSurvey()
             .then(async ({ data, error }) => {
                 if (error) console.error('EncuestaAdminView: fetch employees failed:', error.message);
                 setEmployees(await signPhotosDeep(data || []));
@@ -254,11 +255,9 @@ export default function EncuestaAdminView() {
         if (!survey) return;
         setLoadingDetail(true);
         const [bRes, pRes, rRes] = await Promise.all([
-            supabase.from('survey_bloques').select('*').eq('survey_id', survey.id).order('numero'),
-            supabase.from('survey_preguntas').select('*').eq('survey_id', survey.id).order('numero'),
-            supabase.from('survey_responses')
-                .select('*, employee:employees!employee_id(id, first_names, last_names, photo_url, role_id, branch:branches(id, name))')
-                .eq('survey_id', survey.id),
+            fetchSurveyBloques(survey.id),
+            fetchSurveyPreguntas(survey.id),
+            fetchSurveyResponses(survey.id),
         ]);
         const bData = bRes.data || [];
         const pData = pRes.data || [];
@@ -307,12 +306,12 @@ export default function EncuestaAdminView() {
             fecha_inicio: sfFechaInicio || null, fecha_fin: sfFechaFin || null,
         };
         if (editingSurvey?.id) {
-            const { error } = await supabase.from('surveys').update(payload).eq('id', editingSurvey.id);
+            const { error } = await updateSurvey(editingSurvey.id, payload);
             if (error) { showToast('Error', 'No se pudo actualizar.', 'error'); setSavingSurvey(false); return; }
             await appendAuditLog('ENCUESTA_ACTUALIZADA', null, { survey_id: editingSurvey.id });
             showToast('Actualizado', 'Encuesta actualizada.', 'success');
         } else {
-            const { error } = await supabase.from('surveys').insert(payload);
+            const { error } = await insertSurvey(payload);
             if (error) { showToast('Error', 'No se pudo crear.', 'error'); setSavingSurvey(false); return; }
             await appendAuditLog('ENCUESTA_CREADA', null, { nombre: payload.nombre });
             showToast('Creado', 'Encuesta creada.', 'success');
@@ -355,15 +354,14 @@ export default function EncuestaAdminView() {
         if (!empId || !selectedSurvey) return;
         setSavingResponse(true);
         if (editingResponse?.id) {
-            const { error } = await supabase.from('survey_responses')
-                .update({ is_jefe: rfIsJefe, responses: rfAnswers, comentario: rfComentario.trim() || null,
-                    updated_at: new Date().toISOString() })
-                .eq('id', editingResponse.id);
+            const { error } = await updateSurveyResponse(editingResponse.id,
+                { is_jefe: rfIsJefe, responses: rfAnswers, comentario: rfComentario.trim() || null,
+                    updated_at: new Date().toISOString() });
             if (error) { showToast('Error', 'No se pudo actualizar.', 'error'); setSavingResponse(false); return; }
             await appendAuditLog('ENCUESTA_RESPUESTA_EDITADA', empId, { survey_id: selectedSurvey.id, response_id: editingResponse.id });
             showToast('Actualizado', 'Respuesta actualizada.', 'success');
         } else {
-            const { error } = await supabase.from('survey_responses').insert({
+            const { error } = await insertSurveyResponse({
                 survey_id: selectedSurvey.id, employee_id: empId, is_jefe: rfIsJefe,
                 responses: rfAnswers, comentario: rfComentario.trim() || null,
             });
@@ -380,7 +378,7 @@ export default function EncuestaAdminView() {
 
     const handleDeleteResponse = async (row) => {
         if (!selectedSurvey) return;
-        const { error } = await supabase.from('survey_responses').delete().eq('id', row.id);
+        const { error } = await deleteSurveyResponse(row.id);
         if (error) { showToast('Error', 'No se pudo eliminar.', 'error'); return; }
         await appendAuditLog('ENCUESTA_RESPUESTA_ELIMINADA', row.employee_id, { survey_id: selectedSurvey.id });
         showToast('Eliminado', 'Respuesta eliminada.', 'success');

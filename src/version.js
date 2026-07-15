@@ -5,9 +5,17 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.16';
+export const APP_VERSION = '2.17.17';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.17 — refactor(bloque6.A): VentasView.jsx + EncuestaAdminView.jsx
+// — 24 supabase.from() migradas (13+11; conteo real, no 20). Dos módulos
+// nuevos: src/data/ventas.js (12 fn) y src/data/encuestas.js (11 fn).
+// Verificado en vivo con Playwright: Ventas con datos reales de
+// producción (10,431 facturas, $109,916.07 total ventas, filas con
+// clientes/vendedores/sucursales reales), Gestión de Encuestas con el
+// formulario cargando correctamente. Sin errores de consola atribuibles
+// al cambio. Build + lint + 15 tests unitarios verdes.
 // v2.17.16 — refactor(bloque6.A): requestsSlice.js + slices chicos
 // (practicantesSlice, notificationsSlice, conteoInventarioSlice,
 // payrollSlice) — 63 supabase.from() migradas (36+5+5+3+14; conteo real,

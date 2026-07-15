@@ -5,9 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.13';
+export const APP_VERSION = '2.17.14';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.14 — refactor(bloque6.A): FacturacionView.jsx — 23 supabase.from()
+// migradas a src/data/facturacion.js (nuevo módulo, 19 funciones). El
+// conteo real era 23, no 18 (mismo motivo que systemSlice/TabMinMax:
+// llamadas partidas en dos líneas). Los 2 supabase.storage.from()
+// ('payment-proofs') quedaron intactos — acceso a bucket, no a tabla.
+// **Bug de paginación corregido de paso**: la query de pagos no-efectivo
+// (fetchNonCashInvoices, tab "No Efectivo") filtraba sales_invoices
+// —tabla flagged en CLAUDE.md como obligatoriamente paginada— SIN
+// fetchAllRows; un mes con mucho volumen de tarjeta/transferencia podía
+// truncarse en silencio sobre el cap de 1000 filas de PostgREST. Las
+// otras dos queries de sales_invoices en este archivo (facturas NULA,
+// pendientes de Hacienda) ya usaban fetchAllRows correctamente.
+// fetchInvoicesByIds(ids, columns) generalizado cubre 3 sitios distintos
+// (lookup de facturas resueltas/pendientes-MH/confirmadas, cada uno con
+// su propio set de columnas).
+// Verificado en vivo con Playwright contra datos reales de producción,
+// las 4 sub-pestañas: SALTOS con gaps reales (La Popular, Salud 1) y
+// contador de campos nulos correcto; NO EFECTIVO con 470 pendientes
+// reales ($11,544.66 — 376 tarjeta/79 crédito/15 transferencia) y
+// nombres de clientes reales en la tabla. Sin errores de consola
+// atribuibles al cambio. Build + lint + 15 tests unitarios verdes.
 // v2.17.13 — refactor(bloque6.A): TabMinMax.jsx — 23 supabase.from()
 // migradas a src/data/stockParams.js (nuevo módulo, 10 funciones). El
 // conteo real era 23, no 20 (mismo motivo que systemSlice: llamadas

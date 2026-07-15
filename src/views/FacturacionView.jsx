@@ -15,7 +15,13 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { openStoredFile } from '../utils/storageFiles';
 import { signPhotosDeep } from '../utils/storageFiles';
-import { fetchAllRows } from '../utils/supabaseUtils';
+import {
+    fetchNulaInvoices, fetchPendingMhInvoices, fetchConfirmedMhInvoices, updateInvoiceReceivedMh,
+    fetchInvoicesByIds, fetchInvoiceResolutionIds, fetchInvoiceResolutionsHistorial, insertInvoiceResolution,
+    fetchInvoiceNullIds, fetchSalesInvoiceNulls, insertNullResolution, fetchNullResolutionIds,
+    fetchSalesInvoiceGaps, fetchGapResolutions, insertGapResolution,
+    fetchNonCashInvoices, fetchPaymentConfirmationIds, fetchPaymentConfirmationsHistorial, insertPaymentConfirmation,
+} from '../data/facturacion';
 
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const fmt = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -246,35 +252,19 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
         if (pollingRef.current) return;
         pollingRef.current = true;
         setLoading(true);
-        // fetchAllRows evita el cap silencioso de 1000 filas de PostgREST — el
-        // backlog de facturas con estado nulo/NULA puede superarlo.
-        const buildInvoicesQuery = () => {
-            let q = supabase
-                .from('sales_invoices')
-                .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado, codigo_generacion, recibido_mh')
-                .or('estado.eq.NULA,estado.is.null,estado.eq.undefined')
-                .order('tipo_documento', { ascending: false })
-                .order('fecha', { ascending: true })
-                .order('hora', { ascending: true });
-            if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
-            return q;
-        };
-
+        // fetchNulaInvoices pagina con fetchAllRows — el backlog de facturas con
+        // estado nulo/NULA puede superar el cap de 1000 filas de PostgREST.
         const [invoicesData, resolutionsRes, historialRes] = await Promise.all([
-            fetchAllRows(buildInvoicesQuery),
-            supabase.from('sales_invoice_resolutions').select('invoice_id'),
-            supabase.from('sales_invoice_resolutions')
-                .select('id, invoice_id, comment, resolved_by, resolved_at')
-                .order('resolved_at', { ascending: false }),
+            fetchNulaInvoices(filterBranch),
+            fetchInvoiceResolutionIds(),
+            fetchInvoiceResolutionsHistorial('id, invoice_id, comment, resolved_by, resolved_at'),
         ]);
 
         const resolvedIdSet = new Set((resolutionsRes.data || []).map(r => r.invoice_id));
         const allIds = (historialRes.data || []).map(r => r.invoice_id);
         let invMap = {};
         if (allIds.length > 0) {
-            const { data: d, error: dErr } = await supabase.from('sales_invoices')
-                .select('id, correlativo, erp_invoice_id, branch_id, tipo_documento, cliente, fecha, total')
-                .in('id', allIds);
+            const { data: d, error: dErr } = await fetchInvoicesByIds(allIds, 'id, correlativo, erp_invoice_id, branch_id, tipo_documento, cliente, fecha, total');
             if (dErr) console.error('loadData: fetch resolved invoices failed:', dErr.message);
             for (const inv of (d || [])) invMap[inv.id] = inv;
         }
@@ -293,9 +283,9 @@ function TabAnuladas({ branches, filterBranch, searchTerm, currentUser }) {
     const handleSolve = async (invoiceId) => {
         setSaving(true);
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
-        const { data, error } = await supabase.from('sales_invoice_resolutions').insert({
+        const { data, error } = await insertInvoiceResolution({
             invoice_id: invoiceId, comment: comment.trim() || null, resolved_by: resolvedBy,
-        }).select('id, invoice_id, comment, resolved_by, resolved_at');
+        }, 'id, invoice_id, comment, resolved_by, resolved_at');
         if (error) { console.error('handleSolve: insert resolution failed:', error.message); setSaving(false); return; }
         setResolvedIds(prev => new Set([...prev, invoiceId]));
         const newRec = data?.[0];
@@ -740,35 +730,13 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         const fini = `${y}-${m}-01`;
         const ffin = `${y}-${m}-${new Date(y, n.getMonth() + 1, 0).getDate()}`;
 
-        // fetchAllRows evita el cap silencioso de 1000 filas de PostgREST — el
-        // backlog de pendientes de Hacienda (recibido_mh IS NULL) puede superarlo.
-        const buildPendQuery = () => {
-            let qPend = supabase
-                .from('sales_invoices')
-                .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, estado')
-                .is('recibido_mh', null)
-                .not('estado', 'eq', 'NULA')
-                .order('branch_id', { ascending: true })
-                .order('fecha',     { ascending: true })
-                .order('hora',      { ascending: true });
-            if (filterBranch) qPend = qPend.eq('branch_id', Number(filterBranch));
-            return qPend;
-        };
-
-        let qRes = supabase
-            .from('sales_invoices')
-            .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, total')
-            .eq('recibido_mh', true)
-            .gte('fecha', fini).lte('fecha', ffin)
-            .order('fecha', { ascending: false });
-        if (filterBranch) qRes = qRes.eq('branch_id', Number(filterBranch));
-
+        // fetchPendingMhInvoices pagina con fetchAllRows — el backlog de
+        // pendientes de Hacienda (recibido_mh IS NULL) puede superar 1000 filas.
         const [pendData, { data: resInvs }, { data: allResolutions }, { data: nullsData }] = await Promise.all([
-            fetchAllRows(buildPendQuery), qRes,
-            supabase.from('sales_invoice_resolutions')
-                .select('invoice_id, comment, resolved_by, resolved_at')
-                .order('resolved_at', { ascending: false }),
-            supabase.from('sales_invoice_nulls').select('id'),
+            fetchPendingMhInvoices(filterBranch),
+            fetchConfirmedMhInvoices(filterBranch, fini, ffin),
+            fetchInvoiceResolutionsHistorial('invoice_id, comment, resolved_by, resolved_at'),
+            fetchInvoiceNullIds(),
         ]);
 
         // Invoices that also have non-MH null campos (e.g. cliente, correlativo)
@@ -791,10 +759,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         const manuallyResolvedIds = [...resolvedIds].filter(id => !mhConfirmedIds.has(id));
         let manuallyResolvedInvs = [];
         if (manuallyResolvedIds.length > 0) {
-            const { data: mrData, error: mrErr } = await supabase
-                .from('sales_invoices')
-                .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, total')
-                .in('id', manuallyResolvedIds);
+            const { data: mrData, error: mrErr } = await fetchInvoicesByIds(manuallyResolvedIds, 'id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, total');
             if (mrErr) console.error('loadData: fetch manually resolved invoices failed:', mrErr.message);
             manuallyResolvedInvs = mrData || [];
         }
@@ -823,8 +788,8 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
         const inv = rows.find(r => r.id === invoiceId);
         await Promise.all([
-            supabase.from('sales_invoices').update({ recibido_mh: true }).eq('id', invoiceId),
-            supabase.from('sales_invoice_resolutions').insert({
+            updateInvoiceReceivedMh(invoiceId),
+            insertInvoiceResolution({
                 invoice_id: invoiceId, comment: comment.trim() || null, resolved_by: resolvedBy,
             }),
         ]);
@@ -1180,16 +1145,13 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
 
     const load = useCallback(async () => {
         setLoading(true);
-        let qGaps  = supabase.from('sales_invoice_gaps').select('*');
-        let qNulls = supabase.from('sales_invoice_nulls').select('*');
-        if (filterBranch) { qGaps = qGaps.eq('branch_id', Number(filterBranch)); qNulls = qNulls.eq('branch_id', Number(filterBranch)); }
         const [
             { data: gData, error: gErr }, { data: nData, error: nErr },
             { data: rData, error: rErr }, { data: nrData, error: nrErr },
         ] = await Promise.all([
-            qGaps, qNulls,
-            supabase.from('sales_gap_resolutions').select('*').order('resolved_at', { ascending: false }),
-            supabase.from('sales_null_resolutions').select('null_id'),
+            fetchSalesInvoiceGaps(filterBranch), fetchSalesInvoiceNulls(filterBranch),
+            fetchGapResolutions(),
+            fetchNullResolutionIds(),
         ]);
         if (gErr) console.error('load: fetch sales_invoice_gaps failed:', gErr.message);
         if (nErr) console.error('load: fetch sales_invoice_nulls failed:', nErr.message);
@@ -1231,7 +1193,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
         setSaving(true);
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
         const payload = { branch_id: gap.branch_id, tipo_documento: gap.tipo_documento, gap_from: gap.gap_from, gap_to: gap.gap_to, comment: comment.trim() || null, resolved_by: resolvedBy };
-        const { data, error } = await supabase.from('sales_gap_resolutions').insert(payload).select('*');
+        const { data, error } = await insertGapResolution(payload);
         if (error) { console.error('handleSolveGap: insert resolution failed:', error.message); setSaving(false); return; }
         if (data?.[0]) setGapResolutions(prev => [data[0], ...prev]);
         useStaff.getState().appendAuditLog('SOLVENTAR_SALTO_CORRELATIVO', String(gap.branch_id), {
@@ -1244,7 +1206,7 @@ function TabSaltos({ branches, filterBranch, currentUser }) {
     const handleSolveNull = async (n) => {
         setNullSaving(true);
         const resolvedBy = currentUser?.name || currentUser?.email || 'Desconocido';
-        await supabase.from('sales_null_resolutions').insert({
+        await insertNullResolution({
             null_id: n.id, comment: nullComment.trim() || null, resolved_by: resolvedBy,
         });
         useStaff.getState().appendAuditLog('SOLVENTAR_CAMPO_NULO', String(n.id), {
@@ -1610,23 +1572,16 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
     const loadData = useCallback(async () => {
         setLoading(true);
         const [fini, ffin] = selectedMonth.split('|');
-        let q = supabase
-            .from('sales_invoices')
-            .select('id, branch_id, tipo_documento, correlativo, erp_invoice_id, cliente, fecha, hora, total, tipo_pago')
-            .in('tipo_pago', NON_CASH_TYPES)
-            .gte('fecha', fini).lte('fecha', ffin)
-            .order('tipo_pago', { ascending: true })
-            .order('fecha', { ascending: false });
-        if (filterBranch) q = q.eq('branch_id', Number(filterBranch));
 
-        const [invoicesRes, confirmedIdsRes, historialRes] = await Promise.all([
-            q,
-            supabase.from('sales_payment_confirmations').select('invoice_id'),
-            supabase.from('sales_payment_confirmations')
-                .select('id, invoice_id, confirmed_by, confirmed_by_photo, confirmed_at, notes, proof_url, tipo_pago, branch_id')
-                .order('confirmed_at', { ascending: false }),
+        // fetchNonCashInvoices pagina con fetchAllRows — antes esta query no
+        // paginaba pese a filtrar sales_invoices (tabla flagged en CLAUDE.md);
+        // un mes con mucho volumen de tarjeta/transferencia podía truncarse en
+        // silencio sobre el cap de 1000 filas de PostgREST.
+        const [invoicesData, confirmedIdsRes, historialRes] = await Promise.all([
+            fetchNonCashInvoices(filterBranch, fini, ffin, NON_CASH_TYPES),
+            fetchPaymentConfirmationIds(),
+            fetchPaymentConfirmationsHistorial(),
         ]);
-        if (invoicesRes.error) console.error('loadData: fetch non-cash invoices failed:', invoicesRes.error.message);
         if (confirmedIdsRes.error) console.error('loadData: fetch confirmed ids failed:', confirmedIdsRes.error.message);
         if (historialRes.error) console.error('loadData: fetch confirmation history failed:', historialRes.error.message);
 
@@ -1635,14 +1590,12 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
         const hIds = hData.map(r => r.invoice_id);
         let invMap = {};
         if (hIds.length > 0) {
-            const { data: d, error: dErr } = await supabase.from('sales_invoices')
-                .select('id, correlativo, branch_id, tipo_documento, cliente, fecha, total, tipo_pago')
-                .in('id', hIds);
+            const { data: d, error: dErr } = await fetchInvoicesByIds(hIds, 'id, correlativo, branch_id, tipo_documento, cliente, fecha, total, tipo_pago');
             if (dErr) console.error('loadData: fetch confirmed invoices failed:', dErr.message);
             for (const inv of (d || [])) invMap[inv.id] = inv;
         }
 
-        setPending(invoicesRes.data || []);
+        setPending(invoicesData || []);
         setConfirmedIds(cidSet);
         setConfirmed(hData.map(r => ({ ...r, invoice: invMap[r.invoice_id] || null })));
         setLoading(false);
@@ -1724,7 +1677,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
             branch_id: inv?.branch_id,
         };
 
-        const { data, error } = await supabase.from('sales_payment_confirmations').insert(payload).select('*');
+        const { data, error } = await insertPaymentConfirmation(payload);
         if (error) { console.error('handleConfirm: insert confirmation failed:', error.message); setConfirmSaving(false); return; }
         setConfirmedIds(prev => new Set([...prev, invoiceId]));
         if (data?.[0]) setConfirmed(prev => [{ ...data[0], invoice: inv || null }, ...prev]);

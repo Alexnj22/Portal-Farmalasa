@@ -5,9 +5,31 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.16.11';
+export const APP_VERSION = '2.17.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.0 — feat(bloque5.5): pantalla de "sin conexión" para la PWA.
+// Alcance decidido con el usuario: mínimo, no offline funcional real —
+// `public/sw.js` (antes solo manejaba Web Push, cero fetch/cache) ahora
+// intercepta SOLO requests de navegación (`event.request.mode ===
+// 'navigate'`) y el logo que usa la propia pantalla de offline
+// (`/Logo192.png`); intenta red primero, y si falla sirve
+// `public/offline.html` (página estática nueva, self-contained, sin
+// depender de ningún asset con hash del build) en vez del error nativo
+// del navegador. Deliberadamente NO cachea index.html/JS/CSS del bundle
+// — es el riesgo real que el plan marcaba ("riesgo de stale"): el
+// proyecto ya tuvo que resolver un problema real de chunks viejos tras
+// deploy (ver el guard de `vite:preloadError` en `src/main.jsx`,
+// preexistente) y un service worker que cachea el App Shell mal
+// invalidado es la causa clásica de ese mismo problema en otros
+// proyectos PWA. Al no tocar en absoluto cómo se sirven JS/CSS/HTML del
+// build, ese riesgo queda en cero — la única superficie cacheada
+// (offline.html + un logo) no cambia con cada deploy.
+// Verificado en vivo con Playwright (Chromium real, `context.setOffline`):
+// 1ª carga online → SW se instala y activa; offline → navegar muestra
+// "Sin conexión" con logo cacheado visible y botón Reintentar; volver
+// online → navegación normal se recupera sin rastro, sin recargar
+// manualmente el SW. Build + lint + 15 tests unitarios verdes.
 // v2.16.11 — design(bloque5.6): pase de accesibilidad dirigido, cerrando
 // los gaps ya documentados en DESIGN.md §25 (no se inventó alcance nuevo,
 // se cerró lo ya catalogado en la auditoría de diseño anterior).

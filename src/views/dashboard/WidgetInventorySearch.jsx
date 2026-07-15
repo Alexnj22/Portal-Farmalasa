@@ -3,7 +3,12 @@ import { createPortal } from 'react-dom';
 import { Search, Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useAuth } from '../../context/AuthContext';
-import { fetchAllRows } from '../../utils/supabaseUtils';
+import {
+  fetchProductPhotoMap,
+  fetchProductsByPrincipioActivo,
+  searchInventory,
+  fetchInventoryByProductIds,
+} from '../../data/inventory';
 
 const ERP_BRANCH_MAP = {
   1: 'Salud 1',
@@ -407,37 +412,18 @@ export default function WidgetInventorySearch() {
 
     try {
       // 1. Parallel: photos + products matching by principio_activo
-      // fetchAllRows evita el cap silencioso de 1000 filas de PostgREST — si
-      // más de 1000 productos tienen foto, el mapa quedaba incompleto en silencio.
-      const [photoData, { data: paData }] = await Promise.all([
-        fetchAllRows(() => supabase.from('products').select('nombre, foto_url').not('foto_url', 'is', null)),
-        supabase.from('products').select('id, principio_activo')
-          .ilike('principio_activo', `%${q}%`)
-          .not('principio_activo', 'is', null),
+      // Ambos paginados (src/data/inventory.js) — evita el cap silencioso de
+      // 1000 filas de PostgREST en tablas que pueden crecer sin tope.
+      const [photoMap, paData] = await Promise.all([
+        fetchProductPhotoMap(),
+        fetchProductsByPrincipioActivo(q),
       ]);
 
-      const paIds = (paData || []).map(p => p.id);
-      const paMap = new Map((paData || []).map(p => [p.id, p.principio_activo]));
-
-      const photoMap = {};
-      for (const p of photoData || []) {
-        photoMap[p.nombre.toUpperCase().trim()] = p.foto_url;
-      }
+      const paIds = paData.map(p => p.id);
+      const paMap = new Map(paData.map(p => [p.id, p.principio_activo]));
 
       // 2. Query inventory by name OR principio_activo product IDs (include vencidos)
-      let invQuery = supabase
-        .from('inventory')
-        .select('erp_sucursal_id, erp_product_id, descripcion, presentacion, lote, fecha_vencimiento, cantidad, is_vencidos')
-        .gt('cantidad', 0)
-        .order('descripcion')
-        .order('fecha_vencimiento', { ascending: true, nullsFirst: false });
-
-      invQuery = paIds.length > 0
-        ? invQuery.or(`descripcion.ilike.%${q}%,erp_product_id.in.(${paIds.join(',')})`)
-        : invQuery.ilike('descripcion', `%${q}%`);
-
-      const { data, error: err } = await invQuery;
-      if (err) throw err;
+      const data = await searchInventory({ term: q, productIds: paIds });
 
       const grouped  = groupInventory(data, paMap, photoMap);
       const vencidos = groupVencidos(data, paMap, photoMap);
@@ -461,23 +447,12 @@ export default function WidgetInventorySearch() {
 
           if (molecules.length > 0) {
             // Find our products matching any of these molecules
-            const { data: altProds } = await supabase
-              .from('products')
-              .select('id, principio_activo')
-              .or(molecules.map(m => `principio_activo.ilike.%${m}%`).join(','));
-
-            const altIds   = (altProds || []).map(p => p.id);
-            const altPaMap = new Map((altProds || []).map(p => [p.id, p.principio_activo]));
+            const altProds  = await fetchProductsByPrincipioActivo(molecules);
+            const altIds    = altProds.map(p => p.id);
+            const altPaMap  = new Map(altProds.map(p => [p.id, p.principio_activo]));
 
             if (altIds.length > 0) {
-              const { data: altInv } = await supabase
-                .from('inventory')
-                .select('erp_sucursal_id, erp_product_id, descripcion, presentacion, lote, fecha_vencimiento, cantidad')
-                .gt('cantidad', 0)
-                .in('erp_product_id', altIds)
-                .order('descripcion')
-                .order('fecha_vencimiento', { ascending: true, nullsFirst: false });
-
+              const altInv = await fetchInventoryByProductIds(altIds);
               setAlternatives(groupInventory(altInv, altPaMap, photoMap));
             }
           }

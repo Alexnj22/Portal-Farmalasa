@@ -5,9 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.8';
+export const APP_VERSION = '2.17.9';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.9 — refactor(bloque6.A): primer módulo real de la capa de datos
+// — src/data/inventory.js (antes src/data/ solo tenía catálogos
+// estáticos: constants.js, elSalvadorGeo.js, nationalities.js).
+// Empieza por WidgetInventorySearch.jsx, el consumidor que el plan ya
+// señalaba como punto de partida (había tenido un bug de datos antes).
+// Hallazgo real de paso: 2 de las 3 queries a `inventory`/`products`
+// del widget NO usaban fetchAllRows — `inventory` es una de las tablas
+// que CLAUDE.md marca como obligatoriamente paginada (max-rows=1000 de
+// PostgREST); un término de búsqueda amplio (ej. un principio activo
+// muy común, con muchos productos × sucursales × lotes) podía truncar
+// resultados en silencio. Las 4 funciones nuevas
+// (fetchProductPhotoMap, fetchProductsByPrincipioActivo, searchInventory,
+// fetchInventoryByProductIds) usan fetchAllRows consistentemente.
+// No es un hook (a diferencia de "hook por entidad" en la descripción
+// original del plan) — el widget dispara la búsqueda de forma
+// imperativa con debounce propio, así que funciones async simples
+// encajan mejor que un hook con auto-fetch; el hook sí tiene sentido
+// para consumidores que hacen fetch-on-mount, se evaluará caso por
+// caso en la migración oportunista.
+// Verificado en vivo con Playwright: búsqueda real "ensure" desde el
+// Dashboard → "LA POPULAR 68 uds" con 4 productos y cantidades
+// correctas (2/2/9/12 uds), idéntico a antes de la migración.
+// Build + lint + 15 tests unitarios verdes.
 // v2.17.8 — refactor(bloque6.C): CIERRA TabPedidos.jsx (3457→2037 líneas,
 // -1420 en este PR; -48% desde el original 3943). Último y más grande
 // lote de la sesión: ItemSection+ItemSections (las 4 tablas

@@ -5,9 +5,28 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.5';
+export const APP_VERSION = '2.17.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.6 — refactor(bloque6.C): arranca TabPedidos.jsx (3943→3840
+// líneas). Primer lote, mismo patrón que TabMinMax: las 6 animaciones
+// de "stage" (MotorcycleAnim/BoxStackAnim/PausedAnim/VioletGlow/
+// ScanAnim/PingDot + su dispatcher StageAnim) → tabpedidos/
+// StageAnims.jsx; EmpChip/StagePill/SucPill → archivos propios.
+// STAGE_CONFIG/COLOR_CLS/SUC_COLORS (usados solo dentro de estos
+// componentes, no en el cuerpo principal) → tabpedidos/constants.js.
+// **Hallazgo de paso, no corregido (fuera de alcance de esta
+// extracción):** StageAnim, EmpChip y StagePill no tienen NINGÚN
+// caller en todo el archivo — código muerto real, no falso positivo de
+// grep (verificado explícitamente). Quedaron extraídos igual (mecánico,
+// sin criterio de "está vivo o no"), documentado acá para que quede
+// registro; decidir si se borran o se les busca uso es una decisión de
+// producto aparte. SucPill sí tiene un caller real (la card de cada
+// pedido) y se verificó en vivo con Playwright: los pills de color por
+// sucursal (Salud 1 azul, Salud 2 violeta, Salud 3 esmeralda, etc.) se
+// ven idénticos en la pestaña PEDIDOS real, con datos de producción,
+// junto al LifecycleTimeline (todavía sin extraer) funcionando igual.
+// Build + lint + 15 tests unitarios verdes.
 // v2.17.5 — refactor(bloque6.C): 4ta extracción de TabMinMax.jsx
 // (2913→2584 líneas, -329; -34% acumulado desde 3947). `ConfigPanel`
 // (panel flotante de configuración: ciclo de reposición, reorden por

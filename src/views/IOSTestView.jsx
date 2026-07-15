@@ -27,9 +27,6 @@ const IOSTestView = () => {
     const isIOS = /iPhone|iPad|iPod/.test(ua);
     const isCapacitor = !!(window.Capacitor);
 
-    const safeTop = getComputedStyle(document.documentElement)
-        .getPropertyValue('--sat') || 'usar env()';
-
     return (
         <GlassViewLayout icon={Smartphone} title="Vista de Prueba iOS">
             <div className="p-4 lg:p-8 flex flex-col gap-4">

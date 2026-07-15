@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Search, Loader2, X, FlaskConical, Building2, Pill, CheckCircle2, Package } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 

@@ -29,7 +29,6 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const employees = useStaffStore(s => s.employees);
     const branches = useStaffStore(s => s.branches);
     const shifts = useStaffStore(s => s.shifts);
-    const holidays = useStaffStore(s => s.holidays);
     const { user, hasPermission } = useAuth();
     const canEdit = hasPermission('staff_detail', 'can_edit');
     
@@ -155,7 +154,6 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
             });
         }
         if (ausenciasSearch.trim()) {
-            const q = ausenciasSearch.toLowerCase();
             list = list.filter(ev => tokenMatch(ausenciasSearch, ev.note, ev.type));
         }
         return list;

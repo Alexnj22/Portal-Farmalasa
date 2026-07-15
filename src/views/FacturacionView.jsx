@@ -655,7 +655,6 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
     const [solvingId, setSolvingId]     = useState(null);
     const [comment, setComment]         = useState('');
     const [saving, setSaving]           = useState(false);
-    const [expandedId, setExpandedId]         = useState(null);
     const [copiedId, setCopiedId]             = useState(null);
     const [nullCamposIds, setNullCamposIds]   = useState(new Set());
     const [collapsedBranches, setCollapsedBranches] = useState({});
@@ -834,7 +833,7 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
         });
         setResolved(prev => [{ ...inv, resolution: { comment: comment.trim() || null, resolved_by: resolvedBy, resolved_at: new Date().toISOString() } }, ...prev]);
         setRows(prev => prev.filter(r => r.id !== invoiceId));
-        setExpandedId(null); setSolvingId(null); setComment(''); setSaving(false);
+        setSolvingId(null); setComment(''); setSaving(false);
     };
 
     const { filtered, isPendienteFuzzy } = useMemo(() => {
@@ -962,7 +961,6 @@ function TabPendienteMH({ branches, filterBranch, searchTerm, currentUser }) {
                                         const hasCCF = fechaRows.some(r => r.tipo_documento === 'CCF');
                                         const isToday = fecha === todayStr;
                                         const dLabel = daysAgoLabel(fecha);
-                                        const expandedRow = fechaRows.find(r => r.id === expandedId);
 
                                         return (
                                             <div key={fecha} className="px-4 py-3">
@@ -1849,6 +1847,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                         { key: 'accion',      label: '',          align: 'right' },
                                     ]}
                                     empty={{ message: 'Sin transacciones' }}
+                                    footer={<Pagination page={tipoPg} total={tipoTotalPages} onChange={(p) => setPendingPage(tipo, p)} />}
                                     minWidth="560px"
                                 >
                                     {tipoPageRows.map((r, ri) => {
@@ -1957,6 +1956,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser }) {
                                                 { key: 'accion',      label: '',          align: 'right' },
                                             ]}
                                             empty={{ message: 'Sin transacciones' }}
+                                            footer={<Pagination page={tipoPg} total={tipoTotalPages} onChange={(p) => setPendingPage(tipo, p)} />}
                                             minWidth="560px"
                                         >
                                             {tipoPageRows.map((r, ri) => {

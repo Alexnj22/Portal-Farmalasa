@@ -14,14 +14,12 @@ const GlassViewLayout = ({
     children
 }) => {
     const scrollContainerRef = useRef(null);
-    const [isScrolled, setIsScrolled] = useState(false);
     const [showScrollNav, setShowScrollNav] = useState(false);
 
     const handleInternalScroll = useCallback(() => {
         if (!scrollContainerRef.current) return;
         requestAnimationFrame(() => {
             const { scrollTop } = scrollContainerRef.current;
-            setIsScrolled(scrollTop > 15);
             setShowScrollNav(scrollTop > 150);
         });
     }, []);

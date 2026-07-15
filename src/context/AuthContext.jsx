@@ -242,7 +242,7 @@ export const AuthProvider = ({ children }) => {
     return Date.now() - last >= getIdleLimitMs(u);
   };
 
-  const startIdleWatcher = (u) => {
+  const startIdleWatcher = () => {
     stopIdleWatcher();
     if (!localStorage.getItem(LS_LAST)) writeLastActivity(true);
 

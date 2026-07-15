@@ -274,7 +274,7 @@ function buildSectionFooter(sec) {
 }
 
 // Footer callback: "Revisado por / N/M / Recibido por" en todas las páginas con márgenes uniformes.
-function buildFooterCallback(_meta) {
+function buildFooterCallback() {
     return (currentPage, pageCount) => ({
         margin: [PAGE_MARGINS[0], 6, PAGE_MARGINS[2], 0],
         columns: [

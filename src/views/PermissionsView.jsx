@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     ShieldCheck, Monitor, Calendar, Building2, Megaphone, ClipboardList,
     Palmtree, Activity, AlertTriangle, User, Eye, Pencil, CheckCircle2,
@@ -236,14 +236,6 @@ const ROLE_COLORS = [
     { color: 'from-slate-400 to-slate-600',   textColor: 'text-slate-700',  bg: 'bg-slate-50',  border: 'border-slate-200'  },
 ];
 
-// Fallback para roles no conocidos en ROLE_META
-const defaultRoleMeta = (key) => ({
-    label: key, locked: false,
-    desc: `Rol de sistema: ${key}`,
-    color: 'from-slate-400 to-slate-500', textColor: 'text-slate-700',
-    bg: 'bg-slate-50', border: 'border-slate-200',
-});
-
 const PERMISSION_TYPES = [
     { key: 'can_view',    label: 'Ver',                          icon: Eye,          activeColor: 'bg-blue-500'    },
     { key: 'can_edit',    label: 'Gestionar',                    icon: Pencil,       activeColor: 'bg-violet-500'  },
@@ -456,7 +448,6 @@ const PermissionsView = () => {
     const [confirmCopy, setConfirmCopy] = useState(null); // roleId a copiar
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchMode, setIsSearchMode] = useState(false);
-    const searchInputRef = useRef(null);
 
     // ── Carga roles organizacionales + permisos desde DB ─────────────────────
     useEffect(() => {
@@ -675,15 +666,6 @@ const PermissionsView = () => {
     // Color style derived from role index
     const selectedOrgRoleIdx = orgRoles.findIndex(r => r.id === selectedRoleId);
     const roleStyle = ROLE_COLORS[selectedOrgRoleIdx >= 0 ? selectedOrgRoleIdx % ROLE_COLORS.length : 0];
-
-    // Stats for selected role (solo módulos principales, sin sub-tabs)
-    const roleStats = useMemo(() => {
-        const total = MAIN_MODULES.length;
-        const withView = MAIN_MODULES.filter(m => permissions[`${selectedRoleId}:${m.key}`]?.can_view).length;
-        const withEdit = MAIN_MODULES.filter(m => permissions[`${selectedRoleId}:${m.key}`]?.can_edit).length;
-        const withApprove = MAIN_MODULES.filter(m => permissions[`${selectedRoleId}:${m.key}`]?.can_approve && m.hasApprove).length;
-        return { total, withView, withEdit, withApprove };
-    }, [selectedRoleId, permissions]);
 
     const { filteredRoles, isPermRoleFuzzy } = useMemo(() => {
         if (!searchQuery.trim()) return { filteredRoles: orgRoles, isPermRoleFuzzy: false };

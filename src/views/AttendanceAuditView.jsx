@@ -98,11 +98,6 @@ function formatTime12h(t) {
   let [h, m] = t.split(':'); h = parseInt(h, 10);
   return `${String(h % 12 || 12).padStart(2,'0')}:${m} ${h >= 12 ? 'PM' : 'AM'}`;
 }
-function toTime24(isoStr) {
-  if (!isoStr) return '';
-  const d = new Date(new Date(isoStr).getTime() - 6 * 3600000);
-  return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`;
-}
 function isEditedPunch(p) { return !!(p.details?.manualAudit || p.details?.editedBy || p.details?.auditedByName); }
 function isAutoPunch(p)   { return !!(p.details?.autoInserted); }
 function isPendingPunch(p){ return !!(p.details?.pendingHRReview && !p.details?.autoInserted); }
@@ -442,17 +437,9 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
   const ts = timesheets.find(t => String(t.employee_id) === String(emp.id) && t.work_date === dateStr);
 
   // Status flags
-  const hasInconsistency = useMemo(() => {
-    if (isOff || isFuture || !entryPunch) return false;
-    const expected = getExpectedPunches(dateStr, shift, dayConfig);
-    const punched  = new Set(dayPunches.map(p => p.type));
-    return expected.some(ep => {
-      if (ep.type === 'IN')  return !dayPunches.some(p => IN_TYPES.has(p.type));
-      if (ep.type === 'OUT') return !dayPunches.some(p => OUT_TYPES.has(p.type));
-      return !punched.has(ep.type);
-    }) && new Date(`${dateStr}T23:59:59-06:00`) < now;
-  }, [dayPunches, isOff, isFuture, shift, dayConfig, dateStr, entryPunch, now]);
-
+  /* eslint-disable react-hooks/preserve-manual-memoization -- `shift` viene de shiftById.get() (Map),
+     el compiler lo trata conservadoramente como mutable aunque es const; la memoización manual sigue
+     funcionando igual */
   const inconsistencies = useMemo(() => {
     if (isOff || isFuture || !shift) return [];
     const expected = getExpectedPunches(dateStr, shift, dayConfig);
@@ -463,6 +450,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
       return !punched.has(ep.type);
     }).filter(ep => ep.expected && ep.expected < now);
   }, [dayPunches, isOff, isFuture, shift, dayConfig, dateStr, now]);
+  /* eslint-enable react-hooks/preserve-manual-memoization */
 
   const isAutoDay   = !!exitPunch && isAutoPunch(exitPunch);
   const isPendDay   = dayPunches.some(p => isPendingPunch(p) && !reviewedPunchIds?.has(p.id));
@@ -907,7 +895,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
 }
 
 // ── Main view ─────────────────────────────────────────────────────────────────
-const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) => {
+const AttendanceAuditView = ({ setOverlayActive }) => {
   const navigate  = useNavigate();
   const { user, hasPermission, getScope } = useAuth();
   const canEdit   = hasPermission('time_audit', 'can_edit');
@@ -1238,7 +1226,6 @@ const AttendanceAuditView = ({ setOverlayActive, setView, setActiveEmployee }) =
 
   // ── Pill style helpers (match ViewTabBar) ────────────────────────────────
   const pillWrap    = 'flex items-center border border-white/90 bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] px-3 gap-1 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:-translate-y-[2px] transition-all duration-300';
-  const pillBtn     = (active) => `h-9 md:h-10 px-3 md:px-4 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${active ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]' : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-sm hover:border-white/90'}`;
   const pillDivider = 'h-5 w-px bg-white/40 mx-1';
   const pillIconBtn = 'w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-white hover:text-slate-800 hover:shadow-sm transition-all duration-300 shrink-0';
   const pillLabelText = 'text-slate-800';

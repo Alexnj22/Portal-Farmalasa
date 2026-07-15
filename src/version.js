@@ -5,8 +5,42 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.16.3';
+export const APP_VERSION = '2.16.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.16.4 — fix(bloque2): limpieza de deuda de lint, parte 4 — no-unused-vars
+// 50/102 revisados uno por uno (no barrido ciego). Categorías: (a) código
+// muerto real (funciones/estado/props nunca leídos — ~30 sitios, incl. una
+// `fetchSrs` completa abandonada en SrsBuscadorWidget.jsx, superseded por
+// `srsFetch`); (b) `catch (e)`/`catch (_)` → `catch {}` donde el error nunca
+// se usaba (~10 sitios); (c) parámetros de función sin caller real que los
+// use (`startIdleWatcher(u)` en AuthContext.jsx lee `userRef.current` en vez
+// del arg; `preApprovePlan(headerId, year)`, `buildFooterCallback(_meta)`,
+// `updatePayrollPeriodStatus(..., _meta)`).
+// 2 hallazgos reales corregidos de paso (no cosméticos):
+// - FacturacionView.jsx: las 2 secciones de "pagos pendientes por tipo"
+//   (inmediatos + crédito) calculaban `tipoTotalPages`/`tipoPg` para paginar
+//   pero el <DataTable> nunca tenía `footer={<Pagination .../>}` — con
+//   PAGE_SIZE=10, cualquier tipo de pago con >10 transacciones pendientes
+//   quedaba con las filas extra invisibles y sin forma de navegarlas
+//   (truncado silencioso, mismo patrón que CLAUDE.md ya documenta para
+//   PostgREST). Cerrado replicando el `footer={<Pagination .../>}` que ya
+//   usa la sección "confirmados" del mismo archivo. De paso, `expandedId`
+//   (state completamente huérfano, solo se reseteaba a null, nunca se leía
+//   ni se setteaba a otro valor — vestigio de antes de que existiera
+//   `solvingId`) también eliminado.
+// - VentasView.jsx: `isVendSearchFuzzy` (resultado de smartFilter en la
+//   pestaña Vendedores) se calculaba pero nunca se mostraba el banner
+//   "resultados similares" — sí existe para la pestaña Productos
+//   (`isProdFuzzy`, línea ~1845). Agregado el mismo banner a Vendedores.
+// Encontrados pero NO tocados (fuera de alcance, no son solo lint): en
+// TabPedidos.jsx, `handleCorregirBodega`/`handleConfirmarCorreccion`
+// (backend listo sin botón en UI, ver 7A.1) y en RecepcionModal.jsx,
+// `handleTodoOk` (posible botón faltante, ver 7A.3) — se prefijarán/
+// documentarán en la parte 5, NO se borran: son gaps de feature conocidos,
+// no dead code.
+// Build + 15 tests unitarios verdes. Quedan 52 no-unused-vars, todos en
+// pedidos/productos/promociones/schedule-tabs.
 
 // v2.16.3 — fix(bloque2): limpieza de deuda de lint, parte 3 —
 // react-refresh/only-export-components (8/8) y

@@ -15,7 +15,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import PeriodPicker from '../components/common/PeriodPicker';
-import { DataTable, DataRow, DataCell, useExpandStyle } from '../components/common/DataTable';
+import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
 import { smartFilter, normSearch } from '../utils/searchUtils';
 import { shortEmployeeName } from '../utils/nameUtils';
@@ -59,24 +59,6 @@ function currentMonthRange() {
     const pad = (n) => String(n).padStart(2, '0');
     // Use today as ffin so the comparison period is "same days last month", not full-month-vs-full-month
     return { fini: `${y}-${pad(m)}-01`, ffin: `${y}-${pad(m)}-${pad(d)}`, label: `${y}-${pad(m)}` };
-}
-
-function monthOptions(count = 12) {
-    const opts = [];
-    const now = new Date(Date.now() - 6 * 3600_000);
-    for (let i = 0; i < count; i++) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const y = d.getFullYear();
-        const m = d.getMonth() + 1;
-        const pad = (n) => String(n).padStart(2, '0');
-        const lastDay = new Date(y, m, 0).getDate();
-        const label = d.toLocaleDateString('es-SV', { month: 'long', year: 'numeric' });
-        opts.push({
-            value: `${y}-${pad(m)}-01|${y}-${pad(m)}-${pad(lastDay)}`,
-            label: label.charAt(0).toUpperCase() + label.slice(1),
-        });
-    }
-    return opts;
 }
 
 function computePrevRange(fini, ffin) {
@@ -1136,6 +1118,13 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                 <FilterControls monthRange={monthRange} setMonthRange={setMonthRange} filterBranch={filterBranch} setFilterBranch={setFilterBranch} branchOptions={branchOptions} branchLocked={getScope('ventas') === 'BRANCH'} />
             </div>
 
+            {isVendSearchFuzzy && searchTerm && (
+                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                    <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                    Resultados similares para &ldquo;{searchTerm}&rdquo; — no se encontraron coincidencias exactas
+                </div>
+            )}
+
             <DataTable
                 columns={[
                     { key: 'rank',     label: '#' },
@@ -1512,7 +1501,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     }
                     localStorage.removeItem(lsKey);
                 }
-            } catch (_) { /* localStorage unavailable or corrupted — proceed to fetch */ }
+            } catch { /* localStorage unavailable or corrupted — proceed to fetch */ }
         }
 
         setLoading(true);
@@ -1581,10 +1570,10 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                         .filter(k => k.startsWith('ppv2_') || k.startsWith('ppv3_') || k.startsWith('ppv4_') || k.startsWith('ppv5_') || (k.startsWith('ppv6_') && k !== lsKey))
                         .forEach(k => {
                             if (k.startsWith('ppv2_') || k.startsWith('ppv3_') || k.startsWith('ppv4_') || k.startsWith('ppv5_')) { localStorage.removeItem(k); return; }
-                            try { const e = JSON.parse(localStorage.getItem(k)); if (Date.now() - e.ts > TTL_MS) localStorage.removeItem(k); } catch (_) { /* entrada corrupta — se ignora */ }
+                            try { const e = JSON.parse(localStorage.getItem(k)); if (Date.now() - e.ts > TTL_MS) localStorage.removeItem(k); } catch { /* entrada corrupta — se ignora */ }
                         });
                     localStorage.setItem(lsKey, JSON.stringify({ data: allRows, ts: Date.now() }));
-                } catch (_) { /* quota exceeded or unavailable — in-memory cache still works */ }
+                } catch { /* quota exceeded or unavailable — in-memory cache still works */ }
             }
 
             setRows(allRows);
@@ -1643,7 +1632,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                 parsed.data = (parsed.data || []).map(patchRow);
                 localStorage.setItem(lsKey, JSON.stringify(parsed));
             }
-        } catch (_) { /* localStorage unavailable or corrupted — in-memory cache still fixed */ }
+        } catch { /* localStorage unavailable or corrupted — in-memory cache still fixed */ }
         useStaff.getState().appendAuditLog(nextVal ? 'OCULTAR_PRODUCTO_VENTAS' : 'MOSTRAR_PRODUCTO_VENTAS', String(row.erp_product_id), { producto: row.descripcion });
         useToastStore.getState().showToast(nextVal ? 'Producto oculto' : 'Producto visible', nextVal ? 'Ya no aparecerá en Ventas > Productos.' : 'Vuelve a aparecer en Ventas > Productos.', 'success');
     }, [fini, ffin, filterBranch, currentUser]);
@@ -2239,7 +2228,6 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     const emp        = employees?.find(e => e.code === line.cod_vendedor);
                                                                                     const empName    = emp ? (emp.name || `${emp.first_names ?? ''} ${emp.last_names ?? ''}`.trim()) : (line.cod_vendedor || '—');
                                                                                     const empShort   = empName.split(' ').filter(Boolean).slice(0, 2).join(' ');
-                                                                                    const empInit    = empName[0]?.toUpperCase() || '?';
                                                                                     const branchName = branches.find(b => b.id === line.branch_id)?.name || `Suc. ${line.branch_id}`;
                                                                                     const pagoStyle  = PAGO_STYLE[line.tipo_pago] ?? 'bg-slate-100 text-slate-500';
                                                                                     const docStyle   = line.tipo_documento === 'CCF' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600';

@@ -2,17 +2,6 @@ import React, { useState, useRef, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import { Search, Loader2, ChevronLeft, ChevronRight, FlaskConical, Building2, Pill, X } from 'lucide-react';
 
-async function fetchSrs(q, page = 1) {
-    const { data, error } = await supabase.functions.invoke('srs-proxy', {
-        method: 'GET',
-        headers: { 'x-query': q, 'x-page': String(page) },
-        // Pass params via query string by building URL ourselves
-    });
-    // supabase.functions.invoke doesn't support GET query params natively,
-    // so we call via fetch with the session token
-    throw new Error('use_direct'); // handled below
-}
-
 // Direct fetch wrapper using supabase session token
 async function srsFetch(q, page = 1) {
     const { data: { session } } = await supabase.auth.getSession();
@@ -34,7 +23,6 @@ async function srsFetch(q, page = 1) {
 export default function SrsBuscadorWidget({
     initialQuery = '',
     onSelectResult = null,  // (product) => void — optional callback when user picks a result
-    onClose = null,
 }) {
     const [query, setQuery]       = useState(initialQuery);
     const [results, setResults]   = useState(null);

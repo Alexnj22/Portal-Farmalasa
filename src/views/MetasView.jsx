@@ -582,7 +582,7 @@ export default function MetasView() {
             <YAxis type="category" dataKey="branch" tick={{fontSize:10,fill:axisColor,fontWeight:700}} tickLine={false} axisLine={false} width={68}/>
             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false}/>
             <Tooltip
-              formatter={(v, n) => [fmtK(v), 'Ventas']}
+              formatter={(v) => [fmtK(v), 'Ventas']}
               contentStyle={{fontSize:11, background:'#0f172a', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, color:'white'}}
             />
             <Bar dataKey="val" barSize={18} radius={[0,4,4,0]} isAnimationActive={true} animationDuration={500} animationEasing="ease-out"
@@ -621,7 +621,7 @@ export default function MetasView() {
               </tr>
             </thead>
             <tbody>
-              {BRANCHES.map((b, bi) => {
+              {BRANCHES.map((b) => {
                 const goal = goals[b];
                 const totals = annualTotals[b];
                 return (

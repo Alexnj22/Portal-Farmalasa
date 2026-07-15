@@ -473,7 +473,7 @@ export function useTimeClockEngine(props = {}) {
                 window.location.reload();
             }, 1500);
 
-        } catch (error) {
+        } catch {
             showToast('Error', 'Error al contactar al servidor.', 'error' , 'dark');
             setIsProcessing(false);
         }

@@ -416,7 +416,7 @@ const SchedulesView = ({ openModal, setView }) => {
 
                 if (currentBranch) {
                     let sch = currentBranch.weekly_hours || currentBranch.settings?.schedule;
-                    if (typeof sch === 'string') { try { sch = JSON.parse(sch); } catch(e) { sch = null; } }
+                    if (typeof sch === 'string') { try { sch = JSON.parse(sch); } catch { sch = null; } }
                     if (sch && typeof sch === 'object') {
                         let minOpen = 1440; let maxClose = 0;
                         Object.values(sch).forEach(d => {

@@ -248,7 +248,9 @@ const LockedField = ({ label, value, colSpan = 1 }) => (
 const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode = false, activeTab: activeTabProp, onValidationChange }) => {
 
     const employees = useStaffStore(state => state.employees);
-    const [localActiveTab, setLocalActiveTab] = useState('personal');
+    // Fallback sin uso real hoy: el único caller (UnifiedModal) siempre pasa
+    // activeTab controlado. Sin setter porque no hay UI de tabs interna que lo dispare.
+    const [localActiveTab] = useState('personal');
     const activeTab = activeTabProp !== undefined ? activeTabProp : localActiveTab;
     const [hasDraft, setHasDraft] = useState(false);
 

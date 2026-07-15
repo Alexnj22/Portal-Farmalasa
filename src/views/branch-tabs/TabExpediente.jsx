@@ -308,7 +308,6 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             });
         }
         if (searchTerm) {
-            const lowerTerm = searchTerm.toLowerCase();
             filtered = filtered.filter(doc => tokenMatch(searchTerm, doc.title));
         }
         return filtered;

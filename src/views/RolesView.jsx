@@ -298,7 +298,7 @@ const RolesView = ({ openModal }) => {
 
     const toggleFullScreen = () => {
         if (!document.fullscreenElement) {
-            orgChartContainerRef.current?.requestFullscreen().catch(err => {
+            orgChartContainerRef.current?.requestFullscreen().catch(() => {
                 useToastStore.getState().showToast('Error', 'No se pudo entrar a pantalla completa.', 'error');
             });
         } else {
@@ -327,7 +327,7 @@ const RolesView = ({ openModal }) => {
                 setIsExporting(false);
                 useToastStore.getState().showToast('Exportación Exitosa', 'El organigrama se ha descargado como imagen.', 'success');
             }, 500);
-        } catch (err) {
+        } catch {
             useToastStore.getState().showToast('Error', 'Hubo un problema al generar la imagen.', 'error');
             setIsExporting(false);
         }
@@ -345,7 +345,6 @@ const RolesView = ({ openModal }) => {
         const roleEmps = getEmployeesInRole(role.id);
         const hasDualReporting = !!role.secondary_parent_role_id;
         const secondaryParentName = hasDualReporting ? getSuperiorName(role.secondary_parent_role_id) : '';
-        const isGlobal = role.scope === 'GLOBAL';
 
         return (
             <div className={`org-node-card relative inline-flex flex-col items-center backdrop-blur-[20px] shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.7)] rounded-[1.5rem] p-4 mx-2 mt-2 mb-8 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)] transition-all duration-300 min-w-[150px] max-w-[180px] group ${isExporting ? 'export-compact' : ''} ${isExternal ? 'bg-slate-50/70 border border-slate-300/50' : 'bg-white/70 border border-white/90'}`}>

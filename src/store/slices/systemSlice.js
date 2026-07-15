@@ -1344,7 +1344,7 @@ export const createSystemSlice = (set, get) => ({
                             .map(e => ({ ...e, weeklySchedule: e.weekly_roster }));
                         mappedEmployees = [...mappedEmployees, ...mapped];
                     }
-                } catch (_) { /* non-fatal */ }
+                } catch { /* non-fatal */ }
 
                 // Fotos firmadas para el kiosco (bucket empleados privado)
                 try {

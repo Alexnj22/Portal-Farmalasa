@@ -1017,11 +1017,6 @@ const DashboardView = ({ openModal }) => {
   const shiftStatusData    = useMemo(()=>activeEmployees.filter(e=>String(e.branchId)===currentShiftBranch).map(e=>({...e,currentStatus:getTodayAttendanceStatus(e)})),[activeEmployees,currentShiftBranch]);
   const shiftGroups        = useMemo(()=>{ const g={}; shiftStatusData.forEach(e=>{const s=e.currentStatus?.status||'ABSENT'; if(!g[s])g[s]=[]; g[s].push(e);}); return g; },[shiftStatusData]);
 
-  const upcomingBirthdays = useMemo(()=>{
-    const res=[]; for(let off=0;off<=14;off++){const d=new Date();d.setDate(d.getDate()+off); const m=activeEmployees.filter(e=>{if(!e.birthDate)return false; const bd=new Date(e.birthDate+'T12:00:00'); return bd.getMonth()===d.getMonth()&&bd.getDate()===d.getDate();}); if(m.length) res.push({date:d,employees:m,offset:off,isToday:off===0});}
-    return res;
-  },[activeEmployees]);
-
   const calendarEvents = useMemo(()=>{
     const map={},y=calMonth.getFullYear();
     holidays.forEach(h=>{if(!h.holiday_date)return; const k=h.is_recurring?`${y}-${h.holiday_date.slice(5)}`:h.holiday_date.slice(0,10); if(!map[k])map[k]={holidays:[]}; map[k].holidays.push(h.name);});
@@ -1064,9 +1059,6 @@ const DashboardView = ({ openModal }) => {
     setConfigTab(tabId);
     try { localStorage.setItem(`portal_dash_tab_${user?.id||'guest'}`, tabId); } catch { /* localStorage no disponible o valor corrupto — se usa el default */ }
   };
-
-  // activeLayout is already tab-scoped — no extra filter needed
-  const isWidgetInTab = () => true;
 
   const resetAll = () => {
     const newLayouts = {}, newSizes = {}, newMobileLayouts = {}, newMobileSizes = {};

@@ -33,7 +33,7 @@ export const createVacationPlanSlice = (set, get) => ({
     },
 
     // Bulk-promote all DRAFT plans for a year → PRE_APPROVED + header → PRE_APPROVED
-    preApprovePlan: async (headerId, year) => {
+    preApprovePlan: async (headerId) => {
         const { error: plansErr } = await supabase
             .from('vacation_plans')
             .update({ status: 'PRE_APPROVED', updated_at: new Date().toISOString() })

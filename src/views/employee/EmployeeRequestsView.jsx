@@ -371,7 +371,6 @@ const EmployeeRequestsView = () => {
     const [cancelConfirmId, setCancelConfirmId] = useState(null);
     const [disabilityFile, setDisabilityFile]   = useState(null);
     const [typePickerOpen, setTypePickerOpen]   = useState(true);
-    const [expandedNotice, setExpandedNotice]   = useState(null);
 
     // Compañeros de la misma sucursal (excluyendo al usuario actual)
     const branchEmployees = useMemo(() =>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tag, Gift, History } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';

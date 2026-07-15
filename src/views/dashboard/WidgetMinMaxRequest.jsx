@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Loader2, X, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { useStaffStore } from '../../store/staffStore';

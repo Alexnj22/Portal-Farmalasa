@@ -200,7 +200,7 @@ const STACK_CONFIGS = [
 // ─────────────────────────────────────────────────────────────────────────────
 // UnreadStack — mazo interactivo con teclado, stack real y animación de lectura
 // ─────────────────────────────────────────────────────────────────────────────
-const UnreadStack = memo(({ list, userId, onRead }) => {
+const UnreadStack = memo(({ list, onRead }) => {
     const [dismissed, setDismissed] = useState(() => new Set());
     const [pendingReads, setPendingReads] = useState([]); // [{ id, timeoutId }]
     const [undoKey, setUndoKey] = useState(0); // sube en cada confirm para resetear la animación countdown

@@ -877,7 +877,15 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 </aside>
 
                 {/* ── Main content ── */}
-                <main className={`flex-1 flex flex-col relative z-20 lg:overflow-hidden ${blurClasses}`}>
+                {/* min-w-0: sin esto, un flex item con flex-1 nunca se achica por debajo
+                    del ancho natural de su contenido (default CSS: min-width:auto en flex
+                    items) — en móvil (donde #root corre con overflow:visible, ver el
+                    useEffect de arriba) eso deja contenido ancho (tabla/grid de sucursales)
+                    renderizado fuera del viewport, sin ningún scroll container que lo
+                    alcance: no es que esté oculto, es literalmente inalcanzable. Bug real
+                    detrás de Bloque 5.1 ("no puedo seleccionar Salud 1/3/5" en /pedidos,
+                    "/productos pierde columnas" — ninguno de los dos era sobre hideBelow). */}
+                <main className={`flex-1 flex flex-col relative z-20 lg:overflow-hidden min-w-0 ${blurClasses}`}>
                     <div
                         className="lg:hidden fixed left-0 right-0 z-40 border-b border-white/25"
                         style={{

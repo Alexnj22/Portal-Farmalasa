@@ -582,7 +582,7 @@ Staging ya existe (Bloque D de Fase 6, parcialmente hecho). Falta:
 
 | # | Ítem | Severidad | Notas |
 |---|---|---|---|
-| 5.1 | **DataTable arrastra overflow del contenedor en móvil: en `/pedidos` el usuario NO puede seleccionar Salud 1/3/5; `/productos` pierde columnas** | 🔴 **Funcional, no cosmético** | Diagnóstico raíz primero (¿por qué `hideBelow` no lo resolvió?), decidir wrapper por vista vs. fix del componente compartido (19 vistas lo usan) |
+| 5.1 | **DataTable arrastra overflow del contenedor en móvil: en `/pedidos` el usuario NO puede seleccionar Salud 1/3/5; `/productos` pierde columnas** | 🔴 **Funcional, no cosmético** | ✅ Aplicado y verificado 2026-07-15 (v2.16.6). No era un bug de `DataTable`/`hideBelow` — era `<main>` en `AppLayout.jsx` (flex item sin `min-w-0`, nunca se achicaba por debajo del ancho natural de su contenido; en móvil `#root` corre con `overflow:visible` así que ese exceso quedaba literalmente inalcanzable, sin scroll que lo revelara). Fix de 1 línea en el componente compartido (`min-w-0`), arregla las 40+ rutas de una vez. Verificado con Playwright a 390×844: los 6 chips de sucursal visibles/clickeables en /pedidos, card de /productos sin corte; sin regresión en desktop 1440px |
 | 5.2 | Contraste `text-slate-300/400` sobre superficie clara: ~1,288 instancias / 127 archivos | 🟡 Volumen | Pase dedicado, empezar por top-20 archivos; NO find/replace ciego (409 falsos positivos: iconos, tooltips oscuros) |
 | 5.3 | Touch targets long-tail (~20-40px dispersos) | 🟡 | Perseguir por vista, bajo beneficio/esfuerzo |
 | 5.4 | 2 `<select>` sin migrar (`FormAiSchedulerPreview` grilla densa, `TimePicker12` stepper) | 🟡 | Requieren variante nueva de componente |

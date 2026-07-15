@@ -5,8 +5,38 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.16.5';
+export const APP_VERSION = '2.16.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.16.6 — fix(bloque5.1): overflow móvil de DataTable/grids — causa raíz
+// real encontrada, era un bug de layout compartido, no de `hideBelow`.
+// `<main>` en AppLayout.jsx es un flex item (`flex-1`) sin `min-w-0` — por
+// default CSS un flex item nunca se achica por debajo del ancho NATURAL de
+// su contenido (min-width:auto), sin importar cuánto espacio le dé su
+// contenedor. En desktop no se notaba porque `lg:overflow-hidden` +
+// suficiente ancho de viewport lo tapaban. En móvil, `#root` corre con
+// `overflow:visible` (el useEffect de arriba lo fuerza así para dar scroll
+// nativo de página) — sin min-w-0, `main` se renderizaba a su ancho natural
+// (628-668px medido) en vez de los 390px disponibles, y como NINGÚN
+// contenedor entre `#root` y ese contenido establece un scroll container,
+// lo que sobraba (238-278px) no quedaba oculto-pero-alcanzable: quedaba
+// literalmente fuera del alcance, sin ningún scroll que lo revelara. Por
+// eso "hideBelow no lo resolvía" — el problema nunca fue cuántas columnas
+// mostraba la tabla, era que el layout entero alrededor ya se había roto
+// antes de que la tabla hiciera nada. Fix: un `min-w-0` en `<main>`. Un
+// componente compartido (usado en las 40+ rutas), una sola línea.
+// Verificado con Playwright en viewport 390×844 (iPhone real): ANTES —
+// en /pedidos los chips "Salud 1/3/5" (columna derecha de una grid-cols-2)
+// medían x≈426px, fuera del viewport de 390px, sin scroll que los
+// alcanzara; en /productos la card blanca se veía cortada a la derecha.
+// DESPUÉS — mainScrollScrollWidth pasó de 628-668px a exactamente 390px en
+// ambas rutas, los 6 chips de sucursal (La Popular + Salud 1-5) visibles y
+// clickeables, la card de /productos llega al borde derecho del viewport
+// sin corte. Sin regresión en desktop (1440px, capturas de /pedidos,
+// /productos, /ventas — idénticas a antes, 0 errores de página). Build +
+// lint + 15 tests unitarios verdes.
+
+
 
 // v2.16.5 — fix(bloque2): limpieza de deuda de lint, parte 5 (CIERRE) —
 // no-unused-vars 52/52 restantes, 0/186 total desde que arrancó el barrido.

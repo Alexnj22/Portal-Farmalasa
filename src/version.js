@@ -5,8 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.16.6';
+export const APP_VERSION = '2.16.7';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.16.7 — perf(bloque4.3): product_stock_params fuera de supabase_realtime
+// — concentraba 1,271,562 de ~1,274,010 writes acumulados (99.8%) entre las
+// 11 tablas de la publicación, ~25% del CPU total de la DB en decode de WAL.
+// Su única suscripción real en todo el proyecto era TabMinMax.jsx (canal
+// bodega-params-watch, vista de Bodega) — reemplazada por polling cada 5s
+// con el MISMO parche quirúrgico por fila que ya usaba el push (no hay
+// full-reload: se compara `updated_at > cursor`, se traen solo las filas
+// que cambiaron, y se mergean en el array existente sin tocar scroll ni
+// ediciones en curso en otras filas). DROP TABLE de la publicación vía
+// migración con lock_timeout.
+// Verificado: escritura de prueba con OK explícito sobre un producto real
+// de Bodega (erp_product_id=3959, manual_max null→99→null, revertido
+// limpio) confirma que el mecanismo de escritura/lectura funciona
+// correctamente end-to-end; el trigger real que alimenta Bodega
+// (trg_bodega_draft_sync — suma MIN/MAX de todas las sucursales cuando
+// cambia cualquiera, ver auditoría de esta sesión) también toca
+// `updated_at`, así que el caso de uso más común (recalcular/publicar
+// MIN-MAX de una sucursal) queda cubierto igual que con el push.
+// 4.4 (refresh_product_sales_monthly_agg) quedó SIN cambios a propósito:
+// medido en vivo, el caso típico corre en ~800ms (no los 9.68s que
+// mostraba el promedio acumulado de pg_stat_statements, inflado por
+// corridas viejas) — no había nada que arreglar con el rediseño
+// originalmente propuesto.
 
 // v2.16.6 — fix(bloque5.1): overflow móvil de DataTable/grids — causa raíz
 // real encontrada, era un bug de layout compartido, no de `hideBelow`.

@@ -1782,41 +1782,63 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
     useEffect(() => { loadData(selectedErp); setFilterChangesOnly(false); setFilterDraft(false); setFilterSparse(false); }, [selectedErp, loadData]);
 
-    // Realtime: actualización quirúrgica de la fila inline cuando el trigger escribe bodega.
-    // No recarga toda la tabla — solo parchea el producto afectado en el estado local.
+    // Sync de bodega: actualización quirúrgica de la fila inline cuando otro
+    // usuario/el trigger escribe bodega. No recarga toda la tabla — solo
+    // parchea el producto afectado en el estado local (preserva scroll y
+    // cualquier edición en curso en otras filas).
+    //
+    // Antes era postgres_changes (push instantáneo) — se cambió a polling
+    // por `updated_at` (Bloque 4.3): product_stock_params concentraba el
+    // 99.8% del costo de decode de WAL de toda la publicación realtime
+    // (~25% del CPU de la DB), y esta era su única suscripción real en todo
+    // el proyecto (verificado: ningún otro archivo se conecta a este canal).
+    // El polling solo trae LAS FILAS QUE CAMBIARON desde la última consulta
+    // (`updated_at > cursor`, con índice por erp_sucursal_id) y les aplica
+    // el mismo parche de arriba — el usuario nota como máximo POLL_MS de
+    // demora en vez de instantáneo, pero el mecanismo de actualización es
+    // idéntico (no full-reload).
     useEffect(() => {
         if (selectedErp !== 6) return;
-        const channel = supabase
-            .channel('bodega-params-watch')
-            .on('postgres_changes',
-                { event: '*', schema: 'public', table: 'product_stock_params', filter: 'erp_sucursal_id=eq.6' },
-                (payload) => {
-                    const u = payload.new;
-                    if (!u?.erp_product_id) return;
-                    const pubMin  = u.min_units  ?? 0;
-                    const pubMax  = u.max_units  ?? 0;
-                    const effMin  = pubMin  + (u.manual_min  ?? 0);
-                    const effMax  = pubMax  + (u.manual_max  ?? 0);
-                    const hasManual = u.manual_min !== null || u.manual_max !== null;
-                    const apMult = 1 + (analysisConfigRef.current.approaching_pct ?? 20) / 100;
-                    setData(prev => prev.map(row => {
-                        if (row.erp_product_id !== u.erp_product_id) return row;
-                        const stock = Number(row.current_stock ?? 0);
-                        const alertStatus =
-                            stock === 0                         ? 'out_of_stock' :
-                            stock < effMin                      ? 'below_min'    :
-                            stock < effMin * apMult             ? 'approaching'  :
-                            effMax > 0 && stock > effMax        ? 'overstocked'  : 'ok';
-                        return { ...row, effective_min: effMin, effective_max: effMax,
-                            pub_min: pubMin, pub_max: pubMax, has_manual: hasManual,
-                            draft_status: u.draft_status ?? 'none',
-                            draft_min: u.draft_min ?? null, draft_max: u.draft_max ?? null,
-                            alert_status: alertStatus };
-                    }));
-                }
-            )
-            .subscribe();
-        return () => { supabase.removeChannel(channel); };
+        const POLL_MS = 5000;
+        let cancelled = false;
+        let cursor = new Date().toISOString();
+
+        const poll = async () => {
+            const { data: rows, error } = await supabase
+                .from('product_stock_params')
+                .select('erp_product_id, min_units, max_units, manual_min, manual_max, draft_status, draft_min, draft_max, updated_at')
+                .eq('erp_sucursal_id', 6)
+                .gt('updated_at', cursor)
+                .order('updated_at', { ascending: true });
+            if (cancelled || error || !rows?.length) return;
+            cursor = rows[rows.length - 1].updated_at;
+
+            const apMult = 1 + (analysisConfigRef.current.approaching_pct ?? 20) / 100;
+            const byId = new Map(rows.map(u => [u.erp_product_id, u]));
+            setData(prev => prev.map(row => {
+                const u = byId.get(row.erp_product_id);
+                if (!u) return row;
+                const pubMin  = u.min_units  ?? 0;
+                const pubMax  = u.max_units  ?? 0;
+                const effMin  = pubMin  + (u.manual_min  ?? 0);
+                const effMax  = pubMax  + (u.manual_max  ?? 0);
+                const hasManual = u.manual_min !== null || u.manual_max !== null;
+                const stock = Number(row.current_stock ?? 0);
+                const alertStatus =
+                    stock === 0                         ? 'out_of_stock' :
+                    stock < effMin                      ? 'below_min'    :
+                    stock < effMin * apMult             ? 'approaching'  :
+                    effMax > 0 && stock > effMax        ? 'overstocked'  : 'ok';
+                return { ...row, effective_min: effMin, effective_max: effMax,
+                    pub_min: pubMin, pub_max: pubMax, has_manual: hasManual,
+                    draft_status: u.draft_status ?? 'none',
+                    draft_min: u.draft_min ?? null, draft_max: u.draft_max ?? null,
+                    alert_status: alertStatus };
+            }));
+        };
+
+        const timer = setInterval(poll, POLL_MS);
+        return () => { cancelled = true; clearInterval(timer); };
     }, [selectedErp]);
 
     const fmtCalcError = msg => {

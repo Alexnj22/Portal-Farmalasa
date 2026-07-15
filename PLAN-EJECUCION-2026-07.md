@@ -541,6 +541,15 @@ verde. Detalle:
 
 ## BLOQUE 3 — Finalizar staging + arreglar el drift de migraciones
 
+**Estado al 2026-07-15: CERRADO.** 3.1/3.4/3.5/3.6/3.7 resueltos. 3.2 quedó
+como decisión abierta sin urgencia (sembrar catálogos en staging, 520KB,
+solo si se va a usar la UI ahí). **3.3 diferido a propósito, con el
+usuario informado**: ya se había intentado el 2026-07-11 y revertido por
+exceder el alcance aprobado (requiere ~9,800 líneas de DDL en el registro
+de prod); no resuelve nada roto hoy (staging ya funciona sin eso) — el
+usuario confirmó dejarlo en pausa tras conocer el tamaño real de la
+operación. Detalle completo de cada ítem debajo.
+
 Staging ya existe (Bloque D de Fase 6, parcialmente hecho). Falta:
 
 | # | Ítem | Notas |

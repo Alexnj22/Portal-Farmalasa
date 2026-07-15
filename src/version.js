@@ -5,9 +5,26 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.2';
+export const APP_VERSION = '2.17.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.3 — refactor(bloque6.C): 2da extracción de TabMinMax.jsx
+// (3800→3507 líneas, -293 líneas). `AbcXyzMatrix` (grilla ABC×XYZ
+// clicable, filtra la tabla) y `RowActions` (máx 3 botones + dropdown
+// "Más" por fila: Poner 0/Restaurar/Historial/Ocultar/0 en red/
+// Descartar/Publicar) → `tabminmax/AbcXyzMatrix.jsx` y
+// `tabminmax/RowActions.jsx`. Ambos eran igual de auto-contenidos que
+// el primer lote (props + callbacks, sin closures sobre el estado
+// interno de TabMinMax) — mismo patrón mecánico, mismo nivel de riesgo
+// bajo. `XYZ_KEYS`/`ABC_KEYS` (solo usados dentro de AbcXyzMatrix) se
+// movieron junto con el componente, sin quedar duplicados.
+// Verificado en vivo con Playwright contra datos reales: grilla ABC×XYZ
+// idéntica (54/230/87/6/183/214/3/143/457), botones "Poner 0"/
+// "Restaurar" en la columna ACCIONES funcionando igual que antes.
+// Quedan para el siguiente PR: ExpandedPanel (~547 líneas, el más
+// grande y con más acoplamiento real — hace sus propios fetches RPC),
+// ConfigPanel, LabsPanel — y después TabPedidos.jsx completo.
+// Build + lint + 15 tests unitarios verdes.
 // v2.17.2 — refactor(bloque6.C): primera extracción de TabMinMax.jsx
 // (3947→3800 líneas). Empezando por el menor acoplamiento, como pide el
 // plan ("un PR chico por vez"): 6 componentes 100% presentacionales

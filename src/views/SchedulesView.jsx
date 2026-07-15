@@ -7,7 +7,6 @@ import {
     Star, Trash2, Plus, Globe, MapPin, RefreshCw, ChevronRight, CheckCircle
 } from 'lucide-react';
 
-import { supabase } from '../supabaseClient';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
 import { useToastStore } from '../store/toastStore';
@@ -22,6 +21,12 @@ import InlineDayEditor from './schedule-tabs/components/InlineDayEditor';
 import ScheduleChart from './schedule-tabs/components/ScheduleChart';
 import ScheduleCalendar from './schedule-tabs/components/ScheduleCalendar';
 import ConfirmModal from '../components/common/ConfirmModal';
+import {
+    fetchScheduleCoverageAtBranch, fetchScheduleCoverageFromBranch,
+    fetchBranchHourlySales, deleteScheduleCoverage, upsertScheduleCoverage,
+} from '../data/schedules';
+import { fetchRostersForWeekByEmployees } from '../data/requests';
+import { upsertWeeklyRoster, upsertBulkWeeklyRosters } from '../data/system';
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
@@ -343,11 +348,7 @@ const SchedulesView = ({ openModal, setView }) => {
         if (viewMode !== 'calendar' || !filterBranch || !startDate) return;
         let isMounted = true;
         const load = async () => {
-            const { data: atBranch } = await supabase
-                .from('schedule_coverage')
-                .select('*')
-                .eq('coverage_branch_id', filterBranch)
-                .eq('week_start_date', startDate);
+            const { data: atBranch } = await fetchScheduleCoverageAtBranch(filterBranch, startDate);
             if (!isMounted) return;
             const entries = atBranch || [];
             setCoveragesAtBranch(entries);
@@ -355,11 +356,7 @@ const SchedulesView = ({ openModal, setView }) => {
 
             const empIds = [...new Set(entries.map(e => e.employee_id))];
             if (empIds.length > 0) {
-                const { data: rosters } = await supabase
-                    .from('employee_rosters')
-                    .select('employee_id, schedule_data')
-                    .in('employee_id', empIds)
-                    .eq('week_start_date', startDate);
+                const { data: rosters } = await fetchRostersForWeekByEmployees(startDate, empIds);
                 if (!isMounted) return;
                 const map = {};
                 (rosters || []).forEach(r => { map[r.employee_id] = r.schedule_data; });
@@ -372,11 +369,7 @@ const SchedulesView = ({ openModal, setView }) => {
                 .filter(e => String(e.branchId || e.branch_id) === String(filterBranch) && (e.status || '').toUpperCase() !== 'INACTIVO')
                 .map(e => e.id);
             if (myEmpIds.length > 0) {
-                const { data: fromBranch } = await supabase
-                    .from('schedule_coverage')
-                    .select('employee_id, coverage_branch_id, day_of_week')
-                    .in('employee_id', myEmpIds)
-                    .eq('week_start_date', startDate);
+                const { data: fromBranch } = await fetchScheduleCoverageFromBranch(myEmpIds, startDate);
                 if (!isMounted) return;
                 setCoveragesFromBranch(fromBranch || []);
             } else {
@@ -403,11 +396,7 @@ const SchedulesView = ({ openModal, setView }) => {
                 today.setDate(today.getDate() - standardDaysBack);
                 const dateStr = today.toISOString().split('T')[0];
 
-                const { data: rawSalesData, error } = await supabase
-                    .from('branch_hourly_sales')
-                    .select('*')
-                    .eq('branch_id', filterBranch)
-                    .gte('sale_date', dateStr);
+                const { data: rawSalesData, error } = await fetchBranchHourlySales(filterBranch, dateStr);
 
                 if (error) throw error;
 
@@ -563,10 +552,10 @@ const SchedulesView = ({ openModal, setView }) => {
             return { ...prev, [empId]: sch };
         });
         try {
-            const { error } = await supabase.from('employee_rosters').upsert({
+            const { error } = await upsertWeeklyRoster({
                 employee_id: empId, week_start_date: startDate,
                 schedule_data: latestRoster, status: 'DRAFT',
-            }, { onConflict: 'employee_id, week_start_date' });
+            });
             if (error) console.error("Error guardando borrador:", error);
         } catch (err) {
             console.error("Error de red guardando borrador:", err);
@@ -584,11 +573,7 @@ const SchedulesView = ({ openModal, setView }) => {
     const handleRemoveCoverageEmployee = useCallback(async (empId) => {
         setCoveragesAtBranch(prev => prev.filter(e => e.employee_id !== empId));
         setAddedCoverageEmpIds(prev => { const s = new Set(prev); s.delete(empId); return s; });
-        await supabase.from('schedule_coverage')
-            .delete()
-            .eq('employee_id', empId)
-            .eq('coverage_branch_id', filterBranch)
-            .eq('week_start_date', startDate);
+        await deleteScheduleCoverage(empId, filterBranch, startDate);
     }, [filterBranch, startDate]);
 
     const handleSaveCoverageCell = useCallback(async (empId, homeBranchId, dayOfWeek, scheduleData) => {
@@ -606,9 +591,7 @@ const SchedulesView = ({ openModal, setView }) => {
             if (idx >= 0) { const next = [...prev]; next[idx] = { ...next[idx], schedule_data: scheduleData }; return next; }
             return [...prev, entry];
         });
-        const { error } = await supabase.from('schedule_coverage').upsert(entry, {
-            onConflict: 'employee_id,coverage_branch_id,week_start_date,day_of_week',
-        });
+        const { error } = await upsertScheduleCoverage(entry);
         if (error) console.error('Error guardando cobertura:', error);
     }, [filterBranch, startDate]);
 
@@ -661,8 +644,7 @@ const SchedulesView = ({ openModal, setView }) => {
                 schedule_data: item.weekly_schedule, status: 'DRAFT',
                 updated_at: new Date().toISOString(),
             }));
-            const { error: bulkError } = await supabase.from('employee_rosters')
-                .upsert(rosterInserts, { onConflict: 'employee_id,week_start_date' });
+            const { error: bulkError } = await upsertBulkWeeklyRosters(rosterInserts);
             if (bulkError) throw bulkError;
             if (typeof publishWeekRosters === 'function') await publishWeekRosters(startDate, filterBranch);
             setPublishedIds(prev => {

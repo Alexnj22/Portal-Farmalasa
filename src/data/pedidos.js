@@ -84,6 +84,29 @@ export function updateRutaPedidoEntregado(stopId, userId) {
         .eq('id', stopId);
 }
 
+// Extraído de TabRutas.jsx (5 de sus 7 sitios reutilizan funciones ya
+// definidas arriba: updateRutaStatus, updateRutaPedidoEntregado,
+// fetchBranchNamesForSucursales, fetchBranchIdForSucursal).
+export function fetchRutasConParadas() {
+    return supabase.from('rutas')
+        .select(`
+            id, numero, conductor_id, conductor_nombre, status,
+            salida_at, vuelta_base_at, distancia_total_m, duracion_estimada_min, created_at,
+            ruta_pedidos (
+              id, pedido_id, erp_sucursal_id, orden_entrega,
+              distancia_desde_anterior_m, duracion_desde_anterior_min,
+              entregado_at, entregado_por, confirmado_suc_at, discrepancia
+            )
+        `)
+        .in('status', ['pendiente', 'en_ruta', 'completada', 'con_alerta'])
+        .order('created_at', { ascending: false })
+        .limit(50);
+}
+
+export function fetchPedidoNumerosByIds(pedidoIds) {
+    return supabase.from('pedidos').select('id, numero').in('id', pedidoIds);
+}
+
 // ── pedido_items ─────────────────────────────────────────────────────────────
 
 const ITEMS_SELECT = `

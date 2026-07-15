@@ -5,9 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.22';
+export const APP_VERSION = '2.17.23';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.23 — refactor(bloque6.A): SchedulesView.jsx + TabRutas.jsx — 15
+// supabase.from() migradas (8+7). Módulo nuevo src/data/schedules.js (5 fn):
+// fetchScheduleCoverageAtBranch, fetchScheduleCoverageFromBranch,
+// fetchBranchHourlySales, deleteScheduleCoverage, upsertScheduleCoverage —
+// los otros 3 de los 8 sitios de SchedulesView reutilizan
+// fetchRostersForWeekByEmployees (data/requests.js) y
+// upsertWeeklyRoster/upsertBulkWeeklyRosters (data/system.js). TabRutas.jsx
+// resultó ser casi puro reuso: 5 de sus 7 sitios ya existían en
+// data/pedidos.js (updateRutaStatus, updateRutaPedidoEntregado,
+// fetchBranchNamesForSucursales, fetchBranchIdForSucursal — este último
+// reutilizado dos veces); solo 2 funciones nuevas (fetchRutasConParadas,
+// fetchPedidoNumerosByIds) se agregaron a ese mismo módulo, en vez de
+// crear un archivo nuevo solo para dos exports. Import muerto de
+// `supabase` eliminado en SchedulesView.jsx (queda solo para
+// .channel()/.removeChannel() en TabRutas.jsx). Verificado en vivo con
+// Playwright contra datos reales de producción: /schedules (horario
+// semanal real con 5+ empleados de La Popular), /pedidos?tab=rutas
+// (Historial Rutas con Ruta #4, conductor Francisco Ernesto Ramirez,
+// entrega real a La Popular). Sin errores de consola atribuibles al
+// cambio. Build + lint + 15 tests unitarios verdes.
 // v2.17.22 — refactor(bloque6.A): vacationPlanSlice.js — 14 supabase.from()
 // migradas. Módulo nuevo src/data/vacationPlans.js (8 fn): fetchVacationHeaders,
 // updateVacationHeaderStatus, updateVacationPlansBulkPreApprove,

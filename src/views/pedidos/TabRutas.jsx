@@ -7,6 +7,10 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { notifyBranch } from '../../utils/notify';
 import CrearRutaModal from './CrearRutaModal';
 import RutaMapModal   from './RutaMapModal';
+import {
+    updateRutaStatus, updateRutaPedidoEntregado, fetchBranchIdForSucursal,
+    fetchRutasConParadas, fetchBranchNamesForSucursales, fetchPedidoNumerosByIds,
+} from '../../data/pedidos';
 
 const STATUS_BADGE = {
   pendiente:    { label: 'Pendiente',     cls: 'bg-amber-100  text-amber-700  border-amber-200'  },
@@ -40,10 +44,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
   const handleIniciarRuta = async () => {
     setBusyRuta('iniciar');
     try {
-      const { error } = await supabase
-        .from('rutas')
-        .update({ status: 'en_ruta', salida_at: new Date().toISOString() })
-        .eq('id', ruta.id);
+      const { error } = await updateRutaStatus(ruta.id, { status: 'en_ruta', salida_at: new Date().toISOString() });
       if (error) throw error;
       useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
       onRefresh();
@@ -54,19 +55,12 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
   const handleEntregarStop = async (stop) => {
     setBusyStop(stop.id);
     try {
-      const { error } = await supabase
-        .from('ruta_pedidos')
-        .update({ entregado_at: new Date().toISOString(), entregado_por: currentUserId })
-        .eq('id', stop.id);
+      const { error } = await updateRutaPedidoEntregado(stop.id, currentUserId);
       if (error) throw error;
       useStaff.getState().appendAuditLog('RUTA_PARADA_ENTREGADA', stop.id, { sucursal_id: stop.erp_sucursal_id });
 
       // Llegada física = accionable → campana + push
-      const { data: mapa } = await supabase
-        .from('erp_sucursal_map')
-        .select('branch_id')
-        .eq('erp_sucursal_id', stop.erp_sucursal_id)
-        .maybeSingle();
+      const { data: mapa } = await fetchBranchIdForSucursal(stop.erp_sucursal_id);
       if (mapa?.branch_id) {
         notifyBranch(mapa.branch_id, {
           type: 'PEDIDO_LLEGADA',
@@ -84,10 +78,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
   const handleVueltaBase = async () => {
     setBusyRuta('vuelta');
     try {
-      const { error } = await supabase
-        .from('rutas')
-        .update({ status: 'completada', vuelta_base_at: new Date().toISOString() })
-        .eq('id', ruta.id);
+      const { error } = await updateRutaStatus(ruta.id, { status: 'completada', vuelta_base_at: new Date().toISOString() });
       if (error) throw error;
       useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
       onRefresh();
@@ -262,20 +253,7 @@ export default function TabRutas({ searchTerm = '' }) {
   const [crearOpen,     setCrearOpen]     = useState(false);
 
   const loadRutas = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('rutas')
-      .select(`
-        id, numero, conductor_id, conductor_nombre, status,
-        salida_at, vuelta_base_at, distancia_total_m, duracion_estimada_min, created_at,
-        ruta_pedidos (
-          id, pedido_id, erp_sucursal_id, orden_entrega,
-          distancia_desde_anterior_m, duracion_desde_anterior_min,
-          entregado_at, entregado_por, confirmado_suc_at, discrepancia
-        )
-      `)
-      .in('status', ['pendiente', 'en_ruta', 'completada', 'con_alerta'])
-      .order('created_at', { ascending: false })
-      .limit(50);
+    const { data, error } = await fetchRutasConParadas();
 
     if (error) { console.error(error); setLoading(false); return; }
 
@@ -288,12 +266,8 @@ export default function TabRutas({ searchTerm = '' }) {
     ))];
 
     const [{ data: sucData }, { data: pedData }] = await Promise.all([
-      supabase.from('erp_sucursal_map')
-        .select('erp_sucursal_id, branch:branches!inner(name)')
-        .in('erp_sucursal_id', sucIds.length ? sucIds : [-1]),
-      supabase.from('pedidos')
-        .select('id, numero')
-        .in('id', pedidoIds.length ? pedidoIds : ['00000000-0000-0000-0000-000000000000']),
+      fetchBranchNamesForSucursales(sucIds.length ? sucIds : [-1]),
+      fetchPedidoNumerosByIds(pedidoIds.length ? pedidoIds : ['00000000-0000-0000-0000-000000000000']),
     ]);
 
     const sucNameMap = Object.fromEntries((sucData ?? []).map(s => [s.erp_sucursal_id, s.branch?.name]));

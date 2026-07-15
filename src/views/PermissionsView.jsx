@@ -8,12 +8,15 @@ import {
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck
 } from 'lucide-react';
-import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { smartFilter } from '../utils/searchUtils';
+import {
+    fetchRolesForPermissions, fetchRolePermissions, upsertRolePermission, upsertRolePermissionsBulk,
+    updateRoleMaxPriceLevel, updateRoleIsSU,
+} from '../data/permissions';
 
 // ─── Módulos del sistema agrupados por función ─────────────────────────────
 const MODULE_GROUPS = [
@@ -453,8 +456,8 @@ const PermissionsView = () => {
     useEffect(() => {
         setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
         Promise.all([
-            supabase.from('roles').select('id, name, parent_role_id, max_price_level, is_su').order('id'),
-            supabase.from('role_permissions').select('role_id, module_key, can_view, can_edit, can_approve, scope').not('role_id', 'is', null),
+            fetchRolesForPermissions(),
+            fetchRolePermissions(),
         ]).then(([{ data: rolesData }, { data: permsData }]) => {
             // Ordenar jerárquicamente: raíz → hijos → nietos...
             const rawRoles = rolesData || [];
@@ -523,17 +526,15 @@ const PermissionsView = () => {
         const next = { ...cur, [permType]: value };
         if (permType === 'can_view' && !value) { next.can_edit = false; next.can_approve = false; }
 
-        const { error } = await supabase
-            .from('role_permissions')
-            .upsert({
-                role_id: roleId,
-                module_key: moduleKey,
-                can_view: next.can_view ?? false,
-                can_edit: next.can_edit ?? false,
-                can_approve: next.can_approve ?? false,
-                scope: next.scope || 'ALL',
-                updated_at: new Date().toISOString(),
-            }, { onConflict: 'role_id,module_key', ignoreDuplicates: false });
+        const { error } = await upsertRolePermission({
+            role_id: roleId,
+            module_key: moduleKey,
+            can_view: next.can_view ?? false,
+            can_edit: next.can_edit ?? false,
+            can_approve: next.can_approve ?? false,
+            scope: next.scope || 'ALL',
+            updated_at: new Date().toISOString(),
+        });
 
         setSaving(prev => ({ ...prev, [k]: false }));
         if (!error) {
@@ -546,14 +547,14 @@ const PermissionsView = () => {
     const handlePriceLevelChange = useCallback(async (level) => {
         if (!selectedRoleId) return;
         setRolePriceLevels(prev => ({ ...prev, [selectedRoleId]: level }));
-        await supabase.from('roles').update({ max_price_level: level }).eq('id', selectedRoleId);
+        await updateRoleMaxPriceLevel(selectedRoleId, level);
     }, [selectedRoleId]);
 
     // ── Toggle Super Usuario por cargo ───────────────────────────────────────
     const handleSuToggle = useCallback(async (value) => {
         if (!selectedRoleId) return;
         setRoleIsSU(prev => ({ ...prev, [selectedRoleId]: value }));
-        await supabase.from('roles').update({ is_su: value }).eq('id', selectedRoleId);
+        await updateRoleIsSU(selectedRoleId, value);
     }, [selectedRoleId]);
 
     // ── Activar todos los permisos (como SUPERADMIN) ─────────────────────────
@@ -570,8 +571,8 @@ const PermissionsView = () => {
             updated_at: new Date().toISOString(),
         }));
         const [{ error }] = await Promise.all([
-            supabase.from('role_permissions').upsert(rows, { onConflict: 'role_id,module_key', ignoreDuplicates: false }),
-            supabase.from('roles').update({ max_price_level: null }).eq('id', selectedRoleId),
+            upsertRolePermissionsBulk(rows),
+            updateRoleMaxPriceLevel(selectedRoleId, null),
         ]);
         if (!error) {
             setPermissions(prev => {
@@ -609,8 +610,8 @@ const PermissionsView = () => {
         });
         const srcLevel = rolePriceLevels[sourceRoleId] ?? null;
         const [{ error }] = await Promise.all([
-            supabase.from('role_permissions').upsert(rows, { onConflict: 'role_id,module_key', ignoreDuplicates: false }),
-            supabase.from('roles').update({ max_price_level: srcLevel }).eq('id', selectedRoleId),
+            upsertRolePermissionsBulk(rows),
+            updateRoleMaxPriceLevel(selectedRoleId, srcLevel),
         ]);
         if (!error) {
             setPermissions(prev => {
@@ -656,9 +657,7 @@ const PermissionsView = () => {
             scope: permissions[`${selectedRoleId}:${m.key}`]?.scope || 'ALL',
             updated_at: new Date().toISOString(),
         }));
-        await supabase
-            .from('role_permissions')
-            .upsert(rows, { onConflict: 'role_id,module_key', ignoreDuplicates: false });
+        await upsertRolePermissionsBulk(rows);
     }, [selectedRoleId, permissions]);
 
     const selectedOrgRole = orgRoles.find(r => r.id === selectedRoleId) ?? null;

@@ -13,6 +13,12 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import LiquidAvatar from '../components/common/LiquidAvatar';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
+import {
+    fetchAllProductPreciosForCotizaciones, searchProductsActive, searchCustomersByName,
+    fetchCotizacionesList, insertCotizacion, updateCotizacion, insertCotizacionItems,
+    fetchCotizacionItems, deleteCotizacionItems,
+} from '../data/cotizaciones';
+import { fetchBranchesBasic } from '../data/system';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 const IVA_RATE       = 0.13;
@@ -198,25 +204,7 @@ const buildPrintHTML = (cot, itemsArr, branchName) => {
 };
 
 // ─── Carga paginada de precios ────────────────────────────────────────────────
-const loadAllPrices = async () => {
-    const all = [];
-    let from = 0;
-    const size = 1000;
-    while (true) {
-        const { data, error } = await supabase
-            .from('product_precios')
-            .select('product_id, id_presentacion, descripcion, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7, presentaciones(tipo)')
-            .eq('activo', true)
-            .order('product_id', { ascending: true })
-            .order('id_presentacion', { ascending: true })
-            .range(from, from + size - 1);
-        if (error || !data || data.length === 0) break;
-        all.push(...data);
-        if (data.length < size) break;
-        from += size;
-    }
-    return all;
-};
+const loadAllPrices = async () => (await fetchAllProductPreciosForCotizaciones()) ?? [];
 
 // ─── Fila de totales helper ────────────────────────────────────────────────────
 const Row = ({ label, val, className = 'text-slate-600' }) => (
@@ -371,8 +359,7 @@ export default function CotizacionesView() {
     useEffect(() => {
         const load = async () => {
             // Branches: tabla pequeña, carga rápida
-            const { data: branchData, error: branchErr } = await supabase
-                .from('branches').select('id, name').order('name');
+            const { data: branchData, error: branchErr } = await fetchBranchesBasic();
             if (branchErr) console.error('CotizacionesView: fetch branches failed:', branchErr.message);
             setBranches(branchData || []);
 
@@ -410,13 +397,7 @@ export default function CotizacionesView() {
     const searchProducts = useCallback(async (term) => {
         if (!term || !term.trim()) { setProductResults([]); return; }
         setProductSearching(true);
-        const { data, error } = await supabase
-            .from('products')
-            .select('id, nombre')
-            .eq('activo', true)
-            .ilike('nombre', `%${term.trim()}%`)
-            .order('nombre')
-            .limit(20);
+        const { data, error } = await searchProductsActive(term.trim());
         if (error) console.error('searchProducts failed:', error.message);
         setProductResults(data || []);
         setProductSearching(false);
@@ -426,12 +407,7 @@ export default function CotizacionesView() {
     const searchCustomers = useCallback(async (term) => {
         if (!term || !term.trim()) { setCustomerResults([]); return; }
         setCustomerSearching(true);
-        const { data, error } = await supabase
-            .from('customers')
-            .select('id, name, nit')
-            .ilike('name', `%${term.trim()}%`)
-            .order('name')
-            .limit(60);
+        const { data, error } = await searchCustomersByName(term.trim());
         if (error) console.error('searchCustomers failed:', error.message);
         setCustomerResults(data || []);
         setCustomerSearching(false);
@@ -449,13 +425,7 @@ export default function CotizacionesView() {
     // ── Carga lista ───────────────────────────────────────────────────────────
     const loadList = useCallback(async () => {
         setLoadingList(true);
-        let q = supabase
-            .from('cotizaciones')
-            .select('id, numero, fecha, customer_name, document_type, payment_type, total, status, created_by_name, created_by_photo, branch_id')
-            .order('created_at', { ascending: false })
-            .limit(300);
-        if (cotScope === 'BRANCH' && user?.branchId) q = q.eq('branch_id', user.branchId);
-        const { data } = await q;
+        const { data } = await fetchCotizacionesList(cotScope === 'BRANCH' && user?.branchId ? user.branchId : null);
         setCotizaciones(data || []);
         setLoadingList(false);
     }, [cotScope, user?.branchId]);
@@ -585,7 +555,7 @@ export default function CotizacionesView() {
     }));
 
     const insertItems = async (cotId) => {
-        const { error } = await supabase.from('cotizacion_items').insert(buildItemRows(cotId));
+        const { error } = await insertCotizacionItems(buildItemRows(cotId));
         if (error) throw error;
     };
 
@@ -596,11 +566,10 @@ export default function CotizacionesView() {
         try {
             const { data: numData, error: numErr } = await supabase.rpc('next_cotizacion_numero');
             if (numErr) throw numErr;
-            const { data: cotData, error: cotErr } = await supabase
-                .from('cotizaciones').insert({ numero: numData, ...buildPayload() }).select().single();
+            const { data: cotData, error: cotErr } = await insertCotizacion({ numero: numData, ...buildPayload() });
             if (cotErr) throw cotErr;
             await insertItems(cotData.id);
-            const { data: freshItems, error: freshErr } = await supabase.from('cotizacion_items').select('*').eq('cotizacion_id', cotData.id).order('sort_order');
+            const { data: freshItems, error: freshErr } = await fetchCotizacionItems(cotData.id);
             if (freshErr) console.error('handleSave: fetch fresh items failed:', freshErr.message);
             setSelectedCot({ ...cotData, cotizacion_items: freshItems || [] });
             setMode('view'); resetForm(); loadList();
@@ -613,13 +582,12 @@ export default function CotizacionesView() {
         if (items.length === 0) { setSaveError('Agrega al menos un producto.'); return; }
         setSaveError(''); setSaving(true);
         try {
-            const { data: cotData, error: cotErr } = await supabase
-                .from('cotizaciones').update({ ...buildPayload(), updated_at: new Date().toISOString() })
-                .eq('id', editingId).select().single();
+            const { data: cotData, error: cotErr } = await updateCotizacion(editingId,
+                { ...buildPayload(), updated_at: new Date().toISOString() }, true);
             if (cotErr) throw cotErr;
-            await supabase.from('cotizacion_items').delete().eq('cotizacion_id', editingId);
+            await deleteCotizacionItems(editingId);
             await insertItems(editingId);
-            const { data: freshItems, error: freshErr } = await supabase.from('cotizacion_items').select('*').eq('cotizacion_id', editingId).order('sort_order');
+            const { data: freshItems, error: freshErr } = await fetchCotizacionItems(editingId);
             if (freshErr) console.error('handleUpdate: fetch fresh items failed:', freshErr.message);
             setSelectedCot({ ...cotData, cotizacion_items: freshItems || [] });
             setMode('view'); resetForm(); loadList();
@@ -629,14 +597,14 @@ export default function CotizacionesView() {
 
     // ── Abrir / Editar / Anular ───────────────────────────────────────────────
     const openCot = async (cot) => {
-        const { data, error } = await supabase.from('cotizacion_items').select('*').eq('cotizacion_id', cot.id).order('sort_order');
+        const { data, error } = await fetchCotizacionItems(cot.id);
         if (error) console.error('openCot: fetch items failed:', error.message);
         setSelectedCot({ ...cot, cotizacion_items: data || [] });
         setMode('view');
     };
 
     const startEdit = async (cot) => {
-        const { data: itemsData, error: itemsErr } = await supabase.from('cotizacion_items').select('*').eq('cotizacion_id', cot.id).order('sort_order');
+        const { data: itemsData, error: itemsErr } = await fetchCotizacionItems(cot.id);
         if (itemsErr) console.error('startEdit: fetch items failed:', itemsErr.message);
         setFecha(cot.fecha);
         setCustomerId(cot.customer_id ? String(cot.customer_id) : '');
@@ -665,7 +633,7 @@ export default function CotizacionesView() {
     const handleAnular = async () => {
         if (!confirmAnular) return;
         setAnulando(true);
-        await supabase.from('cotizaciones').update({ status: 'ANULADA' }).eq('id', confirmAnular);
+        await updateCotizacion(confirmAnular, { status: 'ANULADA' });
         setAnulando(false);
         setConfirmAnular(null);
         loadList();
@@ -1145,7 +1113,7 @@ export default function CotizacionesView() {
                                             </button>
                                             <button title="Imprimir / PDF"
                                                 onClick={async () => {
-                                                    const { data, error } = await supabase.from('cotizacion_items').select('*').eq('cotizacion_id', cot.id).order('sort_order');
+                                                    const { data, error } = await fetchCotizacionItems(cot.id);
                                                     if (error) console.error('print cotizacion: fetch items failed:', error.message);
                                                     handlePrint(cot, data || []);
                                                 }}

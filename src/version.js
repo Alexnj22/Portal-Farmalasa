@@ -5,9 +5,22 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.18';
+export const APP_VERSION = '2.17.19';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.19 — refactor(bloque6.A): PermissionsView.jsx + CotizacionesView.jsx
+// — 25 supabase.from() migradas (10+15; conteo real, no 16). Dos módulos
+// nuevos: src/data/permissions.js (6 fn) y src/data/cotizaciones.js (8 fn).
+// CotizacionesView.jsx reutiliza fetchBranchesBasic de data/system.js
+// (Bloque 6.A, PR4) — mismo query exacto. Otro while-loop manual de
+// paginación 1000-en-1000 (product_precios para el catálogo de la
+// cotización) reemplazado por fetchAllRows.
+// Verificado en vivo con Playwright contra datos reales de producción:
+// Permisos de Acceso con roles y conteos reales (Gerente General 32/57
+// módulos, Administrador 35/57, etc.) y el panel de detalle de un
+// cargo con nivel de precio y toggles de módulo reales; Cotizaciones
+// con la lista y stats cargando correctamente. Sin errores de consola
+// atribuibles al cambio. Build + lint + 15 tests unitarios verdes.
 // v2.17.18 — refactor(bloque6.A): RecepcionModal.jsx + DashboardView.jsx
 // — 18 supabase.from() migradas (9+9). Dos módulos nuevos:
 // src/data/recepcion.js (6 fn) y src/data/dashboard.js (9 fn).

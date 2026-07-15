@@ -5,9 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.4';
+export const APP_VERSION = '2.17.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.5 — refactor(bloque6.C): 4ta extracción de TabMinMax.jsx
+// (2913→2584 líneas, -329; -34% acumulado desde 3947). `ConfigPanel`
+// (panel flotante de configuración: ciclo de reposición, reorden por
+// XYZ, umbrales ABC/XYZ, buffer de seguridad, winsorización — escribe
+// en stock_config) y `LabsPanel` (visibilidad de laboratorios en
+// MinMax, toggle + auditoría) → tabminmax/ConfigPanel.jsx y
+// tabminmax/LabsPanel.jsx. Ambos igual de auto-contenidos que las
+// extracciones anteriores (props + estado propio, sin closures sobre
+// TabMinMax) — mismo patrón mecánico.
+// Con esto, TabMinMax.jsx solo conserva el componente principal
+// (~1,955 líneas: fetch/estado de la tabla, filtros, DataTable,
+// modales de historial/publicación). Los 4 PRs de esta sesión
+// extrajeron 10 sub-componentes + todos los helpers/constantes
+// compartidos a src/views/productos/tabminmax/.
+// Verificado en vivo con Playwright: ConfigPanel abre con los valores
+// reales guardados (35 días cobertura, 180 días ventana, 25/25/25
+// reorden XYZ, 150%/400% umbrales XYZ, 70%/90% ABC); LabsPanel abre con
+// la lista real de laboratorios y conteo de productos ("5 ocultos",
+// "1-ABBOTT NUTRICIONAL 52 productos", etc.).
+// Build + lint + 15 tests unitarios verdes.
 // v2.17.4 — refactor(bloque6.C): 3ra extracción de TabMinMax.jsx
 // (3507→2913 líneas, -594 — la extracción más grande hasta ahora).
 // `ExpandedPanel` → `tabminmax/ExpandedPanel.jsx`: el sub-componente más

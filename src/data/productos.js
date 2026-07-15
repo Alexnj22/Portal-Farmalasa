@@ -49,6 +49,23 @@ export function updateProductFoto(productId, fotoUrl) {
     return supabase.from('products').update({ foto_url: fotoUrl }).eq('id', productId);
 }
 
+export function updateProductSinPrincipioActivo(productId, value) {
+    return supabase.from('products').update({ sin_principio_activo: value }).eq('id', productId);
+}
+
+// ── Enriquecimiento SRS (principios activos por lote) ───────────────────────
+
+export function fetchProductsWithoutPrincipioActivo(batchSize) {
+    return supabase
+        .from('products')
+        .select('id, nombre, laboratorios(nombre)')
+        .eq('activo', true)
+        .eq('sin_principio_activo', false)
+        .or('principio_activo.is.null,principio_activo.eq.')
+        .limit(batchSize)
+        .order('nombre');
+}
+
 // ── Stats de márgen (página recursiva, PostgREST cap-safe) ──────────────────
 
 export function fetchProductPreciosMarginPage(priceSelect, from, pageSize) {

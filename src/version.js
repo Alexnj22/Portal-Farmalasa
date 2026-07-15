@@ -5,9 +5,31 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.20';
+export const APP_VERSION = '2.17.21';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.21 — refactor(bloque6.A): TabInventario.jsx + EmployeeHomeView.jsx
+// + EncuestaView.jsx + SrsEnriquecerModal.jsx — 29 supabase.from()
+// migradas (7+8+7+7). Dos módulos nuevos: src/data/inventarioTab.js
+// (5 fn) y employeeHome.js (6 fn); el resto se resolvió extendiendo
+// módulos ya existentes de este bloque (encuestas.js +2 fn, productos.js
+// +2 fn) o reutilizando funciones idénticas ya definidas
+// (fetchLaboratoriosBasic, fetchEmployeeRosterSchedule,
+// fetchRostersForWeekByEmployees, fetchSurveys/Bloques/Preguntas/
+// updateSurvey, deleteProductActivePrinciples/insertProductActivePrinciples/
+// updateProductPrincipioActivo) — 11 de los 29 sitios no crearon función
+// nueva, solo importaron la que ya existía de un PR anterior de este
+// mismo bloque.
+// Verificado en vivo con Playwright contra datos reales de producción:
+// Inventario (13,925 productos, 525 vencidos, $313,780.13 inversión,
+// filas reales de ENSURE ADVANCE en las 7 sucursales), Inicio de
+// empleado (horario semanal real con compañeros de sucursal), Clima
+// Organizacional 2026 (38 participantes, score global 78/100, puntajes
+// reales por bloque). Sin errores de consola atribuibles al cambio —
+// se descartó una falsa alarma inicial de "fetchAllRows error" que
+// resultó ser requests abortados por el propio script de prueba al
+// navegar rápido entre páginas, confirmado al reproducir cada vista en
+// aislamiento sin ese error. Build + lint + 15 tests unitarios verdes.
 // v2.17.20 — refactor(bloque6.A): TabPoliticaVencimiento.jsx +
 // TabReglas.jsx + AttendanceAuditView.jsx — 25 supabase.from() migradas
 // (8+9+8; conteo real, no 21). Tres módulos nuevos: src/data/

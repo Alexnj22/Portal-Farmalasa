@@ -6,6 +6,10 @@ import {
     ChevronRight, AlertTriangle, Zap, Search, Package, Plus,
 } from 'lucide-react';
 import SrsBuscadorWidget from './SrsBuscadorWidget';
+import {
+    deleteProductActivePrinciples, insertProductActivePrinciples, updateProductPrincipioActivo,
+    updateProductSinPrincipioActivo, fetchProductsWithoutPrincipioActivo,
+} from '../../data/productos';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -167,13 +171,13 @@ async function srsFetch(q, page = 1, pageMax = 15) {
 
 async function applyPrincipios(productId, principios) {
     const text = buildPaText(principios);
-    await supabase.from('product_active_principles').delete().eq('product_id', productId);
+    await deleteProductActivePrinciples(productId);
     if (principios.length > 0) {
-        await supabase.from('product_active_principles').insert(
+        await insertProductActivePrinciples(
             principios.map(p => ({ product_id: productId, ...p }))
         );
     }
-    await supabase.from('products').update({ principio_activo: text || null }).eq('id', productId);
+    await updateProductPrincipioActivo(productId, text);
 }
 
 // ── Confidence badge ──────────────────────────────────────────────────────────
@@ -227,14 +231,7 @@ export default function SrsEnriquecerModal({ onClose }) {
         setReviewPanel(null); setManualItems([{ nombre: '', concentracion: '', _key: 0 }]);
 
         // Fetch products without principio_activo
-        const { data: products, error } = await supabase
-            .from('products')
-            .select('id, nombre, laboratorios(nombre)')
-            .eq('activo', true)
-            .eq('sin_principio_activo', false)
-            .or('principio_activo.is.null,principio_activo.eq.')
-            .limit(BATCH_SIZE)
-            .order('nombre');
+        const { data: products, error } = await fetchProductsWithoutPrincipioActivo(BATCH_SIZE);
 
         if (error || !products?.length) {
             setPhase(PHASE.DONE);
@@ -334,14 +331,14 @@ export default function SrsEnriquecerModal({ onClose }) {
     // Mark a product as sin_principio_activo (insumos, equipos, cosméticos…)
     const handleMarkSinPA = useCallback(async (productId) => {
         try {
-            await supabase.from('products').update({ sin_principio_activo: true }).eq('id', productId);
+            await updateProductSinPrincipioActivo(productId, true);
             setMarkedSinPA(s => new Set([...s, productId]));
         } catch { /* ignore */ }
     }, []);
 
     const handleUnmarkSinPA = useCallback(async (productId) => {
         try {
-            await supabase.from('products').update({ sin_principio_activo: false }).eq('id', productId);
+            await updateProductSinPrincipioActivo(productId, false);
             setMarkedSinPA(s => { const n = new Set(s); n.delete(productId); return n; });
         } catch { /* ignore */ }
     }, []);
@@ -350,7 +347,7 @@ export default function SrsEnriquecerModal({ onClose }) {
     const handleReviewMarkSinPA = useCallback(async (entry) => {
         setRevApplying(true);
         try {
-            await supabase.from('products').update({ sin_principio_activo: true }).eq('id', entry.product.id);
+            await updateProductSinPrincipioActivo(entry.product.id, true);
             setMarkedSinPA(s => new Set([...s, entry.product.id]));
         } catch { /* ignore */ }
         setSkipped(s => s + 1);

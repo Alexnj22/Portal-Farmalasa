@@ -9,6 +9,10 @@ import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
 import { supabase } from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
+import {
+    fetchSurveys, fetchSurveyBloques, fetchSurveyPreguntas, fetchSurveyResponsesForView,
+    fetchSurveyAiSummaries, updateSurvey,
+} from '../data/encuestas';
 
 // Jefe inmediato de cada sucursal — configuración de org-chart
 const SUPERVISOR_DE_JEFE = {
@@ -356,7 +360,7 @@ export default function EncuestaView() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        supabase.from('surveys').select('*').order('año', { ascending: false })
+        fetchSurveys()
             .then(({ data }) => {
                 if (data?.length) {
                     setSurveys(data);
@@ -372,11 +376,9 @@ export default function EncuestaView() {
         setExpandedBloque(null);
 
         Promise.all([
-            supabase.from('survey_bloques').select('*').eq('survey_id', selectedSurveyId).order('numero'),
-            supabase.from('survey_preguntas').select('*').eq('survey_id', selectedSurveyId).order('numero'),
-            supabase.from('survey_responses')
-                .select('*, employee:employees!employee_id(first_names, last_names, photo_url, branch:branches(name))')
-                .eq('survey_id', selectedSurveyId),
+            fetchSurveyBloques(selectedSurveyId),
+            fetchSurveyPreguntas(selectedSurveyId),
+            fetchSurveyResponsesForView(selectedSurveyId),
         ]).then(async ([bRes, pRes, rRes]) => {
             await signPhotosDeep(rRes.data || []);
             setBloques((bRes.data || []).map(b => ({
@@ -429,7 +431,7 @@ export default function EncuestaView() {
         setCollapsedSummaries({});
         aiAutoGenDone.current[selectedSurveyId] = new Set();
         setSavedSummariesLoading(true);
-        supabase.from('surveys').select('ai_summaries').eq('id', selectedSurveyId).single()
+        fetchSurveyAiSummaries(selectedSurveyId)
             .then(({ data }) => {
                 const saved = data?.ai_summaries || {};
                 setAiSummaries(saved);
@@ -550,10 +552,9 @@ export default function EncuestaView() {
             setAiSummaries(prev => ({ ...prev, [segment]: summary }));
             if (surveyId) {
                 // Fetch current saved summaries, merge, and save — avoids losing concurrent segments
-                const { data: current } = await supabase
-                    .from('surveys').select('ai_summaries').eq('id', surveyId).single();
+                const { data: current } = await fetchSurveyAiSummaries(surveyId);
                 const merged = { ...(current?.ai_summaries || {}), [segment]: summary };
-                await supabase.from('surveys').update({ ai_summaries: merged }).eq('id', surveyId);
+                await updateSurvey(surveyId, { ai_summaries: merged });
             }
         } catch {
             setAiSummaries(p => ({ ...p, [segment]: 'Error al generar resumen.' }));

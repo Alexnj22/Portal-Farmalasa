@@ -8,7 +8,11 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { normSearch } from '../../utils/searchUtils';
-import { fetchAllRows } from '../../utils/supabaseUtils';
+import {
+    fetchInventorySyncLog, fetchProductCategories, fetchAllVencidosInventory,
+    fetchExpiredInventoryCount, fetchInventoryDetail,
+} from '../../data/inventarioTab';
+import { fetchLaboratoriosBasic } from '../../data/laboratorios';
 
 const ERP_NAMES = {
     1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4',
@@ -91,27 +95,17 @@ export default function TabInventario({ searchTerm = '' }) {
     const isBodega = selectedErp === 6;
 
     useEffect(() => {
-        supabase.from('inventory_sync_log')
-            .select('erp_sucursal_id, is_vencidos, synced_at, success, items_count')
-            .order('synced_at', { ascending: false })
-            .limit(30)
+        fetchInventorySyncLog()
             .then(({ data }) => setSyncLog(data || []));
-        supabase.from('laboratorios').select('id, nombre').order('nombre')
+        fetchLaboratoriosBasic()
             .then(({ data }) => setLabOptions((data || []).map(l => ({ value: String(l.id), label: l.nombre }))));
-        supabase.from('product_categories').select('nombre').order('nombre')
+        fetchProductCategories()
             .then(({ data }) => setCatOptions((data || []).map(r => ({ value: r.nombre, label: r.nombre }))));
     }, []);
 
     useEffect(() => {
         let cancelled = false;
-        fetchAllRows(() => {
-            let q = supabase
-                .from('inventory')
-                .select('erp_sucursal_id, erp_product_id, cantidad, detalle')
-                .eq('is_vencidos', true);
-            if (selectedErp !== null) q = q.eq('erp_sucursal_id', selectedErp);
-            return q;
-        }).then((data) => {
+        fetchAllVencidosInventory(selectedErp).then((data) => {
             if (cancelled) return;
             const map = {};
             for (const row of (data || [])) {
@@ -171,11 +165,7 @@ export default function TabInventario({ searchTerm = '' }) {
             setTotal(data?.length ? Number(data[0].total) : 0);
 
             const today = new Date().toISOString().split('T')[0];
-            let cq = supabase.from('inventory')
-                .select('*', { count: 'exact', head: true })
-                .eq('is_vencidos', false).lt('fecha_vencimiento', today);
-            if (erpId !== null) cq = cq.eq('erp_sucursal_id', erpId);
-            const { count: ec } = await cq;
+            const { count: ec } = await fetchExpiredInventoryCount(erpId, today);
             if (rid !== loadRef.current) return;
             setExpiredTotal(ec ?? 0);
         } catch (e) {
@@ -207,20 +197,8 @@ export default function TabInventario({ searchTerm = '' }) {
         setExpandLoading(prev => new Set([...prev, key]));
         try {
             const [{ data }, { data: vData }] = await Promise.all([
-                supabase.from('inventory')
-                    .select('presentacion, detalle, lote, fecha_vencimiento, cantidad')
-                    .eq('erp_sucursal_id', erpId)
-                    .eq('erp_product_id', productId)
-                    .eq('is_vencidos', false)
-                    .gt('cantidad', 0)
-                    .order('presentacion').order('lote'),
-                supabase.from('inventory')
-                    .select('presentacion, detalle, lote, fecha_vencimiento, cantidad')
-                    .eq('erp_sucursal_id', erpId)
-                    .eq('erp_product_id', productId)
-                    .eq('is_vencidos', true)
-                    .gt('cantidad', 0)
-                    .order('presentacion').order('lote'),
+                fetchInventoryDetail(erpId, productId, false),
+                fetchInventoryDetail(erpId, productId, true),
             ]);
             setExpandedData(prev => ({ ...prev, [key]: data || [] }));
             setExpandedVencidos(prev => ({ ...prev, [key]: vData || [] }));

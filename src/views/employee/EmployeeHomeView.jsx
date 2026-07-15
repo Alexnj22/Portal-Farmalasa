@@ -6,11 +6,16 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
-import { supabase } from '../../supabaseClient';
 import { formatTime12h } from '../../utils/helpers';
 import LiquidWeekPicker from '../../components/common/LiquidWeekPicker';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
+import {
+    fetchMyPendingRequestsCount, fetchMyLateAttendance, fetchMyActiveEvents,
+    fetchMyUpcomingEvents, fetchMyWeekEvents, fetchMyVacationPlans,
+} from '../../data/employeeHome';
+import { fetchEmployeeRosterSchedule } from '../../data/employees';
+import { fetchRostersForWeekByEmployees } from '../../data/requests';
 
 const DAYS = [
     { id: 1, name: 'Lunes',     short: 'LUN' },
@@ -107,9 +112,7 @@ const EmployeeHomeView = () => {
     // Solicitudes pendientes
     useEffect(() => {
         if (!user?.id) return;
-        supabase.from('approval_requests')
-            .select('id', { count: 'exact', head: true })
-            .eq('employee_id', user.id).eq('status', 'PENDING')
+        fetchMyPendingRequestsCount(user.id)
             .then(({ count }) => setPendingCount(count || 0));
     }, [user?.id]);
 
@@ -119,10 +122,7 @@ const EmployeeHomeView = () => {
         const now = new Date();
         const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
         const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-        supabase.from('attendance')
-            .select('id, late_minutes')
-            .eq('employee_id', user.id).eq('late', true)
-            .gte('date', firstDay).lte('date', lastDay)
+        fetchMyLateAttendance(user.id, firstDay, lastDay)
             .then(({ data }) => {
                 const d = data || [];
                 setTardanzas({ count: d.length, minutes: d.reduce((a, r) => a + (r.late_minutes || 0), 0) });
@@ -133,10 +133,7 @@ const EmployeeHomeView = () => {
     useEffect(() => {
         if (!user?.id) return;
         const today = new Date().toISOString().split('T')[0];
-        supabase.from('employee_events')
-            .select('id, type, date, metadata')
-            .eq('employee_id', user.id)
-            .in('type', ['VACATION', 'DISABILITY', 'PERMIT'])
+        fetchMyActiveEvents(user.id)
             .then(({ data }) => {
                 const active = (data || []).find(ev => {
                     const meta  = typeof ev.metadata === 'object' && ev.metadata ? ev.metadata : {};
@@ -152,23 +149,14 @@ const EmployeeHomeView = () => {
     useEffect(() => {
         if (!user?.id) return;
         const today = new Date().toISOString().split('T')[0];
-        supabase.from('employee_events')
-            .select('id, type, date, metadata')
-            .eq('employee_id', user.id)
-            .in('type', ['VACATION', 'DISABILITY', 'PERMIT', 'BIRTHDAY'])
-            .gte('date', today).order('date', { ascending: true }).limit(5)
+        fetchMyUpcomingEvents(user.id, today)
             .then(({ data }) => setUpcomingEvents(data || []));
     }, [user?.id]);
 
     // Mis vacaciones (plan anual)
     useEffect(() => {
         if (!user?.id) return;
-        supabase
-            .from('vacation_plans')
-            .select('id, year, start_date, end_date, days, status')
-            .eq('employee_id', user.id)
-            .neq('status', 'CANCELLED')
-            .order('start_date', { ascending: true })
+        fetchMyVacationPlans(user.id)
             .then(({ data }) => setMyVacationPlans(data || []));
     }, [user?.id]);
 
@@ -190,10 +178,7 @@ const EmployeeHomeView = () => {
         }
         setIsLoadingWeek(true);
         setScheduleData(null);
-        supabase.from('employee_rosters')
-            .select('schedule_data')
-            .eq('employee_id', user.id).eq('week_start_date', weekStartISO)
-            .maybeSingle()
+        fetchEmployeeRosterSchedule(user.id, weekStartISO)
             .then(({ data }) => { setScheduleData(data?.schedule_data || {}); setIsLoadingWeek(false); });
     }, [user?.id, weekStartISO, isCurrentWeek, emp?.weeklySchedule]);
 
@@ -202,11 +187,7 @@ const EmployeeHomeView = () => {
         if (!user?.id) return;
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekEnd.getDate() + 6);
-        supabase.from('employee_events')
-            .select('type, date, metadata')
-            .eq('employee_id', user.id)
-            .in('type', ['VACATION', 'DISABILITY', 'PERMIT'])
-            .lte('date', toISO(weekEnd))
+        fetchMyWeekEvents(user.id, toISO(weekEnd))
             .then(({ data }) => setWeekEvents(data || []));
     }, [user?.id, weekStartISO, weekStart]);
 
@@ -220,11 +201,7 @@ const EmployeeHomeView = () => {
             )
             .map(e => e.id);
         if (branchEmpIds.length === 0) return;
-        supabase
-            .from('employee_rosters')
-            .select('employee_id, schedule_data')
-            .eq('week_start_date', weekStartISO)
-            .in('employee_id', branchEmpIds)
+        fetchRostersForWeekByEmployees(weekStartISO, branchEmpIds)
             .then(({ data }) => setBranchSchedule(data || []));
     }, [weekStartISO, user?.branchId, employees]);
 

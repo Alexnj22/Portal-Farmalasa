@@ -353,6 +353,49 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
   — sin regresiones. Build limpio en cada paso. Detalle completo por archivo
   en el historial de commits `fix(bloque1): 1.6 parte 1..10`.
 
+### 2026-07-15
+- **Deuda de lint post-1.6 — ✅ CERRADA (v2.16.2→v2.16.5, 5 partes de commit).**
+  Los 186 problemas de lint "cosméticos, fuera de alcance" que quedaron tras 1.6
+  (`no-unused-vars` 102, `no-empty` 36, `react-refresh/only-export-components` 8,
+  `react-hooks/preserve-manual-memoization` 7, más ~33 varios) quedan en **0** —
+  `npx eslint .` limpio en todo el proyecto. Mismo estándar que 1.6: cada
+  ocurrencia revisada individualmente contra su código real, no barrido ciego.
+  1 bug real corregido de paso en `FacturacionView.jsx`: las 2 secciones de
+  "pagos pendientes por tipo" calculaban paginación (`tipoTotalPages`/`tipoPg`)
+  pero el `<DataTable>` nunca tenía `footer={<Pagination .../>}` — con
+  `PAGE_SIZE=10`, cualquier tipo de pago con >10 transacciones pendientes
+  quedaba con las filas extra invisibles sin forma de navegarlas (mismo patrón
+  de truncado silencioso que ítem 1.1). Cerrado replicando el patrón ya usado
+  en la sección "confirmados" del mismo archivo. Otro hallazgo menor en
+  `VentasView.jsx`: el banner "resultados similares" de búsqueda difusa
+  faltaba en la pestaña Vendedores (sí existía en Productos) — agregado.
+  3 hallazgos reales encontrados pero **preservados con `eslint-disable` +
+  comentario, NO borrados** (código real, no dead code, pero fuera de alcance
+  de un lint fix — necesitan decisión de producto):
+  - `TabPedidos.jsx`: `handleCorregirBodega`/`handleConfirmarCorreccion` — el
+    mismo gap ya documentado como 7A.1.
+  - `TabPedidos.jsx` `ReceptionActions`: `llegadaEmp`/`llegadaTipo` sin bloque
+    "Confirmado" (existe el equivalente para `erpOk` pero no para `llegadaOk`).
+    **Nuevo hallazgo, agregado a 7A** (ver tabla 7A abajo).
+  - `TabMinMax.jsx`: `hideFiltered` (acción bulk completa de ocultar productos
+    filtrados, con audit log `MINMAX_HIDE_FILTERED`, sin botón en UI — acción
+    masiva real que necesitaría modal de confirmación antes de exponerse).
+    **Nuevo hallazgo, agregado a 7A**.
+  - `TabMinMax.jsx`: `dispMin`/`dispMax`/`hasPres`/`applyRule` en la celda
+    "Despacho" — calculan el MIN/MAX ya redondeado por la regla de despacho
+    pero el JSX solo muestra el nombre de la regla, nunca el resultado
+    numérico. Área con historial de bugs de redondeo (ver
+    `project_pedido_preview_dispatch_rounding`) — no se inventó el formato.
+    **Nuevo hallazgo, agregado a 7A**.
+  1 bug real corregido en `TabPedidos.jsx`: el botón "Apoyo" (bodega) no se
+  ocultaba para un empleado que ya había dado apoyo de preparación
+  (`isApoyoBodega` se calculaba pero nunca se usaba) — el backend ya dedupaba
+  por id así que no había pérdida de datos, pero el botón seguía activo de
+  forma confusa. Fix: `canApoyo && !isApoyoBodega`.
+  Verificado en vivo (vite preview + Playwright): login + 5 rutas más tocadas
+  (Ventas, Facturación, Pedidos, Productos, MinMax) sin errores de
+  consola/página. Build + 15 tests unitarios verdes en cada parte.
+
 ### Camino de deploy de edge functions (resuelto)
 Bash `supabase functions deploy` funciona CON permiso, pero el CLI se traga un `.env` con un nombre
 de variable inválido (un `-`). Solución: apartar `.env` durante el deploy y restaurarlo
@@ -525,6 +568,9 @@ Incrementales, un PR chico por vez, probados en staging antes de prod.
 | 7A.2 | `auto-copy-weekly-roster`: bugs `target_type:'ALL'` + `status='ACTIVE'` (encadenados, corregir JUNTOS) | Impacto acumulado hoy = 0; riesgo hacia adelante (RRHH no vería conflictos de turno) |
 | 7A.3 | `RecepcionModal:439 handleTodoOk` ("marcar todo OK") sin caller — posible botón faltante | Verificar |
 | 7A.4 | **Saly — decisión diferida (2026-07-11).** El usuario pausó la eliminación; a futuro DECIDIR: quitar o mejorar. "Saly" abarca varias superficies: SalyCopilot (horarios, `schedule-tabs/`), borrador de avisos (`AnnouncementsView`), resumen IA de encuestas (`EncuestaView` → única acción `saly-ai` invocada hoy: `analyze-survey-comments`). El chat `SalyChatOverlay` ya fue eliminado antes. NO borrar sin confirmar alcance | Decisión de producto pendiente |
+| 7A.5 | `TabPedidos.jsx` `ReceptionActions`: sin bloque "Confirmado llegada" (existe el equivalente `empChip(erpEmp)` para el paso "Sistema de Ventas" pero no para "Llegada") | Encontrado 2026-07-15 durante limpieza de lint; `llegadaEmp`/`llegadaTipo` ya se reciben como prop, solo falta la tarjeta de UI |
+| 7A.6 | `TabMinMax.jsx`: `hideFiltered` — acción bulk "ocultar todo lo filtrado" completa (RPC + audit log `MINMAX_HIDE_FILTERED`) sin botón en UI | Encontrado 2026-07-15; acción masiva real, probablemente necesita modal de confirmación antes de exponerse — decisión de producto |
+| 7A.7 | `TabMinMax.jsx`: celda "Despacho" calcula MIN/MAX ya redondeado por la regla de despacho (`dispMin`/`dispMax`/`applyRule`) pero el JSX solo muestra el nombre de la regla, nunca el resultado numérico | Encontrado 2026-07-15; decidir formato de display (¿tooltip? ¿badge adicional?) antes de wireearlo — área con historial de bugs de redondeo |
 
 ### 7B — Features nuevas (fundamentadas en la auditoría), por valor/esfuerzo
 | # | Feature | Esfuerzo | Valor |

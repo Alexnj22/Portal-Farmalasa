@@ -5,9 +5,36 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.11';
+export const APP_VERSION = '2.17.12';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.12 — refactor(bloque6.A): systemSlice.js — 34 supabase.from()
+// migradas a src/data/system.js (nuevo módulo, 24 funciones). El
+// conteo real de sitios en este archivo era 34, no 31 como decía el
+// inventario original de la sesión — el grep inicial de 6.A (patrón de
+// una sola línea) no detectaba las llamadas `supabase\n.from(...)`
+// partidas en dos líneas, bastante comunes en este slice.
+// **Deliberadamente NO se tocó `fetchBoot`** (11 de los sitios del
+// archivo) ni el estado `bootStatus`/`isBootSyncing`/`bootPromise` —
+// es la función más usada y de mayor riesgo de todo el proyecto
+// (corre en cada login), y su refactor es alcance de 6.B (partir el
+// monolito), una sesión dedicada aparte con prueba en staging primero.
+// `fetchKioskBoot` sí se migró (2 sitios) — es una función
+// independiente que no toca la máquina de estados de boot.
+// 4 pares de sitios eran duplicados literales, consolidados en una
+// función cada uno: updateEmployeeFields (aplicar/revertir un evento
+// de RRHH sobre employees), insertEmployeeDocument (adjuntar
+// documento desde registerEmployeeEvent y desde addDocumentToEvent),
+// updateEmployeeEventMetadata (cancelar/editar un evento), setShiftActive
+// (archivar/reactivar un turno).
+// Verificado en vivo con Playwright: login (ejercita fetchBoot intacto),
+// Centro de Comunicaciones con avisos reales, Horarios y Turnos,
+// Jerarquía Institucional con datos reales de roles. Los paths de
+// escritura (insert/update/delete de eventos, roles, avisos, turnos,
+// asuetos, rosters) no se ejercitaron en vivo para no escribir datos
+// de RRHH reales sin permiso explícito — verificados por sustitución
+// 1:1 de forma exacta de cada query, no por corrida en vivo. Build +
+// lint + 15 tests unitarios verdes.
 // v2.17.11 — refactor(bloque6.A): TabCatalogo.jsx — las 29 llamadas
 // supabase.from() migradas a src/data/productos.js (nuevo módulo, 15
 // funciones). Dos pares de sitios eran duplicados literales,

@@ -5,6 +5,15 @@ import { assertHeadcountAvailable } from './employeeSlice';
 import { signStorageUrls } from '../../utils/storageFiles';
 import { fetchAllRows } from '../../utils/supabaseUtils';
 import { announcementAppliesToUser } from '../../utils/announcementAudience';
+import {
+    fetchOverlappingEvents, insertEmployeeEvent, fetchEmployeeEventForCancel, fetchEmployeeEventMetadata,
+    updateEmployeeEventMetadata, fetchEmployeeById, updateEmployeeFields, deleteEmployeeBranches,
+    insertEmployeeBranches, insertEmployeeDocument, insertRole, updateRoleRow, deleteRoleRow,
+    insertAnnouncement, updateAnnouncementFull, updateAnnouncementFields, deleteAnnouncementRow,
+    insertShift, deleteShiftRow, updateShiftRow, setShiftActive, insertHoliday, deleteHolidayRow,
+    fetchWeekRostersRaw, upsertWeeklyRoster, upsertBulkWeeklyRosters, publishWeekRostersQuery,
+    fetchBranchesBasic, fetchBranchesFull,
+} from '../../data/system';
 
 export const createSystemSlice = (set, get) => ({
     // 🚨 1. INICIALIZAMOS HOLIDAYS Y EL RESTO (Desde LocalStorage si existe)
@@ -356,13 +365,7 @@ export const createSystemSlice = (set, get) => ({
 
             // 2.5 Validar solapamiento de eventos del mismo tipo (antes de insertar)
             if (['VACATION', 'DISABILITY', 'SUPPORT'].includes(eventData.type)) {
-                let query = supabase
-                    .from('employee_events')
-                    .select('date, metadata')
-                    .eq('employee_id', employeeId)
-                    .eq('type', eventData.type);
-                if (options.excludeEventId) query = query.neq('id', options.excludeEventId);
-                const { data: existing } = await query;
+                const { data: existing } = await fetchOverlappingEvents(employeeId, eventData.type, options.excludeEventId);
 
                 if (existing && existing.length > 0) {
                     const parseMeta = (ev) => {
@@ -539,13 +542,13 @@ export const createSystemSlice = (set, get) => ({
                 }
             };
 
-            const { data: newEvent, error } = await supabase.from('employee_events').insert([dbPayload]).select().single();
+            const { data: newEvent, error } = await insertEmployeeEvent(dbPayload);
             if (error) throw error;
 
             // Aplicar el cambio calculado en 2.6 al expediente — solo si la fecha
             // efectiva ya llegó; los SCHEDULED los aplica el cron en su fecha.
             if (hasChanges && !isScheduled) {
-                const { error: updErr } = await supabase.from('employees').update(empUpdates).eq('id', employeeId);
+                const { error: updErr } = await updateEmployeeFields(employeeId, empUpdates);
                 if (updErr) {
                     const e = new Error(`El evento quedó registrado pero el cambio no se aplicó al expediente: ${updErr.message}`);
                     e.userFacing = true;
@@ -555,7 +558,7 @@ export const createSystemSlice = (set, get) => ({
 
             if (eventData.type === 'TERMINATION' && !isScheduled) {
                 // Limpiar farmacias asignadas (personal externo) — quedaban huérfanas tras la baja
-                await supabase.from('employee_branches').delete().eq('employee_id', employeeId);
+                await deleteEmployeeBranches(employeeId);
                 // Revocar la cuenta Auth (best-effort): bloquea el login usuario/contraseña
                 // además del carné, y cierra las sesiones activas.
                 supabase.functions.invoke('disable-employee-auth', {
@@ -578,13 +581,13 @@ export const createSystemSlice = (set, get) => ({
             if (file) {
                 const url = await get().uploadFileToStorage(file, 'documents');
                 if (url) {
-                    const { data: newDoc } = await supabase.from('employee_documents').insert([{ 
-                        employee_id: employeeId, 
-                        event_id: newEvent.id, 
-                        name: file.name, 
-                        type: 'DOCUMENT', 
-                        url: url 
-                    }]).select().single();
+                    const { data: newDoc } = await insertEmployeeDocument({
+                        employee_id: employeeId,
+                        event_id: newEvent.id,
+                        name: file.name,
+                        type: 'DOCUMENT',
+                        url: url,
+                    });
                     docObject = newDoc;
                 }
             }
@@ -619,11 +622,7 @@ export const createSystemSlice = (set, get) => ({
 
     cancelEmployeeEvent: async (eventId, reason) => {
         try {
-            const { data: existing, error: fetchErr } = await supabase
-                .from('employee_events')
-                .select('type, metadata, employee_id')
-                .eq('id', eventId)
-                .single();
+            const { data: existing, error: fetchErr } = await fetchEmployeeEventForCancel(eventId);
             if (fetchErr) throw fetchErr;
 
             const currentMeta = typeof existing.metadata === 'string'
@@ -640,8 +639,7 @@ export const createSystemSlice = (set, get) => ({
             const localRevert = {};
 
             if (applied && previous && currentMeta.applyStatus === 'APPLIED') {
-                const { data: row, error: rowErr } = await supabase
-                    .from('employees').select('*').eq('id', existing.employee_id).single();
+                const { data: row, error: rowErr } = await fetchEmployeeById(existing.employee_id);
                 if (rowErr) throw rowErr;
 
                 const revertPayload = {};
@@ -654,8 +652,7 @@ export const createSystemSlice = (set, get) => ({
                 });
 
                 if (Object.keys(revertPayload).length > 0) {
-                    const { error: revErr } = await supabase
-                        .from('employees').update(revertPayload).eq('id', existing.employee_id);
+                    const { error: revErr } = await updateEmployeeFields(existing.employee_id, revertPayload);
                     if (revErr) throw revErr;
                     reverted = true;
 
@@ -675,7 +672,7 @@ export const createSystemSlice = (set, get) => ({
                     if (existing.type === 'TERMINATION' && 'status' in revertPayload) {
                         const prevBranches = previous._employee_branches || [];
                         if (prevBranches.length > 0) {
-                            await supabase.from('employee_branches').insert(
+                            await insertEmployeeBranches(
                                 prevBranches.map(branch_id => ({ employee_id: existing.employee_id, branch_id }))
                             );
                             localRevert.assigned_branch_ids = prevBranches;
@@ -695,10 +692,7 @@ export const createSystemSlice = (set, get) => ({
                 ...(reverted ? { applyStatus: 'REVERTED' } : {})
             };
 
-            const { error: updateErr } = await supabase
-                .from('employee_events')
-                .update({ metadata: newMeta })
-                .eq('id', eventId);
+            const { error: updateErr } = await updateEmployeeEventMetadata(eventId, newMeta);
             if (updateErr) throw updateErr;
 
             // Actualizar estado local sin refetch completo
@@ -726,26 +720,17 @@ export const createSystemSlice = (set, get) => ({
 
     editEmployeeEvent: async (eventId, newEventData, employeeId) => {
         try {
-            const { data: existing } = await supabase
-                .from('employee_events')
-                .select('metadata')
-                .eq('id', eventId)
-                .single();
+            const { data: existing } = await fetchEmployeeEventMetadata(eventId);
 
             const currentMeta = typeof existing.metadata === 'string'
                 ? JSON.parse(existing.metadata)
                 : (existing.metadata || {});
 
-            await supabase
-                .from('employee_events')
-                .update({
-                    metadata: {
-                        ...currentMeta,
-                        status: 'SUPERSEDED',
-                        editedAt: new Date().toISOString()
-                    }
-                })
-                .eq('id', eventId);
+            await updateEmployeeEventMetadata(eventId, {
+                ...currentMeta,
+                status: 'SUPERSEDED',
+                editedAt: new Date().toISOString()
+            });
 
             const cleanData = { ...newEventData };
             delete cleanData._editingEventId;
@@ -787,11 +772,7 @@ export const createSystemSlice = (set, get) => ({
     // RESTO DE FUNCIONES DEL SLICE 
     // ============================================================================
     addRole: async (name, parentRoleId = null, secondaryParentRoleId = null, scope = 'BRANCH', maxLimit = 99) => {
-        const { data, error } = await supabase
-            .from('roles')
-            .insert([{ name, parent_role_id: parentRoleId, secondary_parent_role_id: secondaryParentRoleId, scope, max_limit: maxLimit }])
-            .select()
-            .single();
+        const { data, error } = await insertRole({ name, parent_role_id: parentRoleId, secondary_parent_role_id: secondaryParentRoleId, scope, max_limit: maxLimit });
         if (error) throw error;
         window.dispatchEvent(new CustomEvent('force-history-refresh'));
         set((state) => {
@@ -803,12 +784,7 @@ export const createSystemSlice = (set, get) => ({
     },
 
     updateRole: async (roleId, name, parentRoleId = null, secondaryParentRoleId = null, scope = 'BRANCH', maxLimit = 99) => {
-        const { data, error } = await supabase
-            .from('roles')
-            .update({ name, parent_role_id: parentRoleId, secondary_parent_role_id: secondaryParentRoleId, scope, max_limit: maxLimit })
-            .eq('id', roleId)
-            .select()
-            .single();
+        const { data, error } = await updateRoleRow(roleId, { name, parent_role_id: parentRoleId, secondary_parent_role_id: secondaryParentRoleId, scope, max_limit: maxLimit });
         if (error) throw error;
         await get().appendAuditLog('EDITAR_CARGO', roleId, {
             timeline_title: `Actualización de Cargo: ${name}`,
@@ -834,7 +810,7 @@ export const createSystemSlice = (set, get) => ({
             throw new Error("No se puede eliminar: Este cargo es superior (o reporte matricial) de otros niveles.");
         }
         try {
-            const { error } = await supabase.from('roles').delete().eq('id', roleId);
+            const { error } = await deleteRoleRow(roleId);
             if (error) throw error;
             await get().appendAuditLog('ELIMINAR_CARGO', roleId, {
                 timeline_title: `Eliminación de Cargo: ${roleName}`,
@@ -871,7 +847,7 @@ export const createSystemSlice = (set, get) => ({
                 created_by: storedUser?.id || null,
                 scheduled_for: announcementData.scheduledFor || null
             };
-            const { data, error } = await supabase.from('announcements').insert([payload]).select().single();
+            const { data, error } = await insertAnnouncement(payload);
             if (error) throw error;
             await get().appendAuditLog('CREAR_AVISO', data.id, {
                 timeline_title: `Nuevo Aviso: ${data.title}`,
@@ -899,22 +875,17 @@ export const createSystemSlice = (set, get) => ({
             const currentAnn = get().announcements.find(a => a.id === id);
             const previousReaders = currentAnn?.readBy || [];
 
-            const { data, error } = await supabase
-                .from('announcements')
-                .update({
-                    title,
-                    message,
-                    target_type: targetType,
-                    target_value: targetValue,
-                    priority,
-                    scheduled_for: scheduledFor || null,
-                    edited_at: new Date().toISOString(),
-                    prev_read_by: previousReaders,
-                    read_by: [],
-                })
-                .eq('id', id)
-                .select()
-                .single();
+            const { data, error } = await updateAnnouncementFull(id, {
+                title,
+                message,
+                target_type: targetType,
+                target_value: targetValue,
+                priority,
+                scheduled_for: scheduledFor || null,
+                edited_at: new Date().toISOString(),
+                prev_read_by: previousReaders,
+                read_by: [],
+            });
 
             if (error) throw error;
 
@@ -956,7 +927,7 @@ export const createSystemSlice = (set, get) => ({
 
     deleteAnnouncement: async (id) => {
         try {
-            const { error } = await supabase.from('announcements').delete().eq('id', id);
+            const { error } = await deleteAnnouncementRow(id);
             if (error) throw error;
             await get().appendAuditLog('ELIMINAR_AVISO', id, {
                 timeline_title: `Eliminación de Aviso ID: ${id}`,
@@ -980,7 +951,7 @@ export const createSystemSlice = (set, get) => ({
 
     archiveAnnouncement: async (id) => {
         try {
-            const { error } = await supabase.from('announcements').update({ is_archived: true }).eq('id', id);
+            const { error } = await updateAnnouncementFields(id, { is_archived: true });
             if (error) throw error;
             await get().appendAuditLog('ARCHIVAR_AVISO', id, {
                 timeline_title: `Aviso Archivado ID: ${id}`,
@@ -1010,7 +981,7 @@ export const createSystemSlice = (set, get) => ({
             if (ann.readBy.some(r => String(typeof r === 'object' ? r.employeeId : r) === String(employeeId))) return true;
 
             const updatedReadBy = [...(ann.readBy || []), { employeeId: String(employeeId), readAt: new Date().toISOString() }];
-            const { error } = await supabase.from('announcements').update({ read_by: updatedReadBy }).eq('id', announcementId);
+            const { error } = await updateAnnouncementFields(announcementId, { read_by: updatedReadBy });
             if (error) throw error;
 
             set((state) => {
@@ -1028,7 +999,7 @@ export const createSystemSlice = (set, get) => ({
     addShift: async (shiftData) => {
         try {
             const payload = { branch_id: shiftData.branchId, name: shiftData.name, start_time: `${shiftData.start}:00`, end_time: `${shiftData.end}:00` };
-            const { data, error } = await supabase.from("shifts").insert([payload]).select().single();
+            const { data, error } = await insertShift(payload);
             if (error) throw error;
             await get().appendAuditLog('CREAR_TURNO_CATALOGO', data.id, {
                 timeline_title: `Nuevo Turno Creado: ${data.name}`,
@@ -1054,7 +1025,7 @@ export const createSystemSlice = (set, get) => ({
 
     deleteShift: async (id) => {
         try {
-            const { error } = await supabase.from("shifts").delete().eq("id", id);
+            const { error } = await deleteShiftRow(id);
             if (error) throw error;
             await get().appendAuditLog('ELIMINAR_TURNO', id, {
                 timeline_title: `Turno Eliminado ID: ${id}`,
@@ -1078,7 +1049,7 @@ export const createSystemSlice = (set, get) => ({
 
     updateShift: async (id, shiftData) => {
         try {
-            const { data, error } = await supabase.from("shifts").update(shiftData).eq("id", id).select().single();
+            const { data, error } = await updateShiftRow(id, shiftData);
             if (error) throw error;
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
@@ -1103,7 +1074,7 @@ export const createSystemSlice = (set, get) => ({
 
     archiveShift: async (id) => {
         try {
-            const { error } = await supabase.from("shifts").update({ is_active: false }).eq("id", id);
+            const { error } = await setShiftActive(id, false);
             if (error) throw error;
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
@@ -1121,7 +1092,7 @@ export const createSystemSlice = (set, get) => ({
 
     unarchiveShift: async (id) => {
         try {
-            const { error } = await supabase.from("shifts").update({ is_active: true }).eq("id", id);
+            const { error } = await setShiftActive(id, true);
             if (error) throw error;
 
             window.dispatchEvent(new CustomEvent('force-history-refresh'));
@@ -1138,11 +1109,7 @@ export const createSystemSlice = (set, get) => ({
     },
 
     addHoliday: async ({ holiday_date, name, type = 'NATIONAL', municipality = null, is_recurring = false }) => {
-        const { data, error } = await supabase
-            .from('holidays')
-            .insert([{ holiday_date, name, type, municipality: municipality || null, is_recurring }])
-            .select()
-            .single();
+        const { data, error } = await insertHoliday({ holiday_date, name, type, municipality: municipality || null, is_recurring });
         if (error) throw error;
         set(state => {
             const next = [...state.holidays, data].sort((a, b) => a.holiday_date.localeCompare(b.holiday_date));
@@ -1153,7 +1120,7 @@ export const createSystemSlice = (set, get) => ({
     },
 
     deleteHoliday: async (id) => {
-        const { error } = await supabase.from('holidays').delete().eq('id', id);
+        const { error } = await deleteHolidayRow(id);
         if (error) throw error;
         set(state => {
             const next = state.holidays.filter(h => String(h.id) !== String(id));
@@ -1164,7 +1131,7 @@ export const createSystemSlice = (set, get) => ({
 
     fetchWeekRosters: async (weekStartDate) => {
         try {
-            const { data, error } = await supabase.from('employee_rosters').select('*').eq('week_start_date', weekStartDate);
+            const { data, error } = await fetchWeekRostersRaw(weekStartDate);
             if (error) throw error;
 
             const rosterMap = {};
@@ -1188,7 +1155,7 @@ export const createSystemSlice = (set, get) => ({
     saveWeeklyRoster: async (employeeId, weekStartDate, scheduleData) => {
         try {
             const payload = { employee_id: employeeId, week_start_date: weekStartDate, schedule_data: scheduleData };
-            const { error } = await supabase.from('employee_rosters').upsert(payload, { onConflict: 'employee_id, week_start_date' });
+            const { error } = await upsertWeeklyRoster(payload);
             if (error) throw error;
             await get().appendAuditLog('ASIGNAR_TURNO_SEMANAL', employeeId, {
                 timeline_title: `Asignación de Horario Semanal`,
@@ -1215,9 +1182,7 @@ export const createSystemSlice = (set, get) => ({
                 updated_at: new Date().toISOString()
             }));
 
-            const { error } = await supabase
-                .from('employee_rosters')
-                .upsert(inserts, { onConflict: 'employee_id,week_start_date' });
+            const { error } = await upsertBulkWeeklyRosters(inserts);
 
             if (error) throw error;
 
@@ -1231,22 +1196,17 @@ export const createSystemSlice = (set, get) => ({
 
     publishWeekRosters: async (weekStartDate, branchId = 'ALL') => {
         try {
-            let query = supabase
-                .from('employee_rosters')
-                .update({ status: 'PUBLISHED' })
-                .eq('week_start_date', weekStartDate);
-
+            let branchEmployees = null;
             if (branchId !== 'ALL') {
                 const state = get();
-                const branchEmployees = state.employees
+                branchEmployees = state.employees
                     .filter(e => String(e.branchId || e.branch_id) === String(branchId))
                     .map(e => e.id);
 
                 if (branchEmployees.length === 0) return true;
-                query = query.in('employee_id', branchEmployees);
             }
 
-            const { error } = await query;
+            const { error } = await publishWeekRostersQuery(weekStartDate, branchEmployees);
             if (error) throw error;
 
             await get().appendAuditLog('PUBLICAR_HORARIOS', branchId === 'ALL' ? 'GLOBAL' : branchId, {
@@ -1263,7 +1223,7 @@ export const createSystemSlice = (set, get) => ({
     },
     fetchKioskBoot: async () => {
         try {
-            const { data: bData } = await supabase.from("branches").select("id, name").order("name");
+            const { data: bData } = await fetchBranchesBasic();
             if (bData) {
                 set({ branches: bData });
                 localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(bData));
@@ -1290,7 +1250,7 @@ export const createSystemSlice = (set, get) => ({
 
             if (data) {
                 if (!data.branches) {
-                    const { data: bData } = await supabase.from("branches").select("*").order("name");
+                    const { data: bData } = await fetchBranchesFull();
                     if (bData) set({ branches: bData });
                 }
 
@@ -1404,7 +1364,7 @@ export const createSystemSlice = (set, get) => ({
             const url = await get().uploadFileToStorage(file, 'documents');
             if (!url) throw new Error("Fallo al subir el archivo al storage");
 
-            const { data: newDoc, error } = await supabase.from('employee_documents').insert([{ employee_id: employeeId, event_id: eventId || null, name: file.name, type: 'UPLOAD', url: url }]).select().single();
+            const { data: newDoc, error } = await insertEmployeeDocument({ employee_id: employeeId, event_id: eventId || null, name: file.name, type: 'UPLOAD', url: url });
             if (error) throw error;
 
             const empDoc = get().employees.find(e => String(e.id) === String(employeeId));

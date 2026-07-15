@@ -5,11 +5,14 @@ import {
     Package, Plus, Trash2, DollarSign, Calendar,
     FlaskConical, Users, Gift,
 } from 'lucide-react';
-import { supabase }      from '../../supabaseClient';
 import { useAuth }       from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import LiquidSelect      from '../../components/common/LiquidSelect';
 import LiquidDatePicker  from '../../components/common/LiquidDatePicker';
+import {
+    searchActiveProductsByName, fetchProductPreciosForPromo, fetchSalesBranches,
+    insertPromotion, insertPromotionBranches, insertPromotionProducts,
+} from '../../data/promotions';
 
 // IDs de sucursales de ventas (excluye Bodega=30 y Administracion=32)
 const SALES_BRANCH_IDS = [2, 4, 25, 27, 28, 29];
@@ -187,13 +190,7 @@ function AddProductInline({ onAdd }) {
     const handleSearch = useCallback(async (q) => {
         if (!q || q.trim().length < 2) { setSearchResults([]); return; }
         setIsSearching(true);
-        const { data, error } = await supabase
-            .from('products')
-            .select('id, nombre, foto_url, laboratorios(nombre)')
-            .eq('activo', true)
-            .ilike('nombre', `%${q.trim()}%`)
-            .order('nombre')
-            .limit(50);
+        const { data, error } = await searchActiveProductsByName(q.trim());
         if (error) console.error('PromoModal: search products failed:', error.message);
         setSearchResults((data || []).map(p => ({
             value:       String(p.id),
@@ -211,10 +208,7 @@ function AddProductInline({ onAdd }) {
         setPresentOptions([]);
         if (!val) return;
         setLoadingPresent(true);
-        const { data, error } = await supabase
-            .from('product_precios')
-            .select('id_presentacion, descripcion, factor, presentaciones(id, tipo)')
-            .eq('product_id', parseInt(val));
+        const { data, error } = await fetchProductPreciosForPromo(parseInt(val));
         if (error) console.error('PromoModal: fetch product_precios failed:', error.message);
         const unique = [];
         const seen = new Set();
@@ -428,9 +422,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
     useEffect(() => {
         if (!isOpen) return;
         // Sales branches only (no Bodega, no Administracion)
-        supabase.from('branches').select('id, name')
-            .in('id', SALES_BRANCH_IDS)
-            .order('name')
+        fetchSalesBranches(SALES_BRANCH_IDS)
             .then(({ data }) => {
                 const b = data || [];
                 setBranches(b);
@@ -456,31 +448,27 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
 
         setSaving(true);
         try {
-            const { data: promo, error: promoErr } = await supabase
-                .from('promotions')
-                .insert({
-                    nombre:        autoNombre,
-                    estado:        'draft',
-                    fecha_inicio:  form.fecha_inicio || null,
-                    fecha_fin:     form.fecha_fin    || null,
-                    end_condition: form.end_condition,
-                    notas:         form.notas        || null,
-                    created_by:    user?.id          || null,
-                })
-                .select()
-                .single();
+            const { data: promo, error: promoErr } = await insertPromotion({
+                nombre:        autoNombre,
+                estado:        'draft',
+                fecha_inicio:  form.fecha_inicio || null,
+                fecha_fin:     form.fecha_fin    || null,
+                end_condition: form.end_condition,
+                notas:         form.notas        || null,
+                created_by:    user?.id          || null,
+            });
             if (promoErr) throw promoErr;
 
             // Branches
             if (form.branch_ids.length > 0) {
-                await supabase.from('promotion_branches').insert(
+                await insertPromotionBranches(
                     form.branch_ids.map(bid => ({ promotion_id: promo.id, branch_id: bid }))
                 );
             }
 
             // Products
             if (products.length > 0) {
-                await supabase.from('promotion_products').insert(
+                await insertPromotionProducts(
                     products.map(pp => ({
                         promotion_id:       promo.id,
                         product_id:         pp.product_id,

@@ -5,8 +5,36 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.24';
+export const APP_VERSION = '2.17.25';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.25 — refactor(bloque6.A): PromoModal.jsx + EmployeeRequestsView.jsx +
+// EmployeeScheduleView.jsx — 18 supabase.from() migradas (6+6+6). Dos
+// módulos nuevos: src/data/promotions.js (6 fn: searchActiveProductsByName,
+// fetchProductPreciosForPromo, fetchSalesBranches, insertPromotion,
+// insertPromotionBranches, insertPromotionProducts) y
+// src/data/employeeSelfService.js (9 fn: 5 para EmployeeRequestsView —
+// fetchOwnApprovalRequests, fetchPendingShiftChangeRequestsForApprover,
+// fetchOwnMinMaxChangeRequests, fetchEmployeeNamesByIds,
+// fetchEmployeeEventsByTypes — y 4 para EmployeeScheduleView —
+// fetchPublishedRosterForWeek, fetchEmployeeEventsByTypesUntil,
+// fetchMyVacationPlansMultiYear, fetchPendingVacationChangeRequest). Ambos
+// archivos de EmployeeXView reutilizan además updateApprovalRequest/
+// insertApprovalRequest (data/requests.js) y updateVacationPlan
+// (data/vacationPlans.js) ya existentes — el insert de approval_requests en
+// EmployeeScheduleView pasó de un `.select()` genérico a la variante con
+// columnas explícitas de insertApprovalRequest, sin impacto: el caller solo
+// lee id/status/metadata/created_at, todos incluidos. Verificado en vivo con
+// Playwright: /my-requests (solicitudes reales — Cambio de Vendedor,
+// pendientes con niveles reales), /promociones → "Nueva" (Paso 1 carga
+// sucursales reales: La Popular + Salud 1-5). El paso de búsqueda de
+// productos (searchActiveProductsByName) no se pudo automatizar por el
+// widget LiquidSelect con búsqueda server-side — verificado por
+// sustitución 1:1 exacta. EmployeeScheduleView.jsx no tiene ruta activa en
+// App.jsx actualmente (no se pudo verificar en vivo por esa razón, no por
+// el cambio) — se migró igual porque el archivo y sus queries siguen
+// siendo código real del repo. Sin errores de consola atribuibles al
+// cambio. Build + lint + 15 tests verdes.
 
 // v2.17.24 — refactor(bloque6.A): WidgetAnnulmentRequest.jsx +
 // TabGenerar.jsx + CrearRutaModal.jsx — 19 supabase.from() migradas

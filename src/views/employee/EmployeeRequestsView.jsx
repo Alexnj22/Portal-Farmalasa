@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
-import { supabase } from '../../supabaseClient';
 import { useToastStore } from '../../store/toastStore';
 import { REQUEST_TYPES, REQUEST_STATUS } from '../../store/slices/requestsSlice';
 import RangeDatePicker from '../../components/common/RangeDatePicker';
@@ -15,6 +14,11 @@ import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import ConfirmModal from '../../components/common/ConfirmModal';
+import {
+    fetchOwnApprovalRequests, fetchPendingShiftChangeRequestsForApprover,
+    fetchOwnMinMaxChangeRequests, fetchEmployeeNamesByIds, fetchEmployeeEventsByTypes,
+} from '../../data/employeeSelfService';
+import { updateApprovalRequest } from '../../data/requests';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -315,7 +319,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                                         const url = await uploadFileToStorage(file, 'documents', 'disability');
                                         if (url) {
                                             const newMeta = { ...meta, docUrl: url, docName: file.name };
-                                            await supabase.from('approval_requests').update({ metadata: newMeta }).eq('id', req.id);
+                                            await updateApprovalRequest(req.id, { metadata: newMeta });
                                             setMeta(newMeta);
                                             useToastStore.getState().showToast('Documento actualizado', 'El certificado fue reemplazado correctamente.', 'success');
                                         }
@@ -408,10 +412,7 @@ const EmployeeRequestsView = () => {
     useEffect(() => {
         if (!payload.targetEmployeeId || !payload.date) { setTargetEmpStatus(null); return; } // eslint-disable-line react-hooks/set-state-in-effect -- reset antes de re-fetch al cambiar de compañero/fecha
         let cancelled = false;
-        supabase.from('employee_events')
-            .select('type, date, metadata')
-            .eq('employee_id', payload.targetEmployeeId)
-            .in('type', ['DISABILITY', 'PERMIT', 'VACATION'])
+        fetchEmployeeEventsByTypes(payload.targetEmployeeId)
             .then(({ data }) => {
                 if (cancelled) return;
                 if (!data?.length) { setTargetEmpStatus(null); return; }
@@ -541,23 +542,9 @@ const EmployeeRequestsView = () => {
         if (!user?.id) return;
         setIsLoading(true);
         const [{ data: ownData }, { data: peerData }, { data: mmData }] = await Promise.all([
-            supabase
-                .from('approval_requests')
-                .select('id, type, status, note, approver_note, created_at, current_level, metadata')
-                .eq('employee_id', user.id)
-                .order('created_at', { ascending: false }),
-            supabase
-                .from('approval_requests')
-                .select('id, type, status, note, metadata, created_at, employee_id')
-                .eq('approver_id', user.id)
-                .eq('type', 'SHIFT_CHANGE')
-                .eq('status', 'PENDING'),
-            supabase
-                .from('minmax_change_requests')
-                .select('*')
-                .eq('requested_by_id', user.id)
-                .order('requested_at', { ascending: false })
-                .limit(200),
+            fetchOwnApprovalRequests(user.id),
+            fetchPendingShiftChangeRequestsForApprover(user.id),
+            fetchOwnMinMaxChangeRequests(user.id),
         ]);
 
         setRequests(ownData || []);
@@ -571,8 +558,7 @@ const EmployeeRequestsView = () => {
 
         if (rawPeer.length > 0) {
             const empIds = [...new Set(rawPeer.map(r => r.employee_id).filter(Boolean))];
-            const { data: empRows } = await supabase
-                .from('employees').select('id, name').in('id', empIds);
+            const { data: empRows } = await fetchEmployeeNamesByIds(empIds);
             const empMap = Object.fromEntries((empRows || []).map(e => [String(e.id), e]));
             setPeerRequests(rawPeer.map(r => ({ ...r, employee: empMap[String(r.employee_id)] || null })));
         } else {

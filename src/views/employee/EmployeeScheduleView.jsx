@@ -2,9 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Coffee, Palmtree, Calendar, ArrowRight, Loader2, MessageSquare, Check, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
-import { supabase } from '../../supabaseClient';
 import { formatTime12h } from '../../utils/helpers';
 import RangeDatePicker from '../../components/common/RangeDatePicker';
+import {
+    fetchPublishedRosterForWeek, fetchEmployeeEventsByTypesUntil,
+    fetchMyVacationPlansMultiYear, fetchPendingVacationChangeRequest,
+} from '../../data/employeeSelfService';
+import { updateVacationPlan } from '../../data/vacationPlans';
+import { insertApprovalRequest } from '../../data/requests';
 
 const DAYS = [
     { id: 1, name: 'Lunes',     short: 'LUN' },
@@ -92,12 +97,7 @@ const EmployeeScheduleView = () => {
         }
         setIsLoading(true);
         setScheduleData(null);
-        supabase.from('employee_rosters')
-            .select('schedule_data')
-            .eq('employee_id', user.id)
-            .eq('week_start_date', weekStartISO)
-            .eq('status', 'PUBLISHED')
-            .maybeSingle()
+        fetchPublishedRosterForWeek(user.id, weekStartISO)
             .then(({ data }) => {
                 setScheduleData(data?.schedule_data || {});
                 setIsLoading(false);
@@ -109,11 +109,7 @@ const EmployeeScheduleView = () => {
         if (!user?.id) return;
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekEnd.getDate() + 6);
-        supabase.from('employee_events')
-            .select('type, date, metadata')
-            .eq('employee_id', user.id)
-            .in('type', ['VACATION', 'DISABILITY', 'PERMIT'])
-            .lte('date', toISO(weekEnd))
+        fetchEmployeeEventsByTypesUntil(user.id, toISO(weekEnd))
             .then(({ data }) => setActiveEvents(data || []));
     }, [user?.id, weekStartISO, weekStart]);
 
@@ -122,24 +118,14 @@ const EmployeeScheduleView = () => {
         if (!user?.id) return;
         setLoadingVacations(true);
         const currentYear = new Date().getFullYear();
-        supabase.from('vacation_plans')
-            .select('id, year, start_date, end_date, days, status, notes, change_requested_start, change_requested_end')
-            .eq('employee_id', user.id)
-            .in('status', ['PRE_APPROVED', 'CHANGE_REQUESTED', 'APPROVED', 'CONFIRMED', 'PLANNED'])
-            .in('year', [currentYear, currentYear + 1])
-            .order('year', { ascending: true })
+        fetchMyVacationPlansMultiYear(user.id, [currentYear, currentYear + 1])
             .then(({ data }) => {
                 setMyVacations(data || []);
                 setLoadingVacations(false);
             });
 
         // Check for existing pending change request
-        supabase.from('approval_requests')
-            .select('id, status, metadata, created_at')
-            .eq('employee_id', user.id)
-            .eq('type', 'VACATION_CHANGE')
-            .eq('status', 'PENDING')
-            .maybeSingle()
+        fetchPendingVacationChangeRequest(user.id)
             .then(({ data }) => setPendingRequest(data || null));
     }, [user?.id]);
 
@@ -193,36 +179,29 @@ const EmployeeScheduleView = () => {
         setSubmittingReq(true);
         try {
             // Mark vacation_plan as CHANGE_REQUESTED, save requested dates
-            const { error: planErr } = await supabase
-                .from('vacation_plans')
-                .update({
-                    status: 'CHANGE_REQUESTED',
-                    change_requested_start: reqStart,
-                    change_requested_end: reqEnd,
-                    updated_at: new Date().toISOString(),
-                })
-                .eq('id', changeTarget.id);
+            const { error: planErr } = await updateVacationPlan(changeTarget.id, {
+                status: 'CHANGE_REQUESTED',
+                change_requested_start: reqStart,
+                change_requested_end: reqEnd,
+                updated_at: new Date().toISOString(),
+            });
             if (planErr) throw planErr;
 
             // Create approval_request
-            const { data: req, error: reqErr } = await supabase
-                .from('approval_requests')
-                .insert([{
-                    employee_id: user.id,
-                    type: 'VACATION_CHANGE',
-                    status: 'PENDING',
-                    note: reqNote.trim() || null,
-                    metadata: {
-                        vacation_plan_id: changeTarget.id,
-                        year: changeTarget.year,
-                        requested_start: reqStart,
-                        requested_end: reqEnd,
-                        original_start: changeTarget.start_date,
-                        original_end: changeTarget.end_date,
-                    },
-                }])
-                .select()
-                .single();
+            const { data: req, error: reqErr } = await insertApprovalRequest({
+                employee_id: user.id,
+                type: 'VACATION_CHANGE',
+                status: 'PENDING',
+                note: reqNote.trim() || null,
+                metadata: {
+                    vacation_plan_id: changeTarget.id,
+                    year: changeTarget.year,
+                    requested_start: reqStart,
+                    requested_end: reqEnd,
+                    original_start: changeTarget.start_date,
+                    original_end: changeTarget.end_date,
+                },
+            });
             if (reqErr) throw reqErr;
 
             setPendingRequest(req);

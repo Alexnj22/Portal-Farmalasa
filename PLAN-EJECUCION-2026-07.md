@@ -566,15 +566,19 @@ Staging ya existe (Bloque D de Fase 6, parcialmente hecho). Falta:
 
 ## BLOQUE 4 — Rendimiento (DB, casi todo prod → tu OK, bajo riesgo)
 
+**Estado al 2026-07-15: 4.1/4.2/4.5/4.6 cerrados hoy, 4.7 resuelto solo
+(ya no aplica), 4.3 y 4.4 diagnosticados con datos frescos — son
+rediseños, no fixes chicos, pendientes de que decidas si se justifican.**
+
 | # | Ítem | Fuente | Fix |
 |---|---|---|---|
 | 4.1 | `inventory_sync_log` sin índice: `SyncHealthBanner` hace full scan cada 90s (10.8B tuplas leídas) | Fase 2 | ✅ Aplicado (2026-07-12), ver progreso arriba |
 | 4.2 | `SyncHealthBanner` suscrito a realtime de tabla que no está en la publicación (código muerto) | Fase 2 | ✅ Aplicado (2026-07-12), ver progreso arriba |
-| 4.3 | Realtime WAL decode = 26.7% del CPU de la DB | Fase 0 | Revisar si las 11 tablas necesitan realtime o pueden ir a polling |
-| 4.4 | `refresh_product_sales_monthly_agg()` 8.9s/call cada hora | Fase 0 | Revisar plan / refresh incremental |
-| 4.5 | 88 índices sin uso sobre tablas calientes = overhead de escritura puro | Advisor | `DROP INDEX` (lock_timeout, ventana segura) |
-| 4.6 | `multiple_permissive_policies` (ruta_locations, practicantes) | Advisor | Fusionar en 1 policy por comando |
-| 4.7 | `sales_invoices` sin autovacuum hace 6 semanas | Fase 0 | Bajar `autovacuum_vacuum_scale_factor` para esa tabla |
+| 4.3 | Realtime WAL decode = 25.2% del CPU de la DB (re-medido 2026-07-15, era 26.7%) | Fase 0 | ⏸️ **Diagnosticado, no resuelto.** De las 11 tablas en `supabase_realtime`, una sola (`product_stock_params`) concentra 1,271,562 de ~1,274,010 writes acumulados (99.8%) — las otras 10 suman ~2,450 en total, decode irrelevante. La suscripción SÍ es real (`TabMinMax.jsx:1790`, canal `bodega-params-watch`, filtrado a `erp_sucursal_id=6`) — no es código muerto como 4.2, así que no se puede simplemente sacar de la publicación. El filtro del cliente (`filter: 'erp_sucursal_id=eq.6'`) se aplica DESPUÉS de decodificar el WAL — no reduce el costo de decode, sólo qué le llega al cliente. Fix real requeriría reemplazar `postgres_changes` por Realtime Broadcast (un trigger que arma y manda el mensaje solo para la sucursal 6) o por polling — es rediseño de una feature, no un query fix. Necesita tu decisión: ¿vale la pena el esfuerzo por ~25% de CPU de la DB, o se documenta y se deja? |
+| 4.4 | `refresh_product_sales_monthly_agg()` cada hora | Fase 0 | ⏸️ **Diagnosticado, no resuelto.** Re-medido: 115 calls, **9.68s promedio** (era 8.9s), 7.3% del tiempo total de DB. La función YA tiene el patrón anti-churn (`DELETE ... NOT EXISTS` + `INSERT ... ON CONFLICT DO UPDATE ... WHERE IS DISTINCT FROM`) — no es el problema de escritura que resolvieron los fixes anteriores. El costo real es de LECTURA: escanea+agrupa 3 meses completos de `sales_invoice_items JOIN sales_invoices` cada vez, aunque los meses ya cerrados (`close_ventas_month` existe como concepto en el código) no cambian nunca. Fix real: que la función solo recalcule el mes en curso y confíe en que los meses cerrados ya están correctos — cambio de lógica de negocio (qué cuenta como "cerrado"), no un índice. Necesita tu decisión antes de tocarlo |
+| 4.5 | 88 índices sin uso sobre tablas calientes = overhead de escritura puro | Advisor | ✅ Aplicado 2026-07-15. Re-medido: 150 índices sin uso en total, pero solo 12MB — la inmensa mayoría son de features nuevas (rutas, conteo_inventario, promociones) de bajo tráfico, no vale la pena tocarlos. El único con peso real sobre una tabla caliente era `sales_invoices_customer_id_idx` (7.6MB, exactamente el que ya mencionaba este ítem) — `DROP INDEX CONCURRENTLY` + `lock_timeout`, verificado eliminado |
+| 4.6 | `multiple_permissive_policies` (ruta_locations, practicantes) | Advisor | ✅ Aplicado 2026-07-15. `_write` era `FOR ALL` (incluye SELECT), duplicando evaluación con `_select` en cada lectura (7 warnings). Verificado antes de tocar: 0 roles tienen `can_edit=true` con `can_view=false` en `pedidos_tab_rutas`/`staff_list`, así que angostar `_write` a solo INSERT/UPDATE/DELETE no le saca acceso a nadie real. Advisor confirma 0 warnings restantes |
+| 4.7 | `sales_invoices` sin autovacuum hace 6 semanas | Fase 0 | ✅ Ya no aplica (verificado 2026-07-15) — solo 0.27% de filas muertas (870/326K). El autovacuum no dispara porque no hace falta, no porque esté fallando: el trabajo de anti-churn de sesiones anteriores (0B.7/1.x) bajó tanto la escritura redundante que la tabla casi no genera bloat. Bajar `autovacuum_vacuum_scale_factor` no tendría nada real que limpiar hoy — sin acción |
 
 ---
 

@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { UploadCloud, CheckCircle2, Eye, X } from 'lucide-react';
 import { openStoredFile } from '../../utils/storageFiles';
 
+// eslint-disable-next-line react-refresh/only-export-components -- este archivo ya mezcla constantes/helpers con un componente (LazyInput); solo afecta Fast Refresh en dev
 export const EL_SALVADOR_GEO = {
     "Ahuachapán": ["Ahuachapán Norte", "Ahuachapán Centro", "Ahuachapán Sur"],
     "Santa Ana": ["Santa Ana Norte", "Santa Ana Centro", "Santa Ana Este", "Santa Ana Oeste"],
@@ -19,12 +20,14 @@ export const EL_SALVADOR_GEO = {
     "La Unión": ["La Unión Norte", "La Unión Sur"]
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const clampInt = (v, min, max) => {
     const n = parseInt(String(v ?? ''), 10);
     if (Number.isNaN(n)) return null;
     return Math.max(min, Math.min(max, n));
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const formatPhoneMask = (value) => {
     if (!value) return '';
     const cleaned = value.replace(/\D/g, '').substring(0, 8);
@@ -35,6 +38,7 @@ export const formatPhoneMask = (value) => {
     return value;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const safeParse = (obj) => {
     if (typeof obj === 'string') {
         try { return JSON.parse(obj); } catch { return {}; }

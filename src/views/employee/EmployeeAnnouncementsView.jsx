@@ -240,6 +240,7 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
         setPendingReads(prev => prev.slice(0, -1));
     }, [pendingReads]);
 
+    /* eslint-disable react-hooks/preserve-manual-memoization -- el compiler no puede re-optimizar este useCallback (setTimeout anidados con closures), la memoización manual sigue funcionando igual */
     const handleConfirm = useCallback(() => {
         if (phase !== 'idle' || !current) return;
         const cardId = current.id;
@@ -259,6 +260,7 @@ const UnreadStack = memo(({ list, userId, onRead }) => {
             setPendingReads(prev => [...prev, { id: cardId, timeoutId }]);
         }, 380);
     }, [phase, current, onRead]);
+    /* eslint-enable react-hooks/preserve-manual-memoization */
 
     // Teclado: Enter / → / ↓ / Espacio → confirmar  |  ← → retroceder
     useEffect(() => {

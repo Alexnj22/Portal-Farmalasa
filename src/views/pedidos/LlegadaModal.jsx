@@ -83,6 +83,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     };
 
     // Serializar cajasExtraData a notas de texto para el handler existente
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization -- el compiler no puede re-optimizar este useMemo por su cuenta, la memoización manual sigue funcionando igual
     const cajasExtraNotas = useMemo(() => {
         if (cajasExtra === 0) return null;
         const out = {};

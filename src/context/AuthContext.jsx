@@ -6,6 +6,7 @@ import { getSignedFileUrl } from "../utils/storageFiles";
 
 const AuthContext = createContext(null);
 
+// eslint-disable-next-line react-refresh/only-export-components -- patrón estándar de contexto+hook; separar useAuth a otro archivo tocaría decenas de imports para una mejora de solo Fast Refresh en dev
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth debe usarse dentro de un AuthProvider");

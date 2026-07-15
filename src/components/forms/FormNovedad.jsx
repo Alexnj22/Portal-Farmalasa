@@ -71,6 +71,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     // ============================================================================
     // 🇸🇻 MOTOR DINÁMICO DE ASUETOS Y VACACIONES
     // ============================================================================
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization -- formData?.date en deps es a propósito (formData puede venir undefined); usar formData.date sin encadenamiento opcional rompería si formData es undefined
     const getHolidayInfo = useMemo(() => {
         if (!formData?.date) return null;
         const [, m, d] = formData.date.split('-');

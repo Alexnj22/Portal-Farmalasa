@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.16.2';
+export const APP_VERSION = '2.16.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.16.3 — fix(bloque2): limpieza de deuda de lint, parte 3 —
+// react-refresh/only-export-components (8/8) y
+// react-hooks/preserve-manual-memoization (7/7) CERRADOS. Los primeros son
+// archivos que mezclan un export de componente con un export de
+// hook/constante/helper (patrón establecido del proyecto: useAuth/useTheme
+// junto a su Provider, EL_SALVADOR_GEO/clampInt/formatPhoneMask/safeParse
+// junto a LazyInput) — separar el hook a otro archivo tocaría decenas de
+// imports por una mejora de solo Fast Refresh en dev, no vale la pena.
+// Los segundos son casos donde el React Compiler no puede re-verificar una
+// memoización manual ya correcta (closures con setTimeout anidados,
+// deps con encadenamiento opcional) — memoización manual sigue funcionando
+// igual, es limitación del compiler, no bug. Nota: en
+// EmployeeAnnouncementsView.jsx el eslint-disable-next-line inicial no
+// suprimía el error real (ESLint ancla el diagnóstico al inicio del nodo
+// useCallback, no a la línea de deps) — corregido con bloque
+// eslint-disable/eslint-enable en vez de disable-next-line.
+// De paso, 2 fixes reales de deps (EmployeeProfileView.jsx: emp?.weeklySchedule/
+// emp?.birth_date → emp completo; EmployeeRequestsView.jsx: user?.id → user)
+// evitan que el memo/callback quede con un valor stale si la referencia del
+// objeto cambia pero el campo opcional leído no. Build+tests limpios.
+// Quedan 102: no-unused-vars (único rule restante).
 
 // v2.16.2 — fix(bloque2): limpieza de deuda de lint, parte 2 — no-empty
 // CERRADO (36/36). Todos eran `catch {}` legítimos alrededor de

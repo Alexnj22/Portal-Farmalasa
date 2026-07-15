@@ -581,7 +581,7 @@ const EmployeeRequestsView = () => {
         }
 
         setIsLoading(false);
-    }, [user?.id]);
+    }, [user]);
 
     useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 

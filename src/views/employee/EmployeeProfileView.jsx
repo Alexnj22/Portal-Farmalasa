@@ -132,7 +132,7 @@ const EmployeeProfileView = ({ openModal }) => {
             date.setDate(monday.getDate() + offset);
             return { ...d, shift, date };
         });
-    }, [emp?.weeklySchedule, shifts]);
+    }, [emp, shifts]);
 
     const availableTypes = useMemo(() =>
         [...new Set(timeline.map(ev => ev.type))].filter(Boolean)
@@ -182,7 +182,7 @@ const EmployeeProfileView = ({ openModal }) => {
         if (diff === 1) return 'Mañana';
         if (diff <= 30) return `en ${diff} días`;
         return null;
-    }, [emp?.birth_date]);
+    }, [emp]);
 
     if (!emp) return (
         <GlassViewLayout icon={User} title="Mi Perfil" transparentBody={true}>

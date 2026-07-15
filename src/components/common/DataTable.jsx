@@ -56,6 +56,7 @@ const TableCtx = createContext(null);
 const useTable = () => useContext(TableCtx);
 
 // Hook público para que filas expandidas (raw <tr>) lean los tokens del tema
+// eslint-disable-next-line react-refresh/only-export-components -- hook chico y acoplado a los tokens de este archivo; solo afecta Fast Refresh en dev
 export function useExpandStyle() {
   const tk = useTable();
   if (!tk) {

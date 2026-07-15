@@ -509,7 +509,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
     if (!isOpen) return null;
 
     return (
-        <LiquidModal open={isOpen} onClose={onClose} maxWidth="max-w-xl" className="max-h-[90vh]">
+        <LiquidModal open={isOpen} onClose={onClose} maxWidth="max-w-xl" className="max-h-[90vh]" ariaLabel="Nueva Promoción">
 
                 {/* Header — gradient */}
                 <div className="flex-none bg-gradient-to-br from-blue-700 via-blue-600 to-violet-600 px-7 pt-7 pb-6">

@@ -40,7 +40,7 @@ const AlertModal = ({
     const Icon = currentConfig.icon;
 
     return (
-        <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-sm" zClass="z-[9999]">
+        <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-sm" zClass="z-[9999]" ariaLabel={title}>
             <div className={`backdrop-blur-3xl backdrop-saturate-150 border rounded-[2.5rem] overflow-hidden relative transition-colors duration-300 ${
                 isDark 
                     ? 'bg-[#0A0F1C]/90 border-white/10 shadow-[0_40px_80px_rgba(0,0,0,0.5),inset_0_2px_15px_rgba(255,255,255,0.05)]' 

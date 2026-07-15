@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useId } from 'react';
 import { ChevronDown, Search, X, Plus, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -41,6 +41,9 @@ const LiquidSelect = ({
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
+
+    const listboxId = useId();
+    const optionId = (idx) => `${listboxId}-option-${idx}`;
 
     const selectRef = useRef(null);
     const inputRef = useRef(null);
@@ -255,6 +258,8 @@ const LiquidSelect = ({
             key="liquid-dropdown"
             ref={dropdownRef}
             data-surface="dropdown"
+            id={listboxId}
+            role="listbox"
             style={{
                 top: coords.top,
                 left: coords.left,
@@ -315,6 +320,9 @@ const LiquidSelect = ({
                                 key={opt.value}
                                 ref={sIdx >= 0 ? el => { itemRefs.current[sIdx] = el; } : undefined}
                                 type="button"
+                                id={sIdx >= 0 ? optionId(sIdx) : undefined}
+                                role="option"
+                                aria-selected={String(value) === String(opt.value)}
                                 onClick={() => !opt.disabled && handleSelect(opt.value)}
                                 className={`w-full text-left px-3 py-2.5 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-all duration-200 border flex items-center gap-2.5 ${
                                     opt.disabled
@@ -428,8 +436,11 @@ const LiquidSelect = ({
             <div
                 className={`${pillBaseClasses} relative`}
                 onClick={handleOpen}
+                role="combobox"
                 aria-haspopup="listbox"
                 aria-expanded={isOpen}
+                aria-controls={isOpen ? listboxId : undefined}
+                aria-activedescendant={isOpen && highlightedIndex >= 0 ? optionId(highlightedIndex) : undefined}
             >
                 {/* Always-rendered display content — keeps container width stable */}
                 <div className={`w-full ${nano ? 'text-center justify-center' : 'text-left'} ${textStyle} ${paddingStyle} whitespace-nowrap leading-tight flex items-center gap-2

@@ -161,7 +161,7 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
     };
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-3xl" zClass="z-50">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-3xl" zClass="z-50" ariaLabel={`Excepción para hoy — ${employee.name}`}>
                 
                 {/* HEADER */}
                 <div className="bg-slate-900 p-6 flex items-center justify-between text-white">

@@ -1003,14 +1003,15 @@ The 44px minimum follows WCAG 2.5.8 (AA, WCAG 2.2). Nav indented items do not me
 ### ARIA
 
 **Implemented:**
-- `ModalShell` (`src/components/common/ModalShell.jsx:48–53`): `role="dialog"`, `aria-modal="true"`, `aria-label="Cerrar modal"` on close button ✅
+- `ModalShell` (`src/components/common/ModalShell.jsx`): `role="dialog"`, `aria-modal="true"`, `aria-label={ariaLabel}` ✅. **2026-07-15 update**: the `ariaLabel` prop existed but nothing ever passed it — every modal in the app announced as the generic default ("Ventana modal"), including `UnifiedModal` (the app's highest-traffic modal system, ~40 form types). Wired through `LiquidModal`'s new `ariaLabel` prop and set on all 9 real `<LiquidModal>`/`<ModalShell>` call sites with each modal's real title (`UnifiedModal` uses its existing `getModalTitle()`).
 - `BranchHelpers` toggle (`src/components/forms/BranchHelpers.jsx:54`): `aria-pressed={on}` ✅
+- `LiquidSelect` (`src/components/common/LiquidSelect.jsx`) — **2026-07-15**: full combobox/listbox pattern added — trigger gets `role="combobox"`, `aria-haspopup="listbox"`, `aria-expanded`, `aria-controls` (pointing to the open dropdown's `id`, via `useId()`), and `aria-activedescendant` (pointing to the keyboard-highlighted option); the dropdown gets `role="listbox"` + matching `id`; each option gets `role="option"` + `id` + `aria-selected`. One component, ~30+ usages across the app get this for free.
+- Sidebar collapsible groups (`AppLayout.jsx`) — **2026-07-15**: group header button gets `aria-expanded`/`aria-controls`; submenu container gets the matching `id` (`nav-group-{key}`).
+- `PortalInput` (`src/components/common/PortalInput.jsx`) — **2026-07-15**: the canonical shared text-input component (see house rule above the component) now sets `id`/`<label htmlFor>` association, `aria-required`, `aria-invalid`, and `aria-describedby` pointing to the inline "Requerido"/error badge. Only 4 files use it today (`EmployeeFormModal`, `PracticanteModal`) — fixing the shared component is what makes this correct by default for any future form that reuses it, per the existing house rule.
 
-**Missing:**
-- `ModalShell`: no `aria-labelledby` pointing to the modal title — screen readers announce the dialog without a label.
-- Sidebar collapsible groups: no `aria-expanded` on group header buttons, no `aria-controls` on the submenu container.
-- `LiquidSelect` trigger: no `aria-haspopup="listbox"`, `aria-expanded`, or `aria-activedescendant` on the trigger button.
-- All form inputs: no `aria-required`, `aria-invalid`, or `aria-describedby` linking to inline error text.
+**Still missing** (out of scope for the 2026-07-15 pass — see `PLAN-EJECUCION-2026-07.md` Bloque 5.6):
+- The large majority of the app's inputs are hand-rolled per-view (not `PortalInput`) and still lack `aria-invalid`/`aria-describedby` — fixing all of them individually is a much larger, view-by-view effort, not a single shared-component fix like the ones above.
+- Glass inputs with `outline-none` still fall outside the global `focus-visible` rule (§ Focus visible above) — they have their own visible ring, but it isn't `focus-visible`-gated.
 
 ### prefers-reduced-motion
 

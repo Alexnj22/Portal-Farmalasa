@@ -30,7 +30,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
     const isEditing = !!currentAt;
 
     return (
-        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm" className="max-h-[90vh]">
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm" className="max-h-[90vh]" ariaLabel={`${isEditing ? 'Reprogramar entrega' : 'Programar entrega'} — Pedido #${numero}`}>
             <LiquidModal.Header>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">

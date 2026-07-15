@@ -377,7 +377,7 @@ export default function SrsEnriquecerModal({ onClose }) {
 
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" zClass="z-[99999]" className="max-h-[90vh]">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" zClass="z-[99999]" className="max-h-[90vh]" ariaLabel="Enriquecer desde SRS">
 
                 <LiquidModal.Header>
                     <div className="flex items-center justify-between">

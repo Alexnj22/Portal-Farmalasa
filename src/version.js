@@ -5,9 +5,47 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.16.10';
+export const APP_VERSION = '2.16.11';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.16.11 — design(bloque5.6): pase de accesibilidad dirigido, cerrando
+// los gaps ya documentados en DESIGN.md §25 (no se inventó alcance nuevo,
+// se cerró lo ya catalogado en la auditoría de diseño anterior).
+// Hallazgo principal: ModalShell tenía la prop `ariaLabel` desde siempre,
+// pero NINGÚN caller la pasaba nunca — TODOS los modales de la app
+// (incluido UnifiedModal, el sistema de modales de mayor tráfico, ~40
+// tipos de formulario) anunciaban a lectores de pantalla con el genérico
+// "Ventana modal" sin importar el contenido real. Arreglado en la raíz:
+// LiquidModal ahora acepta y reenvía `ariaLabel`; los 9 sitios reales que
+// usan <LiquidModal>/<ModalShell> directo ahora pasan el título real del
+// modal (UnifiedModal reusa su propio getModalTitle() ya existente).
+// LiquidSelect (usado en ~30+ sitios) ganó el patrón combobox/listbox
+// completo: role="combobox" + aria-haspopup + aria-expanded +
+// aria-controls en el trigger (con id real vía useId()), role="listbox"
+// en el dropdown, role="option"+aria-selected+id en cada opción, y
+// aria-activedescendant apuntando a la opción resaltada por teclado.
+// Grupos colapsables del sidebar (AppLayout.jsx): aria-expanded +
+// aria-controls en el header del grupo, id real en el contenedor del
+// submenu.
+// PortalInput (el componente de input compartido — "todo formulario
+// nuevo debe reusarlo", ver comentario en el propio archivo): ahora
+// asocia label<->input vía id/htmlFor, y expone aria-required/
+// aria-invalid/aria-describedby apuntando al badge de "Requerido"/error
+// ya visible. Solo 4 usos hoy, pero arregla el componente canónico, no
+// cada formulario — cualquier form nuevo que lo reuse queda correcto
+// por default.
+// Fuera de alcance de este pase (documentado en DESIGN.md §25, no
+// mecánico de resolver en un solo componente compartido): inputs
+// hand-rolled fuera de PortalInput (la mayoría del formulario de
+// Empleado y otros), y el gap de focus-visible en inputs glass con
+// outline-none (ya tienen su propio ring visible, solo no está
+// gateado a focus-visible).
+// Verificado en vivo con Playwright: toggle de grupo del sidebar
+// (aria-expanded false→true, id de submenu real), LiquidSelect
+// (aria-controls apunta a un listbox real con opciones role="option"),
+// modal de Promociones (aria-label="Nueva Promoción" confirmado en el
+// DOM real, antes habría sido "Ventana modal"). Build + lint + 15 tests
+// unitarios verdes.
 // v2.16.10 — design(bloque5.3): touch targets <44px, long-tail dirigido
 // (WCAG 2.5.8). Auditoría propia con Playwright (getBoundingClientRect +
 // chequeo de intersección real con viewport, mismo fix del bug de falsos

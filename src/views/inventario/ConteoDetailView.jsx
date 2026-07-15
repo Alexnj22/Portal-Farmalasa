@@ -268,7 +268,7 @@ function ItemHistoryModal({ item, onClose }) {
     }, [item, fetchConteoItemHistory]);
 
     return (
-        <LiquidModal open={!!item} onClose={onClose} maxWidth="max-w-lg">
+        <LiquidModal open={!!item} onClose={onClose} maxWidth="max-w-lg" ariaLabel={`Historial de conteo — ${item?.product_nombre || ''}`}>
             <div className="flex-none bg-transparent px-6 py-5 border-b border-white/40 flex items-center justify-between relative z-10">
                 <div>
                     <h3 className="font-black text-slate-800 text-[15px]">{item?.product_nombre}</h3>
@@ -327,7 +327,7 @@ function EditLoteModal({ item, onClose, onSave }) {
     };
 
     return (
-        <LiquidModal open={!!item} onClose={onClose} maxWidth="max-w-sm">
+        <LiquidModal open={!!item} onClose={onClose} maxWidth="max-w-sm" ariaLabel={`Corregir lote — ${item?.product_nombre || ''}`}>
             <div className="flex-none bg-transparent px-6 py-5 border-b border-white/40 flex items-center justify-between relative z-10">
                 <div>
                     <h3 className="font-black text-slate-800 text-[15px]">Corregir lote</h3>

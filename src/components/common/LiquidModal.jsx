@@ -17,6 +17,9 @@ import ModalShell from './ModalShell';
  *   maxWidth  – Tailwind max-w-* class (default: max-w-sm)
  *   zClass    – z-index override (default: ModalShell default z-[100])
  *   className – extra classes on the card (e.g. max-h-[90vh] h-fit)
+ *   ariaLabel – accessible name announced by screen readers (pass the
+ *               modal's actual title — without it every LiquidModal in the
+ *               app announces as the generic ModalShell default)
  */
 export default function LiquidModal({
     open = true,
@@ -24,6 +27,7 @@ export default function LiquidModal({
     maxWidth  = 'max-w-sm',
     zClass,
     className = '',
+    ariaLabel,
     children,
 }) {
     return (
@@ -32,6 +36,7 @@ export default function LiquidModal({
             onClose={onClose}
             maxWidthClass={maxWidth}
             zClass={zClass}
+            ariaLabel={ariaLabel}
         >
             <div
                 data-surface="modal"

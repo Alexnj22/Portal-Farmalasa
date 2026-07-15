@@ -723,7 +723,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-white/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-white/70 backdrop-blur-md";
 
     return (
-        <LiquidModal open={isOpen} onClose={onClose} maxWidth={getModalSize()} zClass="z-[100]" className={getModalHeightClass()}>
+        <LiquidModal open={isOpen} onClose={onClose} maxWidth={getModalSize()} zClass="z-[100]" className={getModalHeightClass()} ariaLabel={getModalTitle()}>
 
                 {!hidesHeader && (
                     <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-white/40 flex flex-col gap-4 relative z-10 shrink-0">

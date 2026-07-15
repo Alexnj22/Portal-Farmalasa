@@ -560,6 +560,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     } : undefined}
                     onMouseLeave={(!isMobile && !isExpanded) ? closeFlyout : undefined}
                     type="button"
+                    aria-expanded={isExpanded && isOpen}
+                    aria-controls={`nav-group-${key}`}
                     className={`relative w-full flex items-center gap-2.5 px-3 py-2.5 xl:px-4 xl:py-3 rounded-[1rem] transition-all duration-200 group text-left overflow-hidden
                         ${hasActiveChild
                             ? 'text-white'
@@ -602,6 +604,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 </button>
 
                 <div
+                    id={`nav-group-${key}`}
                     className={`grid transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]
                         ${isExpanded && isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 pointer-events-none'}`}
                 >

@@ -14,19 +14,23 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
         onChange(e);
     };
 
-    const errorClasses = hasError || (required && !value?.trim()) ? '!border-red-400 !bg-red-50/50' : '';
+    const isMissing = required && !value?.trim();
+    const isInvalid = hasError || isMissing;
+    const errorClasses = isInvalid ? '!border-red-400 !bg-red-50/50' : '';
+    const messageId = name ? `${name}-message` : undefined;
 
     return (
         <div className={`col-span-1 ${colSpan === 2 ? 'md:col-span-2' : ''}`}>
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between transition-colors">
+            <label htmlFor={name} className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between transition-colors">
                 <span>{label} {helperText && <span className="text-[8px] text-[#0052CC] ml-1">{helperText}</span>}</span>
-                {required && !value?.trim() && !hasError && <span className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
-                {hasError && errorMessage && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md shadow-sm border border-red-300 flex items-center gap-1"><AlertCircle size={10} /> {errorMessage}</span>}
+                {isMissing && !hasError && <span id={messageId} className="text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded-md shadow-sm border border-red-200">Requerido</span>}
+                {hasError && errorMessage && <span id={messageId} className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md shadow-sm border border-red-300 flex items-center gap-1"><AlertCircle size={10} /> {errorMessage}</span>}
             </label>
             <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] z-10 ${readOnly ? 'opacity-80 cursor-not-allowed bg-slate-100/50 border-slate-200/50' : `border-slate-200/80 ${inputHoverClass} ${errorClasses}`}`}>
                 {Icon && <div className="absolute left-3 text-slate-500"><Icon size={14} strokeWidth={2.5} /></div>}
                 {prefix && <div className="absolute left-3 text-slate-500 font-black text-[13px]">{prefix}</div>}
                 <input
+                    id={name}
                     type={type}
                     name={name}
                     value={value || ''}
@@ -34,6 +38,10 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                     placeholder={placeholder}
                     readOnly={readOnly}
                     disabled={readOnly}
+                    required={required}
+                    aria-required={required || undefined}
+                    aria-invalid={isInvalid || undefined}
+                    aria-describedby={isInvalid ? messageId : undefined}
                     className={`w-full h-full bg-transparent text-[16px] font-bold text-slate-700 outline-none ${Icon ? 'pl-9 pr-4' : prefix ? 'pl-8 pr-4' : 'px-4'}`}
                 />
                 {readOnly && <Lock size={12} className="absolute right-3 text-slate-400" />}

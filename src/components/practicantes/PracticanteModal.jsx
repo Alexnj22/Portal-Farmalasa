@@ -185,7 +185,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-white/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-white/70 backdrop-blur-md";
 
     return (
-        <LiquidModal open={isOpen} onClose={handleClose} maxWidth="max-w-3xl" className="max-h-[90vh] h-fit">
+        <LiquidModal open={isOpen} onClose={handleClose} maxWidth="max-w-3xl" className="max-h-[90vh] h-fit" ariaLabel={isEditMode ? 'Actualizar Practicante' : 'Nuevo Practicante'}>
             <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-white/40 flex items-center justify-between relative z-10 shrink-0">
                 <div className="flex items-center gap-4">
                     <div className={`${squircleClass} text-violet-600`}><GraduationCap size={22} strokeWidth={2.5} /></div>

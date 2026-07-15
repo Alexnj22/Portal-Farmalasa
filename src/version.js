@@ -5,9 +5,43 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.7';
+export const APP_VERSION = '2.17.8';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.8 — refactor(bloque6.C): CIERRA TabPedidos.jsx (3457→2037 líneas,
+// -1420 en este PR; -48% desde el original 3943). Último y más grande
+// lote de la sesión: ItemSection+ItemSections (las 4 tablas
+// colapsables de un pedido expandido — Enviados/Agotamiento/Sin stock/
+// Revisar regla — con su editor inline de MIN/MAX), LifecycleTimeline+
+// PauseBadge (la línea de tiempo horizontal del ciclo de vida del
+// pedido), DifSection (resolución de diferencias bodega↔sucursal),
+// PostCompletionSection (resumen de recepción), ReceptionActions (los
+// 2 pasos de recepción: confirmar llegada + confirmar en Sistema de
+// Ventas), FilterPill (filtros de sucursal/fecha/estado) →
+// src/views/pedidos/tabpedidos/. Los 7 helpers de fecha/formato que
+// TabPedidos.jsx comparte con sus sub-componentes (fmtMin, elapsed,
+// fmtEntrega, fmtRelative, getBranchStage, calcSolicitado,
+// currentMonthRange) quedaron centralizados en tabpedidos/helpers.js,
+// importados de vuelta donde el cuerpo principal los sigue usando.
+// Extracción mecánica en los 6 PRs de TabPedidos.jsx de hoy — mismo
+// JSX/lógica, solo cambia el límite de archivo.
+// Verificado en vivo con Playwright expandiendo un pedido real: la
+// línea de tiempo completa (Confirmado→Inicio→Listo→...→Finalizado con
+// avatares reales), las 4 tablas colapsables con conteos reales
+// (Enviados 151/Sin inventario 308/Revisar regla 13), y al abrir
+// "Productos enviados" la tabla completa con datos de producción
+// (ALDACTONE, ANALGEPLUS, etc., columnas LABORATORIO/PRODUCTO/
+// PRESENTACIÓN/SOLICITADO/ENVIADO/ESTADO) — todo idéntico a como se
+// veía antes de la extracción, cero errores de consola.
+// Con esto, TabMinMax.jsx (2584 líneas, componente principal +
+// ExpandedPanel-scale ~1955) y TabPedidos.jsx (2037 líneas) quedan
+// ambos reducidos a esencialmente su componente principal de
+// orquestación — 6.C completo en el sentido "todo lo mecánicamente
+// extraíble ya se extrajo"; lo que queda en cada archivo es el hook de
+// estado/fetch central de cada tab, que es un refactor de otra
+// naturaleza (partir estado, no mover JSX) y queda fuera de este
+// bloque de trabajo.
+// Build + lint + 15 tests unitarios verdes.
 // v2.17.7 — refactor(bloque6.C): 2do lote de TabPedidos.jsx (3840→3457
 // líneas, -383). Los 3 modales de acción: PauseModal (pausar despacho,
 // motivo + comentario), AnularModal (anular pedido, con/sin motivo

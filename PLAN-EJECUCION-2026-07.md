@@ -401,8 +401,10 @@ esquema completo reconstruido, cero PII. Ver Bloque 3 para finalizarlo.
   cuenta Auth vía `bulk-create-employee-users` (mismo camino que cualquier
   empleado real) + contraseña fijada por `UPDATE` puntual sobre
   `encrypted_password`. Verificado con Playwright: login limpio, ve
-  Dashboard/Pedidos, no ve Nómina, sin errores. Falta solo que configures
-  los 4 GitHub Secrets — Bloque 2 queda del todo cerrado en cuanto lo hagas.
+  Dashboard/Pedidos, no ve Nómina, sin errores. Los 4 GitHub Secrets
+  configurados el mismo día y confirmados en una corrida real de CI en
+  verde (4/5 tests, el 5º se salta por `E2E_CARNE_CODE` no configurado a
+  propósito) — **Bloque 2 cerrado del todo**.
 
 ### Camino de deploy de edge functions (resuelto)
 Bash `supabase functions deploy` funciona CON permiso, pero el CLI se traga un `.env` con un nombre
@@ -471,10 +473,13 @@ No necesitan staging. Priorizar los que tocan nómina/dinero.
 
 No necesita staging. Es la red para el Bloque 6.
 
-**Estado al 2026-07-15: CERRADO salvo 1 acción tuya en GitHub.** Vitest +
-Playwright + CI instalados y commiteados. Cuenta QA creada y verificada en
-prod. Solo falta que configures los 4 GitHub Secrets (no requiere código).
-Detalle:
+**Estado al 2026-07-15: CERRADO — 100%.** Vitest + Playwright + CI
+instalados y commiteados. Cuenta QA creada y verificada en prod. Los 4
+GitHub Secrets están configurados y **confirmados funcionando**: el job
+`e2e-smoke` corrió en verde (4/5 tests pasaron — login, Dashboard, Pedidos,
+modal Editar Empleado; el 5º se salta porque no se configuró
+`E2E_CARNE_CODE`, opcional, fuera de alcance). `lint-and-unit` también en
+verde. Detalle:
 
 - ✅ Vitest + `@testing-library/react`/`jest-dom` instalados (`vite.config.js`
   `test:` block + `tests/setup.js`). 15 tests unitarios reales sobre lógica
@@ -524,10 +529,13 @@ Detalle:
   corrió la suite de Playwright del repo completa contra prod por precaución
   de escritura de datos de prueba — ver `feedback_qa_test_data_and_db_writes`
   — la verificación de login fue con un script aparte de solo-lectura.)
-  **Pendiente de tu parte — configurar en GitHub (Settings → Secrets → Actions)**:
-  - `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` — públicos, copiar tal cual.
-  - `E2E_USER` = `qa.test`
-  - `E2E_PASSWORD` = (te la paso aparte, no queda en este archivo ni en git)
+  **✅ Los 4 GitHub Secrets configurados y confirmados en CI (2026-07-15)**:
+  `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `E2E_USER=qa.test`,
+  `E2E_PASSWORD`. Corrida real: el step `npx playwright test` del run
+  disparado por el último push muestra las 4 env vars enmascaradas
+  (presentes) y resultado `4 passed, 1 skipped` (el skip es
+  `E2E_CARNE_CODE`, no configurado a propósito — no era parte del pedido).
+  `lint-and-unit` también en verde. Bloque 2 sin pendientes.
 
 ---
 

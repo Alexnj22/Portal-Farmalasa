@@ -587,10 +587,7 @@ promedio inflado por historia vieja; el caso real corre en ~800ms.
 
 ## BLOQUE 5 — Diseño/UX pendiente
 
-**Estado al 2026-07-15: 6/7 cerrados (5.1–5.6).** Solo queda 5.7, que no
-es trabajo de código — son 2 decisiones de producto explícitas
-(`animate-bounce` decorativo, `user-scalable=no`) que necesitan tu
-definición antes de tocarse, no un gap técnico por cerrar.
+**Estado al 2026-07-15: BLOQUE 5 CERRADO — 7/7.**
 
 | # | Ítem | Severidad | Notas |
 |---|---|---|---|
@@ -600,7 +597,7 @@ definición antes de tocarse, no un gap técnico por cerrar.
 | 5.4 | 2 `<select>` sin migrar (`FormAiSchedulerPreview` grilla densa, `TimePicker12` stepper) | 🟡 | ✅ Aplicado 2026-07-15 (v2.16.9). `LiquidSelect` ganó una variante `nano` (sin ícono, texto centrado, `min-h-[26px]`, piso de dropdown 120px) sin tocar `compact`/`default` — 0 regresión en los ~30 usos existentes. `TimePicker12` (hora/minuto/AM-PM) verificado en vivo con Playwright: selección funciona, valor se propaga, validador SALY AI recalcula en vivo. `FormAiSchedulerPreview` migrado pero **no verificable en vivo** — confirmado por grep que el modal `aiSchedulerPreview` no tiene ningún caller en la UI actual (feature huérfana preexistente); solo lint+build+revisión de código |
 | 5.5 | PWA sin offline: service worker sin cache/fetch | 🟡 | ✅ Aplicado 2026-07-15 (v2.17.0). Alcance acotado con el usuario: pantalla de "sin conexión" mínima, NO offline funcional real (sin cache de datos de Supabase). `sw.js` intercepta solo navegaciones + el logo de la propia pantalla offline; red primero, fallback a `public/offline.html` (estático, sin assets con hash) en vez del error nativo del navegador. Deliberadamente sin cachear index.html/JS/CSS del build — evita el riesgo de stale que el plan marcaba (el proyecto ya tuvo un problema real de chunks viejos post-deploy, ver guard `vite:preloadError` en `main.jsx`). Verificado en vivo con Playwright (`context.setOffline`): SW se instala/activa online, offline muestra la pantalla con logo cacheado, volver online recupera navegación normal sin rastro |
 | 5.6 | Pase de accesibilidad dedicado (focus-visible en inputs glass, `aria-invalid`/`aria-describedby`, teclado en LiquidSelect/modales) | 🟡 | ✅ Aplicado 2026-07-15 (v2.16.11). Cerrados los 4 gaps ya catalogados en DESIGN.md §25 (auditoría anterior, no alcance nuevo). Hallazgo principal: `ModalShell` tenía `ariaLabel` desde siempre pero **ningún caller lo pasaba** — todos los modales (incl. `UnifiedModal`, el sistema de mayor tráfico) anunciaban "Ventana modal" genérico sin importar el contenido. Arreglado en la raíz vía `LiquidModal` + los 9 call sites reales. `LiquidSelect` (~30+ usos) ganó combobox/listbox completo (`role`, `aria-expanded/controls/activedescendant`, `useId()`). Grupos colapsables del sidebar: `aria-expanded`/`aria-controls`. `PortalInput` (componente canónico de input, "todo formulario nuevo debe reusarlo"): `id`/`htmlFor`, `aria-required/invalid/describedby`. Fuera de alcance (documentado, no mecánico en un componente compartido): inputs hand-rolled fuera de `PortalInput`, gap de focus-visible en inputs glass con `outline-none`. Verificado en vivo con Playwright (toggle de sidebar, LiquidSelect combobox real, modal con aria-label real confirmado en el DOM) |
-| 5.7 | Decisiones de producto: `animate-bounce` decorativo, `user-scalable=no` (tensión WCAG 1.4.4) | Decisión tuya | No tocar sin definición |
+| 5.7 | Decisiones de producto: `animate-bounce` decorativo, `user-scalable=no` (tensión WCAG 1.4.4) | Decisión tuya | ✅ Decidido y aplicado 2026-07-15 (v2.17.1). `animate-bounce`: auditados los 16 usos, ninguno es el anti-patrón real — 3 categorías legítimas (carga, cumpleaños, error de kiosco), documentadas en DESIGN.md §31, sin cambios de código. `user-scalable=no`: en vez de un solo lado, se hizo condicional (script inline sincrónico en `index.html`) — bloqueado solo en Capacitor nativo/PWA instalada/`\/kiosk`; pinch-zoom real habilitado en cualquier pestaña de navegador normal (resuelve la tensión WCAG 1.4.4 sin perder el feel de app fija donde corresponde). Verificado en vivo con Playwright en los 3 escenarios |
 
 ---
 

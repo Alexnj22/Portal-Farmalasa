@@ -7,6 +7,28 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="preload" as="image" href="/Logo192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <script>
+      // Bloque 5.7b: user-scalable=no da "feel de app nativa" pero bloquea
+      // pinch-zoom por completo — tensión real con WCAG 1.4.4 (Resize Text)
+      // para quien navega el portal como página web normal en el navegador.
+      // Decisión: bloquear zoom SOLO donde tiene sentido de app fija —
+      // build nativo (Capacitor), PWA ya instalada (display-mode:
+      // standalone / navigator.standalone en iOS), o /kiosk (tablet
+      // montada en sucursal, uso público sin usuario logueado). En
+      // cualquier otro caso (pestaña de navegador normal, aunque sea en
+      // el celular) se permite pinch-zoom real. Corre inline y sincrónico
+      // antes de que React monte, para no producir un parpadeo de
+      // comportamiento de zoom distinto tras la carga.
+      (function () {
+        var isKiosk = location.pathname.indexOf('/kiosk') === 0;
+        var isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+        var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+        if (!isKiosk && !isNative && !isStandalone) {
+          var vp = document.querySelector('meta[name="viewport"]');
+          if (vp) vp.setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
+        }
+      })();
+    </script>
 
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

@@ -1258,7 +1258,7 @@ Creating a parallel component that duplicates functionality is prohibited. Exten
 - `active:scale-90/95` — minimum `active:scale-[0.97]`.
 - `font-normal` or `font-light` on interactive UI elements.
 - `text-slate-300/400` as text color over light surfaces.
-- `animate-bounce` on decorative elements.
+- `animate-bounce` on a decorative element with **no semantic purpose** (e.g. a "look here" arrow with nothing to point at). **Clarified 2026-07-15 (Bloque 5.7a)** after auditing all 16 existing uses — none were this anti-pattern. Three uses are legitimate and should stay `animate-bounce`: (1) loading/typing indicator dots (`App.jsx`, 3-4 sequenced dots — the same industry-standard pattern as iMessage/Slack "escribiendo…"), (2) the birthday cake/confetti badge (`AppLayout.jsx`, `StaffManagementView.jsx`, `EmployeeHomeView.jsx` — a deliberate, consistent celebration, not random motion), (3) the red error icon in `FeedbackOverlay.jsx` (kiosk clock-in/out feedback — draws the eye to an error on a screen used quickly and often unattended). If a new use doesn't fit one of these three categories, don't add it without checking here first.
 - New framer-motion imports.
 - `<select>` native element — use LiquidSelect.
 - Hero metric: large number alone with tiny label and no context.
@@ -1305,6 +1305,6 @@ No `env(safe-area-inset-*)` usage was found in the codebase. Given the app targe
 
 ### Viewport meta
 
-`index.html`: `width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover`. `user-scalable=no` blocks pinch-zoom entirely, which is a WCAG 1.4.4 (Resize Text) tension against native-app-feel — this is a deliberate existing choice, not something this audit changed unilaterally (removing it is a product decision with real trade-offs, not a mechanical fix). `viewport-fit=cover` is correctly set up for safe-area CSS to work, once/if that's implemented (see above).
+**Update 2026-07-15 (Bloque 5.7b):** the static `maximum-scale=1.0, user-scalable=no` in `index.html`'s `<meta name="viewport">` blocked pinch-zoom unconditionally — a real WCAG 1.4.4 (Resize Text) violation for anyone using the portal as a normal website. Resolved by making it conditional instead of choosing one side: a small inline script in `index.html` (runs synchronously before React mounts, so there's no flash of different zoom behavior) checks — native Capacitor build (`Capacitor.isNativePlatform()`), installed/standalone PWA (`display-mode: standalone` / `navigator.standalone`), or the `/kiosk` route — and only in those cases keeps `user-scalable=no`. Everywhere else (a regular browser tab, including on mobile) the meta tag is rewritten to drop `maximum-scale`/`user-scalable`, restoring full pinch-zoom. `viewport-fit=cover` is unaffected either way, and is correctly set up for safe-area CSS to work, once/if that's implemented (see above).
 
 ---

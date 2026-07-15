@@ -5,9 +5,36 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.0';
+export const APP_VERSION = '2.17.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.1 — design(bloque5.7): cierra las 2 decisiones de producto que
+// quedaban pendientes, decididas junto al usuario.
+// 5.7a (animate-bounce): auditados los 16 usos existentes — ninguno es
+// el anti-patrón real (rebote decorativo sin propósito). Son 3
+// categorías legítimas: indicador de carga (App.jsx, puntos
+// secuenciados, mismo patrón que iMessage/Slack), badge de cumpleaños
+// (AppLayout/StaffManagementView/EmployeeHomeView, celebración
+// deliberada y consistente), ícono de error en FeedbackOverlay.jsx
+// (feedback de kiosco, atención necesaria en pantalla de uso rápido/
+// desatendido). Sin cambios de código — se documentó el estándar en
+// DESIGN.md §31 con las 3 categorías permitidas, para que auditorías
+// futuras no lo vuelvan a marcar como pendiente sin necesidad.
+// 5.7b (user-scalable=no): bloqueaba pinch-zoom sin condición — tensión
+// real con WCAG 1.4.4 para cualquiera navegando el portal como página
+// web normal. En vez de elegir un solo lado (todo bloqueado o todo
+// abierto), se hizo condicional: nuevo script inline en index.html
+// (corre sincrónico antes de que React monte, sin parpadeo de
+// comportamiento) que mantiene el zoom bloqueado SOLO en build nativo
+// (Capacitor.isNativePlatform()), PWA ya instalada (display-mode:
+// standalone / navigator.standalone en iOS), o la ruta /kiosk (tablet
+// montada en sucursal). En cualquier otro caso — pestaña de navegador
+// normal, incluso en celular — se reescribe el meta viewport para
+// permitir pinch-zoom real. Verificado en vivo con Playwright: pestaña
+// normal → zoom habilitado; /kiosk → zoom bloqueado; flag
+// navigator.standalone simulado (iOS) → zoom bloqueado. Sin errores de
+// consola en ningún caso.
+// Build + lint + 15 tests unitarios verdes. Bloque 5 CERRADO 7/7.
 // v2.17.0 — feat(bloque5.5): pantalla de "sin conexión" para la PWA.
 // Alcance decidido con el usuario: mínimo, no offline funcional real —
 // `public/sw.js` (antes solo manejaba Web Push, cero fetch/cache) ahora

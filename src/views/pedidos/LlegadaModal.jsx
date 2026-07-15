@@ -29,7 +29,7 @@ const TOGGLE_CFG = {
     faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-rose-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200' },
 };
 
-export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, totalCajas = 0, cajasElectrolit = 0, cajasEspeciales = [], draftKey = null }) {
+export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, cajasElectrolit = 0, cajasEspeciales = [], draftKey = null }) {
     const [estados,              setEstados]              = useState({});
     const [nota,                 setNota]                 = useState('');
     const [electrolitFaltantes,  setElectrolitFaltantes]  = useState(null); // null=sin responder, 0=todas ok, N=N faltantes

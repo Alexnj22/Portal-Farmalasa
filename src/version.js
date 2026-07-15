@@ -5,8 +5,55 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.16.4';
+export const APP_VERSION = '2.16.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.16.5 — fix(bloque2): limpieza de deuda de lint, parte 5 (CIERRE) —
+// no-unused-vars 52/52 restantes, 0/186 total desde que arrancó el barrido.
+// Todo problema de lint del proyecto queda en 0 (`npx eslint .` limpio).
+// pedidos/: LlegadaModal (`totalCajas` redundante con `cajas.length` real),
+// RecepcionModal (`navKey` — helper de nav por teclado abandonado, la nav
+// real está inline 2 líneas más abajo; `handleTodoOk` preservado con
+// eslint-disable, ver 7A.3), TabRutas (`fmtMin`/`fmtDate` sin caller).
+// TabPedidos — el más grande (17 sitios): 2 funciones completas preservadas
+// con eslint-disable + comentario (`handleCorregirBodega`/
+// `handleConfirmarCorreccion`, gap 7A.1, backend listo sin botón), 1 prop
+// preservada igual (`llegadaEmp`/`llegadaTipo` en ReceptionActions — falta
+// un bloque "Confirmado" como el que sí tiene erpOk, pero es tarjeta nueva
+// no una línea, no se improvisa en flujo de pedidos), 1 bug real corregido
+// (`isApoyoBodega` calculado pero nunca usado — el botón "Apoyo" no se
+// ocultaba para quien ya había dado apoyo; server-side ya dedupaba por id
+// así que no era pérdida de datos, pero sí podía confundir; ahora
+// `canApoyo && !isApoyoBodega`), resto código muerto real (`fmtDate`,
+// `uniqueActiveRutas`/`pedidoStages`/`isDone` superseded por lógica inline
+// ya existente, `navKey` duplicado, `cajaKey`/`row` props sin uso interno).
+// productos/: TabCatalogo (`cellBg`/`trackCls`/`sectionLabel` muertos,
+// `branches` prop sin uso en 2 componentes incluido uno con "Aurora" en el
+// nombre — sigue con caller activo pese al memo de "no Aurora", ese memo
+// es sobre el theme CSS eliminado, no sobre este componente puntual).
+// TabMinMax — el más grande de productos (18 sitios): 3 hallazgos reales
+// preservados con eslint-disable (no borrados): `hideFiltered` (acción
+// bulk completa con audit log MINMAX_HIDE_FILTERED, sin botón — acción
+// masiva real, necesita decisión de producto + posible modal de
+// confirmación antes de exponerla); `dispMin`/`dispMax`/`hasPres`/
+// `applyRule` en la celda "Despacho" (calculan el MIN/MAX ya redondeado
+// por la regla de despacho pero el JSX solo muestra el nombre de la regla,
+// nunca el resultado numérico — área con historial de bugs de redondeo,
+// no se inventa el formato). Resto código muerto real: `fadeUp`,
+// `relativeTime` (confirma el gap ya documentado en 1.7 — de verdad sin
+// caller), `getBreakdown` (superseded por `formatDominant`), estado
+// `error`/`publishResult` que solo se reseteaba a null y nunca se leía
+// (4 sitios), `handleEditSave`/`lastCalcAt`/`lastDraftCalcAt`/
+// `criticalAOut`/`criticalABelow`/`hasActiveData` sin consumidor real.
+// promociones/ + schedule-tabs/: catch(e)→catch{}, props sin uso interno
+// (`allBranches`, `onRefresh`, `newId`), `tokenMatch` normaliza solo
+// (mismo patrón que ya apareció en EmployeeDetailView/TabExpediente parte 4).
+// 2 bugs reales de paso corregidos en EmployeeAnnouncementsView.jsx (commit
+// anterior) — este batch no tocó archivos de empleado.
+// Verificado en vivo (vite preview + Playwright): login, Ventas,
+// Facturación, Pedidos (Generar + sucursales), Productos (Catálogo +
+// Gestión de Stock) — 0 errores de página/consola de React en las 5 rutas
+// más tocadas. Build + 15 tests unitarios verdes.
 
 // v2.16.4 — fix(bloque2): limpieza de deuda de lint, parte 4 — no-unused-vars
 // 50/102 revisados uno por uno (no barrido ciego). Categorías: (a) código

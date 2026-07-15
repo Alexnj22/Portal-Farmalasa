@@ -19,18 +19,9 @@ function fmtDist(m) {
   if (!m) return null;
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;
 }
-function fmtMin(min) {
-  if (!min) return null;
-  if (min < 60) return `${min} min`;
-  return `${Math.floor(min / 60)}h ${min % 60}min`;
-}
 function fmtTime(iso) {
   if (!iso) return null;
   return new Date(iso).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', hour12: true });
-}
-function fmtDate(iso) {
-  if (!iso) return null;
-  return new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' });
 }
 
 // ── Individual ruta card ────────────────────────────────────────────────────

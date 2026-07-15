@@ -20,18 +20,12 @@ const END_COND_OPTIONS = [
     { value: 'both',  label: 'Por fecha o stock (lo que ocurra primero)' },
 ];
 
-const fmtDate = (d) => {
-    if (!d) return '—';
-    const [y, m, day] = d.split('-');
-    return `${day}/${m}/${y}`;
-};
-
 const inp = 'w-full text-[12px] bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-slate-300 text-slate-700';
 const lbl = 'text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block';
 
 // ── Step 1: Datos de la promoción ────────────────────────────────────────────
 
-function StepInfo({ form, set, branches, allBranches }) {
+function StepInfo({ form, set, branches }) {
     return (
         <div className="space-y-4">
             <div>

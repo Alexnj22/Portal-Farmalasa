@@ -84,10 +84,6 @@ const PAUSE_REASONS = [
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function fmtDate(iso) {
-    if (!iso) return '—';
-    return new Date(iso).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-}
 function fmtMin(min) {
     if (min == null || isNaN(min) || min < 0) return null;
     if (min < 60) return `${min}m`;
@@ -756,7 +752,7 @@ const COLS_SIN_STOCK = [
             {r.stock_packs_snapshot ?? '—'}
         </span>
     )},
-    { key: 'motivo', label: 'Motivo', render: r => (
+    { key: 'motivo', label: 'Motivo', render: () => (
         <div className="flex flex-col gap-0.5">
             <span className="text-amber-600 text-[10px] font-semibold">Sin stock en bodega</span>
             <span className="text-slate-400 text-[9px]">Esperar reabastecimiento o generar un pedido manual</span>
@@ -989,6 +985,11 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
     );
 }
 
+// conteoEmp (row.conteo_por, BD desde v2.2.236) se recibe pero este timeline
+// nunca le agregó un nodo propio — a diferencia de llegadaEmp/erpEmp, que sí
+// se renderizan. No se adivina dónde va (¿nodo propio? ¿parte de "Llegada"?)
+// — gap documentado, no se inventa la UI.
+// eslint-disable-next-line no-unused-vars
 function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEmp, enviadorEmp, llegadaEmp, conteoEmp, reenvioEmp, erpEmp, difsEmp, corrConfEmp, receptionApoyo = [], isBranch = false, empMap = new Map(), pauses = [], rutaStop = null, rutaCondEmp = null }) {
     const hasPause  = (row.min_pausado_total ?? 0) > 0;
     const isPaused  = stage === 'pausado';
@@ -1482,7 +1483,7 @@ const EVENTO_LABEL = {
 
 const DIF_MAX = 3;
 
-function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, empMap = new Map(), onResolver, readOnly = false, onNeedItems, itemsLoaded = true }) {
+function DifSection({ difItems = [], eventos = [], isBranch, busyAction, empMap = new Map(), onResolver, readOnly = false, onNeedItems, itemsLoaded = true }) {
     const [tipoSel,    setTipoSel]    = React.useState({});
     const [notaSel,    setNotaSel]    = React.useState({});
     const [rejectOpen, setRejectOpen] = React.useState({});
@@ -1717,7 +1718,7 @@ const LLEGADA_TIPO_INFO = {
     mixto:      { cls: 'bg-orange-50 border-orange-200 text-orange-700',    icon: '!', label: 'Daños + faltantes' },
 };
 
-function PostCompletionSection({ row, cardKey, difItems = [], empMap = new Map(), onNeedItems, itemsLoaded }) {
+function PostCompletionSection({ row, difItems = [], empMap = new Map(), onNeedItems, itemsLoaded }) {
     // Auto-load items once per card so dif counts are accurate
     const calledRef = React.useRef(false);
     React.useEffect(() => {
@@ -1780,6 +1781,14 @@ function PostCompletionSection({ row, cardKey, difItems = [], empMap = new Map()
 
 // ─── Reception actions ────────────────────────────────────────────────────────
 
+// llegadaEmp/llegadaTipo se reciben pero, a diferencia de erpEmp (que sí
+// tiene su chip en el bloque "Confirmado en Sistema de Ventas"), no hay un
+// bloque "Confirmado" equivalente para el paso de llegada — una vez
+// llegadaOk=true el paso 1 simplemente desaparece sin mostrar quién/qué tipo
+// confirmó. Gap real (mismo patrón que erpEmp/empChip), pero agregarlo es
+// una tarjeta nueva, no una línea — no se improvisa en un flujo crítico
+// ("no romper flujo de pedidos"). Documentado, no se inventa la UI.
+// eslint-disable-next-line no-unused-vars
 function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false, reenvioBodygaAt = null, segundaLlegadaAt = null }) {
     const empChip = (emp) => emp ? (
         <span className="flex items-center gap-1 text-[10px] text-slate-500">
@@ -2614,7 +2623,7 @@ export default function TabPedidos({ searchTerm = '' }) {
         setLlegadaModal({ pedidoId, sucId, key, rows: rows ?? [] });
     }, [busyAction, items, fetchItems]);
 
-    const handleLlegadaConfirm = useCallback(async ({ cajasOk, cajasDanadas, cajasFaltantes, nota, electrolitFaltantes = null, especialesLlegadas = null, cajasExtra = 0, cajasExtraNotas = null }) => {
+    const handleLlegadaConfirm = useCallback(async ({ cajasDanadas, cajasFaltantes, nota, electrolitFaltantes = null, especialesLlegadas = null, cajasExtra = 0, cajasExtraNotas = null }) => {
         if (!llegadaModal) return;
         const { pedidoId, sucId, key, rows } = llegadaModal;
         setLlegadaModal(null);
@@ -3035,6 +3044,9 @@ export default function TabPedidos({ searchTerm = '' }) {
         // loadActive() lo llama el caller (onConfirmed) para no duplicar el fetch
     }, [user]);
 
+    // Sin caller hoy — gap conocido de producto (plan 7A.1: backend completo
+    // desde 2026-06-21, falta botón/modal de entrada en la UI). No borrar.
+    // eslint-disable-next-line no-unused-vars
     const handleCorregirBodega = useCallback(async (pedidoId, sucId, nota) => {
         setBusyAction('corr_bodega');
         try {
@@ -3047,6 +3059,8 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [user, loadActive]);
 
+    // Mismo gap que handleCorregirBodega — ver 7A.1. No borrar.
+    // eslint-disable-next-line no-unused-vars
     const handleConfirmarCorreccion = useCallback(async (pedidoId, sucId) => {
         setBusyAction('confirmar_corr');
         try {
@@ -3162,15 +3176,6 @@ export default function TabPedidos({ searchTerm = '' }) {
             return { id, name: ERP_NAMES[id] ?? `Suc. ${id}`, total: rows.length };
         }).filter(s => s.total > 0);
     }, [activeRows, filterDate, isBranch, erpSucursalId]);
-
-    // Rutas únicas derivadas del pedidoRutaMap (para el header de grupo)
-    const uniqueActiveRutas = useMemo(() => {
-        const seen = new Map();
-        pedidoRutaMap.forEach(({ ruta, driverOnline }) => {
-            if (!seen.has(ruta.id)) seen.set(ruta.id, { ...ruta, _driverOnline: driverOnline });
-        });
-        return [...seen.values()];
-    }, [pedidoRutaMap]);
 
     // Agrupa filteredRows: rutas primero (con sus rows hijas), luego normales
     const renderGroups = useMemo(() => {
@@ -3305,7 +3310,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                             const lcKey      = `lc_${row.pedido_id}_${row.erp_sucursal_id}`;
                             const isLCBusy   = busyLifecycle === lcKey;
 
-                            const pedidoStages = pedidoStageMap.get(row.pedido_id) ?? {};
                             const canActuar = canEdit && !isBranch; // GESTIONAR + Alcance TODOS
 
                             const canIniciar       = canActuar && !isBranch && stage === 'sin_iniciar' && row.pedido_status === 'confirmado';
@@ -3342,7 +3346,6 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 && row.pedido_status === 'confirmado'
                                 && !(pedidoStageMap.get(row.pedido_id)?.anyFinalized);
 
-                            const isDone     = row.pedido_status === 'completado' || row.pedido_status === 'parcial';
                             // Solo fade cuando completado: parcial queda visible (pendiente corrección)
                             const isFadedOut = row.pedido_status === 'completado' && !!row.recibido_erp_at;  // sutil: solo baja un poco la opacidad
 
@@ -3488,7 +3491,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         )}
                                         {elapsedTrans && <span className="text-[10px] text-indigo-600 tabular-nums">{elapsedTrans} en ruta</span>}
                                         <div className="ml-auto flex items-center gap-1.5 flex-wrap">
-                                            {canApoyo && (
+                                            {canApoyo && !isApoyoBodega && (
                                                 <button
                                                     onClick={() => setApoyoModal({ pedidoId: row.pedido_id, sucId: row.erp_sucursal_id, cardKey, tipo: 'preparacion' })}
                                                     disabled={isLCBusy}
@@ -3693,7 +3696,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                             if (error) throw error;
                                                             useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
                                                             loadActiveRutas();
-                                                        } catch (e) { useToastStore.getState().showToast('Error', 'No se pudo iniciar la ruta. Intenta de nuevo.', 'error'); }
+                                                        } catch { useToastStore.getState().showToast('Error', 'No se pudo iniciar la ruta. Intenta de nuevo.', 'error'); }
                                                     }}
                                                     className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.97] transition-all shadow-sm"
                                                 >
@@ -3708,7 +3711,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                             if (error) throw error;
                                                             useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
                                                             loadActiveRutas(); loadActive();
-                                                        } catch (e) { useToastStore.getState().showToast('Error', 'No se pudo completar la ruta. Intenta de nuevo.', 'error'); }
+                                                        } catch { useToastStore.getState().showToast('Error', 'No se pudo completar la ruta. Intenta de nuevo.', 'error'); }
                                                     }}
                                                     className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-700 text-white hover:bg-slate-800 active:scale-[0.97] transition-all shadow-sm"
                                                 >

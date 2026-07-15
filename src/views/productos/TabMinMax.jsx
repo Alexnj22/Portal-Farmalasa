@@ -39,12 +39,6 @@ const iconAnim = {
     whileHover: { scale: 1.07, transition: { duration: 0.1, ease: EASE_OUT_EXPO } },
     whileTap:   { scale: 0.88, transition: { duration: 0.05 } },
 };
-// Entrance — fade up, stagger via delay passed at call site
-const fadeUp = (delay = 0) => ({
-    initial:  { opacity: 0, y: 8 },
-    animate:  { opacity: 1, y: 0, transition: { duration: 0.28, ease: EASE_OUT_EXPO, delay } },
-});
-
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ERP_NAMES = {
@@ -208,16 +202,6 @@ function fmtMoney(n) {
     if (v >= 100_000)   return `$${Math.round(v / 1000)}k`;
     if (v >= 1_000)     return `$${(v / 1000).toFixed(1)}k`;
     return `$${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function relativeTime(iso) {
-    if (!iso) return null;
-    const mins = Math.floor((Date.now() - new Date(iso)) / 60000);
-    if (mins < 2)  return 'hace un momento';
-    if (mins < 60) return `hace ${mins} min`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24)  return `hace ${hrs}h`;
-    return new Date(iso).toLocaleDateString('es-SV', { day: 'numeric', month: 'short' });
 }
 
 // netStockMap: { erp_product_id → net_sucursal_stock } fetched before calling
@@ -598,7 +582,7 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
                             border: '1px solid rgba(255,255,255,0.92)',
                             boxShadow: '0 12px 40px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1)',
                         }}>
-                        {dropdownBtns.map((item, i) => (
+                        {dropdownBtns.map((item) => (
                             <motion.button key={item.key}
                                 whileTap={{ scale: 0.93, transition: { type: 'spring', stiffness: 1200, damping: 40 } }}
                                 disabled={item.disabled}
@@ -737,21 +721,6 @@ function formatDominant(units, presentations) {
     const { tipo, factor } = pres[0];
     // ceil: boxes are indivisible — always round up so the displayed quantity covers the unit threshold
     return `≥${Math.ceil(n / factor)} ${tipo.trim()}`;
-}
-
-function getBreakdown(units, presentations) {
-    const n = Number(units);
-    if (!n) return [];
-    const pres = sortedPres(presentations);
-    if (!pres.length) return [{ tipo: 'und', factor: 1, qty: n, base: n }];
-    let rem = n;
-    const result = [];
-    for (const { tipo, factor } of pres) {
-        const qty = Math.floor(rem / factor);
-        if (qty > 0) { result.push({ tipo: tipo.trim(), factor, qty, base: qty * factor }); rem %= factor; }
-    }
-    if (rem > 0) result.push({ tipo: 'und', factor: 1, qty: rem, base: rem });
-    return result;
 }
 
 // ─── Coverage bar ─────────────────────────────────────────────────────────────
@@ -1708,7 +1677,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     const [calculating,  setCalculating]  = useState(false);
     const [calcMode,     setCalcMode]     = useState('single'); // 'single' | 'all'
     const [calcProgress, setCalcProgress] = useState(null); // { current, total, name }
-    const [error,        setError]        = useState(null);
     const [expandedId,   setExpandedId]   = useState(null);
     const [zoomPhoto,    setZoomPhoto]    = useState(null);
     const [configOpen,   setConfigOpen]   = useState(false);
@@ -1718,7 +1686,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     const [page,         setPage]         = useState(1);
     const [pageSize,     setPageSize]     = useState(25);
     const [publishing,   setPublishing]   = useState(false);
-    const [publishResult,setPublishResult]= useState(null); // kept for potential future use
     const [filterDraft,       setFilterDraft]       = useState(false);
     const [filterSparse,      setFilterSparse]      = useState(false);
     const [hidingIds,         setHidingIds]         = useState(new Set());
@@ -1784,7 +1751,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
     const loadData = useCallback(async (erpId) => {
         const rid = ++loadRef.current;
-        setLoading(true); setError(null); setInlineDraftEdit(null); setExpandedId(null);
+        setLoading(true); setInlineDraftEdit(null); setExpandedId(null);
         try {
             // Una sola llamada JSON (Patrón C): el patrón anterior de count +
             // chunks con .range() RE-EJECUTABA get_stock_analysis una vez por
@@ -1861,7 +1828,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
     const handleRecalcular = async () => {
         const wasPublished = hasPublishedData;
-        setCalculating(true); setCalcMode('single'); setError(null); setConfigChanged(false);
+        setCalculating(true); setCalcMode('single'); setConfigChanged(false);
         try {
             const { data: res, error: e } = await supabase.rpc('calculate_stock_params', { p_erp_sucursal_id: selectedErp });
             if (e) throw e;
@@ -1874,7 +1841,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
     const handleRecalcularAll = async () => {
         const wasPublished = hasPublishedData;
-        setCalculating(true); setCalcMode('all'); setError(null); setConfigChanged(false);
+        setCalculating(true); setCalcMode('all'); setConfigChanged(false);
         const ids = ERP_ORDER.filter(id => id !== 6); // Bodega se actualiza sola vía trigger + publish_stock_params
         let totalRows = 0;
         const failed = [];
@@ -1885,7 +1852,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 const { data: res, error: e } = await supabase.rpc('calculate_stock_params', { p_erp_sucursal_id: id });
                 if (e) throw e;
                 totalRows += res?.rows ?? 0;
-            } catch (e) {
+            } catch {
                 failed.push(ERP_NAMES[id]);
             }
         }
@@ -1900,13 +1867,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         setCalculating(false);
     };
 
-    const handleEditSave = useCallback(() => { loadData(selectedErp); }, [selectedErp, loadData]);
-
     const {
         hasPublishedData, draftCount, sparseCount, changesCount,
         bodegaPendingCount,
-        stats, lastCalcAt, lastDraftCalcAt,
-        criticalACount, criticalAOut, criticalABelow,
+        stats,
+        criticalACount,
     } = useMemo(() => {
         const statCounts = Object.fromEntries(STAT_CFGS.map(s => [s.key, 0]));
         let hasPublished = false, drafts = 0, sparse = 0, changes = 0, bPending = 0;
@@ -2430,7 +2395,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     }, [draftCount]);
 
     const handlePublish = useCallback(async (productIds = null) => {
-        setPublishing(true); setPublishResult(null); setError(null);
+        setPublishing(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
             const rpcParams = { p_erp_sucursal_id: selectedErp, p_published_by: user?.email ?? null };
@@ -2479,7 +2444,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     }, []);
     const isBodega      = selectedErp === 6;
     const neverCalc     = data.length > 0 && data.filter(d => !d.is_catalog_only).every(d => d.is_dead_stock || d.alert_status === 'no_data');
-    const hasActiveData = data.some(d => !d.is_dead_stock && d.alert_status !== 'no_data' && !d.is_catalog_only);
 
     const filteredBase = useMemo(() => {
         if (filterHidden) return data.filter(r => hiddenIds.has(r.erp_product_id));
@@ -2514,6 +2478,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         [filtered, hasActiveFilter]
     );
 
+    // Sin caller hoy — feature completa (bulk-hide de todo lo filtrado, con
+    // audit log MINMAX_HIDE_FILTERED) pero sin botón/confirmación en la UI.
+    // No borrar: es una acción masiva real, no dead code — falta decisión de
+    // producto sobre dónde va el botón y si necesita modal de confirmación.
+    // eslint-disable-next-line no-unused-vars
     const hideFiltered = useCallback(async () => {
         if (!filtered.length) return;
         const ids = filtered.map(r => r.erp_product_id);
@@ -3566,8 +3535,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     {/* Despacho — presentación catálogo siempre visible + regla + cantidades */}
                                     <DataCell align="center" className="!py-2 !px-2">
                                         {(() => {
+                                            // dispMin/dispMax/hasPres/applyRule (abajo) calculan el MIN/MAX ya
+                                            // redondeado por la regla de despacho, pero el JSX de abajo solo
+                                            // muestra la presentación + el NOMBRE de la regla (ruleNote), nunca
+                                            // el resultado numérico ya aplicado. Gap real, no dead code — no se
+                                            // inventa el formato de display en un área con historial de bugs de
+                                            // redondeo (ver project_pedido_preview_dispatch_rounding).
+                                            // eslint-disable-next-line no-unused-vars
                                             const dispMin = (hasDraft && !isBodega) ? (row.draft_min ?? 0) : minN;
+                                            // eslint-disable-next-line no-unused-vars
                                             const dispMax = (hasDraft && !isBodega) ? (row.draft_max ?? 0) : maxN;
+                                            // eslint-disable-next-line no-unused-vars
                                             const hasPres = pres.length > 0;
 
                                             // Catalog presentation label (always shown)
@@ -3601,6 +3579,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             const blisterFactor = sortedP.find(p => p.tipo?.toLowerCase().includes('blist'))?.factor
                                                 ?? sortedP[1]?.factor ?? boxFactor;
 
+                                            // eslint-disable-next-line no-unused-vars
                                             const applyRule = (qty) => {
                                                 if (!qty || qty <= 0 || !hasRule) return qty;
                                                 if (sc) return Math.ceil(qty / boxFactor) * boxFactor;

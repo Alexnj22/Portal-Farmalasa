@@ -27,7 +27,7 @@ const ALL_STATES = ['draft', 'active', 'paused'];
 
 // ── PromoCard ─────────────────────────────────────────────────────────────────
 
-function PromoCard({ promo, onStateChange, onDelete, onRefresh, canEdit }) {
+function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
     const [expanded, setExpanded] = useState(false);
     const es = ESTADO_CFG[promo.estado] || ESTADO_CFG.draft;
 
@@ -415,7 +415,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
             <PromoModal
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
-                onCreated={(newId) => { setShowModal(false); load(); }}
+                onCreated={() => { setShowModal(false); load(); }}
             />
         </div>
     );

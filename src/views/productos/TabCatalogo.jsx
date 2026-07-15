@@ -537,11 +537,7 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
         <p className={`text-[11px] italic ${'text-slate-300'}`}>Sin sucursales.</p>
     );
 
-    const cellBg = (hasData) =>
-        hasData ? 'bg-blue-50/50 border-blue-100' : 'bg-white border-slate-100';
-
     const labelCls = 'text-slate-500';
-    const trackCls = 'bg-slate-100';
 
     const salaActiveBtn  = 'bg-white text-[#0052CC] shadow-sm';
     const inactivBtn     = 'text-slate-400 hover:text-slate-600';
@@ -863,7 +859,7 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
 
 // ── ExpandedProductRow ────────────────────────────────────────────────────────
 
-function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated }) {
+function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated }) {
     const { maxPriceLevel, hasPermission } = useAuth();
     const canSeeCosts = hasPermission('productos_tab_catalogo_costos');
 
@@ -1334,8 +1330,7 @@ function ExpandedProductRow({ product, data, loadingRow, branches, onPhotoUpdate
 // ── Aurora Expanded Panel ─────────────────────────────────────────────────────
 // Dark-glass expanded detail used inside AuroraView cards (not a <tr>).
 
-function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated, allowedPriceFields }) {
-    const { maxPriceLevel } = useAuth();
+function AuroraExpandedPanel({ product, data, loadingRow, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated, allowedPriceFields }) {
     const marginCheckFields = useMemo(() => (allowedPriceFields || PRICE_FIELDS).filter(f => f.key !== 'precio_7' && f.key !== 'premium'), [allowedPriceFields]);
 
     const [photoLoading, setPhotoLoading] = useState(false);
@@ -1381,7 +1376,7 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
             useToastStore.getState().showToast('Guardado', 'Cambios guardados correctamente.', 'success');
             onCategoryUpdated?.(product.id, newCat || null);
             if (onClose) onClose();
-        } catch (_) { /* si algún save({quiet:true}) falla, no se muestra el toast de éxito — comportamiento preexistente, sin toast de error */ }
+        } catch { /* si algún save({quiet:true}) falla, no se muestra el toast de éxito — comportamiento preexistente, sin toast de error */ }
         finally { setSaving(false); }
     };
 
@@ -1449,9 +1444,6 @@ function AuroraExpandedPanel({ product, data, loadingRow, branches, onPhotoUpdat
         return acc;
     }, new Set());
 
-    const sectionLabel = (
-        <span className="text-[9px] font-black uppercase tracking-widest text-blue-400/80" />
-    );
     const SL = ({ icon: Icon, children }) => (
         <p className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-blue-400/80 mb-2.5">
             {Icon && <Icon size={9} />}{children}

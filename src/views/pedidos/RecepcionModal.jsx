@@ -441,6 +441,10 @@ export default function RecepcionModal({
     ]);
 
     // ── Confirmar todo sin errores (acción rápida) ──────────────────────────────
+    // Sin caller hoy — gap conocido de producto (plan 7A.3: posible botón
+    // faltante en la UI). No borrar: backend/lógica lista, falta decisión de
+    // dónde va el botón.
+    // eslint-disable-next-line no-unused-vars
     const handleTodoOk = useCallback(async () => {
         const rowsToSave = (hasCajaMap && selectedCaja !== null) ? selectedCajaRows : sortedRows;
         setSaving(true); setSaveError(null);
@@ -1145,8 +1149,6 @@ export default function RecepcionModal({
                         if (hasDispRule) { presOpts.push(dispOpt); _seen.add(dispFactor); }
                         rawOpts.forEach(o => { if (!_seen.has(o.factor)) { presOpts.push(o); _seen.add(o.factor); } });
                         if (!presOpts.length) presOpts.push(dispOpt);
-
-                        const navKey = (col, dir) => document.querySelector(`[data-qty-row="${rowIdx + dir}"][data-qty-col="${col}"]`)?.focus();
 
                         const toggleProblema = () => {
                             setTieneProblema(p => {

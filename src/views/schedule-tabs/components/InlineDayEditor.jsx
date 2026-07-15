@@ -127,7 +127,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
         if (b) {
             let sch = b.weekly_hours || b.settings?.schedule;
             if (typeof sch === 'string') {
-                try { sch = JSON.parse(sch); } catch(e) { sch = null; }
+                try { sch = JSON.parse(sch); } catch { sch = null; }
             }
 
             if (sch && typeof sch === 'object') {

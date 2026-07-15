@@ -670,7 +670,6 @@ const ScheduleCalendar = memo(({
     // Coverage employee search results
     const coverageSearchResults = useMemo(() => {
         if (!coverageSearchTerm.trim()) return [];
-        const term = coverageSearchTerm.toLowerCase();
         const alreadyAdded = new Set(coverageEmpIds);
         return (allEmployees || []).filter(e => {
             if (String(e.branchId || e.branch_id) === String(currentBranchId)) return false;

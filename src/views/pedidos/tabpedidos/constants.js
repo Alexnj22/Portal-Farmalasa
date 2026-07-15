@@ -1,5 +1,16 @@
-// Extracted from TabPedidos.jsx (Bloque 6.C) — shared by StagePill/SucPill.
-import { Package, Activity, Pause, CheckCircle2, Truck, PackageCheck, Database } from 'lucide-react';
+// Extracted from TabPedidos.jsx (Bloque 6.C) — shared by StagePill/SucPill/PauseModal.
+import { Package, Activity, Pause, CheckCircle2, Truck, PackageCheck, Database, Coffee, Clock, ClipboardList, Bell, MessageSquare } from 'lucide-react';
+
+// Usado por PauseModal (extraído) y por el cuerpo principal de TabPedidos.jsx
+// (busca el motivo de pausa para mostrarlo en el timeline) — se queda acá
+// para no duplicarlo entre ambos.
+export const PAUSE_REASONS = [
+    { key: 'almuerzo',     label: 'Almuerzo',             icon: Coffee,        maxUses: 1    },
+    { key: 'insumos',      label: 'Espera de insumos',    icon: Clock,         maxUses: null },
+    { key: 'reunion',      label: 'Reunión de turno',     icon: ClipboardList, maxUses: null },
+    { key: 'interrupcion', label: 'Interrupción externa', icon: Bell,          maxUses: null },
+    { key: 'otro',         label: 'Otro…',                icon: MessageSquare, maxUses: null, requiresComment: true },
+];
 
 export const STAGE_CONFIG = {
     sin_iniciar: { label: 'Sin iniciar',     color: 'slate',   icon: Package      },

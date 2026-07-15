@@ -5,9 +5,33 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.6';
+export const APP_VERSION = '2.17.7';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.7 — refactor(bloque6.C): 2do lote de TabPedidos.jsx (3840→3457
+// líneas, -383). Los 3 modales de acción: PauseModal (pausar despacho,
+// motivo + comentario), AnularModal (anular pedido, con/sin motivo
+// obligatorio según si ya se inició), ApoioScanModal (escáner de
+// carné por keydown para registrar apoyo — lookup en `employees` +
+// upsert en `pedido_apoyo` + auditoría) → tabpedidos/PauseModal.jsx,
+// AnularModal.jsx, ApoioScanModal.jsx. PAUSE_REASONS (usado también en
+// el cuerpo principal, línea ~2417) → tabpedidos/constants.js.
+// Los 3 son igual de auto-contenidos que las extracciones anteriores
+// (props + estado propio, ApoioScanModal con sus propios fetches/
+// writes a Supabase pero sin depender de nada del scope de
+// TabPedidos) — mismo patrón mecánico.
+// Verificación en vivo con límite honesto: los 3 modales solo se abren
+// con un pedido en un estado de ciclo de vida específico (preparando/
+// recién iniciado) que ningún pedido real tenía en el momento de
+// verificar — no se forzó ese estado con un write real solo para
+// probar la extracción. Confirmado en cambio: cero errores de consola
+// al cargar /pedidos → PEDIDOS (los imports/exports de los 3 modales
+// están bien enlazados — un import roto habría tirado abajo todo el
+// módulo) y al expandir una card real (ItemSections, todavía sin
+// extraer, sigue funcionando igual al lado). Misma transcripción
+// exacta del JSX/lógica que las 6 extracciones anteriores ya probadas
+// en vivo esta sesión.
+// Build + lint + 15 tests unitarios verdes.
 // v2.17.6 — refactor(bloque6.C): arranca TabPedidos.jsx (3943→3840
 // líneas). Primer lote, mismo patrón que TabMinMax: las 6 animaciones
 // de "stage" (MotorcycleAnim/BoxStackAnim/PausedAnim/VioletGlow/

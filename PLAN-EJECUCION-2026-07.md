@@ -545,13 +545,13 @@ Staging ya existe (Bloque D de Fase 6, parcialmente hecho). Falta:
 
 | # | Ítem | Notas |
 |---|---|---|
-| 3.1 | Volver el branch `persistent` | Para que Supabase no lo borre; op sobre el branch, no prod |
-| 3.2 | Sembrar catálogos de referencia (roles/branches/shifts/holidays/presentaciones/laboratorios) — NUNCA employees/ventas | Solo si se quiere correr la app en staging, no solo DDL |
+| 3.1 | Volver el branch `persistent` | ⏸️ Bloqueado: `create_branch`/ningún tool MCP disponible expone un flag para volver persistente un branch ya existente (solo se fija al crearlo). Requiere Dashboard → Project Settings → Branching, manual, tu parte |
+| 3.2 | Sembrar catálogos de referencia (roles/branches/shifts/holidays/presentaciones/laboratorios) — NUNCA employees/ventas | Solo si se quiere correr la app en staging, no solo DDL. Pendiente — decidir si hace falta ahora |
 | 3.3 | **Drift de baseline**: el registro del servidor no reconstruye el esquema (tablas fundacionales sin migración de creación). Decidir si se squashea el registro de prod (borrar entradas viejas + baseline como única) para que crear branch desde cero funcione limpio | Requiere writes a registro de prod → tu OK. Opcional: el branch persistente ya funciona con setup manual |
 | 3.4 | Limpiar las 19 filas bookkeeping inertes en el registro de prod | Cosmético, inerte → recomendado NO tocar salvo que estorbe |
-| 3.5 | Drift local vs servidor: 180 archivos locales vs ~569 entradas servidor | Adoptar workflow de migraciones disciplinado |
-| 3.6 | 4 edge functions desplegadas pero NO en git (`disable-employee-auth`, `apply-scheduled-employee-events`, `backup-critical-tables`, `sync-erp-minmax`) | Descargar y versionar |
-| 3.7 | Agregar a CLAUDE.md la regla "DDL sobre tablas calientes se prueba en staging primero" | |
+| 3.5 | Drift local vs servidor: 180 archivos locales vs ~569 entradas servidor | Adoptar workflow de migraciones disciplinado. Pendiente — es una disciplina a adoptar hacia adelante, no una acción puntual |
+| 3.6 | 4 edge functions desplegadas pero NO en git (`disable-employee-auth`, `apply-scheduled-employee-events`, `backup-critical-tables`, `sync-erp-minmax`) | ✅ Aplicado 2026-07-15. Descargadas del código desplegado (`get_edge_function`) y versionadas en `supabase/functions/`. Solo se normalizó `catch(e)`→`catch{}` donde `e` no se usaba (cosmético, cero cambio de comportamiento, no requiere redeploy) |
+| 3.7 | Agregar a CLAUDE.md la regla "DDL sobre tablas calientes se prueba en staging primero" | ✅ Aplicado 2026-07-15. Nueva sección en CLAUDE.md, referencia al branch `ewcmerxqjvludtgskuin` y a 0B.8/0B.2 como precedentes ya probados así |
 
 ---
 

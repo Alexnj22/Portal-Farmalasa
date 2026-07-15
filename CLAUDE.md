@@ -85,6 +85,14 @@ freeze global. Para DDL sobre las tablas calientes listadas arriba, además
 considerar aplicar entre 06:00–11:59 UTC (crons de sync inactivos: corren
 `12-23,0-5`).
 
+**Probar primero en staging.** Existe un branch de Supabase dedicado para esto
+(`ewcmerxqjvludtgskuin`, esquema reconstruido, cero PII — ver
+`PLAN-EJECUCION-2026-07.md` Bloque 3). Para DDL sobre las tablas calientes
+listadas arriba, aplicar primero ahí con `apply_migration` apuntando a ese
+`project_id`, confirmar que no rompe nada, y solo entonces aplicar a prod.
+Ya se usó así para 0B.8 (RPC `verify_kiosk_device`) y 0B.2 (secretos de Vault
+en `cron.job.command`) — ambos sin incidentes.
+
 **Edge functions**: NUNCA ignorar el `error` de un query supabase-js
 (`const { data } = await ...` sin chequear `error`). Un select que falla en
 silencio deja Maps/lookups vacíos y el bug puede vivir semanas sin detectarse

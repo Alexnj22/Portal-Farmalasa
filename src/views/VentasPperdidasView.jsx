@@ -167,7 +167,7 @@ export default function VentasPperdidasView() {
                                         {/* Quantity bubble */}
                                         <div className="shrink-0 w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex flex-col items-center justify-center">
                                             <span className="text-[14px] font-black text-slate-800 leading-none tabular-nums">{r.cantidad}</span>
-                                            <span className="text-[8px] font-bold text-slate-400 leading-none mt-0.5">uds</span>
+                                            <span className="text-[8px] font-bold text-slate-500 leading-none mt-0.5">uds</span>
                                         </div>
 
                                         <div className="flex-1 min-w-0">
@@ -176,7 +176,7 @@ export default function VentasPperdidasView() {
 
                                             {/* Searched term if different */}
                                             {searched && (
-                                                <p className="text-[9px] text-slate-400 mt-0.5">buscado: "{searched}"</p>
+                                                <p className="text-[9px] text-slate-500 mt-0.5">buscado: "{searched}"</p>
                                             )}
 
                                             {/* Principio activo */}
@@ -215,7 +215,7 @@ export default function VentasPperdidasView() {
                                                         {reporter}
                                                     </span>
                                                 )}
-                                                <span className="flex items-center gap-1 text-[9px] text-slate-400">
+                                                <span className="flex items-center gap-1 text-[9px] text-slate-500">
                                                     <Clock size={8} strokeWidth={2} />
                                                     {fecha}
                                                 </span>

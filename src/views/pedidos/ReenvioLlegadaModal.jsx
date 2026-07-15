@@ -3,9 +3,9 @@ import { PackageCheck, PackageX, AlertTriangle, X, Loader2, Truck, Zap, Package 
 import PedidoModal from './PedidoModal';
 
 const TOGGLE_CFG = {
-    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-emerald-500 text-white shadow-[0_2px_8px_rgba(16,185,129,0.45)]', idle: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200' },
-    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-amber-500 text-white shadow-[0_2px_8px_rgba(245,158,11,0.45)]',   idle: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200' },
-    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-rose-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200' },
+    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-emerald-500 text-white shadow-[0_2px_8px_rgba(16,185,129,0.45)]', idle: 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200' },
+    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-amber-500 text-white shadow-[0_2px_8px_rgba(245,158,11,0.45)]',   idle: 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200' },
+    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-rose-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200' },
 };
 
 const pageHint = (cajaMap, num) => {
@@ -70,12 +70,12 @@ export default function ReenvioLlegadaModal({
                     <Truck size={16} className="text-white" />
                 </div>
                 <div className="flex-1">
-                    <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">
+                    <p className="text-[11px] font-medium text-slate-600 uppercase tracking-wide">
                         Pedido #{pedidoNumero} · Reenvío {cicloNum > 1 ? cicloNum : ''}
                     </p>
                     <h3 className="text-[14px] font-bold text-slate-800 leading-tight">¿Cómo llegó el reenvío?</h3>
                 </div>
-                <button onClick={handleClose} disabled={submitting} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <button onClick={handleClose} disabled={submitting} className="text-slate-500 hover:text-slate-600 transition-colors">
                     <X size={15} />
                 </button>
             </div>
@@ -86,7 +86,7 @@ export default function ReenvioLlegadaModal({
                 {/* Cajas regulares */}
                 {cajasCiclo.length > 0 && (
                     <div className="space-y-2">
-                        <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold">
+                        <p className="text-[10px] text-slate-600 uppercase tracking-wide font-semibold">
                             {cajasCiclo.length} caja{cajasCiclo.length !== 1 ? 's' : ''} esperadas
                         </p>
                         {cajasCiclo.map(num => {
@@ -104,7 +104,7 @@ export default function ReenvioLlegadaModal({
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-[12px] font-bold text-slate-700 leading-tight">Caja #{num}</p>
-                                        <p className="text-[10px] font-medium text-slate-400 mt-0.5">
+                                        <p className="text-[10px] font-medium text-slate-500 mt-0.5">
                                             {pageHint(cajaMap, num) ?? `Reenvío ${cicloNum}`}
                                         </p>
                                     </div>
@@ -179,11 +179,11 @@ export default function ReenvioLlegadaModal({
                                         <span className={`text-[11px] font-black w-7 shrink-0 ${est === 'ok' ? 'text-emerald-600' : 'text-rose-600'}`}>{label}</span>
                                         <div className="flex items-center gap-1 ml-auto shrink-0">
                                             <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'ok' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-400 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
                                                 ✓ OK
                                             </button>
                                             <button onClick={() => setEspEstados(p => ({ ...p, [label]: 'faltante' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-400 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-500 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
                                                 ✗ Falta
                                             </button>
                                         </div>

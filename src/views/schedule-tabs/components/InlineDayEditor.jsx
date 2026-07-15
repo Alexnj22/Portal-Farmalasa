@@ -316,13 +316,13 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         <div className="w-9 h-9 rounded-xl bg-white/60 backdrop-blur-sm overflow-hidden border border-white/80 shadow-sm flex items-center justify-center shrink-0">
                             {employee?.photo_url
                                 ? <img src={employee.photo_url} className="w-full h-full object-cover" alt="" />
-                                : <CircleUserRound size={18} className="text-slate-300" strokeWidth={1.5} />}
+                                : <CircleUserRound size={18} className="text-slate-500" strokeWidth={1.5} />}
                         </div>
                         <div className="min-w-0">
                             <p className="text-[13px] font-black text-slate-800 truncate leading-tight">{employee?.name || '—'}</p>
                             <p className="text-[10px] font-black text-[#0052CC] uppercase tracking-widest leading-none mt-0.5 capitalize">
                                 {new Date(dateStr + 'T00:00:00').toLocaleDateString('es-ES', { weekday: 'long' })}{' '}
-                                <span className="text-slate-400 font-bold">{new Date(dateStr + 'T00:00:00').getDate()}</span>
+                                <span className="text-slate-500 font-bold">{new Date(dateStr + 'T00:00:00').getDate()}</span>
                             </p>
                         </div>
                     </div>
@@ -379,7 +379,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         <div className={`flex flex-col gap-3 p-3 bg-white/[0.35] border rounded-2xl relative z-10 animate-in zoom-in-95 duration-200 ${timeAuditErrors.length > 0 ? 'border-rose-300 shadow-[0_0_15px_rgba(244,63,94,0.15)]' : 'border-white/30'}`}>
                             
                             <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                                <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-1.5">
                                     <Clock size={10} /> Cálculo de Horas
                                 </span>
                                 {netHours !== null && timeAuditErrors.length === 0 && (
@@ -392,11 +392,11 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="group/time hover:-translate-y-0.5 transition-transform duration-300">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block group-hover/time:text-[#0052CC] transition-colors">Entrada</label>
+                                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block group-hover/time:text-[#0052CC] transition-colors">Entrada</label>
                                     <TimePicker12 value={customStart} onChange={setCustomStart} />
                                 </div>
                                 <div className="group/time hover:-translate-y-0.5 transition-transform duration-300">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block group-hover/time:text-[#0052CC] transition-colors">Salida</label>
+                                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block group-hover/time:text-[#0052CC] transition-colors">Salida</label>
                                     <TimePicker12 value={customEnd} onChange={setCustomEnd} />
                                 </div>
                             </div>
@@ -470,7 +470,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
                         disabled={isSaveDisabled}
                         className={`w-full py-3.5 text-[12px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2
                         ${isSaveDisabled 
-                            ? 'bg-slate-100 text-slate-400 border border-slate-200 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] cursor-not-allowed' 
+                            ? 'bg-slate-100 text-slate-500 border border-slate-200 shadow-[inset_0_1px_4px_rgba(0,0,0,0.05)] cursor-not-allowed' 
                             : 'bg-gradient-to-r from-[#0052CC] to-[#003D99] text-white shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0'}`}
                     >
                         {shiftId === 'OFF' ? 'Asignar Descanso' : 'Guardar Cambios'}

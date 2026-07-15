@@ -89,7 +89,7 @@ const CompactSummary = ({ req }) => {
         return <span className="text-[10px] text-slate-500">{meta.correlativo} · vendedor #{meta.current_vendor_code} → #{meta.new_vendor_code}</span>;
     if (req.type === 'CLIENT_CHANGE_REQUEST' && meta.correlativo)
         return <span className="text-[10px] text-slate-500">{meta.correlativo} · {(meta.current_cliente || 'Sin nombre').split(' ')[0]} → {(meta.new_client_name || '').split(' ')[0]}</span>;
-    if (req.note) return <span className="text-[10px] text-slate-400 italic truncate max-w-[160px]">"{req.note}"</span>;
+    if (req.note) return <span className="text-[10px] text-slate-500 italic truncate max-w-[160px]">"{req.note}"</span>;
     return null;
 };
 
@@ -137,15 +137,15 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <CompactSummary req={req} />
-                        <span className="text-[9px] text-slate-400 shrink-0">{fmtDateFull(req.created_at)}</span>
+                        <span className="text-[9px] text-slate-500 shrink-0">{fmtDateFull(req.created_at)}</span>
                         {req.current_level && req.status === 'PENDING' && req.type !== 'DISABILITY' && (
-                            <span className="text-[9px] text-slate-400 shrink-0">· Niv. {req.current_level}/{req.type === 'SHIFT_CHANGE' ? 2 : 3}</span>
+                            <span className="text-[9px] text-slate-500 shrink-0">· Niv. {req.current_level}/{req.type === 'SHIFT_CHANGE' ? 2 : 3}</span>
                         )}
                     </div>
                 </div>
 
                 <ChevronDown size={14} strokeWidth={2.5}
-                    className={`text-slate-400 flex-shrink-0 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
+                    className={`text-slate-500 flex-shrink-0 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Expandable body */}
@@ -167,7 +167,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             {(meta.myShift || meta.targetShift) && (
                                 <div className="grid grid-cols-2 gap-2">
                                     <div className="bg-white/70 border border-white/80 rounded-2xl p-2.5">
-                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{req.employee?.name?.split(' ')[0]}</p>
+                                        <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">{req.employee?.name?.split(' ')[0]}</p>
                                         <p className="text-[11px] font-black text-slate-700">{meta.myShift || '—'}</p>
                                     </div>
                                     <div className="bg-cyan-50/80 border border-cyan-100 rounded-2xl p-2.5">
@@ -276,7 +276,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             </div>
                             {meta.reason && (
                                 <div className="px-3 py-2 rounded-2xl bg-white/70 border border-white/80">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Motivo de anulación</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-0.5">Motivo de anulación</p>
                                     <p className="text-[11px] font-bold text-slate-700">{meta.reason}</p>
                                 </div>
                             )}
@@ -295,7 +295,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="bg-white/70 border border-white/80 rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Actual</p>
+                                    <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">Actual</p>
                                     <p className="text-[12px] font-black text-slate-700 capitalize">{meta.current_pago || '—'}</p>
                                 </div>
                                 <div className="bg-sky-50/80 border border-sky-100 rounded-2xl p-2.5">
@@ -318,12 +318,12 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="bg-white/70 border border-white/80 rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Vendedor actual</p>
+                                    <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">Vendedor actual</p>
                                     {meta.current_vendor_photo && (
                                         <img src={meta.current_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
                                     )}
                                     <p className="text-[11px] font-black text-slate-700">{meta.current_vendor_name || `#${meta.current_vendor_code}`}</p>
-                                    {meta.current_vendor_code && <p className="text-[9px] text-slate-400 font-mono">#{meta.current_vendor_code}</p>}
+                                    {meta.current_vendor_code && <p className="text-[9px] text-slate-500 font-mono">#{meta.current_vendor_code}</p>}
                                 </div>
                                 <div className="bg-purple-50/80 border border-purple-100 rounded-2xl p-2.5">
                                     <p className="text-[8px] font-black text-purple-500 uppercase tracking-widest mb-0.5">Asignar a</p>
@@ -331,7 +331,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                         <img src={meta.new_vendor_photo} className="w-6 h-6 rounded-full object-cover mb-1" alt="" />
                                     )}
                                     <p className="text-[11px] font-black text-slate-700">{meta.new_vendor_name || `#${meta.new_vendor_code}`}</p>
-                                    {meta.new_vendor_code && <p className="text-[9px] text-slate-400 font-mono">#{meta.new_vendor_code}</p>}
+                                    {meta.new_vendor_code && <p className="text-[9px] text-slate-500 font-mono">#{meta.new_vendor_code}</p>}
                                 </div>
                             </div>
                         </div>
@@ -349,7 +349,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                                 <div className="bg-white/70 border border-white/80 rounded-2xl p-2.5">
-                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Cliente actual</p>
+                                    <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Cliente actual</p>
                                     <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center mb-1">
                                         <span className="text-slate-500 font-black text-[10px] leading-none">{(meta.current_cliente || '?').charAt(0)}</span>
                                     </div>
@@ -362,7 +362,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                                     </div>
                                     <p className="text-[11px] font-black text-slate-700 leading-tight">{meta.new_client_name}</p>
                                     {(meta.new_client_nit || meta.new_client_dui) && (
-                                        <p className="text-[9px] text-slate-400 font-mono mt-0.5">{meta.new_client_nit ? `NIT ${meta.new_client_nit}` : `DUI ${meta.new_client_dui}`}</p>
+                                        <p className="text-[9px] text-slate-500 font-mono mt-0.5">{meta.new_client_nit ? `NIT ${meta.new_client_nit}` : `DUI ${meta.new_client_dui}`}</p>
                                     )}
                                 </div>
                             </div>
@@ -372,7 +372,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* Note */}
                     {req.note && (
                         <div>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Motivo del empleado</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Motivo del empleado</p>
                             <p className="text-[12px] text-slate-700 bg-white/70 rounded-2xl p-3 border border-white/80 leading-relaxed">{req.note}</p>
                         </div>
                     )}
@@ -396,13 +396,13 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     {/* Approval history */}
                     {req.approvals && req.approvals.length > 0 && (
                         <div className="space-y-1.5">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Historial</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Historial</p>
                             {req.approvals.map((ap, i) => (
                                 <div key={i} className="flex items-start gap-2 bg-emerald-50/70 border border-emerald-200/50 rounded-2xl p-2.5">
                                     <CheckCircle2 size={12} className="text-emerald-500 mt-0.5 flex-shrink-0" strokeWidth={2.5} />
                                     <div className="min-w-0">
                                         <p className="text-[11px] font-black text-emerald-700">{getApproverLabel(ap)}</p>
-                                        <p className="text-[9px] text-slate-400 mt-0.5">{new Date(ap.approvedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
+                                        <p className="text-[9px] text-slate-500 mt-0.5">{new Date(ap.approvedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
                                         {ap.approverNote && <p className="text-[10px] text-slate-600 mt-0.5 italic">"{ap.approverNote}"</p>}
                                     </div>
                                 </div>
@@ -411,7 +411,7 @@ const RequestCard = memo(({ req, onApprove, onReject, canApprove = false, employ
                     )}
 
                     {req.employee?.code && (
-                        <p className="text-[10px] text-slate-400">Código: <span className="font-mono font-bold text-slate-600">{req.employee.code}</span></p>
+                        <p className="text-[10px] text-slate-500">Código: <span className="font-mono font-bold text-slate-600">{req.employee.code}</span></p>
                     )}
 
                     {req.status === 'PENDING' && (
@@ -620,7 +620,7 @@ const RequestsView = () => {
                 <input ref={searchInputRef} type="text" placeholder="Buscar empleado..."
                     className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[400px] placeholder:text-slate-400 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
-                {rawSearch && <button onClick={() => setRawSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>}
+                {rawSearch && <button onClick={() => setRawSearch('')} className="p-1 text-slate-500 hover:text-red-500 transition-all shrink-0"><X size={16} strokeWidth={2.5} /></button>}
                 <button onClick={() => { setIsSearchMode(false); setRawSearch(''); }}
                     className="w-10 h-10 md:w-11 md:h-11 rounded-full hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2">
                     <ChevronRight size={18} strokeWidth={2.5} />
@@ -687,7 +687,7 @@ const RequestsView = () => {
                     <div className="flex flex-col items-center justify-center min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                         <div className="relative group flex flex-col items-center text-center">
                             <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${statusFilter === 'PENDING' ? 'bg-[#0052CC]' : statusFilter === 'APPROVED' ? 'bg-emerald-500' : statusFilter === 'REJECTED' ? 'bg-red-500' : 'bg-slate-400'}`} />
-                            <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${statusFilter === 'PENDING' ? 'text-[#0052CC]' : statusFilter === 'APPROVED' ? 'text-emerald-500' : statusFilter === 'REJECTED' ? 'text-red-500' : 'text-slate-400'}`}>
+                            <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${statusFilter === 'PENDING' ? 'text-[#0052CC]' : statusFilter === 'APPROVED' ? 'text-emerald-500' : statusFilter === 'REJECTED' ? 'text-red-500' : 'text-slate-500'}`}>
                                 {statusFilter === 'PENDING' ? <CheckCircle2 size={40} strokeWidth={2} /> : <ClipboardList size={40} strokeWidth={2} />}
                             </div>
                             <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">
@@ -719,10 +719,10 @@ const RequestsView = () => {
                                         <TypeIcon size={12} strokeWidth={2} />
                                     </div>
                                     <h3 className={`text-[11px] font-black uppercase tracking-widest ${tc.section}`}>{typeConf.label}</h3>
-                                    <span className="text-[10px] font-bold text-slate-400">{cards.length}</span>
+                                    <span className="text-[10px] font-bold text-slate-500">{cards.length}</span>
                                     <div className="flex-1 h-px bg-slate-200/50 mx-1" />
                                     <ChevronDown size={13} strokeWidth={2.5}
-                                        className={`text-slate-400 transition-transform duration-300 flex-shrink-0 ${isCollapsed ? '-rotate-90' : ''}`} />
+                                        className={`text-slate-500 transition-transform duration-300 flex-shrink-0 ${isCollapsed ? '-rotate-90' : ''}`} />
                                 </button>
 
                                 <div className={`transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)] ${isCollapsed ? 'max-h-0 opacity-0 overflow-hidden' : 'max-h-[9999px] opacity-100 overflow-visible'}`}>
@@ -754,10 +754,10 @@ const RequestsView = () => {
                         <h3 className="text-[18px] font-bold text-slate-800 text-center mb-1">
                             {actionModal.mode === 'approve' ? 'Aprobar Solicitud' : 'Rechazar Solicitud'}
                         </h3>
-                        <p className="text-[12px] text-slate-400 text-center mb-5">
+                        <p className="text-[12px] text-slate-500 text-center mb-5">
                             {REQUEST_TYPES[actionModal.req.type]?.label} · {actionModal.req.employee?.name}
                         </p>
-                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1.5 block">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-600 mb-1.5 block">
                             {actionModal.mode === 'reject' ? 'Motivo de rechazo' : 'Nota para el empleado'}
                             {actionModal.mode === 'reject' && <span className="text-red-400 ml-1">*</span>}
                         </label>
@@ -796,12 +796,12 @@ const RequestsView = () => {
                             </div>
                             <div>
                                 <h3 className="text-[16px] font-bold text-slate-800">Nueva Solicitud</h3>
-                                <p className="text-[11px] text-slate-400">A nombre de un empleado</p>
+                                <p className="text-[11px] text-slate-500">A nombre de un empleado</p>
                             </div>
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Empleado <span className="text-red-400">*</span></p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Empleado <span className="text-red-400">*</span></p>
                             <LiquidSelect
                                 value={createEmployeeId}
                                 onChange={setCreateEmployeeId}
@@ -814,7 +814,7 @@ const RequestsView = () => {
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Tipo</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">Tipo</p>
                             <div className="flex flex-wrap gap-2">
                                 {CREATABLE_TYPES.map(({ key, icon: Icon }) => {
                                     const conf = REQUEST_TYPES[key];
@@ -838,7 +838,7 @@ const RequestsView = () => {
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1.5">
                                 {createType === 'VACATION' ? 'Período de Vacaciones' :
                                  createType === 'PERMIT'   ? 'Días de Permiso' :
                                  'Fecha'}
@@ -863,7 +863,7 @@ const RequestsView = () => {
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Motivo / Descripción <span className="text-red-400">*</span></p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1.5">Motivo / Descripción <span className="text-red-400">*</span></p>
                             <textarea
                                 value={createNote}
                                 onChange={e => setCreateNote(e.target.value)}

@@ -199,7 +199,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                     <div className="flex items-center gap-0.5 px-2 py-1.5">
                         {['all','A','B','C','D'].map(cls => (
                             <button key={cls} onClick={() => { setFilterAbc(cls); setPage(1); }}
-                                className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all duration-150 ${filterAbc === cls ? 'bg-[#0052CC] text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                                className={`px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all duration-150 ${filterAbc === cls ? 'bg-[#0052CC] text-white shadow-sm' : 'text-slate-500 hover:text-slate-600'}`}>
                                 {cls === 'all' ? 'ABC' : cls}
                             </button>
                         ))}
@@ -214,7 +214,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                             if (cnt === 0) return null;
                             return (
                                 <button key={key} onClick={() => { setFilterAlert(key); setPage(1); }}
-                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all ${filterAlert === key ? 'bg-[#0052CC] text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-[10px] text-[11px] font-black transition-all ${filterAlert === key ? 'bg-[#0052CC] text-white shadow-sm' : 'text-slate-500 hover:text-slate-600'}`}>
                                     {key !== 'all' && <span className={`w-1.5 h-1.5 rounded-full ${ALERT_DOT[key]}`} />}
                                     {key === 'all' ? 'Todos' : ALERT_LABELS[key]}
                                     {cnt !== null && <span className="tabular-nums">{cnt}</span>}
@@ -237,7 +237,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                 <div className="flex-1" />
 
                 {!loading && (
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-slate-500">
                         <strong className="text-slate-600">{sorted.length.toLocaleString()}</strong>
                         {!showAll && <span> de {data.length.toLocaleString()}</span>} productos
                     </span>
@@ -284,7 +284,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                                             row.abc_class === 'A' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                                             row.abc_class === 'B' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                                             row.abc_class === 'C' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                                                    'bg-slate-50 text-slate-400 border-slate-200'
+                                                                    'bg-slate-50 text-slate-500 border-slate-200'
                                         }`}>{row.abc_class}</span>
                                     )}
                                     <span className="text-[12px] font-medium text-slate-800 truncate">{row.product_name}</span>

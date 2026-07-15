@@ -77,7 +77,7 @@ const MinMaxStatusCard = memo(({ req }) => {
             <p className="text-[13px] font-bold text-slate-800 leading-tight">{req.product_name || `Producto ${req.erp_product_id}`}</p>
 
             <div className="flex items-center justify-center gap-3 rounded-2xl bg-white/70 border border-slate-100 py-2">
-                <div className="text-right text-[12px] font-bold tabular-nums text-slate-400">
+                <div className="text-right text-[12px] font-bold tabular-nums text-slate-500">
                     <div>MIN {req.current_min ?? '—'}</div>
                     <div>MAX {req.current_max ?? '—'}</div>
                 </div>
@@ -136,12 +136,12 @@ const PeerRequestCard = memo(({ req, onAccept, onReject }) => {
             {/* Shift comparison grid */}
             <div className="grid grid-cols-2 gap-2">
                 <div className="bg-white/80 border border-slate-100 rounded-2xl p-3">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tu turno ese día</p>
+                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Tu turno ese día</p>
                     <p className="text-[12px] font-black text-slate-700">
                         {meta.targetShift && meta.targetShift !== 'No especificado' ? meta.targetShift : '—'}
                     </p>
                     {(!meta.targetShift || meta.targetShift === 'No especificado') && (
-                        <p className="text-[9px] text-slate-400 mt-0.5">Lo que darías</p>
+                        <p className="text-[9px] text-slate-500 mt-0.5">Lo que darías</p>
                     )}
                 </div>
                 <div className="bg-cyan-50/80 border border-cyan-100 rounded-2xl p-3">
@@ -209,7 +209,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                         <span className={`text-[10px] font-black uppercase tracking-widest ${typeConf.color.split(' ')[1]}`}>
                             {typeConf.label}
                         </span>
-                        <span className="text-slate-300">·</span>
+                        <span className="text-slate-500">·</span>
                         <span className={`flex items-center gap-1 text-[10px] font-bold ${statConf.color.split(' ')[1]}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
                             {statConf.label}
@@ -221,7 +221,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                             <span className="text-[9px] font-black text-red-500 uppercase tracking-widest">· Urgente</span>
                         )}
                     </div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">
                         {new Date(req.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                 </div>
@@ -262,7 +262,7 @@ const RequestCard = memo(({ req, onCancel, uploadFileToStorage }) => {
                         )}
                         <div className="grid grid-cols-2 gap-2">
                             <div className="bg-white/70 border border-slate-100 rounded-2xl p-3">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tu turno ese día</p>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Tu turno ese día</p>
                                 <p className="text-[12px] font-black text-slate-700">
                                     {meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}
                                 </p>
@@ -769,7 +769,7 @@ const EmployeeRequestsView = () => {
                         <>
                             <div>
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] ml-1">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] ml-1">
                                         Período de Vacaciones
                                     </label>
                                     {hasRange && (
@@ -792,7 +792,7 @@ const EmployeeRequestsView = () => {
                                 </div>
                             )}
                             {!vacationInfo.inWindow && (
-                                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/70 text-[10px] font-bold text-slate-400">
+                                <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/70 text-[10px] font-bold text-slate-500">
                                     <CalendarDays size={11} strokeWidth={2} />
                                     Próximo período disponible desde {fmt(vacationInfo.nextAnniv)}
                                 </div>
@@ -854,7 +854,7 @@ const EmployeeRequestsView = () => {
             return (
                 <div className="space-y-3">
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                             Compañero de intercambio
                         </label>
                         <LiquidSelect
@@ -898,11 +898,11 @@ const EmployeeRequestsView = () => {
                     {showShifts && !targetEmpStatus?.blocked && (
                         <div className="grid grid-cols-2 gap-2">
                             <div className="bg-white/70 border border-slate-100 rounded-2xl p-3">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Mi turno ese día</p>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Mi turno ese día</p>
                                 <p className="text-[12px] font-black text-slate-700">
                                     {myShiftOnDate ? `${myShiftOnDate.start} – ${myShiftOnDate.end}` : '—'}
                                 </p>
-                                {!myShiftOnDate && <p className="text-[9px] text-slate-400 mt-0.5">Sin turno asignado</p>}
+                                {!myShiftOnDate && <p className="text-[9px] text-slate-500 mt-0.5">Sin turno asignado</p>}
                             </div>
                             <div className="bg-cyan-50/80 border border-cyan-100 rounded-2xl p-3">
                                 <p className="text-[9px] font-black text-cyan-500 uppercase tracking-widest mb-1">
@@ -922,11 +922,11 @@ const EmployeeRequestsView = () => {
         if (formType === 'ADVANCE') {
             return (
                 <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                         Monto solicitado
                     </label>
                     <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-[14px]">$</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-black text-[14px]">$</span>
                         <input
                             type="number"
                             min="1"
@@ -944,7 +944,7 @@ const EmployeeRequestsView = () => {
         if (formType === 'CERTIFICATE') {
             return (
                 <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-2 block ml-1">
                         Tipo de Constancia
                     </label>
                     <LiquidSelect
@@ -954,7 +954,7 @@ const EmployeeRequestsView = () => {
                         options={CERT_TYPES.map(c => ({ value: c.key, label: c.label }))}
                     />
                     {payload.certificateType && (
-                        <p className="text-[11px] text-slate-400 mt-1.5 ml-1">
+                        <p className="text-[11px] text-slate-500 mt-1.5 ml-1">
                             {CERT_TYPES.find(c => c.key === payload.certificateType)?.desc}
                         </p>
                     )}
@@ -975,7 +975,7 @@ const EmployeeRequestsView = () => {
                     <div className="grid grid-cols-2 gap-3">
                         {/* Fecha de inicio */}
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                 Primer día
                             </label>
                             <div className="bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
@@ -989,7 +989,7 @@ const EmployeeRequestsView = () => {
 
                         {/* Cantidad de días */}
                         <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                 Cantidad de días
                             </label>
                             <input
@@ -1012,10 +1012,10 @@ const EmployeeRequestsView = () => {
 
                     {/* Upload documento */}
                     <div>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                             {needsISSS
-                                ? <span>Boleta ISSS <span className="text-red-500">*</span><span className="text-slate-300 ml-1 normal-case font-medium">(obligatoria para cobertura ISSS)</span></span>
-                                : <span>Certificado Médico <span className="text-slate-300 ml-1 normal-case font-medium">(opcional)</span></span>
+                                ? <span>Boleta ISSS <span className="text-red-500">*</span><span className="text-slate-500 ml-1 normal-case font-medium">(obligatoria para cobertura ISSS)</span></span>
+                                : <span>Certificado Médico <span className="text-slate-500 ml-1 normal-case font-medium">(opcional)</span></span>
                             }
                         </label>
                         <label className="flex items-center gap-3 px-4 py-3 bg-white/50 border-2 border-dashed border-red-200 hover:border-red-400 hover:bg-red-50/30 rounded-2xl cursor-pointer transition-all duration-200 group">
@@ -1025,14 +1025,14 @@ const EmployeeRequestsView = () => {
                             <div className="flex-1 min-w-0">
                                 {disabilityFile
                                     ? <><p className="text-[12px] font-bold text-slate-700 truncate">{disabilityFile.name}</p>
-                                       <p className="text-[10px] text-slate-400">{(disabilityFile.size / 1024).toFixed(0)} KB</p></>
+                                       <p className="text-[10px] text-slate-500">{(disabilityFile.size / 1024).toFixed(0)} KB</p></>
                                     : <><p className="text-[12px] font-medium text-slate-500">Adjuntar boleta o certificado</p>
-                                       <p className="text-[10px] text-slate-400">PDF, JPG, PNG — también puedes adjuntarlo después</p></>
+                                       <p className="text-[10px] text-slate-500">PDF, JPG, PNG — también puedes adjuntarlo después</p></>
                                 }
                             </div>
                             {disabilityFile && (
                                 <button type="button" onClick={e => { e.preventDefault(); setDisabilityFile(null); }}
-                                    className="p-1 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-100 transition-all">
+                                    className="p-1 rounded-full text-slate-500 hover:text-red-500 hover:bg-red-100 transition-all">
                                     <X size={14} strokeWidth={2.5} />
                                 </button>
                             )}
@@ -1137,7 +1137,7 @@ const EmployeeRequestsView = () => {
 
                             {/* Selector de tipo */}
                             <div>
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Tipo de Solicitud</label>
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-2 block ml-1">Tipo de Solicitud</label>
                                 {!typePickerOpen ? (
                                     /* Tipo seleccionado — compacto */
                                     (() => {
@@ -1152,7 +1152,7 @@ const EmployeeRequestsView = () => {
                                             >
                                                 <Icon size={16} strokeWidth={2} />
                                                 <span className="flex-1 text-left text-[11px] font-black uppercase tracking-widest">{sel?.label}</span>
-                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest border border-slate-200 rounded-full px-2 py-0.5 bg-white/60">Cambiar</span>
+                                                <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest border border-slate-200 rounded-full px-2 py-0.5 bg-white/60">Cambiar</span>
                                             </button>
                                         );
                                     })()
@@ -1187,7 +1187,7 @@ const EmployeeRequestsView = () => {
 
                             {/* Motivo */}
                             <div>
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                     Motivo / Descripción <span className="text-red-400">*</span>
                                 </label>
                                 <textarea
@@ -1239,7 +1239,7 @@ const EmployeeRequestsView = () => {
                         )}
 
                         <div className="col-span-full flex items-center justify-between">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
                                 <ClipboardList size={10} /> Mis Solicitudes
                             </p>
                             <button
@@ -1247,7 +1247,7 @@ const EmployeeRequestsView = () => {
                                 className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border transition-all duration-200 ${
                                     showOldApproved
                                         ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                        : 'bg-white/60 border-white/60 text-slate-400 hover:text-slate-600 hover:bg-white/80'
+                                        : 'bg-white/60 border-white/60 text-slate-500 hover:text-slate-600 hover:bg-white/80'
                                 }`}
                             >
                                 {showOldApproved ? 'Solo este mes' : 'Ver anteriores'}
@@ -1281,7 +1281,7 @@ const EmployeeRequestsView = () => {
                                     <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/80 border border-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] transform-gpu overflow-hidden ${
                                         statusFilter === 'PENDING' ? 'text-[#0052CC]' :
                                         statusFilter === 'APPROVED' ? 'text-emerald-500' :
-                                        statusFilter === 'REJECTED' ? 'text-red-500' : 'text-slate-400'
+                                        statusFilter === 'REJECTED' ? 'text-red-500' : 'text-slate-500'
                                     }`}>
                                         {statusFilter === 'PENDING'
                                             ? <CheckCircle2 size={40} strokeWidth={2} />

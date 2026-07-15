@@ -101,7 +101,7 @@ export default function StatCard({
                     renderiza ningun caracter de relleno. Cards con y sin
                     `sub` tienen exactamente la misma altura total.
                 */}
-                <span className="block text-[9px] text-slate-400 font-medium leading-none mt-0.5 min-h-[13px] truncate">
+                <span className="block text-[9px] text-slate-500 font-medium leading-none mt-0.5 min-h-[13px] truncate">
                     {!loading ? sub : ''}
                 </span>
             </div>

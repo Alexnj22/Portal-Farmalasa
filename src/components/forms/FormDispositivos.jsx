@@ -80,7 +80,7 @@ const FormDispositivos = ({ formData }) => {
             {/* CONTENEDOR DE LISTA ÚNICA */}
             <div className="relative min-h-[150px]">
                 {loading ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">
                         <Loader2 size={28} className="animate-spin mb-3 opacity-50 text-[#0052CC]" />
                         <p className="text-[10px] font-black uppercase tracking-widest">Sincronizando...</p>
                     </div>
@@ -103,7 +103,7 @@ const FormDispositivos = ({ formData }) => {
                                                     <p className={`text-[13px] font-black leading-tight truncate ${isConfirming ? 'text-red-600' : 'text-slate-800'}`}>
                                                         {kiosk.device_name}
                                                     </p>
-                                                    <p className="text-[9px] font-bold tracking-widest uppercase text-slate-400 mt-0.5 truncate">
+                                                    <p className="text-[9px] font-bold tracking-widest uppercase text-slate-500 mt-0.5 truncate">
                                                         {isConfirming ? 'Confirmar desconexión' : `Vinculado: ${new Date(kiosk.created_at).toLocaleDateString()}`}
                                                     </p>
                                                 </div>
@@ -111,7 +111,7 @@ const FormDispositivos = ({ formData }) => {
                                             
                                             {/* BOTÓN DE APAGAR (Se oculta al confirmar) */}
                                             {!isConfirming && (
-                                                <button type="button" onClick={() => setConfirmingId(kiosk.id)} className="w-9 h-9 flex items-center justify-center bg-slate-50 border border-slate-100 text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 rounded-xl transition-all shrink-0 active:scale-[0.97]" title="Desconectar Kiosco">
+                                                <button type="button" onClick={() => setConfirmingId(kiosk.id)} className="w-9 h-9 flex items-center justify-center bg-slate-50 border border-slate-100 text-slate-500 hover:text-red-500 hover:bg-red-50 hover:border-red-200 rounded-xl transition-all shrink-0 active:scale-[0.97]" title="Desconectar Kiosco">
                                                     <PowerOff size={14} strokeWidth={2.5} />
                                                 </button>
                                             )}
@@ -143,11 +143,11 @@ const FormDispositivos = ({ formData }) => {
                             })
                         ) : (
                             <div className="text-center py-10 rounded-[1.5rem] bg-white border border-slate-100 shadow-sm">
-                                <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-300">
+                                <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-500">
                                     <Laptop size={20} strokeWidth={2} />
                                 </div>
                                 <p className="text-[11px] text-slate-500 font-black uppercase tracking-widest">Ningún equipo conectado</p>
-                                <p className="text-[10px] text-slate-400 mt-1 font-bold px-4">Inicia sesión en la tablet de la sucursal para vincularla.</p>
+                                <p className="text-[10px] text-slate-500 mt-1 font-bold px-4">Inicia sesión en la tablet de la sucursal para vincularla.</p>
                             </div>
                         )}
                     </div>

@@ -294,7 +294,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                 <tr key={emp.id} className="hover:bg-slate-50 transition-colors group/row">
                                     <td className="p-3 border-r border-slate-200 bg-white sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
                                         <p className="text-[12px] font-black text-slate-800 truncate">{emp.name}</p>
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase truncate">{emp.role}</p>
+                                        <p className="text-[9px] font-bold text-slate-500 uppercase truncate">{emp.role}</p>
                                     </td>
                                     <td className="p-2 text-center align-middle border-r border-slate-200">
                                         <span className={`px-2 py-1 rounded-md text-[10px] font-black tracking-widest ${isOver ? 'bg-red-100 text-red-600' : isUnder ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'}`}>
@@ -374,11 +374,11 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
 
                                                         {/* Mini Toolbar Editable */}
                                                         <div className="flex border-t border-slate-100 bg-slate-50/50 mt-auto">
-                                                            <button onClick={() => toggleModifier(emp.id, dayId, 'lunchTime')} className={`flex-1 flex justify-center items-center py-1.5 transition-colors ${dayData.lunchTime ? 'text-orange-500 bg-orange-50' : 'text-slate-300 hover:text-orange-400 hover:bg-slate-100'}`} title="Con/Sin Almuerzo">
+                                                            <button onClick={() => toggleModifier(emp.id, dayId, 'lunchTime')} className={`flex-1 flex justify-center items-center py-1.5 transition-colors ${dayData.lunchTime ? 'text-orange-500 bg-orange-50' : 'text-slate-500 hover:text-orange-400 hover:bg-slate-100'}`} title="Con/Sin Almuerzo">
                                                                 <Utensils size={11} strokeWidth={2.5}/>
                                                             </button>
                                                             <div className="w-px bg-slate-200/50"></div>
-                                                            <button onClick={() => toggleModifier(emp.id, dayId, 'lactationTime')} className={`flex-1 flex justify-center items-center py-1.5 transition-colors ${dayData.lactationTime ? 'text-pink-500 bg-pink-50' : 'text-slate-300 hover:text-pink-400 hover:bg-slate-100'}`} title="Con/Sin Lactancia">
+                                                            <button onClick={() => toggleModifier(emp.id, dayId, 'lactationTime')} className={`flex-1 flex justify-center items-center py-1.5 transition-colors ${dayData.lactationTime ? 'text-pink-500 bg-pink-50' : 'text-slate-500 hover:text-pink-400 hover:bg-slate-100'}`} title="Con/Sin Lactancia">
                                                                 <Baby size={11} strokeWidth={2.5}/>
                                                             </button>
                                                         </div>
@@ -387,7 +387,7 @@ const FormAiSchedulerPreview = ({ formData = {}, onClose }) => {
                                                     <select 
                                                         value=""
                                                         onChange={(e) => handleShiftChange(emp.id, dayId, e.target.value)}
-                                                        className="w-full h-full bg-slate-50 hover:bg-slate-100 text-slate-400 text-[10px] font-black p-2 outline-none text-center border border-dashed border-slate-200 rounded-lg cursor-pointer appearance-none transition-colors"
+                                                        className="w-full h-full bg-slate-50 hover:bg-slate-100 text-slate-500 text-[10px] font-black p-2 outline-none text-center border border-dashed border-slate-200 rounded-lg cursor-pointer appearance-none transition-colors"
                                                     >
                                                         <option value="">LIBRE</option>
                                                         {shifts.map(s => (

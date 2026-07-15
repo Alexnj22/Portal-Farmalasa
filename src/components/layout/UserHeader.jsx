@@ -48,7 +48,7 @@ const UserHeader = ({ user, handleLogout }) => {
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                             </span>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{user?.role || 'Staff'}</p>
+                            <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">{user?.role || 'Staff'}</p>
                         </div>
                     </div>
                     
@@ -58,7 +58,7 @@ const UserHeader = ({ user, handleLogout }) => {
                             {user?.photo ? (
                                 <img src={user?.photo} className="w-full h-full object-cover" alt="Avatar" />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 font-black text-sm">
+                                <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-black text-sm">
                                     {user?.name?.charAt(0)}
                                 </div>
                             )}
@@ -69,7 +69,7 @@ const UserHeader = ({ user, handleLogout }) => {
                 {/* Botón Logout Estilizado */}
                 <button 
                     onClick={handleLogout}
-                    className="group relative p-2.5 rounded-xl bg-slate-50 hover:bg-red-50 border border-slate-100 hover:border-red-100 text-slate-400 hover:text-red-500 transition-all duration-300 active:scale-[0.97]"
+                    className="group relative p-2.5 rounded-xl bg-slate-50 hover:bg-red-50 border border-slate-100 hover:border-red-100 text-slate-500 hover:text-red-500 transition-all duration-300 active:scale-[0.97]"
                     title="Cerrar Sesión"
                 >
                     <LogOut size={18} className="transition-transform group-hover:-translate-x-0.5" />

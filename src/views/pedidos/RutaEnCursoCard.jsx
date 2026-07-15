@@ -114,12 +114,12 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
               <span className="text-[13px] font-black text-slate-800">Ruta #{ruta.numero}</span>
               <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>{badge.label}</span>
               {ruta.salida_at && (
-                <span className="text-[10px] text-slate-400">· Salida {fmtTime(ruta.salida_at)}</span>
+                <span className="text-[10px] text-slate-500">· Salida {fmtTime(ruta.salida_at)}</span>
               )}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-[11px] text-slate-500 font-medium">{ruta.conductor_nombre}</span>
-              <span className="text-[10px] text-slate-400">· {entregadas}/{total} entregadas</span>
+              <span className="text-[10px] text-slate-500">· {entregadas}/{total} entregadas</span>
               {driverOnline && (
                 <span className="flex items-center gap-1 text-[10px] text-emerald-600 font-semibold">
                   <Radio size={8} className="animate-pulse" /> En vivo
@@ -139,12 +139,12 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
           {/* Botón mapa */}
           <button
             onClick={e => { e.stopPropagation(); setMapOpen(true); }}
-            className="p-1.5 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 transition-colors"
             title="Ver mapa"
           >
             <Map size={14} />
           </button>
-          {expanded ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
+          {expanded ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
         </div>
       </div>
 
@@ -181,7 +181,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
                           </span>
                         )}
                         {stop.distancia_desde_anterior_m > 0 && (
-                          <span className="text-[10px] text-slate-400">
+                          <span className="text-[10px] text-slate-500">
                             · {fmtDist(stop.distancia_desde_anterior_m)} desde {idx === 0 ? 'bodega' : `parada ${idx}`}
                           </span>
                         )}

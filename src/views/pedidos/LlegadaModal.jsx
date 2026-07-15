@@ -24,9 +24,9 @@ function deriveCajas(cajaMap, items) {
 }
 
 const TOGGLE_CFG = {
-    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-emerald-500 text-white shadow-[0_2px_8px_rgba(16,185,129,0.45)]', idle: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200' },
-    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-amber-500 text-white shadow-[0_2px_8px_rgba(245,158,11,0.45)]',   idle: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200' },
-    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-rose-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200' },
+    ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-emerald-500 text-white shadow-[0_2px_8px_rgba(16,185,129,0.45)]', idle: 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200' },
+    danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-amber-500 text-white shadow-[0_2px_8px_rgba(245,158,11,0.45)]',   idle: 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200' },
+    faltante: { Icon: PackageX,      label: 'No llegó',active: 'bg-rose-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.45)]',    idle: 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200' },
 };
 
 export default function LlegadaModal({ open, onClose, onConfirm, items = [], pedidoNumero, cajaMap = {}, cajasElectrolit = 0, cajasEspeciales = [], draftKey = null }) {
@@ -140,10 +140,10 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             {/* Header */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-100 shrink-0">
                 <div className="flex-1">
-                    <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Pedido #{pedidoNumero}</p>
+                    <p className="text-[11px] font-medium text-slate-600 uppercase tracking-wide">Pedido #{pedidoNumero}</p>
                     <h3 className="text-[14px] font-bold text-slate-800 leading-tight">¿Cómo llegó cada caja?</h3>
                 </div>
-                <button onClick={handleClose} disabled={submitting} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <button onClick={handleClose} disabled={submitting} className="text-slate-500 hover:text-slate-600 transition-colors">
                     <X size={15} />
                 </button>
             </div>
@@ -164,7 +164,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
 
             {/* Body — todo el contenido variable va aquí, scrollea cuando no cabe */}
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-3">
-                <p className="text-[10px] text-slate-400 uppercase tracking-wide font-semibold">
+                <p className="text-[10px] text-slate-600 uppercase tracking-wide font-semibold">
                     {cajas.length} caja{cajas.length !== 1 ? 's' : ''} en el pedido
                 </p>
 
@@ -184,7 +184,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[12px] font-bold text-slate-700 leading-tight">{c.label}</p>
-                                    <p className="text-[10px] font-medium text-slate-400 mt-0.5">{c.hint}</p>
+                                    <p className="text-[10px] font-medium text-slate-500 mt-0.5">{c.hint}</p>
                                 </div>
                                 <div className="flex items-center gap-1.5 shrink-0">
                                     {(['ok', 'danada', 'faltante']).map(e => {
@@ -242,7 +242,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                     −
                                 </button>
                                 <span className={`w-8 text-center text-[15px] font-black tabular-nums ${
-                                    electrolitFaltantes === null ? 'text-slate-300'
+                                    electrolitFaltantes === null ? 'text-slate-500'
                                     : electrolitFaltantes === 0  ? 'text-emerald-600'
                                     :                              'text-rose-600'}`}>
                                     {electrolitFaltantes ?? '—'}
@@ -282,11 +282,11 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                                         <span className="flex-1 text-[10px] text-slate-600 leading-tight">{e.product_name}</span>
                                         <div className="flex items-center gap-1 shrink-0">
                                             <button onClick={() => setEspEstados(p => ({ ...p, [e.label]: 'ok' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-400 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'ok' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-200 hover:text-emerald-600'}`}>
                                                 ✓ OK
                                             </button>
                                             <button onClick={() => setEspEstados(p => ({ ...p, [e.label]: 'faltante' }))}
-                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-400 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
+                                                className={`text-[9px] font-bold px-2 py-1 rounded-lg border transition-all active:scale-[0.97] ${est === 'faltante' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-500 border-slate-200 hover:border-rose-200 hover:text-rose-600'}`}>
                                                 ✗ Falta
                                             </button>
                                         </div>
@@ -308,7 +308,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         <div className="flex items-center gap-1.5 shrink-0">
                             <button onClick={() => setCajasExtra(n => Math.max(0, n - 1))} disabled={cajasExtra === 0}
                                 className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-[0.97] transition-all disabled:opacity-30">−</button>
-                            <span className={`w-6 text-center text-[13px] font-black tabular-nums ${cajasExtra > 0 ? 'text-amber-600' : 'text-slate-300'}`}>{cajasExtra}</span>
+                            <span className={`w-6 text-center text-[13px] font-black tabular-nums ${cajasExtra > 0 ? 'text-amber-600' : 'text-slate-500'}`}>{cajasExtra}</span>
                             <button onClick={() => setCajasExtra(n => n + 1)}
                                 className="w-6 h-6 rounded-lg bg-white border border-amber-200 text-slate-600 font-black text-[13px] flex items-center justify-center hover:bg-amber-50 active:scale-[0.97] transition-all">+</button>
                         </div>
@@ -389,7 +389,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                     </p>
                 )}
                 {Object.keys(estados).length === 0 && cajas.length > 0 && (
-                    <p className="text-[10px] text-slate-400 text-center pb-1">
+                    <p className="text-[10px] text-slate-500 text-center pb-1">
                         Las cajas sin marcar se registran como <strong>OK</strong>
                     </p>
                 )}

@@ -4,7 +4,7 @@ import GlassViewLayout from '../components/GlassViewLayout';
 
 const Card = ({ title, children, accent }) => (
     <div className={`rounded-[1.25rem] border bg-white/60 backdrop-blur-sm p-4 shadow-sm ${accent || 'border-white/60'}`}>
-        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">{title}</p>
+        <p className="text-[11px] font-black uppercase tracking-widest text-slate-600 mb-2">{title}</p>
         {children}
     </div>
 );
@@ -79,7 +79,7 @@ const IOSTestView = () => {
                                     </div>
                                     <span className="text-[13px] font-semibold text-slate-700">Fila de prueba {i + 1}</span>
                                 </div>
-                                <Move size={14} className="text-slate-400" />
+                                <Move size={14} className="text-slate-500" />
                             </div>
                         ))}
                     </div>

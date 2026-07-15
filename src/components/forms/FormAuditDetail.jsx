@@ -57,7 +57,7 @@ const FormAuditDetail = ({ data }) => {
                             <User size={16} className="text-slate-600" />
                         </div>
                         <div className="min-w-0 pt-0.5">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Usuario Ejecutor</p>
+                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1.5">Usuario Ejecutor</p>
                             <p className="text-[14px] font-bold text-slate-800 truncate">{data.user_name || 'Sistema / Anónimo'}</p>
                         </div>
                     </div>
@@ -67,7 +67,7 @@ const FormAuditDetail = ({ data }) => {
                             <Activity size={16} className="text-[#0052CC]" />
                         </div>
                         <div className="min-w-0 pt-0.5">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2.5">Acción Realizada</p>
+                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest leading-none mb-2.5">Acción Realizada</p>
                             <span className="text-[11px] font-black text-slate-800 bg-white/80 backdrop-blur-sm border border-white px-3 py-1.5 rounded-xl shadow-sm">
                                 {data.action}
                             </span>
@@ -79,7 +79,7 @@ const FormAuditDetail = ({ data }) => {
                             <CalendarClock size={16} className="text-slate-600" />
                         </div>
                         <div className="min-w-0 pt-0.5">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Registro Temporal</p>
+                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest leading-none mb-1.5">Registro Temporal</p>
                             <p className="text-[14px] font-bold text-slate-700">{logDate.toLocaleString()}</p>
                         </div>
                     </div>
@@ -89,7 +89,7 @@ const FormAuditDetail = ({ data }) => {
                             <MonitorSmartphone size={16} className="text-slate-600" />
                         </div>
                         <div className="min-w-0 pt-0.5">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2.5">Contexto de Origen</p>
+                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest leading-none mb-2.5">Contexto de Origen</p>
                             <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-black text-[#0052CC] bg-white/90 border border-white px-2 py-1 rounded-lg shadow-sm uppercase tracking-wider">
                                     {data.source}

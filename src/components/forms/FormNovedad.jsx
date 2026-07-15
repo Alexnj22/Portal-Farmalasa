@@ -396,7 +396,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         </div>
                         
                         <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 min-h-[80px]">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Días Seleccionados ({formData?.permissionDates?.length || 0})</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">Días Seleccionados ({formData?.permissionDates?.length || 0})</p>
                             <div className="flex flex-wrap gap-2">
                                 {formData?.permissionDates?.map((date, idx) => (
                                     <span key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-[11px] font-black shadow-sm animate-in zoom-in-95">
@@ -405,7 +405,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     </span>
                                 ))}
                                 {(!formData?.permissionDates || formData?.permissionDates.length === 0) && (
-                                    <span className="text-[11px] font-medium text-slate-400 italic">No hay fechas agregadas.</span>
+                                    <span className="text-[11px] font-medium text-slate-500 italic">No hay fechas agregadas.</span>
                                 )}
                             </div>
                         </div>
@@ -475,7 +475,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                         className="w-full bg-white/60 border border-white/80 rounded-[1rem] h-[40px] px-4 pr-12 text-[16px] font-bold text-slate-700 outline-none transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
                                         placeholder="Ej: 3"
                                     />
-                                    <span className="absolute right-4 text-slate-400 text-[11px] font-black uppercase tracking-widest">días</span>
+                                    <span className="absolute right-4 text-slate-600 text-[11px] font-black uppercase tracking-widest">días</span>
                                 </div>
                                 {formData?.endDate && formData?.disabilityDays > 0 && (() => {
                                     const retorno = new Date(formData.endDate + 'T12:00:00');
@@ -541,7 +541,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         <div className="flex items-center justify-between gap-3">
                             <div className="flex-1">
                                 <label className={labelClasses}>Código Actual</label>
-                                <div className="h-[40px] bg-slate-100/50 border border-slate-200/50 rounded-[1rem] flex items-center justify-center px-4 text-[14px] font-black tracking-widest text-slate-400 line-through decoration-slate-300 opacity-60">
+                                <div className="h-[40px] bg-slate-100/50 border border-slate-200/50 rounded-[1rem] flex items-center justify-center px-4 text-[14px] font-black tracking-widest text-slate-500 line-through decoration-slate-300 opacity-60">
                                     {activeEmployee?.code || activeEmployee?.employee_code || 'S/N'}
                                 </div>
                             </div>
@@ -638,15 +638,15 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                             {/* Contexto actual */}
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Salario Actual</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Salario Actual</p>
                                     <p className="text-[15px] font-black text-slate-700">{currentSalary ? `$${parseFloat(currentSalary).toFixed(2)}` : '—'}</p>
                                 </div>
                                 <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Cargo</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Cargo</p>
                                     <p className="text-[11px] font-black text-slate-700 leading-tight">{currentRole}</p>
                                 </div>
                                 <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3 text-center">
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Antigüedad</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1">Antigüedad</p>
                                     <p className="text-[11px] font-black text-slate-700 leading-tight">{tenure}</p>
                                 </div>
                             </div>
@@ -689,7 +689,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                                     <p className="text-[11px] font-black uppercase tracking-widest truncate max-w-[200px] px-4">{formData.file.name}</p>
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center gap-2 text-slate-400 group-hover:text-[#0052CC] transition-colors">
+                                <div className="flex flex-col items-center gap-2 text-slate-500 group-hover:text-[#0052CC] transition-colors">
                                     <Paperclip size={24} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
                                     <div className="text-center">
                                         <p className="text-[12px] font-bold">Clic para adjuntar {isDisability ? 'boleta médica' : isTermination ? 'finiquito firmado' : 'documento'}</p>

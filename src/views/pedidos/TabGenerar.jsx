@@ -336,7 +336,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         {visibleSucursales.every(id => selected.has(id)) && visibleSucursales.length > 0 ? 'Deseleccionar todas' : 'Seleccionar todas'}
                     </button>
                 </div>
-                <p className="text-[11px] text-slate-400 mb-2 flex items-center gap-1">
+                <p className="text-[11px] text-slate-500 mb-2 flex items-center gap-1">
                     <Info size={11} />
                     Elige las sucursales a reponer y genera el pedido directamente.
                 </p>
@@ -448,7 +448,7 @@ export default function TabGenerar({ searchTerm = '' }) {
 
                                 <Building2
                                     size={20}
-                                    className="text-slate-400 group-hover:text-slate-600 transition-colors relative z-10 mt-1"
+                                    className="text-slate-500 group-hover:text-slate-600 transition-colors relative z-10 mt-1"
                                 />
                                 <span className="text-[12px] font-bold leading-tight relative z-10 text-slate-800">
                                     {ERP_NAMES[id]}
@@ -470,7 +470,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                         {(() => {
                                             const label = fmtTimeSince(stat.last_pedido_at);
                                             if (!label) return (
-                                                <span className="text-[9px] relative z-10 text-slate-300">sin pedidos</span>
+                                                <span className="text-[9px] relative z-10 text-slate-500">sin pedidos</span>
                                             );
                                             const days = stat.last_pedido_at
                                                 ? Math.floor((Date.now() - new Date(stat.last_pedido_at)) / 86_400_000)
@@ -500,7 +500,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         disabled={confirming || selected.size === 0}
                         className={`flex items-center gap-2.5 px-10 py-3.5 rounded-2xl font-bold text-[15px] transition-all duration-200 ${
                             selected.size === 0
-                                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
                                 : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-[0_4px_20px_rgba(5,150,105,0.25)] hover:shadow-[0_8px_28px_rgba(5,150,105,0.35)] hover:-translate-y-0.5 active:scale-[0.98]'
                         }`}
                     >
@@ -527,7 +527,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                     </span>
                 )}
                 {searchTerm && (
-                    <span className="ml-auto text-[11px] text-slate-400">"{searchTerm}"</span>
+                    <span className="ml-auto text-[11px] text-slate-500">"{searchTerm}"</span>
                 )}
             </div>
 
@@ -567,7 +567,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                         <span className="font-medium text-slate-600">{ERP_NAMES[s.erp_sucursal_id]}</span>
                                         <span className="text-red-500 font-semibold">{s.reponer}</span>
                                         {s.ventas_6m > 0 && (
-                                            <span className="text-slate-400 flex items-center gap-0.5">
+                                            <span className="text-slate-500 flex items-center gap-0.5">
                                                 ↻<span className="text-[8px] font-semibold">{Math.round(s.ventas_6m)}</span>
                                             </span>
                                         )}
@@ -585,7 +585,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                                     {Math.round(row.total_ventas_6m).toLocaleString()}
                                 </span>
                             ) : (
-                                <span className="text-[11px] text-slate-300">—</span>
+                                <span className="text-[11px] text-slate-500">—</span>
                             )}
                         </td>
                     </DataRow>

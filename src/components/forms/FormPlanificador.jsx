@@ -140,7 +140,7 @@ const DayRow = memo(({
                 <div className="w-full xl:w-36 flex items-center justify-between xl:mt-2.5 flex-shrink-0">
                     <div>
                         <h4 className="text-[13px] md:text-[14px] font-black text-slate-800 uppercase tracking-widest">{day.name}</h4>
-                        <p className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 ${conflict ? conflict.text : isWorking ? 'text-[#0052CC]' : 'text-slate-400'}`}>
+                        <p className={`text-[8px] font-bold uppercase tracking-widest mt-0.5 ${conflict ? conflict.text : isWorking ? 'text-[#0052CC]' : 'text-slate-600'}`}>
                             {conflict ? conflict.label : isWorking ? 'Día Laboral' : 'Día de Descanso'}
                         </p>
                     </div>
@@ -165,7 +165,7 @@ const DayRow = memo(({
                             {/* SUCURSAL */}
                             {isMultiBranch && (
                                 <div className="lg:col-span-1 overflow-visible">
-                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-1.5">
+                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 mb-1.5">
                                         <Building2 size={12} className="text-indigo-500"/> Ubicación
                                     </label>
                                     <LiquidSelect 
@@ -180,7 +180,7 @@ const DayRow = memo(({
 
                             {/* TURNO */}
                             <div className="lg:col-span-1 overflow-visible z-[100]">
-                                <label className="text-[8px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-1.5">
+                                <label className="text-[8px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 mb-1.5">
                                     <Clock size={12} className={!config.shiftId ? 'text-red-500 animate-pulse' : 'text-[#0052CC]'}/> Turno Asignado
                                 </label>
                                 <LiquidSelect 
@@ -196,7 +196,7 @@ const DayRow = memo(({
                             {/* ALMUERZO */}
                             <div className="lg:col-span-1 flex flex-col justify-start">
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
                                         <Utensils size={12} className="text-orange-500"/> Almuerzo (-1h)
                                     </label>
                                     <BeautifulCheckbox checked={!!config.lunchTime} onChange={handleLunchToggle} theme="orange" />
@@ -214,14 +214,14 @@ const DayRow = memo(({
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="h-[34px] rounded-[10px] bg-white/40 border border-dashed border-slate-300 flex items-center justify-center text-[8px] font-bold text-slate-300 uppercase tracking-widest shadow-inner">Sin Almuerzo</div>
+                                    <div className="h-[34px] rounded-[10px] bg-white/40 border border-dashed border-slate-300 flex items-center justify-center text-[8px] font-bold text-slate-600 uppercase tracking-widest shadow-inner">Sin Almuerzo</div>
                                 )}
                             </div>
 
                             {/* LACTANCIA */}
                             <div className="lg:col-span-1 flex flex-col justify-start">
                                 <div className="flex items-center justify-between mb-1.5">
-                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                    <label className="text-[8px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
                                         <Baby size={12} className="text-pink-500"/> Lactancia (+1h)
                                     </label>
                                     <BeautifulCheckbox checked={!!config.lactationTime} onChange={handleLactationToggle} theme="pink" />
@@ -239,7 +239,7 @@ const DayRow = memo(({
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="h-[34px] rounded-[10px] bg-white/40 border border-dashed border-slate-300 flex items-center justify-center text-[8px] font-bold text-slate-300 uppercase tracking-widest shadow-inner">No Aplica</div>
+                                    <div className="h-[34px] rounded-[10px] bg-white/40 border border-dashed border-slate-300 flex items-center justify-center text-[8px] font-bold text-slate-600 uppercase tracking-widest shadow-inner">No Aplica</div>
                                 )}
                             </div>
                         </div>
@@ -269,7 +269,7 @@ const DayRow = memo(({
                     </div>
                 ) : (
                     <div className="flex-1 flex items-center justify-center xl:border-l xl:border-slate-200/50 xl:pl-6 pt-3 xl:pt-0 border-t border-slate-200/50 xl:border-t-0">
-                        <div className="w-full xl:w-auto px-5 py-2 rounded-[1rem] bg-white/40 border border-dashed border-slate-300/80 text-slate-400 flex justify-center items-center gap-2 shadow-inner">
+                        <div className="w-full xl:w-auto px-5 py-2 rounded-[1rem] bg-white/40 border border-dashed border-slate-300/80 text-slate-500 flex justify-center items-center gap-2 shadow-inner">
                             <Palmtree size={14} strokeWidth={2.5}/>
                             <span className="text-[9.5px] font-black uppercase tracking-widest">Día de Descanso</span>
                         </div>
@@ -402,7 +402,7 @@ const FormPlanificador = ({ formData, setFormData, shifts }) => {
                         </div>
                         <div className="text-right">
                             <span className={`text-[18px] font-black leading-none ${currentStats.isExcess ? 'text-red-500' : 'text-slate-800'}`}>{currentStats.hours}h</span>
-                            <span className="text-[10px] font-bold text-slate-400"> / {maxHours}h</span>
+                            <span className="text-[10px] font-bold text-slate-500"> / {maxHours}h</span>
                         </div>
                     </div>
                     <div className="h-1.5 bg-white/50 rounded-full overflow-hidden shadow-inner border border-white/80">

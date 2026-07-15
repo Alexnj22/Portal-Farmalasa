@@ -165,7 +165,7 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
                     <div className="h-5 w-px bg-slate-100 shrink-0" />
                     <div className="flex items-center gap-1.5 px-3 py-2">
                         <span className="text-[11px] text-slate-500">Pendiente:</span>
-                        <span className={`text-[11px] font-semibold ${totalPending > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                        <span className={`text-[11px] font-semibold ${totalPending > 0 ? 'text-amber-600' : 'text-slate-500'}`}>
                             {fmt$(totalPending)}
                         </span>
                     </div>
@@ -173,10 +173,10 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
             </div>
 
             {bonifs.length === 0 && !loading && (
-                <div className="text-center py-12 text-slate-300">
+                <div className="text-center py-12 text-slate-500">
                     <Gift size={32} className="mx-auto mb-2 opacity-40" />
                     <p className="text-[12px]">Sin bonificaciones registradas</p>
-                    <p className="text-[11px] mt-1 text-slate-300">
+                    <p className="text-[11px] mt-1 text-slate-500">
                         Las bonificaciones se acumulan automáticamente conforme se procesan las ventas de las promociones activas.
                     </p>
                 </div>
@@ -221,7 +221,7 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
                                 {/* promo */}
                                 <DataCell align="left" hideBelow="md">
                                     <span className="text-[11px] text-slate-600 font-medium">{promoName}</span>
-                                    <span className="ml-1.5 text-[10px] text-slate-400">{prodName}</span>
+                                    <span className="ml-1.5 text-[10px] text-slate-500">{prodName}</span>
                                 </DataCell>
 
                                 {/* ganado */}
@@ -236,7 +236,7 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
 
                                 {/* pendiente */}
                                 <DataCell align="right">
-                                    <span className={`text-[12px] font-semibold ${pending > 0 ? 'text-amber-600' : 'text-slate-300'}`}>
+                                    <span className={`text-[12px] font-semibold ${pending > 0 ? 'text-amber-600' : 'text-slate-500'}`}>
                                         {fmt$(pending)}
                                     </span>
                                 </DataCell>

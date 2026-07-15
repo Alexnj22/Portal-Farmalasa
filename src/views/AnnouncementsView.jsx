@@ -59,7 +59,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
             )}
             <button
               onClick={() => onArchive(ann.id)}
-              className="p-2.5 text-slate-400 bg-white/80 border border-white shadow-sm hover:text-slate-800 hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-full transition-all duration-300 active:scale-[0.97]"
+              className="p-2.5 text-slate-500 bg-white/80 border border-white shadow-sm hover:text-slate-800 hover:bg-white hover:-translate-y-0.5 hover:shadow-md rounded-full transition-all duration-300 active:scale-[0.97]"
               title="Archivar aviso"
             >
               <Archive size={14} strokeWidth={2.5} />
@@ -91,7 +91,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
 
         {renderBadge()}
 
-        <span className="text-[10px] font-bold text-slate-400 tracking-widest bg-white/50 border border-white/60 px-2 py-1 rounded-md">
+        <span className="text-[10px] font-bold text-slate-500 tracking-widest bg-white/50 border border-white/60 px-2 py-1 rounded-md">
           #{String(ann.id).slice(-5).toUpperCase()}
         </span>
         {ann.isCompleted && (
@@ -554,7 +554,7 @@ const AnnouncementsView = ({ openModal }) => {
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchMode ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
         <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
         <input ref={searchInputRef} type="text" placeholder="Buscar en avisos, sucursales o roles..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0" value={announcementSearch} onChange={(e) => setAnnouncementSearch(e.target.value)} />
-        {announcementSearch && <button onClick={() => setAnnouncementSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:scale-110 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
+        {announcementSearch && <button onClick={() => setAnnouncementSearch('')} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:scale-110 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
         <button onClick={() => setIsSearchMode(false)} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 
@@ -616,7 +616,7 @@ const AnnouncementsView = ({ openModal }) => {
 
               <form onSubmit={handlePublish} className="space-y-5 relative z-10">
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Nivel de Prioridad</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-2 block ml-1">Nivel de Prioridad</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button type="button" onClick={() => setPriority('NORMAL')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'NORMAL' ? 'bg-white/80 border-[#0052CC]/30 text-[#0052CC] shadow-[0_2px_10px_rgba(0,82,204,0.2)]' : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'}`}><Megaphone size={14} /> Normal</button>
                     <button type="button" onClick={() => setPriority('URGENT')} className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-xs transition-all duration-300 ${priority === 'URGENT' ? 'bg-red-50 border-red-300 text-red-600 shadow-[0_2px_10px_rgba(239,68,68,0.2)]' : 'bg-white/40 border-white/60 text-slate-500 hover:bg-white/80 hover:shadow-sm hover:-translate-y-0.5'}`}><Flame size={14} className={priority === 'URGENT' ? 'animate-pulse' : ''} /> Urgente</button>
@@ -624,12 +624,12 @@ const AnnouncementsView = ({ openModal }) => {
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">Título del Mensaje</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">Título del Mensaje</label>
                   <input type="text" placeholder="Ej: Mantenimiento de servidores..." className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal ${error && !title.trim() ? 'border-amber-300 focus:ring-amber-500/20' : ''}`} value={title} onChange={(e) => setTitle(e.target.value)} disabled={isSubmitting} />
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">Contenido</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">Contenido</label>
                   <textarea placeholder="Escribe los detalles de tu anuncio aquí..." className={`w-full py-3.5 px-4 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.15)] rounded-2xl text-[16px] outline-none font-medium text-slate-700 resize-none h-24 transition-all duration-300 placeholder-slate-400 placeholder:font-normal placeholder:tracking-normal leading-relaxed custom-scrollbar ${error && !message.trim() ? 'border-amber-300 focus:ring-amber-500/20' : ''}`} value={message} onChange={(e) => setMessage(e.target.value)} disabled={isSubmitting} />
                 </div>
 
@@ -641,7 +641,7 @@ const AnnouncementsView = ({ openModal }) => {
                     </div>
                   ) : (
                     <>
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">¿A quién va dirigido?</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-2 block ml-1">¿A quién va dirigido?</label>
                       <div className="flex items-center gap-1 bg-black/[0.03] p-1.5 rounded-full border border-black/[0.05] shadow-[inset_0_2px_8px_rgba(0,0,0,0.04)] mb-4">
                         {targetTypes.map((type) => {
                           const isActive = targetType === type.id;
@@ -687,7 +687,7 @@ const AnnouncementsView = ({ openModal }) => {
                         <input type="text" placeholder="Buscar persona por nombre..." className="w-full pl-11 pr-4 py-3.5 bg-white/50 border border-white/60 focus:bg-white rounded-2xl text-[16px] outline-none font-bold text-slate-700" value={empSearch} onChange={(e) => setEmpSearch(e.target.value)} disabled={isSubmitting} />
                         {empSearch.trim() && (
                           <div className="absolute z-20 w-full mt-2 bg-white/90 backdrop-blur-xl border border-white/90 rounded-[1.25rem] shadow-[0_12px_40px_rgba(0,0,0,0.12)] max-h-60 overflow-y-auto p-1">
-                            {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<button type="button" key={emp.id} onClick={() => addEmployee(emp.id)} className="w-full p-3 hover:bg-[#0052CC]/10 text-left flex items-center justify-between rounded-xl mx-0.5"><p className="text-[13px] font-bold text-slate-700">{emp.name}</p><Plus size={14} className="text-[#0052CC]" /></button>)) : <div className="p-3 text-[12px] text-slate-400 font-bold text-center">Sin resultados.</div>}
+                            {filteredEmployeeSearch.length ? filteredEmployeeSearch.map((emp) => (<button type="button" key={emp.id} onClick={() => addEmployee(emp.id)} className="w-full p-3 hover:bg-[#0052CC]/10 text-left flex items-center justify-between rounded-xl mx-0.5"><p className="text-[13px] font-bold text-slate-700">{emp.name}</p><Plus size={14} className="text-[#0052CC]" /></button>)) : <div className="p-3 text-[12px] text-slate-500 font-bold text-center">Sin resultados.</div>}
                           </div>
                         )}
                       </div>
@@ -699,7 +699,7 @@ const AnnouncementsView = ({ openModal }) => {
 
                 <div className="pt-3 border-t border-white/50">
                    <div className="flex items-center justify-between mb-3 pl-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] flex items-center gap-1.5">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] flex items-center gap-1.5">
                         <CalendarClock size={14} /> ¿Cuándo se publica?
                       </label>
                       <button
@@ -741,7 +741,7 @@ const AnnouncementsView = ({ openModal }) => {
                   <div className="relative group flex flex-col items-center text-center">
                     <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 transition-colors duration-700 ${announcementSearch ? 'bg-[#0052CC]' : listTab === 'ACTIVE' ? 'bg-emerald-500' : listTab === 'SCHEDULED' ? 'bg-indigo-500' : 'bg-slate-400'}`}></div>
                     
-                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${announcementSearch ? 'text-[#0052CC]' : listTab === 'ACTIVE' ? 'text-emerald-500' : listTab === 'SCHEDULED' ? 'text-indigo-500' : 'text-slate-400'}`}>
+                    <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${announcementSearch ? 'text-[#0052CC]' : listTab === 'ACTIVE' ? 'text-emerald-500' : listTab === 'SCHEDULED' ? 'text-indigo-500' : 'text-slate-500'}`}>
                       {announcementSearch ? <Search size={40} strokeWidth={2} /> : listTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : listTab === 'SCHEDULED' ? <CalendarClock size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
                     </div>
                     

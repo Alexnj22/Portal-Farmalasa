@@ -212,7 +212,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
 
                             <div>
                                 <label className={fieldLabel}>
-                                    <span>Fecha de Nacimiento {age !== null && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-amber-600' : 'text-slate-400'}`}>· {age} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
+                                    <span>Fecha de Nacimiento {age !== null && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-amber-600' : 'text-slate-500'}`}>· {age} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
                                 </label>
                                 <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${isMinor ? '!border-amber-300 !bg-amber-50/40' : 'border-slate-200/80'}`}>
                                     <LiquidDatePicker value={form.birth_date} onChange={(v) => set('birth_date', v)} />
@@ -328,7 +328,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
                                     </button>
                                 )}
                             </div>
-                            <p className="text-[9px] text-slate-400 mt-1.5 ml-1 flex items-center gap-1"><AlertCircle size={10} /> Obligatorio — es el respaldo legal frente al Art. 20 del Código de Trabajo.</p>
+                            <p className="text-[9px] text-slate-500 mt-1.5 ml-1 flex items-center gap-1"><AlertCircle size={10} /> Obligatorio — es el respaldo legal frente al Art. 20 del Código de Trabajo.</p>
                         </div>
 
                         <div className="mt-4">

@@ -59,7 +59,7 @@ const FormSetPassword = ({ formData, onClose }) => {
         <div className="flex flex-col gap-5 p-1 animate-in fade-in duration-300">
             {/* Email pill */}
             <div className="px-4 py-3 bg-[#0052CC]/5 border border-[#0052CC]/15 rounded-[1rem]">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Usuario del Portal</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-0.5">Usuario del Portal</p>
                 <p className="text-[13px] font-bold text-[#0052CC] truncate">{username}@farmalasa.app</p>
             </div>
 

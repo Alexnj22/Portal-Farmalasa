@@ -146,7 +146,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         <div className="bg-white/40 backdrop-blur-md border border-white/80 rounded-[1.5rem] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.03),inset_0_2px_15px_rgba(255,255,255,0.6)] relative overflow-hidden">
                             <div className="flex items-center gap-4 relative z-10">
                                 <div className="w-16 h-16 rounded-full border-[3px] border-white shadow-md overflow-hidden bg-slate-100 shrink-0">
-                                    {selectedEmp.photo ? <img src={selectedEmp.photo} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center text-slate-400 font-black text-2xl">{selectedEmp.name.charAt(0)}</div>}
+                                    {selectedEmp.photo ? <img src={selectedEmp.photo} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center text-slate-500 font-black text-2xl">{selectedEmp.name.charAt(0)}</div>}
                                 </div>
                                 <div className="flex-1">
                                     <h3 className="text-lg font-black text-slate-800 leading-tight">{selectedEmp.name}</h3>
@@ -160,16 +160,16 @@ const FormLeadership = ({ formData, setFormData }) => {
                             {/* Fila de Datos Clave */}
                             <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-white/50 relative z-10">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-400 shadow-sm shrink-0"><CalendarDays size={10} strokeWidth={2.5}/></div>
+                                    <div className="w-6 h-6 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-500 shadow-sm shrink-0"><CalendarDays size={10} strokeWidth={2.5}/></div>
                                     <div className="flex flex-col">
-                                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Antigüedad</span>
+                                        <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest leading-none">Antigüedad</span>
                                         <span className="text-[11px] font-bold text-slate-700 mt-0.5">{getTenure(selectedEmp.hireDate || selectedEmp.hire_date)}</span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-400 shadow-sm shrink-0"><Phone size={10} strokeWidth={2.5}/></div>
+                                    <div className="w-6 h-6 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-500 shadow-sm shrink-0"><Phone size={10} strokeWidth={2.5}/></div>
                                     <div className="flex flex-col overflow-hidden">
-                                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Contacto</span>
+                                        <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest leading-none">Contacto</span>
                                         <span className="text-[11px] font-bold text-slate-700 mt-0.5 truncate">{selectedEmp.phone || 'N/A'}</span>
                                     </div>
                                 </div>
@@ -274,7 +274,7 @@ const FormLeadership = ({ formData, setFormData }) => {
 
                                 {/* 4. CONFIGURACIÓN DEL CARGO */}
                                 <div className="space-y-4">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Configuración del Cargo</h3>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-600 ml-1">Configuración del Cargo</h3>
                                     
                                     <div className="flex p-1.5 bg-white/30 backdrop-blur-md border border-white/60 rounded-[1.2rem] shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
                                         <button type="button" onClick={() => setFormData({...formData, isPermanent: true})} className={`flex-1 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all ${formData.isPermanent !== false ? 'bg-white text-slate-800 shadow-[0_4px_15px_rgba(0,0,0,0.08)]' : 'text-slate-500 hover:bg-white/50'}`}>

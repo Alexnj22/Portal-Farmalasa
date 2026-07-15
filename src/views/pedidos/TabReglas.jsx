@@ -46,7 +46,7 @@ function ruleTypeLabel(rule) {
 const presStyle = (tipo) => {
     const t = (tipo || '').toUpperCase();
     if (t.startsWith('CAJA') || t.startsWith('BOLSA'))
-        return { Icon: Box,     bg: 'bg-slate-800', text: 'text-white', iconInactive: 'text-slate-400' };
+        return { Icon: Box,     bg: 'bg-slate-800', text: 'text-white', iconInactive: 'text-slate-500' };
     if (t.startsWith('BLISTER') || t.startsWith('SOBRE'))
         return { Icon: Layers,  bg: 'bg-indigo-600', text: 'text-white', iconInactive: 'text-indigo-400' };
     if (t === 'UNIDAD' || t === 'UNIDADES' || t === 'PAR' || t === 'PARES')
@@ -61,14 +61,14 @@ function StatCard({ label, sub, value, Icon, iconBg, iconCls, countCls, active, 
         <Tag onClick={onClick} disabled={loading}
             className={`flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border transition-all duration-200 min-w-[130px] ${active ? activeBg : inactiveBg}`}>
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
-                {loading ? <Loader2 size={14} className="animate-spin text-slate-300" /> : <Icon size={15} className={iconCls} />}
+                {loading ? <Loader2 size={14} className="animate-spin text-slate-500" /> : <Icon size={15} className={iconCls} />}
             </div>
             <div className="text-left min-w-0">
                 <div className={`text-[22px] font-black leading-none tabular-nums ${countCls}`}>
                     {loading ? <span className="text-slate-200">–</span> : (value ?? 0).toLocaleString()}
                 </div>
                 <div className="text-[10px] font-bold leading-tight text-slate-600">{label}</div>
-                {sub && <div className="text-[9px] text-slate-400">{sub}</div>}
+                {sub && <div className="text-[9px] text-slate-500">{sub}</div>}
             </div>
             {active && onClick && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
         </Tag>
@@ -166,12 +166,12 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                 <div>
                     <p className="font-semibold text-slate-800 text-[14px] leading-tight">{product.nombre}</p>
                     {product.laboratorio_nombre && (
-                        <p className="text-[11px] text-slate-400 mt-0.5">{product.laboratorio_nombre}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{product.laboratorio_nombre}</p>
                     )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                     {saving && (
-                        <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                        <span className="flex items-center gap-1 text-[11px] text-slate-500">
                             <Loader2 size={11} className="animate-spin" /> Guardando…
                         </span>
                     )}
@@ -186,7 +186,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                         </span>
                     )}
                     <button onClick={onCancel}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-white/80 transition-colors flex-shrink-0">
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-600 hover:bg-white/80 transition-colors flex-shrink-0">
                         <X size={14} />
                     </button>
                 </div>
@@ -199,7 +199,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                     <span className="normal-case tracking-normal font-medium text-slate-500"> · se aplica automáticamente</span>
                 </p>
                 {loadingPres ? (
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                    <div className="flex items-center gap-2 text-[11px] text-slate-500">
                         <Loader2 size={12} className="animate-spin" /> Cargando presentaciones…
                     </div>
                 ) : dedupedPres.length === 0 ? (
@@ -225,7 +225,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                     <Icon size={15} className={isActive ? 'text-white' : style.iconInactive} />
                                     <div>
                                         <p className="text-[12px] font-semibold leading-tight">{tipo}</p>
-                                        <p className={`text-[9px] leading-tight ${isActive ? 'text-white/70' : 'text-slate-400'}`}>
+                                        <p className={`text-[9px] leading-tight ${isActive ? 'text-white/70' : 'text-slate-500'}`}>
                                             {pres.factor > 1 ? `×${pres.factor} unidades` : 'unidad base'}
                                         </p>
                                     </div>
@@ -251,7 +251,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                 Mostrar en PDF como
                                 <span className="normal-case tracking-normal font-medium text-slate-500"> · opcional</span>
                             </p>
-                            <p className="text-[10px] text-slate-400 mb-2 leading-snug">
+                            <p className="text-[10px] text-slate-500 mb-2 leading-snug">
                                 Activa solo para productos en <strong className="text-slate-500">cajas físicas grandes</strong> (Electrolit, sueros, etc.). El PDF los lista en una sección separada «Cajas Adicionales», una caja por fila con lote.
                             </p>
                             <div className={`flex flex-wrap gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
@@ -264,13 +264,13 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                                                 : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700'
                                         }`}
                                     >
-                                        <Box size={11} className={vals.dispatch_label === label ? 'text-white' : 'text-slate-400'} />
+                                        <Box size={11} className={vals.dispatch_label === label ? 'text-white' : 'text-slate-500'} />
                                         {label}
                                     </button>
                                 ))}
                                 {vals.dispatch_label && (
                                     <button type="button" onClick={() => selectLabel(vals.dispatch_label)}
-                                        className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] border border-slate-200 text-slate-400 hover:text-rose-500 hover:border-rose-200 transition-all bg-white">
+                                        className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px] border border-slate-200 text-slate-500 hover:text-rose-500 hover:border-rose-200 transition-all bg-white">
                                         <X size={10} /> quitar
                                     </button>
                                 )}
@@ -356,7 +356,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
             <div>
                 <p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1.5 font-bold">
                     Notas internas
-                    <span className="normal-case tracking-normal font-medium text-slate-300"> · se guardan al salir del campo</span>
+                    <span className="normal-case tracking-normal font-medium text-slate-500"> · se guardan al salir del campo</span>
                 </p>
                 <input type="text"
                     placeholder={!vals.dispatch_id_presentacion ? 'Selecciona una presentación para agregar notas' : 'Observación opcional…'}
@@ -631,7 +631,7 @@ export default function TabReglas({ searchTerm = '' }) {
 
                     <div className="flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border min-w-[130px] bg-white/70 border-white/80 backdrop-blur-sm shadow-sm">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
-                            {statsLoading ? <Loader2 size={14} className="animate-spin text-slate-300" /> : <Package size={15} className="text-[#0052CC]" />}
+                            {statsLoading ? <Loader2 size={14} className="animate-spin text-slate-500" /> : <Package size={15} className="text-[#0052CC]" />}
                         </div>
                         <div>
                             <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">
@@ -643,7 +643,7 @@ export default function TabReglas({ searchTerm = '' }) {
 
                     <StatCard label="Con regla" value={rulesCount}
                         Icon={Check} iconBg={filterRule === 'con' ? 'bg-white' : 'bg-emerald-50'} iconCls="text-emerald-500"
-                        countCls={rulesCount > 0 ? 'text-emerald-600' : 'text-slate-300'}
+                        countCls={rulesCount > 0 ? 'text-emerald-600' : 'text-slate-500'}
                         active={filterRule === 'con'}
                         activeBg="bg-emerald-50 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px"
                         inactiveBg="bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40"
@@ -653,7 +653,7 @@ export default function TabReglas({ searchTerm = '' }) {
 
                     <StatCard label="Sin regla" value={sinRegla}
                         Icon={AlertTriangle} iconBg={filterRule === 'sin' ? 'bg-white' : 'bg-red-50'} iconCls="text-red-400"
-                        countCls={sinRegla > 0 ? 'text-red-500' : 'text-slate-300'}
+                        countCls={sinRegla > 0 ? 'text-red-500' : 'text-slate-500'}
                         active={filterRule === 'sin'}
                         activeBg="bg-red-50 border-red-300 shadow-md shadow-red-100/80 -translate-y-px"
                         inactiveBg="bg-white border-slate-100 hover:border-red-200 hover:bg-red-50/40"
@@ -663,7 +663,7 @@ export default function TabReglas({ searchTerm = '' }) {
 
                     <StatCard label="Nuevos este mes" sub={`agregados en ${mesActual}`} value={thisMonthCount}
                         Icon={Sparkles} iconBg={filterRule === 'nuevo' ? 'bg-white' : 'bg-emerald-50'} iconCls="text-emerald-500"
-                        countCls={thisMonthCount > 0 ? 'text-emerald-600' : 'text-slate-300'}
+                        countCls={thisMonthCount > 0 ? 'text-emerald-600' : 'text-slate-500'}
                         active={filterRule === 'nuevo'}
                         activeBg="bg-emerald-50 border-emerald-300 shadow-md shadow-emerald-100/80 -translate-y-px"
                         inactiveBg="bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40"
@@ -675,7 +675,7 @@ export default function TabReglas({ searchTerm = '' }) {
                 {/* Botón limpiar filtro regla */}
                 {filterRule && (
                     <button onClick={() => setFilterRule('')}
-                        className="flex items-center gap-1 px-3 py-2 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-sm text-[11px] text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors whitespace-nowrap">
+                        className="flex items-center gap-1 px-3 py-2 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-sm text-[11px] text-slate-500 hover:text-red-500 hover:border-red-200 transition-colors whitespace-nowrap">
                         <X size={11} /> Limpiar filtro
                     </button>
                 )}
@@ -709,7 +709,7 @@ export default function TabReglas({ searchTerm = '' }) {
                             <DataRow index={i} onClick={() => toggleEdit(prod.id)}
                                 className={isEditing ? 'bg-blue-50/60' : ''}>
 
-                                <DataCell className="text-slate-400 text-[12px]">
+                                <DataCell className="text-slate-500 text-[12px]">
                                     <span className="block">{prod.laboratorio_nombre ?? '—'}</span>
                                 </DataCell>
 
@@ -735,7 +735,7 @@ export default function TabReglas({ searchTerm = '' }) {
                                             <Check size={9} /> Con regla
                                         </span>
                                     ) : (
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 border border-slate-200 font-medium">
+                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 font-medium">
                                             Sin regla
                                         </span>
                                     )}
@@ -748,7 +748,7 @@ export default function TabReglas({ searchTerm = '' }) {
                                     }
                                 </DataCell>
 
-                                <DataCell className="text-slate-400 italic text-[12px] max-w-[140px]">
+                                <DataCell className="text-slate-500 italic text-[12px] max-w-[140px]">
                                     {hasRule
                                         ? <span className="block truncate">{rule.notes || <span className="not-italic text-slate-200">—</span>}</span>
                                         : <span className="text-slate-200">—</span>

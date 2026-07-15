@@ -194,11 +194,11 @@ const hasInjections = legal.injections === true;
                         if (!emp) {
                             return (
                                 <div key={slot.id} className="flex items-center gap-3 p-3 rounded-[1rem] bg-slate-50/50 backdrop-blur-sm border border-dashed border-slate-200 h-[72px]">
-                                    <div className="w-9 h-9 rounded-lg bg-white/60 flex items-center justify-center text-slate-300 shrink-0 border border-slate-100">
+                                    <div className="w-9 h-9 rounded-lg bg-white/60 flex items-center justify-center text-slate-500 shrink-0 border border-slate-100">
                                         <slot.icon size={14} strokeWidth={2.5} />
                                     </div>
                                     <div className="flex flex-col flex-1">
-                                        <h4 className="text-[10px] font-bold text-slate-400 leading-tight whitespace-normal">{slot.roleName}</h4>
+                                        <h4 className="text-[10px] font-bold text-slate-500 leading-tight whitespace-normal">{slot.roleName}</h4>
                                         <p className="text-[8px] font-black text-red-400 uppercase tracking-widest mt-0.5">Sin Asignar</p>
                                     </div>
                                 </div>
@@ -212,7 +212,7 @@ const hasInjections = legal.injections === true;
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h4 className="text-[11px] font-bold text-slate-600 leading-tight group-hover:text-[#0052CC] transition-colors whitespace-normal truncate">{emp.name}</h4>
-                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5 leading-tight whitespace-normal">{slot.roleName}</p>
+                                    <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mt-0.5 leading-tight whitespace-normal">{slot.roleName}</p>
                                 </div>
                             </div>
                         );

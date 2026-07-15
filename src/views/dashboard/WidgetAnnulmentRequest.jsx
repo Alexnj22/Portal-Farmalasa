@@ -81,7 +81,7 @@ function VendorAvatar({ employee, size = 6 }) {
   const sz = AV[size] ?? AV[6];
   const base = `${sz} rounded-full overflow-hidden flex-shrink-0 border border-slate-200 flex items-center justify-center`;
   if (!employee)
-    return <div className={`${base} bg-slate-100`}><User size={size <= 6 ? 11 : 14} className="text-slate-400" /></div>;
+    return <div className={`${base} bg-slate-100`}><User size={size <= 6 ? 11 : 14} className="text-slate-500" /></div>;
   if (employee.photo || employee.photo_url)
     return <div className={base}><img src={employee.photo || employee.photo_url} className="w-full h-full object-cover" alt="" onError={(ev) => { ev.currentTarget.style.display = 'none'; }} /></div>;
   return (
@@ -102,12 +102,12 @@ function InvoiceHeader({ inv, onBack, vendor }) {
         </button>
         <div className="flex-1 min-w-0">
           <p className="text-[12px] font-black text-slate-800 truncate leading-tight">{inv.cliente || 'Sin nombre'}</p>
-          <p className="text-[9px] text-slate-400 font-mono leading-tight">{inv.correlativo}</p>
+          <p className="text-[9px] text-slate-500 font-mono leading-tight">{inv.correlativo}</p>
         </div>
         <p className="text-[13px] font-black text-slate-800 shrink-0">{fmtCurrency(inv.total)}</p>
       </div>
       <div className="flex items-center gap-1.5 pl-8 flex-wrap">
-        <span className="text-[9px] text-slate-400 font-mono">ID #{inv.id}</span>
+        <span className="text-[9px] text-slate-500 font-mono">ID #{inv.id}</span>
         <span className="text-slate-200">·</span>
         <span className="text-[9px] font-semibold text-slate-500">{fmtDate(inv.fecha)}</span>
         {vendor && (
@@ -187,14 +187,14 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
                 { label: 'ID Venta',      value: `#${inv.id}`, mono: true },
               ].map(({ label, value, mono }, i) => (
                 <div key={i} className={`px-3 py-1.5 ${i > 0 ? 'border-t border-slate-50' : ''}`}>
-                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">{label}</p>
+                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-wider">{label}</p>
                   <p className={`text-[11px] font-bold text-slate-700 ${mono ? 'font-mono' : ''}`}>{value}</p>
                 </div>
               ))}
             </div>
             <div>
               <div className="px-3 py-1.5 border-b border-slate-50">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Vendedor</p>
+                <p className="text-[8px] font-black text-slate-600 uppercase tracking-wider">Vendedor</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <VendorAvatar employee={vendor} size={5} />
                   <p className="text-[11px] font-bold text-slate-700 truncate">
@@ -203,11 +203,11 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
                 </div>
               </div>
               <div className="px-3 py-1.5 border-b border-slate-50">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Fecha</p>
+                <p className="text-[8px] font-black text-slate-600 uppercase tracking-wider">Fecha</p>
                 <p className="text-[12px] font-black text-slate-800">{fmtDate(inv.fecha)}</p>
               </div>
               <div className="px-3 py-1.5">
-                <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Total</p>
+                <p className="text-[8px] font-black text-slate-600 uppercase tracking-wider">Total</p>
                 <p className="text-[13px] font-black text-slate-800">{fmtCurrency(inv.total)}</p>
               </div>
             </div>
@@ -216,24 +216,24 @@ function InvoiceDetail({ inv, onBack, onModify, employees }) {
 
         {/* Productos */}
         <div className="shrink-0">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-1">
+          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest px-1 mb-1">
             Productos ({items.length})
           </p>
           {loading ? (
-            <div className="flex justify-center py-3"><Loader2 size={15} className="animate-spin text-slate-300" /></div>
+            <div className="flex justify-center py-3"><Loader2 size={15} className="animate-spin text-slate-500" /></div>
           ) : items.length === 0 ? (
-            <p className="text-[11px] text-slate-400 text-center py-2">Sin detalle</p>
+            <p className="text-[11px] text-slate-500 text-center py-2">Sin detalle</p>
           ) : (
             <div className="rounded-2xl border border-slate-100 bg-white overflow-hidden">
               {items.map((it, i) => (
                 <div key={i} className={`flex items-start gap-2 px-3 py-1.5 ${i > 0 ? 'border-t border-slate-50' : ''}`}>
                   <div className="flex-1 min-w-0">
                     <p className="text-[11px] font-bold text-slate-700 leading-tight truncate">{it.descripcion}</p>
-                    {it.presentacion && <p className="text-[9px] text-slate-400">{it.presentacion}</p>}
+                    {it.presentacion && <p className="text-[9px] text-slate-500">{it.presentacion}</p>}
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-[11px] font-black text-slate-700">{fmtCurrency(it.total_linea)}</p>
-                    <p className="text-[9px] text-slate-400">{it.cantidad} × {fmtCurrency(it.precio_unitario)}</p>
+                    <p className="text-[9px] text-slate-500">{it.cantidad} × {fmtCurrency(it.precio_unitario)}</p>
                   </div>
                 </div>
               ))}
@@ -290,7 +290,7 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
   return (
     <div className="flex flex-col gap-3 h-full animate-in slide-in-from-right-3 duration-200">
       <InvoiceHeader inv={inv} onBack={onBack} vendor={vendor} />
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Tipo de solicitud</p>
+      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1">Tipo de solicitud</p>
       <div className="flex flex-col gap-2 flex-1">
         {types.map(({ key, icon: Icon, label, desc, color, bg, iconBg }) => (
           <button key={key} onClick={() => onSelect(key)}
@@ -300,7 +300,7 @@ function TypeSelector({ inv, onSelect, onBack, employees }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className={`text-[12px] font-black ${color}`}>{label}</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">{desc}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">{desc}</p>
             </div>
             <ChevronRight size={13} strokeWidth={2.5} className="text-slate-300 shrink-0" />
           </button>
@@ -496,7 +496,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
         <div className="rounded-2xl px-3 py-2 flex items-center gap-2 bg-slate-50 border border-slate-200">
           <CreditCard size={13} className="text-slate-400 shrink-0" strokeWidth={2.5} />
           <div>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Forma de pago actual</p>
+            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Forma de pago actual</p>
             <p className="text-[12px] font-black text-slate-700">{PAYMENT_LABELS[currentPay] || currentPay || '—'}</p>
           </div>
         </div>
@@ -592,7 +592,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
       <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Vendedor actual */}
         <div className="rounded-2xl px-3 py-2 bg-slate-50 border border-slate-200">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Vendedor actual</p>
+          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Vendedor actual</p>
           <div className="flex items-center gap-2.5">
             <VendorAvatar employee={currentVendor} size={8} />
             <p className="text-[13px] font-black text-slate-700">
@@ -605,7 +605,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Asignar a *</label>
           {vendorList.length === 0 ? (
-            <p className="text-[11px] text-slate-400 text-center py-3">No hay otros vendedores en esta sucursal</p>
+            <p className="text-[11px] text-slate-500 text-center py-3">No hay otros vendedores en esta sucursal</p>
           ) : (
             <div className="space-y-1">
               {vendorList.map(emp => {
@@ -733,7 +733,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
       <div className="flex flex-col gap-2.5 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {/* Cliente actual */}
         <div className="rounded-2xl px-3 py-2 bg-slate-50 border border-slate-200">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Cliente actual</p>
+          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Cliente actual</p>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center shrink-0">
               <span className="text-slate-600 font-black text-[11px] leading-none">{(inv.cliente || '?').charAt(0)}</span>
@@ -758,7 +758,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
             />
             {query && (
               <button onClick={() => { setQuery(''); setNewClient(null); setResults([]); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600">
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-600">
                 <X size={10} strokeWidth={2.5} />
               </button>
             )}
@@ -773,7 +773,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-black text-[#0052CC] truncate">{newClient.name}</p>
                 {(newClient.nit || newClient.dui) && (
-                  <p className="text-[9px] text-slate-400 font-mono truncate">{newClient.nit || newClient.dui}</p>
+                  <p className="text-[9px] text-slate-500 font-mono truncate">{newClient.nit || newClient.dui}</p>
                 )}
               </div>
               <div className="w-4 h-4 rounded-full bg-[#0052CC] flex items-center justify-center shrink-0">
@@ -784,7 +784,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 
           {/* Resultados */}
           {!newClient && query.trim().length >= 2 && !searching && results.length === 0 && (
-            <p className="text-[11px] text-slate-400 text-center py-2">Sin coincidencias en el listado de clientes</p>
+            <p className="text-[11px] text-slate-500 text-center py-2">Sin coincidencias en el listado de clientes</p>
           )}
           {!newClient && results.length > 0 && (
             <div className="space-y-1 max-h-[180px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -796,7 +796,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-bold text-slate-700 truncate leading-tight">{c.name}</p>
-                    <p className="text-[9px] text-slate-400 font-mono truncate">
+                    <p className="text-[9px] text-slate-500 font-mono truncate">
                       {[c.nit && `NIT ${c.nit}`, c.dui && `DUI ${c.dui}`, c.phone].filter(Boolean).join(' · ') || `#${c.erp_id || c.id}`}
                     </p>
                   </div>
@@ -899,7 +899,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
     return (
       <div className="flex flex-col items-center justify-center h-full gap-2">
         <AlertTriangle size={28} strokeWidth={1.5} className="text-slate-300" />
-        <p className="text-[12px] font-semibold text-slate-400">Tu sucursal no está configurada</p>
+        <p className="text-[12px] font-semibold text-slate-500">Tu sucursal no está configurada</p>
       </div>
     );
   }
@@ -940,10 +940,10 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
   return (
     <div className="flex flex-col gap-2.5 h-full">
       <div className="flex items-center justify-between shrink-0">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
           Ventas del mes — {activeBranch?.name || 'Tu sucursal'}
         </p>
-        <span className="text-[10px] font-bold text-slate-400">
+        <span className="text-[10px] font-bold text-slate-500">
           {filtered.length !== invoices.length ? `${filtered.length} / ${invoices.length}` : `${invoices.length} facturas`}
         </span>
       </div>
@@ -961,7 +961,7 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
           />
           {search && (
             <button onClick={() => setSearch('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600">
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-600">
               <X size={10} strokeWidth={2.5} />
             </button>
           )}
@@ -974,10 +974,10 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-slate-300" /></div>}
+        {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-slate-500" /></div>}
 
         {!loading && filtered.length === 0 && (
-          <div className="py-8 text-center text-[12px] text-slate-400 font-medium">
+          <div className="py-8 text-center text-[12px] text-slate-500 font-medium">
             {search || dateFilter ? 'Sin resultados con estos filtros' : 'No hay facturas este mes'}
           </div>
         )}
@@ -997,17 +997,17 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
             <div key={inv.id}
               className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-slate-100 bg-white hover:border-slate-200 transition-all">
               <div className="flex-1 min-w-0">
-                <p className={`text-[12px] font-black truncate leading-tight ${ok ? 'text-slate-800' : 'text-slate-400'}`}>
+                <p className={`text-[12px] font-black truncate leading-tight ${ok ? 'text-slate-800' : 'text-slate-500'}`}>
                   {inv.cliente || 'Sin nombre'}
                 </p>
                 <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                  <span className="text-[9px] text-slate-400 font-mono">{inv.correlativo}</span>
+                  <span className="text-[9px] text-slate-500 font-mono">{inv.correlativo}</span>
                   <DocBadge tipo={inv.tipo_documento} />
                   {inv.tipo_pago && <PayBadge tipo={inv.tipo_pago} />}
                   {/* Vendedor avatar + nombre aquí, no al inicio de la fila */}
                   <span className="inline-flex items-center gap-1">
                     <VendorAvatar employee={vendor} size={5} />
-                    <span className="text-[9px] text-slate-400 font-medium">
+                    <span className="text-[9px] text-slate-500 font-medium">
                       {vendor ? vendor.name.split(' ')[0] : (inv.cod_vendedor ? `#${inv.cod_vendedor}` : '')}
                     </span>
                   </span>
@@ -1015,15 +1015,15 @@ export default function WidgetAnnulmentRequest({ selectedBranchId: propBranchId 
               </div>
 
               <div className="text-right shrink-0">
-                <p className={`text-[11px] font-black ${ok ? 'text-slate-700' : 'text-slate-300'}`}>
+                <p className={`text-[11px] font-black ${ok ? 'text-slate-700' : 'text-slate-500'}`}>
                   {fmtCurrency(inv.total)}
                 </p>
-                <p className="text-[8px] text-slate-300">{fmtDate(inv.fecha)}</p>
+                <p className="text-[8px] text-slate-500">{fmtDate(inv.fecha)}</p>
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
                 <button onClick={() => { setFocused(inv); setView('detail'); }}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-[#0052CC] hover:text-white text-slate-400 transition-all"
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-[#0052CC] hover:text-white text-slate-500 transition-all"
                   title="Ver detalle">
                   <Eye size={12} strokeWidth={2.5} />
                 </button>

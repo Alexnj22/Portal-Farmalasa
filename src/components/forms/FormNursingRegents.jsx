@@ -89,14 +89,14 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                     <div className={`relative group border-2 border-dashed rounded-[1.5rem] p-4 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-4 cursor-pointer overflow-hidden ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'bg-blue-50/50 border-blue-300 hover:bg-blue-50' : 'bg-slate-50/50 border-slate-300 hover:bg-[#0052CC]/5 hover:border-[#0052CC]/50'}`}>
                         <input type="file" accept="application/pdf,image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={(e) => updateLegalField('nursingServicePermitFile', e.target.files?.[0] || null)} />
                         
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 group-hover:scale-105 ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'bg-white text-[#0052CC] border border-blue-100' : 'bg-white text-slate-400 group-hover:text-[#0052CC]'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 group-hover:scale-105 ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'bg-white text-[#0052CC] border border-blue-100' : 'bg-white text-slate-500 group-hover:text-[#0052CC]'}`}>
                              {legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? <ShieldCheck size={20} strokeWidth={2}/> : <UploadCloud size={20} strokeWidth={1.5} />}
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className={`text-[12px] font-black tracking-tight truncate ${legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'text-[#0052CC]' : 'text-slate-600'}`}>
                                 {legalData.nursingServicePermitFile ? legalData.nursingServicePermitFile.name : legalData.nursingServicePermitUrl ? "Archivo adjunto guardado" : "Toca para subir documento"}
                             </p>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                            <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-0.5">
                                 {legalData.nursingServicePermitFile || legalData.nursingServicePermitUrl ? 'Reemplazar archivo' : 'PDF, JPG o PNG (Máx 5MB)'}
                             </p>
                         </div>
@@ -147,7 +147,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                         <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 block">Carné JVQE (PDF/IMG)</label>
                                         <div className={`relative group/btn border-2 border-dashed rounded-2xl p-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer ${nurse.carneFile || nurse.carneUrl ? 'bg-blue-50/40 border-blue-200 hover:bg-blue-50/80' : 'bg-slate-50/50 border-slate-200 hover:bg-[#0052CC]/5 hover:border-[#0052CC]/40'}`}>
                                             <input type="file" accept=".pdf,image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={(e) => updateNurse(index, 'carneFile', e.target.files?.[0] || null)} />
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-300 group-hover/btn:scale-105 ${nurse.carneFile || nurse.carneUrl ? 'bg-white text-[#0052CC] shadow-sm border-blue-100' : 'bg-white text-slate-400 border-slate-100 group-hover/btn:text-[#0052CC]'}`}>
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-300 group-hover/btn:scale-105 ${nurse.carneFile || nurse.carneUrl ? 'bg-white text-[#0052CC] shadow-sm border-blue-100' : 'bg-white text-slate-500 border-slate-100 group-hover/btn:text-[#0052CC]'}`}>
                                                 {nurse.carneFile || nurse.carneUrl ? <ShieldCheck size={16} strokeWidth={2}/> : <UploadCloud size={16}/>}
                                             </div>
                                             <p className="text-[10px] font-black text-slate-600 truncate transition-colors group-hover/btn:text-[#0052CC]">
@@ -161,7 +161,7 @@ const FormNursingRegents = ({ formData, setFormData }) => {
                                         <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1 block">Licencia Regencia (PDF)</label>
                                         <div className={`relative group/btn border-2 border-dashed rounded-2xl p-3 transition-all duration-300 transform-gpu hover:-translate-y-0.5 hover:shadow-md flex items-center gap-3 cursor-pointer ${nurse.licenciaFile || nurse.licenciaUrl ? 'bg-blue-50/40 border-blue-200 hover:bg-blue-50/80' : 'bg-slate-50/50 border-slate-200 hover:bg-[#0052CC]/5 hover:border-[#0052CC]/40'}`}>
                                             <input type="file" accept=".pdf,image/*" className="absolute inset-0 opacity-0 cursor-pointer z-10" onChange={(e) => updateNurse(index, 'licenciaFile', e.target.files?.[0] || null)} />
-                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-300 group-hover/btn:scale-105 ${nurse.licenciaFile || nurse.licenciaUrl ? 'bg-white text-[#0052CC] shadow-sm border-blue-100' : 'bg-white text-slate-400 border-slate-100 group-hover/btn:text-[#0052CC]'}`}>
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-300 group-hover/btn:scale-105 ${nurse.licenciaFile || nurse.licenciaUrl ? 'bg-white text-[#0052CC] shadow-sm border-blue-100' : 'bg-white text-slate-500 border-slate-100 group-hover/btn:text-[#0052CC]'}`}>
                                                 {nurse.licenciaFile || nurse.licenciaUrl ? <ShieldCheck size={16} strokeWidth={2}/> : <UploadCloud size={16}/>}
                                             </div>
                                             <p className="text-[10px] font-black text-slate-600 truncate transition-colors group-hover/btn:text-[#0052CC]">

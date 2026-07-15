@@ -129,7 +129,7 @@ const LiquidWeekPicker = ({ selectedWeekStart, onChange, children }) => {
                 {/* ── Cabeceras días ── */}
                 <div className="grid grid-cols-7 mb-1">
                     {DAY_HEADERS.map(d => (
-                        <div key={d} className="text-center text-[9px] font-black text-slate-400 uppercase tracking-wider py-1">
+                        <div key={d} className="text-center text-[9px] font-black text-slate-600 uppercase tracking-wider py-1">
                             {d}
                         </div>
                     ))}
@@ -186,7 +186,7 @@ const LiquidWeekPicker = ({ selectedWeekStart, onChange, children }) => {
                 {/* ── Botón semana actual ── */}
                 <button type="button"
                     onClick={() => selectWeek(new Date())}
-                    className="mt-3 w-full text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-700 hover:bg-slate-50 py-2 rounded-xl transition-all">
+                    className="mt-3 w-full text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-slate-700 hover:bg-slate-50 py-2 rounded-xl transition-all">
                     Semana actual
                 </button>
             </div>

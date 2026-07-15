@@ -473,7 +473,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               </h3>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 transition-colors mt-0.5">
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-600 p-1 transition-colors mt-0.5">
             <X size={16} />
           </button>
         </div>
@@ -512,7 +512,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               </div>
 
               {pedidosDisp.length === 0 ? (
-                <div className="text-center py-6 text-slate-400 text-[12px]">
+                <div className="text-center py-6 text-slate-500 text-[12px]">
                   No hay pedidos confirmados disponibles para despachar.
                 </div>
               ) : (
@@ -535,7 +535,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                             <span className="text-[11px] text-slate-500 font-medium">— {item.suc_name}</span>
                           </div>
                           {item.total_cajas > 0 && (
-                            <span className="text-[10px] text-slate-400">
+                            <span className="text-[10px] text-slate-500">
                               {item.total_cajas} caja{item.total_cajas !== 1 ? 's' : ''}
                               {item.cajas_electrolit > 0 && ` · ${item.cajas_electrolit} Electrolit`}
                             </span>
@@ -564,7 +564,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                 <div className="w-full h-full bg-slate-50 flex flex-col items-center justify-center gap-2 text-center px-4">
                   <MapPin size={20} className="text-slate-300" />
                   <p className="text-[11px] font-semibold text-slate-500">Mapa no disponible</p>
-                  <p className="text-[10px] text-slate-400 max-w-[220px]">
+                  <p className="text-[10px] text-slate-500 max-w-[220px]">
                     La API key de Google Maps no está habilitada para Maps JavaScript API o tiene restricciones de dominio.
                   </p>
                 </div>
@@ -626,7 +626,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                       {/* Tramo de conducción */}
                       <div className="flex items-center gap-3 my-0.5 ml-3">
                         <div className="w-px h-5 bg-indigo-200 mx-auto" style={{ marginLeft: 0 }} />
-                        <div className="flex items-center gap-1.5 text-[9px] text-slate-400 font-medium pl-0">
+                        <div className="flex items-center gap-1.5 text-[9px] text-slate-500 font-medium pl-0">
                           <Clock size={8} className="text-indigo-300" />
                           {stop.dist_m ? `${fmtDist(stop.dist_m)} · ` : ''}{drive > 0 ? `${drive} min conduciendo` : 'sin datos'}
                         </div>
@@ -691,12 +691,12 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                             </div>
                             <div className="flex items-start gap-2 shrink-0">
                               <div className="text-right">
-                                <p className="text-[8px] text-slate-400 uppercase tracking-wider">acumulado</p>
+                                <p className="text-[8px] text-slate-600 uppercase tracking-wider">acumulado</p>
                                 <p className={`text-[15px] font-black ${timeCls} leading-tight`}>{fmtMin(cumul)}</p>
                               </div>
                               <button
                                 onClick={() => removeStop(stop._uid)}
-                                className="p-1 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors mt-0.5"
+                                className="p-1 rounded-lg text-slate-500 hover:text-rose-500 hover:bg-rose-50 transition-colors mt-0.5"
                                 title="Quitar parada"
                               >
                                 <Trash2 size={12} />
@@ -717,7 +717,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   <div className="ml-10 p-3 rounded-xl border border-amber-200 bg-amber-50/60 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">¿A qué sucursal?</p>
-                      <button onClick={() => setShowAddVisita(false)} className="text-slate-400 hover:text-slate-600">
+                      <button onClick={() => setShowAddVisita(false)} className="text-slate-500 hover:text-slate-600">
                         <X size={12} />
                       </button>
                     </div>
@@ -740,7 +740,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   <div className="ml-10">
                     <button
                       onClick={() => setShowAddVisita(true)}
-                      className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-xl border border-dashed border-slate-300 text-slate-400 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50/40 transition-all"
+                      className="flex items-center gap-1.5 text-[10px] font-semibold px-3 py-1.5 rounded-xl border border-dashed border-slate-300 text-slate-500 hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50/40 transition-all"
                     >
                       <Plus size={10} />Agregar visita / encargo extra
                     </button>
@@ -752,7 +752,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   <>
                     <div className="flex items-center gap-3 my-0.5 ml-3">
                       <div className="w-px h-5 bg-slate-200 mx-auto" style={{ marginLeft: 0 }} />
-                      <div className="flex items-center gap-1.5 text-[9px] text-slate-400 font-medium">
+                      <div className="flex items-center gap-1.5 text-[9px] text-slate-500 font-medium">
                         <Clock size={8} className="text-slate-300" />
                         {fmtDist(returnLeg.dist_m)} · {returnLeg.dur_min} min regreso a base
                       </div>
@@ -765,7 +765,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                         <div className="flex items-center justify-between">
                           <p className="text-[11px] font-bold text-slate-700">Bodega — Vuelta en base</p>
                           <div className="text-right">
-                            <p className="text-[8px] text-slate-400 uppercase tracking-wider">total estimado</p>
+                            <p className="text-[8px] text-slate-600 uppercase tracking-wider">total estimado</p>
                             <p className="text-[15px] font-black text-slate-800 leading-tight">{fmtMin(totalTime)}</p>
                           </div>
                         </div>
@@ -790,9 +790,9 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                     <p className="text-[8px] text-amber-300">conducir + descargas</p>
                   </div>
                   <div className="flex-1 bg-slate-50 rounded-xl px-3 py-2 border border-slate-200 text-center">
-                    <p className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Solo conducir</p>
+                    <p className="text-[9px] text-slate-600 font-semibold uppercase tracking-wider">Solo conducir</p>
                     <p className="text-[15px] font-black text-slate-600">{fmtMin(totalDriveMin)}</p>
-                    <p className="text-[8px] text-slate-300">sin descargas</p>
+                    <p className="text-[8px] text-slate-500">sin descargas</p>
                   </div>
                 </div>
               )}

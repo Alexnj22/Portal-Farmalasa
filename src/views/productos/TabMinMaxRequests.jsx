@@ -53,7 +53,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
         <Avatar emp={emp} name={name} />
         <div className="flex-1 min-w-0">
           <p className="text-[12px] font-black text-slate-800 truncate">{name}</p>
-          <p className="text-[10px] text-slate-400">{relTime(r.requested_at)}</p>
+          <p className="text-[10px] text-slate-500">{relTime(r.requested_at)}</p>
         </div>
         <span className={`shrink-0 text-[9px] font-black px-2 py-0.5 rounded-full border ${st.cls}`}>{st.label}</span>
       </div>
@@ -75,7 +75,7 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
 
       {/* Valores: actual → propuesto */}
       <div className="flex items-center justify-center gap-3 rounded-xl bg-slate-50/70 border border-slate-100 py-2">
-        <div className="text-right text-[12px] font-bold tabular-nums text-slate-400">
+        <div className="text-right text-[12px] font-bold tabular-nums text-slate-500">
           <div>MIN {r.current_min ?? '—'}</div>
           <div>MAX {r.current_max ?? '—'}</div>
         </div>
@@ -91,10 +91,10 @@ function RequestCard({ r, emp, busy, onApprove, onReject }) {
 
       {/* Nota de decisión (historial) */}
       {!isPending && r.decision_note && (
-        <p className="text-[10px] text-slate-400">Nota: {r.decision_note}</p>
+        <p className="text-[10px] text-slate-500">Nota: {r.decision_note}</p>
       )}
       {!isPending && (
-        <p className="text-[10px] text-slate-400 flex items-center gap-1">
+        <p className="text-[10px] text-slate-500 flex items-center gap-1">
           <Clock size={10} /> {r.decided_by || '—'} · {relTime(r.decided_at)}
         </p>
       )}
@@ -305,11 +305,11 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
 
       {/* ── Grid de cards ── */}
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-slate-300" /></div>
+        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-slate-500" /></div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-2 text-slate-300">
+        <div className="flex flex-col items-center justify-center py-20 gap-2 text-slate-500">
           <Inbox size={34} strokeWidth={1.5} />
-          <p className="text-[13px] font-semibold text-slate-400">
+          <p className="text-[13px] font-semibold text-slate-500">
             {tab === 'pending' ? 'No hay solicitudes pendientes' : 'Sin historial de solicitudes'}
           </p>
         </div>

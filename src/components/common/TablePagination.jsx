@@ -8,7 +8,7 @@ export const PAGE_SIZE_OPTIONS = [25, 50, 100];
 const navCls = (disabled) =>
     `w-8 h-8 flex items-center justify-center rounded-xl text-[11px] font-bold border transition-colors duration-150 ${
         disabled
-            ? 'bg-white/30 border-white/40 text-slate-300 cursor-not-allowed'
+            ? 'bg-white/30 border-white/40 text-slate-500 cursor-not-allowed'
             : 'bg-white/70 backdrop-blur-sm border-white/80 text-slate-500 hover:border-[#0052CC]/30 hover:text-[#0052CC] hover:bg-white shadow-sm'
     }`;
 
@@ -68,7 +68,7 @@ function SmartPagination({ page, total, onChange }) {
                         ? <div key={`e${i}`}
                             className="w-7 h-8 flex items-center justify-center select-none"
                           >
-                            <span className="text-[13px] font-black text-slate-400 leading-none tracking-[2px]">
+                            <span className="text-[13px] font-black text-slate-500 leading-none tracking-[2px]">
                                 ···
                             </span>
                           </div>
@@ -116,7 +116,7 @@ function SmartPagination({ page, total, onChange }) {
                         placeholder="—"
                         className="w-11 h-7 text-center text-[16px] font-bold text-slate-700 bg-white/80 border border-slate-200/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0052CC]/25 focus:border-[#0052CC] shadow-sm transition-shadow"
                     />
-                    <span className="text-[9px] text-slate-400 tabular-nums">/ {total}</span>
+                    <span className="text-[9px] text-slate-500 tabular-nums">/ {total}</span>
                 </div>
             )}
 
@@ -185,7 +185,7 @@ export default function TablePagination({
                 {isFiltered ? (
                     <>
                         <span className="text-[11px] font-black text-[#0052CC] tabular-nums">{(filteredTotal ?? 0).toLocaleString()}</span>
-                        <span className="text-[9px] text-slate-400 mx-0.5">/</span>
+                        <span className="text-[9px] text-slate-500 mx-0.5">/</span>
                         <span className="text-[10px] font-semibold text-slate-500 tabular-nums">{total.toLocaleString()}</span>
                         <span className="text-[9px] text-slate-500 ml-0.5">{unit}</span>
                     </>

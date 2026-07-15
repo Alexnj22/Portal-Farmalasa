@@ -218,7 +218,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
       <div className="flex items-start gap-1.5">
         <p className="text-[11px] font-black text-slate-800 leading-tight flex-1">{nombre || '—'}</p>
         <span className={`shrink-0 text-[8px] font-black px-1.5 py-0.5 rounded-full ${
-          activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
+          activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
         }`}>
           {activo ? 'ACTIVO' : 'INACTIVO'}
         </span>
@@ -241,7 +241,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
             >
               {rState === 'saving' ? '…' : 'OK'}
             </button>
-            <button onClick={() => setFormOpen(false)} className="text-slate-400 hover:text-slate-600">
+            <button onClick={() => setFormOpen(false)} className="text-slate-500 hover:text-slate-600">
               <X size={10} strokeWidth={2.5} />
             </button>
           </div>
@@ -263,7 +263,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
           </p>
         </div>
       )}
-      {lab && <p className="text-[9px] text-slate-400 font-medium truncate">{lab}</p>}
+      {lab && <p className="text-[9px] text-slate-500 font-medium truncate">{lab}</p>}
     </div>
   );
 }
@@ -287,7 +287,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
             <span className={`text-[10px] font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
             <span className="w-px h-3 bg-slate-200 mx-1" />
             <span className={`text-[12px] font-black tabular-nums ${theme.label}`}>{branchTotal}</span>
-            <span className="text-[9px] font-semibold text-slate-400 ml-0.5">uds</span>
+            <span className="text-[9px] font-semibold text-slate-500 ml-0.5">uds</span>
           </div>
           <div className="h-px flex-1 bg-gradient-to-l from-transparent to-slate-200/80" />
         </div>
@@ -317,7 +317,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                           <p className="text-[9px] text-violet-500 font-semibold mt-0.5 truncate">{prod.principioActivo}</p>
                         )}
                         {prod.presentacion && (
-                          <p className="text-[9px] text-slate-400 font-medium mt-0.5">{prod.presentacion}</p>
+                          <p className="text-[9px] text-slate-500 font-medium mt-0.5">{prod.presentacion}</p>
                         )}
                       </div>
                       <span className="text-[10px] font-black text-slate-500 shrink-0 tabular-nums">{lotTotal} uds</span>
@@ -326,7 +326,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                     <div className="divide-y divide-white/40" style={{ background: 'rgba(255,255,255,0.18)' }}>
                       {prod.lots.map((row, li) => (
                         <div key={li} className="flex items-center gap-2 px-3 py-1.5">
-                          <span className="text-[9px] font-mono text-slate-400 flex-1 truncate min-w-0">{row.lote || '—'}</span>
+                          <span className="text-[9px] font-mono text-slate-500 flex-1 truncate min-w-0">{row.lote || '—'}</span>
                           <ExpiryBadge date={row.fecha_vencimiento} />
                           <span className="text-[10px] font-black text-slate-600 shrink-0 tabular-nums w-14 text-right">{row.cantidad} uds</span>
                         </div>
@@ -346,10 +346,10 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
                         <p className="text-[9px] text-violet-500 font-semibold truncate">{prod.principioActivo}</p>
                       )}
                       {prod.presentacion && (
-                        <p className="text-[9px] text-slate-400">{prod.presentacion}</p>
+                        <p className="text-[9px] text-slate-500">{prod.presentacion}</p>
                       )}
                     </div>
-                    <span className="text-[9px] font-mono text-slate-400 shrink-0 max-w-[60px] truncate">
+                    <span className="text-[9px] font-mono text-slate-500 shrink-0 max-w-[60px] truncate">
                       {prod.lots[0].lote || '—'}
                     </span>
                     <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
@@ -369,7 +369,7 @@ function BranchSections({ branches, onDrill, onZoom, animOffset = 0 }) {
 }
 
 /* ─── Section label ────────────────────────────────────────────────────────── */
-function SectionLabel({ icon: Icon, label, color = 'text-slate-400', bg = 'bg-slate-100' }) {
+function SectionLabel({ icon: Icon, label, color = 'text-slate-500', bg = 'bg-slate-100' }) {
   return (
     <div className="flex items-center gap-2 mb-2 mt-1">
       <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${bg}`}>
@@ -560,9 +560,9 @@ export default function WidgetInventorySearch() {
               <p className="text-[9px] text-violet-500 font-semibold truncate">{drillProduct.principioActivo}</p>
             )}
             {drillProduct.presentacion && (
-              <p className="text-[10px] text-slate-400 font-medium">{drillProduct.presentacion}</p>
+              <p className="text-[10px] text-slate-500 font-medium">{drillProduct.presentacion}</p>
             )}
-            <p className="text-[9px] text-slate-400 font-bold mt-0.5">{grandTotal} uds · {drillBranches.length} sucursal{drillBranches.length !== 1 ? 'es' : ''}</p>
+            <p className="text-[9px] text-slate-500 font-bold mt-0.5">{grandTotal} uds · {drillBranches.length} sucursal{drillBranches.length !== 1 ? 'es' : ''}</p>
           </div>
         </div>
 
@@ -570,7 +570,7 @@ export default function WidgetInventorySearch() {
           {drillBranches.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-2">
               <Package size={24} strokeWidth={1.5} className="text-slate-200" />
-              <p className="text-[11px] text-slate-400 font-semibold">Sin stock en ninguna sucursal</p>
+              <p className="text-[11px] text-slate-500 font-semibold">Sin stock en ninguna sucursal</p>
             </div>
           ) : (
             drillBranches.map((branch, bi) => {
@@ -592,7 +592,7 @@ export default function WidgetInventorySearch() {
                       <span className={`text-[10px] font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
                       <span className="w-px h-3 bg-slate-200 mx-1" />
                       <span className={`text-[12px] font-black tabular-nums ${theme.label}`}>{total}</span>
-                      <span className="text-[9px] font-semibold text-slate-400 ml-0.5">uds</span>
+                      <span className="text-[9px] font-semibold text-slate-500 ml-0.5">uds</span>
                     </div>
                     <div className={`h-px flex-1 bg-gradient-to-l from-transparent ${branch.isVencidos ? 'to-rose-200/80' : 'to-slate-200/80'}`} />
                   </div>
@@ -605,7 +605,7 @@ export default function WidgetInventorySearch() {
                   >
                     {prod.lots.length === 1 ? (
                       <div className="flex items-center gap-2 px-3 py-2">
-                        <span className="text-[9px] font-mono text-slate-400 flex-1 truncate">{prod.lots[0].lote || '—'}</span>
+                        <span className="text-[9px] font-mono text-slate-500 flex-1 truncate">{prod.lots[0].lote || '—'}</span>
                         <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
                         <span className={`text-[10px] font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-rose-600' : 'text-slate-700'}`}>{prod.lots[0].cantidad} uds</span>
                       </div>
@@ -613,7 +613,7 @@ export default function WidgetInventorySearch() {
                       <div className="divide-y divide-white/40">
                         {prod.lots.map((row, li) => (
                           <div key={li} className="flex items-center gap-2 px-3 py-1.5">
-                            <span className="text-[9px] font-mono text-slate-400 flex-1 truncate min-w-0">{row.lote || '—'}</span>
+                            <span className="text-[9px] font-mono text-slate-500 flex-1 truncate min-w-0">{row.lote || '—'}</span>
                             <ExpiryBadge date={row.fecha_vencimiento} />
                             <span className={`text-[10px] font-black shrink-0 tabular-nums w-14 text-right ${branch.isVencidos ? 'text-rose-600' : 'text-slate-600'}`}>{row.cantidad} uds</span>
                           </div>
@@ -659,7 +659,7 @@ export default function WidgetInventorySearch() {
         {query && (
           <button
             onClick={() => { setQuery(''); setResults(null); setDrillProduct(null); setSrsResults(null); setAlternatives([]); }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-600 hover:bg-slate-100 transition-colors"
           >
             <X size={10} strokeWidth={2.5} />
           </button>
@@ -678,7 +678,7 @@ export default function WidgetInventorySearch() {
         {!loading && results === null && (
           <div className="flex flex-col items-center justify-center h-full gap-2">
             <Package size={28} strokeWidth={1.5} className="text-slate-200" />
-            <p className="text-[11px] font-semibold text-slate-400 text-center leading-snug">
+            <p className="text-[11px] font-semibold text-slate-500 text-center leading-snug">
               Busca un producto para ver<br />su stock por sucursal
             </p>
           </div>
@@ -720,12 +720,12 @@ export default function WidgetInventorySearch() {
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-[11px] font-bold text-slate-700 truncate leading-tight">{prod.descripcion}</p>
-                      {prod.presentacion && <p className="text-[9px] text-slate-400">{prod.presentacion}</p>}
+                      {prod.presentacion && <p className="text-[9px] text-slate-500">{prod.presentacion}</p>}
                       {prod.lots.length > 1 && (
                         <div className="mt-1 space-y-0.5">
                           {prod.lots.map((r, li) => (
                             <div key={li} className="flex items-center gap-1.5">
-                              <span className="text-[8px] font-mono text-slate-400 truncate">{r.lote || '—'}</span>
+                              <span className="text-[8px] font-mono text-slate-500 truncate">{r.lote || '—'}</span>
                               <ExpiryBadge date={r.fecha_vencimiento} />
                               <span className="text-[9px] font-black text-rose-600 tabular-nums ml-auto">{r.cantidad}</span>
                             </div>
@@ -735,7 +735,7 @@ export default function WidgetInventorySearch() {
                     </div>
                     {prod.lots.length === 1 && (
                       <>
-                        <span className="text-[9px] font-mono text-slate-400 shrink-0 max-w-[55px] truncate">{prod.lots[0].lote || '—'}</span>
+                        <span className="text-[9px] font-mono text-slate-500 shrink-0 max-w-[55px] truncate">{prod.lots[0].lote || '—'}</span>
                         <ExpiryBadge date={prod.lots[0].fecha_vencimiento} />
                       </>
                     )}
@@ -763,7 +763,7 @@ export default function WidgetInventorySearch() {
             {srsLoading && (
               <div className="flex items-center gap-2 px-1">
                 <Loader2 size={11} className="text-violet-400 animate-spin shrink-0" />
-                <p className="text-[10px] text-slate-400 font-medium">Consultando Registro SRS...</p>
+                <p className="text-[10px] text-slate-500 font-medium">Consultando Registro SRS...</p>
               </div>
             )}
 
@@ -792,7 +792,7 @@ export default function WidgetInventorySearch() {
 
             {/* Nothing anywhere */}
             {!srsLoading && srsResults !== null && srsResults.length === 0 && alternatives.length === 0 && (
-              <p className="text-center text-[11px] text-slate-400 font-medium py-4">
+              <p className="text-center text-[11px] text-slate-500 font-medium py-4">
                 Sin resultados en SRS ni alternativas en inventario
               </p>
             )}

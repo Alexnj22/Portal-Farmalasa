@@ -289,7 +289,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                 </div>
                                 <div>
                                     <p className="text-[13px] font-black text-slate-800 tracking-tight">{branchName}</p>
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{grp.length} empleado{grp.length !== 1 ? 's' : ''}</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">{grp.length} empleado{grp.length !== 1 ? 's' : ''}</p>
                                 </div>
                             </div>
 
@@ -312,7 +312,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                 <div className="w-px h-5 bg-white/50 mx-1" />
 
                                 <div className="text-right">
-                                    <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Total a pagar</p>
+                                    <p className="text-[8px] font-black uppercase tracking-widest text-slate-600">Total a pagar</p>
                                     <p className="text-[15px] font-black text-emerald-700">{fmt(branchNet)}</p>
                                 </div>
                             </div>
@@ -330,7 +330,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                                 <LiquidAvatar src={emp.photo || emp.photo_url} alt={emp.name} fallbackText={emp.name} className="w-8 h-8 rounded-xl shrink-0" />
                                                 <div>
                                                     <p className="font-black text-slate-800 text-[11px] leading-tight">{emp.name || '—'}</p>
-                                                    {emp.role && <p className="text-[9px] text-slate-400 font-medium leading-tight">{emp.role}</p>}
+                                                    {emp.role && <p className="text-[9px] text-slate-500 font-medium leading-tight">{emp.role}</p>}
                                                     {edited && <span className="text-[8px] font-black text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200 inline-block mt-0.5">editado</span>}
                                                 </div>
                                             </div>
@@ -346,12 +346,12 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                         <DataCell>
                                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button onClick={() => onPrint(e)} title="Imprimir boleta individual"
-                                                    className="p-1.5 rounded-lg hover:bg-white/80 text-slate-400 hover:text-slate-700 transition-colors">
+                                                    className="p-1.5 rounded-lg hover:bg-white/80 text-slate-500 hover:text-slate-700 transition-colors">
                                                     <Printer size={12} strokeWidth={2.5} />
                                                 </button>
                                                 {!isPaid && (
                                                     <button onClick={() => onEdit(e)} title="Editar"
-                                                        className="p-1.5 rounded-lg hover:bg-amber-50 text-slate-400 hover:text-amber-600 transition-colors">
+                                                        className="p-1.5 rounded-lg hover:bg-amber-50 text-slate-500 hover:text-amber-600 transition-colors">
                                                         <Edit2 size={12} strokeWidth={2.5} />
                                                     </button>
                                                 )}
@@ -497,7 +497,7 @@ const PayrollView = ({ openModal }) => {
                     <input ref={searchInputRef} type="text" placeholder="Buscar empleado…" value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className="bg-transparent outline-none text-[16px] font-semibold text-slate-700 placeholder-slate-400 w-full" />
-                    {searchTerm && <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600 transition-colors"><X size={13} strokeWidth={2.5} /></button>}
+                    {searchTerm && <button onClick={() => setSearchTerm('')} className="text-slate-500 hover:text-slate-600 transition-colors"><X size={13} strokeWidth={2.5} /></button>}
                 </div>
                 <button onClick={() => { setIsSearchMode(false); setSearchTerm(''); }}
                     className="px-4 h-10 rounded-full bg-white/60 backdrop-blur-md text-slate-500 hover:text-slate-800 hover:bg-white text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border border-white/60 hover:shadow-sm active:scale-[0.97]">
@@ -542,14 +542,14 @@ const PayrollView = ({ openModal }) => {
                     <div className="w-full lg:w-[280px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
                         <div className="backdrop-blur-[30px] rounded-[2.5rem] p-5 bg-white/40 border border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)]">
                             <div className="flex items-center justify-between mb-4">
-                                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Períodos</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">Períodos</p>
                                 <button onClick={() => openModal?.('newPayrollPeriod')}
                                     className="w-8 h-8 bg-[#0052CC] text-white rounded-xl flex items-center justify-center shadow-[0_3px_8px_rgba(0,82,204,0.35)] hover:scale-110 hover:-rotate-3 transition-transform active:scale-[0.97]">
                                     <Plus size={14} strokeWidth={2.5} />
                                 </button>
                             </div>
                             {filteredPeriods.length === 0 ? (
-                                <p className="text-center py-10 text-slate-400 text-[11px] font-medium">Sin períodos aún</p>
+                                <p className="text-center py-10 text-slate-500 text-[11px] font-medium">Sin períodos aún</p>
                             ) : (
                                 <div className="space-y-2">
                                     {filteredPeriods.map((p, i) => {
@@ -561,7 +561,7 @@ const PayrollView = ({ openModal }) => {
                                                 style={{ animationDelay: `${i*40}ms`, background: active?'rgba(0,82,204,0.08)':'rgba(255,255,255,0.5)', borderColor: active?'rgba(0,82,204,0.25)':'rgba(255,255,255,0.7)', boxShadow: active?'0 4px 16px rgba(0,82,204,0.12)':'none' }}>
                                                 <p className={`text-[11px] font-black leading-tight ${active?'text-[#0052CC]':'text-slate-800'}`}>{p.name}</p>
                                                 <div className="flex items-center justify-between mt-1.5">
-                                                    <p className="text-[9px] text-slate-400">{p.pay_date ? `Pago: ${new Date(p.pay_date+'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}</p>
+                                                    <p className="text-[9px] text-slate-500">{p.pay_date ? `Pago: ${new Date(p.pay_date+'T12:00:00').toLocaleDateString('es-SV')}` : 'Sin fecha de pago'}</p>
                                                     <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md border ${meta.color}`}>{meta.label}</span>
                                                 </div>
                                             </button>
@@ -580,7 +580,7 @@ const PayrollView = ({ openModal }) => {
                                     <DollarSign size={28} className="text-white" strokeWidth={1.5} />
                                 </div>
                                 <p className="text-[15px] font-black text-slate-700 uppercase tracking-tight">Selecciona un período</p>
-                                <p className="text-[12px] text-slate-400 mt-1">O crea una nueva quincena con el botón +</p>
+                                <p className="text-[12px] text-slate-500 mt-1">O crea una nueva quincena con el botón +</p>
                             </div>
                         ) : (
                             <>
@@ -589,7 +589,7 @@ const PayrollView = ({ openModal }) => {
                                     <div className="flex flex-wrap items-start justify-between gap-4">
                                         <div>
                                             <h2 className="text-[16px] font-black text-slate-800 tracking-tight">{activePeriod.name}</h2>
-                                            <p className="text-[10px] text-slate-400 mt-0.5">{activePeriod.start_date} → {activePeriod.end_date}{activePeriod.pay_date && ` · Pago: ${activePeriod.pay_date}`}</p>
+                                            <p className="text-[10px] text-slate-500 mt-0.5">{activePeriod.start_date} → {activePeriod.end_date}{activePeriod.pay_date && ` · Pago: ${activePeriod.pay_date}`}</p>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span className={`text-[9px] font-black px-3 py-1.5 rounded-xl border uppercase tracking-widest ${(STATUS_META[activePeriod.status]||STATUS_META.DRAFT).color}`}>
@@ -644,7 +644,7 @@ const PayrollView = ({ openModal }) => {
                                                 { label:'Total a Pagar',  value:totals.net,      color:'text-emerald-700' },
                                             ].map(t => (
                                                 <div key={t.label} className="text-center bg-white/40 rounded-2xl py-3 px-2 border border-white/60">
-                                                    <p className="text-[8px] text-slate-400 uppercase tracking-widest font-black">{t.label}</p>
+                                                    <p className="text-[8px] text-slate-600 uppercase tracking-widest font-black">{t.label}</p>
                                                     <p className={`text-[16px] font-black ${t.color} mt-0.5`}>{fmt(t.value)}</p>
                                                 </div>
                                             ))}
@@ -703,7 +703,7 @@ const PayrollView = ({ openModal }) => {
                                         </table>
                                     </div>
                                 ) : filteredEntries.length === 0 ? (
-                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-white/40 border border-white/80 text-center text-slate-400 text-[12px] animate-in fade-in duration-500">
+                                    <div className="backdrop-blur-[30px] rounded-[2.5rem] p-12 bg-white/40 border border-white/80 text-center text-slate-500 text-[12px] animate-in fade-in duration-500">
                                         {payrollEntries.length === 0 ? 'Genera la planilla para ver los datos.' : 'Sin resultados para los filtros actuales.'}
                                     </div>
                                 ) : (

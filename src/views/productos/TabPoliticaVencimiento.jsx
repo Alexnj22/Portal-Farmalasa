@@ -201,7 +201,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-24 gap-2 text-slate-400">
+            <div className="flex items-center justify-center py-24 gap-2 text-slate-500">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span className="text-sm">Cargando política de vencimiento…</span>
             </div>
@@ -218,7 +218,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
             </div>
 
             {filtered.length === 0 ? (
-                <div className="text-center py-20 text-slate-400 text-sm">
+                <div className="text-center py-20 text-slate-500 text-sm">
                     {searchTerm ? 'Sin resultados.' : 'No hay laboratorios registrados.'}
                 </div>
             ) : (
@@ -336,7 +336,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
 
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-800 truncate">{lab.nombre}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                         {proveedores.length === 0
                             ? 'Sin proveedores registrados'
                             : `${proveedores.length} proveedor${proveedores.length === 1 ? '' : 'es'}${devolutivoCount ? ` · ${devolutivoCount} devolutivo${devolutivoCount === 1 ? '' : 's'}` : ''}`}
@@ -362,12 +362,12 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                         <div className="mx-3 mb-3 rounded-xl bg-slate-50/80 border border-slate-100 p-3 space-y-2">
                             {canEdit && (
                                 <div className="flex items-center justify-between gap-2 px-0.5 mb-1">
-                                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Proveedores</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-600">Proveedores</span>
                                     <button
                                         onClick={onMarkND}
                                         disabled={markingND}
                                         title="Marca todos los productos de este laboratorio como No Devolutivo (ND) — poco común, la mayoría de laboratorios tienen productos mixtos"
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-slate-200 bg-white/70 text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-colors text-[9px] font-bold disabled:opacity-50 shrink-0"
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-slate-200 bg-white/70 text-slate-500 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200 transition-colors text-[9px] font-bold disabled:opacity-50 shrink-0"
                                     >
                                         {markingND ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
                                         Marcar todo como ND
@@ -375,7 +375,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                                 </div>
                             )}
                             {proveedores.length === 0 && newRowIds.length === 0 && (
-                                <p className="text-[11px] text-slate-400 italic px-1 py-2">Este laboratorio aún no tiene proveedores registrados.</p>
+                                <p className="text-[11px] text-slate-500 italic px-1 py-2">Este laboratorio aún no tiene proveedores registrados.</p>
                             )}
                             {proveedores.map(p => (
                                 <ProveedorRow key={p.id} proveedor={p} canEdit={canEdit} proveedorNameOptions={proveedorNameOptions} onUpdate={onUpdate} onDelete={onDelete} />
@@ -432,23 +432,23 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
                     )}
                     {proveedor.nombre}
                 </p>
-                {proveedor.notas && <p className="text-[10px] text-slate-400 truncate mt-0.5">{proveedor.notas}</p>}
+                {proveedor.notas && <p className="text-[10px] text-slate-500 truncate mt-0.5">{proveedor.notas}</p>}
             </div>
             {proveedor.devolutivo ? (
                 <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full shrink-0">
                     Devolutivo{proveedor.meses_devolucion != null ? ` · ${proveedor.meses_devolucion}m` : ''}
                 </span>
             ) : (
-                <span className="text-[9px] font-black uppercase text-slate-400 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
+                <span className="text-[9px] font-black uppercase text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full shrink-0">
                     No devolutivo
                 </span>
             )}
             {canEdit && (
                 <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => setEditing(true)} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-teal-600 hover:bg-teal-50 transition-colors">
+                    <button onClick={() => setEditing(true)} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-teal-600 hover:bg-teal-50 transition-colors">
                         <Pencil className="w-3 h-3" />
                     </button>
-                    <button onClick={() => onDelete(proveedor)} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+                    <button onClick={() => onDelete(proveedor)} className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors">
                         <Trash2 className="w-3 h-3" />
                     </button>
                 </div>
@@ -528,7 +528,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                             draft.devolutivo && draft.meses_devolucion === '' ? 'border-red-300 focus:border-red-300' : 'border-slate-200 focus:border-teal-300'
                         }`}
                     />
-                    <span className="text-[9px] font-semibold text-slate-400 whitespace-nowrap">meses</span>
+                    <span className="text-[9px] font-semibold text-slate-500 whitespace-nowrap">meses</span>
                 </div>
 
                 <button
@@ -537,7 +537,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                     className={`flex items-center justify-center w-7 h-7 rounded-lg border transition-colors shrink-0 ${
                         !draft.devolutivo
                             ? 'bg-amber-50 text-amber-700 border-amber-200'
-                            : 'bg-slate-50 text-slate-400 border-slate-200 hover:border-slate-300'
+                            : 'bg-slate-50 text-slate-500 border-slate-200 hover:border-slate-300'
                     }`}
                 >
                     {!draft.devolutivo ? <Ban className="w-3.5 h-3.5" /> : <RotateCcw className="w-3.5 h-3.5" />}
@@ -560,7 +560,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
 
                 <button
                     onClick={onCancel}
-                    className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-white/60 hover:bg-red-50 hover:border-red-200 text-slate-400 hover:text-red-400 transition-all shrink-0"
+                    className="flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-white/60 hover:bg-red-50 hover:border-red-200 text-slate-500 hover:text-red-400 transition-all shrink-0"
                     title="Cerrar"
                 >
                     <X className="w-3.5 h-3.5" />

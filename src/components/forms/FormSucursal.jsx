@@ -151,7 +151,7 @@ const FormSucursal = ({ formData, setFormData, section = "general" }) => {
         <div className="w-full h-full flex flex-col relative">
             <Suspense fallback={
                 <div className="flex h-full w-full items-center justify-center p-10">
-                    <span className="text-slate-400 font-bold uppercase tracking-widest text-[10px] animate-pulse">
+                    <span className="text-slate-600 font-bold uppercase tracking-widest text-[10px] animate-pulse">
                         Cargando Módulo...
                     </span>
                 </div>

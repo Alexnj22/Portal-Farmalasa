@@ -124,7 +124,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-24 gap-2 text-slate-400">
+            <div className="flex items-center justify-center py-24 gap-2 text-slate-500">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span className="text-sm">Cargando laboratorios…</span>
             </div>
@@ -142,7 +142,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
 
             {/* ── Sections ───────────────────────────────────────────── */}
             {filtered.length === 0 ? (
-                <div className="text-center py-20 text-slate-400 text-sm">
+                <div className="text-center py-20 text-slate-500 text-sm">
                     {searchTerm ? 'Sin resultados.' : 'No hay laboratorios registrados.'}
                 </div>
             ) : (
@@ -251,7 +251,7 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave }) {
 
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-800 truncate">{lab.nombre}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                         {filledCount === 0
                             ? 'Sin ubicaciones registradas'
                             : `${filledCount} de ${branches.length} sucursal${branches.length !== 1 ? 'es' : ''} con ubicación`}
@@ -386,7 +386,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                     </span>
                     <span className="text-[11px] font-bold text-slate-700 truncate flex-1">{branch.name}</span>
                     {!editing && (
-                        <Pencil className="w-3 h-3 text-slate-300 group-hover:text-slate-400 transition-opacity opacity-0 hover:opacity-100 flex-shrink-0" />
+                        <Pencil className="w-3 h-3 text-slate-500 group-hover:text-slate-500 transition-opacity opacity-0 hover:opacity-100 flex-shrink-0" />
                     )}
                 </div>
 
@@ -403,7 +403,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                             {!filled ? (
                                 <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-dashed border-slate-200 bg-slate-50/50">
                                     <MapPin className="w-3 h-3 text-slate-300 flex-shrink-0" />
-                                    <span className="text-[11px] text-slate-300 italic">Sin ubicación — clic para agregar</span>
+                                    <span className="text-[11px] text-slate-500 italic">Sin ubicación — clic para agregar</span>
                                 </div>
                             ) : (
                                 <div className="space-y-1.5">
@@ -446,7 +446,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                             key={t.key}
                                             onClick={() => setSection(t.key)}
                                             className={`flex-1 text-[11px] font-semibold py-1.5 px-2 rounded-[10px] transition-all duration-150 ${
-                                                section === t.key ? t.active : 'text-slate-400 hover:text-slate-600'
+                                                section === t.key ? t.active : 'text-slate-500 hover:text-slate-600'
                                             }`}
                                         >
                                             {t.label}
@@ -475,7 +475,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                                 className={`flex-1 py-1 rounded-lg text-[11px] font-bold border transition-all duration-150 ${
                                                     salaType === t.key
                                                         ? 'bg-teal-500 text-white border-teal-500 shadow-sm shadow-teal-200'
-                                                        : 'bg-white/60 text-slate-400 border-slate-200 hover:border-teal-200 hover:text-teal-500'
+                                                        : 'bg-white/60 text-slate-500 border-slate-200 hover:border-teal-200 hover:text-teal-500'
                                                 }`}
                                             >
                                                 {t.label}
@@ -508,7 +508,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                     whileTap={{ scale: 0.96 }}
                                     onClick={cancel}
                                     disabled={saving}
-                                    className="flex items-center justify-center w-9 rounded-xl border border-slate-200 bg-white/60 hover:bg-red-50 hover:border-red-200 text-slate-400 hover:text-red-400 transition-all"
+                                    className="flex items-center justify-center w-9 rounded-xl border border-slate-200 bg-white/60 hover:bg-red-50 hover:border-red-200 text-slate-500 hover:text-red-400 transition-all"
                                 >
                                     <X className="w-3.5 h-3.5" />
                                 </motion.button>
@@ -542,7 +542,7 @@ function GlassInput({ label, value, onChange, placeholder, accent }) {
         : 'focus:ring-2 focus:ring-teal-100 focus:border-teal-300';
     return (
         <div className="flex items-center gap-2.5">
-            <span className="text-[11px] font-bold text-slate-400 w-12 flex-shrink-0 text-right">{label}</span>
+            <span className="text-[11px] font-bold text-slate-500 w-12 flex-shrink-0 text-right">{label}</span>
             <input
                 value={value}
                 onChange={e => onChange(e.target.value)}

@@ -5,7 +5,7 @@ const ACTION_ITEMS = [
   { icon: LogIn, glassColor: 'bg-green-500/10 border-green-500/30 text-green-400', glow: 'group-hover:shadow-[0_0_20px_rgba(34,197,94,0.3)] group-hover:bg-green-500/20', label: 'Entrada' },
   { icon: Utensils, glassColor: 'bg-orange-500/10 border-orange-500/30 text-orange-400', glow: 'group-hover:shadow-[0_0_20px_rgba(249,115,22,0.3)] group-hover:bg-orange-500/20', label: 'Almuerzo' },
   { icon: Baby, glassColor: 'bg-pink-500/10 border-pink-500/30 text-pink-400', glow: 'group-hover:shadow-[0_0_20px_rgba(236,72,153,0.3)] group-hover:bg-pink-500/20', label: 'Lactancia' },
-  { icon: LogOut, glassColor: 'bg-slate-400/10 border-slate-400/30 text-slate-300', glow: 'group-hover:shadow-[0_0_20px_rgba(148,163,184,0.3)] group-hover:bg-slate-400/20', label: 'Salida' },
+  { icon: LogOut, glassColor: 'bg-slate-400/10 border-slate-400/30 text-slate-500', glow: 'group-hover:shadow-[0_0_20px_rgba(148,163,184,0.3)] group-hover:bg-slate-400/20', label: 'Salida' },
 ];
 
 export default function IdleScanPanel({

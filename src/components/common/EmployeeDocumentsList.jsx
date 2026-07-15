@@ -26,7 +26,7 @@ const DocumentRow = ({ doc }) => {
             <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-bold text-slate-700 truncate">{doc.title || doc.category}</p>
                 {doc.expiry_date && (
-                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">
                         Vence {new Date(doc.expiry_date + 'T12:00:00').toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </p>
                 )}
@@ -68,7 +68,7 @@ const EmployeeDocumentsList = ({ documents, emptyLabel = 'Sin documentos registr
             <div className="flex flex-col items-center justify-center min-h-[160px] animate-in fade-in zoom-in-95 duration-700">
                 <div className="relative flex flex-col items-center text-center">
                     <div className="absolute top-2 w-20 h-20 rounded-full blur-[40px] opacity-20 bg-slate-400" />
-                    <div className="relative z-10 w-12 h-12 rounded-[1rem] flex items-center justify-center mb-3 bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-slate-400">
+                    <div className="relative z-10 w-12 h-12 rounded-[1rem] flex items-center justify-center mb-3 bg-white/70 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] text-slate-500">
                         <FolderOpen size={22} strokeWidth={1.5} />
                     </div>
                     <h3 className="font-bold text-[14px] text-slate-700 tracking-tight">{emptyLabel}</h3>

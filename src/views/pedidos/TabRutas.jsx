@@ -113,18 +113,18 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
                 {badge.label}
               </span>
               {ruta.salida_at && (
-                <span className="text-[10px] text-slate-400">· Salida {fmtTime(ruta.salida_at)}</span>
+                <span className="text-[10px] text-slate-500">· Salida {fmtTime(ruta.salida_at)}</span>
               )}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-[11px] text-slate-500 font-medium">{ruta.conductor_nombre}</span>
               {total > 0 && (
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-slate-500">
                   · {entregadas}/{total} parada{total !== 1 ? 's' : ''} entregada{entregadas !== 1 ? 's' : ''}
                 </span>
               )}
               {ruta.distancia_total_m > 0 && (
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-slate-500">
                   · {fmtDist(ruta.distancia_total_m)}
                 </span>
               )}
@@ -144,12 +144,12 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
           {/* Ver mapa */}
           <button
             onClick={e => { e.stopPropagation(); setMapOpen(true); }}
-            className="p-1.5 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 transition-colors"
             title="Ver mapa de ruta"
           >
             <Map size={14} />
           </button>
-          {expanded ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
+          {expanded ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
         </div>
       </div>
 
@@ -183,7 +183,7 @@ function RutaCard({ ruta, currentUserId, canEdit, isBranch, onRefresh }) {
                         </span>
                       )}
                       {stop.dist_m != null && (
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-slate-500">
                           · {fmtDist(stop.distancia_desde_anterior_m)} desde {idx === 0 ? 'bodega' : `parada ${idx}`}
                         </span>
                       )}
@@ -361,7 +361,7 @@ export default function TabRutas({ searchTerm = '' }) {
           </div>
           <div className="text-center">
             <p className="text-[15px] font-bold text-slate-700">Sin rutas activas</p>
-            <p className="text-[12px] text-slate-400 mt-1">
+            <p className="text-[12px] text-slate-500 mt-1">
               {canEdit && !isBranch ? 'Crea una ruta para gestionar las entregas.' : 'No hay rutas en curso.'}
             </p>
           </div>

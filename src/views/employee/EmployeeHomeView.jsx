@@ -80,7 +80,7 @@ const EmployeeHomeView = () => {
         cardHover:        'hover:bg-white/80 hover:shadow-[0_20px_40px_rgba(0,0,0,0.10)]',
         textStrong:       'text-slate-800',
         textMid:          'text-slate-600',
-        textMuted:        'text-slate-400',
+        textMuted:        'text-slate-500',
         divider:          'border-slate-100',
         pill:             'bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)]',
         shiftPill:        'bg-white/50 border-white/70',

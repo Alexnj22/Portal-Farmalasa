@@ -89,19 +89,19 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
         <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
                 {onPrev
-                    ? <button type="button" onClick={onPrev} className="w-6 h-6 rounded-full hover:bg-white/80 flex items-center justify-center text-slate-400 hover:text-[#0052CC] transition-all"><ChevronLeft size={12} strokeWidth={3} /></button>
+                    ? <button type="button" onClick={onPrev} className="w-6 h-6 rounded-full hover:bg-white/80 flex items-center justify-center text-slate-500 hover:text-[#0052CC] transition-all"><ChevronLeft size={12} strokeWidth={3} /></button>
                     : <div className="w-6" />}
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">
                     {MONTHS_SH[month]} {year}
                 </p>
                 {onNext
-                    ? <button type="button" onClick={onNext} className="w-6 h-6 rounded-full hover:bg-white/80 flex items-center justify-center text-slate-400 hover:text-[#0052CC] transition-all"><ChevronRight size={12} strokeWidth={3} /></button>
+                    ? <button type="button" onClick={onNext} className="w-6 h-6 rounded-full hover:bg-white/80 flex items-center justify-center text-slate-500 hover:text-[#0052CC] transition-all"><ChevronRight size={12} strokeWidth={3} /></button>
                     : <div className="w-6" />}
             </div>
 
             <div className="grid grid-cols-7 mb-1">
                 {DAYS_SH.map(d => (
-                    <div key={d} className="text-center text-[8.5px] font-black uppercase tracking-wider text-slate-400 py-0.5">{d}</div>
+                    <div key={d} className="text-center text-[8.5px] font-black uppercase tracking-wider text-slate-600 py-0.5">{d}</div>
                 ))}
             </div>
 
@@ -319,21 +319,21 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                     Seleccionar período
                                 </p>
                                 <p className={`text-[10px] font-bold leading-tight mt-0.5 transition-colors ${
-                                    dayPhase === 'picking-end' ? 'text-[#0052CC] animate-pulse' : 'text-slate-400'
+                                    dayPhase === 'picking-end' ? 'text-[#0052CC] animate-pulse' : 'text-slate-500'
                                 }`}>
                                     {subtitle()}
                                 </p>
                             </div>
                         </div>
                         <button type="button" onClick={close}
-                            className="w-7 h-7 flex items-center justify-center rounded-full bg-white/60 hover:bg-white/90 text-slate-400 hover:text-slate-600 transition-all shadow-sm shrink-0">
+                            className="w-7 h-7 flex items-center justify-center rounded-full bg-white/60 hover:bg-white/90 text-slate-500 hover:text-slate-600 transition-all shadow-sm shrink-0">
                             <X size={12} strokeWidth={2.5} />
                         </button>
                     </div>
 
                     {/* Presets */}
                     <div className="px-5 pb-3">
-                        <p className="text-[8.5px] font-black uppercase tracking-[0.12em] text-slate-400 mb-2">
+                        <p className="text-[8.5px] font-black uppercase tracking-[0.12em] text-slate-500 mb-2">
                             Accesos rápidos
                         </p>
                         <div className="grid grid-cols-3 gap-1.5">
@@ -363,7 +363,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                     className={`px-3 py-1 rounded-full text-[9.5px] font-black transition-all ${
                                         selMode === opt.key
                                             ? 'bg-[#0052CC] text-white shadow-sm'
-                                            : 'text-slate-400 hover:text-slate-600'
+                                            : 'text-slate-500 hover:text-slate-600'
                                     }`}>
                                     {opt.label}
                                 </button>
@@ -377,13 +377,13 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                         <div className="px-5 pb-5">
                             <div className="flex items-center justify-between mb-3">
                                 <button type="button" onClick={() => setViewYear(y => y - 1)}
-                                    className="w-7 h-7 rounded-full bg-white/60 hover:bg-white flex items-center justify-center text-slate-400 hover:text-[#0052CC] transition-all shadow-sm">
+                                    className="w-7 h-7 rounded-full bg-white/60 hover:bg-white flex items-center justify-center text-slate-500 hover:text-[#0052CC] transition-all shadow-sm">
                                     <ChevronLeft size={13} strokeWidth={3} />
                                 </button>
                                 <span className="text-[12px] font-black text-slate-700 tracking-wide">{viewYear}</span>
                                 <button type="button" onClick={() => setViewYear(y => y + 1)}
                                     disabled={viewYear >= curY + 1}
-                                    className="w-7 h-7 rounded-full bg-white/60 hover:bg-white flex items-center justify-center text-slate-400 hover:text-[#0052CC] transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed">
+                                    className="w-7 h-7 rounded-full bg-white/60 hover:bg-white flex items-center justify-center text-slate-500 hover:text-[#0052CC] transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed">
                                     <ChevronRight size={13} strokeWidth={3} />
                                 </button>
                             </div>
@@ -399,7 +399,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                     } else if (inRange) {
                                         cellCls += 'bg-[#0052CC]/12 text-[#0052CC] font-black ';
                                     } else if (isFuture) {
-                                        cellCls += 'text-slate-300 cursor-not-allowed ';
+                                        cellCls += 'text-slate-500 cursor-not-allowed ';
                                     } else if (isCurrent) {
                                         cellCls += 'text-[#0052CC] font-black ring-1 ring-[#0052CC]/40 cursor-pointer hover:bg-white hover:shadow-sm ';
                                     } else {
@@ -455,7 +455,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                         Selecciona la fecha de fin
                                     </p>
                                     <button type="button" onClick={() => { setDayPhase('idle'); setDayDraftStart(null); setDayHover(null); }}
-                                        className="text-[9.5px] font-bold text-slate-400 hover:text-slate-600 transition-colors">
+                                        className="text-[9.5px] font-bold text-slate-500 hover:text-slate-600 transition-colors">
                                         Cancelar
                                     </button>
                                 </div>
@@ -474,9 +474,9 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
             <div ref={triggerRef} onClick={open}
                 className="flex items-center gap-2 h-full px-3 cursor-pointer rounded-[1rem] transition-all hover:bg-white/60 group">
                 <CalendarDays size={13}
-                    className={fini ? 'text-[#0052CC]' : 'text-slate-400 group-hover:text-[#0052CC] transition-colors'}
+                    className={fini ? 'text-[#0052CC]' : 'text-slate-500 group-hover:text-[#0052CC] transition-colors'}
                     strokeWidth={2.5} />
-                <span className={`text-[12px] font-bold truncate whitespace-nowrap ${fini && ffin ? 'text-slate-700' : 'text-slate-400'}`}>
+                <span className={`text-[12px] font-bold truncate whitespace-nowrap ${fini && ffin ? 'text-slate-700' : 'text-slate-500'}`}>
                     {fini && ffin ? (rangeLabel || `${formatDisplay(fini)} → ${formatDisplay(ffin)}`) : placeholder}
                 </span>
             </div>

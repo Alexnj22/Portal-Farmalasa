@@ -90,12 +90,12 @@ const HolidaysPanel = ({
                     <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Nuevo Feriado</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Nombre</label>
+                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest block mb-1">Nombre</label>
                             <input value={hName} onChange={e => setHName(e.target.value)} placeholder="Ej: Día del Trabajo"
                                 className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
                         </div>
                         <div>
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Fecha</label>
+                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest block mb-1">Fecha</label>
                             <input type="date" value={hDate} onChange={e => setHDate(e.target.value)}
                                 className="w-full bg-white border border-slate-200 rounded-[0.85rem] px-3 py-2.5 text-[16px] font-bold text-slate-800 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all" />
                         </div>
@@ -134,7 +134,7 @@ const HolidaysPanel = ({
                     <div className="p-5 bg-white/50 backdrop-blur-xl border border-white/60 rounded-[2rem] shadow-sm">
                         <Star size={32} className="text-amber-200" strokeWidth={1.5} />
                     </div>
-                    <p className="text-[13px] font-bold text-slate-400">
+                    <p className="text-[13px] font-bold text-slate-500">
                         {searchTerm ? `Sin resultados para "${searchTerm}"` : `No hay feriados registrados para ${holidayYear}`}
                     </p>
                 </div>
@@ -196,7 +196,7 @@ const HolidaysPanel = ({
                                                 {/* Delete */}
                                                 {canEdit && (
                                                     <button onClick={() => onDelete(h.id)} disabled={hDeleting === h.id}
-                                                        className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-[0.65rem] flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex-shrink-0 disabled:opacity-50">
+                                                        className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-[0.65rem] flex items-center justify-center text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all flex-shrink-0 disabled:opacity-50">
                                                         {hDeleting === h.id ? <Loader2 size={14} strokeWidth={2.5} className="animate-spin text-red-400" /> : <Trash2 size={14} strokeWidth={2} />}
                                                     </button>
                                                 )}
@@ -890,7 +890,7 @@ const SchedulesView = ({ openModal, setView }) => {
                             </div>
                             <div className="text-center">
                                 <p className="text-[16px] font-black text-slate-600 mb-1">Sin empleados</p>
-                                <p className="text-[13px] font-medium text-slate-400">No hay empleados activos en esta sucursal.</p>
+                                <p className="text-[13px] font-medium text-slate-500">No hay empleados activos en esta sucursal.</p>
                             </div>
                             <button onClick={goToPersonal}
                                 className="inline-flex items-center gap-2 px-6 py-3 bg-[#0052CC] text-white rounded-full text-[11px] font-black uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] hover:shadow-[0_8px_20px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97] transition-all">

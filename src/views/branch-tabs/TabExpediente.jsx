@@ -49,7 +49,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 {doc.url && !isMissing && (
                     <button
                         onClick={() => openModal('viewDocument', { title: doc.title, url: doc.url })}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-400 hover:text-[#0052CC] hover:bg-white transition-all active:scale-[0.97]"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-500 hover:text-[#0052CC] hover:bg-white transition-all active:scale-[0.97]"
                         title="Ver PDF"
                     >
                         <Eye size={14} strokeWidth={2.5} />
@@ -58,7 +58,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
 
                 <button
                     onClick={() => openModal(doc.modal, { ...liveBranch, docId: doc.id })}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-400 hover:text-[#0052CC] hover:bg-white transition-all active:scale-[0.97]"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-500 hover:text-[#0052CC] hover:bg-white transition-all active:scale-[0.97]"
                     title="Editar/Actualizar Datos"
                 >
                     <Edit3 size={14} strokeWidth={2.5} />
@@ -67,7 +67,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 {doc.isCustom && !doc.url && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onDeleteClick && onDeleteClick(doc.id); }}
-                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all active:scale-[0.97]"
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm border border-slate-100 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all active:scale-[0.97]"
                         title="Eliminar Espacio"
                     >
                         <Trash2 size={14} strokeWidth={2.5} />
@@ -78,7 +78,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
             {/* HEADER DE LA TARJETA */}
             <div className="flex justify-between items-start mb-4 relative z-20">
                 <div className="flex items-center gap-2">
-                    <div className={`transition-transform duration-500 ease-out ${isMissing ? 'text-slate-400' : 'text-[#0052CC]'} ${!isMissing ? 'group-hover:scale-110' : ''}`}>
+                    <div className={`transition-transform duration-500 ease-out ${isMissing ? 'text-slate-500' : 'text-[#0052CC]'} ${!isMissing ? 'group-hover:scale-110' : ''}`}>
                         <FileText size={20} strokeWidth={1.5} />
                     </div>
 
@@ -150,7 +150,7 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                 <div className="flex flex-col gap-1.5 mt-2">
                     {effectiveIssueDate && (
                         <p className="text-[9px] font-bold text-slate-500 flex items-center gap-1">
-                            <span className="text-slate-400 uppercase tracking-widest text-[8px]">Emisión:</span> {formatDate(effectiveIssueDate)}
+                            <span className="text-slate-600 uppercase tracking-widest text-[8px]">Emisión:</span> {formatDate(effectiveIssueDate)}
                         </p>
                     )}
                     {effectiveExpDate && (
@@ -161,10 +161,10 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick }) => {
                     )}
 
                     {isMissing && doc.hasIssueDate && !effectiveIssueDate && (
-                        <p className="text-[9px] font-bold text-slate-400 mt-0.5 flex items-center gap-1"><AlertCircle size={10} /> Requiere Emisión</p>
+                        <p className="text-[9px] font-bold text-slate-500 mt-0.5 flex items-center gap-1"><AlertCircle size={10} /> Requiere Emisión</p>
                     )}
                     {isMissing && (doc.hasExpiration || doc.expDate !== undefined) && !effectiveExpDate && (
-                        <p className="text-[9px] font-bold text-slate-400 mt-0.5 flex items-center gap-1"><Clock size={10} /> Requiere Vencimiento</p>
+                        <p className="text-[9px] font-bold text-slate-500 mt-0.5 flex items-center gap-1"><Clock size={10} /> Requiere Vencimiento</p>
                     )}
                 </div>
             </div>
@@ -413,7 +413,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                             />
                             <button
                                 onClick={handleSearchClose}
-                                className="absolute right-1.5 top-1.5 w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                                className="absolute right-1.5 top-1.5 w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                             >
                                 <X size={14} strokeWidth={2.5} />
                             </button>
@@ -429,7 +429,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
                         <>
                             <Search size={40} className="text-slate-300 mb-3" strokeWidth={1.5} />
                             <p className="text-sm font-black text-slate-600">No se encontraron documentos</p>
-                            <p className="text-[11px] font-bold text-slate-400 mt-1">Ningún documento coincide con "{searchTerm}"</p>
+                            <p className="text-[11px] font-bold text-slate-500 mt-1">Ningún documento coincide con "{searchTerm}"</p>
                         </>
                     ) : (
                         <>
@@ -447,7 +447,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             {/* SECCIÓN 1: LICENCIAS Y PERMISOS */}
             {(permisosDocs.length > 0 || customDocsByCategory['Permisos y Licencias']?.length > 0) && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 ml-1">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 ml-1">
                         <ShieldCheck size={12} className="text-emerald-500" strokeWidth={3} /> Licencias y Permisos
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -460,7 +460,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             {/* SECCIÓN 2: CREDENCIALES DE PERSONAL */}
             {(personalDocs.length > 0 || customDocsByCategory['Recursos Humanos']?.length > 0) && (
                 <div className="space-y-3 pt-2 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 ml-1">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 ml-1">
                         <Users size={12} className="text-purple-500" strokeWidth={3} /> Credenciales de Personal
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -473,7 +473,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
             {/* SECCIÓN 3: INFRAESTRUCTURA Y OPERATIVOS */}
             {(infraDocs.length > 0 || customDocsByCategory['Operativo y Logística']?.length > 0) && (
                 <div className="space-y-3 pt-2 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 ml-1">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 ml-1">
                         <Building2 size={12} className="text-amber-500" strokeWidth={3} /> Infraestructura y Locales
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -490,7 +490,7 @@ const TabExpediente = ({ liveBranch, openModal }) => {
 
                 return (
                     <div key={category} className={`space-y-3 pt-2 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500`} style={{ animationDelay: `${(index + 3) * 50}ms` }}>
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 ml-1">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 ml-1">
                             <Tags size={12} className="text-[#0052CC]" strokeWidth={3} /> {category}
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

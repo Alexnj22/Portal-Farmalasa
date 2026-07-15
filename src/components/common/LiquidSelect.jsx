@@ -275,19 +275,19 @@ const LiquidSelect = ({
                         className={`w-full text-left px-4 py-3 text-[12px] font-bold rounded-[1.25rem] transition-colors duration-200 border ${
                             isDark
                                 ? 'bg-transparent text-white/50 border-transparent hover:bg-white/10 hover:text-white'
-                                : 'bg-transparent text-slate-400 border-transparent hover:bg-white/80 hover:text-slate-700'
+                                : 'bg-transparent text-slate-500 border-transparent hover:bg-white/80 hover:text-slate-700'
                         }`}
                     >
                         {clearLabel}
                     </button>
                 )}
                 {isLoading ? (
-                    <div className={`px-4 py-6 text-[12px] font-bold text-center flex items-center justify-center gap-2.5 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
+                    <div className={`px-4 py-6 text-[12px] font-bold text-center flex items-center justify-center gap-2.5 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
                         <Loader2 size={15} strokeWidth={2.5} className="animate-spin" />
                         Buscando...
                     </div>
                 ) : isLargeList && !searchTerm ? (
-                    <div className={`px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
+                    <div className={`px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm ${isDark ? 'bg-white/5 text-white/40' : 'bg-white/60'}`}>
                             <Search size={20} strokeWidth={2} />
                         </div>
@@ -300,7 +300,7 @@ const LiquidSelect = ({
                         return opt.isSeparator ? (
                             <div
                                 key={opt.value}
-                                className={`px-4 pt-3 pb-1 text-[9px] font-black uppercase tracking-[0.15em] mt-1 border-t first:border-t-0 first:pt-1 ${isDark ? 'text-white/30 border-white/10' : 'text-slate-400 border-slate-100'}`}
+                                className={`px-4 pt-3 pb-1 text-[9px] font-black uppercase tracking-[0.15em] mt-1 border-t first:border-t-0 first:pt-1 ${isDark ? 'text-white/30 border-white/10' : 'text-slate-500 border-slate-100'}`}
                             >
                                 {opt.label}
                             </div>
@@ -312,7 +312,7 @@ const LiquidSelect = ({
                                 onClick={() => !opt.disabled && handleSelect(opt.value)}
                                 className={`w-full text-left px-3 py-2.5 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-all duration-200 border flex items-center gap-2.5 ${
                                     opt.disabled
-                                        ? 'opacity-40 cursor-not-allowed ' + (isDark ? 'bg-transparent text-white/40 border-transparent' : 'bg-transparent text-slate-400 border-transparent')
+                                        ? 'opacity-40 cursor-not-allowed ' + (isDark ? 'bg-transparent text-white/40 border-transparent' : 'bg-transparent text-slate-500 border-transparent')
                                         : String(value) === String(opt.value)
                                             ? 'bg-[#0052CC] text-white shadow-[0_4px_12px_rgba(0,82,204,0.3)] border-transparent'
                                             : isHighlighted
@@ -336,7 +336,7 @@ const LiquidSelect = ({
                                     <span className="block leading-tight">{opt.label}</span>
                                     {opt.sublabel && (
                                         <span className={`block text-[10px] font-medium leading-tight mt-0.5 ${
-                                            String(value) === String(opt.value) && !opt.disabled ? 'text-white/70' : 'text-slate-400'
+                                            String(value) === String(opt.value) && !opt.disabled ? 'text-white/70' : 'text-slate-500'
                                         }`}>
                                             {opt.sublabel}
                                         </span>
@@ -346,7 +346,7 @@ const LiquidSelect = ({
                         );
                     })
                 ) : (
-                    <div className={`px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
+                    <div className={`px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm ${isDark ? 'bg-white/5 text-white/40' : 'bg-white/60'}`}>
                             <Search size={20} strokeWidth={2} />
                         </div>
@@ -354,7 +354,7 @@ const LiquidSelect = ({
                     </div>
                 )}
                 {serverSearch && !searchTerm && !isLoading && (
-                    <div className={`px-4 pt-1 pb-2 text-[10px] font-bold text-center ${isDark ? 'text-white/20' : 'text-slate-300'}`}>
+                    <div className={`px-4 pt-1 pb-2 text-[10px] font-bold text-center ${isDark ? 'text-white/20' : 'text-slate-500'}`}>
                         Escribe para buscar
                     </div>
                 )}
@@ -426,7 +426,7 @@ const LiquidSelect = ({
                 {/* Always-rendered display content — keeps container width stable */}
                 <div className={`w-full text-left ${textStyle} ${paddingStyle} whitespace-nowrap leading-tight flex items-center gap-2
                     ${isOpen ? 'invisible pointer-events-none select-none' : ''}
-                    ${!selectedOption && !isOpen ? (isDark ? 'text-white/40' : 'text-slate-400') : ''}`}>
+                    ${!selectedOption && !isOpen ? (isDark ? 'text-white/40' : 'text-slate-500') : ''}`}>
                     {selectedOption ? (
                         <>
                             {selectedOption.avatar !== undefined && (
@@ -440,7 +440,7 @@ const LiquidSelect = ({
                             <span className="flex-1 min-w-0">
                                 <span className="block leading-tight truncate" title={selectedOption.label}>{selectedOption.label}</span>
                                 {selectedOption.sublabel && (
-                                    <span className={`block text-[10px] font-medium leading-tight mt-0.5 truncate ${isDark ? 'opacity-50' : 'text-slate-400'}`}>
+                                    <span className={`block text-[10px] font-medium leading-tight mt-0.5 truncate ${isDark ? 'opacity-50' : 'text-slate-500'}`}>
                                         {selectedOption.sublabel}
                                     </span>
                                 )}
@@ -516,7 +516,7 @@ const LiquidSelect = ({
                         }`}>
                         <ChevronDown size={iconSize} strokeWidth={3} className={`transition-transform duration-300 ${isOpen
                                 ? 'rotate-180 text-[#0052CC]'
-                                : isDark ? 'text-white/40' : 'text-slate-400'
+                                : isDark ? 'text-white/40' : 'text-slate-500'
                             }`} />
                     </div>
                 </button>

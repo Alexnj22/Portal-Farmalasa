@@ -40,7 +40,7 @@ const FormRoleEmployees = ({ formData }) => {
                             className="flex items-center justify-between p-4 bg-white rounded-[1.5rem] border border-slate-100 shadow-sm group hover:border-[#0052CC]/30 hover:shadow-md transition-all"
                         >
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-[1rem] bg-slate-100 border-2 border-white shadow-sm overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-slate-400">
+                                <div className="w-12 h-12 rounded-[1rem] bg-slate-100 border-2 border-white shadow-sm overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-slate-500">
                                     {emp.photo ? (
                                         <img src={emp.photo} className="w-full h-full object-cover" alt="Perfil" />
                                     ) : (
@@ -51,13 +51,13 @@ const FormRoleEmployees = ({ formData }) => {
                                     <p className="font-bold text-slate-800 text-[14px] md:text-[15px] leading-tight group-hover:text-[#0052CC] transition-colors">
                                         {emp.name}
                                     </p>
-                                    <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
+                                    <p className="text-[9px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
                                         {emp.code || 'SIN CÓDIGO'}
                                     </p>
                                 </div>
                             </div>
                             
-                            <div className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-50 text-slate-400 rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest border border-slate-100 group-hover:bg-[#0052CC]/5 group-hover:text-[#0052CC] group-hover:border-[#0052CC]/20 transition-all">
+                            <div className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-50 text-slate-600 rounded-xl text-[8px] md:text-[9px] font-black uppercase tracking-widest border border-slate-100 group-hover:bg-[#0052CC]/5 group-hover:text-[#0052CC] group-hover:border-[#0052CC]/20 transition-all">
                                 Activo
                             </div>
                         </div>
@@ -66,7 +66,7 @@ const FormRoleEmployees = ({ formData }) => {
                     <div className="text-center py-12 bg-white/60 backdrop-blur-md rounded-[2rem] border-2 border-dashed border-slate-200">
                         <User className="mx-auto text-slate-300 mb-4" size={40} strokeWidth={1.5} />
                         <p className="text-slate-500 font-bold text-[15px]">No hay empleados asignados.</p>
-                        <p className="text-[10px] text-slate-400 mt-1.5 uppercase tracking-widest font-bold px-4">
+                        <p className="text-[10px] text-slate-600 mt-1.5 uppercase tracking-widest font-bold px-4">
                             Puedes asignar este cargo desde la edición del perfil de empleado.
                         </p>
                     </div>

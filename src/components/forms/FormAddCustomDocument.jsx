@@ -82,7 +82,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
             
             {/* 1. Nombre del Documento */}
             <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-2 ml-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 mb-2 ml-1">
                     <FilePlus size={12} className="text-[#0052CC]"/> Nombre del Documento
                 </label>
                 <div className="relative">
@@ -98,7 +98,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
 
             {/* 2. Categoría */}
             <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-2 ml-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 mb-2 ml-1">
                     <Tag size={12} className="text-purple-500"/> Categoría
                 </label>
                 <LiquidSelect
@@ -111,7 +111,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
 
             {/* 3. Zona de Carga (PDF / Imagen) */}
             <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-2 ml-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 mb-2 ml-1">
                     <UploadCloud size={12} className="text-[#0052CC]"/> {isEditing && !data.url ? 'Subir Archivo Digital' : 'Archivo Digital (Opcional)'}
                 </label>
                 <div className="relative">
@@ -148,7 +148,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                             <div className={`flex flex-col items-center ${isEditing ? 'text-red-500' : 'text-slate-500'}`}>
                                 <UploadCloud size={24} strokeWidth={1.5} className="mb-2" />
                                 <span className="text-[12px] font-black">{isEditing ? 'Falta Documento - Sube el PDF' : 'Subir PDF o Imagen'}</span>
-                                <span className={`text-[9px] font-bold mt-1 uppercase tracking-widest ${isEditing ? 'text-red-400' : 'text-slate-400'}`}>Click para explorar</span>
+                                <span className={`text-[9px] font-bold mt-1 uppercase tracking-widest ${isEditing ? 'text-red-400' : 'text-slate-600'}`}>Click para explorar</span>
                             </div>
                         )}
                     </label>
@@ -166,7 +166,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                     >
                         <div>
                             <p className="text-[13px] font-black text-slate-700 group-hover:text-[#0052CC] transition-colors">¿Tiene fecha de expedición?</p>
-                            <p className="text-[10px] font-bold text-slate-400 mt-0.5">Útil para documentos de renovación periódica.</p>
+                            <p className="text-[10px] font-bold text-slate-500 mt-0.5">Útil para documentos de renovación periódica.</p>
                         </div>
                         <div className={`w-11 h-6 rounded-full relative transition-colors duration-300 shadow-inner ${data.hasIssueDate ? 'bg-emerald-500' : 'bg-slate-200'}`}>
                             <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-300 ${data.hasIssueDate ? 'translate-x-5' : 'translate-x-0'}`}></div>
@@ -191,7 +191,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                     >
                         <div>
                             <p className="text-[13px] font-black text-slate-700 group-hover:text-amber-500 transition-colors">¿Tiene fecha de vencimiento?</p>
-                            <p className="text-[10px] font-bold text-slate-400 mt-0.5">El sistema te alertará antes de que caduque.</p>
+                            <p className="text-[10px] font-bold text-slate-500 mt-0.5">El sistema te alertará antes de que caduque.</p>
                         </div>
                         <div className={`w-11 h-6 rounded-full relative transition-colors duration-300 shadow-inner ${data.hasExpiration ? 'bg-amber-500' : 'bg-slate-200'}`}>
                             <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full shadow-sm transition-transform duration-300 ${data.hasExpiration ? 'translate-x-5' : 'translate-x-0'}`}></div>

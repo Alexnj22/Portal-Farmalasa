@@ -44,7 +44,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                             <p className="text-[11px] text-slate-500">Pedido #{numero}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-slate-100 text-slate-400">
+                    <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-slate-100 text-slate-500">
                         <X size={14} />
                     </button>
                 </div>
@@ -67,7 +67,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                     <div className="space-y-2">
                         <div className="flex items-center gap-1.5">
                             <History size={11} className="text-slate-400" />
-                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Historial</span>
+                            <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide">Historial</span>
                         </div>
                         <div className="space-y-1.5">
                             {[...historial].reverse().map((h, i) => {
@@ -79,7 +79,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                                             <p className="text-[11px] font-semibold text-slate-700 truncate">
                                                 {fmtDisplay(h.programada_at) ?? '—'}
                                             </p>
-                                            <p className="text-[10px] text-slate-400">
+                                            <p className="text-[10px] text-slate-500">
                                                 {nombre} · {h.registrado_at ? new Date(h.registrado_at).toLocaleString('es-SV', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }) : ''}
                                             </p>
                                         </div>

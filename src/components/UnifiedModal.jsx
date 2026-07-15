@@ -747,7 +747,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     if (type === "newPayrollPeriod") return <div className={`${squircleClass} text-[#0052CC]`}><DollarSign size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editPayrollEntry") return <div className={`${squircleClass} text-amber-500`}><Edit2 size={22} strokeWidth={2.5} /></div>;
 
-                                    return <div className={`${squircleClass} text-slate-400`}><Settings size={22} strokeWidth={2.5} /></div>;
+                                    return <div className={`${squircleClass} text-slate-500`}><Settings size={22} strokeWidth={2.5} /></div>;
                                 })()}
 
                                 <div>
@@ -780,10 +780,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                                 onClick={() => setEmpActiveTab(step.key)}
                                                 className="flex flex-col items-center gap-1.5 group"
                                             >
-                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-200' : isActive ? 'bg-[#0052CC] border-[#0052CC] text-white scale-110 shadow-[0_4px_14px_rgba(0,82,204,0.35)]' : 'bg-white border-slate-200 text-slate-400 group-hover:border-[#0052CC]/40 group-hover:text-[#0052CC]'}`}>
+                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-200' : isActive ? 'bg-[#0052CC] border-[#0052CC] text-white scale-110 shadow-[0_4px_14px_rgba(0,82,204,0.35)]' : 'bg-white border-slate-200 text-slate-500 group-hover:border-[#0052CC]/40 group-hover:text-[#0052CC]'}`}>
                                                     {isComplete ? <CheckCircle2 size={18} strokeWidth={2.5} /> : <StepIcon size={15} strokeWidth={2} />}
                                                 </div>
-                                                <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-[#0052CC]' : isComplete ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                                                <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-[#0052CC]' : isComplete ? 'text-emerald-600' : 'text-slate-600 group-hover:text-slate-600'}`}>
                                                     {step.label}
                                                 </span>
                                             </button>
@@ -883,7 +883,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                                 {/* CENTER: Cancelar */}
                                 <button type="button" onClick={onClose} disabled={isSaving}
-                                    className="px-5 h-11 rounded-full bg-white/50 border border-white/80 text-slate-400 font-bold text-[11px] uppercase tracking-widest hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all disabled:opacity-50 active:scale-[0.97]">
+                                    className="px-5 h-11 rounded-full bg-white/50 border border-white/80 text-slate-600 font-bold text-[11px] uppercase tracking-widest hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all disabled:opacity-50 active:scale-[0.97]">
                                     Cancelar
                                 </button>
 

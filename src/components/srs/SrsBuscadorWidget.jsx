@@ -82,7 +82,7 @@ export default function SrsBuscadorWidget({
                 />
                 {query && (
                     <button onClick={() => { setQuery(''); setResults(null); setTotal(0); }}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-600 hover:bg-slate-100 transition-colors">
                         <X size={11} strokeWidth={2.5} />
                     </button>
                 )}
@@ -99,12 +99,12 @@ export default function SrsBuscadorWidget({
             {results !== null && (
                 <>
                     {results.length === 0 ? (
-                        <div className="py-8 text-center text-[12px] text-slate-400 font-medium">
+                        <div className="py-8 text-center text-[12px] text-slate-500 font-medium">
                             Sin resultados para "{query}"
                         </div>
                     ) : (
                         <>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-1">
                                 {total} resultado{total !== 1 ? 's' : ''} en SRS
                             </p>
 
@@ -128,7 +128,7 @@ export default function SrsBuscadorWidget({
                                     >
                                         <ChevronLeft size={11} strokeWidth={2.5} /> Ant.
                                     </button>
-                                    <span className="text-[11px] text-slate-400 font-medium">
+                                    <span className="text-[11px] text-slate-500 font-medium">
                                         Pág. {page} / {lastPage}
                                     </span>
                                     <button
@@ -195,7 +195,7 @@ function SrsResultCard({ product: p, onSelect }) {
             {/* Header row */}
             <div className="flex items-start justify-between gap-2">
                 <p className="text-[12px] font-black text-slate-800 leading-tight flex-1">
-                    {nombre || <span className="text-slate-400 font-normal italic">Sin nombre</span>}
+                    {nombre || <span className="text-slate-500 font-normal italic">Sin nombre</span>}
                 </p>
                 <span className={`shrink-0 text-[9px] font-black px-2 py-0.5 rounded-full ${
                     activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
@@ -237,10 +237,10 @@ function SrsResultCard({ product: p, onSelect }) {
             {(noregistro || fechaStr) && (
                 <div className="flex items-center gap-3 pt-0.5">
                     {noregistro && (
-                        <span className="text-[10px] text-slate-400 font-mono">{noregistro}</span>
+                        <span className="text-[10px] text-slate-500 font-mono">{noregistro}</span>
                     )}
                     {fechaStr && (
-                        <span className="text-[10px] text-slate-400">{fechaStr}</span>
+                        <span className="text-[10px] text-slate-500">{fechaStr}</span>
                     )}
                 </div>
             )}

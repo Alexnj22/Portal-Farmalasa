@@ -354,7 +354,7 @@ const RangeDatePicker = ({
                             <p className="text-[12px] font-black uppercase tracking-widest text-slate-700">
                                 {multiRange ? 'Selecciona períodos de apoyo' : (selecting === 'start' ? 'Selecciona el primer día' : 'Ajusta la fecha de fin')}
                             </p>
-                            <p className="text-[10px] text-slate-400 font-bold">
+                            <p className="text-[10px] text-slate-500 font-bold">
                                 {multiRange
                                     ? (selectedRanges.length > 0 ? `${selectedRanges.length} período${selectedRanges.length !== 1 ? 's' : ''} seleccionado${selectedRanges.length !== 1 ? 's' : ''}` : 'Arrastra para seleccionar períodos')
                                     : (draftStart && draftEnd ? `${formatDisplay(draftStart)} → ${formatDisplay(draftEnd)}` : 'Haz click en el calendario')}
@@ -399,7 +399,7 @@ const RangeDatePicker = ({
                         let badgeText;
                         if (multiRange) {
                             if (selectedRanges.length === 0) {
-                                cls += 'bg-slate-100/80 text-slate-400 border border-slate-200';
+                                cls += 'bg-slate-100/80 text-slate-500 border border-slate-200';
                                 badgeText = 'Sin períodos seleccionados';
                             } else {
                                 const total = selectedRanges.reduce((sum, r) => {
@@ -409,7 +409,7 @@ const RangeDatePicker = ({
                                 badgeText = `✓ ${selectedRanges.length} período${selectedRanges.length !== 1 ? 's' : ''} · ${total} días`;
                             }
                         } else if (daysCount === 0) {
-                            cls += 'bg-slate-100/80 text-slate-400 border border-slate-200';
+                            cls += 'bg-slate-100/80 text-slate-500 border border-slate-200';
                             badgeText = 'Sin período seleccionado';
                         } else if (daysCount === defaultDays) {
                             cls += 'bg-emerald-100/80 text-emerald-700 border border-emerald-200';
@@ -442,7 +442,7 @@ const RangeDatePicker = ({
                 {multiRange ? (
                     <div className={`flex items-center gap-2 h-[40px] px-3 bg-white/50 border rounded-[1rem] transition-all hover:bg-white/80 hover:border-[#0052CC]/40 ${isOpen ? 'border-[#0052CC]/50 ring-4 ring-[#0052CC]/10' : 'border-white/80'}`}>
                         <CalendarDays size={14} className={selectedRanges.length > 0 ? 'text-emerald-500' : 'text-slate-400'} strokeWidth={2.5} />
-                        <p className={`text-[12px] font-bold ${selectedRanges.length > 0 ? 'text-slate-700' : 'text-slate-400'}`}>
+                        <p className={`text-[12px] font-bold ${selectedRanges.length > 0 ? 'text-slate-700' : 'text-slate-500'}`}>
                             {selectedRanges.length > 0
                                 ? `${selectedRanges.length} período${selectedRanges.length !== 1 ? 's' : ''} seleccionado${selectedRanges.length !== 1 ? 's' : ''}`
                                 : placeholder}
@@ -451,7 +451,7 @@ const RangeDatePicker = ({
                 ) : (
                     <div className={`flex items-center gap-3 h-[48px] px-4 bg-white/50 border rounded-2xl transition-all hover:bg-white/80 hover:border-[#0052CC]/40 ${isOpen ? 'border-[#0052CC]/50 ring-4 ring-[#0052CC]/10' : 'border-white/80'}`}>
                         <CalendarDays size={14} className={startDate ? 'text-[#0052CC]' : 'text-slate-400'} strokeWidth={2.5} />
-                        <span className={`flex-1 text-[13px] font-bold truncate ${startDate && endDate ? 'text-slate-700' : 'text-slate-400'}`}>
+                        <span className={`flex-1 text-[13px] font-bold truncate ${startDate && endDate ? 'text-slate-700' : 'text-slate-500'}`}>
                             {startDate && endDate
                                 ? `${formatDisplay(startDate)} → ${formatDisplay(endDate)}`
                                 : startDate

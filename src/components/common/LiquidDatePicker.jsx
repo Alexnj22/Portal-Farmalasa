@@ -282,7 +282,7 @@ const LiquidDatePicker = ({
                 {currentMode === 'days' && (
                     <div className="animate-in fade-in duration-300" onMouseLeave={() => setHoverDate(null)}>
                         <div className="grid grid-cols-7 gap-1 mb-2">
-                            {DAYS.map(d => <div key={d} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-wider">{d}</div>)}
+                            {DAYS.map(d => <div key={d} className="text-center text-[10px] font-black text-slate-600 uppercase tracking-wider">{d}</div>)}
                         </div>
                         
                         <div className="grid grid-cols-7 gap-y-1 gap-x-0 relative">
@@ -374,7 +374,7 @@ const LiquidDatePicker = ({
                         {years.map((year) => {
                             const isSelected = yVal === String(year);
                             const isOutRange = year < startYear || year > startYear + 9;
-                            return <button key={year} type="button" onClick={() => handleYearSelect(year)} className={`py-3 rounded-2xl text-[12px] font-bold transition-all transform-gpu ${isSelected ? 'bg-[#0052CC] text-white shadow-lg scale-105' : isOutRange ? 'text-slate-400 opacity-50' : 'text-slate-600 hover:bg-white hover:text-[#0052CC]'}`}>{year}</button>;
+                            return <button key={year} type="button" onClick={() => handleYearSelect(year)} className={`py-3 rounded-2xl text-[12px] font-bold transition-all transform-gpu ${isSelected ? 'bg-[#0052CC] text-white shadow-lg scale-105' : isOutRange ? 'text-slate-500 opacity-50' : 'text-slate-600 hover:bg-white hover:text-[#0052CC]'}`}>{year}</button>;
                         })}
                     </div>
                 )}
@@ -388,16 +388,16 @@ const LiquidDatePicker = ({
     return (
         <>
             <div ref={containerRef} className="w-full h-full flex items-center gap-1 px-3 md:px-4 rounded-xl transition-all hover:bg-white/40 group/picker min-w-[140px] cursor-text focus-within:bg-white/50" onClick={() => { if(!isOpen) openPicker(); if (!dVal) dRef.current?.focus(); else if (!mVal) mRef.current?.focus(); else if (!yVal) yRef.current?.focus(); }}>
-                <IconToRender size={14} className={hasValue ? "text-[#0052CC]" : "text-slate-400 group-hover/picker:text-[#0052CC] transition-colors shrink-0 mr-1.5"} strokeWidth={2.5} />
+                <IconToRender size={14} className={hasValue ? "text-[#0052CC]" : "text-slate-500 group-hover/picker:text-[#0052CC] transition-colors shrink-0 mr-1.5"} strokeWidth={2.5} />
                 <div className="flex items-center flex-1">
                     <input ref={dRef} type="text" inputMode="numeric" placeholder="DD" maxLength={2} value={dVal} onChange={handleD} onKeyDown={(e) => handleKeyDown(e, dVal, null, mRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('days'); }} className={`w-[26px] bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-center placeholder:text-slate-300 ${dVal ? 'text-slate-800' : ''}`} />
-                    <span className="text-slate-300 font-medium mx-0.5 pointer-events-none">/</span>
+                    <span className="text-slate-500 font-medium mx-0.5 pointer-events-none">/</span>
                     <input ref={mRef} type="text" inputMode="numeric" placeholder="MM" maxLength={2} value={mVal} onChange={handleM} onKeyDown={(e) => handleKeyDown(e, mVal, dRef, yRef)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('months'); }} className={`w-[28px] bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-center placeholder:text-slate-300 ${mVal ? 'text-slate-800' : ''}`} />
-                    <span className="text-slate-300 font-medium mx-0.5 pointer-events-none">/</span>
+                    <span className="text-slate-500 font-medium mx-0.5 pointer-events-none">/</span>
                     <input ref={yRef} type="text" inputMode="numeric" placeholder="AAAA" maxLength={4} value={yVal} onChange={handleY} onKeyDown={(e) => handleKeyDown(e, yVal, mRef, null)} onClick={(e) => e.stopPropagation()} onFocus={() => { if(!isOpen) openPicker(); setCurrentMode('years'); }} className={`w-[44px] bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-center placeholder:text-slate-300 ${yVal ? 'text-slate-800' : ''}`} />
                 </div>
                 {hasValue && (
-                    <div role="button" onClick={(e) => { e.stopPropagation(); onChange(''); setDVal(''); setMVal(''); setYVal(''); }} className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-red-50 text-slate-300 hover:text-red-500 transition-all shrink-0 cursor-pointer" title="Borrar fecha">
+                    <div role="button" onClick={(e) => { e.stopPropagation(); onChange(''); setDVal(''); setMVal(''); setYVal(''); }} className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-red-50 text-slate-500 hover:text-red-500 transition-all shrink-0 cursor-pointer" title="Borrar fecha">
                         <X size={14} strokeWidth={3} />
                     </div>
                 )}

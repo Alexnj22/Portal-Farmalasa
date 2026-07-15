@@ -25,7 +25,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
         <div className={cardClass}>
             <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2">
-                    <p className={`text-[12px] font-black uppercase tracking-widest transition-colors duration-300 ${open ? (isInvalid ? 'text-red-600' : 'text-[#0052CC]') : 'text-slate-400 group-hover:text-slate-600'}`}>
+                    <p className={`text-[12px] font-black uppercase tracking-widest transition-colors duration-300 ${open ? (isInvalid ? 'text-red-600' : 'text-[#0052CC]') : 'text-slate-600 group-hover:text-slate-600'}`}>
                         {day.name}
                     </p>
                     
@@ -73,7 +73,7 @@ const DayCard = memo(({ day, index, d, open, isInvalid, setDay, copyPreviousDay 
                 </div>
             ) : (
                 <div className="py-3.5 text-center rounded-[1rem] bg-slate-100/50 border border-slate-200/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-colors duration-300 group-hover:bg-slate-100">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 transition-colors duration-300 group-hover:text-slate-500">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 transition-colors duration-300 group-hover:text-slate-500">
                         Cerrado
                     </p>
                 </div>

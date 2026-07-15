@@ -7,13 +7,13 @@ export default function StatCardPreview() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 p-10 flex flex-col gap-10">
 
-            <h1 className="text-[13px] font-black uppercase tracking-widest text-slate-400">
+            <h1 className="text-[13px] font-black uppercase tracking-widest text-slate-600">
                 StatCard — preview (borrar después)
             </h1>
 
             {/* ── Caso real: 4 cards lado a lado ──────────────────────── */}
             <section>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-3">
                     4 cards en flex items-stretch gap-3 flex-wrap
                 </p>
                 <div className="flex items-stretch gap-3 flex-wrap">
@@ -71,7 +71,7 @@ export default function StatCardPreview() {
 
             {/* ── Verificación de altura: card con sub vs sin sub ──────── */}
             <section>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-3">
                     Verificación de altura — con sub vs sin sub (deben ser iguales)
                 </p>
                 <div className="flex items-stretch gap-3">
@@ -101,7 +101,7 @@ export default function StatCardPreview() {
 
             {/* ── Estado loading ───────────────────────────────────────── */}
             <section>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-3">
                     Estado loading
                 </p>
                 <div className="flex items-stretch gap-3">

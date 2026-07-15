@@ -42,7 +42,7 @@ export default function ViewTabBar({
   const dividerCls   = 'bg-white/40';
   const inputCls     = 'text-slate-700 placeholder:text-slate-400';
   const closeBtnCls  = 'text-slate-500 hover:bg-white hover:text-[#0052CC] hover:shadow-md';
-  const clearBtnCls  = 'text-slate-400 hover:text-red-500';
+  const clearBtnCls  = 'text-slate-500 hover:text-red-500';
 
   return (
     <div className={`relative flex items-center border transition-all duration-700 ${spring}

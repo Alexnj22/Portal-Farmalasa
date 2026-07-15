@@ -245,7 +245,7 @@ const FormWfmAnalytics = ({ branches }) => {
 
             return (
                 <div className="bg-slate-800/90 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-[inset_0_1px_4px_rgba(255,255,255,0.1),0_10px_30px_rgba(0,0,0,0.1)] border border-slate-700/60 w-max z-[100] animate-in fade-in duration-300 transform-gpu">
-                    <p className="font-black text-[10px] uppercase tracking-widest text-slate-400 mb-1 leading-none">{branchName}</p>
+                    <p className="font-black text-[10px] uppercase tracking-widest text-slate-600 mb-1 leading-none">{branchName}</p>
                     <p className="font-extrabold text-[12px] uppercase tracking-tight text-white mb-2 pb-1.5 border-b border-slate-700">{activeView === 'DAYS' ? 'Día' : 'Hora'}: {data.displayLabel}</p>
                     
                     <div className="flex flex-col gap-2 mb-2">
@@ -369,12 +369,12 @@ const FormWfmAnalytics = ({ branches }) => {
                 </div>
 
                 {isLoading ? (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-400 relative z-10">
+                    <div className="flex-1 flex flex-col items-center justify-center gap-3 text-slate-500 relative z-10">
                         <Loader2 size={36} strokeWidth={2.5} className="animate-spin text-[#0052CC]" />
                         <p className="text-[11px] font-black uppercase tracking-widest animate-pulse">Analizando operaciones con Sparkles...</p>
                     </div>
                 ) : chartData.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-2.5 text-slate-400 text-[11px] font-bold uppercase tracking-widest relative z-10">
+                    <div className="flex-1 flex flex-col items-center justify-center gap-2.5 text-slate-600 text-[11px] font-bold uppercase tracking-widest relative z-10">
                         <Activity size={32} />
                          No hay datos de ventas registrados para este período.
                     </div>

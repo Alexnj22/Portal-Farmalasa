@@ -87,7 +87,7 @@ export const FileUploader = ({ label, file, url, onChange }) => {
 
     return (
         <div className="mt-2 w-full">
-            {label && <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 ml-1 mb-1.5 block">{label}</label>}
+            {label && <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500 ml-1 mb-1.5 block">{label}</label>}
             
             <div className={`relative flex items-center gap-3 rounded-[1.25rem] p-2 transition-all duration-300 border transform-gpu ${
                 !hasFile 
@@ -146,7 +146,7 @@ export const LazyInput = ({ value, onChange, className = "", placeholder, requir
     return (
         <div className="relative group flex items-center w-full">
             {Icon && (
-                <div className="absolute left-4 z-10 w-8 h-8 rounded-xl bg-white/60 flex items-center justify-center text-slate-400 shadow-[0_2px_5px_rgba(0,0,0,0.02)] transition-colors duration-300 group-focus-within:text-[#0052CC] group-focus-within:bg-blue-50 pointer-events-none">
+                <div className="absolute left-4 z-10 w-8 h-8 rounded-xl bg-white/60 flex items-center justify-center text-slate-500 shadow-[0_2px_5px_rgba(0,0,0,0.02)] transition-colors duration-300 group-focus-within:text-[#0052CC] group-focus-within:bg-blue-50 pointer-events-none">
                     <Icon size={16} strokeWidth={2.5}/>
                 </div>
             )}

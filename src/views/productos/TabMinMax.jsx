@@ -89,7 +89,7 @@ const ABC_CFG = {
     A: { bg: 'bg-slate-50 text-slate-600 border-slate-200',       title: 'Clase A — top 70% ingresos', color: '#64748b' },
     B: { bg: 'bg-slate-50 text-slate-500 border-slate-200',       title: 'Clase B — siguiente 20%',    color: '#94a3b8' },
     C: { bg: 'bg-amber-50 text-amber-600 border-amber-200',       title: 'Clase C — restante 10%',     color: '#f59e0b' },
-    D: { bg: 'bg-slate-50 text-slate-400 border-slate-200',       title: 'Sin ventas en período',      color: '#94a3b8' },
+    D: { bg: 'bg-slate-50 text-slate-500 border-slate-200',       title: 'Sin ventas en período',      color: '#94a3b8' },
 };
 
 // XYZ — demand variability (replaces stable/moderate/erratic)
@@ -336,7 +336,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
     if (loading || data.length === 0) {
         return (
             <div className="rounded-2xl border border-white/70 p-2.5 flex flex-col gap-1.5" style={glassBox}>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">ABC × XYZ</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">ABC × XYZ</span>
                 {loading ? (
                     <div className="grid gap-[3px] animate-pulse" style={{ gridTemplateColumns: '20px repeat(3, 1fr)' }}>
                         {Array.from({ length: 16 }).map((_, i) => (
@@ -358,17 +358,17 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
          transition-[background-color,box-shadow,color] duration-75
          ${active
              ? 'text-[#0052CC] bg-[rgba(0,82,204,0.11)] shadow-[0_2px_8px_rgba(0,82,204,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
-             : 'text-slate-400 hover:text-slate-600 hover:bg-white/60'}`;
+             : 'text-slate-500 hover:text-slate-600 hover:bg-white/60'}`;
 
     return (
         <div className="rounded-2xl border border-white/70 p-2 flex flex-col gap-1" style={glassBox}>
             <div className="flex items-center justify-between gap-2">
-                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">ABC × XYZ</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-slate-600">ABC × XYZ</span>
                 {(filterAbc !== 'all' || filterXyz !== 'all') && (
                     <motion.button
                         whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
                         onClick={() => { setFilterAbc('all'); setFilterXyz('all'); }}
-                        className="text-[9px] font-bold text-slate-400 hover:text-rose-500 flex items-center gap-0.5 transition-colors duration-75 px-1.5 py-0.5 rounded-md hover:bg-rose-50/70">
+                        className="text-[9px] font-bold text-slate-500 hover:text-rose-500 flex items-center gap-0.5 transition-colors duration-75 px-1.5 py-0.5 rounded-md hover:bg-rose-50/70">
                         <X size={8} strokeWidth={2.5} /> limpiar
                     </motion.button>
                 )}
@@ -421,7 +421,7 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                                     }}
                                     disabled={count === 0}>
                                     <span className="text-[11px] font-black text-slate-700 tabular-nums leading-none">{count || '—'}</span>
-                                    {count > 0 && <span className="text-[8px] font-semibold text-slate-400 block">{abc}{xyz}</span>}
+                                    {count > 0 && <span className="text-[8px] font-semibold text-slate-500 block">{abc}{xyz}</span>}
                                 </motion.button>
                             );
                         })}
@@ -435,8 +435,8 @@ function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, 
                     const descs = ['Estable', 'Mod.', 'Errática'];
                     return (
                         <span key={xyz} className="flex items-center gap-0.5 text-[8px]">
-                            <span className={`font-black transition-colors duration-100 ${isXyzActive(xyz) ? 'text-[#0052CC]' : 'text-slate-400'}`}>{xyz}</span>
-                            <span className="text-slate-400">{descs[i]}</span>
+                            <span className={`font-black transition-colors duration-100 ${isXyzActive(xyz) ? 'text-[#0052CC]' : 'text-slate-500'}`}>{xyz}</span>
+                            <span className="text-slate-500">{descs[i]}</span>
                         </span>
                     );
                 })}
@@ -501,7 +501,7 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
                 onClick: () => onUnhide() }
             : { key: 'hide', icon: hidingIds.has(row.erp_product_id) ? <Loader2 size={13} className="animate-spin"/> : <EyeOff size={13}/>,
                 label: 'Ocultar',
-                cls: `${B} text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none`,
+                cls: `${B} text-slate-500 hover:text-slate-600 hover:bg-slate-100 disabled:pointer-events-none`,
                 dropCls: 'text-slate-500 hover:text-slate-700 hover:bg-slate-100',
                 onClick: () => onHide(), disabled: hidingIds.has(row.erp_product_id) },
         isBodegaRow && canManage && { key: 'zero_all', icon: <XCircle size={13}/>, label: '0 en red',
@@ -546,7 +546,7 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
                     <motion.button
                         onClick={e => { e.stopPropagation(); open ? closeMenu() : openMenu(); }}
                         {...sp}
-                        className={`${B} text-slate-400 hover:text-slate-600 hover:bg-slate-100`}>
+                        className={`${B} text-slate-500 hover:text-slate-600 hover:bg-slate-100`}>
                         <MoreHorizontal size={13}/>
                         <span className="text-[7px] font-bold leading-none">Más</span>
                     </motion.button>
@@ -660,7 +660,7 @@ function DraftCostCard({ draftCost, isBodega }) {
                 </span>
                 <div className="flex items-baseline gap-1">
                     <span className="text-[14px] font-black tabular-nums leading-none text-slate-800">{fmtMoney(hasDraft ? effMin : pubMin)}</span>
-                    <span className="text-[10px] text-slate-400 leading-none">→</span>
+                    <span className="text-[10px] text-slate-500 leading-none">→</span>
                     <span className="text-[14px] font-black tabular-nums leading-none text-slate-800">{fmtMoney(hasDraft ? effMax : pubMax)}</span>
                 </div>
             </div>
@@ -727,7 +727,7 @@ function formatDominant(units, presentations) {
 
 function CoverageBar({ current, velocity, cycleDays }) {
     const days = velocity > 0 ? current / velocity : null;
-    if (days === null) return <span className="text-slate-300 text-xs">—</span>;
+    if (days === null) return <span className="text-slate-500 text-xs">—</span>;
     const pct  = Math.min(100, (days / cycleDays) * 100);
     const fill = days === 0 ? '#ef4444' : days < (cycleDays * 0.2) ? '#f97316' : days < (cycleDays * 0.5) ? '#f59e0b' : '#10b981';
     const label = days >= 999 ? '>999d' : `${Math.round(days)}d`;
@@ -765,7 +765,7 @@ function StockBar({ current, min, max }) {
 function AbcXyzBadge({ abc, xyz }) {
     const xyzKey = normXyz(xyz);
     const abcColor = abc === 'C' ? 'text-amber-600' : 'text-slate-500';
-    const xyzColor = xyzKey === 'Z' ? 'text-rose-500' : 'text-slate-400';
+    const xyzColor = xyzKey === 'Z' ? 'text-rose-500' : 'text-slate-500';
     return (
         <span className="font-black tracking-tight shrink-0" title={`${ABC_CFG[abc]?.title ?? ''} · ${XYZ_CFG[xyzKey]?.desc ?? ''}`}>
             <span className={`text-[11px] ${abcColor}`}>{abc || '—'}</span>
@@ -878,11 +878,11 @@ function ExpandedPanel({ row, cycleDays }) {
             {/* ── Multi-branch grid ── */}
             <div className="px-4 pt-3 pb-2">
                 <div className="flex items-center justify-between mb-2">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Stock en red</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Stock en red</span>
                     {netStock !== null && (
-                        <div className="flex items-center gap-3 text-[9px] text-slate-400">
+                        <div className="flex items-center gap-3 text-[9px] text-slate-500">
                             <span>Red: <strong className="text-slate-600 tabular-nums">{netStock.toLocaleString()} und</strong></span>
-                            <span className="text-slate-400">·</span>
+                            <span className="text-slate-500">·</span>
                             <span>Incl. Bodega: <strong className="text-slate-600 tabular-nums">{totalStock.toLocaleString()} und</strong></span>
                         </div>
                     )}
@@ -929,7 +929,7 @@ function ExpandedPanel({ row, cycleDays }) {
                                         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
                                     </div>
                                     <div className={`text-[12px] font-black tabular-nums leading-none ${
-                                        !hasData ? 'text-slate-300' :
+                                        !hasData ? 'text-slate-500' :
                                         bStock === 0 ? 'text-red-500' :
                                         bStock < bMin ? 'text-orange-600' : 'text-slate-800'
                                     }`}>
@@ -941,7 +941,7 @@ function ExpandedPanel({ row, cycleDays }) {
                                             {(bMin > 0 || bMax > 0) && (
                                                 <div className="flex items-center gap-0.5 text-[9px] tabular-nums leading-tight">
                                                     <span className={`font-black ${hasDraft ? 'text-orange-400/70' : 'text-orange-500'}`}>{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
-                                                    <span className="text-slate-300">·</span>
+                                                    <span className="text-slate-500">·</span>
                                                     <span className={`font-black ${hasDraft ? 'text-blue-400/70' : 'text-blue-500'}`}>{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
                                                 </div>
                                             )}
@@ -967,21 +967,21 @@ function ExpandedPanel({ row, cycleDays }) {
 
             {/* Sin stock indicator */}
             {branchReady && stock === 0 && (
-                <div className="px-4 py-3 flex items-center gap-2 text-[11px] text-slate-400 italic" style={glassSection}>
-                    <Package size={13} className="shrink-0 text-slate-400" /> Sin existencias en esta sucursal
+                <div className="px-4 py-3 flex items-center gap-2 text-[11px] text-slate-500 italic" style={glassSection}>
+                    <Package size={13} className="shrink-0 text-slate-500" /> Sin existencias en esta sucursal
                 </div>
             )}
 
             {/* ── Referencia pedido (sucursal actual) ── */}
             {!row.is_dead_stock && (minN > 0 || coverDays) && (
                 <div className="px-4 py-2.5 flex items-center gap-5 flex-wrap" style={glassSection}>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Referencia pedido</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Referencia pedido</span>
                     {coverDays && (
                         <span className="flex items-center gap-1.5 text-[11px]">
                             <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
                             <span className="text-slate-500 font-semibold">Cobertura</span>
                             <span className="font-black text-slate-700">{coverDays} días</span>
-                            <span className="text-slate-400 text-[10px]">de {cycleDays}d objetivo</span>
+                            <span className="text-slate-500 text-[10px]">de {cycleDays}d objetivo</span>
                         </span>
                     )}
                     {minN > 0 && (
@@ -990,13 +990,13 @@ function ExpandedPanel({ row, cycleDays }) {
                                 <span className="w-2 h-2 rounded-full bg-orange-400 shrink-0" />
                                 <span className="text-slate-500 font-semibold">MIN</span>
                                 <span className="font-black text-orange-600">{hasDominant ? formatDominant(minN, pres) : `${minN.toLocaleString()} und`}</span>
-                                {hasDominant && <span className="text-slate-400 text-[10px]">({minN.toLocaleString()} und)</span>}
+                                {hasDominant && <span className="text-slate-500 text-[10px]">({minN.toLocaleString()} und)</span>}
                             </span>
                             <span className="flex items-center gap-1.5 text-[11px]">
                                 <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
                                 <span className="text-slate-500 font-semibold">MAX</span>
                                 <span className="font-black text-blue-600">{hasDominant ? formatDominant(maxN, pres) : `${maxN.toLocaleString()} und`}</span>
-                                {hasDominant && <span className="text-slate-400 text-[10px]">({maxN.toLocaleString()} und)</span>}
+                                {hasDominant && <span className="text-slate-500 text-[10px]">({maxN.toLocaleString()} und)</span>}
                             </span>
                         </>
                     )}
@@ -1005,7 +1005,7 @@ function ExpandedPanel({ row, cycleDays }) {
                             <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
                             <span className="text-slate-500 font-semibold">Pedir</span>
                             <span className="font-black text-red-600">{hasDominant ? formatDominant(pedir, pres) : `${pedir.toLocaleString()} und`}</span>
-                            {hasDominant && <span className="text-slate-400 text-[10px]">({pedir.toLocaleString()} und)</span>}
+                            {hasDominant && <span className="text-slate-500 text-[10px]">({pedir.toLocaleString()} und)</span>}
                         </span>
                     )}
                 </div>
@@ -1058,9 +1058,9 @@ function ExpandedPanel({ row, cycleDays }) {
                                     return (
                                         <div key={i} className="flex items-center gap-3 text-[10px]">
                                             <span className={`font-black tabular-nums w-8 shrink-0 ${urgent ? 'text-red-600' : 'text-orange-600'}`}>{daysLeft}d</span>
-                                            <span className="text-slate-400 font-mono text-[9px] shrink-0">{lot.lote || '—'}</span>
+                                            <span className="text-slate-500 font-mono text-[9px] shrink-0">{lot.lote || '—'}</span>
                                             <span className="text-slate-600 font-semibold tabular-nums">{Number(lot.cantidad).toLocaleString()} und</span>
-                                            <span className="text-slate-400 text-[9px]">{new Date(lot.fecha_vencimiento).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                                            <span className="text-slate-500 text-[9px]">{new Date(lot.fecha_vencimiento).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
                                         </div>
                                     );
                                 })}
@@ -1076,24 +1076,24 @@ function ExpandedPanel({ row, cycleDays }) {
                                 <div className="grid grid-cols-3">
                                     {/* Compras */}
                                     <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Últimas compras (Bodega)</span>
                                         {!canSeeCosts
-                                            ? <span className="text-[10px] text-slate-400 italic">Sin permiso para ver costos de compra</span>
+                                            ? <span className="text-[10px] text-slate-500 italic">Sin permiso para ver costos de compra</span>
                                             : purchaseData.length === 0
                                             ? <span className="text-[10px] text-slate-500 italic">Sin compras registradas</span>
                                             : <div className="flex flex-col gap-1">
                                                 {purchaseData.map((p, i) => (
                                                     <div key={i} className="flex items-center gap-2 text-[10px]">
-                                                        <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                        <span className="text-[9px] text-slate-500 shrink-0 w-14 tabular-nums">
                                                             {new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
                                                         <span className="font-bold text-slate-700 tabular-nums shrink-0">
                                                             {Number(p.cantidad).toLocaleString()} und
                                                         </span>
-                                                        <span className="text-slate-400 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
+                                                        <span className="text-slate-500 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
                                                         <span className="text-slate-500 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
                                                         {p.lote && p.lote !== 'GENERICO' && (
-                                                            <span className="shrink-0 text-[8px] font-mono text-slate-400 bg-white/60 px-1 rounded">{p.lote}</span>
+                                                            <span className="shrink-0 text-[8px] font-mono text-slate-500 bg-white/60 px-1 rounded">{p.lote}</span>
                                                         )}
                                                     </div>
                                                 ))}
@@ -1104,23 +1104,23 @@ function ExpandedPanel({ row, cycleDays }) {
                                     <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
                                         <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Últimas ventas</span>
                                         {!canSeeCosts
-                                            ? <span className="text-[10px] text-slate-400 italic">Sin permiso para ver costos de compra</span>
+                                            ? <span className="text-[10px] text-slate-500 italic">Sin permiso para ver costos de compra</span>
                                             : saleData.length === 0
                                             ? <span className="text-[10px] text-slate-500 italic">Sin ventas registradas</span>
                                             : <div className="flex flex-col gap-1">
                                                 {saleData.map((s, i) => (
                                                     <div key={i} className="flex items-center gap-2 text-[10px]">
-                                                        <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                        <span className="text-[9px] text-slate-500 shrink-0 w-14 tabular-nums">
                                                             {new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
-                                                        <span className="text-[8px] font-bold text-slate-400 shrink-0 bg-slate-100/80 rounded px-1">
+                                                        <span className="text-[8px] font-bold text-slate-500 shrink-0 bg-slate-100/80 rounded px-1">
                                                             {(ERP_NAMES[s.erp_sucursal_id] ?? `S${s.erp_sucursal_id}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
                                                         </span>
                                                         <span className="font-bold text-emerald-700 tabular-nums shrink-0">
                                                             {Number(s.cantidad).toLocaleString()} und
                                                         </span>
                                                         {s.total_linea > 0 && (
-                                                            <span className="text-slate-400 shrink-0">${Number(s.total_linea).toFixed(2)}</span>
+                                                            <span className="text-slate-500 shrink-0">${Number(s.total_linea).toFixed(2)}</span>
                                                         )}
                                                         {s.cliente && (
                                                             <span className="text-slate-500 truncate min-w-0 flex-1">{s.cliente}</span>
@@ -1146,11 +1146,11 @@ function ExpandedPanel({ row, cycleDays }) {
                                                     const dMax = hasDraft ? Number(bd.draft_max ?? 0) : null;
                                                     return (
                                                         <div key={erpId} className="flex items-center gap-1.5 text-[10px]">
-                                                            <span className="text-slate-400 shrink-0 w-9 text-[8px] truncate">
+                                                            <span className="text-slate-500 shrink-0 w-9 text-[8px] truncate">
                                                                 {(ERP_NAMES[erpId] ?? `S${erpId}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
                                                             </span>
                                                             <span className="text-orange-500 font-black tabular-nums">{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
-                                                            <span className="text-slate-300">·</span>
+                                                            <span className="text-slate-500">·</span>
                                                             <span className="text-blue-500 font-black tabular-nums">{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
                                                             {hasDraft && (
                                                                 <span className="inline-flex items-center gap-0.5 text-[7px] font-black uppercase tracking-wide text-amber-600 bg-amber-50 border border-amber-300 border-dashed rounded px-1 py-px whitespace-nowrap">
@@ -1176,24 +1176,24 @@ function ExpandedPanel({ row, cycleDays }) {
                                 <div className="grid grid-cols-2" style={{ divideX: '1px solid rgba(255,255,255,0.50)' }}>
                                     {/* Compras */}
                                     <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Últimas compras (Bodega)</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Últimas compras (Bodega)</span>
                                         {!canSeeCosts
-                                            ? <span className="text-[10px] text-slate-400 italic">Sin permiso para ver costos de compra</span>
+                                            ? <span className="text-[10px] text-slate-500 italic">Sin permiso para ver costos de compra</span>
                                             : purchaseData.length === 0
                                             ? <span className="text-[10px] text-slate-500 italic">Sin compras registradas</span>
                                             : <div className="flex flex-col gap-1">
                                                 {purchaseData.map((p, i) => (
                                                     <div key={i} className="flex items-center gap-2 text-[10px]">
-                                                        <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                        <span className="text-[9px] text-slate-500 shrink-0 w-14 tabular-nums">
                                                             {new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
                                                         <span className="font-bold text-slate-700 tabular-nums shrink-0">
                                                             {Number(p.cantidad).toLocaleString()} und
                                                         </span>
-                                                        <span className="text-slate-400 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
+                                                        <span className="text-slate-500 shrink-0">${Number(p.precio_unitario).toFixed(2)}</span>
                                                         <span className="text-slate-500 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
                                                         {p.lote && p.lote !== 'GENERICO' && (
-                                                            <span className="shrink-0 text-[8px] font-mono text-slate-400 bg-white/60 px-1 rounded">{p.lote}</span>
+                                                            <span className="shrink-0 text-[8px] font-mono text-slate-500 bg-white/60 px-1 rounded">{p.lote}</span>
                                                         )}
                                                     </div>
                                                 ))}
@@ -1204,20 +1204,20 @@ function ExpandedPanel({ row, cycleDays }) {
                                     <div className="px-4 py-2.5 flex flex-col gap-2">
                                         <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Últimas ventas (sucursal)</span>
                                         {!canSeeCosts
-                                            ? <span className="text-[10px] text-slate-400 italic">Sin permiso para ver costos de compra</span>
+                                            ? <span className="text-[10px] text-slate-500 italic">Sin permiso para ver costos de compra</span>
                                             : saleData.length === 0
                                             ? <span className="text-[10px] text-slate-500 italic">Sin ventas registradas</span>
                                             : <div className="flex flex-col gap-1">
                                                 {saleData.map((s, i) => (
                                                     <div key={i} className="flex items-center gap-2 text-[10px]">
-                                                        <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                        <span className="text-[9px] text-slate-500 shrink-0 w-14 tabular-nums">
                                                             {new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
                                                         <span className="font-bold text-emerald-700 tabular-nums shrink-0">
                                                             {Number(s.cantidad).toLocaleString()} und
                                                         </span>
                                                         {s.total_linea > 0 && (
-                                                            <span className="text-slate-400 shrink-0">${Number(s.total_linea).toFixed(2)}</span>
+                                                            <span className="text-slate-500 shrink-0">${Number(s.total_linea).toFixed(2)}</span>
                                                         )}
                                                         {s.cliente && (
                                                             <span className="text-slate-500 truncate min-w-0 flex-1">{s.cliente}</span>
@@ -1238,7 +1238,7 @@ function ExpandedPanel({ row, cycleDays }) {
                             <div className="grid grid-cols-2">
                                 {/* Proyección de stock */}
                                 <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderRight: '1px solid rgba(255,255,255,0.50)' }}>
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Proyección de stock</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Proyección de stock</span>
                                     {(!row.is_dead_stock && row.daily_velocity > 0 && stock > 0) ? (
                                         <div className="flex items-center gap-6 flex-wrap">
                                             {[30, 60, 90].map(days => {
@@ -1248,39 +1248,39 @@ function ExpandedPanel({ row, cycleDays }) {
                                                 const color     = depleted ? 'text-red-600' : low ? 'text-orange-600' : 'text-emerald-600';
                                                 return (
                                                     <div key={days} className="flex flex-col items-center gap-0.5">
-                                                        <span className="text-[9px] text-slate-400 font-semibold">+{days}d</span>
+                                                        <span className="text-[9px] text-slate-500 font-semibold">+{days}d</span>
                                                         <span className={`text-[15px] font-black tabular-nums leading-none ${color}`}>
                                                             {depleted ? '0 ✗' : projected.toLocaleString()}
                                                         </span>
-                                                        <span className="text-[8px] text-slate-400">und</span>
+                                                        <span className="text-[8px] text-slate-500">und</span>
                                                     </div>
                                                 );
                                             })}
-                                            <div className="flex-1 text-[9px] text-slate-400 leading-snug">
+                                            <div className="flex-1 text-[9px] text-slate-500 leading-snug">
                                                 a {Number(row.daily_velocity).toFixed(2)} und/día
                                             </div>
                                         </div>
                                     ) : (
-                                        <span className="text-[10px] text-slate-400 italic">No disponible</span>
+                                        <span className="text-[10px] text-slate-500 italic">No disponible</span>
                                     )}
                                 </div>
 
                                 {/* Historial de cálculos */}
                                 <div className="px-4 py-2.5 flex flex-col gap-2">
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Historial de cálculos</span>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Historial de cálculos</span>
                                     {historyData.length === 0 ? (
-                                        <span className="text-[10px] text-slate-400 italic">Sin historial</span>
+                                        <span className="text-[10px] text-slate-500 italic">Sin historial</span>
                                     ) : (
                                         <div className="flex flex-col gap-1">
                                             {historyData.map((h, i) => (
                                                 <div key={i} className="flex items-center gap-3 text-[10px] text-slate-500">
-                                                    <span className="text-[9px] text-slate-400 shrink-0 w-14 tabular-nums">
+                                                    <span className="text-[9px] text-slate-500 shrink-0 w-14 tabular-nums">
                                                         {new Date(h.captured_at).toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
                                                     </span>
                                                     <span className="font-bold text-orange-500">{(h.min_units ?? 0).toLocaleString()}</span>
-                                                    <span className="text-slate-400">→</span>
+                                                    <span className="text-slate-500">→</span>
                                                     <span className="font-bold text-blue-500">{(h.max_units ?? 0).toLocaleString()}</span>
-                                                    <span className="text-slate-400">{Number(h.daily_velocity || 0).toFixed(1)}/d</span>
+                                                    <span className="text-slate-500">{Number(h.daily_velocity || 0).toFixed(1)}/d</span>
                                                     {h.abc_class && <AbcXyzBadge abc={h.abc_class} xyz={h.demand_variability} />}
                                                 </div>
                                             ))}
@@ -1294,7 +1294,7 @@ function ExpandedPanel({ row, cycleDays }) {
                     {/* ── Acciones para dead stock ── */}
                     {row.is_dead_stock && (
                         <div className="px-4 py-2.5 flex flex-col gap-2" style={glassSection}>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Opciones</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Opciones</span>
                             {deadAction ? (
                                 <div className="flex items-center gap-2 text-[11px] text-emerald-700 font-semibold">
                                     <CheckCircle2 size={12} />
@@ -1374,7 +1374,7 @@ function ConfigPanel({ config, onSave, onClose }) {
                 <input type="number" min={min} max={max} step={step} value={form[k] ?? 0}
                     onChange={e => set(k, e.target.value)}
                     className="w-16 text-right text-[16px] font-bold text-slate-800 bg-white/80 border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/30 focus:border-[#0052CC]" />
-                {unit && <span className="text-[10px] text-slate-400 shrink-0 w-8">{unit}</span>}
+                {unit && <span className="text-[10px] text-slate-500 shrink-0 w-8">{unit}</span>}
             </div>
         </div>
     );
@@ -1389,7 +1389,7 @@ function ConfigPanel({ config, onSave, onClose }) {
                         <Settings2 size={14} className="text-[#0052CC]" />
                         <span className="text-[12px] font-black text-slate-800">Configuración Min/Max</span>
                     </div>
-                    <button onClick={onClose} className="w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                    <button onClick={onClose} className="w-6 h-6 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-600 hover:bg-slate-100 transition-colors">
                         <X size={12} />
                     </button>
                 </div>
@@ -1397,7 +1397,7 @@ function ConfigPanel({ config, onSave, onClose }) {
                 <div className="px-4 py-3 flex flex-col gap-4 max-h-[70vh] overflow-y-auto">
                     {/* Ciclo */}
                     <section className="flex flex-col gap-2">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Ciclo de reposición</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Ciclo de reposición</span>
                         <Field label="MAX — días de cobertura objetivo" k="cycle_days" unit="días" min={1} />
                         <Field label="Ventana histórica de ventas"       k="analysis_days" unit="días" min={30} />
                     </section>
@@ -1406,7 +1406,7 @@ function ConfigPanel({ config, onSave, onClose }) {
 
                     {/* Reorden por XYZ */}
                     <section className="flex flex-col gap-2">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">MIN — días de reorden por clase XYZ</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">MIN — días de reorden por clase XYZ</span>
                         <Field label="Clase X — demanda estable"   k="reorder_x_days" unit="días" min={1} />
                         <Field label="Clase Y — demanda moderada"  k="reorder_y_days" unit="días" min={1} />
                         <Field label="Clase Z — demanda errática"  k="reorder_z_days" unit="días" min={1} />
@@ -1416,49 +1416,49 @@ function ConfigPanel({ config, onSave, onClose }) {
 
                     {/* Umbrales XYZ */}
                     <section className="flex flex-col gap-2">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Umbrales XYZ (coeficiente de variación)</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Umbrales XYZ (coeficiente de variación)</span>
                         <Field label="X si CV ≤" k="xyz_x_cv_max" unit="%" min={1} step={1} />
                         <Field label="Y si CV ≤" k="xyz_y_cv_max" unit="%" min={1} step={1} />
-                        <p className="text-[9px] text-slate-400">Z = CV mayor al umbral Y</p>
+                        <p className="text-[9px] text-slate-500">Z = CV mayor al umbral Y</p>
                     </section>
 
                     <div className="h-px bg-slate-100" />
 
                     {/* Umbrales ABC */}
                     <section className="flex flex-col gap-2">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Umbrales ABC (% revenue acumulado)</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Umbrales ABC (% revenue acumulado)</span>
                         <Field label="A = top" k="abc_a_pct" unit="%" min={1} step={1} />
                         <Field label="B = hasta" k="abc_b_pct" unit="%" min={1} step={1} />
-                        <p className="text-[9px] text-slate-400">C y D = resto. Recalcula para aplicar.</p>
+                        <p className="text-[9px] text-slate-500">C y D = resto. Recalcula para aplicar.</p>
                     </section>
 
                     <div className="h-px bg-slate-100" />
 
                     {/* Alerta próximo mínimo */}
                     <section className="flex flex-col gap-2">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Alerta "próximo a mínimo"</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Alerta "próximo a mínimo"</span>
                         <Field label="Umbral (stock &lt; MIN × (1 + X%))" k="approaching_pct" unit="%" min={1} max={100} step={1} />
-                        <p className="text-[9px] text-slate-400">Ej: 25% → alerta si stock &lt; MIN × 1.25</p>
+                        <p className="text-[9px] text-slate-500">Ej: 25% → alerta si stock &lt; MIN × 1.25</p>
                     </section>
 
                     <div className="h-px bg-slate-100" />
 
                     {/* Buffer de seguridad */}
                     <section className="flex flex-col gap-2">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Buffer de seguridad (días extra al MIN)</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Buffer de seguridad (días extra al MIN)</span>
                         <Field label="Clase X — demanda estable"  k="buffer_x_days" unit="días" min={0} />
                         <Field label="Clase Y — demanda moderada" k="buffer_y_days" unit="días" min={0} />
                         <Field label="Clase Z — demanda errática" k="buffer_z_days" unit="días" min={0} />
-                        <p className="text-[9px] text-slate-400">MIN = velocidad × (reorden + buffer). Recalcula para aplicar.</p>
+                        <p className="text-[9px] text-slate-500">MIN = velocidad × (reorden + buffer). Recalcula para aplicar.</p>
                     </section>
 
                     <div className="h-px bg-slate-100" />
 
                     {/* Filtrado de demanda mayorista */}
                     <section className="flex flex-col gap-2">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Filtrado de outliers (winsorización)</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Filtrado de outliers (winsorización)</span>
                         <Field label="Percentil de corte" k="outlier_percentile" unit="%" min={50} max={100} step={1} />
-                        <p className="text-[9px] text-slate-400 leading-snug">
+                        <p className="text-[9px] text-slate-500 leading-snug">
                             Capea ventas diarias al percentil indicado antes de calcular velocidad y CV. P95 = estándar industria. P100 = sin filtro. Recalculá para aplicar.
                         </p>
                     </section>
@@ -1566,7 +1566,7 @@ function LabsPanel({ onClose, onChanged }) {
                         )}
                     </div>
                     <button onClick={onClose}
-                        className="w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 transition-colors"
+                        className="w-6 h-6 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-700 transition-colors"
                         style={{ background: 'rgba(255,255,255,0.6)' }}>
                         <X size={11} />
                     </button>
@@ -1584,7 +1584,7 @@ function LabsPanel({ onClose, onChanged }) {
                             className="flex-1 text-[16px] text-slate-700 placeholder-slate-400 bg-transparent outline-none"
                         />
                         {search && (
-                            <button onClick={() => setSearch('')} className="text-slate-300 hover:text-slate-500 transition-colors shrink-0">
+                            <button onClick={() => setSearch('')} className="text-slate-500 hover:text-slate-500 transition-colors shrink-0">
                                 <X size={10} />
                             </button>
                         )}
@@ -1592,7 +1592,7 @@ function LabsPanel({ onClose, onChanged }) {
                 </div>
 
                 {/* Hint */}
-                <p className="px-4 pb-1.5 text-[9.5px] text-slate-400 leading-relaxed">
+                <p className="px-4 pb-1.5 text-[9.5px] text-slate-500 leading-relaxed">
                     Ocultos: no aparecen en MinMax ni en el cálculo. No se cuentan como productos ocultos individualmente.
                 </p>
 
@@ -1621,7 +1621,7 @@ function LabsPanel({ onClose, onChanged }) {
                                         {lab.nombre}
                                     </div>
                                     {count > 0 && (
-                                        <div className={`text-[9px] tabular-nums ${hidden ? 'text-red-400' : 'text-slate-400'}`}>
+                                        <div className={`text-[9px] tabular-nums ${hidden ? 'text-red-400' : 'text-slate-500'}`}>
                                             {count} producto{count !== 1 ? 's' : ''}
                                         </div>
                                     )}
@@ -2691,7 +2691,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         <motion.button onClick={() => setConfigOpen(o => !o)}
                             title="Configurar parámetros"
                             {...iconAnim}
-                            className={`px-3 py-2.5 rounded-xl transition-colors ${configOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
+                            className={`px-3 py-2.5 rounded-xl transition-colors ${configOpen ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-600'}`}>
                             <Settings2 size={13} />
                         </motion.button>
 
@@ -2701,7 +2701,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         <motion.button onClick={() => setLabsOpen(o => !o)}
                             title="Laboratorios ocultos en MinMax"
                             {...iconAnim}
-                            className={`px-3 py-2.5 rounded-xl transition-colors ${labsOpen ? 'text-[#0052CC]' : 'text-slate-400 hover:text-slate-600'}`}>
+                            className={`px-3 py-2.5 rounded-xl transition-colors ${labsOpen ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-600'}`}>
                             <FlaskConical size={13} />
                         </motion.button>
 
@@ -2748,7 +2748,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         loading={loading}
                     />
                     {config && <div className={`${glass} px-4 py-3 flex flex-col gap-2 text-[10px] text-slate-500 min-w-[200px]`} style={glassStyle}>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Fórmula actual</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Fórmula actual</span>
                         <div className="flex flex-col gap-1.5">
                             <div className="flex items-center justify-between gap-4">
                                 <span className="font-semibold text-slate-600">MAX (objetivo)</span>
@@ -2764,7 +2764,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             </div>
                             <div className="flex items-center justify-between gap-4">
                                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-300 inline-block" /> MIN (Z)</span>
-                                <span className="font-black text-slate-400">{config?.reorder_z_days ?? 15}d</span>
+                                <span className="font-black text-slate-500">{config?.reorder_z_days ?? 15}d</span>
                             </div>
                             <div className="h-px bg-slate-100 my-0.5" />
                             <div className="flex items-center justify-between gap-4">
@@ -2772,7 +2772,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 <span className="font-bold text-slate-600">{config?.analysis_days ?? 180}d</span>
                             </div>
                         </div>
-                        <p className="text-[9px] text-slate-400 mt-auto pt-2 leading-snug">
+                        <p className="text-[9px] text-slate-500 mt-auto pt-2 leading-snug">
                             XYZ: X≤{config?.xyz_x_cv_max ?? 30}% CV · Y≤{config?.xyz_y_cv_max ?? 70}% CV · Z&gt;{config?.xyz_y_cv_max ?? 70}%<br />
                             ABC: A&lt;{config?.abc_a_pct ?? 70}% revenue · B&lt;{config?.abc_b_pct ?? 90}%
                         </p>
@@ -2798,7 +2798,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 <div className={`${glass} py-16 text-center`} style={glassStyle}>
                     <Package size={36} className="opacity-30 mx-auto mb-4 text-slate-500" />
                     <p className="text-[15px] font-bold text-slate-700 mb-2">Sin datos para {ERP_NAMES[selectedErp]}</p>
-                    <p className="text-[12px] text-slate-400 mb-6 max-w-sm mx-auto leading-relaxed">
+                    <p className="text-[12px] text-slate-500 mb-6 max-w-sm mx-auto leading-relaxed">
                         {isBodega
                             ? 'Bodega se actualiza automáticamente cuando las sucursales publican sus MIN/MAX. Seleccioná una sucursal, calculá y publicá sus borradores.'
                             : `Haz clic en Calcular para analizar ${config?.analysis_days ?? 180} días de ventas y generar los parámetros MIN/MAX con clasificación ABC×XYZ.`}
@@ -2946,7 +2946,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 <motion.button
                                     whileTap={{ scale: 0.92 }}
                                     onClick={() => setFilterHidden(f => !f)}
-                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 whitespace-nowrap ${filterHidden ? 'bg-violet-50/90 text-violet-700 font-bold' : 'text-slate-400 hover:text-slate-600'}`}>
+                                    className={`flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-semibold transition-colors duration-150 whitespace-nowrap ${filterHidden ? 'bg-violet-50/90 text-violet-700 font-bold' : 'text-slate-500 hover:text-slate-600'}`}>
                                     <Eye size={10} className="shrink-0" />
                                     {hiddenIds.size} oculto{hiddenIds.size !== 1 ? 's' : ''}
                                     <AnimatePresence>
@@ -3191,7 +3191,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 )}
                                             </div>
                                             <div className={`shrink-0 w-4 h-4 flex items-center justify-center ${!canExpand ? 'opacity-0' : ''}`}>
-                                                <ChevronRight size={12} className={`text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                                                <ChevronRight size={12} className={`text-slate-500 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center gap-1.5 min-w-0">
@@ -3245,21 +3245,21 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                             {v6m.toFixed(2)}/día
                                                             {v30 > 0 && v30 > v6m * 1.1 && <TrendingUp size={9} className="text-emerald-500 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
                                                             {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={9} className="text-red-400 ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
-                                                            <span className="text-slate-300 mx-0.5">·</span>
+                                                            <span className="text-slate-500 mx-0.5">·</span>
                                                             {Math.round(v6m * 30)}/mes
-                                                            {Number(row.units_sold_6m) > 0 && <><span className="text-slate-300 mx-0.5">·</span>{Number(row.units_sold_6m).toLocaleString()} vend.</>}
-                                                            <span className="text-slate-300 mx-0.5">·</span>
+                                                            {Number(row.units_sold_6m) > 0 && <><span className="text-slate-500 mx-0.5">·</span>{Number(row.units_sold_6m).toLocaleString()} vend.</>}
+                                                            <span className="text-slate-500 mx-0.5">·</span>
                                                             {row.last_sale_date
                                                                 ? <span className="font-semibold text-slate-600">{isBodega && row.last_sale_sucursal_id ? <span className="font-normal text-slate-500">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
-                                                                : <span className="text-slate-400 italic">sin venta</span>
+                                                                : <span className="text-slate-500 italic">sin venta</span>
                                                             }
                                                         </span>
                                                     )}
                                                     {(dead || noHistory) && (
                                                         <span className="text-[10px] font-semibold text-slate-500">
                                                             {row.last_sale_date
-                                                                ? <><span className="text-slate-400">Últ.</span> {isBodega && row.last_sale_sucursal_id ? <span className="text-slate-500">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</>
-                                                                : <span className="text-slate-400 italic">sin ventas</span>
+                                                                ? <><span className="text-slate-500">Últ.</span> {isBodega && row.last_sale_sucursal_id ? <span className="text-slate-500">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{new Date(row.last_sale_date + 'T12:00:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</>
+                                                                : <span className="text-slate-500 italic">sin ventas</span>
                                                             }
                                                         </span>
                                                     )}
@@ -3271,7 +3271,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     {/* Laboratorio */}
                                     <DataCell align="left" className="!py-2.5">
                                         <span className="text-[11px] text-slate-700 truncate block max-w-[160px]">
-                                            {row.laboratorio_nombre || <span className="text-slate-400">—</span>}
+                                            {row.laboratorio_nombre || <span className="text-slate-500">—</span>}
                                         </span>
                                     </DataCell>
 
@@ -3287,7 +3287,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         normXyz(row.draft_demand_variability) !== normXyz(row.demand_variability)
                                                     ) && (
                                                         <div className="flex items-center gap-0.5">
-                                                            <span className="text-[8px] text-slate-400">→</span>
+                                                            <span className="text-[8px] text-slate-500">→</span>
                                                             <AbcXyzBadge abc={row.draft_abc_class} xyz={row.draft_demand_variability} />
                                                         </div>
                                                     )}
@@ -3302,7 +3302,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         {(() => {
                                             const isEditMin = canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'min';
                                             const isEditMax = canManage && inlineDraftEdit?.productId === row.erp_product_id && inlineDraftEdit?.field === 'max';
-                                            const sep = <span className="text-slate-300 mx-1 select-none text-[11px]">·</span>;
+                                            const sep = <span className="text-slate-500 mx-1 select-none text-[11px]">·</span>;
 
                                             if (isEditMin) return (
                                                 <div className="flex flex-col items-center">
@@ -3344,7 +3344,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                             onClick={e => e.stopPropagation()}
                                                             className={`min-w-[36px] w-14 text-center text-[16px] font-black rounded-md px-1 py-0.5 focus:outline-none border-2 ${hasDraft ? 'text-amber-800 bg-amber-50 border-amber-400' : 'text-emerald-800 bg-emerald-50 border-emerald-400'}`} />
                                                         {sep}
-                                                        <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-blue-500 bg-blue-50 border-blue-300' : 'text-slate-400 bg-slate-50 border-slate-300'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
+                                                        <div className={`min-w-[36px] text-center text-[12px] font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-blue-500 bg-blue-50 border-blue-300' : 'text-slate-500 bg-slate-50 border-slate-300'}`}>{maxN > 0 ? maxN.toLocaleString() : '—'}</div>
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-[9px] font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-amber-700' : 'text-emerald-700'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
                                                     {(dead || noHistory) && <div className="text-[8px] text-yellow-600 font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
@@ -3483,7 +3483,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         {sep}
                                                         {box(row.draft_max > 0 ? row.draft_max.toLocaleString() : '—', 'text-blue-700 bg-blue-50', 'border-blue-200', openMaxEdit)}
                                                     </div>
-                                                    {(minN > 0 || maxN > 0) && <div className="text-[9px] text-slate-400 tabular-nums">{minN.toLocaleString()} · {maxN.toLocaleString()} act.</div>}
+                                                    {(minN > 0 || maxN > 0) && <div className="text-[9px] text-slate-500 tabular-nums">{minN.toLocaleString()} · {maxN.toLocaleString()} act.</div>}
                                                 </div>
                                             );
 
@@ -3500,9 +3500,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
                                             if ((minN === 0 && maxN === 0) || (row.effective_min === null && row.effective_max === null)) return (
                                                 <div className="flex items-center gap-1">
-                                                    {box('—', 'text-slate-300 bg-white/60', 'border-slate-100', openMinEdit)}
+                                                    {box('—', 'text-slate-500 bg-white/60', 'border-slate-100', openMinEdit)}
                                                     {sep}
-                                                    {box('—', 'text-slate-300 bg-white/60', 'border-slate-100', openMaxEdit)}
+                                                    {box('—', 'text-slate-500 bg-white/60', 'border-slate-100', openMaxEdit)}
                                                 </div>
                                             );
 
@@ -3619,7 +3619,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     {baseLabel}
                                                     {ruleNote && <>
                                                         <span className="w-px h-2.5 bg-slate-300 inline-block" />
-                                                        <span className="text-[9px] font-semibold text-slate-400">{ruleNote}</span>
+                                                        <span className="text-[9px] font-semibold text-slate-500">{ruleNote}</span>
                                                     </>}
                                                 </span>
                                             );
@@ -3774,10 +3774,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-[13px] font-black text-slate-800 truncate leading-tight">{historyRow.product_name}</p>
-                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">{ERP_NAMES[historyRow._erp_sucursal_id]} · Historial MIN/MAX</p>
+                                <p className="text-[10px] text-slate-500 font-medium mt-0.5">{ERP_NAMES[historyRow._erp_sucursal_id]} · Historial MIN/MAX</p>
                             </div>
                             <button onClick={() => setHistoryRow(null)}
-                                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors shrink-0">
+                                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-600 transition-colors shrink-0">
                                 <X size={14} />
                             </button>
                         </div>
@@ -3792,7 +3792,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             {!historyLoading && historyLogs.length === 0 && (
                                 <div className="flex flex-col items-center gap-2 py-10">
                                     <History size={28} className="text-slate-400" />
-                                    <p className="text-[12px] text-slate-400">Sin cambios registrados aún</p>
+                                    <p className="text-[12px] text-slate-500">Sin cambios registrados aún</p>
                                 </div>
                             )}
                             {!historyLoading && historyLogs.map(log => {
@@ -3810,26 +3810,26 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center mt-0.5">
                                             {empPhoto
                                                 ? <img src={empPhoto} alt="" className="w-full h-full object-cover" />
-                                                : <span className="text-[10px] font-black text-slate-400">{log.user_name?.charAt(0)?.toUpperCase() || '?'}</span>}
+                                                : <span className="text-[10px] font-black text-slate-500">{log.user_name?.charAt(0)?.toUpperCase() || '?'}</span>}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-baseline justify-between gap-2 flex-wrap">
                                                 <span className="text-[11px] font-bold text-slate-700 truncate">{log.user_name || 'Sistema'}</span>
-                                                <span className="text-[9px] text-slate-400 shrink-0 tabular-nums">{dateStr} · {timeStr}</span>
+                                                <span className="text-[9px] text-slate-500 shrink-0 tabular-nums">{dateStr} · {timeStr}</span>
                                             </div>
                                             <div className="flex items-center gap-2 mt-1 flex-wrap">
                                                 <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md shrink-0 ${meta.badge}`}>{meta.label}</span>
                                                 <span className="text-[11px] text-slate-600 tabular-nums">
-                                                    <span className="text-[9px] text-slate-400 font-bold mr-0.5">MIN</span>
-                                                    {d.old_min !== d.new_min && <span className="text-slate-400">{fmt(d.old_min)} → </span>}
+                                                    <span className="text-[9px] text-slate-500 font-bold mr-0.5">MIN</span>
+                                                    {d.old_min !== d.new_min && <span className="text-slate-500">{fmt(d.old_min)} → </span>}
                                                     <strong className="text-slate-800">{fmt(d.new_min)}</strong>
                                                 </span>
                                                 <span className="text-[11px] text-slate-600 tabular-nums">
-                                                    <span className="text-[9px] text-slate-400 font-bold mr-0.5">MAX</span>
-                                                    {d.old_max !== d.new_max && <span className="text-slate-400">{fmt(d.old_max)} → </span>}
+                                                    <span className="text-[9px] text-slate-500 font-bold mr-0.5">MAX</span>
+                                                    {d.old_max !== d.new_max && <span className="text-slate-500">{fmt(d.old_max)} → </span>}
                                                     <strong className="text-slate-800">{fmt(d.new_max)}</strong>
                                                 </span>
-                                                {sucName && <span className="text-[9px] text-slate-400 ml-auto shrink-0">{sucName}</span>}
+                                                {sucName && <span className="text-[9px] text-slate-500 ml-auto shrink-0">{sucName}</span>}
                                             </div>
                                         </div>
                                     </div>

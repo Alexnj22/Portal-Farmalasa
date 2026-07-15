@@ -68,7 +68,7 @@ export default function ConteoInventarioView() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
-                {search && <button onClick={() => setSearch("")} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
+                {search && <button onClick={() => setSearch("")} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
                 <button onClick={() => { setIsSearchActive(false); setSearch(""); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/60 hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
             </div>
 
@@ -119,10 +119,10 @@ export default function ConteoInventarioView() {
                                     </span>
                                 ) : c.total_diferencias === 0 ? (
                                     <span className="text-[10px] font-bold text-emerald-600">Sin diferencias</span>
-                                ) : <span className="text-slate-300">—</span>}
+                                ) : <span className="text-slate-500">—</span>}
                             </DataCell>
                             <DataCell align="right" hideBelow="lg">
-                                <span className={`text-[11px] font-bold tabular-nums ${valorNeto < 0 ? 'text-red-600' : valorNeto > 0 ? 'text-blue-600' : 'text-slate-400'}`}>{fmtMoney(valorNeto)}</span>
+                                <span className={`text-[11px] font-bold tabular-nums ${valorNeto < 0 ? 'text-red-600' : valorNeto > 0 ? 'text-blue-600' : 'text-slate-500'}`}>{fmtMoney(valorNeto)}</span>
                             </DataCell>
                             <DataCell align="center">
                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${es.bg} ${es.text} ${es.border}`}>

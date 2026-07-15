@@ -17,7 +17,7 @@ const FormUploadOnly = ({ formData, setFormData }) => (
                         <span className="font-bold text-sm">{formData.file.name}</span>
                     </div>
                 ) : (
-                    <div className="text-slate-400">
+                    <div className="text-slate-500">
                         <Upload size={48} className="mx-auto mb-2 opacity-20" />
                         <p className="text-sm font-bold text-slate-600">Haz clic para subir soporte</p>
                         <p className="text-[10px] mt-1 italic">Vincular a acción seleccionada</p>

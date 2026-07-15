@@ -217,7 +217,7 @@ const BranchTabLegal = ({
                         </div>
                     ) : (
                         <div className="flex-1 flex items-center justify-center py-8 text-center bg-white/30 backdrop-blur-sm rounded-[1.5rem] border-2 border-dashed border-white/60 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3)]">
-                            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5">
+                            <p className="text-slate-600 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5">
                                 <AlertCircle size={14} /> Módulo Desactivado
                             </p>
                         </div>
@@ -259,7 +259,7 @@ const BranchTabLegal = ({
                     </div>
                 ) : (
                     <div className="py-8 text-center bg-white/30 backdrop-blur-sm rounded-[1.5rem] border-2 border-dashed border-white/60 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3)] animate-in fade-in duration-300">
-                        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5">
+                        <p className="text-slate-600 font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5">
                             <AlertCircle size={14} /> Módulo Desactivado
                         </p>
                     </div>

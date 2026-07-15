@@ -60,7 +60,7 @@ const LiquidToast = () => {
                 className={`absolute top-1/2 -translate-y-1/2 right-3 w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-300 hover:shadow-sm hover:scale-105 active:scale-[0.97] ${
                     isDark 
                         ? 'bg-white/5 border-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 hover:border-red-500/30' 
-                        : 'bg-white/50 border-white/80 text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200'
+                        : 'bg-white/50 border-white/80 text-slate-500 hover:text-red-500 hover:bg-red-50 hover:border-red-200'
                 }`}
             >
                 <X size={14} strokeWidth={2.5} />

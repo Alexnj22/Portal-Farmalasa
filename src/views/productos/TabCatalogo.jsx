@@ -106,7 +106,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
 
     const statText   = 'text-slate-700';
     const statLabel  = 'text-slate-600';
-    const statSub    = 'text-slate-400';
+    const statSub    = 'text-slate-500';
     const statIconBg = 'bg-blue-50';
     const divider    = 'bg-slate-100';
 
@@ -125,7 +125,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             iconColor: 'text-red-500',
             countColor: perdidaCount > 0
                 ? 'text-red-600'
-                : 'text-slate-300',
+                : 'text-slate-500',
         },
         {
             id: 'bajo',
@@ -141,7 +141,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             iconColor: 'text-amber-500',
             countColor: bajoCount > 0
                 ? 'text-amber-600'
-                : 'text-slate-300',
+                : 'text-slate-500',
         },
     ];
 
@@ -212,7 +212,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                     <div className={`text-[22px] font-black leading-none tabular-nums ${
                         (modificadosStats?.count ?? 0) > 0
                             ? 'text-amber-600'
-                            : 'text-slate-300'
+                            : 'text-slate-500'
                     }`}>
                         {modificadosLoading ? <span className={'text-slate-200'}>–</span> : (modificadosStats?.count ?? 0).toLocaleString()}
                     </div>
@@ -347,13 +347,13 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
     useImperativeHandle(ref, () => ({ save }));
 
     const inp = 'bg-slate-50 border-slate-200 text-slate-700 placeholder:text-slate-300 focus:ring-[#0052CC]/20';
-    const numCls = 'text-slate-300';
-    const rmBtn  = 'text-slate-300 hover:text-red-400 hover:bg-red-50';
-    const addCls = 'text-slate-400 hover:text-[#0052CC]';
+    const numCls = 'text-slate-500';
+    const rmBtn  = 'text-slate-500 hover:text-red-400 hover:bg-red-50';
+    const addCls = 'text-slate-500 hover:text-[#0052CC]';
 
     const presetChipBase = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-all';
     const presetChipOn  = 'bg-amber-50 text-amber-600 border-amber-300';
-    const presetChipOff = 'bg-white text-slate-400 border-slate-200 hover:border-slate-400 hover:text-slate-600';
+    const presetChipOff = 'bg-white text-slate-500 border-slate-200 hover:border-slate-400 hover:text-slate-600';
 
     return (
         <div className="space-y-2">
@@ -397,7 +397,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
                             <Plus size={10} /> Agregar principio
                         </button>
                         {savingPA && (
-                            <span className="flex items-center gap-1 text-[9px] font-semibold text-slate-400">
+                            <span className="flex items-center gap-1 text-[9px] font-semibold text-slate-500">
                                 <Loader2 size={9} className="animate-spin" /> Guardando…
                             </span>
                         )}
@@ -464,7 +464,7 @@ const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, 
                 onCreateOption={handleCreate}
             />
             {savingCat && (
-                <span className="flex items-center gap-1 text-[9px] font-semibold text-slate-400 mt-1.5">
+                <span className="flex items-center gap-1 text-[9px] font-semibold text-slate-500 mt-1.5">
                     <Loader2 size={9} className="animate-spin" /> Guardando…
                 </span>
             )}
@@ -534,13 +534,13 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
 
 
     if (!locs.length) return (
-        <p className={`text-[11px] italic ${'text-slate-300'}`}>Sin sucursales.</p>
+        <p className={`text-[11px] italic ${'text-slate-500'}`}>Sin sucursales.</p>
     );
 
     const labelCls = 'text-slate-500';
 
     const salaActiveBtn  = 'bg-white text-[#0052CC] shadow-sm';
-    const inactivBtn     = 'text-slate-400 hover:text-slate-600';
+    const inactivBtn     = 'text-slate-500 hover:text-slate-600';
     const bodegaActiveBtn = 'bg-white text-amber-600 shadow-sm';
 
     const inp = (sala) =>
@@ -772,10 +772,10 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
     const [showAll, setShowAll] = useState(false);
 
     if (!canSeeCosts)
-        return <p className="text-[11px] text-slate-300 italic">Sin permiso para ver costos de compra.</p>;
+        return <p className="text-[11px] text-slate-500 italic">Sin permiso para ver costos de compra.</p>;
 
     if (!purchases || purchases.length === 0)
-        return <p className="text-[11px] text-slate-300 italic">Sin historial de compras registrado.</p>;
+        return <p className="text-[11px] text-slate-500 italic">Sin historial de compras registrado.</p>;
 
     const clasificacion = classifyFromPurchases(purchases);
     const cs = clasificacion ? CLASIF_STYLE[clasificacion] : null;
@@ -801,15 +801,15 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
                         <cs.Icon size={10} /> {clasificacion}
                     </span>
                 )}
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-slate-500">
                     Primera compra: <span className="font-semibold text-slate-600">{fmtDate(firstDate)}</span>
                 </span>
                 <span className="text-[9px] text-slate-200">·</span>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-slate-500">
                     Última: <span className="font-semibold text-slate-600">{fmtDate(lastDate)}</span>
                 </span>
                 <span className="text-[9px] text-slate-200">·</span>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-slate-500">
                     <span className="font-semibold text-slate-600">{rows.length}</span> compra{rows.length !== 1 ? 's' : ''}
                 </span>
             </div>
@@ -819,10 +819,10 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
                 <table className="min-w-full text-sm">
                     <thead>
                         <tr className="bg-slate-50/80 border-b border-slate-100">
-                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-slate-400">Fecha</th>
-                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-slate-400">Proveedor</th>
-                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-center text-slate-400">Cant.</th>
-                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-right text-slate-400">Costo unit.</th>
+                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-slate-600">Fecha</th>
+                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-slate-600">Proveedor</th>
+                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-center text-slate-600">Cant.</th>
+                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-right text-slate-600">Costo unit.</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -849,7 +849,7 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
             {rows.length > 8 && (
                 <button
                     onClick={() => setShowAll(v => !v)}
-                    className="text-[10px] font-bold text-slate-400 hover:text-slate-600 transition-colors">
+                    className="text-[10px] font-bold text-slate-500 hover:text-slate-600 transition-colors">
                     {showAll ? 'Ver menos' : `Ver ${rows.length - 8} compra${rows.length - 8 !== 1 ? 's' : ''} anterior${rows.length - 8 !== 1 ? 'es' : ''}`}
                 </button>
             )}
@@ -867,19 +867,19 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
     const xk = {
         container: 'bg-gradient-to-br from-[#EEF4FF]/80 via-white to-slate-50/50 border-t border-[#0052CC]/[0.12]',
         loadingRow: 'bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 border-t border-blue-100/60',
-        loadingText: 'text-slate-400',
+        loadingText: 'text-slate-500',
         alertDanger: 'bg-red-50 border-red-200 text-red-700',
         alertWarning: 'bg-amber-50 border-amber-200 text-amber-700',
-        sectionLabel: 'text-[10px] font-black uppercase tracking-widest text-slate-400',
+        sectionLabel: 'text-[10px] font-black uppercase tracking-widest text-slate-600',
         photoBtn: 'border-slate-200 hover:border-[#0052CC]/50 bg-slate-50/70 hover:bg-blue-50/30',
-        photoSubText: 'text-slate-300',
-        photoUploadIcon: 'text-slate-300 group-hover:text-[#0052CC]',
-        photoUploadLabel: 'text-slate-400 group-hover:text-[#0052CC]',
+        photoSubText: 'text-slate-500',
+        photoUploadIcon: 'text-slate-500 group-hover:text-[#0052CC]',
+        photoUploadLabel: 'text-slate-500 group-hover:text-[#0052CC]',
         changesBadge: 'bg-amber-100 text-amber-700 border-amber-200',
-        emptyPresentaciones: 'bg-slate-50 border-slate-100 text-slate-400',
+        emptyPresentaciones: 'bg-slate-50 border-slate-100 text-slate-500',
         pricingWrapper: 'bg-white border-slate-100 shadow-sm',
         pricingThead: 'bg-[#0052CC]/[0.05] border-b border-[#0052CC]/[0.08]',
-        pricingThText: 'text-slate-400',
+        pricingThText: 'text-slate-500',
         pricingDivide: 'divide-y divide-slate-50',
         pricingRowChanged: 'bg-amber-50/60',
         pricingRowLoss: 'bg-red-50/30',
@@ -887,18 +887,18 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         pricingCellChanged: 'bg-amber-50',
         pricingValueChanged: 'text-amber-700',
         pricingValueNormal: 'text-slate-700',
-        pricingOldValue: 'text-slate-400',
+        pricingOldValue: 'text-slate-500',
         pricingFactor: 'text-slate-500',
         pricingCosto: 'text-slate-500',
         statusActive: 'bg-emerald-50 text-emerald-600 border border-emerald-100',
-        statusInactive: 'bg-slate-100 text-slate-400',
+        statusInactive: 'bg-slate-100 text-slate-500',
         changelog: 'bg-amber-50/50 border border-amber-100',
-        changelogDate: 'bg-white border-slate-100 text-slate-400',
+        changelogDate: 'bg-white border-slate-100 text-slate-500',
         changelogField: 'text-slate-600',
-        changelogOld: 'text-slate-400',
-        changelogArrow: 'text-slate-300',
+        changelogOld: 'text-slate-500',
+        changelogArrow: 'text-slate-500',
         changelogNew: 'text-slate-800',
-        sinCambios: 'text-slate-300 italic',
+        sinCambios: 'text-slate-500 italic',
         divider: 'border-slate-100/80',
         vertDivider: 'bg-slate-100',
         btnCancel: 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700',
@@ -1069,7 +1069,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-colors disabled:opacity-50 ${
                             !devolutivo
                                 ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                                : 'bg-slate-50 text-slate-400 border-slate-200 hover:border-slate-300'
+                                : 'bg-slate-50 text-slate-500 border-slate-200 hover:border-slate-300'
                         }`}
                         title={devolutivo
                             ? 'Este producto SÍ puede devolverse al proveedor antes de vencer. Clic para marcarlo como No Devolutivo (ND).'
@@ -1123,7 +1123,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                 )}
                             </button>
                             {localFoto && (
-                                <button onClick={() => fileRef.current?.click()} className={`mt-1.5 text-[9px] font-semibold transition-colors ${'text-slate-400 hover:text-slate-600'}`}>Cambiar foto</button>
+                                <button onClick={() => fileRef.current?.click()} className={`mt-1.5 text-[9px] font-semibold transition-colors ${'text-slate-500 hover:text-slate-600'}`}>Cambiar foto</button>
                             )}
                         </div>
 
@@ -1190,7 +1190,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                                                                 <span className={`text-[9px] line-through whitespace-nowrap ${xk.pricingOldValue}`}>
                                                                                     {fmtP(ch.anterior)}
                                                                                 </span>
-                                                                                <span className={`text-[8px] ${'text-slate-300'}`}>
+                                                                                <span className={`text-[8px] ${'text-slate-500'}`}>
                                                                                     {new Date(ch.detected_at).toLocaleDateString('es-SV', { month: 'short', day: 'numeric' })}
                                                                                 </span>
                                                                             </div>
@@ -1216,7 +1216,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                 <button
                                     onClick={() => setShowInactive(v => !v)}
                                     className={`mt-2 flex items-center gap-1.5 text-[10px] font-bold transition-colors ${
-                                        'text-slate-400 hover:text-slate-600'
+                                        'text-slate-500 hover:text-slate-600'
                                     }`}>
                                     <Eye size={11} />
                                     {showInactive ? 'Ocultar inactivas' : `Mostrar ${inactiveCount} inactiva${inactiveCount !== 1 ? 's' : ''}`}
@@ -1264,7 +1264,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                     ))}
                                     {olderLog1.length > 0 && (
                                         <button onClick={() => setShowAllLog(v => !v)}
-                                            className={`mt-1.5 text-[10px] font-bold transition-colors ${'text-slate-400 hover:text-slate-600'}`}>
+                                            className={`mt-1.5 text-[10px] font-bold transition-colors ${'text-slate-500 hover:text-slate-600'}`}>
                                             {showAllLog ? 'Ver solo este mes' : `Ver ${olderLog1.length} cambio${olderLog1.length !== 1 ? 's' : ''} anterior${olderLog1.length !== 1 ? 'es' : ''}`}
                                         </button>
                                     )}
@@ -1890,13 +1890,13 @@ export default function TabCatalogo({
         rowExpanded: 'bg-[#0052CC]/[0.05]',
         textStrong: 'text-slate-800',
         textMid: 'text-slate-500',
-        textInactive: 'text-slate-400 line-through decoration-slate-300',
+        textInactive: 'text-slate-500 line-through decoration-slate-300',
         avatarBg: 'bg-[#0052CC]/[0.07]',
         avatarIcon: 'text-[#0052CC]/50',
         filterPill: 'bg-white/80 border-slate-200/70 shadow-[0_2px_12px_rgba(0,82,204,0.08)]',
         filterDivider: 'bg-slate-100',
-        filterBtn: 'text-slate-400 hover:text-slate-600 hover:bg-slate-50',
-        totalText: 'text-slate-400',
+        filterBtn: 'text-slate-500 hover:text-slate-600 hover:bg-slate-50',
+        totalText: 'text-slate-500',
     };
 
     const branches = useStaff(s => s.branches);
@@ -2400,11 +2400,11 @@ export default function TabCatalogo({
                                             {p.tipo_medicamento && <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap border bg-blue-50 text-blue-600 border-blue-100">{p.tipo_medicamento}</span>}
                                             {p.es_antibiotico   && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-orange-50 text-orange-600 border-orange-100">Bajo Receta</span>}
                                             {p.requiere_receta  && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-100">Receta</span>}
-                                            {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && <span className="text-[11px] text-slate-300">—</span>}
+                                            {!p.tipo_medicamento && !p.es_antibiotico && !p.requiere_receta && <span className="text-[11px] text-slate-500">—</span>}
                                         </div>
                                     </DataCell>
                                     <DataCell hideBelow="sm">
-                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${p.activo ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide border ${p.activo ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
                                             {p.activo ? 'Activo' : 'Inactivo'}
                                         </span>
                                     </DataCell>

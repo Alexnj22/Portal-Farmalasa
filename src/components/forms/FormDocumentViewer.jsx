@@ -29,7 +29,7 @@ const FormDocumentViewer = ({ formData }) => {
                     </div>
                     <div className="min-w-0">
                         <h3 className="text-lg font-black text-slate-800 truncate">{title || 'Documento Adjunto'}</h3>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Vista Previa de Archivo</p>
+                        <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mt-0.5">Vista Previa de Archivo</p>
                     </div>
                 </div>
                 <a 
@@ -44,7 +44,7 @@ const FormDocumentViewer = ({ formData }) => {
             </div>
             <div className="flex-1 p-4 md:p-6 overflow-hidden">
                 {resolving ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm">
+                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm">
                         <Loader2 size={32} className="animate-spin mb-3 text-[#0052CC]" />
                         <p className="font-bold text-[11px] uppercase tracking-widest">Generando acceso seguro...</p>
                     </div>
@@ -63,7 +63,7 @@ const FormDocumentViewer = ({ formData }) => {
                         </object>
                     </div>
                 ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm border-dashed">
+                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm border-dashed">
                         <FileText size={48} className="mb-4 opacity-30" strokeWidth={1.5}/>
                         <p className="font-bold text-sm">URL no disponible o archivo corrupto.</p>
                     </div>

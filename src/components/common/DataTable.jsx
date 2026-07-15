@@ -42,11 +42,11 @@ function useTokens() {
     rowHover:          'hover:bg-[#0052CC]/[0.032]',
     cellText:          'text-slate-700',
     skeletonPulse:     'bg-[#0052CC]/[0.07]',
-    emptyText:         'text-slate-400',
-    emptyIcon:         'text-slate-300',
+    emptyText:         'text-slate-500',
+    emptyIcon:         'text-slate-500',
     expandBg:          'bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/30',
     expandBorderColor: 'border-blue-100/60',
-    expandText:        'text-slate-400',
+    expandText:        'text-slate-500',
     expandTextStrong:  'text-slate-700',
   };
 }
@@ -61,7 +61,7 @@ export function useExpandStyle() {
   const tk = useTable();
   if (!tk) {
     // Fallback si se usa fuera de DataTable (no debería ocurrir)
-    return { expandBg: '', expandBorderColor: 'border-slate-100', expandText: 'text-slate-400', expandTextStrong: 'text-slate-700' };
+    return { expandBg: '', expandBorderColor: 'border-slate-100', expandText: 'text-slate-500', expandTextStrong: 'text-slate-700' };
   }
   return {
     expandBg: tk.expandBg,

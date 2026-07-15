@@ -173,7 +173,7 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
                             <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2">
                                 Excepción para HOY <ShieldAlert size={18} className="text-orange-400"/>
                             </h2>
-                            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{employee.name}</p>
+                            <p className="text-slate-600 text-xs font-bold uppercase tracking-widest">{employee.name}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 bg-white/10 hover:bg-red-500 rounded-full transition-colors">
@@ -185,8 +185,8 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
                     
                     {/* COLUMNA IZQUIERDA: RESUMEN ORIGINAL (Ocupa 2/5 del ancho) */}
                     <div className="p-6 md:p-8 border-b md:border-b-0 md:border-r border-slate-200 bg-white">
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                            <CalendarIcon size={14} className="text-slate-400"/> Turno Original (Hoy)
+                        <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-6 flex items-center gap-2">
+                            <CalendarIcon size={14} className="text-slate-500"/> Turno Original (Hoy)
                         </h3>
                         
                         <div className="space-y-4">
@@ -199,11 +199,11 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
 
                             <div className="pt-4 border-t border-slate-100 space-y-3">
                                 <div className="flex justify-between items-center text-xs font-bold">
-                                    <span className="flex items-center gap-1.5 text-slate-400"><Utensils size={12}/> Almuerzo</span>
+                                    <span className="flex items-center gap-1.5 text-slate-500"><Utensils size={12}/> Almuerzo</span>
                                     <span className="text-slate-600">{originalDayConfig?.lunchTime ? formatTime12h(originalDayConfig.lunchTime) : 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-xs font-bold">
-                                    <span className="flex items-center gap-1.5 text-slate-400"><Baby size={12}/> Lactancia</span>
+                                    <span className="flex items-center gap-1.5 text-slate-500"><Baby size={12}/> Lactancia</span>
                                     <span className="text-slate-600">{originalDayConfig?.lactationTime ? formatTime12h(originalDayConfig.lactationTime) : 'N/A'}</span>
                                 </div>
                             </div>
@@ -235,7 +235,7 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
                             {/* ENTRADA Y SALIDA */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Hora Entrada</label>
+                                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Hora Entrada</label>
                                     <input 
                                         type="time" 
                                         required
@@ -244,7 +244,7 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Hora Salida</label>
+                                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Hora Salida</label>
                                     <input 
                                         type="time" 
                                         required
@@ -295,7 +295,7 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
 
                             {/* NOTA */}
                             <div className="pt-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Motivo (Opcional)</label>
+                                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 block">Motivo (Opcional)</label>
                                 <input 
                                     type="text" 
                                     placeholder="Ej: Cubriendo vacante sucursal norte..."

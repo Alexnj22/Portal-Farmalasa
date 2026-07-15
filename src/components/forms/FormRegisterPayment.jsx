@@ -148,7 +148,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                         </label>
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <span className="text-slate-400 font-black text-lg">$</span>
+                                <span className="text-slate-500 font-black text-lg">$</span>
                             </div>
                             <input
                                 required
@@ -193,7 +193,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                 {/* NOTAS / OBSERVACIONES */}
                 <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-1.5">
-                        <FileText size={12} className="text-slate-400" /> Notas / Observaciones (Opcional)
+                        <FileText size={12} className="text-slate-500" /> Notas / Observaciones (Opcional)
                     </label>
                     <input
                         type="text"
@@ -241,7 +241,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                                 <p className="text-[13px] font-black text-slate-700 tracking-tight">
                                     Toca para subir o arrastra aquí
                                 </p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">
                                     Si no lo subes hoy, quedará como PENDIENTE
                                 </p>
                             </div>

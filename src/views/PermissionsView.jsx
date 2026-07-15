@@ -305,18 +305,18 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
                         hasAnyPerm
                             ? 'bg-gradient-to-br from-[#0052CC] to-[#6929C4] text-white shadow-[0_3px_12px_rgba(0,82,204,0.38)] scale-100'
-                            : 'bg-white/50 backdrop-blur-sm border border-white/60 text-slate-300 scale-90'
+                            : 'bg-white/50 backdrop-blur-sm border border-white/60 text-slate-500 scale-90'
                     }`}>
                         <ModIcon size={15} strokeWidth={1.8} />
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                            <p className={`text-[12px] font-black leading-tight transition-colors duration-300 ${hasAnyPerm ? 'text-slate-800' : 'text-slate-400'}`}>
+                            <p className={`text-[12px] font-black leading-tight transition-colors duration-300 ${hasAnyPerm ? 'text-slate-800' : 'text-slate-500'}`}>
                                 {module.label}
                             </p>
                             {saving && <Loader2 size={10} className="text-slate-400 animate-spin flex-shrink-0" />}
                         </div>
-                        <p className="text-[10px] text-slate-400 font-medium mt-0.5 leading-snug line-clamp-2">{module.desc}</p>
+                        <p className="text-[10px] text-slate-500 font-medium mt-0.5 leading-snug line-clamp-2">{module.desc}</p>
                     </div>
                 </div>
 
@@ -348,7 +348,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                     }`}>
                                         <PtIcon size={9} className="text-white" strokeWidth={3} />
                                     </div>
-                                    <span className={`text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${val ? 'text-slate-700' : 'text-slate-300'}`}>
+                                    <span className={`text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${val ? 'text-slate-700' : 'text-slate-600'}`}>
                                         {pt.label}
                                     </span>
                                 </div>
@@ -367,8 +367,8 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                 {module.hasScope && perms.can_view && (
                     <div className="mt-3 pt-3 border-t border-white/40">
                         <div className="flex items-center gap-1.5 mb-2">
-                            <Globe2 size={9} className="text-slate-400" strokeWidth={2.5} />
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Alcance</p>
+                            <Globe2 size={9} className="text-slate-500" strokeWidth={2.5} />
+                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Alcance</p>
                         </div>
                         <div className="flex gap-1.5">
                             {SCOPE_OPTIONS.map(opt => (
@@ -380,7 +380,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                     className={`flex-1 py-1.5 px-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 border ${
                                         currentScope === opt.value
                                             ? `${opt.color} border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.15)] scale-[1.02]`
-                                            : 'bg-white/50 backdrop-blur-sm border-white/50 text-slate-400 hover:bg-white/70 hover:text-slate-600'
+                                            : 'bg-white/50 backdrop-blur-sm border-white/50 text-slate-500 hover:bg-white/70 hover:text-slate-600'
                                     } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                                 >
                                     {opt.label}
@@ -395,7 +395,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                     <div className="mt-3 pt-3 border-t border-white/40">
                         <div className="flex items-center gap-1.5 mb-2">
                             <Layers size={9} className="text-slate-400" strokeWidth={2.5} />
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Pestañas</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Pestañas</p>
                         </div>
                         <div className="space-y-1.5">
                             {tabs.map(tab => {
@@ -406,7 +406,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                             ? 'bg-blue-50/50 border-blue-200/40'
                                             : 'bg-white/20 border-white/30'
                                     }`}>
-                                        <span className={`text-[10px] font-bold transition-colors duration-300 ${tabPerm.can_view ? 'text-slate-700' : 'text-slate-300'}`}>
+                                        <span className={`text-[10px] font-bold transition-colors duration-300 ${tabPerm.can_view ? 'text-slate-700' : 'text-slate-500'}`}>
                                             {tab.label}
                                         </span>
                                         <div className="flex items-center gap-1.5">
@@ -716,7 +716,7 @@ const PermissionsView = () => {
                     ref={(input) => { if (input && isSearchMode) setTimeout(() => input.focus(), 100); }}
                 />
                 {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0">
+                    <button onClick={() => setSearchQuery('')} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0">
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}
@@ -805,7 +805,7 @@ const PermissionsView = () => {
 
                     {/* ── Columna izquierda: selector de cargos ── */}
                     <div className="w-full lg:w-64 shrink-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pt-[180px] xl:pt-[200px] [&::-webkit-scrollbar]:hidden">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1 mb-3 flex items-center gap-1.5">
                             <ShieldCheck size={10} /> Cargos
                         </p>
                         <div className="space-y-2">
@@ -846,7 +846,7 @@ const PermissionsView = () => {
                                                 <p className={`text-[12px] font-black leading-tight truncate ${isActive ? (isSURol ? 'text-amber-900' : cs.textColor) : 'text-slate-700'}`}>{r.name}</p>
                                                 {isSURol && <span className="text-[7px] font-black uppercase tracking-widest bg-amber-400 text-white px-1.5 py-0.5 rounded-full flex-shrink-0">SU</span>}
                                             </div>
-                                            <p className={`text-[10px] font-medium mt-0.5 ${isActive ? (isSURol ? 'text-amber-700/60' : cs.textColor + ' opacity-70') : 'text-slate-400'}`}>
+                                            <p className={`text-[10px] font-medium mt-0.5 ${isActive ? (isSURol ? 'text-amber-700/60' : cs.textColor + ' opacity-70') : 'text-slate-500'}`}>
                                                 {viewCount} de {MAIN_MODULES.length} módulos
                                             </p>
                                         </div>
@@ -861,7 +861,7 @@ const PermissionsView = () => {
                         <div className="mt-4 mb-10 px-4 py-3 rounded-2xl bg-slate-50/80 border border-slate-100">
                             <div className="flex items-start gap-2">
                                 <Info size={11} className="text-slate-400 flex-shrink-0 mt-0.5" strokeWidth={2} />
-                                <p className="text-[10px] text-slate-400 font-medium leading-snug">
+                                <p className="text-[10px] text-slate-500 font-medium leading-snug">
                                     Los cambios se aplican inmediatamente a todos los empleados con este cargo.
                                 </p>
                             </div>
@@ -874,10 +874,10 @@ const PermissionsView = () => {
                             /* Empty state */
                             <div className="flex flex-col items-center justify-center min-h-[40vh] text-center px-6 animate-in fade-in duration-500">
                                 <div className="w-16 h-16 rounded-[1.5rem] bg-white/70 border border-slate-100 shadow-sm flex items-center justify-center mb-4">
-                                    <MousePointerClick size={28} className="text-slate-300" strokeWidth={1.5} />
+                                    <MousePointerClick size={28} className="text-slate-500" strokeWidth={1.5} />
                                 </div>
-                                <p className="text-[15px] font-black text-slate-400">Selecciona un cargo</p>
-                                <p className="text-[12px] text-slate-400 font-medium mt-1">para modificar sus permisos de acceso</p>
+                                <p className="text-[15px] font-black text-slate-500">Selecciona un cargo</p>
+                                <p className="text-[12px] text-slate-500 font-medium mt-1">para modificar sus permisos de acceso</p>
                             </div>
                         ) : (
                         /* Grid de módulos */
@@ -928,7 +928,7 @@ const PermissionsView = () => {
                                                     <span className="text-[7px] font-black uppercase tracking-widest bg-amber-400 text-white px-1.5 py-0.5 rounded-full animate-in fade-in duration-300">SU</span>
                                                 )}
                                             </div>
-                                            <p className={`text-[9px] font-medium mt-0.5 leading-snug transition-colors duration-300 ${isRoleSU ? 'text-amber-700/70' : 'text-slate-400'}`}>
+                                            <p className={`text-[9px] font-medium mt-0.5 leading-snug transition-colors duration-300 ${isRoleSU ? 'text-amber-700/70' : 'text-slate-500'}`}>
                                                 {isRoleSU ? 'Acceso total · oculto en listas' : 'Acceso irrestricto al sistema'}
                                             </p>
                                         </div>
@@ -967,7 +967,7 @@ const PermissionsView = () => {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-[13px] font-black text-slate-800 leading-tight">Nivel de Precio Máximo</p>
-                                            <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                            <p className="text-[10px] text-slate-500 font-medium mt-0.5">
                                                 Activo: <span className="font-black text-slate-600">{activeOpt.label}</span>
                                                 {activeOpt.sub !== activeOpt.label && ` · ${activeOpt.sub}`}
                                             </p>
@@ -983,7 +983,7 @@ const PermissionsView = () => {
                                                     className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 border ${
                                                         isActive
                                                             ? `bg-gradient-to-br ${opt.grad} text-white border-transparent shadow-[0_2px_8px_rgba(0,0,0,0.2)]`
-                                                            : 'bg-white/80 border-slate-100 text-slate-400 hover:border-slate-200 hover:text-slate-600'
+                                                            : 'bg-white/80 border-slate-100 text-slate-500 hover:border-slate-200 hover:text-slate-600'
                                                     } ${!canEdit ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
                                                     <OptIcon size={9} strokeWidth={2.5} />
                                                     {opt.label}

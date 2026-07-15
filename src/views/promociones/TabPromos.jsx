@@ -20,7 +20,7 @@ const ESTADO_CFG = {
     draft:  { bg: 'bg-slate-100',    text: 'text-slate-600',    border: 'border-slate-200',    dot: 'bg-slate-400',    label: 'Borrador' },
     active: { bg: 'bg-emerald-50',   text: 'text-emerald-700',  border: 'border-emerald-200',  dot: 'bg-emerald-500',  label: 'Activa'   },
     paused: { bg: 'bg-amber-50',     text: 'text-amber-700',    border: 'border-amber-200',    dot: 'bg-amber-400',    label: 'Pausada'  },
-    closed: { bg: 'bg-slate-50',     text: 'text-slate-400',    border: 'border-slate-150',    dot: 'bg-slate-300',    label: 'Cerrada'  },
+    closed: { bg: 'bg-slate-50',     text: 'text-slate-500',    border: 'border-slate-150',    dot: 'bg-slate-300',    label: 'Cerrada'  },
 };
 
 const ALL_STATES = ['draft', 'active', 'paused'];
@@ -67,7 +67,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 {es.label}
                             </span>
                             {promo.fecha_inicio && (
-                                <span className="flex items-center gap-1 text-[10px] text-slate-400">
+                                <span className="flex items-center gap-1 text-[10px] text-slate-500">
                                     <Calendar size={9} />
                                     {fmtDate(promo.fecha_inicio)}
                                     {promo.fecha_fin && ` → ${fmtDate(promo.fecha_fin)}`}
@@ -76,7 +76,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                         </div>
                         <h3 className="text-[14px] font-bold text-slate-800 leading-tight">{promo.nombre}</h3>
                         {labs.length > 0 && (
-                            <p className="flex items-center gap-1 text-[10px] text-slate-400 mt-0.5">
+                            <p className="flex items-center gap-1 text-[10px] text-slate-500 mt-0.5">
                                 <FlaskConical size={9} /> {labs.join(', ')}
                             </p>
                         )}
@@ -89,7 +89,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 <button
                                     title="Activar"
                                     onClick={() => onStateChange(promo, 'active')}
-                                    className="p-2 rounded-xl hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors"
+                                    className="p-2 rounded-xl hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 transition-colors"
                                 >
                                     <Play size={14} />
                                 </button>
@@ -98,7 +98,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 <button
                                     title="Pausar"
                                     onClick={() => onStateChange(promo, 'paused')}
-                                    className="p-2 rounded-xl hover:bg-amber-50 text-slate-400 hover:text-amber-600 transition-colors"
+                                    className="p-2 rounded-xl hover:bg-amber-50 text-slate-500 hover:text-amber-600 transition-colors"
                                 >
                                     <Pause size={14} />
                                 </button>
@@ -107,7 +107,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 <button
                                     title="Reactivar"
                                     onClick={() => onStateChange(promo, 'active')}
-                                    className="p-2 rounded-xl hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors"
+                                    className="p-2 rounded-xl hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 transition-colors"
                                 >
                                     <Play size={14} />
                                 </button>
@@ -116,7 +116,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 <button
                                     title="Cerrar promoción"
                                     onClick={() => onStateChange(promo, 'closed')}
-                                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                                    className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-600 transition-colors"
                                 >
                                     <Lock size={14} />
                                 </button>
@@ -125,7 +125,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                 <button
                                     title="Eliminar borrador"
                                     onClick={() => onDelete(promo)}
-                                    className="p-2 rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                                    className="p-2 rounded-xl hover:bg-red-50 text-slate-500 hover:text-red-500 transition-colors"
                                 >
                                     <Trash2 size={14} />
                                 </button>
@@ -137,12 +137,12 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                 {/* Meta row */}
                 <div className="flex flex-wrap gap-x-3 gap-y-1 mb-3">
                     {branches.length > 0 && (
-                        <span className="flex items-center gap-1 text-[10px] text-slate-400">
+                        <span className="flex items-center gap-1 text-[10px] text-slate-500">
                             <Building2 size={9} />
                             {branches.length <= 3 ? branches.join(', ') : `${branches.slice(0, 2).join(', ')} +${branches.length - 2}`}
                         </span>
                     )}
-                    <span className="flex items-center gap-1 text-[10px] text-slate-400">
+                    <span className="flex items-center gap-1 text-[10px] text-slate-500">
                         <Package size={9} /> {pps.length} {pps.length === 1 ? 'producto' : 'productos'}
                     </span>
                     {pps.some(pp => pp.bono_vendedor > 0 || pp.bono_admin_pool > 0 || pp.bono_bodega_pool > 0) && (
@@ -156,7 +156,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                 {pct !== null && (
                     <div className="mb-3">
                         <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] text-slate-400">Stock vendido</span>
+                            <span className="text-[10px] text-slate-500">Stock vendido</span>
                             <span className="text-[10px] font-semibold text-slate-600">{totalSold}/{totalStock} und · {pct}%</span>
                         </div>
                         <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -169,7 +169,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                 )}
 
                 {promo.notas && (
-                    <p className="text-[10px] text-slate-400 italic mb-3 leading-relaxed">"{promo.notas}"</p>
+                    <p className="text-[10px] text-slate-500 italic mb-3 leading-relaxed">"{promo.notas}"</p>
                 )}
 
                 {/* Expand toggle */}
@@ -177,7 +177,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                     <button
                         type="button"
                         onClick={() => setExpanded(e => !e)}
-                        className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-slate-600 transition-colors w-full justify-center pt-1 border-t border-slate-100"
+                        className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-600 transition-colors w-full justify-center pt-1 border-t border-slate-100"
                     >
                         {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                         {expanded ? 'Ocultar productos' : 'Ver productos'}
@@ -231,7 +231,7 @@ function PromoCard({ promo, onStateChange, onDelete, canEdit }) {
                                                     style={{ width: `${ppPct}%` }}
                                                 />
                                             </div>
-                                            <span className="text-[9px] text-slate-400 w-8 text-right">{sold}/{pp.stock_inicial}</span>
+                                            <span className="text-[9px] text-slate-500 w-8 text-right">{sold}/{pp.stock_inicial}</span>
                                         </div>
                                     )}
                                 </div>
@@ -371,7 +371,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
 
             {/* Loading */}
             {loading && (
-                <div className="flex items-center justify-center py-16 text-slate-400">
+                <div className="flex items-center justify-center py-16 text-slate-500">
                     <Loader2 size={20} className="animate-spin mr-2" />
                     <span className="text-[12px]">Cargando promociones...</span>
                 </div>
@@ -381,7 +381,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
             {!loading && filtered.length === 0 && (
                 <div className="text-center py-16">
                     <Tag size={32} className="mx-auto mb-3 text-slate-200" />
-                    <p className="text-[13px] text-slate-400 font-medium">
+                    <p className="text-[13px] text-slate-500 font-medium">
                         {searchTerm ? 'Sin resultados para esa búsqueda' : 'No hay promociones aquí'}
                     </p>
                     {canEdit && !searchTerm && (

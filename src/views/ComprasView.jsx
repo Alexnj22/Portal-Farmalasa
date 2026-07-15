@@ -78,10 +78,10 @@ function ItemsExpand({ receiptId }) {
     }, [receiptId]);
 
     if (loading) return (
-        <div className="px-6 py-4 text-[11px] text-slate-400 animate-pulse">Cargando ítems…</div>
+        <div className="px-6 py-4 text-[11px] text-slate-500 animate-pulse">Cargando ítems…</div>
     );
     if (!items?.length) return (
-        <div className="px-6 py-4 text-[11px] text-slate-400">Sin ítems registrados.</div>
+        <div className="px-6 py-4 text-[11px] text-slate-500">Sin ítems registrados.</div>
     );
 
     return (
@@ -105,7 +105,7 @@ function ItemsExpand({ receiptId }) {
                             const lote = it.lote && it.lote !== 'GENERICO' ? it.lote : null;
                             return (
                                 <tr key={it.linea_num} className="hover:bg-blue-50/30 transition-colors">
-                                    <td className="px-3 py-2 text-slate-400 tabular-nums">{it.linea_num}</td>
+                                    <td className="px-3 py-2 text-slate-500 tabular-nums">{it.linea_num}</td>
                                     <td className="px-3 py-2 text-slate-500 tabular-nums font-mono">{it.erp_product_id ?? '—'}</td>
                                     <td className="px-3 py-2 text-slate-700 font-medium">{it.descripcion || '—'}</td>
                                     <td className="px-3 py-2 text-center text-slate-700 tabular-nums">{fmtNum(it.cantidad)}</td>
@@ -114,7 +114,7 @@ function ItemsExpand({ receiptId }) {
                                     <td className="px-3 py-2 text-center text-slate-500 hidden md:table-cell">
                                         {lote
                                             ? <span className="bg-violet-50 text-violet-700 text-[10px] font-bold px-2 py-0.5 rounded-full">{lote}</span>
-                                            : <span className="text-slate-300">—</span>
+                                            : <span className="text-slate-500">—</span>
                                         }
                                     </td>
                                     <td className="px-3 py-2 text-center text-slate-500 hidden md:table-cell">
@@ -203,7 +203,7 @@ function TabFacturas({ dateStart, dateEnd, supplierId, sinProveedor, searchTerm 
                                     )}
                                     <span className="text-slate-800 font-medium text-[12px]">{provName(row)}</span>
                                     {!row.supplier_id && (
-                                        <span className="text-[9px] font-mono text-slate-400">#{row.erp_purchase_id}</span>
+                                        <span className="text-[9px] font-mono text-slate-500">#{row.erp_purchase_id}</span>
                                     )}
                                 </div>
                             </DataCell>
@@ -221,7 +221,7 @@ function TabFacturas({ dateStart, dateEnd, supplierId, sinProveedor, searchTerm 
                                 <span className="tabular-nums font-bold text-slate-800">{fmt$(row.total)}</span>
                             </DataCell>
                             <DataCell align="center">
-                                <button className="text-slate-400 hover:text-[#0052CC] transition-colors p-1 rounded-lg hover:bg-blue-50">
+                                <button className="text-slate-500 hover:text-[#0052CC] transition-colors p-1 rounded-lg hover:bg-blue-50">
                                     {expandedId === row.id
                                         ? <ChevronDown size={14} strokeWidth={2.5} />
                                         : <ChevronRight size={14} strokeWidth={2.5} />

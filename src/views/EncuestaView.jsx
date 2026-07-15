@@ -25,10 +25,10 @@ const SUPERVISOR_DE_JEFE = {
 
 const SCORE_MAP = { A: 4, B: 3, C: 2, D: 1 };
 const OPT_COLORS = {
-    A: { on: 'bg-emerald-500 text-white', off: 'bg-slate-100 text-slate-300' },
-    B: { on: 'bg-blue-500 text-white',    off: 'bg-slate-100 text-slate-300' },
-    C: { on: 'bg-amber-500 text-white',   off: 'bg-slate-100 text-slate-300' },
-    D: { on: 'bg-rose-500 text-white',    off: 'bg-slate-100 text-slate-300' },
+    A: { on: 'bg-emerald-500 text-white', off: 'bg-slate-100 text-slate-500' },
+    B: { on: 'bg-blue-500 text-white',    off: 'bg-slate-100 text-slate-500' },
+    C: { on: 'bg-amber-500 text-white',   off: 'bg-slate-100 text-slate-500' },
+    D: { on: 'bg-rose-500 text-white',    off: 'bg-slate-100 text-slate-500' },
 };
 const PCT_COLORS = {
     blue:    { bar: 'bg-blue-500',    text: 'text-blue-700',    bg: 'bg-blue-50',    border: 'border-blue-200',    badge: 'bg-blue-100 text-blue-700' },
@@ -110,7 +110,7 @@ function PersonAvatar({ nombre, photo = null, isJefe = false, size = 32 }) {
 // ─── Mini bar chart for A/B/C/D distribution ─────────────────────────────────
 function DistBar({ dist, invertida = false }) {
     const { A, B, C, D, total } = dist;
-    if (!total) return <span className="text-[10px] text-slate-300">Sin datos</span>;
+    if (!total) return <span className="text-[10px] text-slate-500">Sin datos</span>;
     const pct = (n) => Math.round((n / total) * 100);
     const positives = pct(A) + pct(B);
     const bars = [
@@ -163,7 +163,7 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
                     <DistBar dist={dist} invertida={pregunta.invertida} />
                 </div>
                 <div className="shrink-0 pt-0.5">
-                    {showDetail ? <ChevronUp size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />}
+                    {showDetail ? <ChevronUp size={13} className="text-slate-500" /> : <ChevronDown size={13} className="text-slate-500" />}
                 </div>
             </button>
 
@@ -222,7 +222,7 @@ function ScoreCard({ pct, label, color, desc }) {
                 <div className={`h-full rounded-full transition-all duration-700 ${c.bar}`}
                     style={{ width: `${pct}%` }} />
             </div>
-            <p className="text-[9px] text-slate-400 leading-tight mt-0.5">{desc}</p>
+            <p className="text-[9px] text-slate-500 leading-tight mt-0.5">{desc}</p>
         </div>
     );
 }
@@ -669,8 +669,8 @@ export default function EncuestaView() {
                                     </div>
                                     <div>
                                         <div className="text-[22px] font-black text-slate-800 leading-none">{value}</div>
-                                        <div className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{label}</div>
-                                        <div className="text-[9px] text-slate-400">{sub}</div>
+                                        <div className="text-[9px] font-bold uppercase tracking-wider text-slate-600">{label}</div>
+                                        <div className="text-[9px] text-slate-500">{sub}</div>
                                     </div>
                                 </div>
                             ))}
@@ -680,7 +680,7 @@ export default function EncuestaView() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* Score global */}
                             <div className="flex flex-col items-center justify-center bg-white rounded-2xl border border-slate-100 shadow-sm p-6 gap-2">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Score Global</span>
+                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">Score Global</span>
                                 <div className="relative w-28 h-28">
                                     <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                                         <circle cx="50" cy="50" r="42" fill="none" stroke="#f1f5f9" strokeWidth="10" />
@@ -692,13 +692,13 @@ export default function EncuestaView() {
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                                         <span className="text-[26px] font-black text-slate-800 leading-none">{globalScore?.toFixed(0)}</span>
-                                        <span className="text-[11px] font-bold text-slate-400">/ 100</span>
+                                        <span className="text-[11px] font-bold text-slate-500">/ 100</span>
                                     </div>
                                 </div>
                                 {(() => { const sl = scoreLabel(globalScore); return (
                                     <span className={`text-[11px] font-black ${sl.color}`}>{sl.label}</span>
                                 ); })()}
-                                <p className="text-[9px] text-slate-400 text-center">Promedio ponderado de todos los bloques (escala A–D)</p>
+                                <p className="text-[9px] text-slate-500 text-center">Promedio ponderado de todos los bloques (escala A–D)</p>
                             </div>
 
                             {/* Scores por bloque */}
@@ -764,7 +764,7 @@ export default function EncuestaView() {
                                     <Star size={12} className="text-amber-400" /> Autocalificación como trabajador/a
                                 </h3>
                                 {Object.values(selfRatings.dist).every(n => n === 0) ? (
-                                    <p className="text-[11px] text-slate-300 text-center py-6">Sin datos</p>
+                                    <p className="text-[11px] text-slate-500 text-center py-6">Sin datos</p>
                                 ) : (() => {
                                     const total = Object.values(selfRatings.dist).reduce((a, b) => a + b, 0);
                                     const ranges = [
@@ -791,10 +791,10 @@ export default function EncuestaView() {
                                                             style={{ left: `calc(${avgPct}% - 7px)` }} />
                                                     )}
                                                 </div>
-                                                <div className="flex justify-between text-[9px] font-bold text-slate-400">
+                                                <div className="flex justify-between text-[9px] font-bold text-slate-500">
                                                     <span>1</span><span>5</span><span>10</span>
                                                 </div>
-                                                <p className="text-[10px] text-slate-400">{total} respuestas · {avg != null ? (avg >= 8 ? 'Muy alta autopercepción' : avg >= 6 ? 'Buena autopercepción' : 'Autopercepción moderada') : ''}</p>
+                                                <p className="text-[10px] text-slate-500">{total} respuestas · {avg != null ? (avg >= 8 ? 'Muy alta autopercepción' : avg >= 6 ? 'Buena autopercepción' : 'Autopercepción moderada') : ''}</p>
                                             </div>
                                         </div>
                                         {/* Distribution rows */}
@@ -808,7 +808,7 @@ export default function EncuestaView() {
                                                         <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
                                                             <div className={`h-full rounded-full ${bar} transition-all duration-700`} style={{ width: `${pct}%` }} />
                                                         </div>
-                                                        <span className="text-[10px] font-black text-slate-500 w-14 text-right shrink-0">{n} <span className="font-normal text-slate-300">({pct}%)</span></span>
+                                                        <span className="text-[10px] font-black text-slate-500 w-14 text-right shrink-0">{n} <span className="font-normal text-slate-500">({pct}%)</span></span>
                                                     </div>
                                                 );
                                             })}
@@ -889,7 +889,7 @@ export default function EncuestaView() {
                                                 {ctx && <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${ctx.badge}`}>→ {ctx.dirigido}</span>}
                                                 {score && <span className={`text-[9px] font-black ${sl.color}`}>{sl.label}</span>}
                                             </div>
-                                            <p className="text-[10px] text-slate-400 mt-0.5">{bloque.desc}</p>
+                                            <p className="text-[10px] text-slate-500 mt-0.5">{bloque.desc}</p>
                                         </div>
                                         <div className="flex items-center gap-2 shrink-0">
                                             {score && (
@@ -900,7 +900,7 @@ export default function EncuestaView() {
                                                     <span className={`text-[14px] font-black ${c.text} w-10 text-right`}>{score.toFixed(0)}%</span>
                                                 </div>
                                             )}
-                                            {isOpen ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
+                                            {isOpen ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
                                         </div>
                                     </button>
 
@@ -934,7 +934,7 @@ export default function EncuestaView() {
                                                                     <div key={suc} className="group relative flex items-center gap-3">
                                                                         <div className="w-20 shrink-0">
                                                                             <div className="text-[10px] font-black text-slate-700">{suc}</div>
-                                                                            <div className="text-[9px] text-slate-400">{jefeDisplay} · {colabRows.length} eval.</div>
+                                                                            <div className="text-[9px] text-slate-500">{jefeDisplay} · {colabRows.length} eval.</div>
                                                                         </div>
                                                                         <div className="flex-1 h-2 rounded-full bg-white overflow-hidden">
                                                                             <div className={`h-full rounded-full ${sColabs >= 70 ? 'bg-emerald-500' : sColabs >= 55 ? 'bg-amber-400' : 'bg-rose-500'} transition-all`}
@@ -947,10 +947,10 @@ export default function EncuestaView() {
                                                                         </div>
                                                                         {/* Tooltip: individual colab scores */}
                                                                         <div className="absolute left-0 bottom-full mb-1.5 z-50 hidden group-hover:block bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 min-w-[190px] pointer-events-none">
-                                                                            <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Respuestas individuales</p>
+                                                                            <p className="text-[9px] font-black uppercase tracking-wider text-slate-600 mb-1.5">Respuestas individuales</p>
                                                                             {colabRows.map(r => {
                                                                                 const s = blockScore([r], bloque.indices, invertedIndices);
-                                                                                const sc = s == null ? 'text-slate-300'
+                                                                                const sc = s == null ? 'text-slate-500'
                                                                                     : s >= 85 ? 'text-emerald-600'
                                                                                     : s >= 70 ? 'text-blue-600'
                                                                                     : s >= 55 ? 'text-amber-600'
@@ -974,7 +974,7 @@ export default function EncuestaView() {
                                                         <p className="text-[10px] font-black text-purple-700 uppercase tracking-wider mb-1">
                                                             Jefes evaluando a su Jefe Inmediato
                                                         </p>
-                                                        <p className="text-[9px] text-slate-400 mb-3">
+                                                        <p className="text-[9px] text-slate-500 mb-3">
                                                             Cada jefe evalúa a quien reporta directamente. Bodega reporta a Administración; las salas al Supervisor/a de Ventas.
                                                         </p>
                                                         {(() => {
@@ -1002,7 +1002,7 @@ export default function EncuestaView() {
                                                                         <div className="space-y-1.5">
                                                                             {jefes.map(jefe => {
                                                                                 const s = blockScore([jefe], bloque.indices, invertedIndices);
-                                                                                const sc = s == null ? 'text-slate-300'
+                                                                                const sc = s == null ? 'text-slate-500'
                                                                                     : s >= 85 ? 'text-emerald-600'
                                                                                     : s >= 70 ? 'text-blue-600'
                                                                                     : s >= 55 ? 'text-amber-600'
@@ -1015,7 +1015,7 @@ export default function EncuestaView() {
                                                                                                 <div className="text-[10px] font-black text-slate-700 leading-tight">
                                                                                                     {jefe.nombre.split(' ').slice(0, 2).join(' ')}
                                                                                                 </div>
-                                                                                                <div className="text-[9px] text-slate-400">{jefe.sucursal}</div>
+                                                                                                <div className="text-[9px] text-slate-500">{jefe.sucursal}</div>
                                                                                             </div>
                                                                                         </div>
                                                                                         <div className="flex-1 h-1.5 rounded-full bg-white overflow-hidden">
@@ -1032,7 +1032,7 @@ export default function EncuestaView() {
                                                             });
                                                         })()}
                                                         <div className="mt-2 pt-2 border-t border-purple-200/60 flex items-center justify-between">
-                                                            <span className="text-[9px] text-slate-400">Score global jefes</span>
+                                                            <span className="text-[9px] text-slate-500">Score global jefes</span>
                                                             <span className="text-[14px] font-black text-purple-700">{jefesEvalSupervisor?.toFixed(0)}%</span>
                                                         </div>
                                                     </div>
@@ -1068,7 +1068,7 @@ export default function EncuestaView() {
                                             <th className="text-left px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500">Bloque</th>
                                             <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-purple-600">Jefes ({RESPUESTAS.filter(r => r.isJefe).length})</th>
                                             <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-600">Colabs. ({RESPUESTAS.filter(r => !r.isJefe).length})</th>
-                                            <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-400" title="Diferencia en puntos porcentuales: Jefes − Empleados. Positivo = jefes puntúan más alto.">Jefes − Colabs</th>
+                                            <th className="text-center px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-600" title="Diferencia en puntos porcentuales: Jefes − Empleados. Positivo = jefes puntúan más alto.">Jefes − Colabs</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1123,7 +1123,7 @@ export default function EncuestaView() {
                                         <div key={suc} className="flex items-center gap-3">
                                             <div className="w-20 shrink-0">
                                                 <div className="text-[11px] font-black text-slate-700 truncate">{suc}</div>
-                                                <div className="text-[9px] text-slate-400">{rows.length} personas · {jCount} jefe{jCount !== 1 ? 's' : ''}</div>
+                                                <div className="text-[9px] text-slate-500">{rows.length} personas · {jCount} jefe{jCount !== 1 ? 's' : ''}</div>
                                             </div>
                                             <div className="flex-1 h-3 rounded-full bg-slate-100 overflow-hidden">
                                                 <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-700"
@@ -1145,9 +1145,9 @@ export default function EncuestaView() {
                             <table className="w-full text-xs min-w-[600px]">
                                 <thead>
                                     <tr className="bg-[#0052CC]/5 border-b border-[#0052CC]/10">
-                                        <th className="text-left px-2 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 whitespace-nowrap">Sucursal</th>
+                                        <th className="text-left px-2 py-2 text-[9px] font-black uppercase tracking-wider text-slate-600 whitespace-nowrap">Sucursal</th>
                                         {BLOQUES.map(b => (
-                                            <th key={b.id} className="text-center px-2 py-2 text-[9px] font-black uppercase tracking-wider text-slate-400 whitespace-nowrap">
+                                            <th key={b.id} className="text-center px-2 py-2 text-[9px] font-black uppercase tracking-wider text-slate-600 whitespace-nowrap">
                                                 B{b.id}
                                             </th>
                                         ))}
@@ -1161,7 +1161,7 @@ export default function EncuestaView() {
                                                 <td className="px-2 py-2 font-black text-[11px] text-slate-700 whitespace-nowrap">{suc}</td>
                                                 {BLOQUES.map(b => {
                                                     const s = blockScore(rows, b.indices, invertedIndices);
-                                                    const cls = s == null ? 'text-slate-300'
+                                                    const cls = s == null ? 'text-slate-500'
                                                         : s >= 85 ? 'text-emerald-600 font-black'
                                                         : s >= 70 ? 'text-blue-600 font-bold'
                                                         : s >= 55 ? 'text-amber-600 font-bold'
@@ -1177,7 +1177,7 @@ export default function EncuestaView() {
                                     })}
                                 </tbody>
                             </table>
-                            <div className="mt-2 flex items-center gap-4 text-[9px] text-slate-400 flex-wrap">
+                            <div className="mt-2 flex items-center gap-4 text-[9px] text-slate-500 flex-wrap">
                                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> ≥85% Excelente</span>
                                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" /> 70–84% Bueno</span>
                                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> 55–69% Regular</span>
@@ -1206,7 +1206,7 @@ export default function EncuestaView() {
                                     clearable={true}
                                 />
                             </div>
-                            <span className="text-[11px] text-slate-400">{filteredRows.length} personas</span>
+                            <span className="text-[11px] text-slate-500">{filteredRows.length} personas</span>
                         </div>
 
                         {personasBySucursal.map(([branchName, branchRows]) => (
@@ -1214,7 +1214,7 @@ export default function EncuestaView() {
                                 <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-100/60 bg-white/30">
                                     <Building2 size={13} strokeWidth={2.5} className="text-slate-400" />
                                     <span className="text-[12px] font-black text-slate-700">{branchName}</span>
-                                    <span className="text-[11px] text-slate-400">— {branchRows.length} {branchRows.length === 1 ? 'persona' : 'personas'}</span>
+                                    <span className="text-[11px] text-slate-500">— {branchRows.length} {branchRows.length === 1 ? 'persona' : 'personas'}</span>
                                 </div>
                                 <div className="overflow-x-auto">
                                     <table className="w-full min-w-[560px] text-sm">
@@ -1223,7 +1223,7 @@ export default function EncuestaView() {
                                                 <th className="text-left px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Empleado</th>
                                                 <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500 w-16">Rol</th>
                                                 {BLOQUES.map(b => (
-                                                    <th key={b.id} title={b.nombre || `Bloque ${b.id}`} className="text-center px-2 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 cursor-help">B{b.id}</th>
+                                                    <th key={b.id} title={b.nombre || `Bloque ${b.id}`} className="text-center px-2 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-600 cursor-help">B{b.id}</th>
                                                 ))}
                                                 <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Auto</th>
                                                 <th className="text-center px-3 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Global</th>
@@ -1256,7 +1256,7 @@ export default function EncuestaView() {
                                                         </td>
                                                         {BLOQUES.map(b => {
                                                             const s = blockScore([row], b.indices, invertedIndices);
-                                                            const cls = s == null ? 'text-slate-300'
+                                                            const cls = s == null ? 'text-slate-500'
                                                                 : s >= 85 ? 'text-emerald-600'
                                                                 : s >= 70 ? 'text-blue-600'
                                                                 : s >= 55 ? 'text-amber-600'
@@ -1269,7 +1269,7 @@ export default function EncuestaView() {
                                                         })}
                                                         <td className="px-3 py-2.5 text-center">
                                                             {self ? (
-                                                                <span className={`text-[12px] font-black ${selfCls[self] || 'text-slate-400'}`}>
+                                                                <span className={`text-[12px] font-black ${selfCls[self] || 'text-slate-500'}`}>
                                                                     {selfLabel[self] || self}
                                                                 </span>
                                                             ) : '–'}
@@ -1281,7 +1281,7 @@ export default function EncuestaView() {
                                                                     {global.toFixed(0)}%
                                                                 </span>
                                                             ) : '–'}
-                                                            {isExpanded ? <ChevronUp size={10} className="text-slate-400" /> : <ChevronDown size={10} className="text-slate-400" />}
+                                                            {isExpanded ? <ChevronUp size={10} className="text-slate-500" /> : <ChevronDown size={10} className="text-slate-500" />}
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -1310,12 +1310,12 @@ export default function EncuestaView() {
                                                                                         ];
                                                                                         return (
                                                                                             <div key={p.id} className="flex items-start gap-3 px-4 py-2.5 border-b border-slate-50 last:border-0">
-                                                                                                <span className="shrink-0 w-5 h-5 rounded bg-slate-50 flex items-center justify-center text-[8px] font-black text-slate-400 mt-0.5">{p.id}</span>
+                                                                                                <span className="shrink-0 w-5 h-5 rounded bg-slate-50 flex items-center justify-center text-[8px] font-black text-slate-500 mt-0.5">{p.id}</span>
                                                                                                 <div className="flex-1 min-w-0 space-y-1">
                                                                                                     <p className="text-[10px] text-slate-500 leading-snug">{p.texto}</p>
                                                                                                     {p.tipo === 'numerica' ? (
                                                                                                         (() => {
-                                                                                                            if (!ans) return <span className="text-[10px] text-slate-300">Sin respuesta</span>;
+                                                                                                            if (!ans) return <span className="text-[10px] text-slate-500">Sin respuesta</span>;
                                                                                                             const n = parseInt(ans, 10);
                                                                                                             const oc = !isNaN(n) ? (n >= 9 ? OPT_COLORS.A : n >= 7 ? OPT_COLORS.B : n >= 5 ? OPT_COLORS.C : OPT_COLORS.D) : OPT_COLORS[ans] || OPT_COLORS.D;
                                                                                                             const display = !isNaN(n) ? `${n} / 10` : ({ A: '9–10', B: '7–8', C: '5–6', D: '1–4' }[ans] || ans);
@@ -1324,12 +1324,12 @@ export default function EncuestaView() {
                                                                                                     ) : (
                                                                                                         ans ? (
                                                                                                             <div className="flex items-center gap-1.5">
-                                                                                                                <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${OPT_COLORS[ans]?.on || 'bg-slate-100 text-slate-400'}`}>{ans}</span>
+                                                                                                                <span className={`w-5 h-5 rounded-full text-[9px] font-black flex items-center justify-center shrink-0 ${OPT_COLORS[ans]?.on || 'bg-slate-100 text-slate-500'}`}>{ans}</span>
                                                                                                                 <span className={`text-[11px] font-semibold leading-snug ${{ A:'text-emerald-700', B:'text-blue-700', C:'text-amber-700', D:'text-rose-700' }[ans] || 'text-slate-600'}`}>
                                                                                                                     {p.opciones?.[ABCD.indexOf(ans)] || DEFAULT_OPTS[ABCD.indexOf(ans)] || ans}
                                                                                                                 </span>
                                                                                                             </div>
-                                                                                                        ) : <span className="text-[10px] text-slate-300">Sin respuesta</span>
+                                                                                                        ) : <span className="text-[10px] text-slate-500">Sin respuesta</span>
                                                                                                     )}
                                                                                                 </div>
                                                                                             </div>
@@ -1395,9 +1395,9 @@ export default function EncuestaView() {
                                             <Sparkles size={10} className="text-white" />
                                         </div>
                                         <span className="text-[12px] font-black text-slate-700 tracking-tight">
-                                            Resumen IA <span className="text-slate-300 font-normal">·</span> <span className="text-indigo-600">{seg.label}</span>
+                                            Resumen IA <span className="text-slate-500 font-normal">·</span> <span className="text-indigo-600">{seg.label}</span>
                                         </span>
-                                        <span className="text-[10px] text-slate-400 font-medium">{seg.comments.length} comentarios</span>
+                                        <span className="text-[10px] text-slate-500 font-medium">{seg.comments.length} comentarios</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         {summary && !isLoading && (
@@ -1410,7 +1410,7 @@ export default function EncuestaView() {
                                                     generateAiSummary(seg.comments, seg.key);
                                                 }}
                                                 title="Regenerar"
-                                                className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/70 transition-all">
+                                                className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/70 transition-all">
                                                 <RotateCcw size={11} strokeWidth={2.5} />
                                             </button>
                                         )}
@@ -1418,7 +1418,7 @@ export default function EncuestaView() {
                                             <button
                                                 onClick={e => { e.stopPropagation(); setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] })); }}
                                                 title={isCollapsed ? 'Expandir' : 'Minimizar'}
-                                                className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/70 transition-all">
+                                                className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/70 transition-all">
                                                 {isCollapsed ? <ChevronDown size={11} strokeWidth={2.5} /> : <Minus size={11} strokeWidth={2.5} />}
                                             </button>
                                         )}
@@ -1463,7 +1463,7 @@ export default function EncuestaView() {
                                     </div>
                                 ) : summary && isCollapsed ? (
                                     <div className="px-5 py-3">
-                                        <p className="text-[10px] text-slate-400 truncate">
+                                        <p className="text-[10px] text-slate-500 truncate">
                                             {sections[0]?.title
                                                 ? <><span className="text-indigo-500 font-black uppercase text-[9px]">{sections[0].title}</span> — {sections[0].content.replace(/\*\*/g, '').slice(0, 120)}…</>
                                                 : summary.replace(/\*\*/g, '').slice(0, 140) + '…'
@@ -1472,11 +1472,11 @@ export default function EncuestaView() {
                                     </div>
                                 ) : seg.comments.length === 0 ? (
                                     <div className="px-5 py-4">
-                                        <p className="text-[11px] text-slate-400 italic">Sin comentarios en este segmento.</p>
+                                        <p className="text-[11px] text-slate-500 italic">Sin comentarios en este segmento.</p>
                                     </div>
                                 ) : (
                                     <div className="px-5 py-4">
-                                        <p className="text-[11px] text-slate-400 italic">Cargando resumen guardado…</p>
+                                        <p className="text-[11px] text-slate-500 italic">Cargando resumen guardado…</p>
                                     </div>
                                 )}
                             </div>
@@ -1484,7 +1484,7 @@ export default function EncuestaView() {
                         })}
 
                         {/* Individual comments */}
-                        <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-400 px-1">{withComment.length} comentarios individuales</h3>
+                        <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-600 px-1">{withComment.length} comentarios individuales</h3>
                         {withComment.map((row, i) => (
                             <div key={i} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
                                 <div className="flex items-center gap-2.5 mb-2">
@@ -1496,7 +1496,7 @@ export default function EncuestaView() {
                                                 <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">Jefe/a</span>
                                             )}
                                         </div>
-                                        <span className="text-[9px] text-slate-400">{row.sucursal}</span>
+                                        <span className="text-[9px] text-slate-500">{row.sucursal}</span>
                                     </div>
                                 </div>
                                 <p className="text-[11px] text-slate-600 leading-relaxed whitespace-pre-line pl-[46px]">{row.comentario}</p>

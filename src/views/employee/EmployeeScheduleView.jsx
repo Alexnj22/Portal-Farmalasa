@@ -304,17 +304,17 @@ const EmployeeScheduleView = () => {
                                     ) : d.shift ? (
                                         <div className="flex items-center gap-3">
                                             <div>
-                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Entrada</p>
+                                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Entrada</p>
                                                 <p className="text-[15px] font-black text-slate-800">{formatTime12h(d.shift.start)}</p>
                                             </div>
                                             <Coffee size={12} className="text-orange-400 flex-shrink-0" />
                                             <div>
-                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Salida</p>
+                                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Salida</p>
                                                 <p className="text-[15px] font-black text-slate-800">{formatTime12h(d.shift.end)}</p>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center gap-2 text-slate-400">
+                                        <div className="flex items-center gap-2 text-slate-500">
                                             <Palmtree size={15} strokeWidth={1.5} />
                                             <span className="text-[13px] font-bold">Día libre</span>
                                         </div>
@@ -333,7 +333,7 @@ const EmployeeScheduleView = () => {
 
             {/* ── Mis Vacaciones ── */}
             <div className="rounded-[1.75rem] border border-white/60 bg-white/60 backdrop-blur-xl p-5 space-y-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
                     <Palmtree size={10} /> Mis Vacaciones
                 </p>
 
@@ -342,7 +342,7 @@ const EmployeeScheduleView = () => {
                         <div className="skeleton rounded-2xl h-16 w-full" />
                     </div>
                 ) : myVacations.length === 0 ? (
-                    <p className="text-[12px] text-slate-400 font-medium text-center py-3">
+                    <p className="text-[12px] text-slate-500 font-medium text-center py-3">
                         No hay vacaciones programadas aún.
                     </p>
                 ) : (
@@ -361,7 +361,7 @@ const EmployeeScheduleView = () => {
                                                     <ArrowRight size={9} className="inline mx-1 text-slate-400" strokeWidth={2.5} />
                                                     {fmtDate(vp.end_date)}
                                                 </p>
-                                                <p className="text-[9px] text-slate-400 font-medium">{vp.days} días · {vp.year}</p>
+                                                <p className="text-[9px] text-slate-500 font-medium">{vp.days} días · {vp.year}</p>
                                             </div>
                                         </div>
                                         <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${meta.color}`}>
@@ -404,20 +404,20 @@ const EmployeeScheduleView = () => {
                     <div className="w-full max-w-md bg-white/90 backdrop-blur-xl border border-white/60 rounded-[2rem] p-6 shadow-2xl space-y-4 animate-in slide-in-from-bottom-4 duration-300">
                         <div className="flex items-center justify-between">
                             <p className="text-[14px] font-black text-slate-800">Solicitar cambio de vacaciones</p>
-                            <button onClick={() => setShowChangeForm(false)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 transition-all">
+                            <button onClick={() => setShowChangeForm(false)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-all">
                                 <X size={16} strokeWidth={2.5} />
                             </button>
                         </div>
 
                         <div className="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Fechas actuales</p>
+                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Fechas actuales</p>
                             <p className="text-[12px] font-bold text-slate-700">
                                 {fmtDate(changeTarget.start_date)} → {fmtDate(changeTarget.end_date)}
                             </p>
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 ml-1">Nuevas fechas solicitadas</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 ml-1">Nuevas fechas solicitadas</p>
                             <RangeDatePicker
                                 startDate={reqStart}
                                 endDate={reqEnd}
@@ -429,7 +429,7 @@ const EmployeeScheduleView = () => {
                         </div>
 
                         <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 ml-1">Motivo (opcional)</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 ml-1">Motivo (opcional)</p>
                             <textarea
                                 value={reqNote}
                                 onChange={e => setReqNote(e.target.value)}

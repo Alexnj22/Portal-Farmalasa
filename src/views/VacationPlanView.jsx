@@ -45,7 +45,7 @@ const StatusBadge = ({ status }) => {
 };
 
 const InputLabel = ({ children }) => (
-    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
+    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
 );
 
 const glassInput = "w-full px-4 py-3 bg-white/50 border border-white/60 focus:bg-white focus:border-[#0052CC]/30 focus:shadow-[0_0_0_4px_rgba(0,82,204,0.12)] rounded-2xl text-[16px] outline-none font-bold text-slate-700 transition-all duration-300 placeholder-slate-400 placeholder:font-normal";
@@ -179,7 +179,7 @@ const GanttChart = ({ plans, year }) => {
     }, [plans]);
 
     if (rows.length === 0) return (
-        <div className="flex flex-col items-center py-10 gap-3 text-slate-400">
+        <div className="flex flex-col items-center py-10 gap-3 text-slate-500">
             <Palmtree size={36} strokeWidth={1} />
             <p className="text-[13px] font-bold text-slate-500">Sin planes para este año</p>
         </div>
@@ -193,7 +193,7 @@ const GanttChart = ({ plans, year }) => {
                     {months.map(m => (
                         <div
                             key={m.idx}
-                            className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center border-l border-slate-100/80 first:border-l-0 py-1"
+                            className="text-[9px] font-black text-slate-600 uppercase tracking-widest text-center border-l border-slate-100/80 first:border-l-0 py-1"
                             style={{ flex: `${m.days} 0 0%` }}
                         >
                             {m.label}
@@ -210,7 +210,7 @@ const GanttChart = ({ plans, year }) => {
                             <React.Fragment key={emp?.id || bars[0]?.employee_id}>
                                 {showHeader && branchName && (
                                     <div className="flex items-center gap-2 mt-3 mb-1 ml-0 pr-0">
-                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 w-[160px] text-right pr-3 shrink-0">
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 w-[160px] text-right pr-3 shrink-0">
                                             {branchName}
                                         </span>
                                         <div className="flex-1 h-px bg-slate-100" />
@@ -246,9 +246,9 @@ const GanttChart = ({ plans, year }) => {
                                                 >
                                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/bar:flex flex-col items-center z-50 pointer-events-none">
                                                         <div className="bg-slate-900/90 backdrop-blur text-white text-[9px] font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap text-center">
-                                                            <span className="block font-black text-[8px] uppercase tracking-widest text-slate-400 mb-0.5">{meta.label}</span>
+                                                            <span className="block font-black text-[8px] uppercase tracking-widest text-slate-600 mb-0.5">{meta.label}</span>
                                                             <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)}</span>
-                                                            <span className="ml-2 text-slate-400">· {p.days}d</span>
+                                                            <span className="ml-2 text-slate-500">· {p.days}d</span>
                                                         </div>
                                                         <div className="w-2 h-2 bg-slate-900/90 rotate-45 -mt-1" />
                                                     </div>
@@ -267,7 +267,7 @@ const GanttChart = ({ plans, year }) => {
                     {Object.entries(STATUS_META).filter(([k]) => k !== 'CANCELLED').map(([k, m]) => (
                         <div key={k} className="flex items-center gap-1.5">
                             <div className={`w-3 h-3 rounded-sm ${m.bar}`} />
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{m.label}</span>
+                            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">{m.label}</span>
                         </div>
                     ))}
                 </div>
@@ -651,7 +651,7 @@ const VacationPlanView = () => {
                         className="bg-transparent outline-none text-[16px] font-semibold text-slate-700 placeholder-slate-400 w-full"
                     />
                     {searchTerm && (
-                        <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600 transition-colors">
+                        <button onClick={() => setSearchTerm('')} className="text-slate-500 hover:text-slate-600 transition-colors">
                             <X size={13} strokeWidth={2.5} />
                         </button>
                     )}
@@ -668,11 +668,11 @@ const VacationPlanView = () => {
 
                 {/* Year selector */}
                 <div className="flex items-center bg-white/50 backdrop-blur-md rounded-full border border-white/80 shadow-[inset_0_1px_6px_rgba(255,255,255,0.6),0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_6px_rgba(255,255,255,0.8)] hover:bg-white/70 h-[calc(100%-8px)] shrink-0 transition-all duration-300 p-0.5">
-                    <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97]">
+                    <button onClick={() => setYear(y => y - 1)} className="w-8 h-full rounded-full flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97]">
                         <ChevronLeft size={14} strokeWidth={2.5} />
                     </button>
                     <span className="text-[12px] font-black text-slate-700 px-2 min-w-[46px] text-center select-none">{year}</span>
-                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="w-8 h-full rounded-full flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed">
+                    <button onClick={() => setYear(y => y + 1)} disabled={year >= currentYear + 1} className="w-8 h-full rounded-full flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-white hover:shadow-sm transition-all duration-200 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed">
                         <ChevronRight size={14} strokeWidth={2.5} />
                     </button>
                 </div>
@@ -879,7 +879,7 @@ const VacationPlanView = () => {
                                                 {activeHeader.ai_generated && ' · IA'}
                                             </span>
                                         ) : (
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Sin plan generado</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Sin plan generado</span>
                                         )}
                                     </div>
                                 </div>
@@ -920,7 +920,7 @@ const VacationPlanView = () => {
                         {/* Gantt */}
                         <div className="bg-white/40 backdrop-blur-[30px] border border-white/80 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] transition-all duration-500">
                             <div className="flex items-center justify-between mb-5">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
                                     <Calendar size={10} /> Línea de tiempo {year}
                                 </p>
                                 {isLoadingVacationPlans && <Loader2 size={14} className="animate-spin text-slate-400" />}
@@ -930,7 +930,7 @@ const VacationPlanView = () => {
 
                         {/* Tabla */}
                         <div className="bg-white/40 backdrop-blur-[30px] border border-white/80 rounded-[2.5rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04),inset_0_2px_15px_rgba(255,255,255,0.7)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] transition-all duration-500">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 mb-5">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 mb-5">
                                 <User size={10} /> Detalle de asignaciones
                             </p>
 
@@ -940,7 +940,7 @@ const VacationPlanView = () => {
                                         <thead>
                                             <tr className="border-b border-slate-100">
                                                 {['Empleado', 'Sucursal', 'Período', 'Días', 'Comentario', 'Estado', ''].map(h => (
-                                                    <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-slate-400 pb-3 pr-4">{h}</th>
+                                                    <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-slate-600 pb-3 pr-4">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
@@ -965,7 +965,7 @@ const VacationPlanView = () => {
                                     </table>
                                 </div>
                             ) : filtered.length === 0 ? (
-                                <div className="flex flex-col items-center py-12 gap-3 text-slate-400">
+                                <div className="flex flex-col items-center py-12 gap-3 text-slate-500">
                                     <Palmtree size={36} strokeWidth={1} />
                                     <p className="text-[13px] font-bold text-slate-500">Sin asignaciones en este período</p>
                                 </div>
@@ -982,7 +982,7 @@ const VacationPlanView = () => {
                                         <thead>
                                             <tr className="border-b border-slate-100">
                                                 {['Empleado', 'Sucursal', 'Período', 'Días', 'Saldo', 'Comentario', 'Estado', ''].map(h => (
-                                                    <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-slate-400 pb-3 pr-4">{h}</th>
+                                                    <th key={h} className="text-left text-[9px] font-black uppercase tracking-widest text-slate-600 pb-3 pr-4">{h}</th>
                                                 ))}
                                             </tr>
                                         </thead>
@@ -1007,9 +1007,9 @@ const VacationPlanView = () => {
                                                                         <span className="group/badge relative inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-200 cursor-default">
                                                                             <Edit2 size={7} strokeWidth={3} /> Editado
                                                                             <span className="absolute bottom-full left-0 mb-1.5 hidden group-hover/badge:flex flex-col gap-0.5 bg-slate-900/90 backdrop-blur text-white text-[9px] font-bold rounded-xl px-3 py-2 shadow-xl whitespace-nowrap z-50 pointer-events-none">
-                                                                                <span className="text-slate-400 font-black uppercase tracking-widest text-[7px] mb-0.5">Fecha original</span>
+                                                                                <span className="text-slate-600 font-black uppercase tracking-widest text-[7px] mb-0.5">Fecha original</span>
                                                                                 <span>{fmtShort(p.metadata.original_start_date)} → {fmtShort(p.metadata.original_end_date)} · {p.metadata.original_days}d</span>
-                                                                                <span className="text-slate-400 font-black uppercase tracking-widest text-[7px] mt-1 mb-0.5">Fecha actual</span>
+                                                                                <span className="text-slate-600 font-black uppercase tracking-widest text-[7px] mt-1 mb-0.5">Fecha actual</span>
                                                                                 <span>{fmtShort(p.start_date)} → {fmtShort(p.end_date)} · {p.days}d</span>
                                                                             </span>
                                                                         </span>
@@ -1027,7 +1027,7 @@ const VacationPlanView = () => {
                                                             <td className="py-3 pr-4 max-w-[160px]">
                                                                 {p.notes
                                                                     ? <p className="text-[11px] text-slate-500 font-medium leading-snug line-clamp-2">{p.notes}</p>
-                                                                    : <span className="text-[10px] text-slate-300">—</span>
+                                                                    : <span className="text-[10px] text-slate-500">—</span>
                                                                 }
                                                             </td>
                                                             <td className="py-3 pr-4"><StatusBadge status={p.status} /></td>
@@ -1106,7 +1106,7 @@ const VacationPlanView = () => {
                                                                 <strong>{fmtShort(meta.requested_end)}</strong>
                                                             </p>
                                                             {meta.original_start && (
-                                                                <p className="text-[9px] text-slate-400 mt-0.5">
+                                                                <p className="text-[9px] text-slate-500 mt-0.5">
                                                                     Original: {fmtShort(meta.original_start)} → {fmtShort(meta.original_end)}
                                                                 </p>
                                                             )}

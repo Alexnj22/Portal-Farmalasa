@@ -252,7 +252,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-full bg-blue-50 text-[#0052CC] flex items-center justify-center shrink-0"><MapPin size={14} strokeWidth={2.5} /></div>
                             <div className="flex flex-col">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Ubicación</span>
+                                <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Ubicación</span>
                                 <span className="text-[11px] font-bold text-slate-700 truncate max-w-[150px]">{liveBranch.address || "No registrada"}</span>
                             </div>
                         </div>
@@ -262,7 +262,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                 <div className="flex items-center gap-2.5">
                                     <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0"><Phone size={14} strokeWidth={2.5} /></div>
                                     <div className="flex flex-col">
-                                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Contacto</span>
+                                        <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Contacto</span>
                                         <span className="text-[11px] font-bold text-slate-700 truncate max-w-[100px]">{liveBranch.phone || liveBranch.cell || "N/A"}</span>
                                     </div>
                                 </div>
@@ -272,7 +272,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center shrink-0"><CalendarClock size={14} strokeWidth={2.5} /></div>
                             <div className="flex flex-col">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Horario ({todaySchedule.label})</span>
+                                <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Horario ({todaySchedule.label})</span>
                                 <span className="text-[11px] font-bold text-slate-700 truncate max-w-[120px]">{todaySchedule.timeStr}</span>
                             </div>
                         </div>
@@ -280,7 +280,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0"><CircleUserRound size={14} strokeWidth={2.5} /></div>
                             <div className="flex flex-col">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Personal</span>
+                                <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Personal</span>
                                 <span className="text-[11px] font-bold text-slate-700 truncate max-w-[150px]">{currentStaff.length} Activos</span>
                             </div>
                         </div>
@@ -385,7 +385,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                     <ChevronRight size={12} strokeWidth={3} className="transition-transform duration-300" />
                                 </div>
                             </div>
-                            <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            <span className="text-[9px] md:text-[10px] font-bold text-slate-600 uppercase tracking-widest">
                                 {(liveBranch?.openingDate || liveBranch?.opening_date)
                                     ? `Inaugurada en ${new Date(liveBranch.openingDate || liveBranch.opening_date).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`
                                     : 'Fecha de inauguración pendiente'}

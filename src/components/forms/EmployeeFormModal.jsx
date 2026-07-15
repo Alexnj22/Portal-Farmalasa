@@ -232,9 +232,9 @@ const applyMask = (value, type) => {
 // Locked field shown for HR-action-only fields in edit mode
 const LockedField = ({ label, value, colSpan = 1 }) => (
     <div className={`col-span-1 ${colSpan === 2 ? 'md:col-span-2' : ''}`}>
-        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 mb-1.5 flex items-center justify-between">
+        <label className="text-[10px] font-black uppercase tracking-widest text-slate-600 ml-1 mb-1.5 flex items-center justify-between">
             <span>{label}</span>
-            <span className="text-[8px] font-black text-slate-400 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+            <span className="text-[8px] font-black text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-md flex items-center gap-1">
                 <Lock size={8} strokeWidth={3} /> Acción RRHH
             </span>
         </label>
@@ -787,17 +787,17 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                     <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200/80 h-[40px] px-3">
                         <FileText size={14} className="text-[#0052CC] shrink-0" />
                         <span className="text-[12px] font-bold text-slate-700 truncate flex-1">{doc.file_name || 'Documento cargado'}</span>
-                        <button type="button" onClick={() => removeDocFile(category)} title="Quitar" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
+                        <button type="button" onClick={() => removeDocFile(category)} title="Quitar" className="text-slate-500 hover:text-red-500 shrink-0"><X size={14} /></button>
                     </div>
                 ) : (
-                    <label className="flex items-center justify-center gap-2 h-[40px] rounded-xl border border-dashed border-slate-300 text-slate-400 hover:border-[#0052CC]/40 hover:text-[#0052CC] cursor-pointer transition-colors">
+                    <label className="flex items-center justify-center gap-2 h-[40px] rounded-xl border border-dashed border-slate-300 text-slate-500 hover:border-[#0052CC]/40 hover:text-[#0052CC] cursor-pointer transition-colors">
                         <Upload size={14} /> <span className="text-[11px] font-bold">Subir archivo</span>
                         <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocFileChange(category, e)} />
                     </label>
                 )}
                 {showExpiry && hasFile && !isAnalyzing && (
                     <div className="mt-2">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 flex items-center justify-between">
+                        <label className="text-[9px] font-bold text-slate-600 uppercase tracking-wide mb-1 flex items-center justify-between">
                             <span>Fecha de Vencimiento (opcional) — detectada por IA si el documento la trae</span>
                             {expiryBadge && <span className={`ml-1 shrink-0 px-1.5 py-0.5 rounded-md border font-black normal-case tracking-normal ${expiryBadge.className}`}>{expiryBadge.label}</span>}
                         </label>
@@ -1033,7 +1033,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                         <span className="text-[11px] font-bold">Tienes un borrador sin guardar.</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button type="button" onClick={discardDraft} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/50 text-slate-400 hover:text-red-500 transition-colors shadow-sm border border-white"><Trash2 size={14}/></button>
+                        <button type="button" onClick={discardDraft} className="w-8 h-8 rounded-full flex items-center justify-center bg-white/50 text-slate-500 hover:text-red-500 transition-colors shadow-sm border border-white"><Trash2 size={14}/></button>
                         <button type="button" onClick={restoreDraft} className="px-3 h-8 bg-[#0052CC] text-white rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-[0.97] transition-all shadow-md">Restaurar</button>
                     </div>
                 </div>
@@ -1115,7 +1115,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                                 <div className="relative z-30">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center justify-between">
-                                        <span>Fecha de Nacimiento {employeeAge !== null && !birthDateInvalid && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-amber-600' : 'text-slate-400'}`}>· {employeeAge} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
+                                        <span>Fecha de Nacimiento {employeeAge !== null && !birthDateInvalid && <span className={`font-bold normal-case tracking-normal ${isMinor ? 'text-amber-600' : 'text-slate-500'}`}>· {employeeAge} años{isMinor ? ' · Menor de Edad' : ''}</span>}</span>
                                         {birthDateInvalid && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md ml-1">{birthDateErrorMsg}</span>}
                                     </label>
                                     <div className={`bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] px-1.5 ${inputHoverClass} ${birthDateInvalid ? '!border-red-400 !bg-red-50/50' : isMinor ? '!border-amber-300 !bg-amber-50/40' : 'border-slate-200/80'}`}>
@@ -1174,7 +1174,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </button>
                                     </label>
                                     <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] z-10 border-slate-200/80 ${inputHoverClass} ${phoneHasError ? '!border-red-400 !bg-red-50/50' : ''}`}>
-                                        <div className="absolute left-3 text-slate-400"><Phone size={14} strokeWidth={2.5} /></div>
+                                        <div className="absolute left-3 text-slate-500"><Phone size={14} strokeWidth={2.5} /></div>
                                         <input type="tel" name="phone" value={formData.phone || ''}
                                             onChange={(e) => { e.target.value = applyMask(e.target.value, 'PHONE'); handleChange(e); }}
                                             placeholder="0000-0000"
@@ -1192,12 +1192,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             return (
                                                 <div key={idx} className="flex items-center gap-2">
                                                     <div className={`relative flex-1 bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}>
-                                                        <div className="absolute left-3 text-slate-400"><Phone size={14} strokeWidth={2.5} /></div>
+                                                        <div className="absolute left-3 text-slate-500"><Phone size={14} strokeWidth={2.5} /></div>
                                                         <input type="tel" value={ph} onChange={(e) => updatePhone(idx, e.target.value)} placeholder="0000-0000"
                                                             className="w-full h-full bg-transparent text-[16px] font-bold text-slate-700 outline-none pl-9 pr-4" />
                                                     </div>
                                                     <button type="button" onClick={() => removePhone(idx)} title="Quitar teléfono"
-                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
                                                         <X size={14} strokeWidth={2.5} />
                                                     </button>
                                                 </div>
@@ -1262,9 +1262,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             return (
                                                 <div key={idx} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
                                                     <div className="flex items-center justify-between mb-3">
-                                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Dirección Alterna {idx + 1}</span>
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Dirección Alterna {idx + 1}</span>
                                                         <button type="button" onClick={() => removeAddress(idx)} title="Quitar dirección"
-                                                            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
                                                             <X size={13} strokeWidth={2.5} />
                                                         </button>
                                                     </div>
@@ -1287,7 +1287,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                         <div className="md:col-span-2">
                                                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Dirección Detallada</label>
                                                             <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
-                                                                <div className="absolute left-3 text-slate-400"><MapPin size={14} strokeWidth={2.5} /></div>
+                                                                <div className="absolute left-3 text-slate-500"><MapPin size={14} strokeWidth={2.5} /></div>
                                                                 <input type="text" value={addr.address || ''} onChange={(e) => updateAddress(idx, 'address', e.target.value)} placeholder="Colonia, Calle, Número de Casa..."
                                                                     className="w-full h-full bg-transparent text-[16px] font-bold text-slate-700 outline-none pl-9 pr-4" />
                                                             </div>
@@ -1524,9 +1524,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         return (
                                             <div key={idx} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
                                                 <div className="flex items-center justify-between mb-3">
-                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Curso / Habilidad {idx + 1}</span>
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Curso / Habilidad {idx + 1}</span>
                                                     <button type="button" onClick={() => removeSkill(idx)} title="Quitar"
-                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
                                                         <X size={13} strokeWidth={2.5} />
                                                     </button>
                                                 </div>
@@ -1578,27 +1578,27 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
                                     <input type="checkbox" checked={!!formData.has_motorcycle} onChange={(e) => handleSelectChange('has_motorcycle', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                                    <Bike size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <Bike size={15} strokeWidth={2.5} className="text-slate-500" />
                                     <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Posee Moto</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
                                     <input type="checkbox" checked={!!formData.has_car} onChange={(e) => handleSelectChange('has_car', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                                    <Car size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <Car size={15} strokeWidth={2.5} className="text-slate-500" />
                                     <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Posee Carro</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
                                     <input type="checkbox" checked={!!formData.has_motorcycle_license} onChange={(e) => handleSelectChange('has_motorcycle_license', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                                    <Bike size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <Bike size={15} strokeWidth={2.5} className="text-slate-500" />
                                     <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Licencia de Motocicleta</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
                                     <input type="checkbox" checked={!!formData.has_car_license} onChange={(e) => handleSelectChange('has_car_license', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                                    <Car size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <Car size={15} strokeWidth={2.5} className="text-slate-500" />
                                     <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Licencia de Automóvil</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60 md:col-span-2">
                                     <input type="checkbox" checked={!!formData.has_srs_accreditation} onChange={(e) => handleSelectChange('has_srs_accreditation', e.target.checked)} className="w-4 h-4 rounded accent-teal-600" />
-                                    <ShieldCheck size={15} strokeWidth={2.5} className="text-slate-400" />
+                                    <ShieldCheck size={15} strokeWidth={2.5} className="text-slate-500" />
                                     <span className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Carné JVPQF (Regente / Químico Farmacéutico)</span>
                                 </label>
                             </div>
@@ -1634,9 +1634,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         return (
                                             <div key={idx} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
                                                 <div className="flex items-center justify-between mb-3">
-                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Persona {idx + 1}</span>
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Persona {idx + 1}</span>
                                                     <button type="button" onClick={() => removeDependent(idx)} title="Quitar persona"
-                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
                                                         <X size={13} strokeWidth={2.5} />
                                                     </button>
                                                 </div>
@@ -1644,7 +1644,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <div>
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Nombre</label>
                                                         <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
-                                                            <div className="absolute left-3 text-slate-400"><User size={14} strokeWidth={2.5} /></div>
+                                                            <div className="absolute left-3 text-slate-500"><User size={14} strokeWidth={2.5} /></div>
                                                             <input type="text" value={dep.name || ''} onChange={(e) => updateDependent(idx, 'name', e.target.value)} placeholder="Nombre completo"
                                                                 className="w-full h-full bg-transparent text-[16px] font-bold text-slate-700 outline-none pl-9 pr-4" />
                                                         </div>
@@ -1670,7 +1670,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                                 <LiquidDatePicker value={dep.birth_date} onChange={(date) => updateDependent(idx, 'birth_date', date)} placeholder="Seleccionar Fecha" />
                                                             </div>
                                                         )}
-                                                        {!depAgeOnly && depAge !== null && <span className="text-slate-400 font-bold text-[10px] ml-1 mt-1 block">· {depAge} años</span>}
+                                                        {!depAgeOnly && depAge !== null && <span className="text-slate-500 font-bold text-[10px] ml-1 mt-1 block">· {depAge} años</span>}
                                                     </div>
                                                     <div className="relative z-10">
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Parentesco</label>
@@ -1700,7 +1700,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <div>
                                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Dirección Detallada</label>
                                                         <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHoverClass}`}>
-                                                            <div className="absolute left-3 text-slate-400"><MapPin size={14} strokeWidth={2.5} /></div>
+                                                            <div className="absolute left-3 text-slate-500"><MapPin size={14} strokeWidth={2.5} /></div>
                                                             <input type="text" value={dep.address || ''} onChange={(e) => updateDependent(idx, 'address', e.target.value)} placeholder="Colonia, Calle, Número de Casa..."
                                                                 className="w-full h-full bg-transparent text-[16px] font-bold text-slate-700 outline-none pl-9 pr-4" />
                                                         </div>
@@ -1773,7 +1773,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     )}
                                                 </div>
                                                 <button type="button" onClick={() => removeChronicCondition(idx)} title="Quitar condición"
-                                                    className="w-10 h-10 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                    className="w-10 h-10 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
                                                     <X size={14} strokeWidth={2.5} />
                                                 </button>
                                             </div>
@@ -1868,7 +1868,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                         </button>
                                     </label>
                                     <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] z-10 border-slate-200/80 ${inputHoverClass} ${emergPhoneHasError ? '!border-red-400 !bg-red-50/50' : ''}`}>
-                                        <div className="absolute left-3 text-slate-400"><Phone size={14} strokeWidth={2.5} /></div>
+                                        <div className="absolute left-3 text-slate-500"><Phone size={14} strokeWidth={2.5} /></div>
                                         <input type="tel" name="emergency_contact_phone" value={formData.emergency_contact_phone || ''}
                                             onChange={(e) => { e.target.value = applyMask(e.target.value, 'PHONE'); handleChange(e); }}
                                             placeholder="0000-0000"
@@ -1884,12 +1884,12 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             return (
                                                 <div key={idx} className="flex items-center gap-2">
                                                     <div className={`relative flex-1 bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] ${inputHoverClass} ${phErr ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}>
-                                                        <div className="absolute left-3 text-slate-400"><Phone size={14} strokeWidth={2.5} /></div>
+                                                        <div className="absolute left-3 text-slate-500"><Phone size={14} strokeWidth={2.5} /></div>
                                                         <input type="tel" value={ph} onChange={(e) => updateEmergencyPhone(idx, e.target.value)} placeholder="0000-0000"
                                                             className="w-full h-full bg-transparent text-[16px] font-bold text-slate-700 outline-none pl-9 pr-4" />
                                                     </div>
                                                     <button type="button" onClick={() => removeEmergencyPhone(idx)} title="Quitar teléfono"
-                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
+                                                        className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
                                                         <X size={14} strokeWidth={2.5} />
                                                     </button>
                                                 </div>
@@ -2150,7 +2150,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                     <Copy size={15} strokeWidth={2.5} />
                                                 </button>
                                             </div>
-                            <p className="text-[9px] font-bold text-slate-400 mt-1.5 ml-1">Este es el valor del código de barras del carné.</p>
+                            <p className="text-[9px] font-bold text-slate-500 mt-1.5 ml-1">Este es el valor del código de barras del carné.</p>
                                         </div>
                                     )}
                                 </div>
@@ -2188,14 +2188,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <div>
-                                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 flex items-center justify-between">
+                                            <label className="text-[9px] font-bold text-slate-600 uppercase tracking-wide mb-1 flex items-center justify-between">
                                                 <span>Frente</span>
                                                 {!getDocEntry('DUI_FRENTE').url && <span className="text-amber-600 font-black">Pendiente</span>}
                                             </label>
                                             {renderDocUploadArea('DUI_FRENTE')}
                                         </div>
                                         <div>
-                                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mb-1 flex items-center justify-between">
+                                            <label className="text-[9px] font-bold text-slate-600 uppercase tracking-wide mb-1 flex items-center justify-between">
                                                 <span>Reverso</span>
                                                 {!getDocEntry('DUI_REVERSO').url && <span className="text-amber-600 font-black">Pendiente</span>}
                                             </label>
@@ -2216,7 +2216,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                             <PortalInput label="Número de Carné JVPE" name="nursing_license_number" value={formData.nursing_license_number} onChange={handleChange} icon={Hash} placeholder="N° JVPE" colSpan={1} />
                                         )}
                                         {(cat.key === 'ANUALIDAD_JVPQF' || cat.key === 'ANUALIDAD_JVPE') && (
-                                            <p className="text-[9px] text-slate-400 font-bold mb-2">Comprobante de pago del año en curso (recibo/mandamiento de pago cancelado) — trámite distinto al carné, se renueva cada año. Fecha límite CSSP: 31 de marzo (igual para todos los profesionales de salud inscritos) — se autocompleta al subir el recibo si no escribes otra fecha.</p>
+                                            <p className="text-[9px] text-slate-500 font-bold mb-2">Comprobante de pago del año en curso (recibo/mandamiento de pago cancelado) — trámite distinto al carné, se renueva cada año. Fecha límite CSSP: 31 de marzo (igual para todos los profesionales de salud inscritos) — se autocompleta al subir el recibo si no escribes otra fecha.</p>
                                         )}
                                         {renderDocUploadArea(cat.key)}
                                     </div>
@@ -2231,14 +2231,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <Plus size={12} strokeWidth={3} /> Agregar Documento
                                 </button>
                             </div>
-                            {extraDocs.length === 0 && <p className="text-[11px] text-slate-400 font-medium">Sin documentos adicionales.</p>}
+                            {extraDocs.length === 0 && <p className="text-[11px] text-slate-500 font-medium">Sin documentos adicionales.</p>}
                             <div className="flex flex-col gap-3">
                                 {extraDocs.map(doc => (
                                     <div key={doc.category} className="p-3 rounded-2xl border border-slate-200/70 bg-slate-50/60">
                                         <div className="flex items-center justify-between mb-2 gap-2">
                                             <input type="text" value={doc.title} onChange={(e) => updateDoc(doc.category, { title: e.target.value })} placeholder="Nombre del documento"
                                                 className="flex-1 bg-transparent text-[16px] font-bold text-slate-700 outline-none border-b border-slate-200 pb-1" />
-                                            <button type="button" onClick={() => removeExtraDoc(doc.category)} title="Quitar documento" className="text-slate-400 hover:text-red-500 shrink-0"><X size={14} /></button>
+                                            <button type="button" onClick={() => removeExtraDoc(doc.category)} title="Quitar documento" className="text-slate-500 hover:text-red-500 shrink-0"><X size={14} /></button>
                                         </div>
                                         {renderDocUploadArea(doc.category)}
                                     </div>

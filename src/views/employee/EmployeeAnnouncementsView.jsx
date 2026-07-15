@@ -100,7 +100,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
                             {(meta.myShift || meta.targetShift) && (
                                 <div className="grid grid-cols-2 gap-2 pt-1">
                                     <div className="bg-white/70 border border-slate-100 rounded-xl p-2">
-                                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tu turno</p>
+                                        <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5">Tu turno</p>
                                         <p className="text-[11px] font-black text-slate-700">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                     </div>
                                     <div className="bg-cyan-50 border border-cyan-100 rounded-xl p-2">
@@ -168,7 +168,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
 
             {/* Footer */}
             <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest flex items-center gap-1.5">
                     <Clock size={11} />
                     {new Date(ann.date).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                     {ann.editedAt && (
@@ -336,7 +336,7 @@ const UnreadStack = memo(({ list, onRead }) => {
             <div className="mb-10 flex flex-col items-center gap-3 select-none">
                 <div className="flex items-center gap-4">
                     <div className="text-center">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-0.5">Sin leer</p>
+                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-0.5">Sin leer</p>
                         <span
                             className="text-[72px] font-black leading-none tracking-tighter transition-all duration-500"
                             style={{
@@ -370,7 +370,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 }`} />
                             );
                         })}
-                        {total > 10 && <span className="text-[9px] font-black text-slate-400">+{total - 10}</span>}
+                        {total > 10 && <span className="text-[9px] font-black text-slate-500">+{total - 10}</span>}
                     </div>
                 )}
             </div>
@@ -443,7 +443,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                     </span>
                                 )}
                                 {badgeEl}
-                                <span className="ml-auto text-[10px] font-bold text-slate-400 flex items-center gap-1 flex-shrink-0">
+                                <span className="ml-auto text-[10px] font-bold text-slate-500 flex items-center gap-1 flex-shrink-0">
                                     <Clock size={10} strokeWidth={2}/>
                                     {new Date(current.date).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                                 </span>
@@ -482,7 +482,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                                         {(meta.myShift || meta.targetShift) && (
                                             <div className="grid grid-cols-2 gap-2 pt-0.5">
                                                 <div className="bg-white/80 border border-slate-100 rounded-xl p-2.5">
-                                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Tu turno</p>
+                                                    <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Tu turno</p>
                                                     <p className="text-[12px] font-black text-slate-700">{meta.myShift && meta.myShift !== 'No especificado' ? meta.myShift : '—'}</p>
                                                 </div>
                                                 <div className="bg-cyan-50/80 border border-cyan-100 rounded-xl p-2.5">
@@ -559,13 +559,13 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 <kbd className="px-2 py-0.5 rounded-md bg-white/80 border border-slate-200 text-[10px] font-black text-slate-600 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_-1px_0_rgba(0,0,0,0.08)] font-mono leading-none">
                                     {key}
                                 </kbd>
-                                {label && <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{label}</span>}
+                                {label && <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">{label}</span>}
                             </div>
                         ))}
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">— confirmar</span>
-                        <span className="text-slate-300">·</span>
+                        <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">— confirmar</span>
+                        <span className="text-slate-500">·</span>
                         <kbd className="px-2 py-0.5 rounded-md bg-white/80 border border-slate-200 text-[10px] font-black text-slate-600 shadow-[0_1px_3px_rgba(0,0,0,0.1),inset_0_-1px_0_rgba(0,0,0,0.08)] font-mono leading-none">←</kbd>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">— retroceder</span>
+                        <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">— retroceder</span>
                     </div>
                 </div>
             </div>
@@ -699,7 +699,7 @@ const EmployeeAnnouncementsView = () => {
                     onChange={e => setSearchQuery(e.target.value)}
                 />
                 {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="p-1 text-slate-400 hover:text-red-500 transition-all active:scale-[0.97] shrink-0">
+                    <button onClick={() => setSearchQuery('')} className="p-1 text-slate-500 hover:text-red-500 transition-all active:scale-[0.97] shrink-0">
                         <X size={14} strokeWidth={2.5} />
                     </button>
                 )}
@@ -831,7 +831,7 @@ const EmployeeAnnouncementsView = () => {
                         <div className="flex flex-col items-center justify-center min-h-[360px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <div className="relative group flex flex-col items-center text-center">
                                 <div className="absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-25 bg-slate-400" />
-                                <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/80 border border-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] text-slate-400 transform-gpu overflow-hidden">
+                                <div className="relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/80 border border-white/90 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] text-slate-500 transform-gpu overflow-hidden">
                                     {searchQuery ? <Search size={40} strokeWidth={1.5} /> : <CheckCircle2 size={40} strokeWidth={1.5} />}
                                 </div>
                                 <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">

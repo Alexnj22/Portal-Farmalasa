@@ -57,7 +57,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     <LiquidAvatar src={formData.photo || formData.photo_url} alt={formData.name} fallbackText={formData.name} className="w-full h-full" />
                 </div>
                 <div className="min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Recontratando a</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-0.5">Recontratando a</p>
                     <p className="font-black text-slate-800 text-[16px] leading-tight truncate">{formData.name}</p>
                     <p className="text-[11px] text-slate-500 font-medium mt-0.5">
                         Código <span className="font-black text-slate-700">{formData.code}</span>
@@ -124,7 +124,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Horas Semanales</label>
                         <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHover}`}>
-                            <div className="absolute left-3 text-slate-400"><Clock size={14} strokeWidth={2.5} /></div>
+                            <div className="absolute left-3 text-slate-500"><Clock size={14} strokeWidth={2.5} /></div>
                             <input type="number" value={formData.rehire_weekly_hours || '44'} onChange={e => set('rehire_weekly_hours', e.target.value)}
                                 className="w-full h-full bg-transparent text-[16px] font-bold text-slate-700 outline-none pl-9 pr-4" />
                         </div>
@@ -134,7 +134,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
                     <div>
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Salario Base</label>
                         <div className={`relative bg-white rounded-[1rem] border border-slate-200/80 shadow-sm flex items-center h-[40px] ${inputHover}`}>
-                            <div className="absolute left-3 text-slate-400 font-black text-[13px]">$</div>
+                            <div className="absolute left-3 text-slate-500 font-black text-[13px]">$</div>
                             <input type="number" value={formData.rehire_base_salary || ''} onChange={e => set('rehire_base_salary', e.target.value)}
                                 placeholder="0.00" className="w-full h-full bg-transparent text-[16px] font-bold text-slate-700 outline-none pl-8 pr-4" />
                         </div>

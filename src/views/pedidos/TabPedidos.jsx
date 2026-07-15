@@ -137,7 +137,7 @@ function calcSolicitado(row) {
 }
 
 function fmtRegla(row) {
-    if (!row.dispatch_tipo) return <span className="text-slate-400">—</span>;
+    if (!row.dispatch_tipo) return <span className="text-slate-500">—</span>;
     const tipoKey    = (row.dispatch_tipo ?? '').toLowerCase();
     const tipos      = { caja: 'CAJA', blister: 'BLÍSTER', multiplo: 'UND ×', multiplo_unidades: 'UND ×', solo_cajas: 'SOLO CAJAS' };
     const base       = tipos[tipoKey] ?? row.dispatch_tipo.toUpperCase();
@@ -312,15 +312,15 @@ function PauseModal({ modal, history, kioskLunch, razonSel, setRazonSel, comment
                                         disabled={isUsed}
                                         onClick={() => !isUsed && setRazonSel(opt.key)}
                                         className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-[12px] font-medium transition-all text-left ${
-                                            isUsed ? 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed' :
+                                            isUsed ? 'border-slate-100 bg-slate-50 text-slate-500 cursor-not-allowed' :
                                             isSel  ? 'border-amber-400 bg-amber-50 text-amber-800 shadow-sm' :
                                                      'border-slate-200 text-slate-700 hover:bg-slate-50'
                                         }`}
                                     >
-                                        <Icon size={15} className={isUsed ? 'text-slate-300' : isSel ? 'text-amber-600' : 'text-slate-500'} />
+                                        <Icon size={15} className={isUsed ? 'text-slate-500' : isSel ? 'text-amber-600' : 'text-slate-500'} />
                                         <div>
                                             <div>{opt.label}</div>
-                                            {isUsed && <div className="text-[10px] text-slate-400">Ya registrado</div>}
+                                            {isUsed && <div className="text-[10px] text-slate-500">Ya registrado</div>}
                                         </div>
                                     </button>
                                 );
@@ -655,7 +655,7 @@ function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existin
 // ─── Item sections inside expanded card ──────────────────────────────────────
 
 function renderLab(row) {
-    return <span className="text-slate-400 text-[11px] whitespace-nowrap">{row.products?.laboratorios?.nombre ?? '—'}</span>;
+    return <span className="text-slate-500 text-[11px] whitespace-nowrap">{row.products?.laboratorios?.nombre ?? '—'}</span>;
 }
 function renderProd(row) {
     return (
@@ -671,7 +671,7 @@ function renderPresentacion(row) {
     const TIPO_LABELS = { caja: 'Caja', blister: 'Blíster', multiplo: 'Unid', multiplo_unidades: 'Unid', solo_cajas: 'Caja' };
     if (!tipo) {
         if (factor > 1) return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap">×{factor} unid</span>;
-        return <span className="text-slate-400 text-[11px]">Unidad</span>;
+        return <span className="text-slate-500 text-[11px]">Unidad</span>;
     }
     const label      = TIPO_LABELS[tipo] ?? tipo;
     const showFactor = factor > 1 && ['caja','blister','solo_cajas'].includes(tipo);
@@ -698,7 +698,7 @@ const renderSolicitado = r => {
     const sol = calcSolicitado(r);
     return sol != null
         ? <span className="tabular-nums text-slate-500">{sol}</span>
-        : <span className="text-slate-300">—</span>;
+        : <span className="text-slate-500">—</span>;
 };
 
 const COLS_ENVIADOS = [
@@ -708,7 +708,7 @@ const COLS_ENVIADOS = [
     { key: 'solicitado', label: 'Solicitado', align: 'center', render: renderSolicitado },
     { key: 'asig',       label: 'Enviado',    align: 'center', render: r => <span className="font-bold tabular-nums">{r.cantidad_asignada}</span> },
     { key: 'rec',        label: 'Recibido',   align: 'center', render: r => {
-        if (r.cantidad_recibida == null) return <span className="text-slate-400">—</span>;
+        if (r.cantidad_recibida == null) return <span className="text-slate-500">—</span>;
         const diff = r.cantidad_recibida - r.cantidad_asignada;
         return (
             <span className={`font-bold tabular-nums ${diff < 0 ? 'text-amber-600' : diff > 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
@@ -738,7 +738,7 @@ const COLS_AGOTAMIENTO = [
         const falto = sol != null ? Math.max(0, sol - (r.cantidad_asignada ?? 0)) : null;
         return falto != null
             ? <span className="font-bold tabular-nums text-orange-600">{falto}</span>
-            : <span className="text-slate-400">—</span>;
+            : <span className="text-slate-500">—</span>;
     }},
 ];
 
@@ -755,7 +755,7 @@ const COLS_SIN_STOCK = [
     { key: 'motivo', label: 'Motivo', render: () => (
         <div className="flex flex-col gap-0.5">
             <span className="text-amber-600 text-[10px] font-semibold">Sin stock en bodega</span>
-            <span className="text-slate-400 text-[9px]">Esperar reabastecimiento o generar un pedido manual</span>
+            <span className="text-slate-500 text-[9px]">Esperar reabastecimiento o generar un pedido manual</span>
         </div>
     )},
 ];
@@ -803,10 +803,10 @@ const COLS_REGLA = [
         return (
             <div className="flex flex-col gap-0.5">
                 <span className="text-rose-600 text-[10px] font-semibold">Necesidad baja</span>
-                <span className="text-slate-400 text-[9px]">
+                <span className="text-slate-500 text-[9px]">
                     {needUnd != null ? `Reponer ${needUnd} und. no alcanza el mín. de la regla` : 'Cantidad < 40% de la unidad mínima de despacho'}
                 </span>
-                <span className="text-slate-300 text-[9px]">Ajustar MAX o reducir el múltiplo en la regla</span>
+                <span className="text-slate-500 text-[9px]">Ajustar MAX o reducir el múltiplo en la regla</span>
             </div>
         );
     }},
@@ -873,19 +873,19 @@ function ItemSection({ label, count, badgeCls, rows, columns, noteEl, renderRowE
                                     placeholder="Buscar…"
                                     className="w-full pl-6 pr-5 py-1 text-[16px] bg-white border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-400 text-slate-700 placeholder:text-slate-400 shadow-sm"
                                 />
-                                <button onClick={closeSearch} className="absolute right-1.5 text-slate-400 hover:text-slate-600">
+                                <button onClick={closeSearch} className="absolute right-1.5 text-slate-500 hover:text-slate-600">
                                     <X size={9} />
                                 </button>
                             </div>
                         </motion.div>
                     ) : (
-                        <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 transition-colors shrink-0">
+                        <motion.button key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={openSearch} className="p-1.5 rounded-lg text-slate-500 hover:text-blue-500 hover:bg-blue-50 transition-colors shrink-0">
                             <Search size={12} />
                         </motion.button>
                     )}
                 </AnimatePresence>
                 <button onClick={() => setOpen(v => !v)} className="p-1.5 shrink-0">
-                    {open ? <ChevronDown size={12} className="text-slate-400" /> : <ChevronRight size={12} className="text-slate-400" />}
+                    {open ? <ChevronDown size={12} className="text-slate-500" /> : <ChevronRight size={12} className="text-slate-500" />}
                 </button>
             </div>
             <AnimatePresence>
@@ -965,16 +965,16 @@ function PauseBadge({ pause, isPaused, empMap = new Map() }) {
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-[200] hidden group-hover/pb:block pointer-events-none">
                     <div className="bg-slate-900/90 text-white rounded-xl px-2.5 py-2 shadow-xl flex flex-col gap-0.5 min-w-max">
                         <div className="text-[9px] font-bold capitalize">{pause.razon ?? 'Pausa'}</div>
-                        <div className="text-[8px] text-slate-300">
+                        <div className="text-[8px] text-slate-500">
                             Pausó: <span className="text-white font-semibold">{fmtHM(pause.pausado_at) || '—'}</span>
-                            {empName(pause.pausado_por) && <span className="text-slate-400"> · {empName(pause.pausado_por)}</span>}
+                            {empName(pause.pausado_por) && <span className="text-slate-500"> · {empName(pause.pausado_por)}</span>}
                         </div>
-                        <div className="text-[8px] text-slate-300">
+                        <div className="text-[8px] text-slate-500">
                             Reanudó:{' '}
                             {pause.reanudado_at
                                 ? <>
                                     <span className="text-white font-semibold">{fmtHM(pause.reanudado_at)}</span>
-                                    {empName(pause.reanudado_por) && <span className="text-slate-400"> · {empName(pause.reanudado_por)}</span>}
+                                    {empName(pause.reanudado_por) && <span className="text-slate-500"> · {empName(pause.reanudado_por)}</span>}
                                   </>
                                 : <span className="text-amber-300 font-semibold">En curso</span>}
                         </div>
@@ -1112,7 +1112,7 @@ function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp, finalizadorEm
                             </div>
 
                             {/* Label */}
-                            <span className={`text-[9px] font-semibold text-center leading-tight ${isFuture ? 'text-slate-400' : 'text-slate-700'}`}>
+                            <span className={`text-[9px] font-semibold text-center leading-tight ${isFuture ? 'text-slate-500' : 'text-slate-700'}`}>
                                 {isPausedDot ? 'Pausado' : node.label}
                             </span>
 
@@ -1254,7 +1254,7 @@ function ItemSections({ allItems, loading }) {
         setErrorMap(prev => ({ ...prev, [rowId]: null }));
     }, [origMap]);
 
-    if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-slate-300" /></div>;
+    if (loading) return <div className="flex justify-center py-5 border-t border-slate-100"><Loader2 size={16} className="animate-spin text-slate-500" /></div>;
 
     const enviados    = allItems.filter(i => i.cantidad_asignada > 0);
     const agotamiento = allItems.filter(i => i.agotamiento);
@@ -1262,7 +1262,7 @@ function ItemSections({ allItems, loading }) {
     const porRegla    = allItems.filter(i => i.revision_minmax);
     const total       = allItems.length;
 
-    if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-slate-400">Sin ítems.</div>;
+    if (total === 0) return <div className="border-t border-slate-100 py-4 text-center text-[11px] text-slate-500">Sin ítems.</div>;
 
     // Mirrors the DB constraint chk_min_lt_max:
     // min=0 → max must be 0 or 1; min≥1 → max must be strictly > min
@@ -1354,12 +1354,12 @@ function ItemSections({ allItems, loading }) {
             <tr key={`mm_${row.id}`}>
                 <td colSpan={colCount} className="px-4 pb-2.5 pt-0">
                     <div className="rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 flex items-center gap-2 flex-wrap">
-                        <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">Ventas 6M</span>
+                        <span className="text-[9px] font-semibold text-slate-600 uppercase tracking-wide shrink-0">Ventas 6M</span>
                         <span className="text-[11px] font-bold tabular-nums text-slate-700 shrink-0">
-                            {psp === undefined ? <span className="text-slate-300">—</span> : v6m != null ? `${v6m} und.` : '0 und.'}
+                            {psp === undefined ? <span className="text-slate-500">—</span> : v6m != null ? `${v6m} und.` : '0 und.'}
                         </span>
                         <div className="w-px h-4 bg-slate-200 shrink-0 mx-0.5" />
-                        <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">MIN</span>
+                        <span className="text-[9px] font-semibold text-slate-600 uppercase tracking-wide shrink-0">MIN</span>
                         <input
                             type="number" min="0" value={edit.min} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'min', e.target.value)}
@@ -1369,7 +1369,7 @@ function ItemSections({ allItems, loading }) {
                             }}
                             className={inputCls(!!err && err !== 'MAX inválido' && !err.startsWith('MAX'))}
                         />
-                        <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">MAX</span>
+                        <span className="text-[9px] font-semibold text-slate-600 uppercase tracking-wide shrink-0">MAX</span>
                         <input
                             type="number" min="0" value={edit.max} disabled={isSaving}
                             onChange={e => onMinMaxChange(row, 'max', e.target.value)}
@@ -1384,7 +1384,7 @@ function ItemSections({ allItems, loading }) {
                         <button
                             onClick={() => restoreMinMax(row)} disabled={isSaving}
                             title="Restaurar MIN/MAX original"
-                            className="ml-auto flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 disabled:opacity-50 transition-colors shrink-0"
+                            className="ml-auto flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-blue-500 hover:border-blue-200 hover:bg-blue-50 disabled:opacity-50 transition-colors shrink-0"
                         >
                             <RotateCcw size={9} />Restaurar
                         </button>
@@ -1541,7 +1541,7 @@ function DifSection({ difItems = [], eventos = [], isBranch, busyAction, empMap 
                                 {(() => { const sol = calcSolicitado(item); return sol != null ? <span>Solicitado: <strong className="text-slate-600">{sol}</strong></span> : null; })()}
                                 <span>Enviado: <strong className="text-slate-700">{item.cantidad_asignada}</strong></span>
                                 {item.cantidad_recibida != null && <>
-                                    <span className="text-slate-300">→</span>
+                                    <span className="text-slate-500">→</span>
                                     <span>Físico: <strong className={item.cantidad_recibida < item.cantidad_asignada ? 'text-red-600' : 'text-emerald-600'}>{item.cantidad_recibida}</strong></span>
                                 </>}
                             </div>
@@ -1589,7 +1589,7 @@ function DifSection({ difItems = [], eventos = [], isBranch, busyAction, empMap 
 
                             {/* ── Estado: null — SUCURSAL espera ── */}
                             {!res && isBranch && !readOnly && (
-                                <p className="text-[10px] text-slate-400 italic">Esperando resolución de bodega…</p>
+                                <p className="text-[10px] text-slate-500 italic">Esperando resolución de bodega…</p>
                             )}
 
                             {/* ── Estado: propuesta — mostrar propuesta ── */}
@@ -1625,7 +1625,7 @@ function DifSection({ difItems = [], eventos = [], isBranch, busyAction, empMap 
                                                 >
                                                     {isBusy ? <Loader2 size={10} className="animate-spin" /> : 'Rechazar'}
                                                 </button>
-                                                <button onClick={() => setRejectOpen(p => ({ ...p, [item.id]: false }))} className="text-[10px] text-slate-400 hover:text-slate-600 px-1">✕</button>
+                                                <button onClick={() => setRejectOpen(p => ({ ...p, [item.id]: false }))} className="text-[10px] text-slate-500 hover:text-slate-600 px-1">✕</button>
                                             </div>
                                         ) : (
                                             <div className="flex gap-2">
@@ -1646,7 +1646,7 @@ function DifSection({ difItems = [], eventos = [], isBranch, busyAction, empMap 
                                         )
                                     )}
                                     {!isBranch && (
-                                        <p className="text-[10px] text-slate-400 italic">Esperando confirmación de sucursal…</p>
+                                        <p className="text-[10px] text-slate-500 italic">Esperando confirmación de sucursal…</p>
                                     )}
                                 </>
                             )}
@@ -1659,7 +1659,7 @@ function DifSection({ difItems = [], eventos = [], isBranch, busyAction, empMap 
                                         {rechazadoEmp && <span className="text-red-600"> por {rechazadoEmp.name?.split(' ')[0]}</span>}
                                     </div>
                                     {item.nota_rechazo && <p className="text-red-600 italic">{item.nota_rechazo}</p>}
-                                    <p className="text-slate-400">Esperando nueva propuesta de bodega…</p>
+                                    <p className="text-slate-500">Esperando nueva propuesta de bodega…</p>
                                 </div>
                             )}
 
@@ -1680,18 +1680,18 @@ function DifSection({ difItems = [], eventos = [], isBranch, busyAction, empMap 
             {/* ── Actividad ── */}
             {eventos.length > 0 && (
                 <div className="border-t border-amber-100 pt-2 space-y-1.5">
-                    <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Actividad</p>
+                    <p className="text-[9px] text-slate-600 uppercase tracking-widest font-bold">Actividad</p>
                     {eventos.map(ev => {
                         const emp       = ev.hecho_por ? empMap.get(ev.hecho_por) : null;
                         const itemName  = difItems.find(d => d.id === ev.pedido_item_id)?.products?.nombre;
                         return (
                             <div key={ev.id} className="flex items-start gap-2 text-[10px] text-slate-600">
-                                <span className="text-slate-400 shrink-0 tabular-nums">{fmtRelative(ev.created_at)}</span>
+                                <span className="text-slate-500 shrink-0 tabular-nums">{fmtRelative(ev.created_at)}</span>
                                 <span>
                                     <strong className="text-slate-700">{emp?.name?.split(' ')[0] ?? '—'}</strong>{' '}
                                     {EVENTO_LABEL[ev.tipo] ?? ev.tipo}
                                     {ev.resolucion_tipo && <em className="text-slate-500"> ({RESOLUCION_LABEL[ev.resolucion_tipo] ?? ev.resolucion_tipo})</em>}
-                                    {itemName && <span className="text-slate-400"> · {itemName}</span>}
+                                    {itemName && <span className="text-slate-500"> · {itemName}</span>}
                                     {ev.nota && <span className="text-slate-500 italic"> — {ev.nota}</span>}
                                 </span>
                             </div>
@@ -1738,12 +1738,12 @@ function PostCompletionSection({ row, difItems = [], empMap = new Map(), onNeedI
     return (
         <div className="border-t border-slate-100 px-4 py-3 space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Resumen de recepción</p>
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">Resumen de recepción</p>
                 {llegadaEmp && (
                     <span className="flex items-center gap-1 text-[10px] text-slate-500">
                         {llegadaEmp.photo_url
                             ? <img src={llegadaEmp.photo_url} className="w-4 h-4 rounded-full object-cover border border-white shadow-sm" alt="" />
-                            : <UserCircle2 size={12} className="text-slate-400" />}
+                            : <UserCircle2 size={12} className="text-slate-500" />}
                         {llegadaEmp.name?.split(' ')[0]}
                     </span>
                 )}
@@ -1794,7 +1794,7 @@ function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOp
         <span className="flex items-center gap-1 text-[10px] text-slate-500">
             {emp.photo_url
                 ? <img src={emp.photo_url} className="w-4 h-4 rounded-full object-cover border border-white shadow-sm" alt="" />
-                : <UserCircle2 size={12} className="text-slate-400" />}
+                : <UserCircle2 size={12} className="text-slate-500" />}
             {emp.name?.split(' ')[0]}
         </span>
     ) : null;
@@ -3210,7 +3210,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-20 gap-2 text-slate-400">
+            <div className="flex items-center justify-center py-20 gap-2 text-slate-500">
                 <Loader2 size={20} className="animate-spin" />
                 <span className="text-[14px]">Cargando pedidos…</span>
             </div>
@@ -3252,7 +3252,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 <div className="text-left">
                                     <div className={`text-[22px] font-black leading-none tabular-nums ${active ? 'text-indigo-700' : 'text-slate-700'}`}>{total}</div>
                                     <div className="text-[10px] font-bold text-slate-600">{name}</div>
-                                    <div className="text-[9px] text-slate-400">pedidos este mes</div>
+                                    <div className="text-[9px] text-slate-500">pedidos este mes</div>
                                 </div>
                                 {active && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
                             </button>
@@ -3269,7 +3269,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                 <div className="text-left">
                                     <div className="text-[22px] font-black leading-none tabular-nums text-slate-700">{own.total}</div>
                                     <div className="text-[10px] font-bold text-slate-600">{own.name}</div>
-                                    <div className="text-[9px] text-slate-400">pedidos este mes</div>
+                                    <div className="text-[9px] text-slate-500">pedidos este mes</div>
                                 </div>
                             </div>
                         );
@@ -3384,7 +3384,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             {PEDIDO_LABEL[row.pedido_status] ?? row.pedido_status}
                                         </span>
                                         <span className="ml-auto text-[10px] text-slate-500 tabular-nums shrink-0">{fmtRelative(row.enviado_at ?? row.created_at)}</span>
-                                        {isExp ? <ChevronDown size={13} className="text-slate-400 shrink-0" /> : <ChevronRight size={13} className="text-slate-400 shrink-0" />}
+                                        {isExp ? <ChevronDown size={13} className="text-slate-500 shrink-0" /> : <ChevronRight size={13} className="text-slate-500 shrink-0" />}
                                     </div>
                                     {row.notes && <p className="px-3 pb-1.5 text-[11px] text-slate-600 italic">{row.notes}</p>}
 
@@ -3415,7 +3415,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                     {/* Apoyo preparación (bodega) */}
                                     {prepApoyo.length > 0 && (
                                         <div className="flex items-center gap-1.5 px-3 pb-1.5 flex-wrap">
-                                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide shrink-0">Prep:</span>
+                                            <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wide shrink-0">Prep:</span>
                                             {prepApoyo.map(a => (
                                                 <span key={a.id} className="inline-flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-white border border-slate-200 shadow-sm">
                                                     {a.photo_url
@@ -3552,8 +3552,8 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 const conductorEnRuta  = rutaActiva?.status === 'en_ruta' && !rutaActiva?.vuelta_base_at;
                                                 if (!canActuar || isBranch || !hasPendingFalta || reenvioEnCamino) return null;
                                                 if (conductorEnRuta) return (
-                                                    <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white/70 cursor-not-allowed" title="El conductor aún está en ruta. Esperá a que marque vuelta a base.">
-                                                        <Truck size={10} className="text-slate-300" />Esperando vuelta conductor
+                                                    <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white/70 cursor-not-allowed" title="El conductor aún está en ruta. Esperá a que marque vuelta a base.">
+                                                        <Truck size={10} className="text-slate-500" />Esperando vuelta conductor
                                                     </div>
                                                 );
                                                 const espFaltList = Object.entries(row.cajas_especiales_llegadas ?? {}).filter(([, v]) => v === 'faltante').map(([k]) => k);
@@ -3683,7 +3683,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                             </div>
                                             <div className="flex items-center gap-2 mt-0.5">
                                                 <span className="text-[11px] text-slate-500">{ruta.conductor_nombre}</span>
-                                                <span className="text-[10px] text-slate-400 tabular-nums">{entregadas}/{total} entregas</span>
+                                                <span className="text-[10px] text-slate-500 tabular-nums">{entregadas}/{total} entregas</span>
                                             </div>
                                         </div>
                                         {/* Acciones */}

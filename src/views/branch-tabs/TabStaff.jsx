@@ -72,7 +72,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 </div>
                 <p className="text-[14px] font-black text-slate-700 leading-tight group-hover:text-red-500 transition-colors text-center">{missingText}</p>
                 <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1 text-center">{missingSub}</p>
-                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-white shadow-sm border border-red-100 flex items-center gap-1.5 text-slate-400 group-hover:bg-red-500 group-hover:text-white transition-all">
+                <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-white shadow-sm border border-red-100 flex items-center gap-1.5 text-slate-500 group-hover:bg-red-500 group-hover:text-white transition-all">
                     <Edit3 size={10} strokeWidth={2.5} /> <span className="text-[7px] font-black uppercase tracking-widest">Asignar</span>
                 </div>
             </div>
@@ -91,7 +91,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             <div className="flex flex-col items-center justify-center relative z-10 mb-3 mt-2">
                 <div className="relative">
                     <div className={`w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr ${theme.gradient} shadow-sm group-hover:scale-105 transition-transform`}>
-                        <div className="w-full h-full rounded-full border-2 border-white overflow-hidden bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xl">
+                        <div className="w-full h-full rounded-full border-2 border-white overflow-hidden bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xl">
                             {employee.photo ? <img src={employee.photo} alt={employee.name} className="w-full h-full object-cover" /> : employee.name.charAt(0)}
                         </div>
                     </div>
@@ -122,16 +122,16 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             <div className="mt-auto pt-3 border-t border-white/60 relative z-10 flex flex-col gap-2 pb-1">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 overflow-hidden">
-                        <div className="w-6 h-6 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-400 shrink-0 shadow-sm"><Phone size={10} strokeWidth={2.5} /></div>
+                        <div className="w-6 h-6 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-500 shrink-0 shadow-sm"><Phone size={10} strokeWidth={2.5} /></div>
                         <div className="flex flex-col">
-                            <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">Teléfono</span>
+                            <span className="text-[7px] font-black text-slate-600 uppercase tracking-widest leading-none">Teléfono</span>
                             <span className="text-[10px] font-bold text-slate-700 truncate">{employee.phone || 'N/A'}</span>
                         </div>
                     </div>
                     {employee.phone && (
                         <div className="flex items-center gap-1 shrink-0">
-                            <button onClick={(e) => handleAction(e, 'wa', employee.phone)} className="p-1.5 text-slate-400 hover:text-emerald-500 bg-white/60 hover:bg-white shadow-sm rounded-md border border-white transition-all" title="WhatsApp"><MessageCircle size={12} strokeWidth={2.5} /></button>
-                            <button onClick={(e) => handleAction(e, 'copy', employee.phone, 'phone')} className="p-1.5 text-slate-400 hover:text-[#0052CC] bg-white/60 hover:bg-white shadow-sm rounded-md border border-white transition-all" title="Copiar">
+                            <button onClick={(e) => handleAction(e, 'wa', employee.phone)} className="p-1.5 text-slate-500 hover:text-emerald-500 bg-white/60 hover:bg-white shadow-sm rounded-md border border-white transition-all" title="WhatsApp"><MessageCircle size={12} strokeWidth={2.5} /></button>
+                            <button onClick={(e) => handleAction(e, 'copy', employee.phone, 'phone')} className="p-1.5 text-slate-500 hover:text-[#0052CC] bg-white/60 hover:bg-white shadow-sm rounded-md border border-white transition-all" title="Copiar">
                                 {copiedField === 'phone' ? <Check size={12} strokeWidth={3} className="text-emerald-500" /> : <Copy size={12} strokeWidth={2} />}
                             </button>
                         </div>
@@ -140,9 +140,9 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
 
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 overflow-hidden pr-8">
-                        <div className="w-6 h-6 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-400 shrink-0 shadow-sm"><Briefcase size={10} strokeWidth={2.5} /></div>
+                        <div className="w-6 h-6 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-500 shrink-0 shadow-sm"><Briefcase size={10} strokeWidth={2.5} /></div>
                         <div className="flex flex-col flex-1 overflow-hidden">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none flex items-center gap-1.5">
+                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest leading-none flex items-center gap-1.5">
                                 Ingreso {hireDate && <span className="text-[#0052CC] bg-blue-50 px-1 rounded lowercase font-bold tracking-normal">({getRelativeTime(hireDate)})</span>}
                             </span>
                             <span className="text-[10px] font-bold text-slate-700 mt-0.5 truncate">{formatDate(hireDate)}</span>
@@ -154,7 +154,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             <div className="absolute bottom-3 right-3 z-20">
                 <button
                     onClick={(e) => { e.stopPropagation(); onClick(employee); }}
-                    className="h-9 w-9 rounded-full flex items-center justify-center bg-white shadow-sm border border-white transition-all hover:bg-[#0052CC] hover:border-[#0052CC] hover:shadow-[0_4px_15px_rgba(0,82,204,0.3)] text-slate-400 hover:text-white group/btn"
+                    className="h-9 w-9 rounded-full flex items-center justify-center bg-white shadow-sm border border-white transition-all hover:bg-[#0052CC] hover:border-[#0052CC] hover:shadow-[0_4px_15px_rgba(0,82,204,0.3)] text-slate-500 hover:text-white group/btn"
                     title="Ver Expediente de Personal"
                 >
                     <CircleUserRound size={16} strokeWidth={2.5} className="transition-transform group-hover/btn:scale-110" />
@@ -251,7 +251,7 @@ const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
                     <h4 className="text-white font-black uppercase tracking-widest text-[12px] flex items-center gap-2">
                         <Zap size={14} className="text-amber-400" /> Motor de Sincronización WFM
                     </h4>
-                    <p className="text-slate-400 font-bold text-[10px] mt-1">Inyecta las ventas desde Enero 2025 usando descargas binarias (XLS) aceleradas por SheetJS.</p>
+                    <p className="text-slate-500 font-bold text-[10px] mt-1">Inyecta las ventas desde Enero 2025 usando descargas binarias (XLS) aceleradas por SheetJS.</p>
                 </div>
                 <button
                     onClick={startHistoricalSync}
@@ -471,7 +471,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 {wfmApplied ? (
                                     <>
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-200 mb-3 border-b border-slate-700/50 pb-1">Desglose de Horas Hombre (WFM)</p>
-                                        <p className="text-[10px] font-bold text-slate-300 mb-1.5 flex justify-between items-center">
+                                        <p className="text-[10px] font-bold text-slate-500 mb-1.5 flex justify-between items-center">
                                             <span>Seguridad (Mín. {MIN_CONCURRENT_STAFF} por turno):</span> <span className="text-white font-black">{baseStaffHours} hrs</span>
                                         </p>
                                         <p className="text-[10px] font-bold text-blue-300 mb-1.5 flex justify-between items-center">
@@ -491,14 +491,14 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 ) : isNewBranch ? (
                                     <>
                                         <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-2 border-b border-slate-700/50 pb-1 flex items-center gap-1.5"><Hourglass size={12} /> Sucursal en Incubación</p>
-                                        <p className="text-[10px] font-bold text-slate-300 leading-tight mb-2">
+                                        <p className="text-[10px] font-bold text-slate-500 leading-tight mb-2">
                                             Esta sucursal tiene menos de 3 meses. El cálculo actual <span className="text-white font-black">({minStaff} operativos)</span> está basado únicamente en la cobertura mínima de seguridad ({MIN_CONCURRENT_STAFF} por turno).
                                         </p>
                                     </>
                                 ) : (
                                     <>
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-200 mb-2 border-b border-slate-700/50 pb-1 flex items-center gap-1.5"><Calculator size={12} /> Cálculo Tradicional</p>
-                                        <p className="text-[10px] font-bold text-slate-300 leading-tight">
+                                        <p className="text-[10px] font-bold text-slate-500 leading-tight">
                                             Basado en los horarios de apertura configurados, necesitas al menos <span className="text-amber-400 font-black">{minStaff} operativos</span> para cubrir los turnos legales.
                                         </p>
                                     </>
@@ -682,7 +682,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                     {wfmApplied ? (
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                             <div className="bg-white/60 backdrop-blur-md rounded-xl p-3 border border-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Registros Históricos</p>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Registros Históricos</p>
                                                 <p className="text-[18px] font-black text-slate-800 mt-1">{historicalSales.length}</p>
                                                 <p className="text-[9px] font-bold text-slate-500">Horas de venta analizadas</p>
                                             </div>
@@ -715,7 +715,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                             {/* SECCIÓN 1: LIDERAZGO */}
                             <div className="space-y-3">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 ml-1">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 ml-1">
                                     <Star size={12} className="text-amber-500" strokeWidth={3} /> {isAdmin ? 'Dirección Administrativa' : 'Dirección de Sucursal'}
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -732,7 +732,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                             {/* SECCIÓN 2: ÁREA OPERATIVA */}
                             <div className="space-y-3 pt-2 mt-6">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 ml-1">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 ml-1">
                                     <User size={12} className="text-[#0052CC]" strokeWidth={3} /> Área Clínica y Operativa
                                 </h4>
 
@@ -770,7 +770,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
 
                             {/* SECCIÓN 3: CUMPLIMIENTO REGULATORIO — solo farmacias */}
                             {isFarmacia && <div className="space-y-3 pt-2 border-t border-white/60 mt-6 pt-6">
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 ml-1">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5 ml-1">
                                     <ShieldCheck size={12} className="text-emerald-500" strokeWidth={3} /> Cumplimiento SRS (DNM/CSSP)
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

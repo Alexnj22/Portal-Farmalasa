@@ -137,13 +137,13 @@ const BranchTabGeneral = ({
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 flex items-center gap-2">
                             <Navigation size={10} />
                             Coordenadas GPS
-                            <span className="normal-case tracking-normal font-medium text-slate-400 text-[9px]">
+                            <span className="normal-case tracking-normal font-medium text-slate-500 text-[9px]">
                                 · Google Maps → click derecho → "¿Qué hay aquí?" → copiar lat, lng
                             </span>
                         </label>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="text-[9px] font-semibold text-slate-400 ml-1 mb-1 block uppercase tracking-widest">Latitud</label>
+                                <label className="text-[9px] font-semibold text-slate-600 ml-1 mb-1 block uppercase tracking-widest">Latitud</label>
                                 <LazyInput
                                     placeholder="14.0123456"
                                     value={String(location.lat || '')}
@@ -152,7 +152,7 @@ const BranchTabGeneral = ({
                                 />
                             </div>
                             <div>
-                                <label className="text-[9px] font-semibold text-slate-400 ml-1 mb-1 block uppercase tracking-widest">Longitud</label>
+                                <label className="text-[9px] font-semibold text-slate-600 ml-1 mb-1 block uppercase tracking-widest">Longitud</label>
                                 <LazyInput
                                     placeholder="-89.1234567"
                                     value={String(location.lng || '')}

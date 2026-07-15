@@ -57,7 +57,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                 </div>
                 <div className="text-[9px] md:text-[10px] font-bold text-slate-500 mt-1 flex flex-col md:flex-row md:items-center gap-1 md:gap-1.5 font-mono">
                     <span className="flex items-center gap-1"><Clock size={10} className="md:w-3 md:h-3" /> {logDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</span>
-                    <span className="hidden md:inline mx-1 text-slate-400/50">|</span>
+                    <span className="hidden md:inline mx-1 text-slate-500/50">|</span>
                     {/* 🚨 MEJORA: Muestra si fue Kiosco o Panel */}
                     <span className="flex items-center gap-1">
                         {getSourceIcon(log.source)}
@@ -82,7 +82,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                         </span>
                         {/* 🚨 MEJORA: Muestra la sucursal debajo del nombre si existe */}
                         {log.branch_name && (
-                            <span className="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 truncate max-w-[120px]">
+                            <span className="text-[8px] md:text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-0.5 truncate max-w-[120px]">
                                 {log.branch_name}
                             </span>
                         )}
@@ -295,7 +295,7 @@ const filtersContent = (
                 {rawSearchTerm && (
                     <button
                         onClick={() => setRawSearchTerm("")}
-                        className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"
+                        className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"
                     >
                         <X size={16} strokeWidth={2.5} />
                     </button>
@@ -395,7 +395,7 @@ const filtersContent = (
                             onOpenChange={setIsDatePickerOpen}
                         />
 
-                        <span className="text-slate-300 font-bold group-hover:text-slate-400 transition-colors mx-1">-</span>
+                        <span className="text-slate-500 font-bold group-hover:text-slate-500 transition-colors mx-1">-</span>
 
                         {/* 🚨 Aquí cambiamos a "Fin" */}
                         <LiquidDatePicker
@@ -414,7 +414,7 @@ const filtersContent = (
                                 e.stopPropagation();
                                 clearFilters();
                             }}
-                            className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/70 border border-white/90 text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300"
+                            className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/70 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 hover:border-red-200 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300"
                             title="Limpiar todos los filtros"
                         >
                             <Trash2 size={15} strokeWidth={2.5} />

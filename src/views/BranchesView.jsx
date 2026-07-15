@@ -344,11 +344,11 @@ const BranchCard = memo(({
                         <div className="w-px h-4 bg-slate-200 mx-0.5"></div>
                         </>
                     )}
-                    <button onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} className="w-8 h-8 rounded-full text-slate-400 hover:text-[#0052CC] hover:bg-[#0052CC]/10 flex items-center justify-center transition-all" title="Ver Perfil"><Eye size={14} strokeWidth={2.5} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} disabled={!canEdit} className="w-8 h-8 rounded-full text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Ajustes Generales"><Edit3 size={14} strokeWidth={2.5} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); handleViewProfile(branch); }} className="w-8 h-8 rounded-full text-slate-500 hover:text-[#0052CC] hover:bg-[#0052CC]/10 flex items-center justify-center transition-all" title="Ver Perfil"><Eye size={14} strokeWidth={2.5} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); openModal?.("editBranch", branch); }} disabled={!canEdit} className="w-8 h-8 rounded-full text-slate-500 hover:text-indigo-500 hover:bg-indigo-50 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Ajustes Generales"><Edit3 size={14} strokeWidth={2.5} /></button>
 
                     {!deleteDisabled && (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} disabled={!canEdit} className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-slate-400 hover:text-red-500 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed" title="Eliminar Sucursal"><Trash2 size={14} strokeWidth={2.5} /></button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteClick(branch, count); }} disabled={!canEdit} className="w-8 h-8 rounded-full flex items-center justify-center transition-all text-slate-500 hover:text-red-500 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed" title="Eliminar Sucursal"><Trash2 size={14} strokeWidth={2.5} /></button>
                     )}
                 </div>
                 {alertStatus.hasAlerts && (
@@ -357,7 +357,7 @@ const BranchCard = memo(({
                             <alertStatus.icon size={14} strokeWidth={2.5} />
                         </div>
                         <div className="absolute top-full mt-2 right-0 w-max max-w-[220px] bg-slate-900/90 backdrop-blur-xl text-white p-4 rounded-[1.2rem] shadow-[0_20px_40px_rgba(0,0,0,0.3)] opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all duration-300 translate-y-2 group-hover/badge:translate-y-0 border border-white/10 z-50">
-                            <p className="text-[8px] text-slate-400 uppercase tracking-widest mb-2.5 font-black border-b border-white/10 pb-1.5 flex items-center justify-between">
+                            <p className="text-[8px] text-slate-600 uppercase tracking-widest mb-2.5 font-black border-b border-white/10 pb-1.5 flex items-center justify-between">
                                 Problemas Detectados <span className="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded text-[7px]">{alertStatus.list.length}</span>
                             </p>
                             <div className="space-y-2.5">
@@ -397,7 +397,7 @@ const BranchCard = memo(({
                                         {BRANCH_TYPE_META[branch.type]?.label}
                                     </span>
                                 )}
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1">
+                                <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest flex items-center gap-1">
                                     {branch.openingDate || branch.opening_date
                                         ? `${new Date(branch.openingDate || branch.opening_date).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`
                                         : 'Pendiente de apertura'}
@@ -412,7 +412,7 @@ const BranchCard = memo(({
                         <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/map:scale-110 group-hover/map:text-[#0052CC] border border-slate-100"><MapPin size={16} strokeWidth={2.5} /></div>
                         <div className="flex-1 flex justify-between items-start gap-2 pr-1">
                             <div className="min-w-0 flex-1">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 flex items-center gap-1">Dirección, Departamento <ArrowUpRight size={10} className="transition-transform duration-300 group-hover/map:translate-x-0.5 group-hover/map:-translate-y-0.5" /></p>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-0.5 flex items-center gap-1">Dirección, Departamento <ArrowUpRight size={10} className="transition-transform duration-300 group-hover/map:translate-x-0.5 group-hover/map:-translate-y-0.5" /></p>
                                 <p className="text-[12px] font-semibold text-slate-700 leading-snug break-words">{[branch.address, branch.settings?.location?.municipality, branch.settings?.location?.department].filter(Boolean).join(', ') || "No registrada"}</p>
                             </div>
                             <div className="shrink-0 mt-0.5" onClick={e => e.stopPropagation()}>
@@ -425,14 +425,14 @@ const BranchCard = memo(({
                         <button onClick={(e) => handlePhoneAction(e, branch.phone, 'Fijo')} className={`group/phone flex items-center gap-2 p-2.5 rounded-[1.2rem] relative text-left w-full ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
                             <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-slate-500 border border-slate-100 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/phone:scale-110 group-hover/phone:text-[#0052CC]"><Phone size={14} strokeWidth={2.5} /></div>
                             <div className="min-w-0 flex-1">
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Fijo</p>
+                                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Fijo</p>
                                 <p className="text-[12px] font-bold text-slate-700 whitespace-nowrap tracking-tight">{branch.phone || "—"}</p>
                             </div>
                         </button>
                         <button onClick={(e) => handlePhoneAction(e, branch.cell, 'Celular')} className={`group/cell flex items-center gap-2 p-2.5 rounded-[1.2rem] relative text-left w-full pr-8 ${CLASS_INTERACTIVE_GLASS_ELEMENT}`}>
                             <div className="w-8 h-8 rounded-lg bg-white shadow-sm text-slate-500 border border-slate-100 flex items-center justify-center shrink-0 transition-all duration-300 group-hover/cell:scale-110 group-hover/cell:text-[#0052CC]"><Smartphone size={14} strokeWidth={2.5} /></div>
                             <div className="min-w-0 flex-1">
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Celular</p>
+                                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Celular</p>
                                 <p className="text-[12px] font-bold text-slate-700 whitespace-nowrap tracking-tight">{branch.cell || "—"}</p>
                             </div>
                             {branch.cell && <div onClick={(e) => handleWhatsAppAction(e, branch.cell)} className="absolute right-1.5 w-6 h-6 bg-emerald-50 text-emerald-500 rounded-md flex items-center justify-center shadow-sm opacity-0 group-hover/cell:opacity-100 transition-all hover:bg-emerald-500 hover:text-white" title="Abrir WhatsApp"><MessageCircle size={13} strokeWidth={2.5} /></div>}
@@ -455,8 +455,8 @@ const BranchCard = memo(({
                 <div className="grid grid-cols-3 gap-2 mt-auto pt-1">
                     <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchLegal', branch); }} disabled={!canEdit} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-[1rem] text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar datos legales">
                         <div className="flex items-center justify-between w-full">
-                            <Scale size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.legal === 0 ? 'text-red-500' : completion.legal === 100 ? 'text-slate-400 group-hover/prog:text-slate-600' : 'text-amber-500'}`} />
-                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.legal === 0 ? 'text-red-500/80' : 'text-slate-400 group-hover/prog:text-slate-700'}`}>Legal</span>
+                            <Scale size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.legal === 0 ? 'text-red-500' : completion.legal === 100 ? 'text-slate-500 group-hover/prog:text-slate-600' : 'text-amber-500'}`} />
+                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.legal === 0 ? 'text-red-500/80' : 'text-slate-600 group-hover/prog:text-slate-700'}`}>Legal</span>
                         </div>
                         {completion.legal < 100 && (
                             <div className="w-full h-1.5 bg-slate-200/50 rounded-full overflow-hidden border border-white/50">
@@ -468,7 +468,7 @@ const BranchCard = memo(({
                     <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchInmueble', branch); }} disabled={!canEdit} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-[1rem] text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar datos de inmueble">
                         <div className="flex items-center justify-between w-full">
                             <Building2 size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.property === 0 ? 'text-red-500' : completion.property === 100 ? 'text-slate-400 group-hover/prog:text-slate-600' : 'text-amber-500'}`} />
-                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.property === 0 ? 'text-red-500/80' : 'text-slate-400 group-hover/prog:text-slate-700'}`}>Local</span>
+                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.property === 0 ? 'text-red-500/80' : 'text-slate-600 group-hover/prog:text-slate-700'}`}>Local</span>
                         </div>
                         {completion.property < 100 && (
                             <div className="w-full h-1.5 bg-slate-200/50 rounded-full overflow-hidden border border-white/50">
@@ -480,7 +480,7 @@ const BranchCard = memo(({
                     <button type="button" onClick={(e) => { e.stopPropagation(); openModal?.('editBranchServicios', branch); }} disabled={!canEdit} className={`group/prog flex flex-col justify-center gap-1.5 p-2.5 min-h-[48px] rounded-[1rem] text-left cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${CLASS_INTERACTIVE_GLASS_ELEMENT}`} title="Completar servicios básicos">
                         <div className="flex items-center justify-between w-full">
                             <Zap size={12} strokeWidth={2.5} className={`transition-colors duration-300 ${completion.services === 0 ? 'text-red-500' : completion.services === 100 ? 'text-slate-400 group-hover/prog:text-slate-600' : 'text-amber-500'}`} />
-                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.services === 0 ? 'text-red-500/80' : 'text-slate-400 group-hover/prog:text-slate-700'}`}>Serv.</span>
+                            <span className={`text-[9px] font-black uppercase tracking-widest transition-colors ${completion.services === 0 ? 'text-red-500/80' : 'text-slate-600 group-hover/prog:text-slate-700'}`}>Serv.</span>
                         </div>
                         {completion.services < 100 && (
                             <div className="w-full h-1.5 bg-slate-200/50 rounded-full overflow-hidden border border-white/50">
@@ -498,7 +498,7 @@ const BranchCard = memo(({
                     className={`flex flex-col gap-1.5 items-start group/personal hover:bg-white/60 p-2 -ml-2 -my-2 rounded-xl transition-all cursor-pointer text-left ${['ADMINISTRATIVA','EXTERNA'].includes(branch.type) ? 'w-full' : 'w-1/2'}`}
                     title="Ver Listado de Personal"
                 >
-                    <div className="flex items-center gap-2 text-slate-400 transition-colors duration-300 group-hover/personal:text-slate-600">
+                    <div className="flex items-center gap-2 text-slate-500 transition-colors duration-300 group-hover/personal:text-slate-600">
                         <Users size={14} className="transition-transform duration-300 group-hover/personal:scale-110 group-hover/personal:text-[#0052CC]" strokeWidth={2.5} />
                         <span className="text-[10px] font-bold uppercase tracking-widest transition-colors duration-300 group-hover/personal:text-slate-600">Personal</span>
                     </div>
@@ -514,12 +514,12 @@ const BranchCard = memo(({
                     <>
                         <div className="w-px h-8 bg-slate-200/60 mx-2"></div>
                         <button type="button" onClick={() => openModal && openModal("manageKiosks", branch)} className="flex flex-col gap-1.5 w-1/2 items-end group/kiosk hover:bg-white/60 p-2 -mr-2 -my-2 rounded-xl transition-all cursor-pointer" title="Gestionar Kioscos">
-                            <div className="flex items-center gap-2 text-slate-400 transition-colors duration-300 group-hover/kiosk:text-slate-600">
+                            <div className="flex items-center gap-2 text-slate-500 transition-colors duration-300 group-hover/kiosk:text-slate-600">
                                 <span className="text-[10px] font-bold uppercase tracking-widest">Kioscos</span>
                                 <Monitor size={14} className="transition-transform duration-300 group-hover/kiosk:scale-110 group-hover/kiosk:text-indigo-500" strokeWidth={2.5} />
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className={`text-[14px] font-black leading-none ${activeKiosks > 0 ? 'text-indigo-600' : 'text-slate-400'}`}>{activeKiosks} <span className="text-[10px] font-bold text-slate-400">/ 3</span></span>
+                                <span className={`text-[14px] font-black leading-none ${activeKiosks > 0 ? 'text-indigo-600' : 'text-slate-500'}`}>{activeKiosks} <span className="text-[10px] font-bold text-slate-500">/ 3</span></span>
                                 <div className={`w-2 h-2 rounded-full border ${activeKiosks > 0 ? 'bg-emerald-400 border-emerald-200 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse' : 'bg-white shadow-inner border-slate-200'}`} />
                             </div>
                         </button>
@@ -692,7 +692,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left ${isSearchActive ? "max-w-[800px] opacity-100 px-4 md:px-5 gap-3" : "max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0 border-transparent"}`}>
                 <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
                 <input type="text" placeholder="Buscar sucursal o dirección..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[250px] sm:w-[400px] md:w-[600px] placeholder:text-slate-400 focus:ring-0" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} ref={(input) => { if (input && isSearchActive) setTimeout(() => input.focus(), 100) }} />
-                {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
+                {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
                 <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2"><ChevronRight size={18} strokeWidth={2.5} /></button>
             </div>
 
@@ -717,7 +717,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
 
                 <div className={`flex items-center shrink-0 border-l transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right border-slate-200/60 ${isFilterPickerOpen ? "max-w-0 opacity-0 scale-95 pointer-events-none ml-0 pl-0 border-transparent m-0" : "max-w-[600px] opacity-100 scale-100 ml-2 pl-2 gap-2"}`}>
                     {filterStatus !== "ALL" && (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setFilterStatus("ALL"); }} className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/70 border border-white/90 text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300" title="Limpiar todos los filtros"><Trash2 size={15} strokeWidth={2.5} /></button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setFilterStatus("ALL"); }} className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/70 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 hover:border-red-200 flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 animate-in zoom-in-50 duration-300" title="Limpiar todos los filtros"><Trash2 size={15} strokeWidth={2.5} /></button>
                     )}
                     {canEdit && <button type="button" onClick={() => openModal?.("newBranch")} className="h-10 md:h-11 px-4 md:px-5 rounded-full bg-white text-[#0052CC] font-black text-[10px] md:text-[11px] uppercase tracking-widest shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:shadow-[0_6px_15px_rgba(0,82,204,0.15)] border border-white hover:border-[#0052CC]/30 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-300 flex items-center justify-center gap-2 shrink-0 transform-gpu whitespace-nowrap">
                         <Plus size={16} strokeWidth={2.5} />
@@ -747,7 +747,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                         </div>
                     ) : filteredBranches.length === 0 ? (
                         <div className="py-24 text-center flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-500">
-                            <div className={`bg-white/60 backdrop-blur-xl p-6 rounded-[2rem] mb-5 shadow-[0_12px_40px_rgba(0,0,0,0.08)] border border-white/80 transition-all duration-300 ${filterStatus === 'ALERTS' ? 'text-emerald-500' : 'text-slate-400'}`}>
+                            <div className={`bg-white/60 backdrop-blur-xl p-6 rounded-[2rem] mb-5 shadow-[0_12px_40px_rgba(0,0,0,0.08)] border border-white/80 transition-all duration-300 ${filterStatus === 'ALERTS' ? 'text-emerald-500' : 'text-slate-500'}`}>
                                 {filterStatus === 'ALERTS' ? <CheckCircle2 size={48} strokeWidth={1.5} /> : <Building2 size={48} strokeWidth={1.5} />}
                             </div>
                             <h3 className="text-[20px] font-black text-slate-800 tracking-tight">
@@ -781,7 +781,7 @@ const BranchesView = ({ openModal, setActiveBranch }) => {
                                                     {BRANCH_TYPE_META[type]?.sectionLabel}
                                                 </span>
                                                 <div className="flex-1 h-px bg-slate-200/60" />
-                                                <span className="text-[10px] font-bold text-slate-400">{groupBranches.length}</span>
+                                                <span className="text-[10px] font-bold text-slate-500">{groupBranches.length}</span>
                                             </div>
                                         )}
                                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-max">

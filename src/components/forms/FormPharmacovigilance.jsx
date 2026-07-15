@@ -123,7 +123,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                             }}
                         />
                         
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 group-hover:scale-105 ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-white text-purple-600 border border-purple-200' : 'bg-white text-slate-400 border border-slate-100 group-hover:text-purple-500 group-hover:border-purple-200'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 group-hover:scale-105 ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'bg-white text-purple-600 border border-purple-200' : 'bg-white text-slate-500 border border-slate-100 group-hover:text-purple-500 group-hover:border-purple-200'}`}>
                              {legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? <ShieldCheck size={20} strokeWidth={2}/> : <UploadCloud size={20} strokeWidth={1.5} />}
                         </div>
                         
@@ -131,7 +131,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                             <p className={`text-[12px] font-black tracking-tight truncate ${legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'text-purple-700' : 'text-slate-600'}`}>
                                 {legalData.farmacovigilanciaAuthFile ? legalData.farmacovigilanciaAuthFile.name : legalData.farmacovigilanciaAuthUrl ? "Autorización guardada" : "Toca para subir documento"}
                             </p>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                            <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-0.5">
                                 {legalData.farmacovigilanciaAuthFile || legalData.farmacovigilanciaAuthUrl ? 'Reemplazar archivo' : 'PDF, JPG o PNG (Máx 5MB)'}
                             </p>
                         </div>

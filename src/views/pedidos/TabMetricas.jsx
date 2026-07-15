@@ -50,7 +50,7 @@ function StatCard({ icon: Icon, label, value, color = 'blue', sub = null }) {
             <div>
                 <p className="text-[11px] text-slate-500">{label}</p>
                 <p className="text-[18px] font-bold text-slate-700 leading-tight">{value}</p>
-                {sub && <p className="text-[10px] text-slate-400">{sub}</p>}
+                {sub && <p className="text-[10px] text-slate-500">{sub}</p>}
             </div>
         </div>
     );
@@ -130,7 +130,7 @@ export default function TabMetricas({ searchTerm = '' }) {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-16 gap-2 text-slate-400">
+            <div className="flex items-center justify-center py-16 gap-2 text-slate-500">
                 <Loader2 size={20} className="animate-spin" />
                 <span className="text-[14px]">Calculando métricas…</span>
             </div>
@@ -174,10 +174,10 @@ export default function TabMetricas({ searchTerm = '' }) {
             </div>
 
             {kpis.length === 0 ? (
-                <div className={`${GLASS} flex flex-col items-center justify-center py-12 gap-2 text-slate-400`}>
+                <div className={`${GLASS} flex flex-col items-center justify-center py-12 gap-2 text-slate-500`}>
                     <BarChart2 size={32} className="opacity-40" />
                     <p className="text-[13px]">Sin datos para el período seleccionado.</p>
-                    <p className="text-[11px] text-slate-300">Los tiempos se registran al despachar y recibir pedidos.</p>
+                    <p className="text-[11px] text-slate-500">Los tiempos se registran al despachar y recibir pedidos.</p>
                 </div>
             ) : (
                 <>
@@ -227,7 +227,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                                                         {s.numPausas}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-slate-300">—</span>
+                                                    <span className="text-slate-500">—</span>
                                                 )}
                                             </td>
                                         </tr>
@@ -259,7 +259,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                                                 />
                                             </div>
                                             {r.min_promedio != null && (
-                                                <span className="text-[10px] text-slate-400 w-14 text-right tabular-nums">
+                                                <span className="text-[10px] text-slate-500 w-14 text-right tabular-nums">
                                                     ~{fmtMin(r.min_promedio)}
                                                 </span>
                                             )}

@@ -21,9 +21,9 @@ export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
         <span className="inline-flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-white border border-slate-200 shadow-sm">
             <LiquidAvatar src={emp.photo_url} alt={emp.name} fallbackText={emp.name} className={avatarCls} />
             <span className="text-[11px] font-semibold text-slate-700 whitespace-nowrap">{emp.name}</span>
-            {sub && <span className="text-[9px] text-slate-400 whitespace-nowrap">{sub}</span>}
+            {sub && <span className="text-[9px] text-slate-500 whitespace-nowrap">{sub}</span>}
             {onRemove && (
-                <button onClick={onRemove} className="text-slate-300 hover:text-red-500 transition-colors">
+                <button onClick={onRemove} className="text-slate-500 hover:text-red-500 transition-colors">
                     <X size={11} />
                 </button>
             )}
@@ -607,7 +607,7 @@ export default function RecepcionModal({
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                             <h3 className="text-[15px] font-bold text-slate-800 leading-snug">Confirmar recepción</h3>
-                            <p className="text-[11px] text-slate-400 mt-0.5">
+                            <p className="text-[11px] text-slate-500 mt-0.5">
                                 {sucursalNombre} · {rows.length} prod. · {allBoxNums.length} caja{allBoxNums.length !== 1 ? 's' : ''}
                             </p>
                         </div>
@@ -619,7 +619,7 @@ export default function RecepcionModal({
                             }`}>
                                 {receivedAccessible}/{accessibleBoxNums.length} recibidas
                             </span>
-                            <button onClick={onClose} disabled={saving} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
+                            <button onClick={onClose} disabled={saving} className="text-slate-500 hover:text-slate-600 transition-colors p-1">
                                 <X size={18} />
                             </button>
                         </div>
@@ -661,13 +661,13 @@ export default function RecepcionModal({
                                     </div>
                                     <div>
                                         <p className={`text-[12px] font-black leading-none ${
-                                            isRecibida ? 'text-emerald-700' : isFalta ? 'text-slate-400' : 'text-slate-700'
+                                            isRecibida ? 'text-emerald-700' : isFalta ? 'text-slate-500' : 'text-slate-700'
                                         }`}>Caja {boxNum}</p>
                                         {pageHint && (
                                             <p className="text-[9px] font-semibold text-violet-500 mt-0.5 leading-none">{pageHint}</p>
                                         )}
                                         <p className={`text-[9px] font-medium mt-0.5 ${
-                                            isRecibida ? 'text-emerald-500' : isFalta ? 'text-slate-400' : isDanada ? 'text-amber-600' : 'text-slate-400'
+                                            isRecibida ? 'text-emerald-500' : isFalta ? 'text-slate-500' : isDanada ? 'text-amber-600' : 'text-slate-500'
                                         }`}>
                                             {isRecibida ? '✓ Recibida' : isFalta ? 'En reenvío' : isDanada ? `${itemCount} prod. ⚠` : `${itemCount} prod.`}
                                         </p>
@@ -714,7 +714,7 @@ export default function RecepcionModal({
                     {/* Cajas especiales */}
                     {especialItems.length > 0 && (
                         <div className="mt-4">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">Cajas especiales</p>
+                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-2">Cajas especiales</p>
                             <div className={`grid gap-2 ${especialItems.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
                                 {especialItems.map(({ label, item }) => {
                                     const isDamaged   = especialesLlegadas[label] === 'danada';
@@ -743,13 +743,13 @@ export default function RecepcionModal({
                                             </div>
                                             <div>
                                                 <p className={`text-[12px] font-black leading-none ${
-                                                    isConfirmed ? 'text-emerald-700' : isFaltante ? 'text-slate-400' : 'text-slate-700'
+                                                    isConfirmed ? 'text-emerald-700' : isFaltante ? 'text-slate-500' : 'text-slate-700'
                                                 }`}>{label}</p>
-                                                <p className="text-[9px] text-slate-400 mt-0.5 leading-tight max-w-[90px] truncate">
+                                                <p className="text-[9px] text-slate-500 mt-0.5 leading-tight max-w-[90px] truncate">
                                                     {item.products?.nombre ?? ''}
                                                 </p>
                                                 <p className={`text-[9px] font-medium mt-0.5 ${
-                                                    isConfirmed ? 'text-emerald-500' : isFaltante ? 'text-slate-400' : isDamaged ? 'text-amber-600' : 'text-violet-500'
+                                                    isConfirmed ? 'text-emerald-500' : isFaltante ? 'text-slate-500' : isDamaged ? 'text-amber-600' : 'text-violet-500'
                                                 }`}>
                                                     {isConfirmed ? '✓ Confirmado' : isFaltante ? 'En reenvío' : isDamaged ? '⚠ Dañada' : `${item.cantidad_asignada} unid.`}
                                                 </p>
@@ -808,14 +808,14 @@ export default function RecepcionModal({
                         </button>
                         <div className="flex-1 min-w-0">
                             <h3 className="text-[15px] font-bold text-slate-800 leading-snug">Productos extra</h3>
-                            <p className="text-[11px] text-slate-400 mt-0.5">
+                            <p className="text-[11px] text-slate-500 mt-0.5">
                                 {extras.length === 0
                                     ? 'Productos recibidos que no estaban en el pedido'
                                     : `${extras.length} producto${extras.length !== 1 ? 's' : ''} agregado${extras.length !== 1 ? 's' : ''}`}
                             </p>
                         </div>
                         <button onClick={goBackFromExtras} disabled={saving}
-                            className="text-slate-400 hover:text-slate-600 transition-colors p-1 disabled:opacity-40">
+                            className="text-slate-500 hover:text-slate-600 transition-colors p-1 disabled:opacity-40">
                             <X size={18} />
                         </button>
                     </div>
@@ -844,8 +844,8 @@ export default function RecepcionModal({
                         {extras.length === 0 && (
                             <div className="py-12 text-center">
                                 <PackagePlus size={30} className="text-indigo-200 mx-auto mb-2" />
-                                <p className="text-[13px] font-semibold text-slate-400">Sin productos extra</p>
-                                <p className="text-[11px] text-slate-300 mt-1">Buscá un producto abajo para agregarlo</p>
+                                <p className="text-[13px] font-semibold text-slate-500">Sin productos extra</p>
+                                <p className="text-[11px] text-slate-500 mt-1">Buscá un producto abajo para agregarlo</p>
                             </div>
                         )}
 
@@ -906,7 +906,7 @@ export default function RecepcionModal({
                                             />
 
                                             <button onClick={() => setExtras(prev => prev.filter((_, j) => j !== ei))}
-                                                className="flex justify-center p-1 text-slate-300 hover:text-red-500 transition-colors">
+                                                className="flex justify-center p-1 text-slate-500 hover:text-red-500 transition-colors">
                                                 <Trash2 size={13} />
                                             </button>
                                         </div>
@@ -944,7 +944,7 @@ export default function RecepcionModal({
                         />
                         {extraBusy
                             ? <Loader2 size={12} className="animate-spin text-indigo-400 shrink-0" />
-                            : extraSearch && <button onClick={() => setExtraSearch('')} className="text-slate-300 hover:text-slate-500 shrink-0"><X size={13} /></button>
+                            : extraSearch && <button onClick={() => setExtraSearch('')} className="text-slate-500 hover:text-slate-500 shrink-0"><X size={13} /></button>
                         }
                     </div>
                     {extraResults.length > 0 && createPortal(
@@ -1019,7 +1019,7 @@ export default function RecepcionModal({
                                             {selectedEspecial.label} — Caja especial
                                             {isDanadaEspecial && <span className="ml-2 text-[11px] font-semibold text-amber-600">⚠ Dañada</span>}
                                         </h3>
-                                        <p className="text-[11px] text-slate-400 mt-0.5">
+                                        <p className="text-[11px] text-slate-500 mt-0.5">
                                             {selectedEspecial.item.products?.nombre ?? ''} · {sucursalNombre}
                                         </p>
                                     </>
@@ -1029,14 +1029,14 @@ export default function RecepcionModal({
                                             Caja {selectedCaja}
                                             {isDanadaBox && <span className="ml-2 text-[11px] font-semibold text-amber-600">⚠ Dañada</span>}
                                         </h3>
-                                        <p className="text-[11px] text-slate-400 mt-0.5">
+                                        <p className="text-[11px] text-slate-500 mt-0.5">
                                             {selectedCajaRows.length} productos · {sucursalNombre}
                                         </p>
                                     </>
                                 ) : (
                                     <>
                                         <h3 className="text-[15px] font-bold text-slate-800 leading-snug">Confirmar recepción</h3>
-                                        <p className="text-[11px] text-slate-400 mt-0.5">
+                                        <p className="text-[11px] text-slate-500 mt-0.5">
                                             {sucursalNombre}{pedido.codigo && ` · ${pedido.codigo}`} · {rows.length} productos
                                         </p>
                                     </>
@@ -1069,7 +1069,7 @@ export default function RecepcionModal({
                                         className="w-full text-[16px] border border-blue-200 rounded-lg pl-8 pr-8 py-2 focus:outline-none focus:border-blue-400 bg-blue-50/40 placeholder-slate-300"
                                     />
                                     {prodSearch && (
-                                        <button onClick={() => setProdSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500">
+                                        <button onClick={() => setProdSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-500">
                                             <X size={12} />
                                         </button>
                                     )}
@@ -1082,7 +1082,7 @@ export default function RecepcionModal({
                             onClick={() => setShowSearch(s => { if (!s) setTimeout(() => searchRef.current?.focus(), 80); else setProdSearch(''); return !s; })}
                             animate={showSearch ? { scale: 1.15 } : { scale: 1 }}
                             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                            className={`p-1.5 rounded-lg transition-colors ${showSearch ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
+                            className={`p-1.5 rounded-lg transition-colors ${showSearch ? 'bg-blue-100 text-blue-600' : 'text-slate-500 hover:text-slate-600'}`}
                             title="Buscar producto"
                         >
                             <Search size={15} />
@@ -1090,7 +1090,7 @@ export default function RecepcionModal({
                         <button
                             onClick={showSearch ? () => { setShowSearch(false); setProdSearch(''); } : (hasCajaMap ? goBack : onClose)}
                             disabled={!showSearch && saving}
-                            className="text-slate-400 hover:text-slate-600 transition-colors p-1 disabled:opacity-40"
+                            className="text-slate-500 hover:text-slate-600 transition-colors p-1 disabled:opacity-40"
                         >
                             <X size={18} />
                         </button>
@@ -1120,7 +1120,7 @@ export default function RecepcionModal({
                 </div>
 
                 {visibleRows.length === 0 && !extras.length && (
-                    <p className="text-center text-[12px] text-slate-400 py-6">No se encontraron productos.</p>
+                    <p className="text-center text-[12px] text-slate-500 py-6">No se encontraron productos.</p>
                 )}
 
                 <div className="divide-y divide-slate-100">
@@ -1220,7 +1220,7 @@ export default function RecepcionModal({
                                             tp === 'done' ? 'text-orange-500 bg-orange-100'
                                             : tp === true  ? 'text-orange-500 bg-orange-100'
                                             : hasDiff      ? 'text-amber-500 hover:bg-amber-100'
-                                            : 'text-slate-300 hover:text-amber-500 hover:bg-amber-50'
+                                            : 'text-slate-500 hover:text-amber-500 hover:bg-amber-50'
                                         }`}
                                     >
                                         <AlertTriangle size={14} />
@@ -1241,7 +1241,7 @@ export default function RecepcionModal({
                                         ))}
                                         {(errorVals[r.id] === 'danado' || errorVals[r.id] === 'vencido') && (
                                             <div className="flex items-center gap-1.5 shrink-0">
-                                                <span className="text-[10px] text-slate-400">¿Cuántos?</span>
+                                                <span className="text-[10px] text-slate-500">¿Cuántos?</span>
                                                 <input type="number" min={1} max={fQty}
                                                     value={cantProblemaVals[r.id] ?? 1}
                                                     onChange={e => setCantProblemaVals(p => ({
@@ -1249,7 +1249,7 @@ export default function RecepcionModal({
                                                     }))}
                                                     className="w-12 text-center border border-orange-300 rounded-full px-2 py-1 text-[16px] font-bold focus:outline-none focus:border-orange-500 bg-white text-orange-700"
                                                 />
-                                                <span className="text-[10px] text-slate-400">de {fQty}</span>
+                                                <span className="text-[10px] text-slate-500">de {fQty}</span>
                                             </div>
                                         )}
                                         <input type="text" placeholder="Nota…"

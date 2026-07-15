@@ -53,7 +53,7 @@ export default function SearchInput({
                 <button
                     onClick={() => { onChange?.(''); inputRef.current?.focus(); }}
                     className={`absolute ${s.clearRight} top-1/2 -translate-y-1/2
-                        p-0.5 text-slate-400 hover:text-red-500 transition-colors`}
+                        p-0.5 text-slate-500 hover:text-red-500 transition-colors`}
                 >
                     <X size={s.icon - 1} strokeWidth={2.5} />
                 </button>

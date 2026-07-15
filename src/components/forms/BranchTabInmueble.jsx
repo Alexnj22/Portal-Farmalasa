@@ -51,7 +51,7 @@ const BranchTabInmueble = ({
                     </h4>
 
                     <div className="flex items-center gap-4 bg-white/80 backdrop-blur-md border border-white shadow-sm px-5 py-2.5 rounded-2xl transition-[box-shadow,background-color] duration-300 hover:shadow-md">
-                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${!isRented ? 'text-purple-600' : 'text-slate-400'}`}>Propio</span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${!isRented ? 'text-purple-600' : 'text-slate-600'}`}>Propio</span>
                         <Switch on={isRented} onToggle={() => {
                             const nextState = isRented ? "OWNED" : "RENTED";
                             setFormData(prev => ({
@@ -64,7 +64,7 @@ const BranchTabInmueble = ({
                                 }
                             }));
                         }} />
-                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isRented ? 'text-[#0052CC]' : 'text-slate-400'}`}>Alquilado</span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${isRented ? 'text-[#0052CC]' : 'text-slate-600'}`}>Alquilado</span>
                     </div>
                 </div>
 
@@ -173,7 +173,7 @@ const BranchTabInmueble = ({
                         <p className="text-slate-500 font-black uppercase tracking-widest text-[12px]">
                             Local Propio
                         </p>
-                        <p className="text-slate-400 font-bold text-[11px] mt-1">
+                        <p className="text-slate-500 font-bold text-[11px] mt-1">
                             No se requiere información de arrendamiento.
                         </p>
                     </div>
@@ -278,10 +278,10 @@ const BranchTabInmueble = ({
                         </div>
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-center bg-white/40 rounded-[1.5rem] border border-white/60 shadow-[inset_0_2px_10px_rgba(255,255,255,0.5)] p-6">
-                            <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mb-3">
+                            <div className="w-12 h-12 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center mb-3">
                                 <Trash2 size={20} strokeWidth={2} />
                             </div>
-                            <p className="text-slate-400 font-bold text-[11px] uppercase tracking-widest leading-relaxed">
+                            <p className="text-slate-600 font-bold text-[11px] uppercase tracking-widest leading-relaxed">
                                 Gestión de desechos<br />desactivada
                             </p>
                         </div>

@@ -80,7 +80,7 @@ export default function SyncHealthBanner() {
             : 'Verificando...'}
         </span>
         {minsAgoLatest !== null && (
-          <span className="text-[10px] text-slate-400 shrink-0">
+          <span className="text-[10px] text-slate-500 shrink-0">
             hace {minsAgoLatest === 0 ? '<1' : minsAgoLatest} min
           </span>
         )}
@@ -111,11 +111,11 @@ export default function SyncHealthBanner() {
                   </span>
                   {isErr
                     ? <span className="flex-1 text-[10px] text-red-500 font-medium truncate">{b.error_msg || 'Error'}</span>
-                    : <span className="flex-1 text-[10px] text-slate-400">
+                    : <span className="flex-1 text-[10px] text-slate-500">
                         {b.items_count?.toLocaleString('es')} items
                       </span>
                   }
-                  <span className="text-[10px] text-slate-400 shrink-0 tabular-nums">
+                  <span className="text-[10px] text-slate-500 shrink-0 tabular-nums">
                     {mRound === 0 ? '<1' : mRound}m
                   </span>
                 </div>
@@ -128,7 +128,7 @@ export default function SyncHealthBanner() {
       {notifPerm !== 'granted' && notifPerm !== 'denied' && notifPerm !== 'unsupported' && (
         <button
           onClick={requestNotif}
-          className="flex items-center justify-center gap-1.5 py-2 border-t border-white/40 text-[10px] font-bold text-slate-400 hover:text-[#0052CC] transition-colors shrink-0"
+          className="flex items-center justify-center gap-1.5 py-2 border-t border-white/40 text-[10px] font-bold text-slate-500 hover:text-[#0052CC] transition-colors shrink-0"
         >
           <Bell size={11} />
           Activar alertas de escritorio

@@ -43,7 +43,7 @@ const SectionCard = ({ children, className = '' }) => (
     </div>
 );
 
-const SectionLabel = ({ icon: Icon, label, color = 'text-slate-400' }) => (
+const SectionLabel = ({ icon: Icon, label, color = 'text-slate-500' }) => (
     <p className={`text-[10px] font-black uppercase tracking-widest ${color} flex items-center gap-1.5 mb-3`}>
         <Icon size={10} /> {label}
     </p>
@@ -52,8 +52,8 @@ const SectionLabel = ({ icon: Icon, label, color = 'text-slate-400' }) => (
 const Field = ({ label, value, icon: Icon }) => (
     <div className="p-3.5 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/80 hover:bg-white/85 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-200 cursor-default">
         <div className="flex items-center gap-1.5 mb-0.5">
-            {Icon && <Icon size={9} className="text-slate-400 flex-shrink-0" />}
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em]">{label}</p>
+            {Icon && <Icon size={9} className="text-slate-500 flex-shrink-0" />}
+            <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em]">{label}</p>
         </div>
         <p className="text-[13px] font-bold text-slate-700 truncate">{value || 'No registrado'}</p>
     </div>
@@ -224,9 +224,9 @@ const EmployeeProfileView = ({ openModal }) => {
                 <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-white shadow-sm" />
             </div>
             <div className="min-w-0">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mi Perfil</p>
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Mi Perfil</p>
                 <h2 className="font-black text-[20px] md:text-[24px] text-slate-900 tracking-tight leading-tight truncate">{emp.name}</h2>
-                <p className="text-[10px] font-bold text-slate-400 truncate">
+                <p className="text-[10px] font-bold text-slate-500 truncate">
                     {emp.role || 'Empleado'}{branch ? ` · ${branch.name}` : ''}
                 </p>
             </div>
@@ -284,7 +284,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             <div key={label} className={`${bg} backdrop-blur-sm border border-white/80 rounded-2xl p-4 flex flex-col items-center text-center hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-200 cursor-default`}>
                                 <Icon size={16} className={`${color} mb-1.5`} strokeWidth={2} />
                                 <p className="text-[15px] font-black text-slate-700 leading-tight">{value}</p>
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{label}</p>
+                                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mt-0.5">{label}</p>
                             </div>
                         ))}
                     </div>
@@ -299,7 +299,7 @@ const EmployeeProfileView = ({ openModal }) => {
                         ].map(({ label, value, icon: Icon, color, bg, extra }) => (
                             <div key={label} className={`${bg} backdrop-blur-sm border border-white/80 rounded-2xl p-4 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all duration-200 cursor-default`}>
                                 <Icon size={14} className={`${color} mb-2`} strokeWidth={2} />
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">{label}</p>
                                 <p className="text-[13px] font-black text-slate-700 leading-tight">{value}</p>
                                 {extra && <p className="text-[10px] font-bold text-pink-500 mt-0.5">{extra}</p>}
                             </div>
@@ -363,11 +363,11 @@ const EmployeeProfileView = ({ openModal }) => {
                                     return (
                                         <div key={vp.id} className={`flex items-center gap-3 p-3 border rounded-2xl hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all duration-200 ${isUpcoming ? 'bg-emerald-50/60 border-emerald-100' : 'bg-white/60 border-white/80'}`}>
                                             <div className={`p-2 rounded-xl flex-shrink-0 ${isUpcoming ? 'bg-emerald-100' : 'bg-slate-100'}`}>
-                                                <Palmtree size={13} className={isUpcoming ? 'text-emerald-600' : 'text-slate-400'} strokeWidth={1.8} />
+                                                <Palmtree size={13} className={isUpcoming ? 'text-emerald-600' : 'text-slate-500'} strokeWidth={1.8} />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-[12px] font-black text-slate-700 truncate">{fmt(vp.start_date)} → {fmt(vp.end_date)}</p>
-                                                <p className="text-[10px] text-slate-400 font-medium">{vp.days} días · {vp.year}</p>
+                                                <p className="text-[10px] text-slate-500 font-medium">{vp.days} días · {vp.year}</p>
                                             </div>
                                             <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-md border flex-shrink-0 ${s.bg} ${s.text} ${s.border}`}>{s.label}</span>
                                         </div>
@@ -384,7 +384,7 @@ const EmployeeProfileView = ({ openModal }) => {
                     {/* Horario habitual */}
                     {weeklySchedule.length > 0 && (
                         <SectionCard>
-                            <SectionLabel icon={Clock} label="Mi Horario Habitual" color="text-slate-400" />
+                            <SectionLabel icon={Clock} label="Mi Horario Habitual" color="text-slate-500" />
                             <div className="overflow-x-auto w-full">
                             <div className="grid grid-cols-7 gap-1.5 min-w-[320px]">
                                 {weeklySchedule.map(d => {
@@ -404,7 +404,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                             : d.shift ? 'bg-white/70 border border-white/80'
                                                       : 'bg-slate-50/80 border border-slate-100'
                                         }`}>
-                                            <p className={`text-[8px] font-black uppercase tracking-widest ${isToday ? 'text-white/50' : evCfg ? evCfg.text : 'text-slate-400'}`}>{d.short}</p>
+                                            <p className={`text-[8px] font-black uppercase tracking-widest ${isToday ? 'text-white/50' : evCfg ? evCfg.text : 'text-slate-600'}`}>{d.short}</p>
                                             <p className={`text-[15px] font-black leading-none mb-1 ${isToday ? 'text-white' : evCfg ? evCfg.text : 'text-slate-600'}`}>{d.date?.getDate()}</p>
                                             {evCfg ? (
                                                 <>
@@ -417,12 +417,12 @@ const EmployeeProfileView = ({ openModal }) => {
                                                     <p className={`text-[9px] font-black mt-1 text-center leading-tight ${isToday ? 'text-white' : 'text-slate-700'}`}>
                                                         {formatTime12h(d.shift.start).replace(' AM','a').replace(' PM','p').replace(' am','a').replace(' pm','p')}
                                                     </p>
-                                                    <p className={`text-[8px] font-medium text-center leading-tight ${isToday ? 'text-white/50' : 'text-slate-400'}`}>
+                                                    <p className={`text-[8px] font-medium text-center leading-tight ${isToday ? 'text-white/50' : 'text-slate-500'}`}>
                                                         {formatTime12h(d.shift.end).replace(' AM','a').replace(' PM','p').replace(' am','a').replace(' pm','p')}
                                                     </p>
                                                 </>
                                             ) : (
-                                                <p className="text-[8px] font-bold text-slate-300 mt-1">Libre</p>
+                                                <p className="text-[8px] font-bold text-slate-500 mt-1">Libre</p>
                                             )}
                                         </div>
                                     );
@@ -467,14 +467,14 @@ const EmployeeProfileView = ({ openModal }) => {
                                     <div className="flex-1 bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
                                         <LiquidDatePicker value={filterFrom} onChange={setFilterFrom} />
                                     </div>
-                                    <span className="text-slate-300 text-[12px] font-bold shrink-0">→</span>
+                                    <span className="text-slate-500 text-[12px] font-bold shrink-0">→</span>
                                     <div className="flex-1 bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
                                         <LiquidDatePicker value={filterTo} onChange={setFilterTo} />
                                     </div>
                                     {(filterFrom || filterTo || filterType) && (
                                         <button
                                             onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterType(''); setTimelineLimit(8); }}
-                                            className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 flex items-center justify-center shrink-0 transition-all active:scale-[0.97]"
+                                            className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-red-500 hover:border-red-200 flex items-center justify-center shrink-0 transition-all active:scale-[0.97]"
                                             title="Limpiar filtros"
                                         >
                                             <X size={13} strokeWidth={2.5} />
@@ -518,7 +518,7 @@ const EmployeeProfileView = ({ openModal }) => {
                                 ))}
                             </div>
                         ) : timeline.length === 0 ? (
-                            <div className="flex flex-col items-center py-12 gap-3 text-slate-400">
+                            <div className="flex flex-col items-center py-12 gap-3 text-slate-500">
                                 <Clock size={36} strokeWidth={1} />
                                 <p className="text-[13px] font-bold text-slate-500">Sin eventos registrados</p>
                             </div>
@@ -537,11 +537,11 @@ const EmployeeProfileView = ({ openModal }) => {
                                             <div className={`bg-white/60 backdrop-blur-xl rounded-2xl p-4 border border-white/80 transition-all duration-300 shadow-sm hover:-translate-y-0.5 ${theme.glow} ${isCancelled || isEdited ? 'opacity-50' : ''}`}>
                                                 <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${theme.bg} ${theme.text} ${theme.border}`}>{label}</span>
-                                                    <span className="text-[10px] font-bold text-slate-400">{formatDate(ev.date)}</span>
+                                                    <span className="text-[10px] font-bold text-slate-500">{formatDate(ev.date)}</span>
                                                 </div>
                                                 <p className="text-[12px] text-slate-600 leading-relaxed font-medium">{ev.note || 'Evento registrado.'}</p>
                                                 {meta.endDate && (
-                                                    <p className="text-[11px] text-slate-400 font-medium mt-1.5 flex items-center gap-1">
+                                                    <p className="text-[11px] text-slate-500 font-medium mt-1.5 flex items-center gap-1">
                                                         <Calendar size={10} /> Hasta: {formatDate(meta.endDate)}
                                                     </p>
                                                 )}

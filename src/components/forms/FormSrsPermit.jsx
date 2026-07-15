@@ -43,7 +43,7 @@ const FormSrsPermit = ({ formData, setFormData }) => {
                         ) : legalData.srsPermitUrl ? (
                             <p className="text-[13px] text-slate-700 font-bold truncate">Reemplazar archivo actual...</p>
                         ) : (
-                            <p className="text-[13px] text-slate-400 font-semibold">Clic para subir documento...</p>
+                            <p className="text-[13px] text-slate-500 font-semibold">Clic para subir documento...</p>
                         )}
                     </div>
                     <input 

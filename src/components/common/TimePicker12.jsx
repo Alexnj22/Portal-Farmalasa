@@ -79,7 +79,7 @@ const TimePicker12 = ({ value, onChange, className = '', disabled, defaultMeridi
                 ))}
             </select>
 
-            <span className="text-slate-300 font-black px-0.5 animate-pulse">:</span>
+            <span className="text-slate-500 font-black px-0.5 animate-pulse">:</span>
 
             <select
                 disabled={disabled}

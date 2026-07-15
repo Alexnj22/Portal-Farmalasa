@@ -24,8 +24,8 @@ const PortalInput = memo(({ icon: Icon, label, name, value, onChange, type = "te
                 {hasError && errorMessage && <span className="text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded-md shadow-sm border border-red-300 flex items-center gap-1"><AlertCircle size={10} /> {errorMessage}</span>}
             </label>
             <div className={`relative bg-white rounded-[1rem] border shadow-sm flex items-center h-[40px] z-10 ${readOnly ? 'opacity-80 cursor-not-allowed bg-slate-100/50 border-slate-200/50' : `border-slate-200/80 ${inputHoverClass} ${errorClasses}`}`}>
-                {Icon && <div className="absolute left-3 text-slate-400"><Icon size={14} strokeWidth={2.5} /></div>}
-                {prefix && <div className="absolute left-3 text-slate-400 font-black text-[13px]">{prefix}</div>}
+                {Icon && <div className="absolute left-3 text-slate-500"><Icon size={14} strokeWidth={2.5} /></div>}
+                {prefix && <div className="absolute left-3 text-slate-500 font-black text-[13px]">{prefix}</div>}
                 <input
                     type={type}
                     name={name}

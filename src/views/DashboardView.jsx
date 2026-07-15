@@ -322,9 +322,9 @@ const MonthYearPicker = ({ value, onChange }) => {
         <div style={{ position: 'fixed', top: coords.top, left: coords.left, transform: 'translateX(-50%)', zIndex: 99999 }} className="animate-in fade-in zoom-in-95 duration-200 origin-top" onMouseDown={e => e.stopPropagation()}>
           <div className="bg-white/90 backdrop-blur-[20px] border border-white/90 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl p-4 w-[196px]">
             <div className="flex items-center justify-between mb-3 px-1">
-              <button onClick={() => setViewYear(y => y - 1)} className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-slate-100 transition-colors active:scale-[0.97]"><ChevronLeft size={14} strokeWidth={2.5} /></button>
+              <button onClick={() => setViewYear(y => y - 1)} className="w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-slate-100 transition-colors active:scale-[0.97]"><ChevronLeft size={14} strokeWidth={2.5} /></button>
               <span className="text-[13px] font-black text-slate-800">{viewYear}</span>
-              <button onClick={() => setViewYear(y => y + 1)} className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-slate-100 transition-colors active:scale-[0.97]"><ChevronRight size={14} strokeWidth={2.5} /></button>
+              <button onClick={() => setViewYear(y => y + 1)} className="w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-slate-100 transition-colors active:scale-[0.97]"><ChevronRight size={14} strokeWidth={2.5} /></button>
             </div>
             <div className="grid grid-cols-3 gap-1">
               {MONTH_NAMES_SHORT.map((m, i) => {
@@ -1114,8 +1114,8 @@ const DashboardView = ({ openModal }) => {
           className="absolute -top-4 left-1/2 -translate-x-1/2 z-30 opacity-100 scale-100 lg:opacity-0 lg:scale-[0.95] lg:group-hover/drag:opacity-100 lg:group-hover/drag:scale-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] cursor-grab active:cursor-grabbing touch-none select-none"
         >
           <div className="bg-white border border-slate-200 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-lg hover:shadow-xl hover:scale-105 hover:bg-[#0052CC] hover:border-[#0052CC] hover:text-white transition-[transform,box-shadow,background-color,border-color,color] duration-150 group/grip">
-            <GripVertical size={12} className="text-slate-400 group-hover/grip:text-white transition-colors" />
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest group-hover/grip:text-white transition-colors">{label}</span>
+            <GripVertical size={12} className="text-slate-500 group-hover/grip:text-white transition-colors" />
+            <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest group-hover/grip:text-white transition-colors">{label}</span>
           </div>
         </div>
 
@@ -1129,7 +1129,7 @@ const DashboardView = ({ openModal }) => {
           >
             <button
               onClick={e => { e.stopPropagation(); setResizeOpenId(isResizeOpen ? null : id); }}
-              className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md border transition-[background-color,color,border-color] active:scale-[0.97] ${isResizeOpen ? 'bg-[#0052CC] border-[#0052CC] text-white' : 'bg-white border-slate-200 text-slate-400 hover:text-[#0052CC] hover:border-[#0052CC]/50'}`}
+              className={`w-7 h-7 rounded-full flex items-center justify-center shadow-md border transition-[background-color,color,border-color] active:scale-[0.97] ${isResizeOpen ? 'bg-[#0052CC] border-[#0052CC] text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-[#0052CC] hover:border-[#0052CC]/50'}`}
               title="Cambiar tamaño"
             >
               <Maximize2 size={11} strokeWidth={2.5} />
@@ -1138,7 +1138,7 @@ const DashboardView = ({ openModal }) => {
             {isResizeOpen && (
               <div className="absolute bottom-full right-0 mb-2 animate-in fade-in zoom-in-95 origin-bottom-right duration-150">
                 <div className="bg-white/95 backdrop-blur-sm border border-slate-200 rounded-2xl px-3 py-2.5 shadow-xl flex items-center gap-1.5 whitespace-nowrap">
-                  <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mr-0.5">W</span>
+                  <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest mr-0.5">W</span>
                   {Array.from({length: activeCols}, (_, i) => i + 1).map(n => (
                     <button key={n}
                       onClick={e => { e.stopPropagation(); updateWidgetSize(id, 'cols', n); }}
@@ -1147,7 +1147,7 @@ const DashboardView = ({ openModal }) => {
                     </button>
                   ))}
                   <div className="w-px h-3 bg-slate-200 mx-0.5" />
-                  <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mr-0.5">H</span>
+                  <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest mr-0.5">H</span>
                   {[1,2,3,4].map(n => (
                     <button key={n}
                       onClick={e => { e.stopPropagation(); updateWidgetSize(id, 'rows', n); }}
@@ -1176,9 +1176,9 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Tendencia de Asistencia" icon={Activity} category="personal"
           action={
             <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 rounded-xl px-1 py-0.5">
-              <button onClick={() => setTrendOffset(o=>o-1)} className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-white transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={13} strokeWidth={2.5} /></button>
+              <button onClick={() => setTrendOffset(o=>o-1)} className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-white transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={13} strokeWidth={2.5} /></button>
               <span className="text-[11px] font-bold text-slate-600 min-w-[110px] text-center px-1">{trendOffset===0?'Esta semana':trendRangeLabel}</span>
-              <button onClick={() => setTrendOffset(o=>Math.min(0,o+1))} disabled={trendOffset===0} className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-white transition-[background-color,color] active:scale-[0.97] disabled:opacity-25 disabled:cursor-not-allowed"><ChevronRight size={13} strokeWidth={2.5} /></button>
+              <button onClick={() => setTrendOffset(o=>Math.min(0,o+1))} disabled={trendOffset===0} className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-white transition-[background-color,color] active:scale-[0.97] disabled:opacity-25 disabled:cursor-not-allowed"><ChevronRight size={13} strokeWidth={2.5} /></button>
             </div>
           }>
           <div className="px-4 pb-4 pt-2 h-full flex flex-col">
@@ -1235,13 +1235,13 @@ const DashboardView = ({ openModal }) => {
                 ))}
               </div>
             ) : shiftStatusData.length===0?(
-              <div className="flex flex-col items-center justify-center py-10 text-slate-300"><Users size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin empleados</p></div>
+              <div className="flex flex-col items-center justify-center py-10 text-slate-500"><Users size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin empleados</p></div>
             ):(
               Object.entries(STATUS_CONFIG).map(([status,cfg])=>{
                 const group=shiftGroups[status]||[]; if(!group.length) return null;
                 return (
                   <div key={status} className="px-4 py-3">
-                    <div className="flex items-center gap-2 mb-2"><span className={`w-2 h-2 rounded-full ${cfg.dot}`}/><span className="text-[10px] font-black uppercase tracking-wide text-slate-400">{cfg.label}</span><span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>{group.length}</span></div>
+                    <div className="flex items-center gap-2 mb-2"><span className={`w-2 h-2 rounded-full ${cfg.dot}`}/><span className="text-[10px] font-black uppercase tracking-wide text-slate-600">{cfg.label}</span><span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>{group.length}</span></div>
                     <div className="flex flex-wrap gap-1">{group.map(e=><span key={e.id} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>{e.name?.split(' ')[0]}</span>)}</div>
                   </div>
                 );
@@ -1262,12 +1262,12 @@ const DashboardView = ({ openModal }) => {
           title={typeof salesView==='number'?`Horas · ${DAY_NAMES[salesView]}`:salesView==='HOURS'?'Promedio por hora':'Ventas por día'}
           action={
             <div className="flex items-center gap-2">
-              {openModal&&<button onClick={()=>openModal('viewWfmAnalytics')} className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-100 text-slate-400 hover:bg-[#0052CC] hover:text-white transition-[background-color,color] active:scale-[0.97] shrink-0"><Maximize2 size={12} strokeWidth={2.5}/></button>}
+              {openModal&&<button onClick={()=>openModal('viewWfmAnalytics')} className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-100 text-slate-500 hover:bg-[#0052CC] hover:text-white transition-[background-color,color] active:scale-[0.97] shrink-0"><Maximize2 size={12} strokeWidth={2.5}/></button>}
               {!isSalesLocked && <LiquidSelect value={effectiveSalesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact theme="light" bare/>}
               <div className="flex items-center bg-slate-100 p-0.5 rounded-full h-7">
                 {typeof salesView==='number'&&<button onClick={()=>setSalesView('DAYS')} className="px-2.5 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full text-slate-500 hover:bg-white/70 flex items-center gap-1 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={10} strokeWidth={3}/> Días</button>}
-                <button onClick={()=>setSalesView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='HOURS'?'bg-white text-[#0052CC] shadow-sm':'text-slate-400 hover:text-slate-600'}`}>Horas</button>
-                <button onClick={()=>setSalesView('DAYS')}  className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='DAYS'?'bg-white text-[#0052CC] shadow-sm':'text-slate-400 hover:text-slate-600'}`}>Días</button>
+                <button onClick={()=>setSalesView('HOURS')} className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='HOURS'?'bg-white text-[#0052CC] shadow-sm':'text-slate-600 hover:text-slate-600'}`}>Horas</button>
+                <button onClick={()=>setSalesView('DAYS')}  className={`px-3 h-full text-[8.5px] font-black uppercase tracking-widest rounded-full transition-[background-color,color] active:scale-[0.97] ${salesView==='DAYS'?'bg-white text-[#0052CC] shadow-sm':'text-slate-600 hover:text-slate-600'}`}>Días</button>
               </div>
             </div>
           }>
@@ -1276,7 +1276,7 @@ const DashboardView = ({ openModal }) => {
               <div className="flex flex-col justify-between pointer-events-none absolute inset-x-0 top-0 h-full opacity-10"><div className="border-t border-dashed border-slate-500 w-full"/><div className="border-t border-dashed border-slate-500 w-full"/></div>
               <div className="flex items-end gap-1.5 w-full h-full relative overflow-visible">
                 {!effectiveSalesBranch?(
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-slate-300"/><p className="text-[9px] font-black text-slate-400/60 uppercase tracking-widest">Selecciona una sucursal</p></div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-slate-600"/><p className="text-[9px] font-black text-slate-600/60 uppercase tracking-widest">Selecciona una sucursal</p></div>
                 ):salesLoading?(
                   <div className="absolute inset-0 flex items-end gap-1.5 px-1 pb-1">
                     {[55,80,42,95,68,72,50,38,85,60,45,78].map((h,i) => (
@@ -1287,15 +1287,15 @@ const DashboardView = ({ openModal }) => {
                   </div>
                 ):(() => {
                   const chartData = typeof salesView==='number'?salesStats.specificHours[salesView]||[]:salesView==='HOURS'?salesStats.generalHours:salesStats.days;
-                  if (!chartData?.length) return <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-slate-300"/><p className="text-[9px] font-black text-[#0052CC]/60 uppercase tracking-widest">Sin historial de ventas</p></div>;
+                  if (!chartData?.length) return <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"><BarChart2 size={24} strokeWidth={1.5} className="text-slate-600"/><p className="text-[9px] font-black text-[#0052CC]/60 uppercase tracking-widest">Sin historial de ventas</p></div>;
                   return chartData.map((item,i)=>(
                     <div key={i} onClick={()=>{if(salesView==='DAYS')setSalesView(item.day);}} className={`flex-1 flex flex-col justify-end items-center group relative h-full overflow-visible ${salesView==='DAYS'?'cursor-pointer':''}`}>
                       <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2.5 py-1.5 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-[opacity,transform] duration-200 pointer-events-none w-max z-[100] translate-y-2 group-hover:-translate-y-1 flex flex-col items-center border border-white/10">
-                        <p className="font-black text-[8px] uppercase tracking-widest text-slate-400 mb-1 border-b border-white/10 pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
+                        <p className="font-black text-[8px] uppercase tracking-widest text-slate-600 mb-1 border-b border-white/10 pb-0.5 px-2">{typeof salesView==='number'?'Hora':'Día'}: {item.label}</p>
                         {salesView==='DAYS'?(
                           <>
                             <p className="text-[11px] font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / hora punta (P75)</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">{item.dailyAvg} Tx / promedio del día</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">{item.dailyAvg} Tx / promedio del día</p>
                           </>
                         ):(
                           <p className="text-[11px] font-bold flex items-center gap-1.5 mt-0.5"><span className="w-2 h-2 rounded-full" style={{backgroundColor:item.color}}/>{item.avg} Tx / promedio</p>
@@ -1303,7 +1303,7 @@ const DashboardView = ({ openModal }) => {
                         {salesView==='DAYS'&&<p className="text-[7px] text-[#0052CC] font-black uppercase tracking-widest mt-1 bg-blue-500/10 px-1.5 py-0.5 rounded-full">Clic para ver horas</p>}
                       </div>
                       <div className={`w-full transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:opacity-80 origin-bottom shadow-sm z-10 ${salesView==='DAYS'?'rounded-t-[6px] group-hover:scale-y-[1.05]':'rounded-t-[4px] group-hover:-translate-y-[2px]'}`} style={{height:item.height,backgroundColor:item.color}}/>
-                      <span className="text-[7px] font-bold text-slate-400 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-cyan-500 transition-[opacity,color] whitespace-nowrap z-10">{item.label}</span>
+                      <span className="text-[7px] font-bold text-slate-500 mt-1 absolute -bottom-4 opacity-80 group-hover:opacity-100 group-hover:text-cyan-500 transition-[opacity,color] whitespace-nowrap z-10">{item.label}</span>
                     </div>
                   ));
                 })()}
@@ -1311,7 +1311,7 @@ const DashboardView = ({ openModal }) => {
             </div>
             <div className="flex flex-wrap gap-3 mt-6 shrink-0">
               {[['#64748b','Muerta'],['#0052CC','Normal'],['#F79009','Pico'],['#FF2D55','Crítica']].map(([c,l])=>(
-                <div key={l} className="flex items-center gap-1 text-[8px] font-bold text-slate-400 uppercase tracking-widest"><div className="w-2 h-2 rounded-full" style={{backgroundColor:c}}/>{l}</div>
+                <div key={l} className="flex items-center gap-1 text-[8px] font-bold text-slate-600 uppercase tracking-widest"><div className="w-2 h-2 rounded-full" style={{backgroundColor:c}}/>{l}</div>
               ))}
             </div>
           </div>
@@ -1343,7 +1343,7 @@ const DashboardView = ({ openModal }) => {
         <div className="h-full bg-white/55 backdrop-blur-[18px] backdrop-saturate-[180%] rounded-[1.75rem] border border-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_32px_rgba(0,0,0,0.06)] p-3.5 flex flex-col gap-1.5">
           <div className="flex items-start justify-between gap-1">
             <p className="text-[12px] font-black text-slate-700 leading-tight truncate">{b.name}</p>
-            <span className={`text-[11px] font-black shrink-0 ${dH.length?'text-emerald-600':'text-slate-300'}`}>{fS(totalS)??'—'}</span>
+            <span className={`text-[11px] font-black shrink-0 ${dH.length?'text-emerald-600':'text-slate-500'}`}>{fS(totalS)??'—'}</span>
           </div>
           {todayLoading?(
             <div className="skeleton rounded-lg flex-1"/>
@@ -1366,7 +1366,7 @@ const DashboardView = ({ openModal }) => {
               <div className="flex gap-[1px] w-full mt-0.5">
                 {allH.map((h)=>(
                   <div key={h} className="flex-1 text-center overflow-hidden">
-                    <span className={`text-[6px] font-bold leading-none ${h===nowH?'text-emerald-500':'text-slate-300'}`}>{fHr(h)}</span>
+                    <span className={`text-[6px] font-bold leading-none ${h===nowH?'text-emerald-500':'text-slate-500'}`}>{fHr(h)}</span>
                   </div>
                 ))}
               </div>
@@ -1400,14 +1400,14 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-5 w-16 rounded-full flex-shrink-0" />
               </div>
             ))
-              :displayAbsences.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><UserCheck size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin ausencias activas</p></div>
+              :displayAbsences.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-500"><UserCheck size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin ausencias activas</p></div>
               :displayAbsences.map(r=>{
                 const meta=parseMeta(r.metadata), cfg=ABSENCE_COLORS[r.type]||ABSENCE_COLORS.PERMIT;
                 const end=meta.endDate||(meta.permissionDates||[])[(meta.permissionDates||[]).length-1];
                 return (
                   <div key={r.id} className="flex items-center gap-3 px-5 py-3">
                     <div className={`w-7 h-7 rounded-[0.6rem] border flex items-center justify-center shrink-0 ${cfg.bg} ${cfg.border}`}><UserX size={13} className={cfg.text}/></div>
-                    <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold text-slate-800 truncate">{getEmpName(r.employee_id)}</p><p className="text-[10px] font-medium text-slate-400">{REQUEST_TYPE_LABELS[r.type]||r.type}{end&&` · hasta ${new Date(end+'T12:00:00').toLocaleDateString('es',{day:'2-digit',month:'short'})}`}</p></div>
+                    <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold text-slate-800 truncate">{getEmpName(r.employee_id)}</p><p className="text-[10px] font-medium text-slate-500">{REQUEST_TYPE_LABELS[r.type]||r.type}{end&&` · hasta ${new Date(end+'T12:00:00').toLocaleDateString('es',{day:'2-digit',month:'short'})}`}</p></div>
                     <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>{REQUEST_TYPE_LABELS[r.type]?.split(' ')[0]||r.type}</span>
                   </div>
                 );
@@ -1441,13 +1441,13 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-2.5 w-10 flex-shrink-0" />
               </div>
             ))
-              :displayReqs.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><ClipboardList size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin solicitudes pendientes</p></div>
+              :displayReqs.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-500"><ClipboardList size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin solicitudes pendientes</p></div>
               :displayReqs.map(r=>(
                 <button key={r.id} onClick={canManage('dash_requests')?()=>navigate('/requests'):undefined}
                   className={`w-full flex items-center gap-3 px-5 py-3 transition-colors text-left ${canManage('dash_requests')?'hover:bg-slate-50 cursor-pointer':'cursor-default'}`}>
                   <div className="w-7 h-7 rounded-[0.6rem] bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0"><ClipboardList size={13} className="text-amber-500"/></div>
-                  <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold text-slate-800 truncate">{getEmpName(r.employee_id)}</p><p className="text-[10px] text-slate-400 font-medium">{REQUEST_TYPE_LABELS[r.type]||r.type}</p></div>
-                  <span className="text-[10px] text-slate-300 shrink-0">{new Date(r.created_at).toLocaleDateString('es',{day:'2-digit',month:'short'})}</span>
+                  <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold text-slate-800 truncate">{getEmpName(r.employee_id)}</p><p className="text-[10px] text-slate-500 font-medium">{REQUEST_TYPE_LABELS[r.type]||r.type}</p></div>
+                  <span className="text-[10px] text-slate-500 shrink-0">{new Date(r.created_at).toLocaleDateString('es',{day:'2-digit',month:'short'})}</span>
                 </button>
               ))}
           </div>
@@ -1483,7 +1483,7 @@ const DashboardView = ({ openModal }) => {
               <div className="flex flex-col items-center justify-center py-6 gap-2">
                 <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center"><CheckCircle2 size={20} className="text-green-500"/></div>
                 <p className="text-[12px] font-bold text-slate-500">Todo en orden</p>
-                <p className="text-[10px] text-slate-300">{displayBranches.length} sucursal{displayBranches.length!==1?'es':''} activa{displayBranches.length!==1?'s':''}</p>
+                <p className="text-[10px] text-slate-500">{displayBranches.length} sucursal{displayBranches.length!==1?'es':''} activa{displayBranches.length!==1?'s':''}</p>
               </div>
             ):(
               displayBranchAlerts.map(b=>{
@@ -1509,15 +1509,15 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('calendar',
         <WidgetCard title="Calendario" icon={CalendarDays} category="general" action={
           <div className="flex items-center gap-0.5">
-            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className="w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:text-[#0052CC] hover:bg-slate-100 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={12} strokeWidth={2.5}/></button>
+            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className="w-6 h-6 flex items-center justify-center rounded-full text-slate-500 hover:text-[#0052CC] hover:bg-slate-100 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={12} strokeWidth={2.5}/></button>
             <MonthYearPicker value={calMonth} onChange={setCalMonth}/>
-            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className="w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:text-[#0052CC] hover:bg-slate-100 transition-[background-color,color] active:scale-[0.97]"><ChevronRight size={12} strokeWidth={2.5}/></button>
+            <button onClick={()=>setCalMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className="w-6 h-6 flex items-center justify-center rounded-full text-slate-500 hover:text-[#0052CC] hover:bg-slate-100 transition-[background-color,color] active:scale-[0.97]"><ChevronRight size={12} strokeWidth={2.5}/></button>
           </div>
         }>
           <div className="px-3 pb-3 pt-1 flex flex-col h-full overflow-hidden">
             {/* Day headers — always visible */}
             <div className="grid grid-cols-7 mb-0.5 shrink-0">
-              {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map((d,i)=><div key={i} className="text-center text-[9px] font-black text-slate-300 uppercase py-1">{d}</div>)}
+              {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map((d,i)=><div key={i} className="text-center text-[9px] font-black text-slate-500 uppercase py-1">{d}</div>)}
             </div>
             {/* Day grid — scrolls internally if widget is too small */}
             <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 min-h-0 [&::-webkit-scrollbar]:hidden">
@@ -1567,14 +1567,14 @@ const DashboardView = ({ openModal }) => {
                   <Skel className="h-2.5 w-1/3" />
                 </div>
               </div>
-            )) : recentAnnouncements.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-300"><Megaphone size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin avisos recientes</p></div>
+            )) : recentAnnouncements.length===0?<div className="flex flex-col items-center justify-center py-10 text-slate-500"><Megaphone size={32} strokeWidth={1}/><p className="text-[12px] font-medium mt-2">Sin avisos recientes</p></div>
               :recentAnnouncements.map(a=>(
                 <button key={a.id} onClick={canManage('dash_announcements')?()=>navigate('/announcements'):undefined}
                   className={`w-full flex items-start gap-3 px-5 py-3.5 transition-colors text-left ${canManage('dash_announcements')?'hover:bg-slate-50 cursor-pointer':'cursor-default'}`}>
                   <div className={`w-7 h-7 rounded-[0.6rem] flex items-center justify-center shrink-0 mt-0.5 ${a.priority==='URGENT'?'bg-red-50 border border-red-100':'bg-blue-50 border border-blue-100'}`}>
                     {a.priority==='URGENT'?<Flame size={13} className="text-red-500"/>:<Megaphone size={13} className="text-blue-500"/>}
                   </div>
-                  <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold text-slate-800 truncate">{a.title}</p><p className="text-[10px] text-slate-400 font-medium mt-0.5">{new Date(a.date).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}</p></div>
+                  <div className="flex-1 min-w-0"><p className="text-[12px] font-semibold text-slate-800 truncate">{a.title}</p><p className="text-[10px] text-slate-500 font-medium mt-0.5">{new Date(a.date).toLocaleDateString('es',{day:'2-digit',month:'short',year:'numeric'})}</p></div>
                   {a.priority==='URGENT'&&<span className="text-[9px] font-black text-red-500 bg-red-50 border border-red-100 px-2 py-0.5 rounded-full shrink-0 mt-1">URGENTE</span>}
                 </button>
               ))}
@@ -1604,9 +1604,9 @@ const DashboardView = ({ openModal }) => {
                 <h3 className="text-[12px] font-black text-slate-800 tracking-tight">Cumpleaños</h3>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-[#0052CC] hover:bg-[#0052CC]/8 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={11} strokeWidth={2.5}/></button>
+                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()-1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-500 hover:text-[#0052CC] hover:bg-[#0052CC]/8 transition-[background-color,color] active:scale-[0.97]"><ChevronLeft size={11} strokeWidth={2.5}/></button>
                 <span className="text-[10px] font-black text-[#0052CC] uppercase tracking-widest min-w-[48px] text-center">{MONTH_ES[bdMonth.getMonth()]}</span>
-                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-[#0052CC] hover:bg-[#0052CC]/8 transition-[background-color,color] active:scale-[0.97]"><ChevronRight size={11} strokeWidth={2.5}/></button>
+                <button onClick={()=>setBdMonth(m=>new Date(m.getFullYear(),m.getMonth()+1,1))} className="w-5 h-5 flex items-center justify-center rounded-full text-slate-500 hover:text-[#0052CC] hover:bg-[#0052CC]/8 transition-[background-color,color] active:scale-[0.97]"><ChevronRight size={11} strokeWidth={2.5}/></button>
               </div>
             </div>
           </div>
@@ -1629,7 +1629,7 @@ const DashboardView = ({ openModal }) => {
                 ))}
               </div>
             ) : displayBirthdays.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full py-8 text-slate-300">
+              <div className="flex flex-col items-center justify-center h-full py-8 text-slate-500">
                 <Gift size={32} strokeWidth={1}/>
                 <p className="text-[12px] font-medium mt-2 text-center">Sin cumpleaños<br/>este mes</p>
               </div>
@@ -1659,7 +1659,7 @@ const DashboardView = ({ openModal }) => {
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <p className={`text-[12px] font-black truncate leading-tight ${e.isToday?'text-[#0052CC]':e.isTomorrow?'text-amber-700':'text-slate-800'}`}>{e.name}</p>
-                        <p className="text-[9px] text-slate-400 font-medium truncate">{e.branchName}</p>
+                        <p className="text-[9px] text-slate-500 font-medium truncate">{e.branchName}</p>
                       </div>
                       {/* Badges */}
                       <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
@@ -1668,7 +1668,7 @@ const DashboardView = ({ openModal }) => {
                           ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-[#0052CC]/10 text-[#0052CC]">Hoy</span>
                           :e.isTomorrow
                           ?<span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-600">Mañana</span>
-                          :<span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${e.isPast?'bg-slate-100 text-slate-300':'bg-slate-100 text-slate-400'}`}>{e.age} años</span>
+                          :<span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${e.isPast?'bg-slate-100 text-slate-500':'bg-slate-100 text-slate-500'}`}>{e.age} años</span>
                         }
                       </div>
                     </div>
@@ -1718,16 +1718,16 @@ const DashboardView = ({ openModal }) => {
             <div className="flex items-end gap-3 px-4 pt-3 pb-2 border-b border-slate-50 shrink-0">
               <div>
                 <p className="text-[32px] font-black text-slate-900 leading-none">{cotizStats.activas}</p>
-                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">últ. 30 días</p>
+                <p className="text-[10px] font-semibold text-slate-500 mt-0.5">últ. 30 días</p>
               </div>
               <div className="mb-1">
                 <p className="text-[13px] font-black text-emerald-600">{fmt(cotizStats.total)}</p>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">monto total</p>
+                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wide">monto total</p>
               </div>
             </div>
             <div className="overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 divide-y divide-slate-50">
               {cotizStats.recent.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-slate-300"><Receipt size={28} strokeWidth={1}/><p className="text-[11px] font-medium mt-2">Sin cotizaciones activas</p></div>
+                <div className="flex flex-col items-center justify-center py-8 text-slate-500"><Receipt size={28} strokeWidth={1}/><p className="text-[11px] font-medium mt-2">Sin cotizaciones activas</p></div>
               ) : cotizStats.recent.map(c => (
                 <div key={c.id} className="flex items-center gap-3 px-4 py-2.5">
                   <div className="w-6 h-6 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
@@ -1735,7 +1735,7 @@ const DashboardView = ({ openModal }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[11px] font-semibold text-slate-800 truncate">{c.customer_name || '—'}</p>
-                    <p className="text-[9px] text-slate-400">{c.numero} · {new Date(c.fecha+'T12:00:00').toLocaleDateString('es',{day:'2-digit',month:'short'})}</p>
+                    <p className="text-[9px] text-slate-500">{c.numero} · {new Date(c.fecha+'T12:00:00').toLocaleDateString('es',{day:'2-digit',month:'short'})}</p>
                   </div>
                   <span className="text-[11px] font-black text-slate-700 shrink-0">{fmt(c.total)}</span>
                 </div>
@@ -1782,7 +1782,7 @@ const DashboardView = ({ openModal }) => {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-50/80 rounded-2xl p-3">
                 <p className="text-[28px] font-black text-slate-900 leading-none">{factStats.count}</p>
-                <p className="text-[10px] font-semibold text-slate-400 mt-1">documentos</p>
+                <p className="text-[10px] font-semibold text-slate-500 mt-1">documentos</p>
               </div>
               <div className="bg-emerald-50 rounded-2xl p-3">
                 <p className="text-[16px] font-black text-emerald-700 leading-none">{fmt(factStats.total)}</p>
@@ -1801,7 +1801,7 @@ const DashboardView = ({ openModal }) => {
                 <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0"/>
                 <div>
                   <p className="text-[14px] font-black text-slate-700">{factStats.fcf}</p>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">FCF / otros</p>
+                  <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wide">FCF / otros</p>
                 </div>
               </div>
             </div>
@@ -1836,12 +1836,12 @@ const DashboardView = ({ openModal }) => {
                 ))}
               </div>
             ) : topProductos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-slate-300"><Package size={28} strokeWidth={1}/><p className="text-[11px] font-medium mt-2">Sin datos este mes</p></div>
+              <div className="flex flex-col items-center justify-center py-10 text-slate-500"><Package size={28} strokeWidth={1}/><p className="text-[11px] font-medium mt-2">Sin datos este mes</p></div>
             ) : topProductos.map((p, i) => {
               const pct = Math.max(Math.round((p.neto / maxNeto) * 100), 4);
               return (
                 <div key={p.erp_product_id} className="flex items-center gap-2.5 py-1.5">
-                  <span className="text-[9px] font-black text-slate-300 w-4 shrink-0 text-right">{i + 1}</span>
+                  <span className="text-[9px] font-black text-slate-500 w-4 shrink-0 text-right">{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-semibold text-slate-700 truncate leading-tight">{p.descripcion}</p>
                     <div className="flex items-center gap-2 mt-0.5">
@@ -2003,8 +2003,8 @@ const DashboardView = ({ openModal }) => {
             <div className="animate-in fade-in slide-in-from-top-2 duration-150 bg-white rounded-[1.5rem] border border-slate-100 shadow-sm p-4 space-y-3">
               {/* Header */}
               <div className="flex items-center justify-between px-1">
-                <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Personalizar Dashboard</p>
-                <button onClick={resetAll} className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-[#0052CC] transition-colors px-2 py-1 rounded-lg hover:bg-slate-50">
+                <p className="text-[11px] font-black uppercase tracking-widest text-slate-600">Personalizar Dashboard</p>
+                <button onClick={resetAll} className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 hover:text-[#0052CC] transition-colors px-2 py-1 rounded-lg hover:bg-slate-50">
                   <RotateCcw size={11}/> Restablecer todo
                 </button>
               </div>
@@ -2015,7 +2015,7 @@ const DashboardView = ({ openModal }) => {
                   return (
                     <button key={tab.id} onClick={() => setConfigTab(tab.id)}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[0.6rem] text-[11px] font-bold flex-1 justify-center transition-[background-color,color,box-shadow] duration-150 ${
-                        configTab === tab.id ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-700'
+                        configTab === tab.id ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-500 hover:text-slate-700'
                       }`}>
                       <TabIcon size={12} strokeWidth={2.2}/>{tab.label}
                     </button>
@@ -2031,8 +2031,8 @@ const DashboardView = ({ openModal }) => {
                   return (
                     <button key={w.id} onClick={() => hasAccess && toggleWidget(w.id)}
                       className={`flex items-center gap-2.5 p-3 rounded-[1rem] border text-left transition-[background-color,border-color] duration-150 ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-slate-50 border-slate-100' : enabled ? 'bg-[#0052CC]/5 border-[#0052CC]/20 hover:bg-[#0052CC]/8' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
-                      <WIcon size={14} className={enabled && hasAccess ? 'text-[#0052CC]' : 'text-slate-400'}/>
-                      <span className={`text-[11px] font-semibold flex-1 ${enabled && hasAccess ? 'text-slate-800' : 'text-slate-400'}`}>{w.label}</span>
+                      <WIcon size={14} className={enabled && hasAccess ? 'text-[#0052CC]' : 'text-slate-500'}/>
+                      <span className={`text-[11px] font-semibold flex-1 ${enabled && hasAccess ? 'text-slate-800' : 'text-slate-500'}`}>{w.label}</span>
                       <div className={`w-8 h-4 rounded-full transition-colors relative shrink-0 ${enabled && hasAccess ? 'bg-[#0052CC]' : 'bg-slate-200'}`}>
                         <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform shadow-sm ${enabled && hasAccess ? 'translate-x-4' : 'translate-x-0.5'}`}/>
                       </div>
@@ -2128,9 +2128,9 @@ const DashboardView = ({ openModal }) => {
       {salesBarTip && createPortal(
         <div style={{position:'fixed',top:salesBarTip.y-8,left:salesBarTip.x,transform:'translate(-50%,-100%)',zIndex:99999,pointerEvents:'none'}}
           className="bg-slate-900 text-white rounded-xl shadow-xl px-2.5 py-1.5 animate-in fade-in zoom-in-95 duration-100 flex flex-col items-center gap-0.5 min-w-[70px]">
-          <span className="text-[9px] text-slate-400 font-semibold">{salesBarTip.label}</span>
+          <span className="text-[9px] text-slate-500 font-semibold">{salesBarTip.label}</span>
           {salesBarTip.amount&&<span className="text-[10px] text-emerald-400 font-black">{salesBarTip.amount}</span>}
-          {salesBarTip.txCount>0&&<span className="text-[9px] text-slate-300 font-semibold">{salesBarTip.txCount} tx</span>}
+          {salesBarTip.txCount>0&&<span className="text-[9px] text-slate-500 font-semibold">{salesBarTip.txCount} tx</span>}
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-slate-900"/>
         </div>,
         document.body

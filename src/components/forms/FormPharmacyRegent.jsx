@@ -130,7 +130,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                                 onChange={(e) => updateLegalField('regentCredentialFile', e.target.files?.[0] || null)} 
                             />
                             
-                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105 ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'bg-white text-[#0052CC] border border-blue-200' : 'bg-white text-slate-400 border border-slate-100 group-hover:text-[#0052CC] group-hover:border-blue-200'}`}>
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105 ${legalData.regentCredentialFile || legalData.regentCredentialUrl ? 'bg-white text-[#0052CC] border border-blue-200' : 'bg-white text-slate-500 border border-slate-100 group-hover:text-[#0052CC] group-hover:border-blue-200'}`}>
                                  {legalData.regentCredentialFile || legalData.regentCredentialUrl ? <ShieldCheck size={16} strokeWidth={2}/> : <UploadCloud size={16} strokeWidth={2} />}
                             </div>
                             
@@ -156,7 +156,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                             onChange={(e) => updateLegalField('regentInscriptionFile', e.target.files?.[0] || null)} 
                         />
                         
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105 ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'bg-white text-purple-600 border border-purple-200' : 'bg-white text-slate-400 border border-slate-100 group-hover:text-purple-500 group-hover:border-purple-200'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 transition-transform duration-300 group-hover:scale-105 ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'bg-white text-purple-600 border border-purple-200' : 'bg-white text-slate-500 border border-slate-100 group-hover:text-purple-500 group-hover:border-purple-200'}`}>
                              {legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? <ShieldCheck size={20} strokeWidth={2}/> : <UploadCloud size={20} strokeWidth={1.5} />}
                         </div>
                         
@@ -164,7 +164,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                             <p className={`text-[12px] font-black tracking-tight truncate ${legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'text-purple-700' : 'text-slate-600'}`}>
                                 {legalData.regentInscriptionFile ? legalData.regentInscriptionFile.name : legalData.regentInscriptionUrl ? "Inscripción guardada" : "Toca para subir documento"}
                             </p>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                            <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-0.5">
                                 {legalData.regentInscriptionFile || legalData.regentInscriptionUrl ? 'Reemplazar archivo' : 'Solo formato PDF'}
                             </p>
                         </div>

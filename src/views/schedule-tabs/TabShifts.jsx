@@ -50,7 +50,7 @@ const SuggestionCard = memo(({ insight, onApply, onDismiss }) => {
                     : <Sparkles size={16} className="text-cyan-400 animate-pulse" />}
             </div>
 
-            <button onClick={onDismiss} className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-[0.97] z-20" title="Ignorar aviso">
+            <button onClick={onDismiss} className="absolute top-5 right-5 p-2 rounded-full text-slate-500 hover:text-white hover:bg-white/10 transition-all active:scale-[0.97] z-20" title="Ignorar aviso">
                 <X size={14} strokeWidth={2.5} />
             </button>
 
@@ -137,7 +137,7 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
                         <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(group); }} className={`p-2 rounded-full backdrop-blur-md transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] border active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer ${isEditingThis ? 'bg-amber-100 text-amber-600 border-amber-300' : 'bg-white/80 text-amber-500 border-white hover:bg-white hover:text-amber-600'}`} title="Editar">
                             <Edit3 size={12} strokeWidth={2.5} />
                         </button>
-                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('archive'); }} className="p-2 rounded-full bg-white/80 backdrop-blur-md border border-white text-slate-400 hover:bg-white hover:text-red-500 transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Archivar">
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmAction('archive'); }} className="p-2 rounded-full bg-white/80 backdrop-blur-md border border-white text-slate-500 hover:bg-white hover:text-red-500 transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.05)] active:scale-[0.97] hover:-translate-y-0.5 cursor-pointer" title="Archivar">
                             <Archive size={12} strokeWidth={2.5} />
                         </button>
                     </>
@@ -171,11 +171,11 @@ const TurnoCard = memo(({ group, onEdit, onDuplicate, onArchive, onUnarchive, is
 
             <div className="flex items-center gap-3 mt-auto border-t border-white/60 pt-4 relative z-10">
                 <div className="flex-1 bg-white/60 backdrop-blur-md p-3 rounded-2xl border border-white shadow-[inset_0_1px_4px_rgba(255,255,255,0.9)]">
-                    <span className="text-[8px] font-black text-slate-400 uppercase block mb-1 tracking-widest">Entrada</span>
+                    <span className="text-[8px] font-black text-slate-500 uppercase block mb-1 tracking-widest">Entrada</span>
                     <span className="text-[14px] font-bold text-slate-700 tracking-tight">{formatTime12h(group.start)}</span>
                 </div>
                 <div className="flex-1 bg-white/60 backdrop-blur-md p-3 rounded-2xl border border-white shadow-[inset_0_1px_4px_rgba(255,255,255,0.9)]">
-                    <span className="text-[8px] font-black text-slate-400 uppercase block mb-1 tracking-widest">Salida</span>
+                    <span className="text-[8px] font-black text-slate-500 uppercase block mb-1 tracking-widest">Salida</span>
                     <span className="text-[14px] font-bold text-slate-700 tracking-tight">{formatTime12h(group.end)}</span>
                 </div>
             </div>
@@ -445,18 +445,18 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                         <div className="animate-in fade-in slide-in-from-top-4 duration-500">
                             <div className="pt-2 grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Entrada</label>
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-2 block ml-1">Entrada</label>
                                     <TimePicker12 value={currentForm.start} onChange={v => setCurrentForm(f => ({ ...f, start: v }))} />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Salida</label>
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-2 block ml-1">Salida</label>
                                     <TimePicker12 value={currentForm.end} onChange={v => setCurrentForm(f => ({ ...f, end: v }))} />
                                 </div>
                             </div>
                         </div>
 
                         <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-2 block ml-1">Nombre del turno</label>
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-2 block ml-1">Nombre del turno</label>
                             <div className="flex gap-2 mb-2">
                                 {['Apertura', 'Enlace', 'Cierre'].map(tipo => (
                                     <button key={tipo} type="button"
@@ -549,7 +549,7 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                         <div className="flex flex-col items-center justify-center h-full min-h-[400px] animate-in fade-in zoom-in-95 duration-700 ease-[cubic-bezier(0.23,1,0.32,1)]">
                             <div className="relative group flex flex-col items-center text-center">
                                 <div className={`absolute top-2 w-28 h-28 rounded-full blur-[40px] opacity-30 ${searchTerm ? 'bg-[#0052CC]' : shiftTab === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                                <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${searchTerm ? 'text-[#0052CC]' : shiftTab === 'ACTIVE' ? 'text-emerald-500' : 'text-slate-400'}`}>
+                                <div className={`relative z-10 w-24 h-24 rounded-[2rem] flex items-center justify-center mb-6 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:-translate-y-2 group-hover:shadow-[0_16px_50px_rgba(0,0,0,0.12)] ${searchTerm ? 'text-[#0052CC]' : shiftTab === 'ACTIVE' ? 'text-emerald-500' : 'text-slate-500'}`}>
                                     {searchTerm ? <Search size={40} strokeWidth={2} /> : shiftTab === 'ACTIVE' ? <CheckCircle2 size={40} strokeWidth={2} /> : <Archive size={40} strokeWidth={2} />}
                                 </div>
                                 <h3 className="font-bold text-[22px] text-slate-800 tracking-tight mb-2">

@@ -420,28 +420,28 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                         <div className="bg-white/60 backdrop-blur-md border border-white/60 rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
                             <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl shadow-sm border border-emerald-100/50"><CheckCircle size={18} strokeWidth={2.5}/></div>
                             <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Estado</p>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Estado</p>
                                 <p className="text-[13px] md:text-[14px] font-bold text-slate-800">{emp.effectiveStatus || emp.status || 'Activo'}</p>
                             </div>
                         </div>
                         <div className="bg-white/60 backdrop-blur-md border border-white/60 rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
                             <div className="p-2.5 bg-blue-50 text-[#0052CC] rounded-xl shadow-sm border border-blue-100/50"><Briefcase size={18} strokeWidth={2.5}/></div>
                             <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Antigüedad</p>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Antigüedad</p>
                                 <p className="text-[13px] md:text-[14px] font-bold text-slate-800 truncate">{tenure}</p>
                             </div>
                         </div>
                         <div className="bg-white/60 backdrop-blur-md border border-white/60 rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
                             <div className="p-2.5 bg-pink-50 text-pink-500 rounded-xl shadow-sm border border-pink-100/50"><Cake size={18} strokeWidth={2.5}/></div>
                             <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Edad</p>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Edad</p>
                                 <p className="text-[13px] md:text-[14px] font-bold text-slate-800">{age ? `${age} Años` : 'N/D'}</p>
                             </div>
                         </div>
                         <div className="bg-white/60 backdrop-blur-md border border-white/60 rounded-[1.5rem] p-4 md:p-5 shadow-sm flex items-center gap-4 transition-all hover:bg-white">
-                            <div className={`p-2.5 rounded-xl shadow-sm border ${latePunches > 0 ? 'bg-red-50 text-red-500 border-red-100/50' : 'bg-slate-50 text-slate-400 border-slate-100/50'}`}><AlertCircle size={18} strokeWidth={2.5}/></div>
+                            <div className={`p-2.5 rounded-xl shadow-sm border ${latePunches > 0 ? 'bg-red-50 text-red-500 border-red-100/50' : 'bg-slate-50 text-slate-500 border-slate-100/50'}`}><AlertCircle size={18} strokeWidth={2.5}/></div>
                             <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tardanzas (Mes)</p>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Tardanzas (Mes)</p>
                                 <p className={`text-[13px] md:text-[14px] font-bold ${latePunches > 0 ? 'text-red-500' : 'text-slate-800'}`}>{latePunches} Acumuladas</p>
                             </div>
                         </div>
@@ -480,7 +480,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <span className="px-4 py-1 rounded-full bg-[#0052CC]/10 border border-[#0052CC]/20 text-[#0052CC] font-black text-[10px] uppercase tracking-[0.15em] text-center shadow-sm">
                                             {emp.role || 'Sin Cargo Asignado'}
                                         </span>
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
                                             CÓD: {emp.code || 'S/N'}
                                         </span>
                                         {canEdit && (
@@ -502,7 +502,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-white/60 border border-white/80 hover:bg-white transition-colors shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
                                             <div className="p-2.5 bg-white border border-slate-100 rounded-[0.8rem] shadow-sm text-[#0052CC] group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-0.5">Correo</p>
+                                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] mb-0.5">Correo</p>
                                                 <p className="text-[12px] font-bold text-slate-700 truncate">{emp.email || emp.username || 'No registrado'}</p>
                                             </div>
                                         </div>
@@ -510,7 +510,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-white/60 border border-white/80 hover:bg-white transition-colors shadow-[0_2px_10px_rgba(0,0,0,0.02)] relative">
                                             <div className="p-2.5 bg-white border border-slate-100 rounded-[0.8rem] shadow-sm text-emerald-500 group-hover:scale-110 transition-transform"><Phone size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-0.5">Celular</p>
+                                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] mb-0.5">Celular</p>
                                                 <p className="text-[12px] font-bold text-slate-700">{emp.phone || 'No registrado'}</p>
                                             </div>
                                             {emp.phone && (
@@ -523,7 +523,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-white/60 border border-white/80 hover:bg-white transition-colors shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
                                             <div className="p-2.5 bg-white border border-slate-100 rounded-[0.8rem] shadow-sm text-purple-500 group-hover:scale-110 transition-transform"><Shield size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-0.5">Documento (DUI)</p>
+                                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] mb-0.5">Documento (DUI)</p>
                                                 <p className="text-[12px] font-bold text-slate-700">{emp.dui || 'No registrado'}</p>
                                             </div>
                                         </div>
@@ -531,7 +531,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div className="group flex items-center gap-3.5 p-3.5 rounded-2xl bg-white/60 border border-white/80 hover:bg-white transition-colors shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
                                             <div className="p-2.5 bg-white border border-slate-100 rounded-[0.8rem] shadow-sm text-orange-500 group-hover:scale-110 transition-transform"><MapPin size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-0.5">Sucursal Base</p>
+                                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] mb-0.5">Sucursal Base</p>
                                                 <p className="text-[12px] font-bold text-slate-700 truncate">{branch ? branch.name : 'Sin Asignar'}</p>
                                             </div>
                                         </div>
@@ -549,14 +549,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     <div className="space-y-3 relative z-10">
                                         {emp.emergency_contact_name && (
                                             <div>
-                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Avisar a</p>
+                                                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">Avisar a</p>
                                                 <p className="text-[13px] font-bold text-slate-800">{emp.emergency_contact_name}</p>
                                             </div>
                                         )}
                                         {emp.emergency_contact_phone && (
                                             <div className="flex items-center justify-between">
                                                 <div>
-                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Teléfono</p>
+                                                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">Teléfono</p>
                                                     <p className="text-[13px] font-bold text-slate-800">{emp.emergency_contact_phone}</p>
                                                 </div>
                                                 <a href={`tel:${emp.emergency_contact_phone.replace(/\D/g,'')}`} className="p-2.5 bg-red-100 text-red-600 rounded-full hover:bg-red-500 hover:text-white transition-colors shadow-sm">
@@ -566,7 +566,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         )}
                                         {emp.blood_type && (
                                             <div className="pt-2 border-t border-red-100/50">
-                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tipo de Sangre</p>
+                                                <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">Tipo de Sangre</p>
                                                 <p className="text-[13px] font-black text-red-600">{emp.blood_type}</p>
                                             </div>
                                         )}
@@ -631,7 +631,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border shadow-sm ${evTheme.bg} ${evTheme.text} ${evTheme.border}`}>
                                                                     {evTheme.label}
                                                                 </span>
-                                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100/50 px-2 py-1 rounded-md">
+                                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 bg-slate-100/50 px-2 py-1 rounded-md">
                                                                     {formatDate(ev.date)}
                                                                 </span>
                                                             </div>
@@ -642,7 +642,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                                             {ev.metadata?.permissionDates && ev.metadata.permissionDates.length > 0 && (
                                                                 <div className="mt-3 flex flex-wrap gap-1.5">
-                                                                    <span className="text-[9px] font-black uppercase text-slate-400 w-full mb-0.5">Días de Ausencia Autorizada:</span>
+                                                                    <span className="text-[9px] font-black uppercase text-slate-500 w-full mb-0.5">Días de Ausencia Autorizada:</span>
                                                                     {ev.metadata.permissionDates.map((d, i) => (
                                                                         <span key={i} className="px-2 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg text-[10px] font-black tracking-widest">{formatDate(d)}</span>
                                                                     ))}
@@ -673,7 +673,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                         <button
                                                                             onClick={() => openModal('uploadDocument', {}, ev.id)}
                                                                             disabled={!canEdit}
-                                                                            className="flex items-center gap-1.5 text-slate-400 hover:text-orange-600 hover:bg-orange-50 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                            className="flex items-center gap-1.5 text-slate-600 hover:text-orange-600 hover:bg-orange-50 px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                                         >
                                                                             <Paperclip size={12} strokeWidth={2.5}/> Adjuntar Soporte
                                                                         </button>
@@ -747,7 +747,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div className="flex flex-wrap items-center justify-between gap-3">
                                             <h3 className="font-black text-slate-800 uppercase tracking-tight text-[16px] flex items-center gap-2">
                                                 <Stethoscope size={18} className="text-amber-500"/> Ausencias
-                                                <span className="text-[11px] font-bold text-slate-400 normal-case tracking-normal">Permisos e Incapacidades</span>
+                                                <span className="text-[11px] font-bold text-slate-500 normal-case tracking-normal">Permisos e Incapacidades</span>
                                             </h3>
                                             <div className="flex items-center gap-2">
                                                 {ausenciasSelectedDay && (
@@ -777,21 +777,21 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             {/* Navegación de mes */}
                                             <div className="flex items-center justify-between mb-3">
                                                 <button onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); setAusenciasSelectedDay(null); }}
-                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-blue-50 transition-all active:scale-[0.97]">
+                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 transition-all active:scale-[0.97]">
                                                     <ChevronLeft size={14} strokeWidth={2.5}/>
                                                 </button>
                                                 <span className="text-[13px] font-black text-slate-700 capitalize">
                                                     {ausenciasCalMonth.toLocaleDateString('es', { month: 'long', year: 'numeric' })}
                                                 </span>
                                                 <button onClick={() => { setAusenciasCalMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)); setAusenciasSelectedDay(null); }}
-                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-[#0052CC] hover:bg-blue-50 transition-all active:scale-[0.97]">
+                                                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 transition-all active:scale-[0.97]">
                                                     <ChevronRight size={14} strokeWidth={2.5}/>
                                                 </button>
                                             </div>
                                             {/* Encabezados días */}
                                             <div className="grid grid-cols-7 mb-1">
                                                 {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d => (
-                                                    <div key={d} className="text-center text-[9px] font-black text-slate-300 uppercase py-1">{d}</div>
+                                                    <div key={d} className="text-center text-[9px] font-black text-slate-500 uppercase py-1">{d}</div>
                                                 ))}
                                             </div>
                                             {/* Celdas */}
@@ -844,7 +844,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         <div key={ds}
                                                             className={`relative group/cal flex flex-col items-center justify-center rounded-lg transition-all duration-200 ${hasEvents ? 'cursor-pointer hover:scale-110 hover:z-20 hover:shadow-md' : 'cursor-default'} ${cellBg}`}
                                                             onClick={() => hasEvents && setAusenciasSelectedDay(prev => prev === ds ? null : ds)}>
-                                                            <span className={`text-[12px] font-bold leading-none select-none ${isSelected || isToday ? 'text-white' : hasEvents ? 'text-slate-700' : 'text-slate-400'}`}>
+                                                            <span className={`text-[12px] font-bold leading-none select-none ${isSelected || isToday ? 'text-white' : hasEvents ? 'text-slate-700' : 'text-slate-500'}`}>
                                                                 {day}
                                                             </span>
                                                             {hasEvents && !isSelected && !isToday && (
@@ -857,14 +857,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             {/* Tooltip */}
                                                             {hasEvents && tooltipLines.length > 0 && (
                                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800/95 backdrop-blur-sm text-white rounded-xl shadow-xl z-[999] min-w-[170px] max-w-[230px] pointer-events-none opacity-0 group-hover/cal:opacity-100 transition-opacity duration-200 text-left">
-                                                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">{ds}</p>
+                                                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1.5">{ds}</p>
                                                                     {tooltipLines.map((item, li) => (
                                                                         <div key={li} className={li > 0 ? 'mt-2 pt-2 border-t border-slate-700' : ''}>
                                                                             <div className="flex items-center justify-between gap-3">
                                                                                 <span className="text-[11px] font-black">{item.label}</span>
                                                                                 {item.hoursStr && <span className="text-[10px] font-bold text-amber-300 whitespace-nowrap">{item.hoursStr}</span>}
                                                                             </div>
-                                                                            {item.note && <p className="text-[10px] text-slate-300 mt-0.5 leading-snug whitespace-normal">{item.note}</p>}
+                                                                            {item.note && <p className="text-[10px] text-slate-500 mt-0.5 leading-snug whitespace-normal">{item.note}</p>}
                                                                         </div>
                                                                     ))}
                                                                     <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-4 border-transparent border-t-slate-800/95"/>
@@ -878,15 +878,15 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             <div className="flex flex-wrap items-center gap-3 mt-3 pt-2.5 border-t border-slate-100">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="w-3 h-3 rounded-sm bg-amber-100 border border-amber-200 flex-shrink-0"/>
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Permiso</span>
+                                                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Permiso</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="w-3 h-3 rounded-sm bg-red-100 border border-red-200 flex-shrink-0"/>
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Incapacidad</span>
+                                                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Incapacidad</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="w-3 h-3 rounded-sm bg-violet-100 border border-violet-300 flex-shrink-0"/>
-                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Día 4+ Seguro</span>
+                                                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Día 4+ Seguro</span>
                                                 </div>
                                                 {ausenciasSelectedDay && (
                                                     <div className="flex items-center gap-1.5 ml-auto">
@@ -925,7 +925,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                     </div>
                                                                     <div>
                                                                         <span className={`text-[10px] font-black uppercase tracking-widest ${cfg.text}`}>{cfg.label}</span>
-                                                                        <p className="text-[10px] text-slate-400 font-bold">
+                                                                        <p className="text-[10px] text-slate-500 font-bold">
                                                                             {formatDate(ev.date)}{meta.endDate && meta.endDate !== ev.date && ` → ${formatDate(meta.endDate)}`}
                                                                         </p>
                                                                     </div>
@@ -995,7 +995,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                         <p className="text-2xl font-black text-emerald-700 tracking-tight">${emp.salary || emp.base_salary || '0.00'}</p>
                                                     </div>
                                                     <div className="p-5 bg-white/60 rounded-[1.5rem] border border-white/80 shadow-sm flex flex-col justify-center">
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Depósito de Planilla</p>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">Depósito de Planilla</p>
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-[14px] font-bold text-slate-700">{emp.bank_name || 'No configurado'}</span>
                                                             <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-[11px] font-black tracking-wider border border-slate-200">CTA: {emp.account_number || '---'}</span>
@@ -1026,7 +1026,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                                                 <div className="flex items-center gap-3 w-32 shrink-0 relative">
                                                                     <div className={`w-2.5 h-2.5 rounded-full ${dia.active ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-slate-300'}`}></div>
-                                                                    <span className={`text-[12px] font-black uppercase tracking-widest ${dia.active ? 'text-slate-700' : 'text-slate-400'}`}>{dia.day}</span>
+                                                                    <span className={`text-[12px] font-black uppercase tracking-widest ${dia.active ? 'text-slate-700' : 'text-slate-600'}`}>{dia.day}</span>
                                                                     {isToday && (
                                                                         <span className="ml-2 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-[#0052CC] text-white shadow-sm animate-pulse">Hoy</span>
                                                                     )}
@@ -1035,15 +1035,15 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 {dia.active ? (
                                                                     <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4 w-full">
                                                                         <div>
-                                                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Entrada</p>
+                                                                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Entrada</p>
                                                                             <p className="text-[13px] font-bold text-slate-800 bg-white px-3 py-1.5 rounded-xl shadow-sm border border-slate-100 w-max">{dia.start}</p>
                                                                         </div>
                                                                         <div>
-                                                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Salida</p>
+                                                                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Salida</p>
                                                                             <p className="text-[13px] font-bold text-slate-800 bg-white px-3 py-1.5 rounded-xl shadow-sm border border-slate-100 w-max">{dia.end}</p>
                                                                         </div>
                                                                         <div className="col-span-2 md:col-span-1">
-                                                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Almuerzo / Receso</p>
+                                                                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Almuerzo / Receso</p>
                                                                             <p className="text-[11px] font-bold text-orange-600 flex items-center gap-1.5 bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100 w-max">
                                                                                 <Coffee size={12} strokeWidth={3}/> {dia.break}
                                                                             </p>
@@ -1051,7 +1051,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                     </div>
                                                                 ) : (
                                                                     <div className="flex-1">
-                                                                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest bg-slate-200/50 px-3 py-1.5 rounded-xl">Día Libre / Descanso</span>
+                                                                        <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest bg-slate-200/50 px-3 py-1.5 rounded-xl">Día Libre / Descanso</span>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1096,7 +1096,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 ))}
                                             </div>
                                         ) : empRequests.length === 0 ? (
-                                            <div className="flex flex-col items-center py-12 gap-2 text-slate-400">
+                                            <div className="flex flex-col items-center py-12 gap-2 text-slate-500">
                                                 <ClipboardList size={36} strokeWidth={1.2} />
                                                 <p className="text-[13px] font-semibold">Sin solicitudes registradas</p>
                                             </div>
@@ -1119,8 +1119,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                     </span>
                                                                 </div>
                                                                 {req.note && <p className="text-[12px] text-slate-600 line-clamp-2">{req.note}</p>}
-                                                                {req.approver_note && <p className="text-[11px] text-slate-400 mt-1 italic">Nota: {req.approver_note}</p>}
-                                                                <p className="text-[10px] text-slate-400 mt-1">{new Date(req.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                                                {req.approver_note && <p className="text-[11px] text-slate-500 mt-1 italic">Nota: {req.approver_note}</p>}
+                                                                <p className="text-[10px] text-slate-500 mt-1">{new Date(req.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                                                             </div>
                                                         </div>
                                                     );

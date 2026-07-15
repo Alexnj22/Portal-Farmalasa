@@ -954,14 +954,14 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 return (
                                     <button key={key} onClick={() => navigate(path)} className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-[1.25rem] transition-all duration-200 flex-1 ${isActive ? 'bg-[#0052CC]/10' : 'hover:bg-slate-100/60'}`}>
                                         <div className="relative">
-                                            <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-[#0052CC]' : 'text-slate-400'} />
+                                            <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-[#0052CC]' : 'text-slate-500'} />
                                             {badge > 0 && (
                                                 <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
                                                     {badge > 9 ? '9+' : badge}
                                                 </span>
                                             )}
                                         </div>
-                                        <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isActive ? 'text-[#0052CC]' : 'text-slate-400'}`}>{label}</span>
+                                        <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isActive ? 'text-[#0052CC]' : 'text-slate-600'}`}>{label}</span>
                                     </button>
                                 );
                             })}

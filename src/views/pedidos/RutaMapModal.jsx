@@ -463,8 +463,8 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
     : centerOnPosition;
 
   const gpsIconColor = isConductor
-    ? (gpsStatus === 'ok' ? 'text-blue-500' : gpsStatus === 'denied' ? 'text-red-400' : 'text-slate-400')
-    : (driverOnline ? 'text-emerald-500' : driverPos ? 'text-amber-400' : 'text-slate-400');
+    ? (gpsStatus === 'ok' ? 'text-blue-500' : gpsStatus === 'denied' ? 'text-red-400' : 'text-slate-500')
+    : (driverOnline ? 'text-emerald-500' : driverPos ? 'text-amber-400' : 'text-slate-500');
 
   return (
     <PedidoModal open onClose={onClose} maxWidth="max-w-2xl">
@@ -500,7 +500,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
                 <RefreshCw size={8} /> {recalcCount} recálculo{recalcCount !== 1 ? 's' : ''}
               </span>
             )}
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 transition-colors">
+            <button onClick={onClose} className="text-slate-500 hover:text-slate-600 p-1 transition-colors">
               <X size={16} />
             </button>
           </div>
@@ -544,7 +544,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
 
         {/* Lista de paradas */}
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">
             Paradas · {entregadas}/{paradas.length} entregadas
           </p>
           <div className="space-y-1.5">
@@ -558,7 +558,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
                 <p className="text-[12px] font-semibold text-slate-700 flex-1 truncate">{stop.suc_name}</p>
                 {stop.entregado_at
                   ? <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 shrink-0"><CheckCircle2 size={10} />{fmtTime(stop.entregado_at)}</span>
-                  : <span className="text-[10px] text-slate-400 flex items-center gap-1 shrink-0"><Clock size={10} />Pendiente</span>
+                  : <span className="text-[10px] text-slate-500 flex items-center gap-1 shrink-0"><Clock size={10} />Pendiente</span>
                 }
               </div>
             ))}

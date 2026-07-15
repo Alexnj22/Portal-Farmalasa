@@ -86,7 +86,7 @@ export default function WidgetSrsInventory() {
         />
         {query && (
           <button onClick={() => { setQuery(''); setResults(null); setInStock(new Set()); }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-600 hover:bg-slate-100 transition-colors">
             <X size={11} strokeWidth={2.5} />
           </button>
         )}
@@ -99,14 +99,14 @@ export default function WidgetSrsInventory() {
       {/* Results */}
       <div className="flex-1 overflow-y-auto space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {results === null && !loading && (
-          <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-300">
+          <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-500">
             <FlaskConical size={32} strokeWidth={1.5} />
-            <p className="text-[12px] font-semibold text-slate-400">Busca un medicamento en el registro SRS</p>
+            <p className="text-[12px] font-semibold text-slate-500">Busca un medicamento en el registro SRS</p>
           </div>
         )}
 
         {results !== null && results.length === 0 && (
-          <div className="py-8 text-center text-[12px] text-slate-400 font-medium">Sin resultados para "{query}"</div>
+          <div className="py-8 text-center text-[12px] text-slate-500 font-medium">Sin resultados para "{query}"</div>
         )}
 
         {(results || []).map((p) => {
@@ -129,7 +129,7 @@ export default function WidgetSrsInventory() {
               {/* Header */}
               <div className="flex items-start justify-between gap-2">
                 <p className="text-[12px] font-black text-slate-800 leading-tight flex-1">
-                  {nombre || <span className="text-slate-400 font-normal italic">Sin nombre</span>}
+                  {nombre || <span className="text-slate-500 font-normal italic">Sin nombre</span>}
                 </p>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {hasStock && (
@@ -147,8 +147,8 @@ export default function WidgetSrsInventory() {
 
               {(lab || forma) && (
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
-                  {lab && <span className="flex items-center gap-1 text-[11px] text-slate-500"><Building2 size={10} className="text-slate-400 shrink-0" />{lab}</span>}
-                  {forma && <span className="flex items-center gap-1 text-[11px] text-slate-500"><Pill size={10} className="text-slate-400 shrink-0" />{forma}</span>}
+                  {lab && <span className="flex items-center gap-1 text-[11px] text-slate-500"><Building2 size={10} className="text-slate-500 shrink-0" />{lab}</span>}
+                  {forma && <span className="flex items-center gap-1 text-[11px] text-slate-500"><Pill size={10} className="text-slate-500 shrink-0" />{forma}</span>}
                 </div>
               )}
 
@@ -162,7 +162,7 @@ export default function WidgetSrsInventory() {
               )}
 
               {noregistro && (
-                <span className="text-[10px] text-slate-400 font-mono">{noregistro}</span>
+                <span className="text-[10px] text-slate-500 font-mono">{noregistro}</span>
               )}
             </div>
           );

@@ -39,7 +39,7 @@ function expiryInfo(fecha) {
 }
 
 function ExpiryCell({ fecha }) {
-    if (!fecha) return <span className="text-slate-400 text-xs">—</span>;
+    if (!fecha) return <span className="text-slate-500 text-xs">—</span>;
     const info = expiryInfo(fecha);
     if (!info) return null;
     if (info.expired) return (
@@ -58,7 +58,7 @@ function ExpiryCell({ fecha }) {
             <Calendar size={9} /> {fecha}
         </span>
     );
-    return <span className="text-xs text-slate-400 whitespace-nowrap">{fecha}</span>;
+    return <span className="text-xs text-slate-500 whitespace-nowrap">{fecha}</span>;
 }
 
 export default function TabInventario({ searchTerm = '' }) {
@@ -266,7 +266,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                 {loading ? <span className="text-slate-200">–</span> : total.toLocaleString()}
                             </div>
                             <div className="text-[10px] font-bold text-slate-600">Productos</div>
-                            <div className="text-[9px] text-slate-400">
+                            <div className="text-[9px] text-slate-500">
                                 {selectedErp !== null ? ERP_NAMES[selectedErp] : 'todas las sucursales'}
                             </div>
                         </div>
@@ -287,7 +287,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                 {loading ? <span className="text-slate-200">–</span> : expiredTotal.toLocaleString()}
                             </div>
                             <div className="text-[10px] font-bold text-slate-600">Vencidos</div>
-                            <div className="text-[9px] text-slate-400">por fecha</div>
+                            <div className="text-[9px] text-slate-500">por fecha</div>
                         </div>
                         {filterVencidos && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
                     </button>
@@ -307,7 +307,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                 {loading ? <span className="text-slate-200">–</span> : sixMonthsTotal.toLocaleString()}
                             </div>
                             <div className="text-[10px] font-bold text-slate-600">Próx. a vencer</div>
-                            <div className="text-[9px] text-slate-400">en 6 meses</div>
+                            <div className="text-[9px] text-slate-500">en 6 meses</div>
                         </div>
                         {filterSixMonths && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
                     </button>
@@ -328,7 +328,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                     {loading ? <span className="text-slate-200">–</span> : Object.keys(vencidosMap).length.toLocaleString()}
                                 </div>
                                 <div className="text-[10px] font-bold text-slate-600">Área vencidos</div>
-                                <div className="text-[9px] text-slate-400">ubicación bodega</div>
+                                <div className="text-[9px] text-slate-500">ubicación bodega</div>
                             </div>
                             {filterAreaVenc && <X size={11} className="text-slate-400 ml-auto shrink-0" />}
                         </button>
@@ -346,7 +346,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                 }
                             </div>
                             <div className="text-[10px] font-bold text-slate-600">Inversión</div>
-                            <div className="text-[9px] text-slate-400">costo sin IVA</div>
+                            <div className="text-[9px] text-slate-500">costo sin IVA</div>
                         </div>
                     </div>
 
@@ -497,14 +497,14 @@ export default function TabInventario({ searchTerm = '' }) {
 
                                     <DataCell hideBelow="lg">
                                         <span className="text-[11px] text-slate-500">
-                                            {lab || <span className="text-slate-400">—</span>}
+                                            {lab || <span className="text-slate-500">—</span>}
                                         </span>
                                     </DataCell>
 
                                     <DataCell>
                                         <div className="flex items-center gap-2">
                                             <ChevronDown size={12} strokeWidth={2.5}
-                                                className={`text-slate-400 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-[#0052CC]' : ''}`} />
+                                                className={`text-slate-500 shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-[#0052CC]' : ''}`} />
                                             <div className="min-w-0">
                                                 <span className="text-[13px] font-medium text-slate-800 line-clamp-2 leading-tight">
                                                     {group.descripcion || '—'}
@@ -527,7 +527,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                     </span>
                                                 ))}
                                             </div>
-                                        ) : <span className="text-slate-400 text-xs">—</span>}
+                                        ) : <span className="text-slate-500 text-xs">—</span>}
                                     </DataCell>
 
                                     <DataCell hideBelow="lg">
@@ -538,7 +538,7 @@ export default function TabInventario({ searchTerm = '' }) {
 
                                     <DataCell align="right" className="whitespace-nowrap">
                                         <span className={`text-sm font-semibold tabular-nums ${
-                                            units === 0 ? 'text-slate-400' :
+                                            units === 0 ? 'text-slate-500' :
                                             hasExpired  ? 'text-red-600'   : 'text-slate-700'
                                         }`}>
                                             {units.toLocaleString()}
@@ -565,12 +565,12 @@ export default function TabInventario({ searchTerm = '' }) {
                                         <td colSpan={colCount} className="p-0 border-b border-blue-100/60">
                                             <div className="bg-gradient-to-br from-blue-50/40 via-white/60 to-slate-50/30 px-10 py-3">
                                                 {expandLoading.has(key) ? (
-                                                    <div className="flex items-center gap-2 text-slate-400 py-2">
+                                                    <div className="flex items-center gap-2 text-slate-500 py-2">
                                                         <Loader2 size={14} className="animate-spin" />
                                                         <span className="text-xs">Cargando...</span>
                                                     </div>
                                                 ) : (expandedData[key] || []).length === 0 && (expandedVencidos[key] || []).length === 0 ? (
-                                                    <p className="text-xs text-slate-400 py-2">Sin datos</p>
+                                                    <p className="text-xs text-slate-500 py-2">Sin datos</p>
                                                 ) : (
                                                     <>
                                                         {/* Regular inventory */}
@@ -600,7 +600,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                                                         {row.presentacion || '—'}
                                                                                     </span>
                                                                                     {row.detalle && (
-                                                                                        <span className="text-[10px] text-slate-400 font-mono ml-1.5">
+                                                                                        <span className="text-[10px] text-slate-500 font-mono ml-1.5">
                                                                                             {row.detalle}
                                                                                         </span>
                                                                                     )}
@@ -615,7 +615,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                                                     {(row.cantidad || 0).toLocaleString()}
                                                                                 </td>
                                                                                 <td className="py-1.5 text-right">
-                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-slate-400' : 'text-slate-700'}`}>
+                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-slate-500' : 'text-slate-700'}`}>
                                                                                         {rowUnits.toLocaleString()}
                                                                                     </span>
                                                                                     <span className="text-[9px] text-slate-500 ml-0.5">und</span>
@@ -671,7 +671,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                                                     {(row.cantidad || 0).toLocaleString()}
                                                                                 </td>
                                                                                 <td className="py-1.5 text-right">
-                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-slate-400' : 'text-rose-600'}`}>
+                                                                                    <span className={`text-[12px] font-bold tabular-nums ${rowUnits === 0 ? 'text-slate-500' : 'text-rose-600'}`}>
                                                                                         {rowUnits.toLocaleString()}
                                                                                     </span>
                                                                                     <span className="text-[9px] text-rose-500 ml-0.5">und</span>

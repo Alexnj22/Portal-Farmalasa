@@ -21,10 +21,10 @@ const ScheduleChart = ({
                     </span>
                     {/* Legend inline */}
                     <div className="hidden md:flex items-center gap-2">
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#64748b]" /><span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">Muerta</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#0052CC]" /><span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">Normal</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#F79009]" /><span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">Pico</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#FF2D55]" /><span className="text-[6.5px] font-bold text-slate-400 uppercase tracking-widest">Crítica</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#64748b]" /><span className="text-[6.5px] font-bold text-slate-600 uppercase tracking-widest">Muerta</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#0052CC]" /><span className="text-[6.5px] font-bold text-slate-600 uppercase tracking-widest">Normal</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#F79009]" /><span className="text-[6.5px] font-bold text-slate-600 uppercase tracking-widest">Pico</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-[#FF2D55]" /><span className="text-[6.5px] font-bold text-slate-600 uppercase tracking-widest">Crítica</span></div>
                     </div>
                 </div>
 
@@ -38,11 +38,11 @@ const ScheduleChart = ({
                             </button>
                         )}
                         <button onClick={() => setChartView('HOURS')}
-                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
+                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'HOURS' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-600 hover:text-slate-600 hover:bg-white/50'}`}>
                             Horas
                         </button>
                         <button onClick={() => setChartView('DAYS')}
-                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'DAYS' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}>
+                            className={`px-2.5 h-full text-[7.5px] font-black uppercase tracking-widest rounded-full transition-all active:scale-[0.97] ${chartView === 'DAYS' ? 'bg-white text-[#0052CC] shadow-sm' : 'text-slate-600 hover:text-slate-600 hover:bg-white/50'}`}>
                             Días
                         </button>
                     </div>
@@ -73,7 +73,7 @@ const ScheduleChart = ({
                         ))}
                     </div>
                 ) : currentChartData.length === 0 ? (
-                    <div className="absolute inset-0 flex items-center justify-center gap-2 text-slate-300 z-10">
+                    <div className="absolute inset-0 flex items-center justify-center gap-2 text-slate-500 z-10">
                         <BarChart2 size={18} strokeWidth={1.5} />
                         <span className="text-[8px] font-black uppercase tracking-widest">Sin historial</span>
                     </div>
@@ -85,7 +85,7 @@ const ScheduleChart = ({
 
                             {/* Tooltip */}
                             <div className="absolute mb-1 bottom-full left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-2 py-1.5 rounded-xl shadow-xl opacity-0 group-hover/bar:opacity-100 transition-all duration-150 pointer-events-none w-max z-[100] translate-y-1 group-hover/bar:-translate-y-0 border border-white/10">
-                                <p className="font-black text-[7.5px] uppercase tracking-widest text-slate-400">{item.label}</p>
+                                <p className="font-black text-[7.5px] uppercase tracking-widest text-slate-600">{item.label}</p>
                                 <p className="text-[10px] font-bold flex items-center gap-1 mt-0.5">
                                     <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.color }} />
                                     {item.avg} Tx

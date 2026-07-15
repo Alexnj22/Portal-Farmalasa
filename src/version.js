@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.16.7';
+export const APP_VERSION = '2.16.8';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.16.8 — design(bloque5.2): contraste text-slate-300/400 sobre superficie
+// clara — 1,698 → 216 instancias, las 216 restantes verificadas una por una
+// como excepciones legítimas (íconos, placeholders, disabled, iconCls). 132
+// archivos tocados. NO fue find/replace ciego (la advertencia del plan por
+// 409 falsos positivos en la auditoría original): metodología validada
+// primero a mano en el archivo más grande (TabMinMax.jsx, 122→17 instancias,
+// revisadas 1 por 1 — incluye 15 labels de sección al tier correcto
+// text-slate-600, un badge de clasificación ABC que rompía el patrón de sus
+// hermanos, y un botón "Ocultar" que un heurístico ciego se hubiera saltado
+// por un `disabled:pointer-events-none` no relacionado en la misma clase),
+// después escalada a script (heurística: reconoce iconos Lucide en su propio
+// tag, placeholders, estados disabled reales, y distingue "label" uppercase-
+// tracking-widest → slate-600 vs "sub-texto" → slate-500 por el resto).
+// Verificado el resultado del script contra el archivo hecho a mano (mismo
+// resultado), y aislado el remanente de 216 con un segundo filtro (excluye
+// placeholder + cualquier línea con un tag JSX en mayúscula) — dio solo 6
+// líneas sospechosas, las 6 confirmadas como excepciones reales (2
+// disabled:text-slate-400, 4 iconCls). Verificado en vivo con Playwright
+// (desktop 1440px y mobile 390px, login + 7 rutas incl. Roles con datos
+// reales) sin errores de página ni regresiones visuales. Build + lint +
+// 15 tests unitarios verdes.
 
 // v2.16.7 — perf(bloque4.3): product_stock_params fuera de supabase_realtime
 // — concentraba 1,271,562 de ~1,274,010 writes acumulados (99.8%) entre las

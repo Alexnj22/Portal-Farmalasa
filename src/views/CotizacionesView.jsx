@@ -244,7 +244,7 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
         <div className="bg-white/60 backdrop-blur-sm border border-white/80 rounded-2xl p-4 shadow-sm space-y-3">
             <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-[9px] font-black text-slate-400 bg-slate-100 rounded-lg px-2 py-1 shrink-0">#{idx + 1}</span>
+                    <span className="text-[9px] font-black text-slate-500 bg-slate-100 rounded-lg px-2 py-1 shrink-0">#{idx + 1}</span>
                     <p className="text-[12px] font-black text-slate-800 leading-tight truncate">{item.productName}</p>
                 </div>
                 <button type="button" onClick={() => removeItem(item._id)}
@@ -254,26 +254,26 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="col-span-1">
-                    <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Presentación</label>
+                    <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1 block">Presentación</label>
                     <LiquidSelect value={item.presentacionId} onChange={v => updateItem(item._id, 'presentacionId', v)}
                         options={presOptions} placeholder={presOptions.length === 0 ? 'Sin precios' : 'Seleccionar...'}
                         icon={Tag} compact clearable={false} />
                 </div>
                 <div className="col-span-1">
-                    <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Tipo Precio</label>
+                    <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1 block">Tipo Precio</label>
                     <LiquidSelect value={item.priceType} onChange={v => updateItem(item._id, 'priceType', v)}
                         options={priceOptions} placeholder="Precio..." icon={Percent} compact clearable={false} />
                 </div>
                 <div>
-                    <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Cantidad</label>
+                    <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1 block">Cantidad</label>
                     <input type="number" min="0" step="0.001" value={item.cantidad}
                         onChange={e => updateItem(item._id, 'cantidad', e.target.value)}
                         className="w-full bg-white/80 border border-white/80 rounded-2xl px-3 py-2.5 text-[16px] font-bold text-slate-800 text-center outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all" />
                 </div>
                 <div>
-                    <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 block">P. Unitario (c/IVA)</label>
+                    <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1 block">P. Unitario (c/IVA)</label>
                     <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-500">$</span>
                         <input type="number" min="0" step="0.01" value={item.precioUnitario}
                             onChange={e => updateItem(item._id, 'precioUnitario', e.target.value)}
                             className="w-full bg-white/80 border border-white/80 rounded-2xl pl-6 pr-3 py-2.5 text-[16px] font-bold text-slate-800 text-right outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all" />
@@ -284,24 +284,24 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                 {isCCF ? (
                     <>
                         <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">P. s/IVA</span>
+                            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">P. s/IVA</span>
                             <span className="text-[11px] font-black text-slate-600">{fmt(dsg.unitSinIva)}</span>
                         </div>
                         <span className="text-slate-200">|</span>
                         <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Subtotal s/IVA</span>
+                            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Subtotal s/IVA</span>
                             <span className="text-[11px] font-black text-slate-600">{fmt(dsg.subtotalSinIva)}</span>
                         </div>
                         <span className="text-slate-200">|</span>
                         <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">IVA 13%</span>
+                            <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">IVA 13%</span>
                             <span className="text-[11px] font-black text-blue-600">{fmt(dsg.subtotalIva)}</span>
                         </div>
                         <span className="text-slate-200">|</span>
                     </>
                 ) : null}
                 <div className="flex items-center gap-1.5 ml-auto">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Subtotal</span>
+                    <span className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">Subtotal</span>
                     <span className="text-[14px] font-black text-[#0052CC]">{fmt(item.subtotal)}</span>
                 </div>
             </div>
@@ -708,12 +708,12 @@ export default function CotizacionesView() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Fecha</label>
+                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Fecha</label>
                             <input type="date" value={fecha} onChange={e => setFecha(e.target.value)}
                                 className="w-full bg-white/60 border border-white/80 rounded-2xl px-4 py-3 text-[16px] font-bold text-slate-700 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all" />
                         </div>
                         <div>
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Cliente</label>
+                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Cliente</label>
                             <LiquidSelect value={customerId}
                                 onChange={handleCustomerChange}
                                 onSearchChange={searchCustomers}
@@ -722,13 +722,13 @@ export default function CotizacionesView() {
                                 options={customerOptions} placeholder="Consumidor Final" icon={User} compact />
                         </div>
                         <div>
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Tipo Documento</label>
+                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Tipo Documento</label>
                             <LiquidSelect value={docType}
                                 onChange={v => { setDocType(v); if (v === 'COF') setAppliesRetention(false); }}
                                 options={DOC_OPTS} placeholder="Tipo..." icon={FileText} compact clearable={false} />
                         </div>
                         <div>
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Forma de Pago</label>
+                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Forma de Pago</label>
                             <LiquidSelect value={paymentType} onChange={setPaymentType}
                                 options={PAY_OPTS} placeholder="Forma de pago..." icon={CreditCard} compact clearable={false} />
                         </div>
@@ -738,7 +738,7 @@ export default function CotizacionesView() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                         {/* Sucursal */}
                         <div>
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Sucursal</label>
+                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Sucursal</label>
                             <div className="flex items-center gap-2 bg-white/40 border border-white/60 rounded-2xl px-4 py-3 min-h-[46px]">
                                 <Building2 size={13} className="text-slate-400 shrink-0" />
                                 <span className="text-[12px] font-bold text-slate-600 truncate">
@@ -756,7 +756,7 @@ export default function CotizacionesView() {
                                 </div>
                                 <div>
                                     <p className="text-[11px] font-black text-slate-700 leading-none">Retención 1%</p>
-                                    <p className="text-[9px] font-bold text-slate-400 mt-0.5">Solo CCF — agente de retención</p>
+                                    <p className="text-[9px] font-bold text-slate-500 mt-0.5">Solo CCF — agente de retención</p>
                                 </div>
                                 {appliesRetention && <span className="ml-auto text-[9px] font-black text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">ACTIVA</span>}
                             </div>
@@ -771,7 +771,7 @@ export default function CotizacionesView() {
 
                         {/* Notas */}
                         <div>
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Notas (opcional)</label>
+                            <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Notas (opcional)</label>
                             <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
                                 placeholder="Observaciones..."
                                 className="w-full bg-white/60 border border-white/80 rounded-2xl px-4 py-3 text-[16px] font-bold text-slate-700 placeholder-slate-300 outline-none focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 transition-all" />
@@ -807,7 +807,7 @@ export default function CotizacionesView() {
                     </div>
 
                     {items.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-10 gap-3 text-slate-400">
+                        <div className="flex flex-col items-center justify-center py-10 gap-3 text-slate-500">
                             <div className="w-12 h-12 rounded-[1rem] bg-slate-50 flex items-center justify-center border border-slate-100"><Package size={22} strokeWidth={1.5} /></div>
                             <p className="text-[12px] font-bold">Busca y selecciona productos</p>
                         </div>
@@ -912,11 +912,11 @@ export default function CotizacionesView() {
                         ].map(c => (
                             <div key={c.label} className="bg-white/50 backdrop-blur-sm border border-white/80 rounded-2xl p-4 shadow-sm">
                                 <div className="flex items-center gap-1.5 mb-1.5">
-                                    <c.icon size={11} className="text-slate-400" strokeWidth={2} />
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{c.label}</span>
+                                    <c.icon size={11} className="text-slate-500" strokeWidth={2} />
+                                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{c.label}</span>
                                 </div>
                                 <p className="text-[13px] font-black text-slate-800 leading-tight">{c.val}</p>
-                                {c.sub && <p className="text-[10px] font-bold text-slate-400 mt-0.5">{c.sub}</p>}
+                                {c.sub && <p className="text-[10px] font-bold text-slate-500 mt-0.5">{c.sub}</p>}
                             </div>
                         ))}
                     </div>
@@ -927,7 +927,7 @@ export default function CotizacionesView() {
                             <LiquidAvatar src={cot.created_by_photo} fallbackText={cot.created_by_name}
                                 className="w-8 h-8 rounded-full shrink-0" />
                             <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Preparada por</p>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Preparada por</p>
                                 <p className="text-[13px] font-black text-slate-700">{cot.created_by_name}</p>
                             </div>
                         </div>
@@ -939,21 +939,21 @@ export default function CotizacionesView() {
                             <table className="min-w-full text-sm">
                                 <thead>
                                     <tr className="bg-[#0052CC]/5 backdrop-blur-xl border-b border-[#0052CC]/10">
-                                        <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">#</th>
-                                        <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Producto</th>
-                                        <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-400">Pres.</th>
-                                        <th className="px-4 py-2.5 text-center text-[9px] font-black uppercase tracking-widest text-slate-400">Cant.</th>
+                                        <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-600">#</th>
+                                        <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-600">Producto</th>
+                                        <th className="px-4 py-2.5 text-left text-[9px] font-black uppercase tracking-widest text-slate-600">Pres.</th>
+                                        <th className="px-4 py-2.5 text-center text-[9px] font-black uppercase tracking-widest text-slate-600">Cant.</th>
                                         {isCCF ? (
                                             <>
-                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-400">P.Unit s/IVA</th>
-                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-400">Subtotal s/IVA</th>
-                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-400">IVA 13%</th>
-                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-400">Total</th>
+                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-600">P.Unit s/IVA</th>
+                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-600">Subtotal s/IVA</th>
+                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-600">IVA 13%</th>
+                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-600">Total</th>
                                             </>
                                         ) : (
                                             <>
-                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-400">P.Unit.</th>
-                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-400">Subtotal</th>
+                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-600">P.Unit.</th>
+                                                <th className="px-4 py-2.5 text-right text-[9px] font-black uppercase tracking-widest text-slate-600">Subtotal</th>
                                             </>
                                         )}
                                     </tr>
@@ -963,7 +963,7 @@ export default function CotizacionesView() {
                                         const dsg = desglose(parseFloat(it.precio_unitario || 0), parseFloat(it.cantidad || 1));
                                         return (
                                             <tr key={it.id || i} className="border-t border-black/[0.04]">
-                                                <td className="px-4 py-2.5 text-[11px] font-black text-slate-400">{i + 1}</td>
+                                                <td className="px-4 py-2.5 text-[11px] font-black text-slate-500">{i + 1}</td>
                                                 <td className="px-4 py-2.5 text-[12px] font-bold text-slate-800 max-w-[200px] truncate">{it.product_nombre}</td>
                                                 <td className="px-4 py-2.5 text-[11px] text-slate-500">{it.presentacion_desc || '—'}</td>
                                                 <td className="px-4 py-2.5 text-center text-[12px] font-bold text-slate-700">{parseFloat(it.cantidad).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</td>
@@ -1068,7 +1068,7 @@ export default function CotizacionesView() {
                     { label: 'Monto',    val: fmt(cotizaciones.filter(c => c.status === 'ACTIVA').reduce((s, c) => s + parseFloat(c.total || 0), 0)),    color: 'text-blue-600' },
                 ].map(s => (
                     <div key={s.label} className="flex items-center gap-2 bg-white/60 border border-white/80 px-4 py-2.5 rounded-2xl shadow-sm">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{s.label}</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">{s.label}</span>
                         <span className={`text-[15px] font-black ${s.color}`}>{s.val}</span>
                     </div>
                 ))}
@@ -1103,7 +1103,7 @@ export default function CotizacionesView() {
                             className={isAnulada ? 'opacity-50 bg-red-50/20' : ''}
                         >
                             <DataCell>
-                                <span className={`text-[12px] font-black ${isAnulada ? 'line-through text-slate-400' : 'text-[#0052CC]'}`}>{cot.numero}</span>
+                                <span className={`text-[12px] font-black ${isAnulada ? 'line-through text-slate-500' : 'text-[#0052CC]'}`}>{cot.numero}</span>
                             </DataCell>
                             <DataCell>
                                 <p className="text-[12px] font-bold text-slate-700">{fmtD(cot.fecha)}</p>
@@ -1125,7 +1125,7 @@ export default function CotizacionesView() {
                                         <LiquidAvatar src={cot.created_by_photo} fallbackText={cot.created_by_name} className="w-6 h-6 rounded-full shrink-0" />
                                         <span className="text-[11px] text-slate-600 truncate max-w-[100px]">{cot.created_by_name}</span>
                                     </div>
-                                ) : <span className="text-slate-300">—</span>}
+                                ) : <span className="text-slate-500">—</span>}
                             </DataCell>
                             <DataCell hideBelow="sm">
                                 <span className={`text-[9px] font-black px-2 py-1 rounded-full border uppercase tracking-wider ${cot.status === 'ACTIVA' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
@@ -1133,7 +1133,7 @@ export default function CotizacionesView() {
                                 </span>
                             </DataCell>
                             <DataCell align="right">
-                                <span className={`text-[13px] font-black ${isAnulada ? 'line-through text-slate-400' : 'text-slate-800'}`}>{fmt(cot.total)}</span>
+                                <span className={`text-[13px] font-black ${isAnulada ? 'line-through text-slate-500' : 'text-slate-800'}`}>{fmt(cot.total)}</span>
                             </DataCell>
                             <DataCell onClick={e => e.stopPropagation()}>
                                 <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">

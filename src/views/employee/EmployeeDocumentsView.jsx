@@ -114,7 +114,7 @@ const DocCard = ({ doc }) => {
                         <div>
                             <p className={`text-[13px] font-black ${cfg.text} leading-tight`}>{title}</p>
                             {period && (
-                                <p className="text-[10px] text-slate-400 font-medium mt-0.5 flex items-center gap-1">
+                                <p className="text-[10px] text-slate-500 font-medium mt-0.5 flex items-center gap-1">
                                     <Calendar size={9} />
                                     {period}
                                 </p>
@@ -133,13 +133,13 @@ const DocCard = ({ doc }) => {
 
                     {/* Footer: fecha + archivo */}
                     <div className="flex items-center justify-between gap-2 flex-wrap mt-2 pt-2 border-t border-slate-100/80">
-                        <p className="text-[10px] text-slate-400 font-medium">
+                        <p className="text-[10px] text-slate-500 font-medium">
                             Solicitado el {new Date(doc.created_at).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </p>
 
                         {doc.meta?.docUrl ? (
                             <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] text-slate-400 font-medium truncate max-w-[120px]">
+                                <span className="text-[10px] text-slate-500 font-medium truncate max-w-[120px]">
                                     {doc.meta.docName || 'Documento adjunto'}
                                 </span>
                                 <button
@@ -152,7 +152,7 @@ const DocCard = ({ doc }) => {
                                 </button>
                             </div>
                         ) : (
-                            <span className="text-[10px] text-slate-300 font-medium italic">Sin archivo adjunto</span>
+                            <span className="text-[10px] text-slate-500 font-medium italic">Sin archivo adjunto</span>
                         )}
                     </div>
 
@@ -253,7 +253,7 @@ const EmployeeDocumentsView = () => {
                     onChange={e => setSearch(e.target.value)}
                 />
                 {search && (
-                    <button onClick={() => setSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0">
+                    <button onClick={() => setSearch('')} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0">
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}
@@ -316,12 +316,12 @@ const EmployeeDocumentsView = () => {
 
                         {/* Rango de fechas */}
                         <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Período de solicitud</p>
+                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">Período de solicitud</p>
                             <div className="flex items-center gap-2">
                                 <div className="flex-1 bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
                                     <LiquidDatePicker value={filterFrom} onChange={setFilterFrom} />
                                 </div>
-                                <span className="text-slate-300 text-[12px] font-bold shrink-0">→</span>
+                                <span className="text-slate-500 text-[12px] font-bold shrink-0">→</span>
                                 <div className="flex-1 bg-white border border-slate-200 rounded-xl h-10 overflow-hidden">
                                     <LiquidDatePicker value={filterTo} onChange={setFilterTo} />
                                 </div>
@@ -330,7 +330,7 @@ const EmployeeDocumentsView = () => {
 
                         {/* Estado */}
                         <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Estado</p>
+                            <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2">Estado</p>
                             <div className="flex flex-wrap gap-1.5">
                                 {[{ key: '', label: 'Todos' }, ...Object.entries(STATUS_CFG).map(([k, v]) => ({ key: k, label: v.label }))].map(s => (
                                     <button
@@ -358,7 +358,7 @@ const EmployeeDocumentsView = () => {
                             <div key={s.label} className={`${s.bg} backdrop-blur-sm border border-white/80 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.03)]`}>
                                 <div className="flex-1 min-w-0">
                                     <p className={`text-[22px] font-black leading-none ${s.color}`}>{s.value}</p>
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{s.label}</p>
+                                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-0.5">{s.label}</p>
                                 </div>
                             </div>
                         ))}
@@ -380,7 +380,7 @@ const EmployeeDocumentsView = () => {
                         <p className="text-[15px] font-black text-slate-500 mb-1">
                             {search || hasFilters ? 'Sin resultados' : 'Sin documentos aún'}
                         </p>
-                        <p className="text-[11px] text-slate-400 font-medium text-center max-w-xs">
+                        <p className="text-[11px] text-slate-500 font-medium text-center max-w-xs">
                             {search || hasFilters
                                 ? 'Intenta con otros filtros o términos de búsqueda.'
                                 : 'Aquí aparecerán tus constancias, boletas de incapacidad y otros documentos adjuntos a tus solicitudes.'}

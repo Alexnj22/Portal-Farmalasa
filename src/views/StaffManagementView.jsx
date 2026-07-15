@@ -149,7 +149,7 @@ const PendingBadge = ({ emp }) => {
                 <li key={i} className="flex items-baseline gap-1.5 text-[11px] whitespace-nowrap">
                   <span className="w-1 h-1 rounded-full bg-amber-400 shrink-0 self-center" />
                   <span className="font-bold">{item.label}</span>
-                  <span className="text-slate-400 font-medium">— {item.hint}</span>
+                  <span className="text-slate-500 font-medium">— {item.hint}</span>
                 </li>
               ))}
             </ul>
@@ -344,7 +344,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
             </div>
             
             <div className="flex items-center gap-2 mt-0.5 h-[16px] relative z-10">
-              <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">
+              <p className="text-[9px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest truncate">
                 {emp.code || 'Sin código'}
               </p>
               {phoneDigits.length >= 8 && (
@@ -394,7 +394,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           {(emp.status === 'INACTIVO' || emp.status === 'Liquidado') && canEdit && (
             <button
               onClick={() => onRehireEmployee(emp)}
-              className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 border border-white/80 hover:border-emerald-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
+              className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 border border-white/80 hover:border-emerald-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97]"
               title="Recontratar"
             >
               <RefreshCw size={14} strokeWidth={2.5} />
@@ -403,7 +403,7 @@ const EmployeeRow = memo(({ emp, branchName, onOpenEmployee, onEditEmployee, onR
           <button
             onClick={() => onEditEmployee(emp)}
             disabled={!canEdit || emp.status === 'INACTIVO' || emp.status === 'Liquidado'}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-400 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-500 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
             title="Edición rápida"
           >
             <Edit3 size={14} strokeWidth={2.5} />
@@ -455,7 +455,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
               <p className="font-black text-slate-800 text-[12px] md:text-[13px] truncate tracking-tight" title={fullName}>{fullName}</p>
               <span className="text-[8px] font-black uppercase tracking-widest text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-md shrink-0">Practicante</span>
             </div>
-            <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest truncate mt-0.5">
+            <p className="text-[9px] md:text-[10px] font-black text-slate-600 uppercase tracking-widest truncate mt-0.5">
               {p.institucion_educativa} · {fmtShortDate(p.fecha_inicio)}→{fmtShortDate(p.fecha_fin)}
             </p>
           </div>
@@ -487,7 +487,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
           <button
             onClick={() => onEdit(p)}
             disabled={!canEdit}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-400 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-amber-50 text-slate-500 hover:text-amber-500 border border-white/80 hover:border-amber-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
             title="Editar practicante"
           >
             <Edit3 size={14} strokeWidth={2.5} />
@@ -495,7 +495,7 @@ const PracticanteRow = memo(({ p, branchName, onEdit, onDelete, canEdit, stagger
           <button
             onClick={() => onDelete(p)}
             disabled={!canEdit}
-            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-red-50 text-slate-400 hover:text-red-500 border border-white/80 hover:border-red-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full bg-white/70 hover:bg-red-50 text-slate-500 hover:text-red-500 border border-white/80 hover:border-red-200 shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
             title="Eliminar practicante"
           >
             <Trash2 size={14} strokeWidth={2.5} />
@@ -858,7 +858,7 @@ const StaffManagementView = ({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
+        {searchTerm && <button onClick={() => setSearchTerm("")} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
         <button onClick={() => { setIsSearchActive(false); setSearchTerm(""); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/60 hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
       </div>
 

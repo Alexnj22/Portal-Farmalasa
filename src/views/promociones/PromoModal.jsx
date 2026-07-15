@@ -21,7 +21,7 @@ const END_COND_OPTIONS = [
 ];
 
 const inp = 'w-full text-[12px] bg-white border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-slate-300 text-slate-700';
-const lbl = 'text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block';
+const lbl = 'text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1.5 block';
 
 // ── Step 1: Datos de la promoción ────────────────────────────────────────────
 
@@ -129,7 +129,7 @@ function ProductRow({ pp, onRemove }) {
             <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-semibold text-slate-700 leading-tight truncate">{pp.nombre}</p>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                    {pp.laboratorio && <span className="text-[10px] text-slate-400">{pp.laboratorio}</span>}
+                    {pp.laboratorio && <span className="text-[10px] text-slate-500">{pp.laboratorio}</span>}
                     {pp.presentacion_tipo && (
                         <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md">{pp.presentacion_tipo}</span>
                     )}
@@ -161,7 +161,7 @@ function ProductRow({ pp, onRemove }) {
             <button
                 type="button"
                 onClick={onRemove}
-                className="p-1.5 rounded-lg hover:bg-red-50 text-slate-300 hover:text-red-400 transition-colors flex-shrink-0"
+                className="p-1.5 rounded-lg hover:bg-red-50 text-slate-500 hover:text-red-400 transition-colors flex-shrink-0"
             >
                 <Trash2 size={13} />
             </button>
@@ -300,7 +300,7 @@ function AddProductInline({ onAdd }) {
                 <div>
                     <label className={lbl}>Presentación *</label>
                     {loadingPresent ? (
-                        <div className="flex items-center gap-2 text-[11px] text-slate-400 py-2">
+                        <div className="flex items-center gap-2 text-[11px] text-slate-500 py-2">
                             <Loader2 size={12} className="animate-spin" /> Cargando presentaciones...
                         </div>
                     ) : (
@@ -371,7 +371,7 @@ function AddProductInline({ onAdd }) {
             )}
 
             <div className="flex gap-2 justify-end">
-                <button type="button" onClick={() => setShow(false)} className="px-3 py-1.5 text-[11px] text-slate-400 hover:text-slate-600">Cancelar</button>
+                <button type="button" onClick={() => setShow(false)} className="px-3 py-1.5 text-[11px] text-slate-500 hover:text-slate-600">Cancelar</button>
                 <button
                     type="button"
                     onClick={handleAdd}
@@ -389,7 +389,7 @@ function StepProducts({ products, onAdd, onRemove }) {
     return (
         <div className="space-y-3">
             {products.length === 0 && (
-                <p className="text-[11px] text-slate-400 italic text-center py-2">Aún no hay productos. Agrega al menos uno.</p>
+                <p className="text-[11px] text-slate-500 italic text-center py-2">Aún no hay productos. Agrega al menos uno.</p>
             )}
             {products.map((pp, idx) => (
                 <ProductRow key={idx} pp={pp} onRemove={() => onRemove(idx)} />
@@ -588,7 +588,7 @@ export default function PromoModal({ isOpen, onClose, onCreated }) {
                     <button
                         type="button"
                         onClick={step === 0 ? handleClose : () => setStep(s => s - 1)}
-                        className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors"
+                        className="flex items-center gap-1.5 px-4 py-2 text-[11px] font-medium text-slate-500 hover:text-slate-600 transition-colors"
                     >
                         {step > 0 && <ChevronLeft size={13} />}
                         {step === 0 ? 'Cancelar' : 'Atrás'}

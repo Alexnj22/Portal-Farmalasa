@@ -159,7 +159,7 @@ function UltimaVentaCell({ row, allBranches }) {
     if (!fecha) {
         return (
             <div>
-                <span className="text-[10px] text-slate-300 italic">Nunca vendido</span>
+                <span className="text-[10px] text-slate-500 italic">Nunca vendido</span>
             </div>
         );
     }
@@ -172,7 +172,7 @@ function UltimaVentaCell({ row, allBranches }) {
         return (
             <div>
                 <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-[9px] text-slate-400">hace {days}d</span>
+                <span className="block text-[9px] text-slate-500">hace {days}d</span>
             </div>
         );
     }
@@ -194,7 +194,7 @@ function UltimaVentaCell({ row, allBranches }) {
             <LiquidTooltip content={tipContent}>
                 <div>
                     <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                    <span className="block text-[9px] text-slate-400">{name}</span>
+                    <span className="block text-[9px] text-slate-500">{name}</span>
                 </div>
             </LiquidTooltip>
         );
@@ -204,7 +204,7 @@ function UltimaVentaCell({ row, allBranches }) {
     const sorted = [...porSuc].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     const tipContent = (
         <div className="space-y-1.5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Última venta por suc.</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">Última venta por suc.</p>
             {sorted.map(s => {
                 const d = Math.floor((now - new Date(s.fecha)) / 86_400_000);
                 const c = d > 365 ? 'text-red-500' : d > 180 ? 'text-orange-500' : 'text-[#0052CC]';
@@ -221,7 +221,7 @@ function UltimaVentaCell({ row, allBranches }) {
         <LiquidTooltip content={tipContent}>
             <div className="cursor-help">
                 <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-[9px] text-slate-400">{porSuc.length} suc. ⓘ</span>
+                <span className="block text-[9px] text-slate-500">{porSuc.length} suc. ⓘ</span>
             </div>
         </LiquidTooltip>
     );
@@ -258,27 +258,27 @@ function SinMinMaxFilters({ data, filterMode, onFilter, loading, ignoredSet }) {
         { id: 'agregar', Icon: PlusCircle, label: 'Agregar Min/Max', sub: 'rotación justifica gestión',
           activeBg: 'bg-emerald-50/80 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
           iconBgActive: 'bg-emerald-100', iconColor: 'text-emerald-600',
-          numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-300' },
+          numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-500' },
         { id: 'evaluar', Icon: AlertTriangle, label: 'Evaluar', sub: 'rotación moderada',
           activeBg: 'bg-amber-50/80 border-amber-300 shadow-[0_4px_16px_rgba(245,158,11,0.20)] -translate-y-1',
           iconBgActive: 'bg-amber-100', iconColor: 'text-amber-500',
-          numColor: n => n > 0 ? 'text-amber-600' : 'text-slate-300' },
+          numColor: n => n > 0 ? 'text-amber-600' : 'text-slate-500' },
         { id: 'encargo', Icon: ShoppingBag, label: 'Posible encargo', sub: 'pocas transacc., alto volumen',
           activeBg: 'bg-orange-50/80 border-orange-300 shadow-[0_4px_16px_rgba(249,115,22,0.20)] -translate-y-1',
           iconBgActive: 'bg-orange-100', iconColor: 'text-orange-500',
-          numColor: n => n > 0 ? 'text-orange-600' : 'text-slate-300' },
+          numColor: n => n > 0 ? 'text-orange-600' : 'text-slate-500' },
         { id: 'mayorista', Icon: Truck, label: 'Mayorista', sub: 'compra por volumen · no agregar',
           activeBg: 'bg-indigo-50/80 border-indigo-300 shadow-[0_4px_16px_rgba(99,102,241,0.20)] -translate-y-1',
           iconBgActive: 'bg-indigo-100', iconColor: 'text-indigo-500',
-          numColor: n => n > 0 ? 'text-indigo-600' : 'text-slate-300' },
+          numColor: n => n > 0 ? 'text-indigo-600' : 'text-slate-500' },
         { id: 'omitir', Icon: Minus, label: 'Sin acción', sub: 'rotación insuficiente',
           activeBg: 'bg-slate-100/80 border-slate-300 shadow-[0_4px_16px_rgba(100,116,139,0.15)] -translate-y-1',
           iconBgActive: 'bg-slate-200', iconColor: 'text-slate-500',
-          numColor: n => n > 0 ? 'text-slate-600' : 'text-slate-300' },
+          numColor: n => n > 0 ? 'text-slate-600' : 'text-slate-500' },
         { id: 'ignorado', Icon: EyeOff, label: 'No sugerir', sub: 'descartados',
           activeBg: 'bg-slate-100/80 border-slate-400 shadow-[0_4px_16px_rgba(100,116,139,0.15)] -translate-y-1',
           iconBgActive: 'bg-slate-200', iconColor: 'text-slate-600',
-          numColor: n => n > 0 ? 'text-slate-700' : 'text-slate-300' },
+          numColor: n => n > 0 ? 'text-slate-700' : 'text-slate-500' },
     ];
 
     return (
@@ -323,15 +323,15 @@ function StockRetFilters({ data, filterMode, onFilter, loading }) {
         { id: 'con_minmax', Icon: CheckCircle2, label: 'Con Min/Max',
           activeBg: 'bg-emerald-50/80 border-emerald-300 shadow-[0_4px_16px_rgba(16,185,129,0.20)] -translate-y-1',
           iconBgActive: 'bg-emerald-100', iconColor: 'text-emerald-600',
-          numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-300' },
+          numColor: n => n > 0 ? 'text-emerald-600' : 'text-slate-500' },
         { id: 'sin_stock_minmax', Icon: AlertCircle, label: 'Sin stock + Min/Max',
           activeBg: 'bg-violet-50/80 border-violet-300 shadow-[0_4px_16px_rgba(139,92,246,0.20)] -translate-y-1',
           iconBgActive: 'bg-violet-100', iconColor: 'text-violet-600',
-          numColor: n => n > 0 ? 'text-violet-600' : 'text-slate-300' },
+          numColor: n => n > 0 ? 'text-violet-600' : 'text-slate-500' },
         { id: 'sin_minmax', Icon: CircleDashed, label: 'Sin Min/Max',
           activeBg: 'bg-red-50/80 border-red-300 shadow-[0_4px_16px_rgba(239,68,68,0.18)] -translate-y-1',
           iconBgActive: 'bg-red-100', iconColor: 'text-red-500',
-          numColor: n => n > 0 ? 'text-red-600' : 'text-slate-300' },
+          numColor: n => n > 0 ? 'text-red-600' : 'text-slate-500' },
     ];
 
     return (
@@ -427,7 +427,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
         filterPill:       'bg-white/80 border-slate-200/70 backdrop-blur-sm shadow-[0_4px_20px_rgba(0,82,204,0.10)]',
         filterBtn:        'text-slate-500 hover:text-slate-700 hover:bg-white/60',
         filterDivider:    'bg-slate-100',
-        totalText:        'text-slate-400',
+        totalText:        'text-slate-500',
     };
 
     const loadMode = useCallback(async (erpId, m) => {
@@ -575,7 +575,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                             <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">
                                 {mode === 'sin_gestion' ? 'Sin Min/Max' : 'Stock retenido'}
                             </div>
-                            <div className="text-[9px] text-slate-400">en la sucursal activa</div>
+                            <div className="text-[9px] text-slate-500">en la sucursal activa</div>
                         </div>
                     </div>
 
@@ -592,7 +592,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                 <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">Costo retenido</div>
                                 {filteredCost > 0 && filteredCost !== totalCost
                                     ? <div className="text-[9px] text-orange-400">{fmtMoney(filteredCost)} en filtro</div>
-                                    : <div className="text-[9px] text-slate-400">total sucursal</div>
+                                    : <div className="text-[9px] text-slate-500">total sucursal</div>
                                 }
                             </div>
                         </div>
@@ -609,7 +609,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                     {activeLoading ? <span className="text-slate-200">–</span> : fmtMoney(totalRevenue)}
                                 </div>
                                 <div className="text-[10px] font-bold leading-tight text-slate-700 mt-0.5">Revenue 6m</div>
-                                <div className="text-[9px] text-slate-400">sin parámetros min/max</div>
+                                <div className="text-[9px] text-slate-500">sin parámetros min/max</div>
                             </div>
                         </div>
                     )}
@@ -658,7 +658,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                     <div className={`h-5 w-px shrink-0 ${tk.filterDivider}`} />
 
                     {/* Sucursal */}
-                    {activeRefreshing && <div className="pl-2"><Loader2 size={13} className="animate-spin text-slate-300" /></div>}
+                    {activeRefreshing && <div className="pl-2"><Loader2 size={13} className="animate-spin text-slate-500" /></div>}
                     <div className="px-2 py-2 overflow-visible" style={{ width: '170px' }}>
                         <LiquidSelect
                             value={String(selectedErp)}
@@ -734,11 +734,11 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 <span className="text-[13px] font-semibold text-slate-800 block truncate leading-snug max-w-[280px] group-hover/copy:text-[#0052CC] transition-colors">
                                                     {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
                                                 </span>
-                                                <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-emerald-500 opacity-100' : 'text-slate-300 opacity-0 group-hover/copy:opacity-100'}`}>
+                                                <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-emerald-500 opacity-100' : 'text-slate-500 opacity-0 group-hover/copy:opacity-100'}`}>
                                                     {copiedId === row.erp_product_id ? '✓' : '⎘'}
                                                 </span>
                                             </button>
-                                            <span className="text-[10px] text-slate-400">{(Number(row.units_sold)/6).toFixed(1)} uds/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
+                                            <span className="text-[10px] text-slate-500">{(Number(row.units_sold)/6).toFixed(1)} uds/mes · {fmtMoney(Number(row.revenue)/6)}/mes</span>
                                         </DataCell>
                                         <DataCell hideBelow="md" className="text-[12px] text-slate-500">{row.laboratorio || '—'}</DataCell>
                                         <DataCell align="center" hideBelow="lg">
@@ -747,7 +747,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                     <div key={i} className={`w-2 h-4 rounded-sm ${i < sugg.months ? 'bg-amber-400' : 'bg-slate-100'}`} />
                                                 ))}
                                             </div>
-                                            <div className="text-[9px] text-slate-400 mt-0.5 text-center">{sugg.months}/6</div>
+                                            <div className="text-[9px] text-slate-500 mt-0.5 text-center">{sugg.months}/6</div>
                                         </DataCell>
                                         <DataCell align="right" hideBelow="sm">
                                             <span className="text-[13px] font-bold text-amber-600 tabular-nums">{Number(row.units_sold).toLocaleString()}</span>
@@ -758,7 +758,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         </DataCell>
                                         <DataCell hideBelow="md">
                                             {isIgnored ? (
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 w-fit">
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-500 border-slate-200 w-fit">
                                                     <EyeOff size={9} />No sugerir
                                                 </span>
                                             ) : (
@@ -766,26 +766,26 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                     {lvl === 'agregar' && (<>
                                                         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200 w-fit"><PlusCircle size={9} />Agregar Min/Max</span>
                                                         <span className="text-[9px] text-slate-500 font-semibold">Min {sugg.minSug} / Max {sugg.maxSug} sugerido</span>
-                                                        <span className="text-[9px] text-slate-400 italic">{sugg.reason}</span>
-                                                        <span className="text-[9px] text-slate-400">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
+                                                        <span className="text-[9px] text-slate-500 italic">{sugg.reason}</span>
+                                                        <span className="text-[9px] text-slate-500">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
                                                     </>)}
                                                     {lvl === 'evaluar' && (<>
                                                         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 w-fit"><AlertTriangle size={9} />Evaluar</span>
-                                                        <span className="text-[9px] text-slate-400 italic">{sugg.reason}</span>
-                                                        <span className="text-[9px] text-slate-400">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
+                                                        <span className="text-[9px] text-slate-500 italic">{sugg.reason}</span>
+                                                        <span className="text-[9px] text-slate-500">{sugg.invoices} facturas · {sugg.avgPerInv.toFixed(1)} uds/factura</span>
                                                     </>)}
                                                     {lvl === 'encargo' && (<>
                                                         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-50 text-orange-700 border-orange-200 w-fit"><ShoppingBag size={9} />Posible encargo</span>
                                                         <span className="text-[9px] text-orange-500 font-semibold">{sugg.reason}</span>
-                                                        <span className="text-[9px] text-slate-400 italic">No agregar a min/max</span>
+                                                        <span className="text-[9px] text-slate-500 italic">No agregar a min/max</span>
                                                     </>)}
                                                     {lvl === 'mayorista' && (<>
                                                         <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-indigo-50 text-indigo-700 border-indigo-200 w-fit"><Truck size={9} />Venta mayorista</span>
                                                         <span className="text-[9px] text-indigo-500 font-semibold">{sugg.reason}</span>
-                                                        <span className="text-[9px] text-slate-400 italic">No agregar a min/max</span>
+                                                        <span className="text-[9px] text-slate-500 italic">No agregar a min/max</span>
                                                     </>)}
                                                     {lvl === 'omitir' && (
-                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 w-fit"><Minus size={9} />Sin acción</span>
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-50 text-slate-500 border-slate-200 w-fit"><Minus size={9} />Sin acción</span>
                                                     )}
                                                 </div>
                                             )}
@@ -793,7 +793,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <DataCell align="center" hideBelow="md">
                                             {isIgnored ? (
                                                 <button onClick={() => handleRestore(row.erp_product_id)} title="Restaurar sugerencia"
-                                                    className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
+                                                    className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors">
                                                     <Eye size={13} />
                                                 </button>
                                             ) : (
@@ -821,14 +821,14 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                 <span className="text-[13px] font-semibold text-slate-800 block truncate leading-snug max-w-[220px] group-hover/copy:text-[#0052CC] transition-colors">
                                                     {copiedId === row.erp_product_id ? '¡Copiado!' : (row.product_name || '—')}
                                                 </span>
-                                                <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-emerald-500 opacity-100' : 'text-slate-300 opacity-0 group-hover/copy:opacity-100'}`}>
+                                                <span className={`shrink-0 text-[9px] font-bold transition-all duration-150 ${copiedId === row.erp_product_id ? 'text-emerald-500 opacity-100' : 'text-slate-500 opacity-0 group-hover/copy:opacity-100'}`}>
                                                     {copiedId === row.erp_product_id ? '✓' : '⎘'}
                                                 </span>
                                             </button>
                                             {row.fecha_vencimiento_min && (() => {
                                                 const exp = new Date(row.fecha_vencimiento_min);
                                                 const expired = exp < new Date();
-                                                return <span className={`text-[9px] mt-0.5 block font-semibold ${expired ? 'text-red-500' : 'text-slate-400'}`}>
+                                                return <span className={`text-[9px] mt-0.5 block font-semibold ${expired ? 'text-red-500' : 'text-slate-500'}`}>
                                                     {expired ? 'Vencido: ' : 'Vence: '}{exp.toLocaleDateString('es-SV', { day:'numeric', month:'short', year:'numeric' })}
                                                 </span>;
                                             })()}
@@ -840,7 +840,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                             ) : (
                                                 <>
                                                     <span className="text-[13px] font-bold text-slate-700 tabular-nums">{stock.toLocaleString()}</span>
-                                                    <span className="text-[10px] text-slate-400 ml-1">und</span>
+                                                    <span className="text-[10px] text-slate-500 ml-1">und</span>
                                                 </>
                                             )}
                                         </DataCell>
@@ -856,7 +856,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                                     {(row.min_qty != null || row.max_qty != null) && (
                                                         <span className="text-[9px] font-mono text-slate-500 tabular-nums">
                                                             <span className="text-orange-500 font-bold">{Number(row.min_qty ?? 0).toLocaleString()}</span>
-                                                            <span className="text-slate-300 mx-0.5">/</span>
+                                                            <span className="text-slate-500 mx-0.5">/</span>
                                                             <span className="text-blue-500 font-bold">{Number(row.max_qty ?? 0).toLocaleString()}</span>
                                                         </span>
                                                     )}
@@ -876,7 +876,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
                                         <DataCell>
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 {soldIn.length === 0
-                                                    ? <span className="text-[10px] font-semibold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full italic">Sin historial</span>
+                                                    ? <span className="text-[10px] font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-full italic">Sin historial</span>
                                                     : soldIn.map(s => (
                                                         <span key={s.esid} title={`$${Number(s.rev).toLocaleString('en-US', { maximumFractionDigits: 0 })} en ingresos`}
                                                             className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-default ${SUC_COLORS[s.esid] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>

@@ -198,7 +198,7 @@ function FilterControls({
                     className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                         filterAnuladas
                             ? 'bg-red-100 border-red-200 text-red-700 shadow-sm'
-                            : 'bg-transparent text-slate-400 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
+                            : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
                     }`}>
                     Anuladas
                     {filterAnuladas && <X size={9} strokeWidth={3} />}
@@ -209,7 +209,7 @@ function FilterControls({
                         className={`flex items-center gap-1 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
                             filterAntibiotico
                                 ? 'bg-rose-100 border-rose-200 text-rose-700 shadow-sm'
-                                : 'bg-transparent text-slate-400 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
+                                : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
                         }`}>
                         Receta Médica
                         {filterAntibiotico && <X size={9} strokeWidth={3} />}
@@ -251,7 +251,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
                 <Icon size={11} className="text-white" strokeWidth={2.5} />
             </div>
             <div className="flex flex-col min-w-0">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 leading-none mb-0.5">{label}</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-600 leading-none mb-0.5">{label}</span>
                 <div className={`flex items-baseline gap-1.5 flex-wrap transition-[filter] duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>
                     <span className={`text-[15px] font-black leading-none ${text}`}>{blurred ? '••••••' : value}</span>
                     {!blurred && pct !== null && pct !== undefined && (
@@ -261,7 +261,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
                         </span>
                     )}
                 </div>
-                {sub && <span className={`text-[9px] text-slate-400 font-medium leading-none mt-0.5 transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>{blurred ? '••' : sub}</span>}
+                {sub && <span className={`text-[9px] text-slate-500 font-medium leading-none mt-0.5 transition-all duration-300 ${blurred ? 'blur-sm select-none' : ''}`}>{blurred ? '••' : sub}</span>}
             </div>
             {isFilter && !active && <ChevronDown size={11} className="text-amber-400 ml-0.5 shrink-0" />}
             {active && <X size={11} className="text-amber-500 ml-0.5 shrink-0" />}
@@ -271,7 +271,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
     return (
         <LiquidTooltip content={
             <div className="whitespace-nowrap">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total con IVA</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1">Total con IVA</p>
                 <p className="text-[13px] font-black text-slate-800">{fmt(conIva)}</p>
             </div>
         }>
@@ -289,7 +289,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort, className = '' }) {
                 className={`group flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg transition-all duration-150 ${
                     active
                         ? 'text-[#0052CC] bg-blue-50'
-                        : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100/70'
+                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100/70'
                 }`}>
                 {label}
                 <span className={`transition-opacity duration-150 ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
@@ -719,19 +719,19 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                             >
                                 <DataCell>
                                     <p className={`text-[12px] font-bold text-slate-700 ${isCancelled ? 'line-through' : ''}`}>{r.fecha}</p>
-                                    {r.hora && <p className="text-[10px] text-slate-400">{r.hora?.slice(0, 5)}</p>}
+                                    {r.hora && <p className="text-[10px] text-slate-500">{r.hora?.slice(0, 5)}</p>}
                                     {isCancelled
                                         ? <span className="text-[8px] font-black uppercase tracking-widest text-red-400">ANULADA</span>
                                         : r.recibido_mh === null && <span className="text-[8px] font-black uppercase tracking-widest text-orange-400">Pdte. MH</span>}
                                 </DataCell>
                                 <DataCell hideBelow="md">
                                     {r.erp_invoice_id && <p className={`font-mono text-[11px] font-black text-slate-500 ${isCancelled ? 'line-through' : ''}`}>#{r.erp_invoice_id}</p>}
-                                    <p className="font-mono text-[10px] text-slate-400">{r.correlativo}</p>
+                                    <p className="font-mono text-[10px] text-slate-500">{r.correlativo}</p>
                                 </DataCell>
                                 <DataCell hideBelow="sm">
                                     {r.tipo_documento
                                         ? <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md ${tipoBadgeColor}`}>{r.tipo_documento}</span>
-                                        : <span className="text-slate-300">—</span>}
+                                        : <span className="text-slate-500">—</span>}
                                 </DataCell>
                                 <DataCell hideBelow="lg">
                                     <span className="text-[11px] text-slate-600">{getBranch(r.branch_id)}</span>
@@ -766,7 +766,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                 <DataCell hideBelow="sm">
                                     {r.tipo_pago
                                         ? <span className="text-[11px] text-slate-600 font-medium">{r.tipo_pago}</span>
-                                        : <span className="text-slate-300">—</span>}
+                                        : <span className="text-slate-500">—</span>}
                                 </DataCell>
                                 <DataCell align="right">
                                     <div className="flex items-center justify-end gap-2">
@@ -777,7 +777,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                     {relevantChanges.map((c, ci) => (
                                                         <div key={ci} className="flex items-baseline gap-2 py-1 border-b border-slate-100 last:border-0">
                                                             <span className="text-[11px] font-bold text-slate-600 shrink-0">{CAMPO_LABELS[c.campo] ?? c.campo}:</span>
-                                                            <span className="text-[11px] text-slate-400 line-through">{fmtCampoVal(c.campo, c.valor_anterior)}</span>
+                                                            <span className="text-[11px] text-slate-500 line-through">{fmtCampoVal(c.campo, c.valor_anterior)}</span>
                                                             <span className="text-[11px] font-semibold text-slate-700">→ {fmtCampoVal(c.campo, c.valor_nuevo)}</span>
                                                         </div>
                                                     ))}
@@ -789,9 +789,9 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 </div>
                                             </LiquidTooltip>
                                         )}
-                                        <p className={`text-[13px] font-black ${isCancelled ? 'line-through text-slate-400' : 'text-slate-800'}`}>{fmt(r.total)}</p>
+                                        <p className={`text-[13px] font-black ${isCancelled ? 'line-through text-slate-500' : 'text-slate-800'}`}>{fmt(r.total)}</p>
                                         <ChevronDown size={12}
-                                            className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : noData ? 'text-slate-200' : 'text-slate-400'}`} />
+                                            className={`transition-transform duration-200 shrink-0 ${isExpanded ? 'rotate-180 text-blue-400' : noData ? 'text-slate-200' : 'text-slate-500'}`} />
                                     </div>
                                 </DataCell>
                             </DataRow>
@@ -800,11 +800,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                     <td colSpan={8}
                                         className="px-5 py-4 bg-gradient-to-br from-blue-50/40 via-white/50 to-slate-50/20">
                                         {loadingItems && !cachedItems ? (
-                                            <div className="flex items-center gap-2 text-[11px] py-1 text-slate-400">
+                                            <div className="flex items-center gap-2 text-[11px] py-1 text-slate-500">
                                                 <Loader2 size={12} className="animate-spin text-blue-400" /> Cargando productos...
                                             </div>
                                         ) : noData ? (
-                                            <div className="flex items-center gap-2 text-[11px] py-1 text-slate-400">
+                                            <div className="flex items-center gap-2 text-[11px] py-1 text-slate-500">
                                                 <Info size={12} className="shrink-0 text-slate-300" />
                                                 Esta sucursal no tiene detalle de productos sincronizado desde el ERP.
                                             </div>
@@ -823,7 +823,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                 const regularSum    = regularItems.reduce((s, it) => s + parseFloat(it.total_linea || 0), 0);
                                                 const arithmeticDiscount = regularSum - parseFloat(r.total || 0);
                                                 const finalDiscount = discountItems.length > 0 ? discountAmt : (arithmeticDiscount > 0.01 ? arithmeticDiscount : 0);
-                                                const hdrTxt = 'text-slate-400';
+                                                const hdrTxt = 'text-slate-500';
                                                 const nameTxt = 'text-slate-700';
                                                 const numTxt = 'text-slate-500';
                                                 const dividerCls = 'border-slate-100/80';
@@ -865,14 +865,14 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                             {(antibioticIds.has(it.erp_product_id) || it.presentacion || it.lote || it.fecha_vencimiento) && (
                                                                                 <div className="flex flex-wrap gap-1 mt-0.5">
                                                                                     {antibioticIds.has(it.erp_product_id) && <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600">Receta Médica</span>}
-                                                                                    {it.presentacion && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-400">{it.presentacion}</span>}
+                                                                                    {it.presentacion && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500">{it.presentacion}</span>}
                                                                                     {it.lote && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500 font-mono">L:{it.lote}</span>}
                                                                                     {it.fecha_vencimiento && <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md font-mono bg-slate-100 text-slate-500">Vence {it.fecha_vencimiento}</span>}
                                                                                 </div>
                                                                             )}
                                                                         </td>
                                                                         <td className={`py-1 text-right text-[10px] font-bold whitespace-nowrap ${numTxt}`}>{fmtQty(it.cantidad)}u</td>
-                                                                        <td className="py-1 text-right text-[10px] whitespace-nowrap hidden sm:table-cell text-slate-400">{fmt(it.precio_unitario)}</td>
+                                                                        <td className="py-1 text-right text-[10px] whitespace-nowrap hidden sm:table-cell text-slate-500">{fmt(it.precio_unitario)}</td>
                                                                         <td className="py-1 text-right whitespace-nowrap">
                                                                             {tier ? (
                                                                                 <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md inline-flex items-center gap-1 ${tier.color}`}>
@@ -880,7 +880,7 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                                                                                     {tier.num != null && <span className="opacity-50 font-bold">{tier.num}</span>}
                                                                                 </span>
                                                                             ) : noPrice ? (
-                                                                                <span className="text-[9px] text-slate-300">—</span>
+                                                                                <span className="text-[9px] text-slate-500">—</span>
                                                                             ) : null}
                                                                         </td>
                                                                         <td className={`py-1 text-right text-[11px] font-black whitespace-nowrap ${nameTxt}`}>{fmt(it.total_linea)}</td>
@@ -1157,9 +1157,9 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                 <DataCell>
                                     <div className="flex items-center gap-1.5">
                                         {i === 0 ? <Trophy size={15} className="text-yellow-500" />
-                                            : i === 1 ? <Trophy size={15} className="text-slate-400" />
+                                            : i === 1 ? <Trophy size={15} className="text-slate-500" />
                                             : i === 2 ? <Trophy size={15} className="text-amber-600" />
-                                            : <span className="text-xs text-slate-400 font-bold w-4 text-center">{i + 1}</span>}
+                                            : <span className="text-xs text-slate-500 font-bold w-4 text-center">{i + 1}</span>}
                                         <TrendBadge cod={r.cod_vendedor} currentRank={i + 1} />
                                     </div>
                                 </DataCell>
@@ -1176,7 +1176,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                         )}
                                         <div>
                                             <p className="font-semibold text-[13px]">{displayName}</p>
-                                            <p className="text-[10px] text-slate-400">Cód. {r.cod_vendedor}</p>
+                                            <p className="text-[10px] text-slate-500">Cód. {r.cod_vendedor}</p>
                                         </div>
                                     </div>
                                 </DataCell>
@@ -1205,10 +1205,10 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                     <td colSpan={7}
                                         className={`px-4 py-3 ${expandBg}`}>
                                         {loadingExpand ? (
-                                            <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-slate-400" /></div>
+                                            <div className="flex justify-center py-4"><Loader2 size={16} className="animate-spin text-slate-500" /></div>
                                         ) : (
                                             <div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-slate-400">Ventas diarias</p>
+                                                <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-slate-600">Ventas diarias</p>
                                                 <div className="flex flex-wrap gap-2">
                                                     {expandedData.map(d => {
                                                         const cross = d.branches.filter(b => b.branch_id !== baseBranchId);
@@ -1216,7 +1216,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                                             <div key={d.fecha} className={`border rounded-xl px-3 py-2 text-xs ${cross.length > 0 ? cardCross : cardNormal}`}>
                                                                 <p className="mb-0.5 text-slate-500">{new Date(d.fecha + 'T12:00').toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}</p>
                                                                 <p className="font-black text-slate-800">{fmt(d.total)}</p>
-                                                                <p className="text-slate-400">{d.count} fact.</p>
+                                                                <p className="text-slate-500">{d.count} fact.</p>
                                                                 {cross.map(b => (
                                                                     <p key={b.branch_id} className="text-orange-500 font-semibold mt-0.5">{getBranchName(b.branch_id)}: {fmt(b.total)}</p>
                                                                 ))}
@@ -1330,7 +1330,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
     const porSuc = row.ultima_venta_por_suc || [];
 
     if (!fecha) {
-        return <span className="text-[10px] text-slate-300 italic">Sin ventas</span>;
+        return <span className="text-[10px] text-slate-500 italic">Sin ventas</span>;
     }
 
     const days  = Math.floor((now - new Date(fecha + 'T12:00:00')) / 86_400_000);
@@ -1341,7 +1341,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
         return (
             <div>
                 <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-[9px] text-slate-400">hace {days}d</span>
+                <span className="block text-[9px] text-slate-500">hace {days}d</span>
             </div>
         );
     }
@@ -1355,14 +1355,14 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
         return (
             <div>
                 <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                {name && <span className="block text-[9px] text-slate-400">{name}</span>}
+                {name && <span className="block text-[9px] text-slate-500">{name}</span>}
             </div>
         );
     }
 
     const tipContent = (
         <div className="space-y-1.5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Última venta por suc.</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">Última venta por suc.</p>
             {byBranch.map(s => {
                 const name = branches.find(b => b.id === Number(s.branch_id))?.name || `Suc. ${s.branch_id}`;
                 const d = Math.floor((now - new Date(s.fecha + 'T12:00:00')) / 86_400_000);
@@ -1380,7 +1380,7 @@ function UltimaVentaCell({ row, filterBranch, branches }) {
         <LiquidTooltip content={tipContent}>
             <div className="cursor-help">
                 <span className={`text-[11px] font-semibold tabular-nums ${color}`}>{label}</span>
-                <span className="block text-[9px] text-slate-400">{byBranch.length} suc. ⓘ</span>
+                <span className="block text-[9px] text-slate-500">{byBranch.length} suc. ⓘ</span>
             </div>
         </LiquidTooltip>
     );
@@ -1883,7 +1883,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                 const isExpanded = expandedKey === rowKey;
                                 const pct        = (r.neto / maxNeto) * 100;
                                 const margin     = r.margen;
-                                const marginColor = margin == null ? 'text-slate-300'
+                                const marginColor = margin == null ? 'text-slate-500'
                                     : margin >= 25 ? 'text-emerald-600'
                                     : margin >= 10 ? 'text-amber-600'
                                     : 'text-red-600';
@@ -1893,21 +1893,21 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         className={isExpanded ? 'bg-blue-50/40' : ''}>
                                         <DataCell className="text-[11px] font-bold">
                                             {globalIdx === 0 ? <Star size={15} className="text-yellow-500 fill-yellow-400" />
-                                                : <span className="text-slate-400">{globalIdx + 1}</span>}
+                                                : <span className="text-slate-500">{globalIdx + 1}</span>}
                                         </DataCell>
                                         <DataCell className="max-w-[220px]">
                                             <div className="flex items-start gap-1.5">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className={`font-semibold text-[12px] leading-tight ${r.neto === 0 ? 'text-slate-400' : ''}`}>{r.descripcion}</p>
+                                                    <p className={`font-semibold text-[12px] leading-tight ${r.neto === 0 ? 'text-slate-500' : ''}`}>{r.descripcion}</p>
                                                     {r.presentaciones?.length > 0 && (
-                                                        <p className="text-[10px] text-slate-400 mt-0.5">
+                                                        <p className="text-[10px] text-slate-500 mt-0.5">
                                                             {r.presentaciones.length === 1
                                                                 ? r.presentaciones[0].presentacion || 'sin presentación'
                                                                 : `${r.presentaciones.length} presentaciones`}
                                                         </p>
                                                     )}
                                                     {r.neto === 0 && (
-                                                        <span className="text-[9px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full mt-1 inline-block">Sin ventas en período</span>
+                                                        <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full mt-1 inline-block">Sin ventas en período</span>
                                                     )}
                                                     {r.neto > 0 && (
                                                     <div className="mt-1.5 h-1 rounded-full bg-slate-100">
@@ -1928,14 +1928,14 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                 return (
                                                     <LiquidTooltip content={
                                                         <div className="space-y-1 whitespace-nowrap">
-                                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Desglose por presentación</p>
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1">Desglose por presentación</p>
                                                             {pres.map((p, i) => {
                                                                 const f = p.factor || 1;
                                                                 const sub = p.cantidad * f;
                                                                 return (
                                                                     <div key={`${p.presentacion}-${i}`} className="flex items-center justify-between gap-4 text-[11px]">
                                                                         <span className="font-semibold text-slate-600">{fmtQty(p.cantidad)} {p.presentacion || 'u'}</span>
-                                                                        <span className="text-slate-400 tabular-nums">{f > 1 ? `× ${f} = ${fmtNum(sub)} u` : `= ${fmtNum(sub)} u`}</span>
+                                                                        <span className="text-slate-500 tabular-nums">{f > 1 ? `× ${f} = ${fmtNum(sub)} u` : `= ${fmtNum(sub)} u`}</span>
                                                                     </div>
                                                                 );
                                                             })}
@@ -1958,7 +1958,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             ) : (
                                                 <LiquidTooltip content={
                                                     <div className="whitespace-nowrap">
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total con IVA</p>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1">Total con IVA</p>
                                                         <p className="text-[13px] font-black text-slate-800">{fmt(r.neto * 1.13)}</p>
                                                     </div>
                                                 }>
@@ -1990,7 +1990,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             <LiquidTooltip content={
                                                 showHidden
                                                     ? <div className="whitespace-nowrap">
-                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Mostrar de nuevo</p>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1">Mostrar de nuevo</p>
                                                         <p className="text-[11px] text-slate-600">
                                                             Oculto por <span className="font-bold text-slate-800">{shortEmployeeName(r.oculto_por)}</span>
                                                             {r.oculto_at && ` el ${new Date(r.oculto_at).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })}`}
@@ -2002,8 +2002,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                     onClick={(e) => { e.stopPropagation(); toggleOculto(r); }}
                                                     className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0 ${
                                                         showHidden
-                                                            ? 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
-                                                            : 'text-slate-300 hover:text-red-500 hover:bg-red-50'
+                                                            ? 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50'
+                                                            : 'text-slate-500 hover:text-red-500 hover:bg-red-50'
                                                     }`}
                                                 >
                                                     {showHidden ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -2016,7 +2016,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                             <td colSpan={10}
                                                 className="px-4 py-4">
                                                 {drillLoading ? (
-                                                    <div className="flex items-center gap-2 text-[12px] text-slate-400 py-3">
+                                                    <div className="flex items-center gap-2 text-[12px] text-slate-500 py-3">
                                                         <Loader2 size={14} className="animate-spin" /> Cargando detalle...
                                                     </div>
                                                 ) : (
@@ -2024,7 +2024,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                         {/* Presentaciones breakdown */}
                                                         {r.presentaciones?.length > 1 && (
                                                             <div>
-                                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Por presentación</p>
+                                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2">Por presentación</p>
                                                                 <div className="flex flex-wrap gap-2">
                                                                     {r.presentaciones.map(p => (
                                                                         <div key={p.presentacion} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-sm">
@@ -2033,7 +2033,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                             {p.factor > 1 && (
                                                                                 <span className="text-[10px] font-semibold text-blue-500">= {fmtQty(p.cantidad * p.factor)} base</span>
                                                                             )}
-                                                                            <span className="text-[10px] text-slate-400">{fmt(p.neto)}</span>
+                                                                            <span className="text-[10px] text-slate-500">{fmt(p.neto)}</span>
                                                                         </div>
                                                                     ))}
                                                                 </div>
@@ -2069,7 +2069,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                     {/* Branch rotation */}
                                                                     {showBranch && (
                                                                         <div className="rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50/50 p-4 shadow-sm">
-                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">Ventas por sucursal</p>
+                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-3">Ventas por sucursal</p>
                                                                             <div className="space-y-2.5">
                                                                                 {branchAgg.entries.map(([bid, neto], ci) => {
                                                                                     const pct   = branchAgg.total > 0 ? (neto / branchAgg.total) * 100 : 0;
@@ -2081,7 +2081,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                             <div className="flex justify-between items-center mb-1">
                                                                                                 <span className="text-[10px] text-slate-600 font-semibold truncate max-w-[150px]">{name}</span>
                                                                                                 <div className="flex items-center gap-2 shrink-0 ml-2">
-                                                                                                    <span className="text-[9px] text-slate-400 font-semibold tabular-nums">{fmtQty(cant)} und</span>
+                                                                                                    <span className="text-[9px] text-slate-500 font-semibold tabular-nums">{fmtQty(cant)} und</span>
                                                                                                     <span className="text-[10px] font-black text-slate-700">{fmt(neto)}</span>
                                                                                                     <span className="text-[9px] font-black text-white px-1.5 py-0.5 rounded-full bg-indigo-500">{pct.toFixed(0)}%</span>
                                                                                                 </div>
@@ -2099,7 +2099,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                     {/* Trend */}
                                                                     {showTrend && (
                                                                         <div className="rounded-2xl border border-slate-100 bg-gradient-to-br from-white to-slate-50/50 p-4 shadow-sm">
-                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">Tendencia mensual</p>
+                                                                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-3">Tendencia mensual</p>
                                                                             <div className="flex items-end gap-1.5" style={{ height: 80 }}>
                                                                                 {drillMonthly.map((m, i) => {
                                                                                     const barPct = (m.neto / maxTrend) * 100;
@@ -2145,7 +2145,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                 const active = drillSortCol === col;
                                                                 return (
                                                                     <th onClick={() => handleDrillSort(col)}
-                                                                        className={`px-3 py-2 font-black text-[9px] uppercase tracking-wide cursor-pointer select-none whitespace-nowrap ${right ? 'text-right' : 'text-left'} ${active ? 'text-blue-600' : 'text-slate-400'} hover:text-slate-700`}>
+                                                                        className={`px-3 py-2 font-black text-[9px] uppercase tracking-wide cursor-pointer select-none whitespace-nowrap ${right ? 'text-right' : 'text-left'} ${active ? 'text-blue-600' : 'text-slate-600'} hover:text-slate-700`}>
                                                                         <span className="inline-flex items-center gap-0.5">
                                                                             {label}
                                                                             {active
@@ -2194,13 +2194,13 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
 
                                                                     {/* Totals summary */}
                                                                     <div className="flex items-center gap-3 mb-2">
-                                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">
                                                                             {filteredDrill.length} venta{filteredDrill.length !== 1 ? 's' : ''}{drillData.length >= 300 ? '+' : ''}
                                                                         </p>
                                                                         <span className="text-slate-200">·</span>
-                                                                        <p className="text-[10px] font-black text-slate-600">{fmtQty(totCant)} <span className="font-medium text-slate-400">unidades</span></p>
+                                                                        <p className="text-[10px] font-black text-slate-600">{fmtQty(totCant)} <span className="font-medium text-slate-500">unidades</span></p>
                                                                         <span className="text-slate-200">·</span>
-                                                                        <p className="text-[11px] font-black text-emerald-700">{fmt(totNeto)} <span className="text-[9px] font-medium text-slate-400">total</span></p>
+                                                                        <p className="text-[11px] font-black text-emerald-700">{fmt(totNeto)} <span className="text-[9px] font-medium text-slate-500">total</span></p>
                                                                     </div>
 
                                                                     {/* Table */}
@@ -2216,8 +2216,8 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                     <DH col="cliente"        label="Cliente" />
                                                                                     {!filterBranch && <DH col="branch_id" label="Suc." />}
                                                                                     <DH col="presentacion"     label="Presentación" />
-                                                                                    <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-slate-400 text-left whitespace-nowrap">Lote</th>
-                                                                                    <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-slate-400 text-left whitespace-nowrap hidden lg:table-cell">Vence</th>
+                                                                                    <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-slate-600 text-left whitespace-nowrap">Lote</th>
+                                                                                    <th className="px-3 py-2 font-black text-[9px] uppercase tracking-wide text-slate-600 text-left whitespace-nowrap hidden lg:table-cell">Vence</th>
                                                                                     <DH col="precio_display"   label="P. Unit." right />
                                                                                     <DH col="cantidad"         label="Cant." right />
                                                                                     <DH col="neto_display"     label="Total" right />
@@ -2238,7 +2238,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                 <div className="flex flex-col leading-tight">
                                                                                                     <span className="font-mono text-slate-700 text-[11px]">{line.correlativo || '—'}</span>
                                                                                                     {line.erp_invoice_id && (
-                                                                                                        <span className="font-mono text-[9px] text-slate-400">#{line.erp_invoice_id}</span>
+                                                                                                        <span className="font-mono text-[9px] text-slate-500">#{line.erp_invoice_id}</span>
                                                                                                     )}
                                                                                                 </div>
                                                                                             </td>
@@ -2260,12 +2260,12 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                             <td className="px-3 py-2 whitespace-nowrap">
                                                                                                 {line.lote
                                                                                                     ? <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-500">{line.lote}</span>
-                                                                                                    : <span className="text-slate-300">—</span>}
+                                                                                                    : <span className="text-slate-500">—</span>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 whitespace-nowrap hidden lg:table-cell">
                                                                                                 {line.fecha_vencimiento
                                                                                                     ? <span className="text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-600">{line.fecha_vencimiento}</span>
-                                                                                                    : <span className="text-slate-300">—</span>}
+                                                                                                    : <span className="text-slate-500">—</span>}
                                                                                             </td>
                                                                                             <td className="px-3 py-2 text-right whitespace-nowrap">
                                                                                                 <div className="flex flex-col items-end gap-0.5">
@@ -2282,7 +2282,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                                                                                                     <div className="absolute bottom-full right-0 mb-1.5 z-50 hidden group-hover/tier:block w-max max-w-[220px] bg-slate-800 text-white text-[10px] leading-relaxed rounded-xl px-3 py-2 shadow-xl pointer-events-none">
                                                                                                                         <p className="font-black text-amber-300 mb-0.5">Precio cambió</p>
                                                                                                                         {line.tierChangedAt && (
-                                                                                                                            <p className="text-slate-300">
+                                                                                                                            <p className="text-slate-500">
                                                                                                                                 {new Date(line.tierChangedAt).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                                                                                             </p>
                                                                                                                         )}
@@ -2420,7 +2420,7 @@ export default function VentasView() {
                     className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-slate-400 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && (
-                    <button onClick={() => setRawSearch('')} className="p-1 text-slate-400 hover:text-red-500 transition-colors shrink-0">
+                    <button onClick={() => setRawSearch('')} className="p-1 text-slate-500 hover:text-red-500 transition-colors shrink-0">
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}

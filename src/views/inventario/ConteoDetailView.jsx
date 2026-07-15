@@ -54,7 +54,7 @@ const fmtDateTime = (iso) => {
     if (!iso) return '—';
     return new Date(iso).toLocaleString('es-SV', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
 };
-const difClass = (dif) => (dif == null ? 'text-slate-300' : dif === 0 ? 'text-emerald-600' : dif < 0 ? 'text-red-600' : 'text-blue-600');
+const difClass = (dif) => (dif == null ? 'text-slate-500' : dif === 0 ? 'text-emerald-600' : dif < 0 ? 'text-red-600' : 'text-blue-600');
 const difLabel = (dif) => (dif == null ? '—' : dif > 0 ? `+${dif}` : String(dif));
 
 // Umbral "próximo a vencer" — mismo valor usado en get_conteo_products_page
@@ -152,14 +152,14 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
 
     return (
         <DataRow index={index} className="bg-slate-50/30">
-            <DataCell><span className="text-slate-300 text-[11px]">↳</span></DataCell>
+            <DataCell><span className="text-slate-500 text-[11px]">↳</span></DataCell>
             <DataCell hideBelow="lg" />
             <DataCell align="center" hideBelow="md"><span className="text-[11px] font-semibold text-slate-600">{item.presentacion || '—'}</span></DataCell>
             <DataCell hideBelow="md">
                 <div className="flex items-center gap-1.5">
                     <span className="text-[11px] text-slate-600 tabular-nums">{item.lote || '—'}</span>
                     {editable && (
-                        <button onClick={() => onEditLote(item)} disabled={saving} className="text-slate-300 hover:text-teal-600 transition-colors shrink-0" title="Corregir lote/vencimiento">
+                        <button onClick={() => onEditLote(item)} disabled={saving} className="text-slate-500 hover:text-teal-600 transition-colors shrink-0" title="Corregir lote/vencimiento">
                             <Pencil size={10} />
                         </button>
                     )}
@@ -206,9 +206,9 @@ function ItemRow({ item, index, editable, onSave, onShowHistory, onEditLote, cur
             </DataCell>
             <DataCell align="center">
                 <div className="flex flex-col items-center gap-0.5">
-                    {!editable && (estadoItem === 'CONTADO' ? <CheckCircle2 size={14} className="text-emerald-500" /> : <span className="text-slate-300 text-[9px]">Pendiente</span>)}
+                    {!editable && (estadoItem === 'CONTADO' ? <CheckCircle2 size={14} className="text-emerald-500" /> : <span className="text-slate-500 text-[9px]">Pendiente</span>)}
                     {contadoPorNombre && (
-                        <button onClick={() => onShowHistory(item)} className="flex items-center gap-1 text-[8px] font-semibold text-slate-400 hover:text-teal-600 transition-colors" title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`}>
+                        <button onClick={() => onShowHistory(item)} className="flex items-center gap-1 text-[8px] font-semibold text-slate-500 hover:text-teal-600 transition-colors" title={`Contado por ${contadoPorNombre} · ${fmtDateTime(contadoAt)} — ver historial`}>
                             <History size={9} /> {contadoPorNombre}
                         </button>
                     )}
@@ -249,7 +249,7 @@ function ProductGroupRow({ product, index, expanded, onToggle }) {
             <DataCell align="center"><span className={`text-[12px] font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span></DataCell>
             <DataCell hideBelow="lg" />
             <DataCell align="center">
-                <span className={`text-[10px] font-bold tabular-nums ${product.contados_count >= product.item_count ? 'text-emerald-600' : 'text-slate-400'}`}>
+                <span className={`text-[10px] font-bold tabular-nums ${product.contados_count >= product.item_count ? 'text-emerald-600' : 'text-slate-500'}`}>
                     {product.contados_count}/{product.item_count}
                 </span>
             </DataCell>
@@ -278,16 +278,16 @@ function ItemHistoryModal({ item, onClose }) {
             </div>
             <div className="px-6 py-5 max-h-[60vh] overflow-y-auto relative z-10">
                 {history === null ? (
-                    <div className="flex items-center justify-center py-8"><Loader2 size={18} className="animate-spin text-slate-400" /></div>
+                    <div className="flex items-center justify-center py-8"><Loader2 size={18} className="animate-spin text-slate-500" /></div>
                 ) : history.length === 0 ? (
-                    <p className="text-[12px] text-slate-400 text-center py-8">Sin registros todavía.</p>
+                    <p className="text-[12px] text-slate-500 text-center py-8">Sin registros todavía.</p>
                 ) : (
                     <div className="space-y-2">
                         {history.map((h) => (
                             <div key={h.id} className="bg-slate-50 rounded-xl p-3 flex items-center justify-between gap-3">
                                 <div>
                                     <p className="text-[11px] font-bold text-slate-700">{h.contado_por_nombre || 'Desconocido'}</p>
-                                    <p className="text-[9px] text-slate-400">{fmtDateTime(h.contado_at)}</p>
+                                    <p className="text-[9px] text-slate-500">{fmtDateTime(h.contado_at)}</p>
                                     {h.nota && <p className="text-[10px] text-slate-500 italic mt-0.5">"{h.nota}"</p>}
                                 </div>
                                 <div className="text-right shrink-0">
@@ -531,7 +531,7 @@ export default function ConteoDetailView() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />
-                {search && <button onClick={() => setSearch("")} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
+                {search && <button onClick={() => setSearch("")} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>}
                 <button onClick={() => { setIsSearchActive(false); setSearch(""); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/60 hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2 border border-white"><ChevronRight size={18} strokeWidth={2.5} /></button>
             </div>
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-visible transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-right ${isSearchActive ? "max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0" : "max-w-[1200px] opacity-100 pl-2 pr-2 md:pr-2 gap-3"}`}>
@@ -562,7 +562,7 @@ export default function ConteoDetailView() {
                                     <h2 className="text-[16px] font-black text-slate-800">{conteo.branches?.name}</h2>
                                     <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${es.bg} ${es.text}`}>{es.label}</span>
                                 </div>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {conteo.scope_type}</p>
+                                <p className="text-[10px] text-slate-600 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {conteo.scope_type}</p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                                 <button onClick={() => handlePrint('hoja')} disabled={printing} className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:border-teal-300 transition-all disabled:opacity-50">
@@ -590,7 +590,7 @@ export default function ConteoDetailView() {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
                                 <div className="bg-slate-50 rounded-xl px-3 py-2 text-center">
                                     <p className="text-[16px] font-black text-slate-700 tabular-nums">{conteo.total_contados ?? 0}/{conteo.total_items ?? 0}</p>
-                                    <p className="text-[8px] uppercase tracking-widest text-slate-400 font-bold">Contados</p>
+                                    <p className="text-[8px] uppercase tracking-widest text-slate-600 font-bold">Contados</p>
                                 </div>
                                 <div className="bg-amber-50 rounded-xl px-3 py-2 text-center">
                                     <p className="text-[16px] font-black text-amber-700 tabular-nums">{conteo.total_diferencias ?? 0}</p>
@@ -773,7 +773,7 @@ function AddManualItemForm({ conteoId, branchId, onAdd, onCancel }) {
         <div className="bg-teal-50/60 border border-teal-200/70 rounded-2xl p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
                 <p className="text-[11px] font-black uppercase tracking-widest text-teal-700 flex items-center gap-1.5"><FlaskConical size={12} /> Producto no listado en el snapshot</p>
-                <button onClick={onCancel} className="text-slate-400 hover:text-red-500"><X size={14} /></button>
+                <button onClick={onCancel} className="text-slate-500 hover:text-red-500"><X size={14} /></button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="md:col-span-3">

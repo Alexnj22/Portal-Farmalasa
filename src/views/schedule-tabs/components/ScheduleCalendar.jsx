@@ -318,7 +318,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
             <td className="p-0 sticky left-0 z-30 align-top h-px group-hover/row:z-50 min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
                 <div className="min-h-[72px] h-full bg-white/60 backdrop-blur-xl border border-white/80 shadow-[inset_0_1px_10px_rgba(255,255,255,0.7),0_8px_20px_rgba(0,0,0,0.03)] rounded-[2rem] p-2.5 mx-1 flex items-center gap-2 transition-transform duration-150 group-hover/row:scale-[1.01] overflow-hidden">
                     <div className="w-9 h-9 2xl:w-10 2xl:h-10 rounded-xl bg-white/30 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_4px_rgba(255,255,255,0.7)] overflow-hidden flex items-center justify-center shrink-0">
-                        {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={24} className="text-slate-300" />}
+                        {emp.photo_url ? <img src={emp.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={24} className="text-slate-500" />}
                     </div>
                     <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden">
                         <h4 className="font-black text-slate-800 text-[12px] 2xl:text-[13px] truncate leading-tight mb-1" title={emp.name}>{shortName}</h4>
@@ -474,7 +474,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="w-full flex-1 flex flex-col items-center justify-center text-slate-400">
+                                    <div className="w-full flex-1 flex flex-col items-center justify-center text-slate-500">
                                         <span className="text-[8px] font-black uppercase tracking-widest">Descanso</span>
                                     </div>
                                 )}
@@ -527,7 +527,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                             <span className="text-[7px] font-black uppercase tracking-widest text-indigo-600">APOYO</span>
                         </div>
                     </div>
-                    <button onClick={onRemove} className="w-7 h-7 rounded-full bg-white/70 hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors shrink-0" title="Quitar cobertura">
+                    <button onClick={onRemove} className="w-7 h-7 rounded-full bg-white/70 hover:bg-red-50 text-slate-500 hover:text-red-500 flex items-center justify-center transition-colors shrink-0" title="Quitar cobertura">
                         <XIcon size={12} strokeWidth={2.5} />
                     </button>
                 </div>
@@ -573,15 +573,15 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                                     <div className="flex flex-col h-full">
                                         <div className="flex items-start justify-between w-full mb-1">
                                             <span className={`text-[7.5px] font-black uppercase px-1 py-[1px] rounded border truncate max-w-[68%]
-                                                ${isCoverageDay ? 'text-indigo-700 bg-indigo-100 border-indigo-200' : 'text-slate-400 bg-slate-50 border-slate-100'}`}>
+                                                ${isCoverageDay ? 'text-indigo-700 bg-indigo-100 border-indigo-200' : 'text-slate-500 bg-slate-50 border-slate-100'}`}>
                                                 {shift?.name || 'Manual'}
                                             </span>
                                             <span className={`text-[7px] font-black px-1 py-[1px] rounded border
-                                                ${isCoverageDay ? 'text-indigo-500 bg-indigo-50 border-indigo-100' : 'text-slate-300 bg-slate-50 border-slate-100'}`}>
+                                                ${isCoverageDay ? 'text-indigo-500 bg-indigo-50 border-indigo-100' : 'text-slate-500 bg-slate-50 border-slate-100'}`}>
                                                 {netHrs}h
                                             </span>
                                         </div>
-                                        <div className={`text-[8px] font-bold font-mono tracking-tight mt-auto ${isCoverageDay ? 'text-indigo-600' : 'text-slate-300'}`}>
+                                        <div className={`text-[8px] font-bold font-mono tracking-tight mt-auto ${isCoverageDay ? 'text-indigo-600' : 'text-slate-500'}`}>
                                             {fmt12h(startStr)} - {fmt12h(endStr)}
                                         </div>
                                     </div>
@@ -703,7 +703,7 @@ const ScheduleCalendar = memo(({
                         <tr>
                             <th className="p-0 sticky left-0 z-[70] min-w-[192px] max-w-[192px] 2xl:min-w-[208px] 2xl:max-w-[208px] bg-transparent align-bottom">
                                 <div className="bg-white/50 backdrop-blur-2xl border border-white/80 shadow-[0_4px_15px_rgba(0,0,0,0.03)] rounded-[1.5rem] pt-4 pb-2 px-3 mx-1 mb-2 mt-4 text-[9px] font-black uppercase text-slate-500 tracking-widest flex flex-col items-center justify-center gap-1">
-                                    Personal <span className="bg-white/80 px-2 py-0.5 rounded-lg text-slate-400 border border-white">44H / 1 DESCANSO</span>
+                                    Personal <span className="bg-white/80 px-2 py-0.5 rounded-lg text-slate-500 border border-white">44H / 1 DESCANSO</span>
                                 </div>
                             </th>
                             
@@ -715,7 +715,7 @@ const ScheduleCalendar = memo(({
 
                                 let headerBg = "bg-[#0052CC]/5 border-[#0052CC]/10 shadow-sm";
                                 let headerTextColor = "text-slate-500";
-                                let dayTextColor = "text-slate-400";
+                                let dayTextColor = "text-slate-500";
                                 
                                 if (dayColor === '#FF2D55') { // Crítico (Rojo)
                                     headerBg = "bg-rose-50 border-rose-200 shadow-[0_4px_15px_rgba(244,63,94,0.05)]";
@@ -836,7 +836,7 @@ const ScheduleCalendar = memo(({
                                     {!showCoverageSearch ? (
                                         <button
                                             onClick={() => setShowCoverageSearch(true)}
-                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-slate-300/50 text-slate-400 hover:border-indigo-400 hover:text-indigo-500 hover:bg-indigo-50/30 transition-all duration-200 text-[10px] font-black uppercase tracking-widest"
+                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-slate-300/50 text-slate-600 hover:border-indigo-400 hover:text-indigo-500 hover:bg-indigo-50/30 transition-all duration-200 text-[10px] font-black uppercase tracking-widest"
                                         >
                                             <Plus size={13} strokeWidth={2.5} /> Agregar Personal de Apoyo
                                         </button>
@@ -868,7 +868,7 @@ const ScheduleCalendar = memo(({
                                                                 onClick={() => { onAddCoverageEmployee?.(e.id); setShowCoverageSearch(false); setCoverageSearchTerm(''); }}
                                                                 className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-indigo-50 transition-colors text-left w-full">
                                                                 <div className="w-8 h-8 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
-                                                                    {e.photo_url ? <img src={e.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={18} className="text-slate-300" />}
+                                                                    {e.photo_url ? <img src={e.photo_url} className="w-full h-full object-cover" alt="" /> : <CircleUserRound size={18} className="text-slate-500" />}
                                                                 </div>
                                                                 <div className="min-w-0">
                                                                     <p className="text-[12px] font-black text-slate-800 truncate">{e.name}</p>
@@ -879,7 +879,7 @@ const ScheduleCalendar = memo(({
                                                     })}
                                                 </div>
                                             ) : (
-                                                <p className="text-[11px] text-slate-400 text-center py-2">
+                                                <p className="text-[11px] text-slate-500 text-center py-2">
                                                     {coverageSearchTerm.trim() ? 'No se encontraron empleados' : 'Escribe el nombre del empleado'}
                                                 </p>
                                             )}

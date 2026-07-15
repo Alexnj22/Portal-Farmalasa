@@ -84,11 +84,11 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
 
             <div className="flex-1 flex items-end justify-between mt-2 relative z-10">
                 <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Monto (Aprox)</p>
+                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-0.5">Monto (Aprox)</p>
                     <p className="text-lg font-black text-slate-800">${amount ? Number(amount).toFixed(2) : '0.00'}</p>
                 </div>
                 <div className="text-right">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
+                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-0.5">
                         {isPendingReceipt ? 'Mes Pagado' : 'Día de Pago'}
                     </p>
                     <p className="text-[12px] font-bold text-slate-700">
@@ -123,7 +123,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-white/80 backdrop-blur-xl border border-white/50 p-4 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{label}</p>
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">{label}</p>
                 <p className="text-base font-black text-slate-800 flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#0052CC] shadow-sm"></span>
                     ${payload[0].value.toFixed(2)}

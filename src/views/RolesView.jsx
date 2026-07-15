@@ -387,7 +387,7 @@ const RolesView = ({ openModal }) => {
                 )}
 
                 {isExporting && (
-                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest bg-white/50 px-2 py-1 rounded-md">
+                    <span className="text-[8px] font-bold text-slate-600 uppercase tracking-widest bg-white/50 px-2 py-1 rounded-md">
                         {roleEmps.length} Empleados
                     </span>
                 )}
@@ -451,7 +451,7 @@ const RolesView = ({ openModal }) => {
                     {searchQuery && (
                         <button
                             onClick={() => setSearchQuery("")}
-                            className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"
+                            className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"
                         >
                             <X size={16} strokeWidth={2.5} />
                         </button>
@@ -475,7 +475,7 @@ const RolesView = ({ openModal }) => {
                                         : "bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90"
                                     }`}
                             >
-                                <ShieldCheck size={14} className={`inline-block mr-1.5 mb-0.5 ${activeTab === 'list' ? 'text-[#0052CC]' : 'text-slate-400'}`} />
+                                <ShieldCheck size={14} className={`inline-block mr-1.5 mb-0.5 ${activeTab === 'list' ? 'text-[#0052CC]' : 'text-slate-500'}`} />
                                 Listado
                             </button>
                             <button
@@ -485,7 +485,7 @@ const RolesView = ({ openModal }) => {
                                         : "bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90"
                                     }`}
                             >
-                                <LayoutTemplate size={14} className={`inline-block mr-1.5 mb-0.5 ${activeTab === 'chart' ? 'text-[#0052CC]' : 'text-slate-400'}`} />
+                                <LayoutTemplate size={14} className={`inline-block mr-1.5 mb-0.5 ${activeTab === 'chart' ? 'text-[#0052CC]' : 'text-slate-500'}`} />
                                 Visual
                             </button>
                         </div>
@@ -595,11 +595,11 @@ const RolesView = ({ openModal }) => {
 
                                 <form className="space-y-4">
                                     <div>
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                             Nombre del Cargo
                                         </label>
                                         <div className="relative group">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/60 rounded-xl flex items-center justify-center text-slate-400 shadow-sm transition-colors group-focus-within:text-[#0052CC] group-focus-within:bg-blue-50">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/60 rounded-xl flex items-center justify-center text-slate-500 shadow-sm transition-colors group-focus-within:text-[#0052CC] group-focus-within:bg-blue-50">
                                                 <Award size={16} />
                                             </div>
                                             <input
@@ -615,7 +615,7 @@ const RolesView = ({ openModal }) => {
                                     {/* 🚨 CONTROLES DE HEADCOUNT */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="relative z-[70]">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                                 Alcance
                                             </label>
                                             <div className="h-[44px]">
@@ -630,11 +630,11 @@ const RolesView = ({ openModal }) => {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                                 Límite de Plazas
                                             </label>
                                             <div className="relative group">
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0052CC] transition-colors z-10">
+                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-[#0052CC] transition-colors z-10">
                                                     <Hash size={16} />
                                                 </div>
                                                 <input
@@ -650,7 +650,7 @@ const RolesView = ({ openModal }) => {
                                     </div>
 
                                     <div className="relative z-[60]">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                             Dependencia (Reporta a)
                                         </label>
                                         <div className="h-[44px]">
@@ -667,7 +667,7 @@ const RolesView = ({ openModal }) => {
                                     </div>
 
                                     <div className="relative z-[50]">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1.5 block ml-1">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-1.5 block ml-1">
                                             Reporte Matricial
                                         </label>
                                         <div className="h-[44px]">
@@ -731,7 +731,7 @@ const RolesView = ({ openModal }) => {
 
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="flex gap-3.5 items-start min-w-0 w-full pr-2 relative">
-                                                    <div className={`mt-0.5 h-10 w-10 rounded-[1rem] flex items-center justify-center font-bold overflow-hidden shadow-sm border flex-shrink-0 transition-colors ${isRoot ? 'bg-[#0052CC] text-white border-[#0052CC]/20' : isExternal ? 'bg-white/60 text-slate-400 border-white/60' : 'bg-white text-[#0052CC] border-white group-hover:bg-[#0052CC]/10'}`}>
+                                                    <div className={`mt-0.5 h-10 w-10 rounded-[1rem] flex items-center justify-center font-bold overflow-hidden shadow-sm border flex-shrink-0 transition-colors ${isRoot ? 'bg-[#0052CC] text-white border-[#0052CC]/20' : isExternal ? 'bg-white/60 text-slate-500 border-white/60' : 'bg-white text-[#0052CC] border-white group-hover:bg-[#0052CC]/10'}`}>
                                                         <Award size={18} strokeWidth={isRoot ? 2.5 : 2} />
                                                     </div>
 
@@ -801,7 +801,7 @@ const RolesView = ({ openModal }) => {
                                                         <Users size={14} strokeWidth={2.5} />
                                                     </div>
                                                     <div>
-                                                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none mb-0.5">Fuerza Laboral</p>
+                                                        <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest leading-none mb-0.5">Fuerza Laboral</p>
                                                         <p className="text-[16px] font-black tracking-tight text-slate-800 leading-none">
                                                             {roleEmps.length > 0 ? String(roleEmps.length).padStart(2, '0') : '-'}
                                                         </p>
@@ -812,7 +812,7 @@ const RolesView = ({ openModal }) => {
                                                     onClick={() => openModal && openModal('viewRoleEmployees', { role })}
                                                     className={`w-9 h-9 rounded-xl bg-white border flex items-center justify-center transition-all shadow-sm active:scale-[0.97] ${isEditingThis
                                                         ? 'border-amber-200 text-amber-500 hover:bg-amber-500 hover:text-white'
-                                                        : 'border-slate-100 text-slate-400 hover:bg-[#0052CC] hover:text-white hover:border-[#0052CC]'
+                                                        : 'border-slate-100 text-slate-500 hover:bg-[#0052CC] hover:text-white hover:border-[#0052CC]'
                                                         }`}
                                                     title="Ver Empleados"
                                                 >
@@ -823,7 +823,7 @@ const RolesView = ({ openModal }) => {
                                     );
                                 })}
                                 {filteredAndSortedRoles.length === 0 && (
-                                    <div className="col-span-full py-16 flex flex-col items-center justify-center text-slate-400 opacity-60">
+                                    <div className="col-span-full py-16 flex flex-col items-center justify-center text-slate-500 opacity-60">
                                         <Search size={48} className="mb-4 text-slate-300" strokeWidth={1.5} />
                                         <p className="text-[16px] font-bold text-slate-600">No se encontraron cargos</p>
                                         <p className="text-[14px] mt-1 font-medium">No hay coincidencias para "{searchQuery}".</p>
@@ -849,7 +849,7 @@ const RolesView = ({ openModal }) => {
                                 <button
                                     onClick={downloadOrgChart}
                                     disabled={isExporting}
-                                    className={`px-4 py-2 border rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] ${isExporting ? 'bg-white/50 border-white text-slate-400 cursor-not-allowed' : 'bg-white border-white/90 text-slate-600 hover:text-[#0052CC] hover:border-white'}`}
+                                    className={`px-4 py-2 border rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all active:scale-[0.97] ${isExporting ? 'bg-white/50 border-white text-slate-600 cursor-not-allowed' : 'bg-white border-white/90 text-slate-600 hover:text-[#0052CC] hover:border-white'}`}
                                 >
                                     {isExporting ? <><Loader2 size={14} className="animate-spin" /> Procesando...</> : <><Download size={14} /> Exportar PNG</>}
                                 </button>
@@ -885,7 +885,7 @@ const RolesView = ({ openModal }) => {
 
                                             {roles.filter(r => !r.parent_role_id).length === 0 && (
                                                 <div className="text-center py-20 px-10 opacity-60">
-                                                    <Network className="mx-auto text-slate-400 mb-4" size={48} strokeWidth={1.5} />
+                                                    <Network className="mx-auto text-slate-500 mb-4" size={48} strokeWidth={1.5} />
                                                     <h3 className="text-[16px] font-bold text-slate-600">Sin Estructura Definida</h3>
                                                     <p className="text-slate-500 text-[14px] mt-1 font-medium">Crea un cargo "Nivel Raíz" para comenzar el árbol.</p>
                                                 </div>

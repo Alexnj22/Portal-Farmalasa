@@ -715,7 +715,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             <button
               type="button"
               onClick={() => setSearchTerm("")}
-              className="mr-4 text-xs font-black text-slate-300 hover:text-red-500 uppercase transition-colors"
+              className="mr-4 text-xs font-black text-slate-500 hover:text-red-500 uppercase transition-colors"
             >
               Borrar
             </button>
@@ -752,7 +752,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                 </div>
               )}
 
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 relative z-10">
+              <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 relative z-10">
                 {card.label}
               </p>
               <p
@@ -781,10 +781,10 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             <Users size={32} className="text-slate-300" />
           </div>
           <div>
-            <p className="text-[14px] font-black uppercase tracking-widest text-slate-400">
+            <p className="text-[14px] font-black uppercase tracking-widest text-slate-600">
               No hay empleados en esta categoría
             </p>
-            <p className="text-[12px] text-slate-400 mt-1 font-medium">
+            <p className="text-[12px] text-slate-500 mt-1 font-medium">
               Intenta cambiar el filtro o seleccionar otra tarjeta.
             </p>
           </div>
@@ -816,7 +816,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                           "h-14 w-14 rounded-2xl border-2 overflow-hidden flex items-center justify-center font-black text-lg shadow-sm transition-transform group-hover:scale-105",
                           isLate && status !== "FINISHED"
                             ? "border-red-200 bg-red-50 text-red-500"
-                            : "border-white bg-white text-slate-400",
+                            : "border-white bg-white text-slate-500",
                         ].join(" ")}
                       >
                         {emp.photo ? (
@@ -840,7 +840,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                       <h3 className="font-bold text-slate-900 text-[15px] leading-tight truncate group-hover:text-[#0052CC] transition-colors">
                         {emp.name}
                       </h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate mt-0.5">
+                      <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest truncate mt-0.5">
                         {emp.role || "Empleado"}
                       </p>
                     </div>

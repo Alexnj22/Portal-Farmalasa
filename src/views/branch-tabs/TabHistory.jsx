@@ -291,7 +291,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                         <div className={`flex items-center w-full h-full px-4 md:px-5 gap-3 animate-in fade-in slide-in-from-right-4 duration-500`}>
                             <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
                             <input autoFocus type="text" placeholder="Buscar en historial..." className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 min-w-[200px] xl:w-[600px] placeholder:text-slate-400 focus:ring-0" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                            {searchQuery && (<button onClick={() => setSearchQuery("")} className="p-1 text-slate-400 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>)}
+                            {searchQuery && (<button onClick={() => setSearchQuery("")} className="p-1 text-slate-500 hover:text-red-500 transition-all hover:-translate-y-0.5 hover:scale-110 active:scale-[0.97] transform-gpu shrink-0"><X size={16} strokeWidth={2.5} /></button>)}
                             <button onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-transparent hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all duration-300 hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2">
                                 <ChevronRight size={18} strokeWidth={2.5} />
                             </button>
@@ -347,7 +347,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                                 <div className="w-px h-5 bg-slate-300/40 mx-1 shrink-0"></div>
 
                                 <div className="flex-1 w-[90px] shrink-0"><LiquidDatePicker value={dateFilter.start} onChange={(v) => setDateFilter({ ...dateFilter, start: v })} placeholder="Desde" compact /></div>
-                                <span className="text-slate-400 font-black shrink-0">-</span>
+                                <span className="text-slate-500 font-black shrink-0">-</span>
                                 <div className="flex-1 w-[90px] shrink-0"><LiquidDatePicker value={dateFilter.end} onChange={(v) => setDateFilter({ ...dateFilter, end: v })} placeholder="Hasta" compact /></div>
 
                                 {(dateFilter.start || dateFilter.end || typeFilter !== 'ALL') && (
@@ -467,7 +467,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
                             ))}
                         </div>
                     ) : filteredHistory.length === 0 ? (
-                        <div className="text-center py-20 opacity-60 relative z-10"><FileText className="text-slate-300 mx-auto mb-4" size={48} /> Sin registros en esta sucursal</div>
+                        <div className="text-center py-20 opacity-60 relative z-10"><FileText className="text-slate-500 mx-auto mb-4" size={48} /> Sin registros en esta sucursal</div>
                     ) : (
                         <div className="relative z-10 w-full pt-2">
                             {isHistorySearchFuzzy && searchQuery && (
@@ -591,7 +591,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, e
 
                                                                                                 {(oldVal || newVal) && (
                                                                                                     <div className="flex flex-col gap-1 mt-2">
-                                                                                                        {oldVal && <span className="text-[10px] font-bold text-slate-400 line-through truncate">Antes: {oldVal}</span>}
+                                                                                                        {oldVal && <span className="text-[10px] font-bold text-slate-500 line-through truncate">Antes: {oldVal}</span>}
                                                                                                         {newVal && <span className={`text-[10px] font-bold truncate ${item.severity === 'CRITICAL' ? 'text-red-500' : 'text-[#0052CC]'}`}>Nuevo: {newVal}</span>}
                                                                                                     </div>
                                                                                                 )}

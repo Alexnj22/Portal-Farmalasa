@@ -273,7 +273,7 @@ export default function MetasView() {
   const card        = 'bg-white/60 border-white/55 backdrop-blur-xl';
   const shadow      = 'shadow-[0_4px_24px_rgba(0,82,204,0.07)]';
   const txt         = 'text-slate-700';
-  const muted       = 'text-slate-400';
+  const muted       = 'text-slate-500';
   const divider     = 'border-slate-200/60';
   const gridColor   = '#e2e8f0';
   const axisColor   = '#94a3b8';
@@ -416,7 +416,7 @@ export default function MetasView() {
 
               {trend != null && (
                 <div className={`flex items-center gap-1 text-[10px] font-semibold ${
-                  trend > 0 ? 'text-green-500' : trend < 0 ? 'text-red-500' : 'text-slate-400'
+                  trend > 0 ? 'text-green-500' : trend < 0 ? 'text-red-500' : 'text-slate-500'
                 }`}>
                   {trend > 0 ? <TrendingUp size={12}/> : trend < 0 ? <TrendingDown size={12}/> : <Minus size={12}/>}
                   {trend !== 0 && <span>{trend > 0 ? '+' : ''}{fmtK(trend)} vs mes anterior</span>}
@@ -442,7 +442,7 @@ export default function MetasView() {
                 onClick={() => toggleBranch(b)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all ${
                   hidden.has(b)
-                    ? 'bg-slate-100 border-slate-200 text-slate-300'
+                    ? 'bg-slate-100 border-slate-200 text-slate-500'
                     : 'border-transparent text-white shadow-sm'
                 }`}
                 style={!hidden.has(b) ? {background: COLORS[b]} : {}}
@@ -640,7 +640,7 @@ export default function MetasView() {
                         <td key={mi}
                           className={`px-2 py-2 text-right text-[11px] whitespace-nowrap font-mono
                             ${yr2026 ? 'bg-indigo-50/30' : ''}
-                            ${st ? (status==='green'?'bg-green-50 text-green-800':status==='orange'?'bg-orange-50 text-orange-700':'bg-red-100 text-red-900') : 'text-slate-300'}`}
+                            ${st ? (status==='green'?'bg-green-50 text-green-800':status==='orange'?'bg-orange-50 text-orange-700':'bg-red-100 text-red-900') : 'text-slate-500'}`}
                         >
                           {val == null ? <span className={muted}>—</span> : fmt(val)}
                         </td>

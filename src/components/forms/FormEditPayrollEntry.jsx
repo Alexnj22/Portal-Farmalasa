@@ -17,7 +17,7 @@ const NocturnalLegalInfo = () => (
         <Info size={11} className="text-indigo-400 cursor-help" strokeWidth={2} />
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-[10px] leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
             <p className="font-black text-indigo-300 mb-1.5">Art. 168 — Código de Trabajo SV</p>
-            <p className="text-slate-300 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
+            <p className="text-slate-500 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
             <p className="text-slate-200">• Hrs. ordinarias nocturnas: <span className="text-indigo-300 font-bold">+25% recargo</span> sobre tarifa diurna</p>
             <p className="text-slate-200">• Hrs. extra nocturnas: <span className="text-indigo-300 font-bold">×2.25</span> (OT 100% + 25% noct.)</p>
             <p className="text-slate-200">• Jornada noct. máx: 7h/día, 39h/sem</p>
@@ -201,7 +201,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             </div>
 
             <div className="col-span-2 pt-2">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center">
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-3 flex items-center">
                     Horas adicionales <NocturnalLegalInfo />
                 </p>
             </div>
@@ -211,7 +211,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             {numField('extra_hours_nocturnal', 'Hrs. Extra Nocturnas')}
 
             <div className="col-span-2 pt-2">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">Otros ingresos</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-3">Otros ingresos</p>
             </div>
             {numField('holiday_surcharge', 'Recargo de Asuetos ($)')}
             {numField('bonifications',     'Bonificaciones ($)')}
@@ -229,7 +229,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
             </div>
 
             <div className="col-span-2 pt-2">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">Descuentos adicionales</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-3">Descuentos adicionales</p>
             </div>
             {numField('order_discount',  'Orden de Descuento ($)')}
             {numField('other_discounts', 'Otros Descuentos ($)')}
@@ -237,18 +237,18 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
 
             {/* Live preview */}
             <div className="col-span-2 bg-white/60 rounded-2xl p-4 border border-slate-200/60 mt-2">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-3">Vista previa</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-3">Vista previa</p>
                 <div className="grid grid-cols-3 gap-2 text-center">
                     <div>
-                        <p className="text-[9px] text-slate-400">Subtotal A</p>
+                        <p className="text-[9px] text-slate-500">Subtotal A</p>
                         <p className="text-[14px] font-black text-slate-800">{fmt(preview.subtotal_a)}</p>
                     </div>
                     <div>
-                        <p className="text-[9px] text-slate-400">Deducciones</p>
+                        <p className="text-[9px] text-slate-500">Deducciones</p>
                         <p className="text-[14px] font-black text-red-600">{fmt(preview.total_deductions)}</p>
                     </div>
                     <div>
-                        <p className="text-[9px] text-slate-400">Líquido</p>
+                        <p className="text-[9px] text-slate-500">Líquido</p>
                         <p className="text-[16px] font-black text-emerald-700">{fmt(preview.net_pay)}</p>
                     </div>
                 </div>

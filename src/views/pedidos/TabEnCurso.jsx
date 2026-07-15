@@ -160,7 +160,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-16 gap-2 text-slate-400">
+            <div className="flex items-center justify-center py-16 gap-2 text-slate-500">
                 <Loader2 size={20} className="animate-spin" />
                 <span className="text-[14px]">Cargando pedidos activos…</span>
             </div>
@@ -176,7 +176,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                     <Activity size={14} className="text-blue-500" />
                     <span className="text-[12px] font-semibold text-slate-600">Pedidos en curso</span>
                     {lastSync && (
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-slate-500">
                             · actualizado {fmtRelative(lastSync.toISOString())}
                         </span>
                     )}
@@ -207,9 +207,9 @@ export default function TabEnCurso({ searchTerm = '' }) {
 
             {/* Empty state */}
             {filtered.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 gap-2 text-slate-300">
+                <div className="flex flex-col items-center justify-center py-12 gap-2 text-slate-500">
                     <CheckCircle2 size={32} className="opacity-50" />
-                    <p className="text-[13px] text-slate-400">No hay pedidos activos en este momento.</p>
+                    <p className="text-[13px] text-slate-500">No hay pedidos activos en este momento.</p>
                 </div>
             )}
 
@@ -244,14 +244,14 @@ export default function TabEnCurso({ searchTerm = '' }) {
                                     Listo para enviar
                                 </span>
                             )}
-                            <span className="ml-auto text-[10px] text-slate-400">
+                            <span className="ml-auto text-[10px] text-slate-500">
                                 {fmtRelative(pedido.enviado_at ?? pedido.created_at)}
                             </span>
                         </div>
 
                         {/* Notas del pedido */}
                         {pedido.notes && (
-                            <p className="px-4 pb-1 text-[11px] text-slate-400 italic">{pedido.notes}</p>
+                            <p className="px-4 pb-1 text-[11px] text-slate-500 italic">{pedido.notes}</p>
                         )}
 
                         {/* Sucursales */}
@@ -296,7 +296,7 @@ export default function TabEnCurso({ searchTerm = '' }) {
                             return (
                                 <div className="border-t border-slate-100 px-4 py-2.5">
                                     <div className="flex items-center justify-between mb-1">
-                                        <span className="text-[9px] text-slate-400 font-medium">
+                                        <span className="text-[9px] text-slate-500 font-medium">
                                             Progreso de recepción
                                         </span>
                                         <span className="text-[9px] text-slate-500 font-semibold">

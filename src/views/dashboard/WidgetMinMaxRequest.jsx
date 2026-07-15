@@ -143,7 +143,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         <div className="flex-1 min-w-0">
           <p className="text-[12px] font-black text-slate-800 truncate">{product.nombre}</p>
           {product.principio_activo && <p className="text-[10px] text-emerald-600 font-semibold truncate">{product.principio_activo}</p>}
-          <p className="text-[10px] text-slate-400 truncate">
+          <p className="text-[10px] text-slate-500 truncate">
             {ERP_NAMES[Number(erp)] || 'Sucursal'}{product.laboratorio_nombre ? ` · ${product.laboratorio_nombre}` : ''}
           </p>
         </div>
@@ -154,14 +154,14 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
         {erp && (
           <div className="rounded-2xl border border-slate-100 bg-slate-50/60 px-3.5 py-2.5 flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">En uso ahora</span>
+              <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider">En uso ahora</span>
               {loadingCur ? <Loader2 size={13} className="animate-spin text-slate-300" /> : (
                 <div className="text-right">
                   <span className="text-[11px] font-bold text-slate-600">
-                    MIN <span className="text-orange-500">{current?.min ?? '—'}</span> · MAX <span className="text-blue-500">{current?.max ?? '—'}</span> <span className="text-slate-400 font-medium">und</span>
+                    MIN <span className="text-orange-500">{current?.min ?? '—'}</span> · MAX <span className="text-blue-500">{current?.max ?? '—'}</span> <span className="text-slate-500 font-medium">und</span>
                   </span>
                   {(fmtEquiv(current?.min, pres) || fmtEquiv(current?.max, pres)) && (
-                    <div className="text-[9px] text-slate-400 font-semibold">
+                    <div className="text-[9px] text-slate-500 font-semibold">
                       {fmtEquiv(current?.min, pres) || '—'} · {fmtEquiv(current?.max, pres) || '—'}
                     </div>
                   )}
@@ -170,7 +170,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
             </div>
             {!loadingCur && (
               <div className="flex items-center justify-between border-t border-slate-100 pt-1.5">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider flex items-center gap-1">
                   <TrendingUp size={11} className="text-emerald-500" /> Ventas 6 meses
                 </span>
                 <span className="text-[11px] font-bold text-slate-700 tabular-nums">
@@ -310,23 +310,23 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
           spellCheck={false} />
         {search && (
           <button onClick={() => setSearch('')}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-600 hover:bg-slate-100">
             <X size={11} strokeWidth={2.5} />
           </button>
         )}
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-slate-300" /></div>}
+        {loading && <div className="flex justify-center py-8"><Loader2 size={20} className="animate-spin text-slate-500" /></div>}
 
         {!loading && search.trim().length >= 2 && results.length === 0 && (
-          <div className="py-8 text-center text-[12px] text-slate-400 font-medium">Sin resultados para "{search}"</div>
+          <div className="py-8 text-center text-[12px] text-slate-500 font-medium">Sin resultados para "{search}"</div>
         )}
 
         {!loading && search.trim().length < 2 && (
-          <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-300">
+          <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-500">
             <TrendingUp size={28} strokeWidth={1.5} />
-            <p className="text-[12px] font-semibold text-slate-400 text-center px-4">Buscá un producto para proponer un ajuste de mínimo/máximo</p>
+            <p className="text-[12px] font-semibold text-slate-500 text-center px-4">Buscá un producto para proponer un ajuste de mínimo/máximo</p>
           </div>
         )}
 
@@ -341,7 +341,7 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
             <div className="flex-1 min-w-0">
               <p className="text-[12px] font-bold text-slate-800 truncate leading-tight">{p.nombre}</p>
               {p.principio_activo && <p className="text-[9px] text-emerald-600 font-semibold truncate">{p.principio_activo}</p>}
-              {p.laboratorio_nombre && <p className="text-[9px] text-slate-400 truncate">{p.laboratorio_nombre}</p>}
+              {p.laboratorio_nombre && <p className="text-[9px] text-slate-500 truncate">{p.laboratorio_nombre}</p>}
             </div>
             <Building2 size={12} className="text-slate-300 shrink-0" />
           </button>

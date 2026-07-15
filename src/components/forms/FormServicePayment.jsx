@@ -138,7 +138,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                         value={currentData.paidThrough || ""} 
                         onChange={(e) => handleChange('paidThrough', e.target.value)} 
                     />
-                    <p className="mt-2 text-[10px] font-semibold text-slate-400 ml-2">Selecciona el último mes que fue cubierto en su totalidad. El sistema calculará automáticamente las alertas en base a esto y al día de pago.</p>
+                    <p className="mt-2 text-[10px] font-semibold text-slate-500 ml-2">Selecciona el último mes que fue cubierto en su totalidad. El sistema calculará automáticamente las alertas en base a esto y al día de pago.</p>
                 </div>
             </div>
         </div>

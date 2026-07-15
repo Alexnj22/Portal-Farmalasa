@@ -156,7 +156,7 @@ const RouteLoadingFallback = () => (
     <div className="fixed inset-0 w-full h-[100dvh] flex items-center justify-center z-40">
         <div className="relative bg-white/35 backdrop-blur-3xl border border-white/70 rounded-[2rem] px-10 py-8 shadow-[0_32px_80px_rgba(0,82,204,0.10),0_8px_32px_rgba(0,0,0,0.04),inset_0_2px_24px_rgba(255,255,255,0.85)] flex flex-col items-center gap-3">
             <Loader2 className="text-[#0052CC] animate-spin" size={28} strokeWidth={2.5} />
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Cargando…</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Cargando…</span>
         </div>
     </div>
 );
@@ -500,7 +500,7 @@ function MainApp() {
                         </div>
 
                         {/* Status */}
-                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 -mt-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 -mt-2">
                             Verificando sesión...
                         </span>
 

@@ -112,7 +112,7 @@ const AuthPromptPanel = ({
           <div className="mt-5 sm:mt-6 flex flex-col items-center justify-center gap-3 w-full">
 
             {promptType === 'OUT_LATE' && (
-              <button type="button" onClick={forceNormalOutHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-slate-300 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 rounded-full border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-[0.97]">
+              <button type="button" onClick={forceNormalOutHandler} className="relative z-20 pointer-events-auto text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-slate-600 flex items-center justify-center w-full gap-2 transition-all duration-300 bg-white/5 px-5 py-3.5 rounded-full border border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white active:scale-[0.97]">
                 No, guardar según horario
               </button>
             )}

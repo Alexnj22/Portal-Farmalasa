@@ -375,7 +375,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 ? <CheckCircle2 size={compact?17:19} className="text-emerald-500" strokeWidth={2.2} />
                                 : st === 'error'
                                     ? <AlertCircle size={compact?17:19} className="text-red-500" strokeWidth={2.2} />
-                                    : <ScanBarcode size={compact?17:19} className={paused || cameraActive ? 'text-slate-400' : 'text-[#0052CC]'} strokeWidth={2} />}
+                                    : <ScanBarcode size={compact?17:19} className={paused || cameraActive ? 'text-slate-500' : 'text-[#0052CC]'} strokeWidth={2} />}
                         {active && (
                             <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0052CC]/50" />
@@ -449,7 +449,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                     { ref: userPasswordRef, id: 'password', type: 'password', placeholder: 'Contraseña',      autoComplete: 'current-password', Icon: Lock },
                 ].map(({ ref, id, type, placeholder, autoComplete, Icon }) => (
                     <div key={id} className="relative group flex items-center">
-                        <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-slate-400 group-focus-within:text-[#0052CC] transition-colors pointer-events-none z-10" />
+                        <Icon size={compact?16:18} strokeWidth={2} className="absolute left-4 text-slate-500 group-focus-within:text-[#0052CC] transition-colors pointer-events-none z-10" />
                         <input ref={ref} id={id} name={id} type={type} placeholder={placeholder}
                             autoComplete={autoComplete}
                             onFocus={syncFormEngaged} onBlur={syncFormEngaged} onInput={syncFormEngaged}

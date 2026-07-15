@@ -64,7 +64,7 @@ const NocturnalLegalInfo = () => (
     <Info size={10} className="text-indigo-400 cursor-help" strokeWidth={2} />
     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900/95 backdrop-blur-sm text-white rounded-xl px-3 py-2.5 text-[10px] leading-relaxed shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
       <p className="font-black text-indigo-300 mb-1.5">Art. 168 — Código de Trabajo SV</p>
-      <p className="text-slate-300 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
+      <p className="text-slate-500 mb-1.5">Jornada nocturna: 19:00 – 06:00</p>
       <p className="text-slate-200">• Hrs. ordinarias nocturnas: <span className="text-indigo-300 font-bold">+25% recargo</span> sobre tarifa diurna</p>
       <p className="text-slate-200">• Hrs. extra nocturnas: <span className="text-indigo-300 font-bold">×2.25</span> (OT 100% + 25% noct.)</p>
       <p className="text-slate-200">• Jornada noct. máx: 7h/día, 39h/sem</p>
@@ -291,11 +291,11 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-black/[0.06]">
           <div>
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Corrección de marcaje</p>
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-0.5">Corrección de marcaje</p>
             <p className="text-[16px] font-black text-slate-900">{fmtDia}</p>
           </div>
           <button onClick={onClose}
-            className="p-2 rounded-xl hover:bg-black/[0.06] text-slate-400 hover:text-slate-700 transition-all active:scale-[0.94]">
+            className="p-2 rounded-xl hover:bg-black/[0.06] text-slate-500 hover:text-slate-700 transition-all active:scale-[0.94]">
             <X size={18} strokeWidth={2.5} />
           </button>
         </div>
@@ -323,15 +323,15 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
             </div>
           ) : (
             <div className="bg-slate-50/80 border border-slate-200/60 rounded-2xl px-4 py-3">
-              <p className="text-[11px] font-bold text-slate-400">Sin horario planificado para este día</p>
+              <p className="text-[11px] font-bold text-slate-500">Sin horario planificado para este día</p>
             </div>
           )}
 
           {/* Marcajes actuales */}
           <div>
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 px-0.5">Marcajes del día</p>
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-2 px-0.5">Marcajes del día</p>
             {dayPunches.length === 0 ? (
-              <p className="text-[12px] text-slate-400 font-bold">Sin marcajes registrados</p>
+              <p className="text-[12px] text-slate-500 font-bold">Sin marcajes registrados</p>
             ) : (
               <div className="space-y-1.5">
                 {dayPunches.map(p => (
@@ -375,7 +375,7 @@ function DayCorrectionModal({ isOpen, onClose, emp, dateStr, dayPunches, shift, 
               className="w-full bg-white border border-black/[0.09] rounded-2xl px-3.5 py-2.5 text-[16px] font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/20 focus:border-[#0052CC]/40 transition-all resize-none"
             />
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[10px] font-bold text-slate-400">
+              <p className="text-[10px] font-bold text-slate-500">
                 Por: <span className="text-slate-700">{user?.name || user?.email || '—'}</span>
               </p>
               <button
@@ -487,7 +487,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
       {/* Header row */}
       <div className="flex items-start gap-3">
         {/* Date pill */}
-        <div className={`w-11 h-11 rounded-[1rem] flex flex-col items-center justify-center shrink-0 ${isToday ? 'bg-[#0052CC] text-white' : isOff ? 'bg-slate-100 text-slate-400' : 'bg-slate-100 text-slate-600'}`}>
+        <div className={`w-11 h-11 rounded-[1rem] flex flex-col items-center justify-center shrink-0 ${isToday ? 'bg-[#0052CC] text-white' : isOff ? 'bg-slate-100 text-slate-500' : 'bg-slate-100 text-slate-600'}`}>
           <span className="text-[8px] font-black uppercase tracking-widest leading-none">{DAY_NAMES_SHORT[dow]}</span>
           <span className="text-[16px] font-black leading-tight">{dayD.getUTCDate()}</span>
         </div>
@@ -499,10 +499,10 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             {isToday && <span className="text-[8px] font-black uppercase tracking-widest bg-[#0052CC] text-white px-1.5 py-0.5 rounded-full">Hoy</span>}
             {isOff && (
               isNoSchedule
-                ? <span className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-400 border border-dashed border-slate-300 px-2 py-0.5 rounded-full">Sin turno</span>
-                : <span className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-400 border border-slate-200 px-2 py-0.5 rounded-full">Libre</span>
+                ? <span className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-600 border border-dashed border-slate-300 px-2 py-0.5 rounded-full">Sin turno</span>
+                : <span className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-full">Libre</span>
             )}
-            {isFuture && !isOff && <span className="text-[9px] font-black uppercase tracking-widest text-slate-300 px-1">Próximo</span>}
+            {isFuture && !isOff && <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 px-1">Próximo</span>}
             {!isOff && !isFuture && inconsistencies.length > 0 && !ts?.absence_type && (
               <span className="text-[9px] font-black uppercase tracking-widest bg-red-100 text-red-600 border border-red-200 px-2 py-0.5 rounded-full">
                 {inconsistencies.length} falta{inconsistencies.length > 1 ? 'n' : ''}
@@ -522,7 +522,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             {ts?.is_absent && !ts?.absence_type && !isOff && !isFuture && <span className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 border border-slate-200 px-2 py-0.5 rounded-full">Ausente</span>}
           </div>
           {!isOff && shift && (
-            <p className="text-[10px] font-bold text-slate-400">
+            <p className="text-[10px] font-bold text-slate-500">
               {shift.name} · {formatTime12h(shiftStart)} – {formatTime12h(shiftEnd)}
               {dayConfig?.lunchStart && <span> · Almuerzo {formatTime12h(dayConfig.lunchStart)}</span>}
             </p>
@@ -559,7 +559,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             <div className="flex items-center gap-2">
               <LogIn size={13} className={entryPunch ? 'text-emerald-500' : 'text-slate-300'} strokeWidth={2.5} />
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Entrada</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Entrada</p>
                 {entryPunch ? (
                   <div className="flex items-center gap-1.5">
                     <p className="text-[13px] font-black text-slate-800">{fmtTimeCSTStr(entryPunch.timestamp)}</p>
@@ -567,7 +567,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                     {isEditedPunch(entryPunch) && <span className="text-[8px] font-black text-emerald-500">✎</span>}
                   </div>
                 ) : (
-                  <p className="text-[11px] font-black text-slate-300">—</p>
+                  <p className="text-[11px] font-black text-slate-500">—</p>
                 )}
               </div>
             </div>
@@ -576,7 +576,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
             <div className="flex items-center gap-2">
               <LogOut size={13} className={exitPunch ? 'text-slate-500' : 'text-slate-300'} strokeWidth={2.5} />
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Salida</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Salida</p>
                 {exitPunch ? (
                   <div className="flex items-center gap-1.5">
                     <p className="text-[13px] font-black text-slate-800">{fmtTimeCSTStr(exitPunch.timestamp)}</p>
@@ -585,7 +585,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
                     {isEditedPunch(exitPunch) && <span className="text-[8px] font-black text-emerald-500">✎</span>}
                   </div>
                 ) : (
-                  <p className="text-[11px] font-black text-slate-300">—</p>
+                  <p className="text-[11px] font-black text-slate-500">—</p>
                 )}
               </div>
             </div>
@@ -595,7 +595,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
               <div className="flex items-center gap-2">
                 <Coffee size={13} className="text-orange-400" strokeWidth={2.5} />
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Almuerzo</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Almuerzo</p>
                   <p className="text-[12px] font-black text-slate-700">
                     {lunchOut ? fmtTimeCSTStr(lunchOut.timestamp) : '—'} → {lunchIn ? fmtTimeCSTStr(lunchIn.timestamp) : '—'}
                   </p>
@@ -608,7 +608,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
               <div className="flex items-center gap-2">
                 <Clock size={13} className="text-[#0052CC]/50" strokeWidth={2.5} />
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Horas</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-slate-600">Horas</p>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <p className="text-[13px] font-black text-slate-800">{(ts.regular_hours||0).toFixed(1)}h</p>
                     {ts.overtime_hours > 0 && <span className="text-[9px] font-black text-violet-500">+{ts.overtime_hours.toFixed(1)}h OT</span>}
@@ -668,7 +668,7 @@ function DayCard({ dateStr, emp, shiftById, timesheets, homeBranchId, branchName
 
       {/* Off day */}
       {isOff && (
-        <div className="mt-2 ml-14 flex items-center gap-2 text-slate-300">
+        <div className="mt-2 ml-14 flex items-center gap-2 text-slate-500">
           <Palmtree size={14} strokeWidth={1.5} />
           <span className="text-[11px] font-bold">Día libre</span>
         </div>
@@ -760,7 +760,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
         {/* Name + role + alert chips */}
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-black text-slate-900 leading-none truncate">{emp.name}</p>
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{emp.role || '—'}</p>
+          <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-0.5">{emp.role || '—'}</p>
           {(alerts.total > 0 || hasCrossBranch) && (
             <div className="flex items-center gap-1 mt-1.5 flex-wrap">
               {alerts.inconsistencies > 0 && (
@@ -792,9 +792,9 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
           {totalReg > 0 && (
             <div className="flex flex-col items-end min-w-[3.5rem]">
               <span className="text-[15px] font-black text-slate-800 tabular-nums leading-none">
-                {totalReg.toFixed(1)}<span className="text-[10px] font-bold text-slate-400 ml-0.5">h</span>
+                {totalReg.toFixed(1)}<span className="text-[10px] font-bold text-slate-500 ml-0.5">h</span>
               </span>
-              <span className="text-[7px] font-black uppercase tracking-widest text-slate-400 mt-0.5">regular</span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-slate-600 mt-0.5">regular</span>
             </div>
           )}
           {totalOT > 0 && (
@@ -848,14 +848,14 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
               <span className="text-[13px] font-black text-slate-500 tabular-nums leading-none">
                 {empTimesheets.filter(t => t.status === 'APPROVED').length}/{empTimesheets.length}
               </span>
-              <span className="text-[7px] font-black uppercase tracking-widest text-slate-400 mt-0.5">aprob.</span>
+              <span className="text-[7px] font-black uppercase tracking-widest text-slate-600 mt-0.5">aprob.</span>
             </div>
           )}
         </div>
 
         <ChevronDown
           size={16}
-          className={`text-slate-400 transition-transform duration-300 ease-out shrink-0 ${expanded ? 'rotate-180' : ''}`}
+          className={`text-slate-500 transition-transform duration-300 ease-out shrink-0 ${expanded ? 'rotate-180' : ''}`}
           strokeWidth={2.5}
         />
       </button>
@@ -870,7 +870,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
                 {isMonday && idx > 0 && (
                   <div className="flex items-center gap-2 pt-1">
                     <div className="h-px flex-1 bg-gradient-to-r from-slate-200/60 to-transparent" />
-                    <span className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-300">nueva semana</span>
+                    <span className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-500">nueva semana</span>
                     <div className="h-px w-8 bg-slate-200/60" />
                   </div>
                 )}
@@ -1354,14 +1354,14 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                           {meta.pinOmitido && <span className="ml-2 text-amber-600 text-[9px] uppercase tracking-wider font-black">sin PIN</span>}
                         </p>
                       ) : (
-                        <p className="text-[10px] text-slate-400 mt-1 italic">No declaró horario — solo registró entrada</p>
+                        <p className="text-[10px] text-slate-500 mt-1 italic">No declaró horario — solo registró entrada</p>
                       )}
                     </div>
                     {isEditing ? (
                       <div className="flex items-center gap-2 flex-wrap">
                         <input type="time" value={editStart} onChange={e => setEditStart(e.target.value)}
                           className="bg-white border border-violet-300 rounded-xl px-3 py-1.5 text-sm font-bold text-violet-700 outline-none focus:border-violet-500" />
-                        <span className="text-slate-400 text-xs">–</span>
+                        <span className="text-slate-500 text-xs">–</span>
                         <input type="time" value={editEnd} onChange={e => setEditEnd(e.target.value)}
                           className="bg-white border border-violet-300 rounded-xl px-3 py-1.5 text-sm font-bold text-violet-700 outline-none focus:border-violet-500" />
                         <button disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', editStart, editEnd)}
@@ -1369,7 +1369,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                           {isBusy ? '…' : 'Aplicar'}
                         </button>
                         <button onClick={() => setEditingExId(null)}
-                          className="text-[9px] font-bold text-slate-400 hover:text-slate-600 px-2 py-1.5">
+                          className="text-[9px] font-bold text-slate-500 hover:text-slate-600 px-2 py-1.5">
                           Cancelar
                         </button>
                       </div>
@@ -1415,8 +1415,8 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                 {[
                   { Icon: Users,        label: 'Empleados',   val: withData,          unit: '',  c: 'text-[#0052CC]', bg: 'bg-[#0052CC]/10' },
                   { Icon: Clock,        label: 'Horas Regulares', val: totReg.toFixed(1), unit: 'h', c: 'text-slate-700',  bg: 'bg-slate-100' },
-                  { Icon: TrendingUp,   label: 'Horas Extra',     val: totOT.toFixed(1),  unit: 'h', c: totOT > 0 ? 'text-amber-600' : 'text-slate-400', bg: totOT > 0 ? 'bg-amber-50' : 'bg-slate-100' },
-                  { Icon: CalendarRange,label: 'Ausencias',       val: totAbs,            unit: '',  c: totAbs > 0 ? 'text-red-600' : 'text-slate-400', bg: totAbs > 0 ? 'bg-red-50' : 'bg-slate-100' },
+                  { Icon: TrendingUp,   label: 'Horas Extra',     val: totOT.toFixed(1),  unit: 'h', c: totOT > 0 ? 'text-amber-600' : 'text-slate-500', bg: totOT > 0 ? 'bg-amber-50' : 'bg-slate-100' },
+                  { Icon: CalendarRange,label: 'Ausencias',       val: totAbs,            unit: '',  c: totAbs > 0 ? 'text-red-600' : 'text-slate-500', bg: totAbs > 0 ? 'bg-red-50' : 'bg-slate-100' },
                 ].map(({ Icon, label, val, unit, c, bg }) => (
                   <div key={label} className="bg-white/50 backdrop-blur-xl border border-white/60 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
                     <div className="flex items-center gap-2">
@@ -1452,7 +1452,7 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
                         </div>
                         <div className="min-w-0">
                           <p className="text-[12px] font-black text-slate-700 leading-none">{bName}</p>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                          <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-0.5">
                             {branchEmployees.length} empleado{branchEmployees.length !== 1 ? 'es' : ''}
                           </p>
                         </div>
@@ -1483,9 +1483,9 @@ const AttendanceAuditView = ({ setOverlayActive }) => {
               {employeesByBranch.size === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 gap-4">
                   <div className="p-5 bg-white/40 backdrop-blur-xl border border-white/50 rounded-[2rem] shadow-sm">
-                    <CalendarRange size={32} className="text-slate-300" strokeWidth={1.5} />
+                    <CalendarRange size={32} className="text-slate-500" strokeWidth={1.5} />
                   </div>
-                  <p className="text-[14px] font-bold text-slate-400">Sin empleados para mostrar</p>
+                  <p className="text-[14px] font-bold text-slate-500">Sin empleados para mostrar</p>
                 </div>
               )}
 

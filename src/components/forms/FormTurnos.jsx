@@ -225,12 +225,12 @@ const FormTurnos = ({ branches }) => {
 
                     <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-4 border border-slate-100">
                         <div className="flex-1">
-                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Entrada</label>
+                            <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1 block">Entrada</label>
                             <p className="text-[12px] md:text-[13px] font-bold text-slate-700 font-mono tracking-tighter">{formatTime12h(shift.start_time || shift.start)}</p>
                         </div>
                         <div className="w-px h-8 bg-slate-200"></div>
                         <div className="flex-1">
-                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Salida</label>
+                            <label className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1 block">Salida</label>
                             <p className="text-[12px] md:text-[13px] font-bold text-slate-700 font-mono tracking-tighter">{formatTime12h(shift.end_time || shift.end)}</p>
                         </div>
                     </div>
@@ -254,7 +254,7 @@ const FormTurnos = ({ branches }) => {
                         <h4 className="text-[13px] md:text-[14px] font-black text-slate-800 uppercase tracking-tightleading-none mb-1">
                             {editingShiftId ? 'Editor de Turno' : 'Creador de Turno'}
                         </h4>
-                        <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest">Configuración del Catálogo</p>
+                        <p className="text-[10px] md:text-[11px] font-bold text-slate-600 uppercase tracking-widest">Configuración del Catálogo</p>
                     </div>
                     {editingShiftId && (
                         <button onClick={cancelEditing} className="ml-auto w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-colorsactive:scale-[0.97]"><X size={16} strokeWidth={3}/></button>
@@ -353,7 +353,7 @@ const FormTurnos = ({ branches }) => {
 
                 <div className="flex-1 overflow-y-auto pr-2 space-y-4 scrollbar-hide pb-8 relative">
                     {allShifts === null ? (
-                         <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-3 opacity-60">
+                         <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-3 opacity-60">
                              <Loader2 size={32} strokeWidth={1.5} className="animate-spin text-[#0052CC]" />
                              <p className="text-[10px] font-black uppercase tracking-widest text-center">Conectando a Supabase...</p>
                          </div>
@@ -362,7 +362,7 @@ const FormTurnos = ({ branches }) => {
                             {visibleShifts.map(shift => <TurnoCard key={shift.id} shift={shift} />)}
                         </div>
                     ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-300 gap-3 opacity-60">
+                        <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-3 opacity-60">
                             {statusFilter === 'ARCHIVED' ? <Package size={32} /> : <BookOpen size={32} strokeWidth={1.5} />}
                             <p className="text-[10px] font-black uppercase tracking-widest text-center">No hay turnos registrados en esta vista</p>
                         </div>

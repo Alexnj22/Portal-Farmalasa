@@ -5,9 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.1';
+export const APP_VERSION = '2.17.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.2 — refactor(bloque6.C): primera extracción de TabMinMax.jsx
+// (3947→3800 líneas). Empezando por el menor acoplamiento, como pide el
+// plan ("un PR chico por vez"): 6 componentes 100% presentacionales
+// (CoverageBar, StockBar, AbcXyzBadge, CardSkeletons, CostCards,
+// DraftCostCard) + los 2 helpers/constantes que comparten con el resto
+// del archivo (fmtMoney, normXyz → tabminmax/helpers.js; ABC_CFG,
+// XYZ_CFG → tabminmax/constants.js, estos 2 últimos ya no se usaban
+// fuera de AbcXyzBadge así que no se re-importan en el archivo
+// principal). Nuevo directorio `src/views/productos/tabminmax/`.
+// Extracción mecánica — mismo JSX/lógica, solo cambia el límite de
+// archivo; sin cambios de comportamiento. Verificado en vivo con
+// Playwright contra datos reales: CostCards ($32.0k/$26.7k/$2.1k/
+// $735.65), DraftCostCard ($15.9k → $31.1k) y AbcXyzBadge (columna
+// CLASE de la tabla: AY/AZ/BZ con el color-coding correcto, Z en rosa)
+// renderizan idéntico a antes. Quedan para próximos PRs de 6.C:
+// AbcXyzMatrix, RowActions, ExpandedPanel, ConfigPanel, LabsPanel (todo
+// TabMinMax.jsx), y luego TabPedidos.jsx completo (mismo patrón, ya
+// tiene sub-componentes bien separados adentro del archivo: MotorcycleAnim,
+// PauseModal, AnularModal, ApoioScanModal, ItemSection, LifecycleTimeline,
+// DifSection, etc.). Build + lint + 15 tests unitarios verdes.
 // v2.17.1 — design(bloque5.7): cierra las 2 decisiones de producto que
 // quedaban pendientes, decididas junto al usuario.
 // 5.7a (animate-bounce): auditados los 16 usos existentes — ninguno es

@@ -604,12 +604,15 @@ promedio inflado por historia vieja; el caso real corre en ~800ms.
 ## BLOQUE 6 — Refactors estructurales (GATE: staging vivo + tests del Bloque 2)
 
 Incrementales, un PR chico por vez, probados en staging antes de prod.
+**En progreso — no es un bloque de "cerrar en una sesión"**, son 3 refactors
+grandes e independientes que se migran de forma oportunista a lo largo de
+varias sesiones, no todo de una vez.
 
 | # | Refactor | Problema | Ruta |
 |---|---|---|---|
-| 6.A | Capa de datos | 390 `supabase.from()` en 58 archivos, sin capa, sin caché; el límite 1000-filas se resuelve a mano vista por vista | `src/data/` con hook por entidad (paginación + manejo de error + caché). Migración oportunista; empezar por `WidgetInventorySearch` (ya tuvo bug) |
-| 6.B | Partir `fetchBoot` monolítico | Un `bootStatus` global bloquea todos los datos sensibles → race condition conocida + sobre-fetch | `status` por slice, coexistiendo; migrar primero el modal de empleado |
-| 6.C | Dividir `TabMinMax.jsx`/`TabPedidos.jsx` (~3,900 líneas c/u) | Mini-apps en un archivo | Extraer un sub-componente por PR, empezar por el de menor acoplamiento |
+| 6.A | Capa de datos | 390 `supabase.from()` en 58 archivos, sin capa, sin caché; el límite 1000-filas se resuelve a mano vista por vista | `src/data/` con hook por entidad (paginación + manejo de error + caché). Migración oportunista; empezar por `WidgetInventorySearch` (ya tuvo bug). **No iniciado** |
+| 6.B | Partir `fetchBoot` monolítico | Un `bootStatus` global bloquea todos los datos sensibles → race condition conocida + sobre-fetch | `status` por slice, coexistiendo; migrar primero el modal de empleado. **No iniciado** — es el de mayor riesgo (toca el boot sequence completo, usado por toda la app), requiere su propio PR dedicado y prueba en staging antes de tocar prod |
+| 6.C | Dividir `TabMinMax.jsx`/`TabPedidos.jsx` (~3,900 líneas c/u) | Mini-apps en un archivo | 🟡 **En progreso — 1er PR aplicado 2026-07-15 (v2.17.2).** `TabMinMax.jsx`: 3947→3800 líneas. Extraídos los 6 componentes 100% presentacionales de menor acoplamiento (`CoverageBar`, `StockBar`, `AbcXyzBadge`, `CardSkeletons`, `CostCards`, `DraftCostCard`) + helpers compartidos (`fmtMoney`, `normXyz` → `tabminmax/helpers.js`; `ABC_CFG`, `XYZ_CFG` → `tabminmax/constants.js`) a `src/views/productos/tabminmax/`. Extracción mecánica, sin cambio de comportamiento — verificado en vivo con Playwright contra datos reales (CostCards/DraftCostCard/AbcXyzBadge renderizan idéntico). Ambos archivos ya tienen buena separación interna de sub-componentes (no es "todo junto sin límites" — es "todo junto en un solo archivo"), así que el resto es mecánico: quedan por extraer de `TabMinMax.jsx` → `AbcXyzMatrix`, `RowActions`, `ExpandedPanel`, `ConfigPanel`, `LabsPanel`; después el mismo tratamiento completo para `TabPedidos.jsx` (`MotorcycleAnim`, `PauseModal`, `AnularModal`, `ApoioScanModal`, `ItemSection`, `LifecycleTimeline`, `DifSection`, etc. ya identificados) |
 
 ---
 

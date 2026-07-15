@@ -7,7 +7,7 @@ import {
     RefreshCw, AlertTriangle, Loader2,
     Building2, Package, X, Download, Trash2,
     CheckCircle2, Check, Info, RotateCcw, ChevronRight, History,
-    DollarSign, TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2, Target, FlaskConical, Search, MoreHorizontal,
+    TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, Upload, XCircle, Eye, EyeOff, BarChart2, FlaskConical, Search, MoreHorizontal,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
@@ -19,6 +19,13 @@ import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
 import { applyPresRule } from '../../utils/presentacion';
 import { useNowTick } from '../../hooks/useNowTick';
+import { normXyz } from './tabminmax/helpers';
+import CoverageBar from './tabminmax/CoverageBar';
+import StockBar from './tabminmax/StockBar';
+import AbcXyzBadge from './tabminmax/AbcXyzBadge';
+import CardSkeletons from './tabminmax/CardSkeletons';
+import CostCards from './tabminmax/CostCards';
+import DraftCostCard from './tabminmax/DraftCostCard';
 
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
@@ -85,26 +92,8 @@ const STAT_CFGS = [
 // Solo estos chips se muestran en el filtro bar
 const VISIBLE_STAT_KEYS = ['overstocked', 'dead_stock', 'no_data'];
 
-const ABC_CFG = {
-    A: { bg: 'bg-slate-50 text-slate-600 border-slate-200',       title: 'Clase A — top 70% ingresos', color: '#64748b' },
-    B: { bg: 'bg-slate-50 text-slate-500 border-slate-200',       title: 'Clase B — siguiente 20%',    color: '#94a3b8' },
-    C: { bg: 'bg-amber-50 text-amber-600 border-amber-200',       title: 'Clase C — restante 10%',     color: '#f59e0b' },
-    D: { bg: 'bg-slate-50 text-slate-500 border-slate-200',       title: 'Sin ventas en período',      color: '#94a3b8' },
-};
-
-// XYZ — demand variability (replaces stable/moderate/erratic)
-const XYZ_CFG = {
-    X: { label: 'X', desc: 'Estable',   cls: 'text-slate-600 bg-slate-50 border-slate-200', color: '#64748b' },
-    Y: { label: 'Y', desc: 'Moderada',  cls: 'text-slate-500 bg-slate-50 border-slate-200', color: '#94a3b8' },
-    Z: { label: 'Z', desc: 'Errática',  cls: 'text-rose-600 bg-rose-50 border-rose-200',    color: '#e11d48' },
-    // Legacy support (old data before migration)
-    stable:   { label: 'X', desc: 'Estable',  cls: 'text-slate-600 bg-slate-50 border-slate-200', color: '#64748b' },
-    moderate: { label: 'Y', desc: 'Moderada', cls: 'text-slate-500 bg-slate-50 border-slate-200', color: '#94a3b8' },
-    erratic:  { label: 'Z', desc: 'Errática', cls: 'text-rose-600 bg-rose-50 border-rose-200',    color: '#e11d48' },
-};
-
-// Normalize legacy demand_variability values → X/Y/Z
-const normXyz = (v) => ({ stable: 'X', moderate: 'Y', erratic: 'Z' }[v] ?? v ?? 'X');
+// ABC_CFG, XYZ_CFG, normXyz, fmtMoney: extracted to ./tabminmax/constants.js
+// y ./tabminmax/helpers.js (Bloque 6.C) — importados arriba.
 
 const translateDbError = (msg) => {
     if (!msg) return 'Error desconocido';
@@ -195,14 +184,6 @@ const validateEditForRow = (edit, row) => {
     }
     return null;
 };
-
-function fmtMoney(n) {
-    const v = Number(n) || 0;
-    if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
-    if (v >= 100_000)   return `$${Math.round(v / 1000)}k`;
-    if (v >= 1_000)     return `$${(v / 1000).toFixed(1)}k`;
-    return `$${v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
 
 // netStockMap: { erp_product_id → net_sucursal_stock } fetched before calling
 function exportCsv(rows, name, sucursalName, isBodega = false, netStockMap = {}, supplierMap = {}) {
@@ -603,88 +584,8 @@ function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, p
 
 // ─── Cost summary cards ───────────────────────────────────────────────────────
 
-function CostCards({ summary, isBodega }) {
-    const total  = Number(summary.total_cost)  || 0;
-    const useful = Number(summary.useful_cost) || 0;
-    const excess = Number(summary.excess_cost) || 0;
-    const dead   = Number(summary.dead_cost)   || 0;
-
-    const STATS = [
-        { label: 'Total retenido', value: fmtMoney(total),  color: 'text-slate-800', icon: DollarSign,  iconCls: 'text-slate-400' },
-        ...(!isBodega ? [
-            { label: 'Inventario útil',  value: fmtMoney(useful), color: 'text-slate-800', icon: TrendingUp,  iconCls: 'text-slate-400' },
-            { label: 'Capital excedente',value: fmtMoney(excess), color: 'text-slate-800', icon: TrendingDown,iconCls: 'text-slate-400' },
-        ] : []),
-        { label: 'Sin movimiento', value: fmtMoney(dead),   color: 'text-slate-800', icon: Layers,      iconCls: 'text-slate-400' },
-    ];
-
-    return (
-        <div className="flex items-center gap-2.5 flex-wrap">
-            {STATS.map(({ label, value, color, icon: Icon, iconCls }) => (
-                <div key={label}
-                    className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm"
-                    style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
-                    <Icon size={13} className={`shrink-0 ${iconCls}`} />
-                    <div className="flex flex-col leading-snug gap-0.5">
-                        <span className="text-[10px] font-semibold text-slate-500">{label}</span>
-                        <span className={`text-[14px] font-black tabular-nums leading-none ${color}`}>{value}</span>
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function DraftCostCard({ draftCost, isBodega }) {
-    const pubMin  = Number(draftCost?.pub_min_cost  ?? draftCost?.min_cost  ?? 0);
-    const pubMax  = Number(draftCost?.pub_max_cost  ?? draftCost?.max_cost  ?? 0);
-    const effMin  = Number(draftCost?.eff_min_cost  ?? pubMin);
-    const effMax  = Number(draftCost?.eff_max_cost  ?? pubMax);
-    const hasDraft = Number(draftCost?.draft_count ?? 0) > 0;
-    const deltaMax = effMax - pubMax;
-    const hasAnyDelta = hasDraft && Math.abs(deltaMax) > 0.01;
-    if (!draftCost || (!pubMin && !pubMax && !effMin && !effMax)) return null;
-    const label = isBodega ? 'Σ red efectiva' : 'Inversión proyectada';
-    return (
-        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm"
-            style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
-            <Target size={13} className={`shrink-0 ${isBodega ? 'text-amber-400' : 'text-violet-400'}`} />
-            <div className="flex flex-col leading-snug gap-0.5">
-                <span className="text-[10px] font-semibold text-slate-500">
-                    {label}
-                    {hasAnyDelta && (
-                        <span className={`ml-1.5 tabular-nums font-bold ${deltaMax >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                            {deltaMax >= 0 ? '+' : ''}{fmtMoney(deltaMax)}
-                        </span>
-                    )}
-                </span>
-                <div className="flex items-baseline gap-1">
-                    <span className="text-[14px] font-black tabular-nums leading-none text-slate-800">{fmtMoney(hasDraft ? effMin : pubMin)}</span>
-                    <span className="text-[10px] text-slate-500 leading-none">→</span>
-                    <span className="text-[14px] font-black tabular-nums leading-none text-slate-800">{fmtMoney(hasDraft ? effMax : pubMax)}</span>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function CardSkeletons({ isBodega }) {
-    const count = isBodega ? 2 : 4;
-    return (
-        <div className="flex items-center gap-2.5 flex-wrap">
-            {Array.from({ length: count }).map((_, i) => (
-                <div key={i} className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-white/70 backdrop-blur-sm animate-pulse"
-                    style={{ background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 20px rgba(0,82,204,0.06), inset 0 1px 0 rgba(255,255,255,0.9)' }}>
-                    <div className="w-3.5 h-3.5 rounded-full bg-slate-200/80 shrink-0" />
-                    <div className="flex flex-col gap-1.5">
-                        <div className="h-2 w-16 rounded bg-slate-200/80" />
-                        <div className="h-3 w-20 rounded bg-slate-200/80" />
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-}
+// CostCards, DraftCostCard, CardSkeletons: extracted to ./tabminmax/
+// (Bloque 6.C) — importados arriba.
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -723,56 +624,8 @@ function formatDominant(units, presentations) {
     return `≥${Math.ceil(n / factor)} ${tipo.trim()}`;
 }
 
-// ─── Coverage bar ─────────────────────────────────────────────────────────────
-
-function CoverageBar({ current, velocity, cycleDays }) {
-    const days = velocity > 0 ? current / velocity : null;
-    if (days === null) return <span className="text-slate-500 text-xs">—</span>;
-    const pct  = Math.min(100, (days / cycleDays) * 100);
-    const fill = days === 0 ? '#ef4444' : days < (cycleDays * 0.2) ? '#f97316' : days < (cycleDays * 0.5) ? '#f59e0b' : '#10b981';
-    const label = days >= 999 ? '>999d' : `${Math.round(days)}d`;
-    return (
-        <div className="flex flex-col gap-0.5 items-end">
-            <span className="text-[11px] font-black tabular-nums" style={{ color: fill }}>{label}</span>
-            <div className="w-14 h-[3px] rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: fill }} />
-            </div>
-        </div>
-    );
-}
-
-// ─── Stock mini-bar ───────────────────────────────────────────────────────────
-
-function StockBar({ current, min, max }) {
-    const c  = Number(current) || 0;
-    const mn = Number(min)     || 0;
-    const mx = Number(max)     || 0;
-    if (!mx && !mn) return null;
-    const ceil = Math.max(mx * 1.3, c * 1.15, mn * 3, 1);
-    const pct  = v => `${Math.min(100, (v / ceil) * 100).toFixed(2)}%`;
-    const fill = c === 0 ? 'bg-red-400' : c < mn ? 'bg-orange-400' : c > mx ? 'bg-blue-400' : 'bg-emerald-400';
-    return (
-        <div className="relative h-[3px] w-full bg-slate-100 rounded-full mt-1.5">
-            <div className={`absolute left-0 top-0 h-full rounded-full ${fill} transition-all`} style={{ width: pct(c) }} />
-            {mn > 0 && <div className="absolute top-[-2px] h-[7px] w-[2px] bg-orange-400/80 rounded-full" style={{ left: pct(mn) }} />}
-            {mx > 0 && <div className="absolute top-[-2px] h-[7px] w-[2px] bg-blue-400/70 rounded-full"   style={{ left: pct(mx) }} />}
-        </div>
-    );
-}
-
-// ─── Combined ABC×XYZ badge — plain text, only C/Z get color ────────────────
-
-function AbcXyzBadge({ abc, xyz }) {
-    const xyzKey = normXyz(xyz);
-    const abcColor = abc === 'C' ? 'text-amber-600' : 'text-slate-500';
-    const xyzColor = xyzKey === 'Z' ? 'text-rose-500' : 'text-slate-500';
-    return (
-        <span className="font-black tracking-tight shrink-0" title={`${ABC_CFG[abc]?.title ?? ''} · ${XYZ_CFG[xyzKey]?.desc ?? ''}`}>
-            <span className={`text-[11px] ${abcColor}`}>{abc || '—'}</span>
-            <span className={`text-[10px] ${xyzColor}`}>{xyzKey || 'X'}</span>
-        </span>
-    );
-}
+// CoverageBar, StockBar, AbcXyzBadge: extracted to ./tabminmax/
+// (Bloque 6.C) — importados arriba.
 
 // ─── Expanded panel — multi-branch view + current branch breakdown ────────────
 

@@ -5,9 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.21';
+export const APP_VERSION = '2.17.22';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.22 — refactor(bloque6.A): vacationPlanSlice.js — 14 supabase.from()
+// migradas. Módulo nuevo src/data/vacationPlans.js (8 fn): fetchVacationHeaders,
+// updateVacationHeaderStatus, updateVacationPlansBulkPreApprove,
+// fetchVacationChangeRequests, updateVacationPlan (genérica, con toggle
+// returning=true/false para preservar el .select().single() exacto de cada
+// sitio), fetchVacationPlans, fetchOverlappingVacationPlans, insertVacationPlan.
+// El update final de approval_requests en processChangeRequest reutiliza
+// updateApprovalRequest de data/requests.js (mismo query exacto, no se
+// duplica). Este archivo NO estaba en el inventario original de 385 sitios
+// (undercount ya documentado en PLAN-EJECUCION-2026-07.md) — es el primero
+// de los 173 sitios reales descubiertos en el reescaneo completo del
+// 2026-07-15. Verificado en vivo con Playwright contra datos reales de
+// producción: /vacation-plan renderiza Plan de Vacaciones 2026 con
+// asignación real (Andy Mancia, La Popular, 02-ene→16-ene, CONFIRMADO).
+// Sin errores de consola atribuibles al cambio (solo el ruido preexistente
+// ya documentado: COEP, CORS de ensure_user_by_code, widget top_productos).
+// Los paths de escritura (aprobar/rechazar cambio, crear/editar/cancelar
+// plan) no se ejercitaron en vivo por tratarse de datos reales de RRHH —
+// verificados por sustitución 1:1 exacta de cada query. Build + lint +
+// 15 tests unitarios verdes.
 // v2.17.21 — refactor(bloque6.A): TabInventario.jsx + EmployeeHomeView.jsx
 // + EncuestaView.jsx + SrsEnriquecerModal.jsx — 29 supabase.from()
 // migradas (7+8+7+7). Dos módulos nuevos: src/data/inventarioTab.js

@@ -1,5 +1,12 @@
 import { supabase } from '../../supabaseClient';
 import { notifyEmployees } from '../../utils/notify';
+import {
+    fetchVacationHeaders as fetchVacationHeadersData, updateVacationHeaderStatus,
+    updateVacationPlansBulkPreApprove, fetchVacationChangeRequests as fetchVacationChangeRequestsData,
+    updateVacationPlan, fetchVacationPlans as fetchVacationPlansData, fetchOverlappingVacationPlans,
+    insertVacationPlan,
+} from '../../data/vacationPlans';
+import { updateApprovalRequest } from '../../data/requests';
 
 export const createVacationPlanSlice = (set, get) => ({
     vacationPlans: [],
@@ -9,20 +16,14 @@ export const createVacationPlanSlice = (set, get) => ({
     vacationChangeRequests: [],  // pending approval_requests type=VACATION_CHANGE
 
     fetchVacationHeaders: async () => {
-        const { data, error } = await supabase
-            .from('vacation_plan_headers')
-            .select('id, year, status, ai_generated, notes, created_at, updated_at')
-            .order('year', { ascending: false });
+        const { data, error } = await fetchVacationHeadersData();
         if (error) { console.error('fetchVacationHeaders:', error); return []; }
         set({ vacationHeaders: data || [] });
         return data || [];
     },
 
     updateHeaderStatus: async (headerId, status) => {
-        const { error } = await supabase
-            .from('vacation_plan_headers')
-            .update({ status, updated_at: new Date().toISOString() })
-            .eq('id', headerId);
+        const { error } = await updateVacationHeaderStatus(headerId, status);
         if (error) { console.error('updateHeaderStatus:', error); return false; }
         set(state => ({
             vacationHeaders: state.vacationHeaders.map(h =>
@@ -34,17 +35,10 @@ export const createVacationPlanSlice = (set, get) => ({
 
     // Bulk-promote all DRAFT plans for a year → PRE_APPROVED + header → PRE_APPROVED
     preApprovePlan: async (headerId) => {
-        const { error: plansErr } = await supabase
-            .from('vacation_plans')
-            .update({ status: 'PRE_APPROVED', updated_at: new Date().toISOString() })
-            .eq('plan_header_id', headerId)
-            .eq('status', 'DRAFT');
+        const { error: plansErr } = await updateVacationPlansBulkPreApprove(headerId);
         if (plansErr) { console.error('preApprovePlan plans:', plansErr); return false; }
 
-        const { error: headerErr } = await supabase
-            .from('vacation_plan_headers')
-            .update({ status: 'PRE_APPROVED', updated_at: new Date().toISOString() })
-            .eq('id', headerId);
+        const { error: headerErr } = await updateVacationHeaderStatus(headerId, 'PRE_APPROVED');
         if (headerErr) { console.error('preApprovePlan header:', headerErr); return false; }
 
         set(state => ({
@@ -88,12 +82,7 @@ export const createVacationPlanSlice = (set, get) => ({
     },
 
     fetchVacationChangeRequests: async (year) => {
-        const { data, error } = await supabase
-            .from('approval_requests')
-            .select('id, employee_id, status, note, approver_note, metadata, created_at')
-            .eq('type', 'VACATION_CHANGE')
-            .eq('status', 'PENDING')
-            .order('created_at', { ascending: false });
+        const { data, error } = await fetchVacationChangeRequestsData();
         if (error) { console.error('fetchVacationChangeRequests:', error); return []; }
         const employees = get().employees || [];
         const enriched = (data || [])
@@ -110,18 +99,15 @@ export const createVacationPlanSlice = (set, get) => ({
         // action: 'APPROVED' | 'REJECTED'
         if (action === 'APPROVED' && vacationPlanId && newStart && newEnd) {
             const days = Math.round((new Date(newEnd + 'T12:00:00') - new Date(newStart + 'T12:00:00')) / 86400000) + 1;
-            const { error: planErr } = await supabase
-                .from('vacation_plans')
-                .update({
-                    start_date: newStart,
-                    end_date: newEnd,
-                    days,
-                    status: 'APPROVED',
-                    change_requested_start: null,
-                    change_requested_end: null,
-                    updated_at: new Date().toISOString(),
-                })
-                .eq('id', vacationPlanId);
+            const { error: planErr } = await updateVacationPlan(vacationPlanId, {
+                start_date: newStart,
+                end_date: newEnd,
+                days,
+                status: 'APPROVED',
+                change_requested_start: null,
+                change_requested_end: null,
+                updated_at: new Date().toISOString(),
+            });
             if (planErr) { console.error('processChangeRequest plan:', planErr); return false; }
             set(state => ({
                 vacationPlans: state.vacationPlans.map(vp =>
@@ -132,10 +118,7 @@ export const createVacationPlanSlice = (set, get) => ({
             }));
         } else if (action === 'REJECTED' && vacationPlanId) {
             // Revert plan status to PRE_APPROVED, clear requested dates
-            await supabase
-                .from('vacation_plans')
-                .update({ status: 'PRE_APPROVED', change_requested_start: null, change_requested_end: null, updated_at: new Date().toISOString() })
-                .eq('id', vacationPlanId);
+            await updateVacationPlan(vacationPlanId, { status: 'PRE_APPROVED', change_requested_start: null, change_requested_end: null, updated_at: new Date().toISOString() });
             set(state => ({
                 vacationPlans: state.vacationPlans.map(vp =>
                     vp.id === vacationPlanId
@@ -145,10 +128,7 @@ export const createVacationPlanSlice = (set, get) => ({
             }));
         }
         // Update approval_request status
-        const { error } = await supabase
-            .from('approval_requests')
-            .update({ status: action, updated_at: new Date().toISOString() })
-            .eq('id', requestId);
+        const { error } = await updateApprovalRequest(requestId, { status: action, updated_at: new Date().toISOString() });
         if (error) { console.error('processChangeRequest request:', error); return false; }
         set(state => ({
             vacationChangeRequests: state.vacationChangeRequests.filter(r => r.id !== requestId),
@@ -159,13 +139,7 @@ export const createVacationPlanSlice = (set, get) => ({
     fetchVacationPlans: async (year, branchId = null) => {
         set({ isLoadingVacationPlans: true });
         try {
-            let query = supabase
-                .from('vacation_plans')
-                .select('id, year, plan_header_id, employee_id, branch_id, start_date, end_date, days, status, notes, metadata, change_requested_start, change_requested_end, created_at')
-                .eq('year', year)
-                .order('start_date', { ascending: true });
-            if (branchId) query = query.eq('branch_id', branchId);
-            const { data, error } = await query;
+            const { data, error } = await fetchVacationPlansData(year, branchId);
             if (error) throw error;
             const employees = get().employees || [];
             const branches  = get().branches  || [];
@@ -222,12 +196,7 @@ export const createVacationPlanSlice = (set, get) => ({
             }
 
             // Validar solapamiento en misma sucursal
-            const { data: existing } = await supabase
-                .from('vacation_plans')
-                .select('id, employee_id, start_date, end_date')
-                .eq('branch_id', planData.branch_id)
-                .eq('year', planData.year)
-                .neq('status', 'CANCELLED');
+            const { data: existing } = await fetchOverlappingVacationPlans(planData.branch_id, planData.year);
 
             const hasOverlap = (existing || []).some(vp => {
                 if (String(vp.employee_id) === String(planData.employee_id)) return false;
@@ -238,22 +207,18 @@ export const createVacationPlanSlice = (set, get) => ({
                 throw new Error('OVERLAP_ERROR: Ya existe un plan de vacaciones en esas fechas para esta sucursal. No pueden solaparse.');
             }
 
-            const { data, error } = await supabase
-                .from('vacation_plans')
-                .insert([{
-                    year:        planData.year,
-                    employee_id: planData.employee_id,
-                    branch_id:   planData.branch_id,
-                    start_date:  planData.start_date,
-                    end_date:    planData.end_date,
-                    days:        planData.days || 15,
-                    status:      'PLANNED',
-                    notes:       planData.notes || null,
-                    metadata:    metadata,
-                    created_by:  planData.created_by,
-                }])
-                .select()
-                .single();
+            const { data, error } = await insertVacationPlan({
+                year:        planData.year,
+                employee_id: planData.employee_id,
+                branch_id:   planData.branch_id,
+                start_date:  planData.start_date,
+                end_date:    planData.end_date,
+                days:        planData.days || 15,
+                status:      'PLANNED',
+                notes:       planData.notes || null,
+                metadata:    metadata,
+                created_by:  planData.created_by,
+            });
 
             if (error) throw error;
 
@@ -289,19 +254,14 @@ export const createVacationPlanSlice = (set, get) => ({
                     edited_at:           new Date().toISOString(),
                   };
 
-            const { data, error } = await supabase
-                .from('vacation_plans')
-                .update({
-                    start_date:  updates.start_date,
-                    end_date:    updates.end_date,
-                    days:        updates.days,
-                    notes:       updates.notes ?? null,
-                    metadata,
-                    updated_at:  new Date().toISOString(),
-                })
-                .eq('id', planId)
-                .select()
-                .single();
+            const { data, error } = await updateVacationPlan(planId, {
+                start_date:  updates.start_date,
+                end_date:    updates.end_date,
+                days:        updates.days,
+                notes:       updates.notes ?? null,
+                metadata,
+                updated_at:  new Date().toISOString(),
+            }, true);
             if (error) throw error;
             set(state => ({
                 vacationPlans: state.vacationPlans.map(vp =>
@@ -317,10 +277,7 @@ export const createVacationPlanSlice = (set, get) => ({
 
     updateVacationPlanStatus: async (planId, status) => {
         try {
-            const { error } = await supabase
-                .from('vacation_plans')
-                .update({ status, updated_at: new Date().toISOString() })
-                .eq('id', planId);
+            const { error } = await updateVacationPlan(planId, { status, updated_at: new Date().toISOString() });
             if (error) throw error;
 
             if (status === 'CONFIRMED') {
@@ -354,10 +311,7 @@ export const createVacationPlanSlice = (set, get) => ({
 
     deleteVacationPlan: async (planId) => {
         try {
-            const { error } = await supabase
-                .from('vacation_plans')
-                .update({ status: 'CANCELLED', updated_at: new Date().toISOString() })
-                .eq('id', planId);
+            const { error } = await updateVacationPlan(planId, { status: 'CANCELLED', updated_at: new Date().toISOString() });
             if (error) throw error;
             set(state => ({
                 vacationPlans: state.vacationPlans.map(vp =>

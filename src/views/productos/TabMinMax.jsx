@@ -31,6 +31,11 @@ import RowActions from './tabminmax/RowActions';
 import ExpandedPanel from './tabminmax/ExpandedPanel';
 import ConfigPanel from './tabminmax/ConfigPanel';
 import LabsPanel from './tabminmax/LabsPanel';
+import {
+    upsertStockParams, upsertStockParamsBulk, updateStockParams, updateStockParamsBulk,
+    fetchStockParams, fetchStockParamsUpdates, fetchStockConfig, fetchEmployeeByEmail,
+    fetchEmployeesBasic, fetchAuditLogsForProduct,
+} from '../../data/stockParams';
 
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
@@ -367,7 +372,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
             if (!user?.email) return;
-            supabase.from('employees').select('id,name,photo_url').eq('email', user.email).maybeSingle()
+            fetchEmployeeByEmail(user.email)
                 .then(async ({ data: emp }) => { if (emp) { await signPhotosDeep(emp); setCurrentEmployee(emp); } });
         });
     }, []);
@@ -399,7 +404,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 supabase.rpc('get_stock_analysis_jsonb',   { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_inventory_cost_summary', { p_erp_sucursal_id: erpId }),
                 supabase.rpc('get_draft_cost_estimate',    { p_erp_sucursal_id: erpId }),
-                supabase.from('stock_config').select('analysis_days,approaching_pct').eq('id', 1).single(),
+                fetchStockConfig(),
             ]);
             if (rowsRes.error) throw rowsRes.error;
             if (costRes.error) throw costRes.error;
@@ -441,12 +446,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         let cursor = new Date().toISOString();
 
         const poll = async () => {
-            const { data: rows, error } = await supabase
-                .from('product_stock_params')
-                .select('erp_product_id, min_units, max_units, manual_min, manual_max, draft_status, draft_min, draft_max, updated_at')
-                .eq('erp_sucursal_id', 6)
-                .gt('updated_at', cursor)
-                .order('updated_at', { ascending: true });
+            const { data: rows, error } = await fetchStockParamsUpdates(6, cursor);
             if (cancelled || error || !rows?.length) return;
             cursor = rows[rows.length - 1].updated_at;
 
@@ -584,11 +584,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
     const zeroOutRow = useCallback(async (row) => {
         if (hasPublishedData && row.draft_status !== 'pending') {
-            const { error: e } = await supabase.from('product_stock_params')
-                .upsert(
-                    { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, min_units: 0, max_units: 0, updated_at: new Date().toISOString() },
-                    { onConflict: 'erp_product_id,erp_sucursal_id' }
-                );
+            const { error: e } = await upsertStockParams(
+                { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, min_units: 0, max_units: 0, updated_at: new Date().toISOString() }
+            );
             if (!e) {
                 setData(prev => prev.map(r =>
                     r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
@@ -601,11 +599,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 new_min: 0, new_max: 0,
             });
         } else {
-            const { error: e } = await supabase.from('product_stock_params')
-                .upsert(
-                    { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() },
-                    { onConflict: 'erp_product_id,erp_sucursal_id' }
-                );
+            const { error: e } = await upsertStockParams(
+                { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() }
+            );
             if (!e) {
                 setData(prev => prev.map(r =>
                     r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
@@ -683,11 +679,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             // effective = sum + delta. Si no hay excedente (numVal === floor), delta = null.
             const delta = numVal - floor;
             const deltaToStore = delta > 0 ? delta : null;
-            const { error: e } = await supabase.from('product_stock_params')
-                .upsert(
-                    { erp_product_id: edit.productId, erp_sucursal_id: 6, [col]: deltaToStore, updated_at: new Date().toISOString() },
-                    { onConflict: 'erp_product_id,erp_sucursal_id' }
-                );
+            const { error: e } = await upsertStockParams(
+                { erp_product_id: edit.productId, erp_sucursal_id: 6, [col]: deltaToStore, updated_at: new Date().toISOString() }
+            );
             if (e) { useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error'); return; }
             const newMinEff = edit.field === 'min' ? (numVal ?? 0) : (targetRow?.effective_min ?? 0);
             const newMaxEff = edit.field === 'max' ? (numVal ?? 0) : (targetRow?.effective_max ?? 0);
@@ -718,11 +712,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 if (r.erp_product_id !== edit.productId || r._erp_sucursal_id !== edit.sucursalId) return r;
                 return { ...r, [effCol]: numVal, draft_status: 'none', alert_status: calcAlertStatus(r.current_stock, newMin, newMax) };
             }));
-            const { error: e } = await supabase.from('product_stock_params')
-                .upsert(
-                    { erp_product_id: edit.productId, erp_sucursal_id: edit.sucursalId, [col]: numVal, draft_status: 'none', draft_min: null, draft_max: null, updated_at: new Date().toISOString() },
-                    { onConflict: 'erp_product_id,erp_sucursal_id' }
-                );
+            const { error: e } = await upsertStockParams(
+                { erp_product_id: edit.productId, erp_sucursal_id: edit.sucursalId, [col]: numVal, draft_status: 'none', draft_min: null, draft_max: null, updated_at: new Date().toISOString() }
+            );
             if (e) {
                 setData(prev => prev.map(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId ? targetRow : r));
                 useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error');
@@ -749,11 +741,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 if (r.erp_product_id !== edit.productId || r._erp_sucursal_id !== edit.sucursalId) return r;
                 return { ...r, [col]: numVal, draft_status: 'pending', alert_status: calcAlertStatus(r.current_stock, newMin, newMax) };
             }));
-            const { error: e } = await supabase.from('product_stock_params')
-                .upsert(
-                    { erp_product_id: edit.productId, erp_sucursal_id: edit.sucursalId, [col]: numVal, draft_status: 'pending', updated_at: new Date().toISOString() },
-                    { onConflict: 'erp_product_id,erp_sucursal_id' }
-                );
+            const { error: e } = await upsertStockParams(
+                { erp_product_id: edit.productId, erp_sucursal_id: edit.sucursalId, [col]: numVal, draft_status: 'pending', updated_at: new Date().toISOString() }
+            );
             if (e) {
                 setData(prev => prev.map(r => r.erp_product_id === edit.productId && r._erp_sucursal_id === edit.sucursalId ? targetRow : r));
                 useToastStore.getState().showToast(targetRow?.product_name || 'Producto', e.message || 'Error al guardar', 'error');
@@ -813,8 +803,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
             const deltaMax = maxNum - floorMax;
             const deltaMinStore = deltaMin > 0 ? deltaMin : null;
             const deltaMaxStore = deltaMax > 0 ? deltaMax : null;
-            const { error: e } = await supabase.from('product_stock_params')
-                .upsert({ erp_product_id: productId, erp_sucursal_id: 6, manual_min: deltaMinStore, manual_max: deltaMaxStore, updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
+            const { error: e } = await upsertStockParams({ erp_product_id: productId, erp_sucursal_id: 6, manual_min: deltaMinStore, manual_max: deltaMaxStore, updated_at: new Date().toISOString() });
             if (e) { useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return; }
             setData(prev => prev.map(r => {
                 if (r.erp_product_id !== productId || r._erp_sucursal_id !== 6) return r;
@@ -843,8 +832,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 if (r.erp_product_id !== productId || r._erp_sucursal_id !== sucursalId) return r;
                 return { ...r, effective_min: minNum, effective_max: maxNum, draft_status: 'none', alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
             }));
-            const { error: e } = await supabase.from('product_stock_params')
-                .upsert({ erp_product_id: productId, erp_sucursal_id: sucursalId, min_units: minNum, max_units: maxNum, draft_status: 'none', draft_min: null, draft_max: null, updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
+            const { error: e } = await upsertStockParams({ erp_product_id: productId, erp_sucursal_id: sucursalId, min_units: minNum, max_units: maxNum, draft_status: 'none', draft_min: null, draft_max: null, updated_at: new Date().toISOString() });
             if (e) {
                 setData(prev => prev.map(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId ? targetRow : r));
                 useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return;
@@ -854,8 +842,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 if (r.erp_product_id !== productId || r._erp_sucursal_id !== sucursalId) return r;
                 return { ...r, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', alert_status: calcAlertStatus(r.current_stock, minNum, maxNum) };
             }));
-            const { error: e } = await supabase.from('product_stock_params')
-                .upsert({ erp_product_id: productId, erp_sucursal_id: sucursalId, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', updated_at: new Date().toISOString() }, { onConflict: 'erp_product_id,erp_sucursal_id' });
+            const { error: e } = await upsertStockParams({ erp_product_id: productId, erp_sucursal_id: sucursalId, draft_min: minNum, draft_max: maxNum, draft_status: 'pending', updated_at: new Date().toISOString() });
             if (e) {
                 setData(prev => prev.map(r => r.erp_product_id === productId && r._erp_sucursal_id === sucursalId ? targetRow : r));
                 useToastStore.getState().showToast(productName || 'Producto', e.message || 'Error al guardar', 'error'); return;
@@ -879,10 +866,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     }, [data, hasPublishedData]);
 
     const unhideProduct = useCallback(async (productId) => {
-        await supabase.from('product_stock_params')
-            .update({ is_hidden: false, updated_at: new Date().toISOString() })
-            .eq('erp_product_id', productId)
-            .eq('erp_sucursal_id', selectedErp);
+        await updateStockParams(productId, selectedErp, { is_hidden: false, updated_at: new Date().toISOString() });
         setHiddenIds(prev => { const n = new Set(prev); n.delete(productId); return n; });
         setData(prev => prev.map(r => r.erp_product_id === productId ? { ...r, is_hidden: false } : r));
         useStaff.getState().appendAuditLog('MINMAX_UNHIDE', String(productId), { sucursal_id: selectedErp });
@@ -891,10 +875,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     const unhideAll = useCallback(async () => {
         const ids = [...hiddenIds];
         if (!ids.length) return;
-        await supabase.from('product_stock_params')
-            .update({ is_hidden: false, updated_at: new Date().toISOString() })
-            .in('erp_product_id', ids)
-            .eq('erp_sucursal_id', selectedErp);
+        await updateStockParamsBulk(ids, selectedErp, { is_hidden: false, updated_at: new Date().toISOString() });
         setHiddenIds(new Set());
         setData(prev => prev.map(r => ids.includes(r.erp_product_id) ? { ...r, is_hidden: false } : r));
         setFilterHidden(false);
@@ -905,18 +886,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         // Bodega: "Restaurar" significa limpiar el override manual → vuelve a Σ sucursales automáticamente
         if (row._erp_sucursal_id === 6) {
             if (!row.has_manual) return;
-            const { error: e } = await supabase.from('product_stock_params')
-                .update({ manual_min: null, manual_max: null, updated_at: new Date().toISOString() })
-                .eq('erp_product_id', row.erp_product_id)
-                .eq('erp_sucursal_id', 6);
+            const { error: e } = await updateStockParams(row.erp_product_id, 6, { manual_min: null, manual_max: null, updated_at: new Date().toISOString() });
             if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${e.message}`, 'error'); return; }
             // Re-leer desde DB: pub_min local puede ser stale si sucursales publicaron después del último fetch
-            const { data: fresh } = await supabase
-                .from('product_stock_params')
-                .select('min_units, max_units, draft_min, draft_max, draft_status')
-                .eq('erp_product_id', row.erp_product_id)
-                .eq('erp_sucursal_id', 6)
-                .single();
+            const { data: fresh } = await fetchStockParams(row.erp_product_id, 6, 'min_units, max_units, draft_min, draft_max, draft_status');
             const newEff    = fresh?.min_units ?? fresh?.draft_min ?? 0;
             const newEffMax = fresh?.max_units ?? fresh?.draft_max ?? 0;
             setData(prev => prev.map(r => {
@@ -941,10 +914,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         }
         if (row.calc_min == null && row.calc_max == null) {
             // Sin valores calculados: limpia borrador y manual dejando -- (null)
-            const { error: e } = await supabase.from('product_stock_params')
-                .update({ draft_min: null, draft_max: null, draft_status: 'none', manual_min: null, manual_max: null, updated_at: new Date().toISOString() })
-                .eq('erp_product_id', row.erp_product_id)
-                .eq('erp_sucursal_id', row._erp_sucursal_id);
+            const { error: e } = await updateStockParams(row.erp_product_id, row._erp_sucursal_id,
+                { draft_min: null, draft_max: null, draft_status: 'none', manual_min: null, manual_max: null, updated_at: new Date().toISOString() });
             if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${e.message}`, 'error'); return; }
             setData(prev => prev.map(r =>
                 r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
@@ -964,8 +935,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         const upsertData = saveLive
             ? { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, min_units: cMin, max_units: cMax, manual_min: null, manual_max: null, updated_at: new Date().toISOString() }
             : { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, draft_min: cMin, draft_max: cMax, draft_status: 'pending', updated_at: new Date().toISOString() };
-        const { error: e } = await supabase.from('product_stock_params')
-            .upsert(upsertData, { onConflict: 'erp_product_id,erp_sucursal_id' });
+        const { error: e } = await upsertStockParams(upsertData);
         if (e) { useToastStore.getState().showToast(row.product_name, `Error al restaurar: ${e.message}`, 'error'); return; }
         setData(prev => prev.map(r => {
             if (r.erp_product_id !== row.erp_product_id || r._erp_sucursal_id !== row._erp_sucursal_id) return r;
@@ -988,10 +958,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     const discardDraft = useCallback(async (row) => {
         const revertMin = row.effective_min ?? 0;
         const revertMax = row.effective_max ?? 0;
-        const { error: e } = await supabase.from('product_stock_params')
-            .update({ draft_min: revertMin, draft_max: revertMax, draft_status: 'none', updated_at: new Date().toISOString() })
-            .eq('erp_product_id', row.erp_product_id)
-            .eq('erp_sucursal_id', row._erp_sucursal_id);
+        const { error: e } = await updateStockParams(row.erp_product_id, row._erp_sucursal_id,
+            { draft_min: revertMin, draft_max: revertMax, draft_status: 'none', updated_at: new Date().toISOString() });
         if (e) { useToastStore.getState().showToast(row.product_name, `Error: ${e.message}`, 'error'); return; }
         setData(prev => prev.map(r =>
             r.erp_product_id === row.erp_product_id && r._erp_sucursal_id === row._erp_sucursal_id
@@ -1025,20 +993,14 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         // ediciones desde Pedidos y los "0 en red" (que no llevan sucursal_id propio
         // porque tocan TODAS las sucursales a la vez, por eso van con .or() aparte).
         const [{ data: logs }, { data: emps }] = await Promise.all([
-            supabase.from('audit_logs')
-                .select('id,user_name,user_id,action,details,created_at')
-                .in('action', [
-                    'MINMAX_LIVE_EDIT', 'MINMAX_DRAFT_EDIT',
-                    'MINMAX_BODEGA_MANUAL_OVERRIDE', 'MINMAX_BODEGA_RESET_MANUAL',
-                    'MINMAX_UPDATED_FROM_PEDIDO',
-                    'MINMAX_RESET_CALC', 'MINMAX_RESET_CLEAR', 'MINMAX_DISCARD_DRAFT',
-                    'MINMAX_ZERO_OUT', 'MINMAX_LIVE_ZERO', 'MINMAX_ZERO_ALL_BRANCHES',
-                ])
-                .eq('target_id', String(row.erp_product_id))
-                .or(`details->>sucursal_id.eq.${row._erp_sucursal_id},action.eq.MINMAX_ZERO_ALL_BRANCHES`)
-                .order('created_at', { ascending: false })
-                .limit(80),
-            supabase.from('employees').select('name,photo_url'),
+            fetchAuditLogsForProduct([
+                'MINMAX_LIVE_EDIT', 'MINMAX_DRAFT_EDIT',
+                'MINMAX_BODEGA_MANUAL_OVERRIDE', 'MINMAX_BODEGA_RESET_MANUAL',
+                'MINMAX_UPDATED_FROM_PEDIDO',
+                'MINMAX_RESET_CALC', 'MINMAX_RESET_CLEAR', 'MINMAX_DISCARD_DRAFT',
+                'MINMAX_ZERO_OUT', 'MINMAX_LIVE_ZERO', 'MINMAX_ZERO_ALL_BRANCHES',
+            ], row.erp_product_id, row._erp_sucursal_id),
+            fetchEmployeesBasic(),
         ]);
         const photoMap = {};
         await signPhotosDeep(emps || []);
@@ -1146,19 +1108,17 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         if (!filtered.length) return;
         const ids = filtered.map(r => r.erp_product_id);
         // upsert en vez de update para que dead-stock products (sin fila en product_stock_params) también queden ocultos
-        await supabase.from('product_stock_params')
-            .upsert(
-                ids.map(id => ({
-                    erp_product_id: id,
-                    erp_sucursal_id: selectedErp,
-                    is_hidden: true,
-                    draft_min: 0,
-                    draft_max: 0,
-                    draft_status: 'pending',
-                    updated_at: new Date().toISOString(),
-                })),
-                { onConflict: 'erp_product_id,erp_sucursal_id' }
-            );
+        await upsertStockParamsBulk(
+            ids.map(id => ({
+                erp_product_id: id,
+                erp_sucursal_id: selectedErp,
+                is_hidden: true,
+                draft_min: 0,
+                draft_max: 0,
+                draft_status: 'pending',
+                updated_at: new Date().toISOString(),
+            }))
+        );
         setHiddenIds(prev => { const n = new Set(prev); ids.forEach(id => n.add(id)); return n; });
         setData(prev => prev.map(r =>
             ids.includes(r.erp_product_id) && r._erp_sucursal_id === selectedErp
@@ -2045,12 +2005,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             // Floor = max(min_units, draft_min) porque Bodega puede no estar publicada
                                             // pero ya tener un draft_min > 0 (Σ efectivo de sucursales via trigger).
                                             const _openBodegaEdit = async (field) => {
-                                                const { data: fresh } = await supabase
-                                                    .from('product_stock_params')
-                                                    .select('min_units, max_units, draft_min, draft_max')
-                                                    .eq('erp_product_id', row.erp_product_id)
-                                                    .eq('erp_sucursal_id', 6)
-                                                    .single();
+                                                const { data: fresh } = await fetchStockParams(row.erp_product_id, 6, 'min_units, max_units, draft_min, draft_max');
                                                 // Floor = mayor entre publicado y borrador (sucursales sin publicar solo tienen draft)
                                                 const freshFloorMin = Math.max(fresh?.min_units ?? 0, fresh?.draft_min ?? 0);
                                                 const freshFloorMax = Math.max(fresh?.max_units ?? 0, fresh?.draft_max ?? 0);
@@ -2278,9 +2233,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             onUnhide={async () => { await unhideProduct(row.erp_product_id); }}
                                             onHide={async () => {
                                                 setHidingIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });
-                                                await supabase.from('product_stock_params').upsert(
-                                                    { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() },
-                                                    { onConflict: 'erp_product_id,erp_sucursal_id' }
+                                                await upsertStockParams(
+                                                    { erp_product_id: row.erp_product_id, erp_sucursal_id: row._erp_sucursal_id, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending', updated_at: new Date().toISOString() }
                                                 );
                                                 setHidingIds(prev => { const n = new Set(prev); n.delete(row.erp_product_id); return n; });
                                                 setHiddenIds(prev => { const n = new Set(prev); n.add(row.erp_product_id); return n; });

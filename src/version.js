@@ -5,9 +5,27 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.12';
+export const APP_VERSION = '2.17.13';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.13 — refactor(bloque6.A): TabMinMax.jsx — 23 supabase.from()
+// migradas a src/data/stockParams.js (nuevo módulo, 10 funciones). El
+// conteo real era 23, no 20 (mismo motivo que systemSlice: llamadas
+// partidas en dos líneas que el grep de una sola línea no detectaba).
+// La inmensa mayoría de los sitios son upsert/update a
+// product_stock_params con la misma clave compuesta (erp_product_id,
+// erp_sucursal_id) — se consolidaron en upsertStockParams/
+// updateStockParams genéricos (el caller sigue armando el payload/
+// patch exacto que ya armaba antes; cubren ~15 de los 23 sitios).
+// Verificado en vivo con Playwright contra datos reales de producción:
+// vista Min/Max con cost cards reales ($31.9k/$26.6k/$2.1k/$734.73/
+// $15.9k→$31.1k), matriz ABC×XYZ con conteos reales, tabla con
+// productos y MIN·MAX reales; modal de historial abierto con datos
+// reales de auditoría (Edwin Nuñez, BORRADOR, MIN/MAX 0→1). Los paths
+// de escritura (upsert/update sobre MIN/MAX, que alimentan compras)
+// no se ejercitaron en vivo por no tocar datos reales de compras sin
+// permiso explícito — verificados por sustitución 1:1 exacta de cada
+// query. Build + lint + 15 tests unitarios verdes.
 // v2.17.12 — refactor(bloque6.A): systemSlice.js — 34 supabase.from()
 // migradas a src/data/system.js (nuevo módulo, 24 funciones). El
 // conteo real de sitios en este archivo era 34, no 31 como decía el

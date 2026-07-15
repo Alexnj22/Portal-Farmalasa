@@ -25,6 +25,11 @@ import WidgetMinMaxRequest from './dashboard/WidgetMinMaxRequest';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { getTodayAttendanceStatus } from '../utils/helpers';
+import {
+    fetchUserDashboardPrefs, upsertUserDashboardPrefs, fetchSalesBranchIdsSince,
+    fetchPendingApprovalRequests, fetchActiveLeaveRequests, fetchTodayHourlySales,
+    fetchBranchHourlySalesRange, fetchRecentCotizaciones, fetchTodayInvoicesSummary,
+} from '../data/dashboard';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
@@ -528,10 +533,7 @@ const DashboardView = ({ openModal }) => {
   useEffect(() => {
     if (!user?.id) return;
     setPrefsReady(false); // reset while loading so save effect won't fire mid-fetch
-    supabase.from('user_dashboard_prefs')
-      .select('layout, sizes, widgets, mobile_layout, mobile_sizes')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    fetchUserDashboardPrefs(user.id)
       .then(({ data, error }) => {
         if (error) console.error('[dash prefs load]', error);
         if (data) {
@@ -598,11 +600,10 @@ const DashboardView = ({ openModal }) => {
     if (!prefsReady || !user?.id) return;
     clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      supabase.from('user_dashboard_prefs').upsert(
+      upsertUserDashboardPrefs(
         { user_id: user.id, layout: widgetLayout, sizes: widgetSizes, widgets: widgetConfig,
           mobile_layout: mobileLayout, mobile_sizes: mobileSizes,
-          updated_at: new Date().toISOString() },
-        { onConflict: 'user_id' }
+          updated_at: new Date().toISOString() }
       ).then(({ error }) => {
         if (error) console.error('[dash prefs save]', error);
       });
@@ -792,7 +793,7 @@ const DashboardView = ({ openModal }) => {
   // ── Effects ────────────────────────────────────────────────────────────────
   useEffect(() => {
     const since = new Date(); since.setDate(since.getDate()-7);
-    supabase.from('branch_hourly_sales').select('branch_id').gte('sale_date', localDateStr(since))
+    fetchSalesBranchIdsSince(localDateStr(since))
       .then(({ data }) => {
         setSalesBranchIds(new Set((data||[]).map(r => String(r.branch_id))));
         setSalesBranchIdsLoading(false);
@@ -820,15 +821,13 @@ const DashboardView = ({ openModal }) => {
   useEffect(() => { if (!attendanceLoaded) loadAttendance(14); }, [attendanceLoaded, loadAttendance]);
 
   useEffect(() => {
-    supabase.from('approval_requests').select('id, type, employee_id, metadata, created_at')
-      .eq('status','PENDING').order('created_at',{ascending:false}).limit(8)
+    fetchPendingApprovalRequests()
       .then(({ data }) => { setPendingReqs(data||[]); setReqLoading(false); });
   }, []);
 
   useEffect(() => {
     const today = localDateStr();
-    supabase.from('approval_requests').select('id, type, employee_id, metadata')
-      .eq('status','APPROVED').in('type',['VACATION','DISABILITY','PERMIT'])
+    fetchActiveLeaveRequests()
       .then(({ data }) => {
         const active = (data||[]).filter(r => {
           const meta = parseMeta(r.metadata);
@@ -853,7 +852,7 @@ const DashboardView = ({ openModal }) => {
   useEffect(() => {
     if (!branches.length) return;
     setTodayLoading(true);
-    supabase.from('branch_hourly_sales').select('branch_id, sale_hour, transaction_count, total_sales').eq('sale_date', localDateStr())
+    fetchTodayHourlySales(localDateStr())
       .then(({ data }) => {
         const map = {};
         (data||[]).forEach(r => {
@@ -886,7 +885,7 @@ const DashboardView = ({ openModal }) => {
         return { ...item, color, height: hi > 0 ? `${Math.max(hi * 100, 15)}%` : '0%' };
       });
     };
-    supabase.from('branch_hourly_sales').select('sale_hour, transaction_count, sale_date').eq('branch_id',salesBranch).gte('sale_date',localDateStr(since))
+    fetchBranchHourlySalesRange(salesBranch, localDateStr(since))
       .then(({ data }) => {
         let openH=7, closeH=18;
         const cb = branches.find(b=>String(b.id)===String(salesBranch));
@@ -927,11 +926,7 @@ const DashboardView = ({ openModal }) => {
   // ── Comercial data effects ─────────────────────────────────────────────────
   useEffect(() => {
     const since = new Date(); since.setDate(since.getDate() - 30);
-    supabase.from('cotizaciones')
-      .select('id, numero, fecha, customer_name, total, status')
-      .gte('fecha', localDateStr(since))
-      .order('fecha', { ascending: false })
-      .limit(50)
+    fetchRecentCotizaciones(localDateStr(since))
       .then(({ data }) => {
         const rows    = data || [];
         const activas = rows.filter(c => c.status === 'ACTIVA');
@@ -945,10 +940,7 @@ const DashboardView = ({ openModal }) => {
   }, []);
 
   useEffect(() => {
-    supabase.from('sales_invoices')
-      .select('id, tipo_documento, total')
-      .eq('fecha', localDateStr())
-      .neq('estado', 'NULA')
+    fetchTodayInvoicesSummary(localDateStr())
       .then(({ data }) => {
         const rows = data || [];
         setFactStats({

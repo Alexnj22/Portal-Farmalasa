@@ -13,6 +13,11 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import PedidoModal from './PedidoModal';
 import LiquidAvatar from '../../components/common/LiquidAvatar';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import {
+    fetchProductPreciosOpts, fetchProductPreciosOptsForProducts, fetchPedidoApoyoBasic,
+    searchAvailableProducts, fetchLastDispatchInfo, insertPedidoRecepcionExtras,
+} from '../../data/recepcion';
+import { updatePedidoSucursalStatus } from '../../data/pedidos';
 
 export function EmpChip({ emp, size = 'sm', sub = null, onRemove = null }) {
     if (!emp) return null;
@@ -55,9 +60,7 @@ const GRID = 'grid-cols-[minmax(0,1fr)_2.5rem_9rem_3rem_9rem_3rem_1.75rem]';
 const EXTRAS_GRID = 'grid-cols-[minmax(0,1fr)_9rem_3rem_9rem_3rem_1.75rem]';
 
 async function fetchPresOpts(productId) {
-    const { data, error } = await supabase.from('product_precios')
-        .select('product_id, factor, descripcion, presentaciones!id_presentacion(tipo)')
-        .eq('product_id', productId).eq('activo', true).order('factor');
+    const { data, error } = await fetchProductPreciosOpts(productId);
     if (error) console.error('fetchPresOpts failed:', error.message);
     const opts = [];
     (data || []).forEach(p => {
@@ -205,9 +208,7 @@ export default function RecepcionModal({
         setNotaVals(notas); setErrorVals(errs); setTieneProblema({}); setCantProblemaVals({});
 
         (async () => {
-            const { data, error } = await supabase.from('pedido_apoyo')
-                .select('employee_id, employees(name, photo_url)')
-                .eq('pedido_id', pedido.id).eq('erp_sucursal_id', sucursalId);
+            const { data, error } = await fetchPedidoApoyoBasic(pedido.id, sucursalId);
             if (error) console.error('fetch pedido_apoyo failed:', error.message);
             setApoyo(await signPhotosDeep((data || []).map(r => ({ id: r.employee_id, ...r.employees }))));
         })();
@@ -215,19 +216,7 @@ export default function RecepcionModal({
         const productIds = [...new Set(rows.map(r => r.erp_product_id))];
         if (productIds.length > 0) {
             (async () => {
-                const PAGE = 1000;
-                let allData = [], from = 0;
-                while (true) {
-                    const { data, error } = await supabase.from('product_precios')
-                        .select('product_id, factor, descripcion, presentaciones!id_presentacion(tipo)')
-                        .in('product_id', productIds).eq('activo', true).order('factor')
-                        .range(from, from + PAGE - 1);
-                    if (error) { console.error('fetch product_precios (paged) failed:', error.message); break; }
-                    if (!data || data.length === 0) break;
-                    allData = [...allData, ...data];
-                    if (data.length < PAGE) break;
-                    from += PAGE;
-                }
+                const allData = await fetchProductPreciosOptsForProducts(productIds) ?? [];
                 const map = {};
                 allData.forEach(p => {
                     const pid = p.product_id;
@@ -251,10 +240,7 @@ export default function RecepcionModal({
         const existingIds = [...rows.map(r => r.erp_product_id), ...extras.map(e => e.erp_product_id)];
         const t = setTimeout(async () => {
             setExtraBusy(true);
-            let q = supabase.from('products').select('id, nombre')
-                .eq('activo', true).ilike('nombre', `%${extraSearch.trim()}%`).order('nombre').limit(10);
-            if (existingIds.length > 0) q = q.not('id', 'in', `(${existingIds.join(',')})`);
-            const { data, error } = await q;
+            const { data, error } = await searchAvailableProducts(extraSearch.trim(), existingIds);
             if (error) console.error('extras search failed:', error.message);
             setExtraResults((data || []).slice(0, 8));
             setExtraBusy(false);
@@ -269,11 +255,7 @@ export default function RecepcionModal({
         let opts = presMap[prod.id] ? [...presMap[prod.id]] : [];
         if (opts.length === 0) opts = await fetchPresOpts(prod.id);
 
-        const { data: lastDispatch, error: lastDispatchErr } = await supabase.from('pedido_items')
-            .select('dispatch_factor, dispatch_tipo')
-            .eq('erp_product_id', prod.id)
-            .not('dispatch_tipo', 'is', null).not('dispatch_factor', 'is', null)
-            .order('id', { ascending: false }).limit(1);
+        const { data: lastDispatch, error: lastDispatchErr } = await fetchLastDispatchInfo(prod.id);
         if (lastDispatchErr) console.error('fetch last dispatch failed:', lastDispatchErr.message);
         if (lastDispatch?.[0]) {
             const df = Number(lastDispatch[0].dispatch_factor) || 1;
@@ -334,7 +316,7 @@ export default function RecepcionModal({
         if (!extras.length) return;
         const erpFactorMap = {};
         rows.forEach(r => { erpFactorMap[r.erp_product_id] = Number(r.factor) || 1; });
-        await supabase.from('pedido_recepcion_extras').insert(
+        await insertPedidoRecepcionExtras(
             extras.map(e => {
                 const ef = erpFactorMap[e.erp_product_id] ?? 1;
                 return {
@@ -395,9 +377,7 @@ export default function RecepcionModal({
             } else if (hasCajaMap && selectedCaja !== null) {
                 // Mark this box as received
                 const newRec = [...new Set([...allRecibidas, selectedCaja])].sort((a, b) => a - b);
-                await supabase.from('pedido_sucursal_status')
-                    .update({ cajas_recibidas: newRec })
-                    .eq('pedido_id', pedido.id).eq('erp_sucursal_id', sucursalId);
+                await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
                 setLocalRec(prev => [...new Set([...prev, selectedCaja])].sort((a, b) => a - b));
 
                 const nowRegDone = accessibleBoxNums.every(n => newRec.includes(n));
@@ -467,9 +447,7 @@ export default function RecepcionModal({
 
             if (hasCajaMap && selectedCaja !== null) {
                 const newRec = [...new Set([...allRecibidas, selectedCaja])].sort((a, b) => a - b);
-                await supabase.from('pedido_sucursal_status')
-                    .update({ cajas_recibidas: newRec })
-                    .eq('pedido_id', pedido.id).eq('erp_sucursal_id', sucursalId);
+                await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
                 setLocalRec(prev => [...new Set([...prev, selectedCaja])].sort((a, b) => a - b));
 
                 const nowAllDone = accessibleBoxNums.every(n => newRec.includes(n));
@@ -526,9 +504,7 @@ export default function RecepcionModal({
                     sucursal_id: sucursalId, caja: boxNum, items_count: p_items.length, todo_ok: true,
                 });
             }
-            await supabase.from('pedido_sucursal_status')
-                .update({ cajas_recibidas: newRec })
-                .eq('pedido_id', pedido.id).eq('erp_sucursal_id', sucursalId);
+            await updatePedidoSucursalStatus(pedido.id, sucursalId, { cajas_recibidas: newRec });
             setLocalRec(newRec.filter(n => !initCajasRecibidas.includes(n)));
 
             // También confirmar cajas especiales accesibles (no faltantes)

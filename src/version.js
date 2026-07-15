@@ -5,9 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.17';
+export const APP_VERSION = '2.17.18';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.18 — refactor(bloque6.A): RecepcionModal.jsx + DashboardView.jsx
+// — 18 supabase.from() migradas (9+9). Dos módulos nuevos:
+// src/data/recepcion.js (6 fn) y src/data/dashboard.js (9 fn).
+// RecepcionModal.jsx reutiliza updatePedidoSucursalStatus de
+// data/pedidos.js (Bloque 6.A, PR2) para los 3 sitios que actualizan
+// cajas_recibidas — mismo query exacto, no se duplica. Otro while-loop
+// manual de paginación 1000-en-1000 (product_precios por lote de
+// productos) reemplazado por fetchAllRows.
+// Verificado en vivo con Playwright contra datos reales de producción:
+// Dashboard completo (49 empleados activos, 4 solicitudes pendientes,
+// widgets de ventas por sucursal con montos reales, "Facturación Hoy"
+// 382 documentos/$3,694.40, gráfico "Ventas por día" con datos reales,
+// layout de widgets personalizado cargado correctamente desde
+// user_dashboard_prefs). Sin errores de consola atribuibles al cambio.
+// Build + lint + 15 tests unitarios verdes.
 // v2.17.17 — refactor(bloque6.A): VentasView.jsx + EncuestaAdminView.jsx
 // — 24 supabase.from() migradas (13+11; conteo real, no 20). Dos módulos
 // nuevos: src/data/ventas.js (12 fn) y src/data/encuestas.js (11 fn).

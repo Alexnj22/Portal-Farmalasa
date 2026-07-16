@@ -5,8 +5,26 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.49';
+export const APP_VERSION = '2.17.50';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.50 — refactor(bloque6.C, continuación, PR2/2): extrae el hook de
+// estado/fetch de TabPedidos.jsx a src/views/pedidos/tabpedidos/usePedidosData.js.
+// CIERRA la segunda mitad del Bloque 6.C. Extracción mecánica: 43
+// useState/useRef + 9 useEffect + 28 handlers + 7 useMemo movidos tal cual
+// (mismos nombres, misma lógica, incluida la suscripción realtime con el
+// truco `expandedMetaRef` y el efecto de GPS en background). TabPedidos.jsx
+// 1971→918 líneas (-53%), queda solo con el JSX (incluidos 3 handlers async
+// embebidos que ya vivían en el JSX antes de este refactor — el onConfirmed
+// de RecepcionModal y los 2 botones Iniciar/Completar ruta — se dejaron tal
+// cual, solo llamando a los valores que ahora vienen del hook). 100%
+// mecánico, sin ninguna desviación de comportamiento (a diferencia de PR1,
+// TabPedidos no tenía lógica duplicada que consolidar). Verificado: lint
+// limpio, build limpio, 15 tests verdes, Playwright en vivo contra
+// /pedidos?tab=pedidos con datos reales de producción (cards de pedidos con
+// timeline de lifecycle, stats, fotos de empleados de apoyo) — sin errores
+// de consola relacionados, sin ejercitar ninguna acción de lifecycle
+// (Pausar/Finalizar/Crear Ruta/Anular no se clickearon).
 
 // v2.17.49 — refactor(bloque6.C, continuación, PR1/2): extrae el hook de
 // estado/fetch de TabMinMax.jsx a src/views/productos/tabminmax/useMinMaxData.js.

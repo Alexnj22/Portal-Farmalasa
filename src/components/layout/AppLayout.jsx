@@ -7,7 +7,7 @@ import {
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, LayoutDashboard, Cake,
     TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
-    PackageMinus, ShoppingCart, ClipboardCheck, RadioTower
+    PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { fetchVentasPerdidasPendingCount } from '../../data/ventasPerdidas';
@@ -46,6 +46,7 @@ const MODULE_MAP = {
     auditview:         { path: '/auditview',       label: 'Auditoría General',        icon: Activity      },
     ios_test:          { path: '/ios-test',        label: 'Prueba iOS',               icon: Smartphone    },
     sync_health:       { path: '/sync-health',     label: 'Salud de Syncs',           icon: RadioTower    },
+    orphan_objects:    { path: '/orphan-objects',  label: 'Objetos Huérfanos',        icon: Ghost         },
     // ── Próximamente ──
     ventas:            { path: '/ventas',           label: 'Ventas',                   icon: TrendingUp },
     metas:             { path: '/metas',            label: 'Metas',                    icon: Target     },
@@ -77,7 +78,7 @@ const MENU_GROUPS = [
     { key: 'asistencia',    label: 'Asistencia',    icon: Monitor,       modules: ['monitor', 'time_audit']               },
     { key: 'planificacion', label: 'Planificación', icon: Palmtree,      modules: ['vacation_plan']                       },
     { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
-    { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview', 'ios_test', 'sync_health'] },
+    { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview', 'ios_test', 'sync_health', 'orphan_objects'] },
     { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones', 'promociones', 'bonificaciones'] },
     { key: 'rrhh',         label: 'RRHH',          icon: Users,         modules: ['entrevistas', 'encuesta_admin'] },
     { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'laboratorios', 'pedidos', 'minmax', 'ventas_perdidas', 'compras', 'conteo_inventario'] },

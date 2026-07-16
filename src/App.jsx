@@ -37,6 +37,7 @@ const LoginView = lazy(() => import("./views/LoginView"));
 const AuditView = lazy(() => import("./views/AuditView"));
 const IOSTestView = lazy(() => import("./views/IOSTestView"));
 const SyncHealthView = lazy(() => import("./views/SyncHealthView"));
+const OrphanObjectsView = lazy(() => import("./views/OrphanObjectsView"));
 const RawTestView = lazy(() => import("./views/RawTestView"));
 const RequestsView = lazy(() => import("./views/RequestsView"));
 const VacationPlanView = lazy(() => import("./views/VacationPlanView"));
@@ -638,6 +639,7 @@ function MainApp() {
                                     <Route path="auditview" element={<PermissionGuard moduleKey="auditview"><AuditView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="ios-test" element={<PermissionGuard moduleKey="ios_test"><IOSTestView /></PermissionGuard>} />
                                     <Route path="sync-health" element={<PermissionGuard moduleKey="sync_health"><SyncHealthView /></PermissionGuard>} />
+                                    <Route path="orphan-objects" element={<PermissionGuard moduleKey="orphan_objects"><OrphanObjectsView /></PermissionGuard>} />
 
                                     {/* ── Fallbacks ── */}
                                     <Route path="employee-detail" element={<Navigate to="/dashboard" replace />} />

@@ -5,8 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.42';
+export const APP_VERSION = '2.17.43';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.43 — feat(bloque7b.7): vista de Objetos Huérfanos. Nueva
+// OrphanObjectsView.jsx en menú Sistema (moduleKey "orphan_objects",
+// registrado en PermissionsView.jsx, permiso otorgado a role_id=13 igual
+// que sync_health) — tablero de seguimiento sobre orphan_objects_registry
+// (tabla nueva, sembrada con 8 casos reales verificados de nuevo antes de
+// sembrar, no copiados ciego de notas viejas: SalyChatOverlay ya eliminado
+// -resuelto-, StageAnim/EmpChip/StagePill de TabPedidos importados pero sin
+// uso en el JSX -confirmado con grep, EmpChip/StagePill SÍ están importados,
+// contradice una nota vieja que decía "sin caller" a secas-, RutaEnCursoCard
+// sin ningún import, ShiftExceptionModal con estado que nunca se pone en
+// true, FormAiSchedulerPreview sin ningún openModal() que lo invoque,
+// sync-erp-minmax código muerto hallado en Fase 0). No es detección
+// automática (el proyecto no tiene knip/ts-prune) — es un registro manual
+// donde se marca estado (candidato/confirmado/falso positivo/resuelto).
+// Verificado en vivo con Playwright: las 8 filas renderizan con notas y
+// selector de estado editable.
 
 // v2.17.42 — feat(bloque7b.3): dashboard de salud de syncs. Nueva vista
 // SyncHealthView.jsx en el menú Sistema (moduleKey "sync_health", registrado

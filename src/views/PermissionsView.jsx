@@ -6,7 +6,7 @@ import {
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
     LayoutDashboard, TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
-    Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower
+    Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -175,6 +175,7 @@ const MODULE_GROUPS = [
             { key: 'auditview',    label: 'Auditoría General',      desc: 'Registro completo de cambios y acciones en el sistema',     icon: Activity,      hasApprove: false },
             { key: 'ios_test',     label: 'Prueba iOS',             desc: 'Vista de prueba para verificar safe areas y layout en iOS', icon: Smartphone,    hasApprove: false },
             { key: 'sync_health',  label: 'Salud de Syncs',         desc: 'Historial de corridas de sync por dominio (productos/minmax/compras/backup) y alertas de fallo', icon: RadioTower, hasApprove: false },
+            { key: 'orphan_objects', label: 'Objetos Huérfanos',   desc: 'Tablero de seguimiento de candidatos a código muerto (componentes, funciones, edge functions sin caller)', icon: Ghost, hasApprove: false },
         ],
     },
 ];

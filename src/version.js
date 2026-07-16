@@ -5,9 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.38';
+export const APP_VERSION = '2.17.39';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.39 — fix(bloque7A.7 gap): get_stock_analysis leía columnas viejas de
+// dispatch_rules (solo_cajas/multiplo/blister/multiplo_unidades — siempre
+// vacías desde la migración al modelo nuevo) en vez de dispatch_id_presentacion/
+// dispatch_multiplo/dispatch_label, por eso hasRule era siempre false en
+// TabMinMax. RPC reescrita con el mismo CTE dispatch_pres_factor que ya usa
+// get_pedido_preview correctamente (product_precios.factor × dispatch_multiplo).
+// TabMinMax.jsx actualizado para leer dispatch_pres_factor/dispatch_multiplo/
+// dispatch_tipo. Verificado en vivo: 393 productos con regla real ahora
+// muestran su múltiplo (ej. "Bote ×2", 3→4 redondeado correctamente).
+//
 // v2.17.38 — feat(bloque7A.7): valor numérico de Despacho en TabMinMax —
 // dispMin/dispMax/applyRule ya calculaban el MIN/MAX redondeado a la
 // regla de despacho, pero el JSX solo mostraba el nombre de la regla

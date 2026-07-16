@@ -2193,30 +2193,20 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                 ? `${displayTipo} ${displayDesc}`
                                                 : displayTipo || 'und';
 
-                                            // Dispatch rule — rounds quantities, always shown as note when present
-                                            const muN = Number(row.dispatch_multiplo_unidades ?? 0);
-                                            const bN  = Number(row.dispatch_blister          ?? 0);
-                                            const mN  = Number(row.dispatch_multiplo          ?? 0);
-                                            const sc  = row.dispatch_solo_cajas;
-                                            const hasRule = sc || muN > 1 || bN > 1 || mN > 1;
-                                            const ruleNote = muN > 1 ? `und ×${muN}`
-                                                : bN > 1 ? `blist ×${bN}`
-                                                : mN > 1 ? `caja ×${mN}`
-                                                : sc ? 'solo cajas' : null;
-
-                                            const sortedP = sortedPres(pres);
-                                            const boxFactor = sortedP[0]?.factor ?? 1;
-                                            const blisterFactor = sortedP.find(p => p.tipo?.toLowerCase().includes('blist'))?.factor
-                                                ?? sortedP[1]?.factor ?? boxFactor;
+                                            // Dispatch rule — rounds quantities, always shown as note when present.
+                                            // packSize ya viene resuelto por la RPC (factor de la presentación de
+                                            // despacho × múltiplo), mismo cálculo que get_pedido_preview.
+                                            const dpFactor = row.dispatch_pres_factor != null ? Number(row.dispatch_pres_factor) : null;
+                                            const dpMultiplo = Number(row.dispatch_multiplo ?? 1);
+                                            const dpTipo = row.dispatch_tipo || null;
+                                            const hasRule = dpFactor != null;
+                                            const packSize = hasRule ? dpFactor * dpMultiplo : 1;
+                                            const ruleNote = hasRule
+                                                ? `${capTipo(dpTipo)}${dpMultiplo > 1 ? ` ×${dpMultiplo}` : ''}`
+                                                : null;
 
                                             const applyRule = (qty) => {
-                                                if (!qty || qty <= 0 || !hasRule) return qty;
-                                                if (sc) return Math.ceil(qty / boxFactor) * boxFactor;
-                                                const packSize = muN > 1 ? muN
-                                                    : bN > 1 ? bN * blisterFactor
-                                                    : mN > 1 ? mN * boxFactor
-                                                    : 1;
-                                                if (packSize <= 1) return qty;
+                                                if (!qty || qty <= 0 || !hasRule || packSize <= 1) return qty;
                                                 const rounded = Math.round(qty / packSize) * packSize;
                                                 return rounded > 0 ? rounded : packSize;
                                             };

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { PackageMinus, CheckCircle2, TrendingDown, Clock, FlaskConical, Building2, ShoppingCart } from 'lucide-react';
+import { PackageMinus, CheckCircle2, TrendingDown, Clock, FlaskConical, Building2, ShoppingCart, Download } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import { signPhotosDeep } from '../utils/storageFiles';
+import { exportCsv } from '../utils/csvExport';
+import { useStaffStore as useStaff } from '../store/staffStore';
 import {
     fetchBranchesForVentasPerdidas, fetchEmployeesSafeBasic, fetchVentasPerdidas, updateVentaPerdidaStatus,
 } from '../data/ventasPerdidas';
@@ -69,6 +71,22 @@ export default function VentasPperdidasView() {
         setRows(prev => prev.filter(r => r.id !== id));
     };
 
+    const handleExportCsv = () => {
+        const headers = ['Fecha', 'Producto', 'Buscado como', 'Cantidad', 'Principio activo', 'Laboratorio', 'Sucursal', 'Reportado por'];
+        const csvRows = rows.map(r => [
+            new Date(r.created_at).toLocaleString('es-SV'),
+            r.descripcion || r.producto_buscado || '',
+            r.producto_buscado || '',
+            r.cantidad ?? '',
+            r.principio_activo || '',
+            r.laboratorio || '',
+            branchMap[r.branch_id] || '',
+            empMap[r.reportado_por]?.name || '',
+        ]);
+        exportCsv(headers, csvRows, `ventas_perdidas_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`);
+        useStaff.getState().appendAuditLog('EXPORT_VENTAS_PERDIDAS', null, { count: rows.length, tab: activeTab });
+    };
+
     // Top-5 most-needed products (pending only)
     const summary = activeTab === 'pendiente'
         ? Object.values(
@@ -98,7 +116,16 @@ export default function VentasPperdidasView() {
                 {/* Tab explanation */}
                 <div className="flex items-start gap-2 px-3 py-2 rounded-xl bg-slate-800/6 border border-slate-200/60">
                     <ShoppingCart size={13} className="text-slate-500 shrink-0 mt-0.5" strokeWidth={2} />
-                    <p className="text-[11px] text-slate-600 font-medium leading-snug">{TAB_HELP[activeTab]}</p>
+                    <p className="text-[11px] text-slate-600 font-medium leading-snug flex-1">{TAB_HELP[activeTab]}</p>
+                    {rows.length > 0 && (
+                        <button
+                            onClick={handleExportCsv}
+                            className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-black transition-colors"
+                        >
+                            <Download size={11} strokeWidth={2.5} />
+                            CSV
+                        </button>
+                    )}
                 </div>
 
                 {/* Top requested summary (pending only) */}

@@ -5,8 +5,16 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.40';
+export const APP_VERSION = '2.17.41';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.41 — feat(bloque7b.5): export CSV en Ventas Perdidas. Nueva utilidad
+// compartida src/utils/csvExport.js (primera extracción del patrón Blob+BOM+
+// separador ";"+CRLF que ya usaba TabMinMax.jsx ad-hoc, sin su lógica de
+// negocio) + botón "CSV" en VentasPperdidasView.jsx (visible cuando hay
+// filas, respeta el tab activo). appendAuditLog('EXPORT_VENTAS_PERDIDAS').
+// Verificado en vivo con Playwright: descarga real disparada,
+// ventas_perdidas_pendiente_2026-07-16.csv.
 
 // v2.17.40 — feat(bloque7b.4): feedback sonoro del kiosco tras escaneo.
 // El feedback visual (FeedbackOverlay + colores por caso) ya existía; el

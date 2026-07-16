@@ -6,7 +6,10 @@ import ViewTabBar      from '../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import TablePagination from '../components/common/TablePagination';
 import LiquidSelect from '../components/common/LiquidSelect';
-import { supabase }    from '../supabaseClient';
+import {
+    fetchPurchaseReceiptItems, fetchPurchaseReceiptsPage, fetchProductPurchaseSummaryPage,
+    fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount,
+} from '../data/compras';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -66,11 +69,7 @@ function ItemsExpand({ receiptId }) {
 
     useEffect(() => {
         let cancelled = false;
-        supabase
-            .from('purchase_receipt_items')
-            .select('linea_num, erp_product_id, descripcion, cantidad, precio_unitario, total_linea, lote, fecha_vencimiento')
-            .eq('receipt_id', receiptId)
-            .order('linea_num')
+        fetchPurchaseReceiptItems(receiptId)
             .then(({ data }) => {
                 if (!cancelled) { setItems(data || []); setLoading(false); }
             });
@@ -145,23 +144,7 @@ function TabFacturas({ dateStart, dateEnd, supplierId, sinProveedor, searchTerm 
         const from = (page - 1) * PAGE_SIZE;
         const to   = from + PAGE_SIZE - 1;
 
-        let q = supabase
-            .from('purchase_receipts')
-            .select('id, erp_purchase_id, fecha, proveedor, estado, subtotal, iva, total, supplier_id, suppliers(nombre), purchase_receipt_items(id)', { count: 'exact' })
-            .order('fecha', { ascending: false })
-            .order('id',    { ascending: false })
-            .range(from, to);
-
-        if (dateStart) q = q.gte('fecha', dateStart);
-        if (dateEnd)   q = q.lte('fecha', dateEnd);
-        if (sinProveedor) q = q.is('supplier_id', null);
-        else if (supplierId) q = q.eq('supplier_id', supplierId);
-        if (searchTerm) {
-            const term = searchTerm.trim();
-            q = q.or(`proveedor.ilike.%${term}%`);
-        }
-
-        const { data, count } = await q;
+        const { data, count } = await fetchPurchaseReceiptsPage({ from, to, dateStart, dateEnd, sinProveedor, supplierId, searchTerm });
         setRows(data || []);
         setTotal(count || 0);
         setLoading(false);
@@ -260,18 +243,7 @@ function TabProductos({ searchTerm }) {
         const from = (page - 1) * PAGE_SIZE;
         const to   = from + PAGE_SIZE - 1;
 
-        let q = supabase
-            .from('product_purchase_summary')
-            .select('erp_product_id, first_purchase_date, last_purchase_date, days_since_first_purchase, total_receipts, total_units_received, avg_cost, latest_cost, distinct_suppliers', { count: 'exact' })
-            .order('last_purchase_date', { ascending: false })
-            .range(from, to);
-
-        if (searchTerm) {
-            const term = searchTerm.trim();
-            if (!isNaN(Number(term))) q = q.eq('erp_product_id', Number(term));
-        }
-
-        const { data, count } = await q;
+        const { data, count } = await fetchProductPurchaseSummaryPage(from, to, searchTerm);
         setRows(data || []);
         setTotal(count || 0);
         setLoading(false);
@@ -347,9 +319,9 @@ export default function ComprasView() {
 
     // Load supplier list + global unlinked count once
     useEffect(() => {
-        supabase.from('suppliers').select('id, nombre').order('nombre')
+        fetchSuppliersBasic()
             .then(({ data }) => setSuppliers(data || []));
-        supabase.from('purchase_receipts').select('id', { count: 'exact', head: true }).is('supplier_id', null)
+        fetchUnlinkedPurchaseReceiptsCount()
             .then(({ count }) => setUnlinkedCount(count || 0));
     }, []);
 

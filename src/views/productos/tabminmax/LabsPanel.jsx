@@ -2,9 +2,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FlaskConical, X, Search, Loader2 } from 'lucide-react';
-import { supabase } from '../../../supabaseClient';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { smartFilter } from '../../../utils/searchUtils';
+import {
+    fetchLaboratoriosMinMaxVisibility, fetchActiveProductLabIds, updateLaboratorioMinMaxVisibility,
+    fetchProductIdsByLaboratorio, unhideStockParamsForProducts,
+} from '../../../data/minmaxLabs';
 
 export default function LabsPanel({ onClose, onChanged }) {
     const [labs,      setLabs]      = useState([]);
@@ -16,8 +19,8 @@ export default function LabsPanel({ onClose, onChanged }) {
 
     useEffect(() => {
         Promise.all([
-            supabase.from('laboratorios').select('id, nombre, ocultar_en_minmax').order('nombre'),
-            supabase.from('products').select('laboratorio_id').eq('activo', true),
+            fetchLaboratoriosMinMaxVisibility(),
+            fetchActiveProductLabIds(),
         ]).then(([{ data: labData }, { data: prodData }]) => {
             setLabs(labData || []);
             const cm = {};
@@ -32,18 +35,14 @@ export default function LabsPanel({ onClose, onChanged }) {
     const toggle = async (lab) => {
         setSaving(lab.id);
         const newVal = !lab.ocultar_en_minmax;
-        const { error } = await supabase.from('laboratorios')
-            .update({ ocultar_en_minmax: newVal })
-            .eq('id', lab.id);
+        const { error } = await updateLaboratorioMinMaxVisibility(lab.id, newVal);
         if (!error) {
             // Al desocultar un lab, limpia is_hidden individual para que los productos
             // reaparezcan sin estar marcados como ocultos a nivel de producto
             if (!newVal) {
-                const { data: prods } = await supabase.from('products').select('id').eq('laboratorio_id', lab.id);
+                const { data: prods } = await fetchProductIdsByLaboratorio(lab.id);
                 if (prods?.length) {
-                    await supabase.from('product_stock_params')
-                        .update({ is_hidden: false, updated_at: new Date().toISOString() })
-                        .in('erp_product_id', prods.map(p => p.id));
+                    await unhideStockParamsForProducts(prods.map(p => p.id));
                 }
             }
             setLabs(prev => prev.map(l => l.id === lab.id ? { ...l, ocultar_en_minmax: newVal } : l));

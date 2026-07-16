@@ -5,8 +5,26 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.25';
+export const APP_VERSION = '2.17.26';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.26 — refactor(bloque6.A): ComprasView.jsx + WidgetMinMaxRequest.jsx +
+// ConteoDetailView.jsx + LabsPanel.jsx — 20 supabase.from() migradas
+// (5+5+5+5). Tres módulos nuevos: src/data/compras.js (5 fn),
+// src/data/minmaxRequests.js (5 fn — las 2 últimas preservan el patrón de
+// paginación en paralelo count+N chunks de 1000 vía .range(), Patrón B de
+// CLAUDE.md, sin cambios de comportamiento) y src/data/minmaxLabs.js
+// (5 fn). data/conteoInventario.js extendido con 5 fn más (10 → 15
+// llamadas cubiertas en ese módulo). Verificado en vivo con Playwright
+// contra datos reales de producción: /compras (334 facturas reales,
+// proveedores y montos reales), /minmax → panel de laboratorios (5
+// ocultos, conteos de productos reales por laboratorio), /overview →
+// widget "Ajuste de Min/Max" (búsqueda real: DEXA NEUROBION INY., DOLO
+// NEUROBION), /conteo-inventario → conteo real de Bodega en progreso con
+// productos/lotes reales. Sin errores de consola atribuibles al cambio
+// (incluye la falsa alarma ya documentada de "[top_productos] Failed to
+// fetch", confirmada transitoria y no relacionada). Build + lint + 15
+// tests unitarios verdes.
 
 // v2.17.25 — refactor(bloque6.A): PromoModal.jsx + EmployeeRequestsView.jsx +
 // EmployeeScheduleView.jsx — 18 supabase.from() migradas (6+6+6). Dos

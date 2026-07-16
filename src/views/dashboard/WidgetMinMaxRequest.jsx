@@ -5,6 +5,10 @@ import { useStaffStore } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { smartFilter } from '../../utils/searchUtils';
 import { notifyEmployees } from '../../utils/notify';
+import {
+    fetchProductPreciosForMinMax, fetchCurrentStockParams, insertMinMaxChangeRequest,
+    fetchActiveProductsCount, fetchActiveProductsChunk,
+} from '../../data/minmaxRequests';
 
 // ERP sucursal ids ↔ nombre (igual que TabMinMax). product_stock_params usa erp_sucursal_id.
 const ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
@@ -37,10 +41,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
   // Presentaciones del producto (para mostrar el factor y el equivalente en cajas)
   useEffect(() => {
     let cancelled = false;
-    supabase.from('product_precios')
-      .select('factor, descripcion, presentaciones(tipo)')
-      .eq('product_id', product.id)
-      .eq('activo', true)
+    fetchProductPreciosForMinMax(product.id)
       .then(({ data }) => {
         if (cancelled) return;
         setPres((data || [])
@@ -56,11 +57,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
     if (!erp) { setCurrent(null); return; }
     let cancelled = false;
     setLoadingCur(true);
-    supabase.from('product_stock_params')
-      .select('manual_min, manual_max, min_units, max_units, units_sold_6m')
-      .eq('erp_product_id', product.id)
-      .eq('erp_sucursal_id', Number(erp))
-      .maybeSingle()
+    fetchCurrentStockParams(product.id, erp)
       .then(({ data }) => {
         if (cancelled) return;
         setCurrent({
@@ -84,7 +81,7 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.from('minmax_change_requests').insert({
+      const { error } = await insertMinMaxChangeRequest({
         erp_product_id:    product.id,
         erp_sucursal_id:   Number(erp),
         product_name:      product.nombre,
@@ -243,18 +240,11 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
     async function loadCatalog() {
       setLoading(true);
       const CHUNK = 1000;
-      const { count } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq('activo', true);
+      const { count } = await fetchActiveProductsCount();
       const numChunks = Math.max(1, Math.ceil((count || 0) / CHUNK));
       const chunks = await Promise.all(
         Array.from({ length: numChunks }, (_, i) =>
-          supabase.from('products')
-            .select('id, nombre, laboratorio_id, foto_url, principio_activo, laboratorios(nombre)')
-            .eq('activo', true)
-            .order('nombre')
-            .range(i * CHUNK, (i + 1) * CHUNK - 1)
+          fetchActiveProductsChunk(i * CHUNK, (i + 1) * CHUNK - 1)
         )
       );
       allProdsRef.current = chunks

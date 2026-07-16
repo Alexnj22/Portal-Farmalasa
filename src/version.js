@@ -5,8 +5,26 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.48';
+export const APP_VERSION = '2.17.49';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.49 — refactor(bloque6.C, continuación, PR1/2): extrae el hook de
+// estado/fetch de TabMinMax.jsx a src/views/productos/tabminmax/useMinMaxData.js.
+// Extracción mecánica: 50 useState/useRef + 9 useEffect + 24 handlers + 6
+// useMemo movidos tal cual (mismos nombres, misma lógica). TabMinMax.jsx
+// 2565→1666 líneas (-35%), queda solo con el JSX + `cycleDays`/`canManage`
+// (no dependen del hook) + hook call/destructure. STAT_CFGS/VISIBLE_STAT_KEYS
+// movidos a tabminmax/constants.js (los necesitan tanto el hook como el JSX).
+// Única desviación no textual (deliberada, de bajo riesgo): los 2 fetchers de
+// tooltip de Bodega, antes duplicados inline en el JSX (`onMouseEnter` de la
+// misma llamada a `get_product_branch_summary`), se consolidan en
+// `openBodegaTooltip`/`closeBodegaTooltip`; `_openBodegaEdit` (definida
+// inline por fila) se mueve tal cual como `openBodegaEdit(row, field,
+// isBodega)`. Verificado: lint limpio, build limpio, 15 tests verdes,
+// Playwright en vivo contra /minmax con datos reales de producción (La
+// Popular: cost cards, matriz ABC×XYZ con conteos reales, fila expandida
+// con stock por sucursal vía ExpandedPanel) — sin errores de consola
+// relacionados, sin escribir ningún cambio real de MIN/MAX.
 
 // v2.17.48 — chore(theme): completa el barrido de Aurora/Cosmos pedido por
 // el usuario más allá de TabCatalogo.jsx. Grep exhaustivo de "aurora",

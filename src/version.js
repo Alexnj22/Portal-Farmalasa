@@ -5,8 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.31';
+export const APP_VERSION = '2.17.32';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.32 — docs(plan): Bloque 6.B CERRADO — sobre-fetch investigado y
+// cerrado sin cambios de código. employees_safe/employee_events/
+// employee_documents ya se escalaban a "mi sucursal"/"solo yo" para
+// self-service desde antes de esta sesión. Lo único sin scope hoy es
+// employee_rosters (semana actual) y shifts, pero con ~47 empleados
+// activos totales el ahorro real de escalar rosters es de ~40 filas
+// descartadas en memoria — no un problema de performance — y shifts es
+// una tabla chica de uso legítimo compañía-entera (Monitor/Auditoría/
+// Kiosco/Admin), escalarla arriesga esos consumidores por casi nada.
+// Decisión informada del usuario: no vale el riesgo/complejidad para el
+// tamaño actual de la empresa. La race condition real (el problema que
+// originalmente motivó el bloque) ya quedó resuelta en v2.17.31.
 
 // v2.17.31 — refactor(bloque6.B): primer slice de fetchBoot — employeesStatus
 // desacoplado de bootStatus. systemSlice.js: fetchBoot() dividido en 2 grupos

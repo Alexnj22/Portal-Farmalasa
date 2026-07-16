@@ -11,6 +11,14 @@ import { supabase } from '../supabaseClient';
 
 export const REQUEST_SIMPLE_SELECT = 'id, type, status, note, metadata, approver_note, created_at, updated_at, employee_id, approver_id, current_level, approvals';
 
+// EmployeeDetailView.jsx — tab Solicitudes (solo lectura, historial del empleado)
+export function fetchEmployeeApprovalRequestsDetail(employeeId) {
+    return supabase.from('approval_requests')
+        .select('id, type, status, note, approver_note, created_at, updated_at')
+        .eq('employee_id', employeeId)
+        .order('created_at', { ascending: false });
+}
+
 // ── Disponibilidad del empleado (vacaciones/incapacidad vigentes) ──────────
 
 export function fetchEmployeeAvailabilityEvents(employeeId) {

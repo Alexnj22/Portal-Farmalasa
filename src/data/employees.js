@@ -26,6 +26,25 @@ export function updateEmployeeReturning(employeeId, patch) {
     return supabase.from('employees').update(patch).eq('id', employeeId).select().single();
 }
 
+// ── EmployeeDetailView.jsx (timeline, VIEW employee_timeline) ───────────────
+
+export function fetchEmployeeTimeline(employeeId) {
+    return supabase.from('employee_timeline').select('*')
+        .eq('employee_id', employeeId).order('event_date', { ascending: false });
+}
+
+// ── EmployeeFormModal.jsx ────────────────────────────────────────────────────
+
+export function fetchEducationCatalogEntries() {
+    return supabase.from('education_catalog_entries').select('category, value').order('value');
+}
+
+export function fetchLastTerminationEvent(employeeId) {
+    return supabase.from('employee_events').select('date')
+        .eq('employee_id', employeeId).eq('type', 'TERMINATION')
+        .order('date', { ascending: false }).limit(1);
+}
+
 // ── Roster (lectura puntual — el upsert usa upsertWeeklyRoster de data/system) ─
 
 export function fetchEmployeeRosterSchedule(employeeId, weekStart) {

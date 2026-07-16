@@ -85,3 +85,41 @@ export function fetchAuditLogsForProduct(actions, erpProductId, erpSucursalId) {
         .order('created_at', { ascending: false })
         .limit(80);
 }
+
+// ── MinMaxView.jsx (2 sitios) ─────────────────────────────────────────────────
+
+export function fetchStockConfigFull() {
+    return supabase.from('stock_config').select('*').eq('id', 1).maybeSingle();
+}
+
+export function fetchErpSucursalIdForBranchLocked(branchId) {
+    return supabase.from('erp_sucursal_map').select('erp_sucursal_id').eq('branch_id', branchId).maybeSingle();
+}
+
+// ── ItemSections.jsx (1 de sus 2 sitios; el otro reutiliza updateStockParams) ─
+
+export function fetchStockParamsForRevision(productIds, sucursalIds) {
+    return supabase.from('product_stock_params')
+        .select('erp_product_id, erp_sucursal_id, units_sold_6m, daily_velocity, min_units, max_units, manual_min, manual_max, abc_class')
+        .in('erp_product_id', productIds)
+        .in('erp_sucursal_id', sucursalIds);
+}
+
+// ── ExpandedPanel.jsx (2 sitios) ──────────────────────────────────────────────
+
+export function fetchStockParamsHistory(erpProductId, erpSucursalId) {
+    return supabase.from('product_stock_params_history')
+        .select('captured_at, min_units, max_units, daily_velocity, velocity_30d, abc_class, demand_variability')
+        .eq('erp_product_id', erpProductId)
+        .eq('erp_sucursal_id', erpSucursalId)
+        .order('captured_at', { ascending: false })
+        .limit(5);
+}
+
+export function fetchProductCostHistory(erpProductId) {
+    return supabase.from('product_cost_history')
+        .select('fecha, proveedor, precio_unitario, cantidad, lote, fecha_vencimiento')
+        .eq('erp_product_id', erpProductId)
+        .order('fecha', { ascending: false })
+        .limit(6);
+}

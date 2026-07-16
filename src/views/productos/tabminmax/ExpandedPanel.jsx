@@ -13,6 +13,7 @@ import { ERP_NAMES, ERP_ORDER, ALERT } from './constants';
 import { sortedPres, formatDominant } from './helpers';
 import StockBar from './StockBar';
 import AbcXyzBadge from './AbcXyzBadge';
+import { fetchStockParamsHistory, fetchProductCostHistory } from '../../../data/stockParams';
 
 export default function ExpandedPanel({ row, cycleDays }) {
     const { hasPermission } = useAuth();
@@ -56,18 +57,9 @@ export default function ExpandedPanel({ row, cycleDays }) {
 
         Promise.all([
             supabase.rpc('get_product_expiring_lots', { p_erp_product_id: row.erp_product_id }),
-            supabase.from('product_stock_params_history')
-                .select('captured_at, min_units, max_units, daily_velocity, velocity_30d, abc_class, demand_variability')
-                .eq('erp_product_id', row.erp_product_id)
-                .eq('erp_sucursal_id', row._erp_sucursal_id)
-                .order('captured_at', { ascending: false })
-                .limit(5),
+            fetchStockParamsHistory(row.erp_product_id, row._erp_sucursal_id),
             canSeeCosts
-                ? supabase.from('product_cost_history')
-                    .select('fecha, proveedor, precio_unitario, cantidad, lote, fecha_vencimiento')
-                    .eq('erp_product_id', row.erp_product_id)
-                    .order('fecha', { ascending: false })
-                    .limit(6)
+                ? fetchProductCostHistory(row.erp_product_id)
                 : Promise.resolve({ data: [] }),
             canSeeCosts
                 ? supabase.rpc('get_product_last_sales', { p_erp_product_id: row.erp_product_id, p_erp_sucursal_id: row._erp_sucursal_id === 6 ? null : row._erp_sucursal_id })

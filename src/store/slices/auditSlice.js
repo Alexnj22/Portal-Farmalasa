@@ -1,5 +1,5 @@
-import { supabase } from '../../supabaseClient';
 import { safeJsonParse, CACHE_KEYS } from '../utils';
+import { insertAuditLog, fetchAuditLogs as fetchAuditLogsData } from '../../data/audit';
 
 // ==========================================================
 // 🔐 Auditoría PRO (sin IP)
@@ -166,13 +166,7 @@ export const createAuditSlice = (set) => ({
     };
 
     try {
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .insert([logData])
-        .select(
-          'id,user_id,user_name,action,target_id,details,source,severity,branch_id,branch_name,device_name,input_method,created_at'
-        )
-        .single();
+      const { data, error } = await insertAuditLog(logData);
 
       if (error) {
           throw error;
@@ -204,14 +198,8 @@ export const createAuditSlice = (set) => ({
     lastAuditFetchTime = now;
 
     try {
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .select(
-          'id,user_id,user_name,action,target_id,details,source,severity,branch_id,branch_name,device_name,input_method,created_at'
-        )
-        .order('created_at', { ascending: false })
-        .limit(limit);
-        
+      const { data, error } = await fetchAuditLogsData(limit);
+
       if (error) throw error; // Dispara el error para que el catch lo atrape
 
       set({ auditLog: data || [] });

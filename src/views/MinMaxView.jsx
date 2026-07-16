@@ -5,8 +5,8 @@ import ViewTabBar         from '../components/common/ViewTabBar';
 import TabMinMax          from './productos/TabMinMax';
 import TabMinMaxNetwork   from './productos/TabMinMaxNetwork';
 import TabMinMaxRequests  from './productos/TabMinMaxRequests';
-import { supabase }      from '../supabaseClient';
 import { useAuth }       from '../context/AuthContext';
+import { fetchStockConfigFull, fetchErpSucursalIdForBranchLocked } from '../data/stockParams';
 
 const ALL_MINMAX_TABS = [
     { key: 'sucursal', label: 'Sucursal' },
@@ -50,7 +50,7 @@ export default function MinMaxView() {
     }, [rawSearch]);
 
     const loadConfig = useCallback(async () => {
-        const { data, error } = await supabase.from('stock_config').select('*').eq('id', 1).maybeSingle();
+        const { data, error } = await fetchStockConfigFull();
         if (error) console.error('MinMaxView: fetch stock_config failed:', error.message);
         if (data) setConfig({ ...DEFAULT_CONFIG, ...data });
         setConfigLoaded(true);
@@ -60,11 +60,7 @@ export default function MinMaxView() {
 
     useEffect(() => {
         if (getScope('minmax') !== 'BRANCH' || !user?.branchId) return;
-        supabase
-            .from('erp_sucursal_map')
-            .select('erp_sucursal_id')
-            .eq('branch_id', user.branchId)
-            .maybeSingle()
+        fetchErpSucursalIdForBranchLocked(user.branchId)
             .then(({ data }) => { if (data?.erp_sucursal_id) setLockedErpId(data.erp_sucursal_id); });
     }, [user?.branchId, getScope]);
 

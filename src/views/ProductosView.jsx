@@ -6,8 +6,9 @@ import ViewTabBar      from '../components/common/ViewTabBar';
 import TabCatalogo     from './productos/TabCatalogo';
 import TabInventario   from './productos/TabInventario';
 import TabSinVenta     from './productos/TabSinVenta';
-import { supabase }    from '../supabaseClient';
 import { useAuth }     from '../context/AuthContext';
+import { fetchLaboratoriosBasic } from '../data/laboratorios';
+import { fetchProductCategories } from '../data/inventarioTab';
 
 const TABS = [
     { key: 'catalogo',   label: 'Catálogo',        icon: LayoutList },
@@ -41,9 +42,9 @@ export default function ProductosView() {
     const [categorias,        setCategorias]         = useState([]);
 
     useEffect(() => {
-        supabase.from('laboratorios').select('id, nombre').order('nombre')
+        fetchLaboratoriosBasic()
             .then(({ data }) => setLabs(data || []));
-        supabase.from('product_categories').select('nombre').order('nombre')
+        fetchProductCategories()
             .then(({ data }) => setCategorias((data || []).map(r => r.nombre)));
     }, []);
 

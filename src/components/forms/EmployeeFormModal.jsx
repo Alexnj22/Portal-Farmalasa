@@ -10,6 +10,7 @@ import { NATIONALITY_OPTIONS } from '../../data/nationalities';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { supabase } from '../../supabaseClient';
+import { fetchEducationCatalogEntries, fetchLastTerminationEvent } from '../../data/employees';
 import { getStoragePathFromUrl } from '../../utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '../../utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '../../utils/documentExpiry';
@@ -260,7 +261,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     const [educationCatalog, setEducationCatalog] = useState(() => Object.fromEntries(CATALOG_CATEGORIES.map(c => [c, []])));
     useEffect(() => {
         let cancelled = false;
-        supabase.from('education_catalog_entries').select('category, value').order('value').then(({ data }) => {
+        fetchEducationCatalogEntries().then(({ data }) => {
             if (cancelled || !data) return;
             const grouped = Object.fromEntries(CATALOG_CATEGORIES.map(c => [c, []]));
             for (const row of data) { if (grouped[row.category]) grouped[row.category].push(row.value); }
@@ -276,9 +277,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     useEffect(() => {
         if (!isEditMode || !formData?.id) { setLastTermination(null); return; }
         let cancelled = false;
-        supabase.from('employee_events').select('date')
-            .eq('employee_id', formData.id).eq('type', 'TERMINATION')
-            .order('date', { ascending: false }).limit(1).then(({ data }) => {
+        fetchLastTerminationEvent(formData.id).then(({ data }) => {
                 if (!cancelled) setLastTermination(data?.[0] || null);
             });
         return () => { cancelled = true; };

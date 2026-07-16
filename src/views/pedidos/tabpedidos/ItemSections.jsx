@@ -4,7 +4,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, ChevronRight, Search, X, Loader2, Check, RotateCcw, ShieldAlert } from 'lucide-react';
-import { supabase } from '../../../supabaseClient';
 import { smartFilter } from '../../../utils/searchUtils';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useToastStore } from '../../../store/toastStore';
@@ -12,6 +11,7 @@ import { DataTable, DataRow, DataCell } from '../../../components/common/DataTab
 import TablePagination from '../../../components/common/TablePagination';
 import ConfirmModal from '../../../components/common/ConfirmModal';
 import { calcSolicitado } from './helpers';
+import { fetchStockParamsForRevision, updateStockParams } from '../../../data/stockParams';
 
 const MINI_PAGE = 15;
 
@@ -333,11 +333,7 @@ export default function ItemSections({ allItems, loading }) {
         const productIds  = [...new Set(items.map(r => r.erp_product_id))];
         const sucursalIds = [...new Set(items.map(r => r.erp_sucursal_id))];
         (async () => {
-            const { data, error } = await supabase
-                .from('product_stock_params')
-                .select('erp_product_id, erp_sucursal_id, units_sold_6m, daily_velocity, min_units, max_units, manual_min, manual_max, abc_class')
-                .in('erp_product_id', productIds)
-                .in('erp_sucursal_id', sucursalIds);
+            const { data, error } = await fetchStockParamsForRevision(productIds, sucursalIds);
             if (error) console.error('fetch product_stock_params (revision_minmax) failed:', error.message);
             if (!data) return;
             const map = {};
@@ -390,10 +386,7 @@ export default function ItemSections({ allItems, loading }) {
         try {
             const k = `${row.erp_product_id}_${row.erp_sucursal_id}`;
             const prevPsp = pspMap[k];
-            const { error } = await supabase.from('product_stock_params')
-                .update({ min_units: min, max_units: max, manual_min: null, manual_max: null })
-                .eq('erp_product_id', row.erp_product_id)
-                .eq('erp_sucursal_id', row.erp_sucursal_id);
+            const { error } = await updateStockParams(row.erp_product_id, row.erp_sucursal_id, { min_units: min, max_units: max, manual_min: null, manual_max: null });
             if (error) throw error;
             // target_id debe ser el producto (no el pedido) — es lo que el historial
             // MIN/MAX de Productos usa para buscar cambios de un producto puntual.

@@ -55,6 +55,15 @@ export function fetchApoyoForPedido(pedidoId, sucId) {
     return q;
 }
 
+// ApoioScanModal.jsx (2 sitios)
+export function fetchEmployeeByKioskPin(code) {
+    return supabase.from('employees').select('id, name, photo_url').eq('kiosk_pin', code).maybeSingle();
+}
+
+export function upsertPedidoApoyo(payload) {
+    return supabase.from('pedido_apoyo').upsert(payload, { onConflict: 'pedido_id,erp_sucursal_id,employee_id,tipo' });
+}
+
 // ── Rutas ────────────────────────────────────────────────────────────────────
 
 export function fetchActiveRutas(todayStartIso) {

@@ -5,8 +5,35 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.28';
+export const APP_VERSION = '2.17.29';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.29 — refactor(bloque6.A): ExpandedPanel.jsx + ItemSections.jsx +
+// ApoioScanModal.jsx + ProductosView.jsx + MinMaxView.jsx +
+// EmployeeDetailView.jsx + auditSlice.js + usePushSubscription.js +
+// NuevoConteoModal.jsx + EmployeeFormModal.jsx — 20 supabase.from()
+// migradas (2×10). Dos módulos nuevos: data/pushSubscriptions.js (2fn) y
+// data/audit.js (2fn — insertAuditLog/fetchAuditLogs, el corazón de
+// appendAuditLog usado en TODO el proyecto). data/stockParams.js +6fn
+// (MinMaxView, ItemSections, ExpandedPanel). data/pedidos.js +2fn
+// (ApoioScanModal). data/employees.js +3fn (EmployeeDetailView timeline +
+// EmployeeFormModal catálogo educativo/última baja). data/requests.js
+// +1fn (EmployeeDetailView tab Solicitudes). ProductosView.jsx y
+// NuevoConteoModal.jsx no necesitaron NINGUNA función nueva — sus 4
+// sitios combinados reutilizan fetchLaboratoriosBasic,
+// fetchProductCategories (ya en data/inventarioTab.js) y
+// searchActiveProductsForConteo (ya en data/conteoInventario.js) al
+// 100%. Verificado en vivo con Playwright contra datos reales de
+// producción: /auditview (1000 registros reales, usuarios y acciones
+// reales), /minmax → expandir fila (ExpandedPanel con stock real de red,
+// compra real de C.IMBERTON S.A., venta real a cliente), /conteo-
+// inventario → Nuevo Conteo (sin errores), /dashboard → detalle de
+// empleado real (Dolores Concepción Tejada Hernández, historial +
+// timeline reales) → Editar (EmployeeFormModal con catálogo educativo
+// cargado sin errores). ApoioScanModal.jsx no se pudo ejercitar en vivo
+// (requiere simular un scan de carné por teclado dentro de un pedido
+// activo) — verificado por sustitución 1:1 exacta. Build + lint + 15
+// tests unitarios verdes.
 
 // v2.17.28 — refactor(bloque6.A): TabPromos.jsx + TabBonificaciones.jsx +
 // TabSinVenta.jsx + TabLaboratorios.jsx + EmployeeProfileView.jsx +

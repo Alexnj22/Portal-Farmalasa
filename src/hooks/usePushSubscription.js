@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { upsertPushSubscription, deletePushSubscriptionByEndpoint } from '../data/pushSubscriptions';
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
@@ -13,10 +13,7 @@ function urlBase64ToUint8Array(base64String) {
 
 async function saveSubscription(employeeId, sub) {
   const { endpoint, keys: { p256dh, auth } } = sub.toJSON();
-  await supabase.from('push_subscriptions').upsert(
-    { employee_id: employeeId, endpoint, p256dh, auth },
-    { onConflict: 'endpoint' }
-  );
+  await upsertPushSubscription({ employee_id: employeeId, endpoint, p256dh, auth });
 }
 
 const SYNC_EVENT = 'push-subscription-changed';
@@ -81,7 +78,7 @@ export function usePushSubscription() {
       const sub = await reg.pushManager.getSubscription();
       if (sub) {
         await sub.unsubscribe();
-        await supabase.from('push_subscriptions').delete().eq('endpoint', sub.toJSON().endpoint);
+        await deletePushSubscriptionByEndpoint(sub.toJSON().endpoint);
       }
       setSubscribed(false);
       window.dispatchEvent(new Event(SYNC_EVENT));

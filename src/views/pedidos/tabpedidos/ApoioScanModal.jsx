@@ -3,11 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Users, ScanLine, Loader2, ShieldAlert, AlertTriangle, UserCircle2, CheckCheck } from 'lucide-react';
-import { supabase } from '../../../supabaseClient';
 import { signPhotosDeep } from '../../../utils/storageFiles';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useToastStore } from '../../../store/toastStore';
 import PedidoModal from '../PedidoModal';
+import { fetchEmployeeByKioskPin, upsertPedidoApoyo } from '../../../data/pedidos';
 
 export default function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existingApoyo = [], onSuccess, tipo = 'preparacion' }) {
     const [displayDots, setDisplayDots] = useState(0);
@@ -37,11 +37,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
         setLoading(true);
         setError('');
         try {
-            const { data, error } = await supabase
-                .from('employees')
-                .select('id, name, photo_url')
-                .eq('kiosk_pin', code.toUpperCase().trim())
-                .maybeSingle();
+            const { data, error } = await fetchEmployeeByKioskPin(code.toUpperCase().trim());
             if (error) console.error('lookupPin: fetch employee failed:', error.message);
             if (data) { await signPhotosDeep(data); setEmployee(data); setManualWarn(false); }
             else       setError(error ? 'Error al buscar empleado.' : 'No se encontró ningún empleado con ese carnet.');
@@ -105,9 +101,8 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
         }
         setLoading(true);
         try {
-            const { error: e } = await supabase.from('pedido_apoyo').upsert(
-                { pedido_id: pedidoId, erp_sucursal_id: sucId, employee_id: employee.id, registered_by: currentUserId, tipo },
-                { onConflict: 'pedido_id,erp_sucursal_id,employee_id,tipo' }
+            const { error: e } = await upsertPedidoApoyo(
+                { pedido_id: pedidoId, erp_sucursal_id: sucId, employee_id: employee.id, registered_by: currentUserId, tipo }
             );
             if (e) throw e;
             useStaff.getState().appendAuditLog('PEDIDO_APOYO_REGISTRADO', pedidoId, { sucursal_id: sucId, employee_id: employee.id });

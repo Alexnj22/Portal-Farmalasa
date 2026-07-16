@@ -1,14 +1,16 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { UserCircle2, PackageCheck, AlertTriangle, PackageX, Truck, Database, UserPlus, Loader2 } from 'lucide-react';
 
-// llegadaEmp/llegadaTipo se reciben pero, a diferencia de erpEmp (que sí
-// tiene su chip en el bloque "Confirmado en Sistema de Ventas"), no hay un
-// bloque "Confirmado" equivalente para el paso de llegada — una vez
-// llegadaOk=true el paso 1 simplemente desaparece sin mostrar quién/qué tipo
-// confirmó. Gap real (mismo patrón que erpEmp/empChip), pero agregarlo es
-// una tarjeta nueva, no una línea — no se improvisa en un flujo crítico
-// ("no romper flujo de pedidos"). Documentado, no se inventa la UI. (7A.5)
-// eslint-disable-next-line no-unused-vars
+// Mismas etiquetas que LLEGADA_TIPO_INFO en PostCompletionSection.jsx (solo
+// el texto — el estilo de esta tarjeta sigue el patrón "completado" propio
+// de este componente, ver bloque "Confirmado en Sistema de Ventas").
+const LLEGADA_TIPO_LABEL = {
+    completa:    'sin novedad',
+    caja_danada: 'caja dañada',
+    falta_caja:  'caja faltante',
+    mixto:       'daños + faltantes',
+};
+
 export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOpenRecibir, onOpenReenvioModal, onSegundaLlegada, onApoyo, busy, llegadaEmp, erpEmp, cardApoyo = [], pendientesCount = 0, llegadaTipo, reenviosHistorial = [], faltaCajas = [], cajasDanadas = [], hasFaltaItems = false, reenvioBodygaAt = null, segundaLlegadaAt = null }) {
     const empChip = (emp) => emp ? (
         <span className="flex items-center gap-1 text-[10px] text-slate-500">
@@ -62,6 +64,19 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                     <button onClick={onMarkLlegada} disabled={busy === 'llegada'} className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active:scale-[0.97] transition-all disabled:opacity-50">
                         {busy === 'llegada' ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar'}
                     </button>
+                </div>
+            )}
+
+            {/* Confirmado: llegada de cajas (7A.5) */}
+            {llegadaOk && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl border bg-emerald-50/40 border-emerald-100 text-[11px]">
+                    <PackageCheck size={13} className="text-emerald-500" />
+                    <span className="text-emerald-700">
+                        Llegada confirmada{llegadaTipo && LLEGADA_TIPO_LABEL[llegadaTipo] ? ` — ${LLEGADA_TIPO_LABEL[llegadaTipo]}` : ''}
+                    </span>
+                    <div className="ml-auto flex items-center gap-1.5">
+                        {empChip(llegadaEmp)}
+                    </div>
                 </div>
             )}
 

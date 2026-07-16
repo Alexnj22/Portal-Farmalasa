@@ -5,8 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.35';
+export const APP_VERSION = '2.17.36';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.36 — feat(bloque7A.5): tarjeta "Llegada confirmada" en
+// ReceptionActions.jsx — llegadaEmp/llegadaTipo llegaban como prop pero,
+// a diferencia de erpEmp (con su bloque "Confirmado en Sistema de
+// Ventas"), el Paso 1 (llegada de cajas) simplemente desaparecía sin
+// dejar registro de quién/qué tipo confirmó una vez llegadaOk=true.
+// Agregada tarjeta "Confirmado" equivalente, mismo patrón visual que el
+// bloque de erpOk (empChip + acento emerald), con label de tipo
+// reutilizando el mismo vocabulario que LLEGADA_TIPO_INFO de
+// PostCompletionSection.jsx (sin novedad/caja dañada/caja faltante/daños
+// + faltantes). Verificado en vivo: build limpio, sin pedido real en
+// estado "enviado" ahora mismo para ver la tarjeta (mismo hallazgo que
+// 7A.1/7A.3), cero errores de React/consola nuevos.
 
 // v2.17.35 — feat(bloque7A.3): botón "Todo OK" en RecepcionModal — gap
 // confirmado real. handleTodoOk (línea ~428) tenía lógica completa

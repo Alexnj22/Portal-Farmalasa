@@ -5,8 +5,33 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.37';
+export const APP_VERSION = '2.17.38';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.38 — feat(bloque7A.7): valor numérico de Despacho en TabMinMax —
+// dispMin/dispMax/applyRule ya calculaban el MIN/MAX redondeado a la
+// regla de despacho, pero el JSX solo mostraba el nombre de la regla
+// (ruleNote), nunca el resultado numérico. Agregada una segunda línea
+// bajo el badge de presentación ("{applyRule(dispMin)} · {applyRule
+// (dispMax)}", con tooltip), visible solo cuando hasRule && hasPres —
+// display puramente aditivo, reutiliza el applyRule ya existente sin
+// introducir matemática nueva (área con historial de bugs de redondeo,
+// ver project_pedido_preview_dispatch_rounding).
+//
+// Hallazgo real durante la verificación en vivo: nunca se pudo ver el
+// badge nuevo con datos reales porque get_stock_analysis (la RPC que
+// alimenta esta vista) selecciona dr.solo_cajas/dr.multiplo/dr.blister/
+// dr.multiplo_unidades de dispatch_rules — columnas que están vacías en
+// las 845 filas de la tabla (0 con solo_cajas=true, 0 con multiplo>1,
+// 0 con blister>1, 0 con multiplo_unidades>1). La regla real vive en
+// dispatch_rules.dispatch_multiplo (393 filas con valor >1, confirmado
+// contra la BD), una columna que la RPC nunca lee. hasRule es siempre
+// false hoy en toda la vista — no es un bug de este PR ni del
+// componente, es un desalineamiento previo entre la RPC y el esquema
+// real de dispatch_rules. Fuera de alcance de 7A.7 (gap de UI, no de
+// pipeline de datos) — documentado como hallazgo nuevo en el plan para
+// una sesión futura. El código de este PR es correcto y se poblará en
+// cuanto se corrija get_stock_analysis. Build + lint + 15 tests verdes.
 
 // v2.17.37 — feat(bloque7A.6): botón "Ocultar filtrados" en TabMinMax —
 // hideFiltered() tenía la lógica de bulk-hide completa (RPC vía

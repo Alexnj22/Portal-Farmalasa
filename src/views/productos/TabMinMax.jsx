@@ -2170,17 +2170,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                     {/* Despacho — presentación catálogo siempre visible + regla + cantidades */}
                                     <DataCell align="center" className="!py-2 !px-2">
                                         {(() => {
-                                            // dispMin/dispMax/hasPres/applyRule (abajo) calculan el MIN/MAX ya
-                                            // redondeado por la regla de despacho, pero el JSX de abajo solo
-                                            // muestra la presentación + el NOMBRE de la regla (ruleNote), nunca
-                                            // el resultado numérico ya aplicado. Gap real, no dead code — no se
-                                            // inventa el formato de display en un área con historial de bugs de
-                                            // redondeo (ver project_pedido_preview_dispatch_rounding).
-                                            // eslint-disable-next-line no-unused-vars
+                                            // 7A.7: dispMin/dispMax + applyRule calculan el MIN/MAX ya
+                                            // redondeado por la regla de despacho — se muestran debajo del
+                                            // badge de presentación/regla (solo cuando hay regla + presentación
+                                            // real, para no mostrar un redondeo basado en factores default=1).
                                             const dispMin = (hasDraft && !isBodega) ? (row.draft_min ?? 0) : minN;
-                                            // eslint-disable-next-line no-unused-vars
                                             const dispMax = (hasDraft && !isBodega) ? (row.draft_max ?? 0) : maxN;
-                                            // eslint-disable-next-line no-unused-vars
                                             const hasPres = pres.length > 0;
 
                                             // Catalog presentation label (always shown)
@@ -2214,7 +2209,6 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             const blisterFactor = sortedP.find(p => p.tipo?.toLowerCase().includes('blist'))?.factor
                                                 ?? sortedP[1]?.factor ?? boxFactor;
 
-                                            // eslint-disable-next-line no-unused-vars
                                             const applyRule = (qty) => {
                                                 if (!qty || qty <= 0 || !hasRule) return qty;
                                                 if (sc) return Math.ceil(qty / boxFactor) * boxFactor;
@@ -2228,13 +2222,22 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             };
 
                                             return (
-                                                <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border leading-tight bg-slate-100 text-slate-600 border-slate-200 gap-1 whitespace-nowrap">
-                                                    {baseLabel}
-                                                    {ruleNote && <>
-                                                        <span className="w-px h-2.5 bg-slate-300 inline-block" />
-                                                        <span className="text-[9px] font-semibold text-slate-500">{ruleNote}</span>
-                                                    </>}
-                                                </span>
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border leading-tight bg-slate-100 text-slate-600 border-slate-200 gap-1 whitespace-nowrap">
+                                                        {baseLabel}
+                                                        {ruleNote && <>
+                                                            <span className="w-px h-2.5 bg-slate-300 inline-block" />
+                                                            <span className="text-[9px] font-semibold text-slate-500">{ruleNote}</span>
+                                                        </>}
+                                                    </span>
+                                                    {hasRule && hasPres && (
+                                                        <span
+                                                            className="text-[9px] font-semibold text-slate-500 tabular-nums"
+                                                            title="MIN · MAX ya redondeado a la regla de despacho">
+                                                            {applyRule(dispMin).toLocaleString()} · {applyRule(dispMax).toLocaleString()}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             );
                                         })()}
                                     </DataCell>

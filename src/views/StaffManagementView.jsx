@@ -547,7 +547,7 @@ const StaffManagementView = ({
   const navigate = useNavigate(); // 🚨 2. INICIALIZAMOS EL ROUTER
   const employees = useStaff(s => s.employees);
   const branches = useStaff(s => s.branches);
-  const bootStatus = useStaff(s => s.bootStatus);
+  const employeesStatus = useStaff(s => s.employeesStatus);
   const practicantes = useStaff(s => s.practicantes);
   const practicantesLoading = useStaff(s => s.practicantesLoading);
   const fetchPracticantes = useStaff(s => s.fetchPracticantes);
@@ -768,10 +768,11 @@ const StaffManagementView = ({
   // fetch real a employees_safe todavía no responde. Si el usuario abre
   // "Editar" en esa ventana de milisegundos, esos campos se ven vacíos en el
   // modal — y si guarda sin notarlo, se sobrescriben con NULL en la BD.
-  // Bloqueamos la edición hasta que el boot completo (bootStatus==='ready')
-  // haya reemplazado ese snapshot con los datos reales.
+  // Bloqueamos la edición hasta que el grupo de datos de empleado del boot
+  // (employeesStatus==='ready' — Bloque 6.B, independiente del resto de
+  // fetchBoot) haya reemplazado ese snapshot con los datos reales.
   const handleOpenEditEmployee = useCallback((emp) => {
-    if (bootStatus !== 'ready') {
+    if (employeesStatus !== 'ready') {
       useToastStore.getState().showToast(
         'Cargando datos completos…',
         'Espera un momento y vuelve a intentar — se están terminando de sincronizar los datos del empleado.',
@@ -781,7 +782,7 @@ const StaffManagementView = ({
     }
     setIsSearchActive(false);
     openModal?.('editEmployee', emp);
-  }, [openModal, bootStatus]);
+  }, [openModal, employeesStatus]);
 
   const handleOpenRehireEmployee = useCallback((emp) => {
     setIsSearchActive(false);
@@ -912,22 +913,22 @@ const StaffManagementView = ({
             <StaffStatCard
               icon={Users} color="blue" label="Total" value={stats.total}
               active={activeStatFilter === 'ALL'} onClick={() => setActiveStatFilter('ALL')}
-              loading={bootStatus !== 'ready' && employees.length === 0}
+              loading={employeesStatus !== 'ready' && employees.length === 0}
             />
             <StaffStatCard
               icon={ShieldCheck} color="emerald" label="Activos" value={stats.active}
               active={activeStatFilter === 'Activo'} onClick={() => setActiveStatFilter('Activo')}
-              loading={bootStatus !== 'ready' && employees.length === 0}
+              loading={employeesStatus !== 'ready' && employees.length === 0}
             />
             <StaffStatCard
               icon={Briefcase} color="cyan" label="Apoyo" value={stats.support}
               active={activeStatFilter === 'En Apoyo'} onClick={() => setActiveStatFilter('En Apoyo')}
-              loading={bootStatus !== 'ready' && employees.length === 0}
+              loading={employeesStatus !== 'ready' && employees.length === 0}
             />
             <StaffStatCard
               icon={UserMinus} color="amber" label="Otros" value={stats.inactive}
               active={activeStatFilter === 'Otros'} onClick={() => setActiveStatFilter('Otros')}
-              loading={bootStatus !== 'ready' && employees.length === 0}
+              loading={employeesStatus !== 'ready' && employees.length === 0}
             />
             <StaffStatCard
               icon={GraduationCap} color="violet" label="Practicantes" value={practicantesSearchFiltered.length}
@@ -994,7 +995,7 @@ const StaffManagementView = ({
           sortKey={sortConfig.key}
           sortDir={sortConfig.direction}
           onSort={handleSort}
-          loading={isPracticantesView ? (practicantesLoading && practicantes.length === 0) : (bootStatus !== 'ready' && employees.length === 0)}
+          loading={isPracticantesView ? (practicantesLoading && practicantes.length === 0) : (employeesStatus !== 'ready' && employees.length === 0)}
           skeletonRows={8}
           empty={{
             icon: isPracticantesView ? GraduationCap : Search,
@@ -1009,7 +1010,7 @@ const StaffManagementView = ({
                 <PracticanteRow key={p.id} staggerIndex={i} p={p} branchName={branchMap.get(Number(p.branch_id))} onEdit={handleEditPracticante} onDelete={handleDeletePracticante} canEdit={canEdit} />
               ))
             : paginatedEmployees.map((emp, i) => (
-                <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit && bootStatus === 'ready'} />
+                <EmployeeRow key={emp.id} staggerIndex={i} emp={emp} branchName={branchMap.get(Number(emp.branchId || emp.branch_id))} onOpenEmployee={handleOpenEmployee} onEditEmployee={handleOpenEditEmployee} onRehireEmployee={handleOpenRehireEmployee} canEdit={canEdit && employeesStatus === 'ready'} />
               ))
           }
         </DataTable>

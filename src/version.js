@@ -5,8 +5,37 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.30';
+export const APP_VERSION = '2.17.31';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.31 — refactor(bloque6.B): primer slice de fetchBoot — employeesStatus
+// desacoplado de bootStatus. systemSlice.js: fetchBoot() dividido en 2 grupos
+// que arrancan ambos de inmediato (mismo tiempo total de red, cero
+// serialización nueva): grupo liviano (holidays/branches/roles/shifts/
+// announcements) y grupo empleados (rosters/employees_safe/events/documents/
+// branch_assign). bootStatus mantiene su significado exacto (sigue sin pasar
+// a 'ready' hasta que TODO termine); employeesStatus (nuevo) pasa a 'ready'
+// en cuanto el grupo de empleados específicamente termina, sin esperar a los
+// datos livianos. Consumidores migrados (los únicos 2 puntos de entrada al
+// modal "Editar Empleado" en todo el repo): StaffManagementView.jsx (3 usos:
+// gate de apertura, canEdit del botón, 5 checks de loading/skeleton) y
+// EmployeeDetailView.jsx (handleEditProfile) — este último NO tenía ninguna
+// protección hasta ahora, era un punto de entrada abierto a la misma race
+// condition documentada en StaffManagementView.jsx (employees arranca del
+// snapshot sanitizado de localStorage sin DUI/ISSS/AFP/banco/kiosk_pin
+// mientras employees_safe sigue en vuelo; abrir "Editar" en esa ventana
+// mostraba campos vacíos y guardar los sobrescribía con NULL en la BD).
+// App.jsx y SchedulesView.jsx no se tocan (no leen bootStatus). Sin cambios
+// de esquema de BD — puro estado de frontend. Verificado en vivo con
+// Playwright: login fresco → abrir "Edición rápida" en /dashboard → modal
+// abre con DUI real poblado (no vacío); mismo check desde
+// /dashboard/empleado/:id → "Editar" (el punto antes desprotegido) — ambos
+// con datos reales de Dolores Concepción Tejada Hernández. Sin errores
+// nuevos en consola (solo ruido pre-existente: COEP, CORS de
+// ensure_user_by_code). Build + lint + 15 tests unitarios verdes.
+// Deja abierto el resto de 6.B (más slices, sobre-fetch) para futuras
+// sesiones — este PR cierra exactamente lo que pedía el plan: "migrar
+// primero el modal de empleado".
 
 // v2.17.30 — refactor(bloque6.A): CIERRE — último bloque de 19 archivos de
 // 1 sitio cada uno, PR final de la migración completa. Archivos: TabExpenses,

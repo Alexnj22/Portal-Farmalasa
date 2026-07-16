@@ -23,6 +23,14 @@ export const createSystemSlice = (set, get) => ({
     holidays: safeJsonParse(localStorage.getItem(CACHE_KEYS.HOLIDAYS), []) || [],
     isBootSyncing: false,
     bootStatus: 'idle',
+    // Bloque 6.B — status independiente del grupo de datos de empleado
+    // (employees_safe + events + documents + rosters + branch_assign),
+    // desacoplado del resto de fetchBoot. bootStatus sigue significando
+    // "TODO terminó" exactamente igual que antes; employeesStatus resuelve
+    // en cuanto el grupo de empleados específicamente termina, sin esperar
+    // a holidays/branches/roles/shifts/announcements. Ver StaffManagementView.jsx
+    // y EmployeeDetailView.jsx — es el único par de consumidores migrados hoy.
+    employeesStatus: 'idle',
     bootPromise: null,
     lastBootAt: null,
     _announcementsChannel: null,
@@ -50,6 +58,7 @@ export const createSystemSlice = (set, get) => ({
         set({
             isBootSyncing: false,
             bootStatus: 'idle',
+            employeesStatus: 'idle',
             bootPromise: null,
             lastBootAt: null,
             _announcementsChannel: null,
@@ -58,6 +67,7 @@ export const createSystemSlice = (set, get) => ({
 
     invalidateBoot: () => set({
         bootStatus: 'idle',
+        employeesStatus: 'idle',
         bootPromise: null,
     }),
 
@@ -77,194 +87,227 @@ export const createSystemSlice = (set, get) => ({
         if (!force && current.bootPromise) return await current.bootPromise;
 
         const bootPromise = (async () => {
-            set({ isBootSyncing: true, bootStatus: 'loading' });
+            set({ isBootSyncing: true, bootStatus: 'loading', employeesStatus: 'loading' });
 
             try {
-                // Calcular lunes local sin mutar Date y sin problemas de DST
-                const now = new Date();
-                const dow = now.getDay();
-                const monday = new Date(now);
-                monday.setDate(now.getDate() - dow + (dow === 0 ? -6 : 1));
-                monday.setHours(0, 0, 0, 0);
-                const weekStartDate = monday.toLocaleDateString('en-CA'); // YYYY-MM-DD local
-
-                // Alcance de datos de empleados: con permiso staff_list.can_view (RRHH/admin)
-                // se carga la empresa completa (comportamiento sin cambios). Sin ese permiso
-                // (self-service — hoy 44 de 47 empleados activos) se escala a "mi sucursal":
-                // las vistas self-service (Home/Perfil/Solicitudes) solo hacen
-                // employees.find(propio) o filtran por branch_id === mi sucursal para el
-                // picker de compañero de cambio de turno — nunca necesitan otra sucursal ni
-                // el historial/documentos de un compañero. Antes TODOS bajaban el roster de
-                // la empresa entera en cada login sin importar su rol. Falla ABIERTO (carga
-                // todo) ante cualquier error de red o rol sin id, para no ocultarle datos a
-                // un admin por un hipo de conexión.
-                const storedUser = safeJsonParse(localStorage.getItem('sb_user'));
-                const myId = storedUser?.id ?? null;
-                const myBranchId = storedUser?.branchId ?? null;
-                const myRoleId = storedUser?.roleId ?? (Number.isInteger(storedUser?.role) ? storedUser.role : null);
-
-                let canSeeAllStaff = true;
-                if (myRoleId) {
+                // Bloque 6.B — split en dos grupos que arrancan ambos de inmediato
+                // (mismo tiempo total de red que antes, cero serialización nueva).
+                // Grupo liviano: holidays/branches/roles/shifts/announcements —
+                // tablas chicas, sin scope por empleado. Resuelve independiente
+                // del grupo de empleados (más abajo), que es el lento/paginado.
+                const lightGroupPromise = (async () => {
                     try {
-                        const { data: perm, error: permError } = await supabase
-                            .from('role_permissions')
-                            .select('can_view')
-                            .eq('role_id', myRoleId)
-                            .eq('module_key', 'staff_list')
-                            .maybeSingle();
-                        if (!permError) canSeeAllStaff = !!perm?.can_view;
-                    } catch { /* red caída: se queda en true (comportamiento actual) */ }
-                }
-                const scopeToMyBranch = !canSeeAllStaff && myBranchId != null;
-                const scopeToMe = !canSeeAllStaff && myId != null;
+                        const [
+                            { data: holidaysData },
+                            { data: branchData },
+                            { data: rolesData },
+                            { data: shiftsData },
+                            { data: annData },
+                        ] = await Promise.all([
+                            supabase.from('holidays').select('*').order('holiday_date', { ascending: true }),
+                            supabase.from('branches').select('*').order('id', { ascending: true }),
+                            supabase.from('roles').select('*').order('name', { ascending: true }),
+                            supabase.from('shifts').select('*'),
+                            supabase.from('announcements').select('*').order('created_at', { ascending: false }),
+                        ]);
 
-                // Todas las queries en paralelo — de ~3-4s secuencial a ~600ms
-                // Tablas chicas (<1000 filas garantizadas) con select directo; las que
-                // crecen sin tope (empleados, eventos, documentos, asignaciones) van
-                // paginadas con fetchAllRows para evitar el truncado silencioso de PostgREST.
-                const [
-                    { data: holidaysData },
-                    { data: branchData },
-                    { data: rolesData },
-                    { data: shiftsData },
-                    { data: rostersData },
-                    empData,
-                    eventsData,
-                    docsData,
-                    { data: annData },
-                    branchAssignData,
-                ] = await Promise.all([
-                    supabase.from('holidays').select('*').order('holiday_date', { ascending: true }),
-                    supabase.from('branches').select('*').order('id', { ascending: true }),
-                    supabase.from('roles').select('*').order('name', { ascending: true }),
-                    supabase.from('shifts').select('*'),
-                    supabase.from('employee_rosters').select('employee_id, schedule_data').eq('week_start_date', weekStartDate).eq('status', 'PUBLISHED'),
-                    fetchAllRows(() => {
-                        let q = supabase.from('employees_safe').select(`*, main_role:roles!employees_role_id_fkey(id, name), sec_role:roles!employees_secondary_role_id_fkey(id, name)`).order('id', { ascending: true });
-                        if (scopeToMyBranch) q = q.eq('branch_id', myBranchId);
-                        return q;
-                    }),
-                    fetchAllRows(() => {
-                        let q = supabase.from('employee_events').select('*').order('id', { ascending: true });
-                        if (scopeToMe) q = q.eq('employee_id', myId);
-                        return q;
-                    }),
-                    fetchAllRows(() => {
-                        let q = supabase.from('employee_documents').select('*').order('id', { ascending: true });
-                        if (scopeToMe) q = q.eq('employee_id', myId);
-                        return q;
-                    }),
-                    supabase.from('announcements').select('*').order('created_at', { ascending: false }),
-                    fetchAllRows(() => supabase.from('employee_branches').select('employee_id, branch_id').order('employee_id', { ascending: true })),
-                ]);
+                        // Holidays
+                        if (holidaysData) {
+                            set({ holidays: holidaysData });
+                            localStorage.setItem(CACHE_KEYS.HOLIDAYS, JSON.stringify(holidaysData));
+                        }
 
-                // Holidays
-                if (holidaysData) {
-                    set({ holidays: holidaysData });
-                    localStorage.setItem(CACHE_KEYS.HOLIDAYS, JSON.stringify(holidaysData));
-                }
+                        // Branches
+                        if (branchData) {
+                            const mappedBranches = branchData.map((b) => ({
+                                ...b,
+                                weeklyHours: b.weekly_hours,
+                                propertyType: b.settings?.propertyType || 'OWNED',
+                                rent: b.settings?.rent || null,
+                                type: b.type || 'FARMACIA',
+                            }));
+                            set({ branches: mappedBranches });
+                            localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(mappedBranches));
+                        }
 
-                // Branches
-                if (branchData) {
-                    const mappedBranches = branchData.map((b) => ({
-                        ...b,
-                        weeklyHours: b.weekly_hours,
-                        propertyType: b.settings?.propertyType || 'OWNED',
-                        rent: b.settings?.rent || null,
-                        type: b.type || 'FARMACIA',
-                    }));
-                    set({ branches: mappedBranches });
-                    localStorage.setItem(CACHE_KEYS.BRANCHES, JSON.stringify(mappedBranches));
-                }
+                        // Roles
+                        if (rolesData) {
+                            set({ roles: rolesData });
+                            localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(rolesData));
+                        }
 
-                // Roles
-                if (rolesData) {
-                    set({ roles: rolesData });
-                    localStorage.setItem(CACHE_KEYS.ROLES, JSON.stringify(rolesData));
-                }
+                        // Shifts
+                        if (shiftsData) {
+                            const mappedShifts = shiftsData.map((s) => ({
+                                id: s.id,
+                                branchId: s.branch_id,
+                                name: s.name,
+                                start: s.start_time.substring(0, 5),
+                                end: s.end_time.substring(0, 5),
+                                is_active: s.is_active,
+                            }));
+                            set({ shifts: mappedShifts });
+                            localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(mappedShifts));
+                        }
 
-                // Shifts
-                if (shiftsData) {
-                    const mappedShifts = shiftsData.map((s) => ({
-                        id: s.id,
-                        branchId: s.branch_id,
-                        name: s.name,
-                        start: s.start_time.substring(0, 5),
-                        end: s.end_time.substring(0, 5),
-                        is_active: s.is_active,
-                    }));
-                    set({ shifts: mappedShifts });
-                    localStorage.setItem(CACHE_KEYS.SHIFTS, JSON.stringify(mappedShifts));
-                }
+                        // Announcements
+                        if (annData) {
+                            const mappedAnns = annData.map((a) => ({
+                                id: a.id,
+                                title: a.title,
+                                message: a.message,
+                                targetType: a.target_type,
+                                targetValue: a.target_value,
+                                priority: a.priority || 'NORMAL',
+                                date: a.created_at,
+                                readBy: a.read_by || [],
+                                prevReadBy: a.prev_read_by || [],
+                                isArchived: a.is_archived,
+                                editedAt: a.edited_at,
+                                scheduledFor: a.scheduled_for,
+                                metadata: a.metadata || null,
+                            }));
+                            set({ announcements: mappedAnns });
+                            localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(mappedAnns));
+                        }
+                    } catch (e) {
+                        console.error("🔥 Error cargando datos livianos en fetchBoot:", e.message || e);
+                        throw e;
+                    }
+                })();
 
-                // Announcements
-                if (annData) {
-                    const mappedAnns = annData.map((a) => ({
-                        id: a.id,
-                        title: a.title,
-                        message: a.message,
-                        targetType: a.target_type,
-                        targetValue: a.target_value,
-                        priority: a.priority || 'NORMAL',
-                        date: a.created_at,
-                        readBy: a.read_by || [],
-                        prevReadBy: a.prev_read_by || [],
-                        isArchived: a.is_archived,
-                        editedAt: a.edited_at,
-                        scheduledFor: a.scheduled_for,
-                        metadata: a.metadata || null,
-                    }));
-                    set({ announcements: mappedAnns });
-                    localStorage.setItem(CACHE_KEYS.ANNOUNCEMENTS, JSON.stringify(mappedAnns));
-                }
-
-                // Employees + events + docs (merged)
-                const rosterMap = {};
-                (rostersData || []).forEach((r) => { rosterMap[r.employee_id] = r.schedule_data; });
-
-                if (empData) {
-                    const branchMap = {};
-                    (branchAssignData || []).forEach(({ employee_id, branch_id }) => {
-                        if (!branchMap[employee_id]) branchMap[employee_id] = [];
-                        branchMap[employee_id].push(branch_id);
-                    });
-
-                    const mappedEmployees = empData.map((e) => {
-                        const myHistory = eventsData ? eventsData.filter((ev) => String(ev.employee_id) === String(e.id)) : [];
-                        const myDocs = docsData ? docsData.filter((d) => String(d.employee_id) === String(e.id)) : [];
-                        const mySchedule = rosterMap[e.id] || {};
-
-                        return {
-                            ...e,
-                            branchId: e.branch_id,
-                            hireDate: e.hire_date,
-                            birthDate: e.birth_date,
-                            photo: e.photo_url,
-                            attendance: Array.isArray(e.attendance) ? e.attendance : [],
-                            history: myHistory,
-                            documents: myDocs,
-                            weeklySchedule: mySchedule,
-                            role_id: e.role_id,
-                            secondary_role_id: e.secondary_role_id,
-                            role: e.main_role?.name || null,
-                            secondary_role: e.sec_role?.name || null,
-                            assigned_branch_ids: branchMap[e.id] || [],
-                        };
-                    });
-
-                    // Fotos: bucket empleados es privado — `photo` lleva la URL firmada
-                    // (12h, se renueva en cada boot); `photo_url` queda CRUDO como
-                    // identificador de BD (nunca guardar la firmada).
+                // Grupo empleados: rosters + employees_safe + events + docs +
+                // branch_assign. Al terminar, marca employeesStatus:'ready' —
+                // señal específica que StaffManagementView.jsx/EmployeeDetailView.jsx
+                // usan para permitir abrir "Editar Empleado" con datos sensibles
+                // reales (DUI/ISSS/AFP/banco/kiosk_pin), sin esperar al grupo liviano.
+                const employeeGroupPromise = (async () => {
                     try {
-                        const photoMap = await signStorageUrls(mappedEmployees.map(e => e.photo_url).filter(Boolean));
-                        mappedEmployees.forEach(e => {
-                            if (e.photo_url) e.photo = photoMap.get(e.photo_url) || e.photo_url;
-                        });
-                    } catch { /* fallback: photo queda con la URL cruda */ }
+                        // Calcular lunes local sin mutar Date y sin problemas de DST
+                        const now = new Date();
+                        const dow = now.getDay();
+                        const monday = new Date(now);
+                        monday.setDate(now.getDate() - dow + (dow === 0 ? -6 : 1));
+                        monday.setHours(0, 0, 0, 0);
+                        const weekStartDate = monday.toLocaleDateString('en-CA'); // YYYY-MM-DD local
 
-                    set({ employees: mappedEmployees });
-                    persistEmployees(mappedEmployees);
-                }
+                        // Alcance de datos de empleados: con permiso staff_list.can_view (RRHH/admin)
+                        // se carga la empresa completa (comportamiento sin cambios). Sin ese permiso
+                        // (self-service — hoy 44 de 47 empleados activos) se escala a "mi sucursal":
+                        // las vistas self-service (Home/Perfil/Solicitudes) solo hacen
+                        // employees.find(propio) o filtran por branch_id === mi sucursal para el
+                        // picker de compañero de cambio de turno — nunca necesitan otra sucursal ni
+                        // el historial/documentos de un compañero. Antes TODOS bajaban el roster de
+                        // la empresa entera en cada login sin importar su rol. Falla ABIERTO (carga
+                        // todo) ante cualquier error de red o rol sin id, para no ocultarle datos a
+                        // un admin por un hipo de conexión.
+                        const storedUser = safeJsonParse(localStorage.getItem('sb_user'));
+                        const myId = storedUser?.id ?? null;
+                        const myBranchId = storedUser?.branchId ?? null;
+                        const myRoleId = storedUser?.roleId ?? (Number.isInteger(storedUser?.role) ? storedUser.role : null);
+
+                        let canSeeAllStaff = true;
+                        if (myRoleId) {
+                            try {
+                                const { data: perm, error: permError } = await supabase
+                                    .from('role_permissions')
+                                    .select('can_view')
+                                    .eq('role_id', myRoleId)
+                                    .eq('module_key', 'staff_list')
+                                    .maybeSingle();
+                                if (!permError) canSeeAllStaff = !!perm?.can_view;
+                            } catch { /* red caída: se queda en true (comportamiento actual) */ }
+                        }
+                        const scopeToMyBranch = !canSeeAllStaff && myBranchId != null;
+                        const scopeToMe = !canSeeAllStaff && myId != null;
+
+                        // Todas las queries en paralelo — de ~3-4s secuencial a ~600ms
+                        // Tablas chicas (<1000 filas garantizadas) con select directo; las que
+                        // crecen sin tope (empleados, eventos, documentos, asignaciones) van
+                        // paginadas con fetchAllRows para evitar el truncado silencioso de PostgREST.
+                        const [
+                            { data: rostersData },
+                            empData,
+                            eventsData,
+                            docsData,
+                            branchAssignData,
+                        ] = await Promise.all([
+                            supabase.from('employee_rosters').select('employee_id, schedule_data').eq('week_start_date', weekStartDate).eq('status', 'PUBLISHED'),
+                            fetchAllRows(() => {
+                                let q = supabase.from('employees_safe').select(`*, main_role:roles!employees_role_id_fkey(id, name), sec_role:roles!employees_secondary_role_id_fkey(id, name)`).order('id', { ascending: true });
+                                if (scopeToMyBranch) q = q.eq('branch_id', myBranchId);
+                                return q;
+                            }),
+                            fetchAllRows(() => {
+                                let q = supabase.from('employee_events').select('*').order('id', { ascending: true });
+                                if (scopeToMe) q = q.eq('employee_id', myId);
+                                return q;
+                            }),
+                            fetchAllRows(() => {
+                                let q = supabase.from('employee_documents').select('*').order('id', { ascending: true });
+                                if (scopeToMe) q = q.eq('employee_id', myId);
+                                return q;
+                            }),
+                            fetchAllRows(() => supabase.from('employee_branches').select('employee_id, branch_id').order('employee_id', { ascending: true })),
+                        ]);
+
+                        // Employees + events + docs (merged)
+                        const rosterMap = {};
+                        (rostersData || []).forEach((r) => { rosterMap[r.employee_id] = r.schedule_data; });
+
+                        if (empData) {
+                            const branchMap = {};
+                            (branchAssignData || []).forEach(({ employee_id, branch_id }) => {
+                                if (!branchMap[employee_id]) branchMap[employee_id] = [];
+                                branchMap[employee_id].push(branch_id);
+                            });
+
+                            const mappedEmployees = empData.map((e) => {
+                                const myHistory = eventsData ? eventsData.filter((ev) => String(ev.employee_id) === String(e.id)) : [];
+                                const myDocs = docsData ? docsData.filter((d) => String(d.employee_id) === String(e.id)) : [];
+                                const mySchedule = rosterMap[e.id] || {};
+
+                                return {
+                                    ...e,
+                                    branchId: e.branch_id,
+                                    hireDate: e.hire_date,
+                                    birthDate: e.birth_date,
+                                    photo: e.photo_url,
+                                    attendance: Array.isArray(e.attendance) ? e.attendance : [],
+                                    history: myHistory,
+                                    documents: myDocs,
+                                    weeklySchedule: mySchedule,
+                                    role_id: e.role_id,
+                                    secondary_role_id: e.secondary_role_id,
+                                    role: e.main_role?.name || null,
+                                    secondary_role: e.sec_role?.name || null,
+                                    assigned_branch_ids: branchMap[e.id] || [],
+                                };
+                            });
+
+                            // Fotos: bucket empleados es privado — `photo` lleva la URL firmada
+                            // (12h, se renueva en cada boot); `photo_url` queda CRUDO como
+                            // identificador de BD (nunca guardar la firmada).
+                            try {
+                                const photoMap = await signStorageUrls(mappedEmployees.map(e => e.photo_url).filter(Boolean));
+                                mappedEmployees.forEach(e => {
+                                    if (e.photo_url) e.photo = photoMap.get(e.photo_url) || e.photo_url;
+                                });
+                            } catch { /* fallback: photo queda con la URL cruda */ }
+
+                            set({ employees: mappedEmployees });
+                            persistEmployees(mappedEmployees);
+                        }
+
+                        set({ employeesStatus: 'ready' });
+                    } catch (e) {
+                        console.error("🔥 Error cargando datos de empleados en fetchBoot:", e.message || e);
+                        set({ employeesStatus: 'error' });
+                        throw e;
+                    }
+                })();
+
+                await Promise.all([lightGroupPromise, employeeGroupPromise]);
 
                 const bootedAt = new Date().toISOString();
                 localStorage.setItem(CACHE_KEYS.AT, bootedAt);

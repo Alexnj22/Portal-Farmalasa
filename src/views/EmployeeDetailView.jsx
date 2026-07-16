@@ -31,6 +31,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const employees = useStaffStore(s => s.employees);
     const branches = useStaffStore(s => s.branches);
     const shifts = useStaffStore(s => s.shifts);
+    const employeesStatus = useStaffStore(s => s.employeesStatus);
     const { user, hasPermission } = useAuth();
     const canEdit = hasPermission('staff_detail', 'can_edit');
     
@@ -257,10 +258,21 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     }, []);
 
     // 🚨 MODO PRO 1: useCallback para evitar re-renders innecesarios en componentes hijos
+    // Mismo gate que StaffManagementView.jsx (Bloque 6.B): sin employeesStatus==='ready',
+    // `emp` puede venir del snapshot sanitizado de localStorage (sin DUI/ISSS/AFP/banco/
+    // kiosk_pin) y guardar sin darse cuenta los sobrescribe con NULL en la BD.
     const handleEditProfile = useCallback((e) => {
         if(e) { e.preventDefault(); e.stopPropagation(); }
+        if (employeesStatus !== 'ready') {
+            useToastStore.getState().showToast(
+                'Cargando datos completos…',
+                'Espera un momento y vuelve a intentar — se están terminando de sincronizar los datos del empleado.',
+                'info'
+            );
+            return;
+        }
         if (typeof openModal === 'function') openModal('editEmployee', emp);
-    }, [openModal, emp]);
+    }, [openModal, emp, employeesStatus]);
 
     const handleNewHRAction = useCallback((e) => {
         e.preventDefault();

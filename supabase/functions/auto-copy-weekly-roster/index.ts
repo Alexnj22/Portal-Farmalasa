@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
         .from('employees')
         .select('id')
         .eq('role_id', TH_ROLE_ID)
-        .eq('status', 'ACTIVE');
+        .eq('status', 'ACTIVO');
 
       const thIds = (thEmps || []).map(e => String(e.id));
 
@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
           .from('employees')
           .select('id')
           .in('system_role', FALLBACK_SYSTEM_ROLES)
-          .eq('status', 'ACTIVE');
+          .eq('status', 'ACTIVO');
 
         recipientIds  = (fallbackEmps || []).map(e => String(e.id));
         recipientLabel = 'Administración y Supervisión';

@@ -5,8 +5,26 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.33';
+export const APP_VERSION = '2.17.34';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.34 — fix(bloque7A.2): auto-copy-weekly-roster — bugs encadenados
+// de status literal. `.eq('status', 'ACTIVE')` (×2: filtro de Talento
+// Humano y filtro de fallback Admin/Supervisor) nunca matcheaba nada —
+// employees.status es 'ACTIVO' (español, verificado contra la BD real:
+// 49/49 activos con ese valor exacto). Efecto encadenado: al no encontrar
+// NINGÚN destinatario válido (ni TH ni fallback), `recipientIds` quedaba
+// siempre vacío y `target_type: recipientIds.length > 0 ? 'EMPLOYEE' :
+// 'ALL'` caía siempre en 'ALL' — un broadcast a TODA la empresa en vez de
+// la notificación dirigida a TH/Admin que el código realmente intentaba
+// enviar. Corregido ambos `.eq('status', 'ACTIVE')` → `'ACTIVO'`. role_id
+// 11 (Talento Humano) y FALLBACK_SYSTEM_ROLES (ADMIN/SUPERVISOR) ya
+// estaban correctos, verificados contra roles/employees reales. Impacto
+// histórico = 0 (nunca hubo un conflicto de turno que disparara esta
+// rama), pero el bug quedaba latente hacia adelante. Edge function
+// desplegada a producción (`deploy_edge_function`, verify_jwt=true
+// preservado). Sin cambios de frontend, sin tests unitarios aplicables
+// (edge function Deno, fuera del runner de Vitest).
 
 // v2.17.33 — feat(bloque7A.1): cierre de bodega en Pedidos — backend listo
 // desde 2026-06-21, faltaba el punto de entrada en la UI. Agregado un

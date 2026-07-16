@@ -5,8 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.44';
+export const APP_VERSION = '2.17.45';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.45 — feat(bloque7b.8): modo offline del kiosco, Fases A+B.
+// Fase A (useKioskDevice.js/branchSlice.js): validateKioskToken ahora
+// distingue "la RPC respondió que no" (revocación real) de "la RPC no pudo
+// ejecutarse" (error de red) — antes ambos casos devolvían el mismo `false`
+// y useTimeClockEngine.js mostraba "KIOSCO NO AUTORIZADO" para los dos por
+// igual, bloqueando marcajes reales solo por un corte de conexión.
+// verifyDevice() ahora devuelve {config, networkError} y usa una ventana de
+// gracia de 15min (lastVerifiedAt persistido) para seguir confiando en la
+// última verificación exitosa cuando hay error de red.
+// Fase B (nuevo src/utils/attendanceQueue.js): finalizePunch ya no es
+// fire-and-forget — espera el resultado real de registerAttendance antes de
+// pintar "éxito" (antes podía mostrar éxito aunque el insert nunca llegara a
+// la BD). Si falla, el marcaje se encola en localStorage y se reintenta solo
+// (evento 'online' + poll cada 30s) llamando de nuevo a registerAttendance
+// (mismo camino que un marcaje normal, con toda su auditoría intacta).
+// OfflineBanner montado en TimeClockView.jsx (antes solo estaba en
+// AppLayout.jsx — el kiosco daba cero feedback de conectividad).
+// Fase C (@capacitor/network) NO aplica: /kiosk está gateado por
+// !isMobileOrApp() en App.jsx — nunca corre en la app nativa Capacitor ni en
+// tablets/celulares, solo en un navegador de escritorio normal. Fase D
+// (cache de datos) queda diferida — no hay problema real que resuelva hoy.
+// Verificado en vivo con Playwright (context.setOffline): banner "Sin
+// conexión" aparece correctamente sobre el kiosco. 15 tests unitarios verdes.
 
 // v2.17.44 — feat(bloque7b.6): historial de precios en catálogo. Nueva
 // sección "Historial de precios" en ExpandedProductRow (TabCatalogo.jsx),

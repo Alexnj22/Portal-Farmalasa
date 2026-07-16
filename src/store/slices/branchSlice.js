@@ -410,12 +410,20 @@ export const createBranchSlice = (set, get) => ({
         // Auditoría 2026-07 (0B.8): antes hacía SELECT directo sobre kiosk_devices,
         // que requería una policy anon SELECT true (cualquiera sin sesión leía toda
         // la tabla). Ahora valida server-side vía RPC SECURITY DEFINER.
+        //
+        // 7B.8: distinguir "la RPC respondió que NO" (dispositivo revocado/token
+        // inválido — negativo real) de "la RPC no pudo ejecutarse" (sin conexión,
+        // timeout, etc.). useKioskDevice.js depende de esta distinción para no
+        // desvincular un kiosco solo porque se quedó sin internet un momento.
         const { data, error } = await supabase.rpc('verify_kiosk_device', {
             p_device_id: deviceId,
             p_device_token: token,
         });
 
-        return !error && Array.isArray(data) && data.length > 0;
+        if (error) {
+            return { authorized: false, networkError: true, message: error.message };
+        }
+        return { authorized: Array.isArray(data) && data.length > 0, networkError: false };
     },
 
     getBranchHistory: async (branchId) => {

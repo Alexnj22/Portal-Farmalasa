@@ -22,6 +22,7 @@ import {
 import { buildCustomConfig, buildFinalPunchPresentation } from '../utils/timeClock.rules';
 import { getHourlyCode, getSuPinSuffix, toLocalISO } from '../utils/helpers';
 import { playFeedbackTone } from '../utils/kioskSound';
+import { enqueueAttendancePunch, flushAttendanceQueue } from '../utils/attendanceQueue';
 import useKioskDevice from './useKioskDevice';
 import { XCircle, ShieldAlert } from 'lucide-react';
 import { insertApprovalRequestSilent } from '../data/requests';
@@ -86,6 +87,20 @@ export function useTimeClockEngine(props = {}) {
     useEffect(() => {
         if (feedback?.color) playFeedbackTone(feedback.color);
     }, [feedback]);
+
+    // 7B.8, Fase B: vacía la cola de marcajes pendientes al volver la conexión
+    // (evento 'online') y además cada 30s como red de seguridad — el evento
+    // 'online' no siempre dispara de forma confiable en algunos WebViews.
+    useEffect(() => {
+        const tryFlush = () => { flushAttendanceQueue(registerAttendance).catch(() => {}); };
+        tryFlush();
+        window.addEventListener('online', tryFlush);
+        const interval = setInterval(tryFlush, 30_000);
+        return () => {
+            window.removeEventListener('online', tryFlush);
+            clearInterval(interval);
+        };
+    }, [registerAttendance]);
 
     useEffect(() => {
         const clockInterval = setInterval(() => {
@@ -217,7 +232,7 @@ export function useTimeClockEngine(props = {}) {
         setIsConfiguring(false);
     }, []);
 
-    const finalizePunch = useCallback((employee, rawType, customConfig, metadata = null, kioskData = null, nowDate = new Date()) => {
+    const finalizePunch = useCallback(async (employee, rawType, customConfig, metadata = null, kioskData = null, nowDate = new Date()) => {
         const extendedMetadata = metadata ? { ...metadata } : {};
 
         if (kioskData) {
@@ -244,13 +259,22 @@ export function useTimeClockEngine(props = {}) {
             employee,
         });
 
-        registerAttendance(
-            employee.id,
-            presentation.finalType,
-            Object.keys(extendedMetadata).length > 0 ? extendedMetadata : null
-        ).catch((err) => {
-            console.error('❌ Kiosko: error al guardar marcaje en DB:', err);
-        });
+        const finalMetadata = Object.keys(extendedMetadata).length > 0 ? extendedMetadata : null;
+
+        // 7B.8: antes esto era fire-and-forget (.catch(console.error)) y el
+        // feedback de "éxito" se pintaba ANTES de saber si el insert realmente
+        // llegó a la BD — un empleado podía ver "marcaje exitoso" que nunca se
+        // guardó. Ahora se espera el resultado real; si falla (sin conexión u
+        // otro error), el marcaje se encola localmente en vez de perderse —
+        // se reintenta solo cuando vuelve la conexión (ver flushAttendanceQueue).
+        let queuedOffline = false;
+        try {
+            await registerAttendance(employee.id, presentation.finalType, finalMetadata);
+        } catch (err) {
+            console.error('❌ Kiosko: error al guardar marcaje en DB, encolado localmente:', err);
+            enqueueAttendancePunch({ employeeId: employee.id, type: presentation.finalType, metadata: finalMetadata });
+            queuedOffline = true;
+        }
 
         const skipWarning = extendedMetadata.pinOmitido
             ? 'Esta acción no fue autorizada. Se notificará a Talento Humano.'
@@ -264,6 +288,11 @@ export function useTimeClockEngine(props = {}) {
             warning: skipWarning,
             shiftName: presentation.shiftName
         });
+
+        if (queuedOffline) {
+            normalizedFeedback.subtext = [normalizedFeedback.subtext, 'Sin conexión: marcaje guardado, se sincronizará solo.']
+                .filter(Boolean).join(' — ');
+        }
 
         setFeedback(normalizedFeedback);
         setAuthPrompt(null);
@@ -664,7 +693,10 @@ const submitEarlyExit = useCallback((e) => {
 
         setIsProcessing(true);
 
-        const kioskConfig = await kiosk.verifyDevice();
+        // 7B.8: verifyDevice ahora distingue revocación real de error de red —
+        // solo bloquea acá cuando config viene null (sin verificación reciente
+        // que confiar dentro de la ventana de gracia).
+        const { config: kioskConfig, networkError } = await kiosk.verifyDevice();
         if (!kioskConfig) {
             setFeedback({
                 status: 'error',
@@ -679,6 +711,7 @@ const submitEarlyExit = useCallback((e) => {
         }
 
         kioskConfig.inputMethod = inputMethod;
+        kioskConfig.offline = networkError;
 
         if (authPrompt) {
             const empRole = String(authPrompt.employee?.role || '').toUpperCase();

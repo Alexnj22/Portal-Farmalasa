@@ -3,6 +3,9 @@ import { useStaffStore as useStaff } from '../store/staffStore';
 
 const KIOSK_LS_KEY = 'kiosk_config';
 const EMPTY_BRANCHES = [];
+// 7B.8: ventana de gracia — si la última verificación exitosa fue hace menos
+// de esto, un error de RED (no una revocación real) no bloquea el kiosco.
+const GRACE_MS = 15 * 60 * 1000;
 
 // 🚨 Sacamos esta función fuera del hook para usarla en el estado inicial
 // y evitar el "parpadeo" de la UI al recargar la página.
@@ -21,6 +24,7 @@ const readLocalConfigSafe = () => {
       deviceId: parsed.deviceId ? String(parsed.deviceId) : null,
       deviceToken: parsed.deviceToken ? String(parsed.deviceToken) : null,
       deviceName: parsed.deviceName || parsed.device_name || null,
+      lastVerifiedAt: parsed.lastVerifiedAt || null,
     };
   } catch {
     return null;
@@ -75,41 +79,66 @@ export default function useKioskDevice() {
   // -----------------------------
   // API pública
   // -----------------------------
+  // 7B.8: devuelve { config, networkError } en vez de solo config — un error
+  // de red (RPC no pudo ejecutarse) ya NO se trata igual que una revocación
+  // real. Dentro de la ventana de gracia, se sigue confiando en la última
+  // config verificada con éxito en vez de bloquear el marcaje.
+  const resolveCachedConfig = useCallback((local) => {
+    const b = branches.find((x) => String(x.id || x.branchId) === String(local.branchId));
+    return { ...local, branchName: b?.name || b?.branchName || local.branchName || null };
+  }, [branches]);
+
   const verifyDevice = useCallback(async () => {
     setLastError(null);
 
     const local = readLocalConfigSafe();
     if (!local || !local.deviceId || !local.deviceToken) {
       revokeLocalConfig();
-      return null;
+      return { config: null, networkError: false };
     }
 
     if (typeof validateKioskToken !== 'function') {
       setLastError('La función de validación no está disponible en el store.');
-      return null;
+      return { config: null, networkError: false };
     }
 
     setIsVerifying(true);
     try {
-      const ok = await validateKioskToken(local.deviceId, local.deviceToken);
-      if (!ok) {
-        revokeLocalConfig();
-        setLastError('Kiosco no autorizado o token revocado.');
-        return null;
+      const result = await validateKioskToken(local.deviceId, local.deviceToken);
+
+      if (result?.networkError) {
+        setLastError('Sin conexión con el servidor de verificación.');
+        const ageMs = local.lastVerifiedAt ? Date.now() - new Date(local.lastVerifiedAt).getTime() : Infinity;
+        if (ageMs <= GRACE_MS) {
+          return { config: resolveCachedConfig(local), networkError: true };
+        }
+        return { config: null, networkError: true };
       }
 
-      // ✅ Autorizado
-      const b = branches.find((x) => String(x.id || x.branchId) === String(local.branchId));
-      const next = { ...local, branchName: b?.name || b?.branchName || local.branchName || null };
+      if (!result?.authorized) {
+        revokeLocalConfig();
+        setLastError('Kiosco no autorizado o token revocado.');
+        return { config: null, networkError: false };
+      }
+
+      // ✅ Autorizado — marca el momento de esta verificación real para la
+      // ventana de gracia de la próxima vez.
+      const next = { ...resolveCachedConfig(local), lastVerifiedAt: new Date().toISOString() };
       writeLocalConfig(next);
-      return next;
+      return { config: next, networkError: false };
     } catch (e) {
+      // No debería pasar (validateKioskToken captura sus propios errores),
+      // pero por seguridad se trata igual que un error de red.
       setLastError(e?.message || 'Error verificando kiosco.');
-      return null;
+      const ageMs = local.lastVerifiedAt ? Date.now() - new Date(local.lastVerifiedAt).getTime() : Infinity;
+      if (ageMs <= GRACE_MS) {
+        return { config: resolveCachedConfig(local), networkError: true };
+      }
+      return { config: null, networkError: true };
     } finally {
       setIsVerifying(false);
     }
-  }, [branches, revokeLocalConfig, validateKioskToken, writeLocalConfig]);
+  }, [resolveCachedConfig, revokeLocalConfig, validateKioskToken, writeLocalConfig]);
 
   const saveConfig = useCallback((config) => {
     setLastError(null);

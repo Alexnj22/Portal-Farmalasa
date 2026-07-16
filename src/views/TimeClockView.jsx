@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTimeClockEngine } from '../hooks/useTimeClockEngine';
 
 import ConfirmModal from '../components/common/ConfirmModal';
+import OfflineBanner from '../components/common/OfflineBanner';
 import FeedbackOverlay from '../components/timeclock/FeedbackOverlay';
 import AuthPromptPanel from '../components/timeclock/AuthPromptPanel';
 import EarlyExitForm from '../components/timeclock/EarlyExitForm';
@@ -135,6 +136,10 @@ const TimeClockView = ({ setView }) => {
         {/* Subtle center vignette glow */}
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-blue-950/20 to-transparent" />
       </div>
+
+      {/* 7B.8: el kiosco no daba ningún aviso de conectividad — solo estaba
+          montado en AppLayout.jsx (dashboard normal), nunca acá. */}
+      <OfflineBanner />
 
       {/* ── Modals ────────────────────────────────────────────────── */}
       {isRevokeModalOpen && (

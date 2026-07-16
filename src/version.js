@@ -5,9 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.39';
+export const APP_VERSION = '2.17.40';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.40 — feat(bloque7b.4): feedback sonoro del kiosco tras escaneo.
+// El feedback visual (FeedbackOverlay + colores por caso) ya existía; el
+// único gap real era audio (confirmado: 0 usos de Audio()/beep en todo el
+// repo). Nuevo src/utils/kioskSound.js — tonos generados con Web Audio API
+// (sin .mp3, evita autoplay-policy en WebViews de Capacitor). Enganchado con
+// un solo useEffect sobre feedback.color en useTimeClockEngine.js, reusando
+// la máquina de estados existente (verde/azul/morado→éxito, naranja/rosa→
+// advertencia, rojo→error). Verificado en vivo con Playwright: overlay rojo
+// "KIOSCO NO AUTORIZADO" dispara el tono de error (2 osciladores confirmados).
+//
 // v2.17.39 — fix(bloque7A.7 gap): get_stock_analysis leía columnas viejas de
 // dispatch_rules (solo_cajas/multiplo/blister/multiplo_unidades — siempre
 // vacías desde la migración al modelo nuevo) en vez de dispatch_id_presentacion/

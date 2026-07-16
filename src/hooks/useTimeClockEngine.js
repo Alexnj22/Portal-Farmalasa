@@ -21,6 +21,7 @@ import {
 } from '../utils/timeClock.audit';
 import { buildCustomConfig, buildFinalPunchPresentation } from '../utils/timeClock.rules';
 import { getHourlyCode, getSuPinSuffix, toLocalISO } from '../utils/helpers';
+import { playFeedbackTone } from '../utils/kioskSound';
 import useKioskDevice from './useKioskDevice';
 import { XCircle, ShieldAlert } from 'lucide-react';
 import { insertApprovalRequestSilent } from '../data/requests';
@@ -78,6 +79,13 @@ export function useTimeClockEngine(props = {}) {
     const closeTimerRef = useRef(null);
 
     const kiosk = useKioskDevice();
+
+    // 7B.4: feedback sonoro — el visual (FeedbackOverlay/color) ya existía,
+    // solo faltaba el tono. Reusa la máquina de estados de `feedback`, no
+    // agrega un sistema paralelo (LiquidToast queda fuera, es solo para config).
+    useEffect(() => {
+        if (feedback?.color) playFeedbackTone(feedback.color);
+    }, [feedback]);
 
     useEffect(() => {
         const clockInterval = setInterval(() => {

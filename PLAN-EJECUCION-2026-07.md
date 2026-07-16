@@ -631,16 +631,29 @@ varias sesiones, no todo de una vez.
 | 7A.7 (gap) | `get_stock_analysis` leía columnas viejas de `dispatch_rules` (siempre vacías) en vez del modelo nuevo | ✅ **Aplicado y verificado en prod 2026-07-16 (v2.17.39, con tu OK explícito).** RPC reescrita: nuevo CTE `dispatch_pres_factor` (mismo patrón que ya usa correctamente `get_pedido_preview` — `JOIN product_precios` vía `dispatch_id_presentacion` × `dispatch_multiplo`), reemplaza `dispatch_solo_cajas`/`dispatch_blister`/`dispatch_multiplo_unidades` (0 datos reales en las 845 filas) por `dispatch_pres_factor`/`dispatch_tipo` en el contrato de salida; `dispatch_multiplo` se mantiene con el mismo nombre pero ahora lee la columna real. Verificado antes de tocar prod: 845/845 filas con `dispatch_id_presentacion` tienen match en `product_precios` (0 huérfanos), valores de negocio coherentes (ej. "ALCOHOL 90 X 750ML" → múltiplo 5). `TabMinMax.jsx` actualizado en el mismo commit (`hasRule`/`applyRule`/`ruleNote` ahora derivan de los 3 campos nuevos, ya no reconstruyen `boxFactor`/`blisterFactor` desde `pres`). Verificado en vivo con Playwright contra `vite preview` con datos reales de prod: "GLUCERNA LIQUIDO FRESA X 237ML" (Bote ×2) redondea 3→4 correctamente; "ENSURE LIQUIDO VAINILLA X 220ML" (Bote ×2) 22·32 sin cambio; "PEDIASURE LIQUIDO FRESA X 220ML" (Unidad ×2) 2·4. Build+lint limpios. **7A cerrado del todo** (solo queda 7A.4, decisión de producto pendiente sobre Saly) |
 
 ### 7B — Features nuevas (fundamentadas en la auditoría), por valor/esfuerzo
-| # | Feature | Esfuerzo | Valor |
-|---|---|---|---|
-| 7B.1 | Alertas push de fallo de sync (extender patrón DTE a products/minmax/purchases/backup) | Bajo (3-5d) | Alto — cierra el gap de observabilidad *pull* |
-| 7B.2 | Tracker de corto vence (reglas de Bodega ya documentadas) | Medio (2-3sem) | Alto — reduce mermas |
-| 7B.3 | Dashboard de salud de syncs (historial por sucursal) | Medio (1-2sem) | Medio-alto |
-| 7B.4 | Kiosk: feedback visual/sonoro tras escaneo | Bajo (1-2d) | Medio |
-| 7B.5 | Export de Ventas Perdidas | Bajo-medio (3-5d) | Medio |
-| 7B.6 | Historial de precios en catálogo | Medio (1sem) | Medio |
-| 7B.7 | Vista de "objetos huérfanos" para Sistema | Medio (1-2sem) | Medio — mantenimiento preventivo |
-| 7B.8 | Modo offline del kiosco | Alto (3-4sem) | Alto para sucursales con mala conexión — evaluar prioridad |
+
+**Plan de implementación completo** (orden, alcance exacto, decisiones técnicas) diseñado
+2026-07-16 tras investigación real de arquitectura (3 agentes Explore + verificación directa
+contra prod vía `execute_sql`) — ver plan file de esa sesión para el detalle completo por
+feature. Orden: Fase 0 (infra común) → 7B.1 → 7B.4/7B.5 (comodines) → 7B.3 → 7B.7 → 7B.6 →
+7B.2 → 7B.8.
+
+- **Fase 0 (prerrequisito 7B.1/7B.3) — ✅ Aplicado 2026-07-16.** `products_sync_log`/
+  `minmax_sync_log`/`backup_sync_log` (products/minmax/backup no tenían NINGÚN log de fallos —
+  solo `console.error`/error en response HTTP) + vista `v_sync_health` (UNION ALL sobre las 6
+  tablas de log, tipos normalizados). Probado primero en staging. `sync-products`,
+  `auto-calculate-minmax`, `backup-critical-tables` ahora loguean cada corrida. **Hallazgo de
+  paso**: `sync-erp-minmax` es código muerto (tabla `erp_minmax` eliminada en v2.2.209, sin
+  cron activo) — se editó por error y se revirtió antes de redesplegar; candidato real para
+  7B.7. Verificado en vivo: `sync-products` corrió (natural + manual) y logueó 2 filas reales.
+| 7B.1 | Alertas push de fallo de sync (extender patrón DTE a products/minmax/purchases/backup) | Bajo (3-5d) | Alto — cierra el gap de observabilidad *pull* | ✅ **Aplicado 2026-07-16.** Edge function `check-sync-health-alerts` (calco de `check-sales-alerts`): stale o fallo real en products/minmax/purchases/backup (dte/inventory quedan fuera, ya tienen su propio monitoreo). Idempotente vía `sync_alert_log` — solo manda push si la fila fue realmente nueva (mejora sobre el patrón original, que no verificaba esto). Nuevo rol de sistema "Sistema — Alertas Técnicas" (id 34, scope GLOBAL, sin headcount, NO es cargo de farmacia) asignado como `secondary_role_id` de Edwin Nuñez (sin tocar su rol primario) — nota importante: `secondary_role_id` NO otorga permisos vía RLS (`auth_employee_role_id()` solo lee el rol primario), solo se usó para decidir destinatario del push. Cron cada 20min en horario de negocio. Verificado en vivo: 2 alertas reales enviadas (minmax/backup "nunca ha corrido", cierto en ese momento) |
+| 7B.4 | Kiosk: feedback visual/sonoro tras escaneo | Bajo (1-2d) | Medio | ✅ **Aplicado 2026-07-16 (v2.17.40).** Visual ya existía completo (`FeedbackOverlay`); el gap real era 100% audio (0 usos de `Audio()` en todo el repo). `src/utils/kioskSound.js` nuevo (tonos Web Audio API, sin `.mp3`) enganchado con 1 `useEffect` sobre `feedback.color` en `useTimeClockEngine.js` — reusa la máquina de estados existente. Verificado en vivo con Playwright: overlay rojo "KIOSCO NO AUTORIZADO" dispara el tono de error (2 osciladores confirmados vía spy de `AudioContext`) |
+| 7B.5 | Export de Ventas Perdidas | Bajo-medio (3-5d) | Medio | Pendiente |
+| 7B.3 | Dashboard de salud de syncs (historial por sucursal) | Medio (1-2sem) | Medio-alto | Pendiente (depende de Fase 0 + 7B.1, ya cerradas) |
+| 7B.7 | Vista de "objetos huérfanos" para Sistema | Medio (1-2sem) | Medio — mantenimiento preventivo | Pendiente |
+| 7B.6 | Historial de precios en catálogo | Medio (1sem) | Medio | Pendiente |
+| 7B.2 | Tracker de corto vence (reglas de Bodega ya documentadas) | Medio (2-3sem) | Alto — reduce mermas | Pendiente — bloqueado por decisión de negocio: cómo resolver "viñeta del proveedor" cuando un laboratorio tiene varios proveedores (caso real, no teórico: labs con 2-5 proveedores registrados hoy) |
+| 7B.8 | Modo offline del kiosco | Alto (3-4sem) | Alto para sucursales con mala conexión | Pendiente — plan ya fija que debe arrancar arreglando 2 bugs reales encontrados (`verifyDevice` confunde error de red con revocación; `finalizePunch` pinta "éxito" antes de esperar el insert), cachear datos es secundario |
 
 ---
 

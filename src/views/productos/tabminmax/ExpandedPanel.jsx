@@ -15,6 +15,18 @@ import StockBar from './StockBar';
 import AbcXyzBadge from './AbcXyzBadge';
 import { fetchStockParamsHistory, fetchProductCostHistory } from '../../../data/stockParams';
 
+// 7B.2 — regla (g) de Bodega: la cuenta regresiva es sobre la política en
+// meses, NO el mes de vencimiento — el envío llega ~1 mes después de
+// mandarse (regla h: se manda 25-30 del mes, llega primeros 15 días del mes
+// siguiente). Ej.: vence diciembre, política 2 meses → el límite de envío
+// es la última semana de SEPTIEMBRE (no octubre, que sería la resta ingenua).
+function computeSendDeadline(fechaVencimiento, mesesDevolucion) {
+    const d = new Date(fechaVencimiento);
+    d.setMonth(d.getMonth() - (mesesDevolucion + 1));
+    d.setDate(25); // ventana de envío real: 25-30 del mes (regla h)
+    return d;
+}
+
 export default function ExpandedPanel({ row, cycleDays }) {
     const { hasPermission } = useAuth();
     const now = useNowTick();
@@ -30,6 +42,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
     const [branchData,   setBranchData]   = useState(null);
     const [branchReady,  setBranchReady]  = useState(false);
     const [expiryData,   setExpiryData]   = useState([]);
+    const [policyData,   setPolicyData]   = useState(null);
     const [historyData,  setHistoryData]  = useState([]);
     const [purchaseData, setPurchaseData] = useState([]);
     const [saleData,     setSaleData]     = useState([]);
@@ -64,11 +77,15 @@ export default function ExpandedPanel({ row, cycleDays }) {
             canSeeCosts
                 ? supabase.rpc('get_product_last_sales', { p_erp_product_id: row.erp_product_id, p_erp_sucursal_id: row._erp_sucursal_id === 6 ? null : row._erp_sucursal_id })
                 : Promise.resolve({ data: [] }),
-        ]).then(([{ data: eData }, { data: hData }, { data: pData }, { data: sData }]) => {
+            // 7B.2: política de vencimiento/devolución resuelta (laboratorio →
+            // viñeta del proveedor, con ND a nivel de producto como excepción).
+            supabase.rpc('get_product_vencimiento_policy', { p_erp_product_id: row.erp_product_id }),
+        ]).then(([{ data: eData }, { data: hData }, { data: pData }, { data: sData }, { data: polData }]) => {
             setExpiryData(eData || []);
             setHistoryData(hData || []);
             setPurchaseData(pData || []);
             setSaleData(sData || []);
+            setPolicyData(polData?.[0] || null);
             setDetailReady(true);
         });
     }, [row.erp_product_id, row._erp_sucursal_id, canSeeCosts]);
@@ -280,17 +297,48 @@ export default function ExpandedPanel({ row, cycleDays }) {
                     {/* ── Vencimientos próximos (60 días) ── */}
                     {expiryData.length > 0 && (
                         <div className="px-4 py-2.5 flex flex-col gap-2" style={{ borderTop: '1px solid rgba(251,146,60,0.25)', background: 'rgba(255,247,237,0.35)' }}>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-orange-500">Vencimientos próximos (60 días)</span>
-                            <div className="flex flex-col gap-1">
+                            <div className="flex items-center justify-between flex-wrap gap-1.5">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-orange-500">Vencimientos próximos (60 días)</span>
+                                {policyData && (
+                                    <span className="flex items-center gap-1 text-[9px] font-bold text-slate-500">
+                                        {policyData.es_cofarsal && (
+                                            <span title="COFARSAL" className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                                        )}
+                                        {policyData.proveedor_nombre}
+                                        {policyData.es_devolutivo
+                                            ? (policyData.meses_devolucion != null ? ` · ${policyData.meses_devolucion}m devolutivo` : '')
+                                            : ' · ND'}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex flex-col gap-1.5">
                                 {expiryData.map((lot, i) => {
                                     const daysLeft = Math.ceil((new Date(lot.fecha_vencimiento) - now) / 86400000);
                                     const urgent   = daysLeft <= 30;
+                                    const sendDeadline = (policyData?.es_devolutivo && policyData?.meses_devolucion != null)
+                                        ? computeSendDeadline(lot.fecha_vencimiento, policyData.meses_devolucion)
+                                        : null;
+                                    const pastDeadline = sendDeadline ? now > sendDeadline : false;
+                                    const ndReport = policyData && !policyData.es_devolutivo && daysLeft <= 210;
                                     return (
-                                        <div key={i} className="flex items-center gap-3 text-[10px]">
-                                            <span className={`font-black tabular-nums w-8 shrink-0 ${urgent ? 'text-red-600' : 'text-orange-600'}`}>{daysLeft}d</span>
-                                            <span className="text-slate-500 font-mono text-[9px] shrink-0">{lot.lote || '—'}</span>
-                                            <span className="text-slate-600 font-semibold tabular-nums">{Number(lot.cantidad).toLocaleString()} und</span>
-                                            <span className="text-slate-500 text-[9px]">{new Date(lot.fecha_vencimiento).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                                        <div key={i} className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-3 text-[10px]">
+                                                <span className={`font-black tabular-nums w-8 shrink-0 ${urgent ? 'text-red-600' : 'text-orange-600'}`}>{daysLeft}d</span>
+                                                <span className="text-slate-500 font-mono text-[9px] shrink-0">{lot.lote || '—'}</span>
+                                                <span className="text-slate-600 font-semibold tabular-nums">{Number(lot.cantidad).toLocaleString()} und</span>
+                                                <span className="text-slate-500 text-[9px]">{new Date(lot.fecha_vencimiento).toLocaleDateString('es-SV', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                                            </div>
+                                            {sendDeadline && (
+                                                <span className={`text-[9px] pl-11 font-semibold ${pastDeadline ? 'text-red-600' : 'text-slate-500'}`}>
+                                                    {pastDeadline ? 'FUERA DE PLAZO — límite era el ' : 'Enviar a bodega antes del '}
+                                                    {sendDeadline.toLocaleDateString('es-SV', { day: '2-digit', month: 'short' })}
+                                                </span>
+                                            )}
+                                            {ndReport && (
+                                                <span className="text-[9px] pl-11 font-semibold text-amber-600">
+                                                    ND — reportar a jefe inmediato (6-7 meses antes de vencer)
+                                                </span>
+                                            )}
                                         </div>
                                     );
                                 })}

@@ -5,8 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.45';
+export const APP_VERSION = '2.17.46';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.46 — feat(bloque7b.2): tracker de corto vence — resolución
+// automática de proveedor. Decisión del usuario: nueva columna
+// proveedores.vineta cruzada con product_precios.vineta (el precio-viñeta
+// vigente del producto) para desambiguar cuando un laboratorio tiene varios
+// proveedores (caso real, no teórico: labs con 2-5 proveedores). Nuevo RPC
+// get_product_vencimiento_policy(p_erp_product_id) resuelve: match por
+// viñeta → fallback a proveedor único del lab → null si sigue ambiguo.
+// ND a nivel de producto (products.devolutivo=false) manda sobre la
+// política del proveedor, no al revés. TabPoliticaVencimiento.jsx: input
+// "Viñeta" nuevo en el form de proveedor (autosave, mismo patrón que meses).
+// ExpandedPanel.jsx (TabMinMax "Vencimientos próximos"): muestra proveedor
+// resuelto + punto rojo COFARSAL a nivel de producto (regla b) + "Enviar a
+// bodega antes del [fecha]" calculado con la regla (g) real de Bodega —
+// la cuenta regresiva es sobre la política en meses, NO el mes de
+// vencimiento (vence diciembre, política 2 meses → límite es la última
+// semana de SEPTIEMBRE, no octubre, porque el envío tarda ~1 mes en llegar,
+// regla h) — + aviso ND "reportar a jefe 6-7 meses antes" (regla f).
+// Verificado con datos reales de prod en transacciones ROLLBACK (cero
+// escritura permanente): caso proveedor único resuelve correcto; caso
+// ambiguo (lab con 5 proveedores) resuelve correcto por match de viñeta.
+// Reglas (d)/(e) de la spec (descuento a responsable, escalación a jefe de
+// Bodega) quedan fuera de alcance — son un workflow de aprobación/atribución
+// nuevo, no una vista de solo lectura, decisión de producto aparte.
 
 // v2.17.45 — feat(bloque7b.8): modo offline del kiosco, Fases A+B.
 // Fase A (useKioskDevice.js/branchSlice.js): validateKioskToken ahora

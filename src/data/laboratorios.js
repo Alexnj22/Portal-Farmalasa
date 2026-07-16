@@ -9,7 +9,7 @@ export function fetchLaboratoriosBasic() {
 
 export function fetchProveedores() {
     return supabase.from('proveedores')
-        .select('id, laboratorio_id, nombre, devolutivo, meses_devolucion, notas')
+        .select('id, laboratorio_id, nombre, devolutivo, meses_devolucion, notas, vineta')
         .order('nombre');
 }
 

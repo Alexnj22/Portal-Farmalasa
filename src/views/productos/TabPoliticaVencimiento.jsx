@@ -30,9 +30,9 @@ const isCofarsal = (nombre) => /cofarsal/i.test(nombre || '');
 // Devolutivo=true por default — igual que products.devolutivo (TabCatalogo):
 // la mayoría de proveedores SÍ aceptan devolución, ND es la excepción.
 function emptyDraft() {
-    return { nombre: '', devolutivo: true, meses_devolucion: '', notas: '' };
+    return { nombre: '', devolutivo: true, meses_devolucion: '', notas: '', vineta: '' };
 }
-const draftKey = (d) => JSON.stringify([d.nombre, d.devolutivo, d.devolutivo ? d.meses_devolucion : '', d.notas]);
+const draftKey = (d) => JSON.stringify([d.nombre, d.devolutivo, d.devolutivo ? d.meses_devolucion : '', d.notas, d.vineta]);
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -95,6 +95,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
             devolutivo:       draft.devolutivo,
             meses_devolucion: draft.devolutivo ? parseInt(draft.meses_devolucion, 10) : null,
             notas:            draft.notas.trim() || null,
+            vineta:           draft.vineta !== '' ? parseFloat(draft.vineta) : null,
         };
         const { data, error } = await insertProveedor(payload);
         if (error) { useToastStore.getState().showToast('Error', error.message, 'error'); return false; }
@@ -111,6 +112,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
             devolutivo:       draft.devolutivo,
             meses_devolucion: draft.devolutivo ? parseInt(draft.meses_devolucion, 10) : null,
             notas:            draft.notas.trim() || null,
+            vineta:           draft.vineta !== '' ? parseFloat(draft.vineta) : null,
             updated_at:       new Date().toISOString(),
         };
         const { error } = await updateProveedor(proveedor.id, payload);
@@ -430,6 +432,11 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
                 </p>
                 {proveedor.notas && <p className="text-[10px] text-slate-500 truncate mt-0.5">{proveedor.notas}</p>}
             </div>
+            {proveedor.vineta != null && (
+                <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full shrink-0" title="Viñeta">
+                    v{proveedor.vineta}
+                </span>
+            )}
             {proveedor.devolutivo ? (
                 <span className="text-[9px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full shrink-0">
                     Devolutivo{proveedor.meses_devolucion != null ? ` · ${proveedor.meses_devolucion}m` : ''}
@@ -525,6 +532,20 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                         }`}
                     />
                     <span className="text-[9px] font-semibold text-slate-500 whitespace-nowrap">meses</span>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                    <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={draft.vineta}
+                        onChange={e => setF('vineta', e.target.value)}
+                        placeholder="—"
+                        title="Viñeta: identifica a este proveedor específico cuando el laboratorio tiene varios — se cruza con el precio-viñeta vigente del producto para resolver la política automáticamente"
+                        className="w-14 text-[16px] font-semibold px-1.5 py-1.5 rounded-lg border bg-white/90 outline-none focus:ring-2 focus:ring-teal-100 border-slate-200 focus:border-teal-300 text-slate-700 text-center"
+                    />
+                    <span className="text-[9px] font-semibold text-slate-500 whitespace-nowrap">viñeta</span>
                 </div>
 
                 <button

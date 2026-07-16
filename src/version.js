@@ -5,8 +5,20 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.41';
+export const APP_VERSION = '2.17.42';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.42 — feat(bloque7b.3): dashboard de salud de syncs. Nueva vista
+// SyncHealthView.jsx en el menú Sistema (moduleKey "sync_health", registrado
+// en PermissionsView.jsx) — tabs por dominio (Productos/MinMax/Compras/
+// Backup) sobre v_sync_health (Fase 0), polling cada 30s (no Realtime, es un
+// dashboard histórico). src/data/syncHealth.js nuevo. No reemplaza
+// SyncHealthBanner/useSyncMonitor (esos siguen siendo el aviso operativo en
+// vivo de inventario). Verificado en vivo con Playwright (permiso temporal
+// otorgado y revertido en el momento, con OK explícito, ya que ningún
+// empleado real tiene hoy el rol "Sistema — Alertas Técnicas" como primario):
+// menú/rutas/tabs renderizan correctamente, estado vacío correcto para
+// MinMax (dominio sin corridas aún).
 
 // v2.17.41 — feat(bloque7b.5): export CSV en Ventas Perdidas. Nueva utilidad
 // compartida src/utils/csvExport.js (primera extracción del patrón Blob+BOM+

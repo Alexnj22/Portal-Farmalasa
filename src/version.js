@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.32';
+export const APP_VERSION = '2.17.33';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.33 — feat(bloque7A.1): cierre de bodega en Pedidos — backend listo
+// desde 2026-06-21, faltaba el punto de entrada en la UI. Agregado un
+// bloque nuevo en DifSection.jsx (dentro de la tarjeta de pedido, visible
+// cuando todas las diferencias individuales ya fueron confirmadas): bodega
+// escribe una nota opcional y marca "Marcar corregido"
+// (update_pedido_sucursal_lifecycle stage=corregir_bodega), luego sucursal
+// ve la nota y hace "Confirmar corrección recibida"
+// (stage=confirmar_correccion). Backend sin cambios — RPC y columnas de
+// pedido_sucursal_status (corregido_bodega_at/por/nota,
+// confirmado_correccion_at/por) ya existían y ya se seleccionaban en
+// get_pedidos_en_curso. handleCorregirBodega/handleConfirmarCorreccion en
+// TabPedidos.jsx tenían el backend completo pero ningún caller — ahora
+// wireados vía 2 props nuevas de DifSection. Mismo patrón visual/de gating
+// que el resto de DifSection (isBranch decide qué lado ve qué acción, sin
+// chequeo de permiso extra en el cliente — el RPC ya lo hace server-side).
+// Verificado en vivo: /pedidos?tab=pedidos carga sin errores nuevos, el
+// resto del timeline/tarjetas de pedidos reales sigue renderizando
+// exactamente igual (sin regresión); no hay actualmente ningún pedido en
+// el estado "parcial con diferencias ya confirmadas" para ejercitar el
+// botón nuevo en vivo sin escribir a producción sin permiso. Build + lint
+// + 15 tests unitarios verdes.
 
 // v2.17.32 — docs(plan): Bloque 6.B CERRADO — sobre-fetch investigado y
 // cerrado sin cambios de código. employees_safe/employee_events/

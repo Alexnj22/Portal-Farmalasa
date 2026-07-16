@@ -44,12 +44,13 @@ const EVENTO_LABEL = {
 
 const DIF_MAX = 3;
 
-export default function DifSection({ difItems = [], eventos = [], isBranch, busyAction, empMap = new Map(), onResolver, readOnly = false, onNeedItems, itemsLoaded = true }) {
+export default function DifSection({ row, difItems = [], eventos = [], isBranch, busyAction, empMap = new Map(), onResolver, onCorregirBodega, onConfirmarCorreccion, readOnly = false, onNeedItems, itemsLoaded = true }) {
     const [tipoSel,    setTipoSel]    = useState({});
     const [notaSel,    setNotaSel]    = useState({});
     const [rejectOpen, setRejectOpen] = useState({});
     const [notaRec,    setNotaRec]    = useState({});
     const [showAll,    setShowAll]    = useState(false);
+    const [corrNota,   setCorrNota]   = useState('');
 
     useEffect(() => {
         if (!itemsLoaded && onNeedItems) onNeedItems();
@@ -59,6 +60,13 @@ export default function DifSection({ difItems = [], eventos = [], isBranch, busy
     const allConfirmed  = difItems.length > 0 && difItems.every(r => r.resolucion_status === 'confirmada');
     const visibleItems  = showAll ? difItems : difItems.slice(0, DIF_MAX);
     const hiddenCount   = difItems.length - DIF_MAX;
+
+    // Cierre a nivel sucursal (7A.1): backend listo desde 2026-06-21
+    // (pedido_sucursal_status.corregido_bodega_*/confirmado_correccion_*),
+    // solo faltaba este bloque de UI. Aparece tras confirmar cada item
+    // individual — bodega marca la corrección global, sucursal la confirma.
+    const corrBodegaEmp = row?.corregido_bodega_por      ? empMap.get(row.corregido_bodega_por)      : null;
+    const corrConfEmp   = row?.confirmado_correccion_por ? empMap.get(row.confirmado_correccion_por) : null;
 
     return (
         <div className="border-t border-amber-100 bg-gradient-to-b from-amber-50/40 to-white px-4 py-3 space-y-3">
@@ -237,6 +245,64 @@ export default function DifSection({ difItems = [], eventos = [], isBranch, busy
                     </div>
                 );
             })}
+
+            {/* ── Cierre de bodega (7A.1) ── */}
+            {allConfirmed && !readOnly && (
+                <div className="border-t border-amber-100 pt-2.5 space-y-2">
+                    {!row?.confirmado_correccion_at ? (
+                        !row?.corregido_bodega_at ? (
+                            !isBranch ? (
+                                <div className="space-y-2">
+                                    <p className="text-[10px] text-slate-600 font-semibold">Todas las diferencias fueron resueltas — marca la corrección como completa</p>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text" placeholder="Nota (opcional)…"
+                                            value={corrNota}
+                                            onChange={e => setCorrNota(e.target.value)}
+                                            className="flex-1 text-[16px] border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-emerald-400 bg-white placeholder-slate-300"
+                                        />
+                                        <button
+                                            onClick={() => onCorregirBodega?.(corrNota || null)}
+                                            disabled={busyAction === 'corr_bodega'}
+                                            className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 shrink-0 active:scale-[0.97] transition-all"
+                                        >
+                                            {busyAction === 'corr_bodega' ? <Loader2 size={10} className="animate-spin" /> : 'Marcar corregido'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-[10px] text-slate-500 italic">Esperando que bodega marque la corrección…</p>
+                            )
+                        ) : isBranch ? (
+                            <div className="space-y-2">
+                                <div className="flex items-start gap-1.5 text-[10px] bg-emerald-50 rounded-lg px-2.5 py-1.5 border border-emerald-100">
+                                    <CheckCircle2 size={10} className="text-emerald-500 mt-0.5 shrink-0" />
+                                    <div>
+                                        <span className="font-semibold text-emerald-700">Bodega marcó la corrección</span>
+                                        {corrBodegaEmp && <span className="text-emerald-600"> — {corrBodegaEmp.name?.split(' ')[0]}</span>}
+                                        {row.corregido_bodega_nota && <p className="text-emerald-600 italic">{row.corregido_bodega_nota}</p>}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => onConfirmarCorreccion?.()}
+                                    disabled={busyAction === 'confirmar_corr'}
+                                    className="text-[10px] font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 active:scale-[0.97] transition-all"
+                                >
+                                    {busyAction === 'confirmar_corr' ? <Loader2 size={10} className="animate-spin" /> : '✓ Confirmar corrección recibida'}
+                                </button>
+                            </div>
+                        ) : (
+                            <p className="text-[10px] text-slate-500 italic">Esperando confirmación de sucursal…</p>
+                        )
+                    ) : (
+                        <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-emerald-700">
+                            <CheckCircle2 size={11} className="text-emerald-500 shrink-0" />
+                            <strong>Corrección confirmada</strong>
+                            {corrConfEmp && <span className="text-emerald-600">— {corrConfEmp.name?.split(' ')[0]}</span>}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* ── Actividad ── */}
             {eventos.length > 0 && (

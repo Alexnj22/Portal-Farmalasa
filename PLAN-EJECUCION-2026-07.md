@@ -621,7 +621,7 @@ varias sesiones, no todo de una vez.
 ### 7A — Cerrar features huérfanas (backend listo, sin UI o con bug)
 | # | Ítem | Estado |
 |---|---|---|
-| 7A.1 | Corrección de bodega en Pedidos: `handleCorregirBodega`/`handleConfirmarCorreccion` sin botón en UI | Backend desde 2026-06-21; decisión de producto: dónde va el botón/modal |
+| 7A.1 | Corrección de bodega en Pedidos: `handleCorregirBodega`/`handleConfirmarCorreccion` sin botón en UI | ✅ Aplicado 2026-07-15 (v2.17.33). Bloque nuevo en `DifSection.jsx`, visible tras confirmar todas las diferencias individuales: bodega marca "Marcar corregido" (con nota opcional) → sucursal "Confirmar corrección recibida". Backend sin cambios (ya estaba completo). Verificado en vivo sin regresión; sin pedido real en ese estado exacto para ejercitar el botón sin escribir a prod sin permiso |
 | 7A.2 | `auto-copy-weekly-roster`: bugs `target_type:'ALL'` + `status='ACTIVE'` (encadenados, corregir JUNTOS) | Impacto acumulado hoy = 0; riesgo hacia adelante (RRHH no vería conflictos de turno) |
 | 7A.3 | `RecepcionModal:439 handleTodoOk` ("marcar todo OK") sin caller — posible botón faltante | Verificar |
 | 7A.4 | **Saly — decisión diferida (2026-07-11).** El usuario pausó la eliminación; a futuro DECIDIR: quitar o mejorar. "Saly" abarca varias superficies: SalyCopilot (horarios, `schedule-tabs/`), borrador de avisos (`AnnouncementsView`), resumen IA de encuestas (`EncuestaView` → única acción `saly-ai` invocada hoy: `analyze-survey-comments`). El chat `SalyChatOverlay` ya fue eliminado antes. NO borrar sin confirmar alcance | Decisión de producto pendiente |

@@ -1067,9 +1067,8 @@ export default function TabPedidos({ searchTerm = '' }) {
         // loadActive() lo llama el caller (onConfirmed) para no duplicar el fetch
     }, [user]);
 
-    // Sin caller hoy — gap conocido de producto (plan 7A.1: backend completo
-    // desde 2026-06-21, falta botón/modal de entrada en la UI). No borrar.
-    // eslint-disable-next-line no-unused-vars
+    // 7A.1: cierre de bodega tras resolver todas las diferencias — llamado
+    // desde DifSection.jsx (bloque "Cierre de bodega").
     const handleCorregirBodega = useCallback(async (pedidoId, sucId, nota) => {
         setBusyAction('corr_bodega');
         try {
@@ -1082,8 +1081,8 @@ export default function TabPedidos({ searchTerm = '' }) {
         } catch (e) { console.error(e); } finally { setBusyAction(null); }
     }, [user, loadActive]);
 
-    // Mismo gap que handleCorregirBodega — ver 7A.1. No borrar.
-    // eslint-disable-next-line no-unused-vars
+    // 7A.1: confirmación de sucursal tras el "Marcar corregido" de bodega —
+    // llamado desde DifSection.jsx (bloque "Cierre de bodega").
     const handleConfirmarCorreccion = useCallback(async (pedidoId, sucId) => {
         setBusyAction('confirmar_corr');
         try {
@@ -1641,6 +1640,12 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                 itemsLoaded={!!items[cardKey]}
                                                 onResolver={(itemId, action, tipo, nota) =>
                                                     handleResolverItem(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId, action, tipo, nota)
+                                                }
+                                                onCorregirBodega={(nota) =>
+                                                    handleCorregirBodega(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, nota)
+                                                }
+                                                onConfirmarCorreccion={() =>
+                                                    handleConfirmarCorreccion(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id)
                                                 }
                                             />
                                         </div>

@@ -649,11 +649,77 @@ feature. Orden: Fase 0 (infra común) → 7B.1 → 7B.4/7B.5 (comodines) → 7B.
 | 7B.1 | Alertas push de fallo de sync (extender patrón DTE a products/minmax/purchases/backup) | Bajo (3-5d) | Alto — cierra el gap de observabilidad *pull* | ✅ **Aplicado 2026-07-16.** Edge function `check-sync-health-alerts` (calco de `check-sales-alerts`): stale o fallo real en products/minmax/purchases/backup (dte/inventory quedan fuera, ya tienen su propio monitoreo). Idempotente vía `sync_alert_log` — solo manda push si la fila fue realmente nueva (mejora sobre el patrón original, que no verificaba esto). Nuevo rol de sistema "Sistema — Alertas Técnicas" (id 34, scope GLOBAL, sin headcount, NO es cargo de farmacia) asignado como `secondary_role_id` de Edwin Nuñez (sin tocar su rol primario) — nota importante: `secondary_role_id` NO otorga permisos vía RLS (`auth_employee_role_id()` solo lee el rol primario), solo se usó para decidir destinatario del push. Cron cada 20min en horario de negocio. Verificado en vivo: 2 alertas reales enviadas (minmax/backup "nunca ha corrido", cierto en ese momento) |
 | 7B.4 | Kiosk: feedback visual/sonoro tras escaneo | Bajo (1-2d) | Medio | ✅ **Aplicado 2026-07-16 (v2.17.40).** Visual ya existía completo (`FeedbackOverlay`); el gap real era 100% audio (0 usos de `Audio()` en todo el repo). `src/utils/kioskSound.js` nuevo (tonos Web Audio API, sin `.mp3`) enganchado con 1 `useEffect` sobre `feedback.color` en `useTimeClockEngine.js` — reusa la máquina de estados existente. Verificado en vivo con Playwright: overlay rojo "KIOSCO NO AUTORIZADO" dispara el tono de error (2 osciladores confirmados vía spy de `AudioContext`) |
 | 7B.5 | Export de Ventas Perdidas | Bajo-medio (3-5d) | Medio | ✅ **Aplicado 2026-07-16 (v2.17.41).** `src/utils/csvExport.js` nuevo (primera extracción del patrón Blob+BOM+`;`+CRLF que usaba ad-hoc `TabMinMax.jsx`) + botón "CSV" en `VentasPperdidasView.jsx`, visible con filas, respeta tab activo, con `appendAuditLog`. Verificado en vivo: descarga real disparada |
-| 7B.3 | Dashboard de salud de syncs (historial por sucursal) | Medio (1-2sem) | Medio-alto | ✅ **Aplicado 2026-07-16 (v2.17.42).** `SyncHealthView.jsx` nueva en menú Sistema (moduleKey `sync_health`, registrado en `PermissionsView.jsx`), tabs por dominio sobre `v_sync_health`, polling 30s. **Nota de proceso**: para verificar en vivo hizo falta un permiso temporal (nadie tiene hoy el rol "Sistema — Alertas Técnicas" como PRIMARIO, `secondary_role_id` no otorga permisos) — se pidió tu OK explícito antes de aplicarlo y se revirtió enseguida. Sigue pendiente decidir cómo un empleado real vería esta vista de forma permanente (asignar el rol como primario a alguien, o extender el modelo de permisos para que `secondary_role_id` sí cuente — cambio de arquitectura mayor, fuera de alcance de 7B.3) |
+| 7B.3 | Dashboard de salud de syncs (historial por sucursal) | Medio (1-2sem) | Medio-alto | ✅ **Aplicado 2026-07-16 (v2.17.42).** `SyncHealthView.jsx` nueva en menú Sistema (moduleKey `sync_health`, registrado en `PermissionsView.jsx`), tabs por dominio sobre `v_sync_health`, polling 30s. Acceso permanente resuelto: `role_permissions` de `Supervisor/a de Ventas` (role_id=13, rol primario real de Edwin Nuñez) ahora tiene `sync_health.can_view=true` — decisión del usuario tras discutir el gap de `secondary_role_id` (ver Bloque 8 más abajo, deuda de arquitectura separada) |
 | 7B.7 | Vista de "objetos huérfanos" para Sistema | Medio (1-2sem) | Medio — mantenimiento preventivo | Pendiente |
 | 7B.6 | Historial de precios en catálogo | Medio (1sem) | Medio | Pendiente |
 | 7B.2 | Tracker de corto vence (reglas de Bodega ya documentadas) | Medio (2-3sem) | Alto — reduce mermas | Pendiente — bloqueado por decisión de negocio: cómo resolver "viñeta del proveedor" cuando un laboratorio tiene varios proveedores (caso real, no teórico: labs con 2-5 proveedores registrados hoy) |
 | 7B.8 | Modo offline del kiosco | Alto (3-4sem) | Alto para sucursales con mala conexión | Pendiente — plan ya fija que debe arrancar arreglando 2 bugs reales encontrados (`verifyDevice` confunde error de red con revocación; `finalizePunch` pinta "éxito" antes de esperar el insert), cachear datos es secundario |
+
+---
+
+## BLOQUE 8 — Deuda de arquitectura: cargo secundario debe sumar permisos (post-Bloque 7B)
+
+**Origen (2026-07-16, durante 7B.3):** al construir el dashboard de Salud de Syncs se
+descubrió que `employees.secondary_role_id` ("Cargo Secundario", campo real y usado en
+`EmployeeFormModal.jsx`/`RolesView.jsx`) es **puramente cosmético hoy** — no otorga ningún
+permiso. Confirmado leyendo las funciones reales:
+- `auth_employee_role_id()` (SQL) solo devuelve `employees.role_id` (el primario).
+- `auth_has_module_permission()`, `auth_can_edit_any()` y `auth_module_scope()` — las 3
+  funciones que gatean las ~35 tablas con RLS granular del proyecto — consultan
+  `role_permissions` filtrando únicamente por ese `role_id` primario.
+- Frontend: `AuthContext.jsx` (`hasPermission`, `rolePerms`) hace exactamente lo mismo —
+  fetch y suscripción Realtime (`filter: role_id=eq.${roleId}`) solo del rol primario.
+
+**Decisión del usuario:** el cargo secundario SÍ debería sumar permisos — modelo de
+**unión**: para cada `module_key`/acción (`can_view`/`can_edit`/`can_approve`), el permiso
+efectivo es `true` si el rol primario **O** el secundario lo tienen en `true`. Ej.: si el
+primario tiene el módulo activado pero sin cierta sección, y el secundario sí la tiene,
+el empleado debe verla — el secundario "rellena" lo que le falta al primario, no lo
+reemplaza. Acordado explícitamente: implementar **después de terminar todo el Bloque 7B**,
+no mezclado con esas features.
+
+**Alcance real del cambio (no es chico — toca el mecanismo de permisos de todo el proyecto):**
+
+1. **Backend (Postgres, SECURITY DEFINER, mismo patrón de `search_path` fijo ya establecido):**
+   - Nuevo helper `auth_employee_secondary_role_id()` (mismo cuerpo que `auth_employee_role_id()`
+     pero leyendo `secondary_role_id`).
+   - Reescribir `auth_has_module_permission(module_key, action)`: `OR` entre el `EXISTS` actual
+     (rol primario) y un segundo `EXISTS` idéntico contra `auth_employee_secondary_role_id()`
+     — cuidado con `NULL` (empleados sin cargo secundario deben comportarse IDÉNTICO a hoy).
+   - Mismo tratamiento para `auth_can_edit_any(modules[])`.
+   - `auth_module_scope(module_key)` necesita **una regla de negocio explícita para el empate**:
+     si el primario da `'BRANCH'` y el secundario da `'ALL'` para el mismo módulo, ¿cuál gana?
+     (probable: el más permisivo, `'ALL'`, gana — pero confirmarlo antes de codear, no asumir).
+   - Buscar TODO lugar que llame `auth_employee_role_id()` directamente en vez de pasar por los
+     3 helpers de arriba (grep en `supabase/migrations/*.sql`) — cualquier policy/función que
+     lo use standalone para lógica de permisos (no solo para leer el id) queda afuera del fix
+     si no se actualiza también.
+
+2. **Frontend (`src/context/AuthContext.jsx`):**
+   - Fetch de `rolePerms` debe traer y mergear (unión por módulo/acción) las filas de
+     `role_permissions` de AMBOS `role_id` (primario + secundario, si existe).
+   - La suscripción Realtime hoy solo escucha `role_id=eq.${roleId}` — agregar una segunda
+     suscripción (o ampliar el filtro) para reaccionar también a cambios en los permisos del
+     rol secundario.
+   - `getScope(moduleKey)` debe aplicar la misma regla de empate que el backend (consistencia
+     — que el cliente no muestre/oculte distinto de lo que el servidor realmente permite).
+
+3. **Testing obligatorio antes de prod (alto riesgo — es el mecanismo de seguridad de ~35 tablas):**
+   - Regresión: empleados SIN `secondary_role_id` deben comportarse exactamente igual que hoy
+     (ningún cambio de acceso).
+   - Positivo: empleado con secundario que tiene un permiso que el primario no tiene → ahora sí
+     lo ve/edita.
+   - Negativo: confirmar que la unión no crea escalamiento de privilegio no deseado en
+     `can_edit`/`can_approve` (acciones de escritura, más sensibles que `can_view`).
+   - Igual rigor que 0B.7: tests dentro de transacciones con `ROLLBACK`, cero escritura
+     permanente durante la verificación.
+   - **Probar primero en staging** (`ewcmerxqjvludtgskuin`) — no es tabla caliente, pero SÍ es
+     el corazón de la seguridad de acceso del proyecto entero, amerita el mismo cuidado.
+
+**Precedente ya resuelto ad-hoc, a revisar cuando se haga esto:** el push de `check-sync-health-alerts`
+(7B.1) ya construyó su propia unión manual (`role_id.eq.X,secondary_role_id.eq.X` en la query de
+destinatarios) porque el mecanismo general no existía — una vez implementado este bloque, evaluar
+si conviene simplificar ese código para depender del mecanismo genérico en vez de su propio OR.
 
 ---
 

@@ -863,6 +863,68 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true }) {
     );
 }
 
+// 7B.6 — historial de precios vigentes (SCD2, distinto del changelog
+// campo-a-campo de arriba). product_precios_history acumula una fila por
+// corrida del sync aunque el precio no cambie (write-churn preexistente,
+// fuera de alcance del changelog) — se colapsan acá los snapshots
+// consecutivos idénticos por presentación, solo se muestran cambios reales.
+function PriceHistorySection({ history, allowedPriceFields }) {
+    const [showAll, setShowAll] = useState(false);
+
+    const deduped = useMemo(() => {
+        const out = [];
+        const lastByPres = {};
+        for (const r of (history || [])) {
+            const key = r.id_presentacion;
+            const snap = JSON.stringify([r.vineta, r.descuento_1, r.vip, r.clinica, r.mayoreo, r.premium, r.precio_7]);
+            if (lastByPres[key] !== snap) { out.push(r); lastByPres[key] = snap; }
+        }
+        return out.sort((a, b) => new Date(b.valid_from) - new Date(a.valid_from));
+    }, [history]);
+
+    if (deduped.length === 0)
+        return <p className="text-[11px] text-slate-500 italic">Sin historial de precios registrado.</p>;
+
+    const fmtDate = d => d ? new Date(d).toLocaleDateString('es-SV', { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
+    const visible = showAll ? deduped : deduped.slice(0, 8);
+
+    return (
+        <div className="space-y-3">
+            <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+                <table className="min-w-full text-sm">
+                    <thead>
+                        <tr className="bg-slate-50/80 border-b border-slate-100">
+                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-slate-600">Fecha</th>
+                            <th className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-left text-slate-600">Presentación</th>
+                            {allowedPriceFields.map(f => (
+                                <th key={f.key} className="px-3 py-2 text-[9px] font-black uppercase tracking-wider text-right text-slate-600">{f.label}</th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                        {visible.map((row, i) => (
+                            <tr key={row.id_presentacion + '-' + row.valid_from + '-' + i} className="hover:bg-slate-50/40 transition-colors">
+                                <td className="px-3 py-2 text-[11px] text-slate-600 whitespace-nowrap">{fmtDate(row.valid_from)}</td>
+                                <td className="px-3 py-2 text-[11px] text-slate-700">{row.presentaciones?.tipo || '—'}</td>
+                                {allowedPriceFields.map(f => (
+                                    <td key={f.key} className="px-3 py-2 text-[12px] font-semibold text-slate-700 text-right tabular-nums">{fmtP(row[f.key])}</td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            {deduped.length > 8 && (
+                <button
+                    onClick={() => setShowAll(v => !v)}
+                    className="text-[10px] font-bold text-slate-500 hover:text-slate-600 transition-colors">
+                    {showAll ? 'Ver menos' : `Ver ${deduped.length - 8} cambio${deduped.length - 8 !== 1 ? 's' : ''} anterior${deduped.length - 8 !== 1 ? 'es' : ''}`}
+                </button>
+            )}
+        </div>
+    );
+}
+
 // ── ExpandedProductRow ────────────────────────────────────────────────────────
 
 function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinciplesUpdated, onCategoryUpdated, onClose, categories, onCategoryCreated }) {
@@ -1314,6 +1376,14 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                             <Package size={9} /> Historial de compras
                         </p>
                         <PurchaseHistorySection purchases={data?.purchases || []} canSeeCosts={canSeeCosts} />
+                    </div>
+
+                    {/* ── Historial de precios ── */}
+                    <div>
+                        <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-1.5`}>
+                            <History size={9} /> Historial de precios
+                        </p>
+                        <PriceHistorySection history={data?.precioHistory || []} allowedPriceFields={allowedPriceFields} />
                     </div>
 
                     {/* ── Cerrar (todo autoguarda: foto, devolutivo, categoría y principios) ── */}
@@ -2145,8 +2215,8 @@ export default function TabCatalogo({
                 const results = await fetchProductDetail(productId, PRICE_SELECT, canSeeCosts);
                 const firstErr = results.find(r => r.error)?.error;
                 if (firstErr) console.error('prefetchRow failed:', firstErr.message);
-                const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }] = results;
-                setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [] } }));
+                const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }, { data: precioHistory }] = results;
+                setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [], precioHistory: precioHistory || [] } }));
             } catch { /* silent */ }
         }, 120);
     }, [expandedCache, canSeeCosts]);
@@ -2164,8 +2234,8 @@ export default function TabCatalogo({
             const results = await fetchProductDetail(productId, PRICE_SELECT, canSeeCosts);
             const firstErr = results.find(r => r.error)?.error;
             if (firstErr) console.error('toggleRow: expand product failed:', firstErr.message);
-            const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }] = results;
-            setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [] } }));
+            const [{ data: precios }, { data: changelog }, { data: prodLog }, { data: principles }, { data: purchases }, { data: precioHistory }] = results;
+            setExpandedCache(c => ({ ...c, [productId]: { precios: precios || [], changelog: changelog || [], prodLog: prodLog || [], principles: principles || [], purchases: purchases || [], precioHistory: precioHistory || [] } }));
         } finally { setLoadingExpandedId(null); }
     }, [expandedId, expandedCache, cancelPrefetch, canSeeCosts]);
 

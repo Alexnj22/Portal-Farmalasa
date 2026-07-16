@@ -145,5 +145,15 @@ export function fetchProductDetail(productId, priceSelect, canSeeCosts) {
         canSeeCosts
             ? supabase.from('purchase_receipt_items').select('cantidad, precio_unitario, purchase_receipts(fecha, proveedor)').eq('erp_product_id', productId).order('receipt_id', { ascending: false }).limit(60)
             : Promise.resolve({ data: [] }),
+        // 7B.6 — serie histórica de precios vigentes (SCD2, distinto del
+        // changelog campo-a-campo de arriba). product_precios_history ya
+        // acumula una fila por corrida del sync aunque el precio no cambie
+        // (write-churn preexistente, fuera de alcance tocar el sync acá) —
+        // el dedupe de snapshots idénticos se hace en la UI, no en la query.
+        supabase.from('product_precios_history')
+            .select('id_presentacion, valid_from, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7, presentaciones(tipo)')
+            .eq('product_id', productId)
+            .order('id_presentacion', { ascending: true })
+            .order('valid_from', { ascending: true }),
     ]);
 }

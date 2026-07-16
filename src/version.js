@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.43';
+export const APP_VERSION = '2.17.44';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.44 — feat(bloque7b.6): historial de precios en catálogo. Nueva
+// sección "Historial de precios" en ExpandedProductRow (TabCatalogo.jsx),
+// junto a "Historial de compras" — lee product_precios_history (modelo
+// SCD2, ya tenía RLS abierta a authenticated, no hizo falta RPC nuevo).
+// fetchProductDetail (data/productos.js) suma una 6ª query en el mismo
+// Promise.all ya existente. Dedupe en la UI de snapshots de precio
+// idénticos consecutivos por presentación (la tabla acumula una fila por
+// corrida del sync aunque el precio no cambie — write-churn preexistente,
+// fuera de alcance tocar el sync acá). No reemplaza "Cambios en el
+// producto" (product_precios_changelog) — son conceptos distintos,
+// coexisten como 2 secciones. Verificado en vivo: producto real con 26
+// filas de historial, dedupe funcionando, consistente con la duplicación
+// "UNIDAD ×2" que ya existe en la tabla de precios vigentes de arriba
+// (2 presentaciones legítimas distintas, mismo tipo genérico).
 
 // v2.17.43 — feat(bloque7b.7): vista de Objetos Huérfanos. Nueva
 // OrphanObjectsView.jsx en menú Sistema (moduleKey "orphan_objects",

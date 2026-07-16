@@ -237,9 +237,17 @@ Deno.serve(async (req) => {
       }
     }
 
+    const syncSuccess = upsertErrors.length === 0;
+    await supabase.from('products_sync_log').insert({
+      success:          syncSuccess,
+      error_msg:        syncSuccess ? null : upsertErrors.join('; ').slice(0, 2000),
+      products_written: productRowsToUpsert.length,
+      product_changes:  realProductChangelogs.length,
+    });
+
     return new Response(
       JSON.stringify({
-        success:          upsertErrors.length === 0,
+        success:          syncSuccess,
         laboratorios:     labRows.length,
         presentaciones:   presMap.size,
         products_total:   productRows.length,
@@ -253,6 +261,17 @@ Deno.serve(async (req) => {
     );
 
   } catch (err: any) {
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      await supabase.from('products_sync_log').insert({
+        success: false,
+        error_msg: String(err.message ?? err).slice(0, 2000),
+      });
+    } catch { /* logging no debe tapar el error original */ }
+
     return new Response(
       JSON.stringify({ error: err.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }

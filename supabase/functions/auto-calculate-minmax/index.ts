@@ -46,6 +46,12 @@ serve(async (req) => {
     if (error) {
       results.push({ id, name: ERP_NAMES[id], error: error.message });
       console.error(`[auto-calculate-minmax] Error en ${ERP_NAMES[id]}:`, error.message);
+      await supabase.from("minmax_sync_log").insert({
+        source: "auto-calculate-minmax",
+        erp_sucursal_id: id,
+        success: false,
+        error_msg: error.message.slice(0, 2000),
+      });
     } else {
       const r = (data as { rows?: number; auto_applied?: number; drafted?: number }) ?? {};
       const rows = r.rows ?? 0;
@@ -55,6 +61,12 @@ serve(async (req) => {
       totalAutoApplied += autoApplied;
       totalDrafted += drafted;
       results.push({ id, name: ERP_NAMES[id], rows, auto_applied: autoApplied, drafted });
+      await supabase.from("minmax_sync_log").insert({
+        source: "auto-calculate-minmax",
+        erp_sucursal_id: id,
+        success: true,
+        items_count: rows,
+      });
     }
   }
 

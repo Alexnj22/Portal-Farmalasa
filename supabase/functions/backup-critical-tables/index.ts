@@ -75,8 +75,20 @@ Deno.serve(async (req: Request) => {
       }
     } catch { /* la retención no bloquea el backup */ }
 
+    const backupOk = failCount === 0;
+    const failedTables = Object.entries(results)
+      .filter(([, v]) => (v as any)?.error)
+      .map(([k]) => k);
+    await admin.from("backup_sync_log").insert({
+      success: backupOk,
+      error_msg: backupOk ? null : failedTables.join(", ").slice(0, 2000),
+      tables_ok: okCount,
+      tables_failed: failCount,
+      total_kb: Math.round(totalBytes / 1024),
+    });
+
     return json({
-      ok: failCount === 0,
+      ok: backupOk,
       date: today,
       tables_ok: okCount,
       tables_failed: failCount,
@@ -84,6 +96,12 @@ Deno.serve(async (req: Request) => {
       results,
     });
   } catch (e) {
+    try {
+      await admin.from("backup_sync_log").insert({
+        success: false,
+        error_msg: String((e as Error)?.message ?? e).slice(0, 2000),
+      });
+    } catch { /* logging no debe tapar el error original */ }
     return json({ ok: false, error: "UNHANDLED", details: String((e as Error)?.message ?? e) });
   }
 });

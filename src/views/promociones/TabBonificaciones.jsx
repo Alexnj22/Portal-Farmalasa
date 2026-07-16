@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Gift, Loader2, DollarSign, Check, User, Wallet } from 'lucide-react';
-import { supabase }      from '../../supabaseClient';
 import { useAuth }       from '../../context/AuthContext';
 import { useToastStore } from '../../store/toastStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import {
+    fetchPromotionBonifications, insertPromotionPayment, updatePromotionBonificationPaid,
+} from '../../data/promotions';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -43,7 +45,7 @@ function PayModal({ bonif, onClose, onPaid }) {
         if (amt > pending + 0.001) return showToast('Error', 'El monto supera el pendiente', 'error');
 
         setSaving(true);
-        const { error: payErr } = await supabase.from('promotion_payments').insert({
+        const { error: payErr } = await insertPromotionPayment({
             promotion_id: bonif.promotion_products?.promotion_id,
             employee_id:  bonif.employee_id,
             amount:       amt,
@@ -53,9 +55,7 @@ function PayModal({ bonif, onClose, onPaid }) {
         if (payErr) { setSaving(false); return showToast('Error', payErr.message, 'error'); }
 
         // Update bonification record
-        const { error: updErr } = await supabase.from('promotion_bonifications')
-            .update({ amount_paid: bonif.amount_paid + amt })
-            .eq('id', bonif.id);
+        const { error: updErr } = await updatePromotionBonificationPaid(bonif.id, bonif.amount_paid + amt);
         setSaving(false);
         if (updErr) return showToast('Error', updErr.message, 'error');
         showToast('Pago registrado', `${fmt$(amt)} a ${bonif.employees?.name || 'empleado'}`, 'success');
@@ -119,20 +119,7 @@ export default function TabBonificaciones({ searchTerm, canEdit }) {
 
     const load = useCallback(async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('promotion_bonifications')
-            .select(`
-                id, role, units_credited, amount_earned, amount_paid, updated_at,
-                employee_id,
-                employees(id, name, photo_url),
-                promotion_products(
-                    id, promotion_id, factor_descripcion,
-                    products(nombre),
-                    promotions(id, nombre, estado)
-                )
-            `)
-            .gt('amount_earned', 0)
-            .order('amount_earned', { ascending: false });
+        const { data, error } = await fetchPromotionBonifications();
 
         if (error) showToast('Error', error.message, 'error');
         setBonifs(data || []);

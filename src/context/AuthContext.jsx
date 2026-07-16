@@ -3,6 +3,8 @@ import { supabase } from "../supabaseClient";
 import { CACHE_KEYS } from "../store/utils";
 import { useStaffStore } from "../store/staffStore";
 import { getSignedFileUrl } from "../utils/storageFiles";
+import { fetchRolePermissionsForRole, fetchRolePriceLevelAndSU } from "../data/permissions";
+import { fetchEmployeeSafeByUsername } from "../data/auth";
 
 const AuthContext = createContext(null);
 
@@ -109,10 +111,10 @@ export const AuthProvider = ({ children }) => {
 
     const roleId = u.roleId ?? (Number.isInteger(u.role) ? u.role : null);
     const permsQuery = roleId
-      ? supabase.from('role_permissions').select('module_key, can_view, can_edit, can_approve, scope').eq('role_id', roleId)
+      ? fetchRolePermissionsForRole(roleId)
       : Promise.resolve({ data: [] });
     const priceLevelQuery = roleId
-      ? supabase.from('roles').select('max_price_level, is_su').eq('id', roleId).single()
+      ? fetchRolePriceLevelAndSU(roleId)
       : Promise.resolve({ data: null });
 
     Promise.all([permsQuery, priceLevelQuery])
@@ -495,7 +497,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       const { data: emp, error: empError } = await withNetworkRetry(() =>
-        supabase.from('employees_safe').select('*').eq('username', cleanUsername).single()
+        fetchEmployeeSafeByUsername(cleanUsername)
       );
 
       if (empError && empError.code !== 'PGRST116') {

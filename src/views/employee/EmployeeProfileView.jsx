@@ -8,8 +8,10 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore } from '../../store/staffStore';
-import { supabase } from '../../supabaseClient';
 import { EVENT_TYPES } from '../../data/constants';
+import {
+    fetchOwnEventsFull, fetchOwnPendingRequestsCount, fetchOwnVacationPlansActive,
+} from '../../data/employeeSelfService';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import { formatTime12h } from '../../utils/helpers';
@@ -84,8 +86,8 @@ const EmployeeProfileView = ({ openModal }) => {
         const load = async () => {
             setEvLoading(true);
             const [{ data: evData }, { count }] = await Promise.all([
-                supabase.from('employee_events').select('id, type, date, note, metadata').eq('employee_id', user.id).order('date', { ascending: false }),
-                supabase.from('approval_requests').select('id', { count: 'exact', head: true }).eq('employee_id', user.id).eq('status', 'PENDING'),
+                fetchOwnEventsFull(user.id),
+                fetchOwnPendingRequestsCount(user.id),
             ]);
             setEvents(evData || []);
             setActiveCount(count || 0);
@@ -96,7 +98,7 @@ const EmployeeProfileView = ({ openModal }) => {
 
     useEffect(() => {
         if (!user?.id) return;
-        supabase.from('vacation_plans').select('id, year, start_date, end_date, days, status').eq('employee_id', user.id).neq('status', 'CANCELLED').order('start_date', { ascending: false }).then(({ data }) => setMyVacPlans(data || []));
+        fetchOwnVacationPlansActive(user.id).then(({ data }) => setMyVacPlans(data || []));
     }, [user?.id]);
 
 

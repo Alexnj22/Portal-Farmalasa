@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
+import { fetchMinMaxIgnored, upsertMinMaxIgnored, deleteMinMaxIgnored } from '../../data/stockParams';
 import {
     Loader2, Building2, Package, AlertTriangle, X, DollarSign,
     ChevronLeft, ChevronRight, AlertCircle, Truck, Archive,
@@ -467,10 +468,7 @@ export default function TabGestionStock({ searchTerm = '' }) {
         setFilterMode(mode === 'sin_gestion' ? 'agregar' : 'todos');
 
         if (selectedErp !== null) {
-            supabase
-                .from('minmax_ignored')
-                .select('erp_product_id')
-                .eq('erp_sucursal_id', selectedErp)
+            fetchMinMaxIgnored(selectedErp)
                 .then(({ data }) => {
                     if (data) setIgnoredSet(new Set(data.map(r => r.erp_product_id)));
                 });
@@ -482,18 +480,12 @@ export default function TabGestionStock({ searchTerm = '' }) {
 
     const handleIgnore = useCallback(async (erp_product_id) => {
         setIgnoredSet(prev => new Set([...prev, erp_product_id]));
-        await supabase.from('minmax_ignored').upsert(
-            { erp_sucursal_id: selectedErp, erp_product_id },
-            { onConflict: 'erp_sucursal_id,erp_product_id' }
-        );
+        await upsertMinMaxIgnored(selectedErp, erp_product_id);
     }, [selectedErp]);
 
     const handleRestore = useCallback(async (erp_product_id) => {
         setIgnoredSet(prev => { const s = new Set(prev); s.delete(erp_product_id); return s; });
-        await supabase.from('minmax_ignored')
-            .delete()
-            .eq('erp_sucursal_id', selectedErp)
-            .eq('erp_product_id', erp_product_id);
+        await deleteMinMaxIgnored(selectedErp, erp_product_id);
     }, [selectedErp]);
 
     useEffect(() => { setPage(1); }, [filterMode, searchTerm, pageSize]);

@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';
 import { useToastStore } from '../../store/toastStore';
+import { fetchLaboratoriosBasic, fetchLabLocations, upsertLabLocation } from '../../data/laboratorios';
 import {
     FlaskConical, MapPin, Check, X, Pencil, Loader2,
     ChevronDown, Building2, Package, ShoppingBag,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const LOC_FIELDS = 'lab_id, branch_id, vitrina, estante, peldano, bodega_numero, bodega_peldano';
 
 function emptyLoc() {
     return { vitrina: '', estante: '', peldano: '', bodega_numero: '', bodega_peldano: '' };
@@ -46,8 +44,8 @@ export default function TabLaboratorios({ searchTerm = '' }) {
     const load = useCallback(async () => {
         setLoading(true);
         const [{ data: labData }, { data: locData }] = await Promise.all([
-            supabase.from('laboratorios').select('id, nombre').order('nombre'),
-            supabase.from('lab_locations').select(LOC_FIELDS),
+            fetchLaboratoriosBasic(),
+            fetchLabLocations(),
         ]);
         setLabs(labData || []);
         const map = {};
@@ -78,9 +76,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
             bodega_peldano: fields.bodega_peldano?.trim() || null,
             updated_at:     new Date().toISOString(),
         };
-        const { error } = await supabase
-            .from('lab_locations')
-            .upsert(payload, { onConflict: 'lab_id,branch_id' });
+        const { error } = await upsertLabLocation(payload);
         if (error) { useToastStore.getState().showToast('Error', error.message, 'error'); return false; }
         setLocations(prev => ({
             ...prev,

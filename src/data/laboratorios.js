@@ -40,3 +40,16 @@ export function updateProductsMarkND(labId) {
         .eq('laboratorio_id', labId).eq('devolutivo', true)
         .select('id');
 }
+
+// ── TabLaboratorios.jsx (2 de sus 3 sitios; el tercero reutiliza
+// fetchLaboratoriosBasic ya definida arriba) ─────────────────────────────────
+
+const LAB_LOC_FIELDS = 'lab_id, branch_id, vitrina, estante, peldano, bodega_numero, bodega_peldano';
+
+export function fetchLabLocations() {
+    return supabase.from('lab_locations').select(LAB_LOC_FIELDS);
+}
+
+export function upsertLabLocation(payload) {
+    return supabase.from('lab_locations').upsert(payload, { onConflict: 'lab_id,branch_id' });
+}

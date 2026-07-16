@@ -5,8 +5,35 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.27';
+export const APP_VERSION = '2.17.28';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.28 — refactor(bloque6.A): TabPromos.jsx + TabBonificaciones.jsx +
+// TabSinVenta.jsx + TabLaboratorios.jsx + EmployeeProfileView.jsx +
+// AuthContext.jsx + FormTurnos.jsx — 21 supabase.from() migradas (3×7).
+// data/promotions.js +6fn (fetchPromotionBonifications, insertPromotionPayment,
+// updatePromotionBonificationPaid, fetchPromotionsList, updatePromotionEstado,
+// deletePromotion). data/stockParams.js +3fn (minmax_ignored: fetch/upsert/delete).
+// data/laboratorios.js +2fn (lab_locations) — el tercer sitio de
+// TabLaboratorios.jsx reutiliza fetchLaboratoriosBasic ya existente.
+// data/employeeSelfService.js +3fn para EmployeeProfileView. data/system.js
+// +2fn para FormTurnos (upsertShift/updateShiftFlags). data/permissions.js
+// +2fn (fetchRolePermissionsForRole/fetchRolePriceLevelAndSU) y data/auth.js
+// nuevo (1fn: fetchEmployeeSafeByUsername) para AuthContext.jsx —
+// código de login crítico, preservado exacto (mismo .single(), sin
+// tocar el flujo de reintentos/retry). FormTurnos.jsx resultó
+// inalcanzable desde la UI (mismo patrón que EmployeeScheduleView/
+// RutaEnCursoCard/ShiftExceptionModal de PRs anteriores): el tipo de
+// modal "manageShifts" está definido en UnifiedModal.jsx pero ningún
+// openModal() lo dispara. Verificado en vivo con Playwright (login
+// fresco en 5 sesiones distintas, confirmando que el flujo de auth
+// sigue funcionando): /promociones
+// (real, sin promos activas), /promociones?tab=bonificaciones (real,
+// sin bonificaciones aún), /productos?tab=sinventa (Gestión de Stock
+// carga sin errores), /laboratorios (355 laboratorios reales, 1 con
+// ubicación, 7 sucursales), /profile (Edwin Nuñez, 4 pendientes reales,
+// historial real). FormTurnos.jsx verificado por sustitución 1:1 exacta
+// al no ser alcanzable. Build + lint + 15 tests verdes.
 
 // v2.17.27 — refactor(bloque6.A): RutaMapModal.jsx + RutaEnCursoCard.jsx +
 // VentasPperdidasView.jsx + ShiftExceptionModal.jsx — 16 supabase.from()

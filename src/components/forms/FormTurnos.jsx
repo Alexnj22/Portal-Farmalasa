@@ -8,7 +8,7 @@ import LiquidSelect from '../common/LiquidSelect';
 import { formatTime12h } from '../../utils/helpers';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
-import { supabase } from '../../supabaseClient'; // 🚨 Usaremos esta conexión directa
+import { upsertShift, updateShiftFlags } from '../../data/system';
 
 const FormTurnos = ({ branches }) => {
     // 1. Conexión directa con Supabase para acciones de persistencia
@@ -59,10 +59,7 @@ const FormTurnos = ({ branches }) => {
                 updated_at: new Date().toISOString()
             };
 
-            const { error } = await supabase
-                .from('shifts')
-                .upsert(shiftObject)
-                .select();
+            const { error } = await upsertShift(shiftObject);
 
             if (error) throw error;
 
@@ -89,10 +86,7 @@ const FormTurnos = ({ branches }) => {
         setActionLoading(shift.id);
         try {
             // 🚨 SOFT DELETE: Archivar en lugar de eliminar
-            const { error } = await supabase
-                .from('shifts')
-                .update({ is_archived: true, updated_at: new Date().toISOString() })
-                .eq('id', shift.id);
+            const { error } = await updateShiftFlags(shift.id, { is_archived: true, updated_at: new Date().toISOString() });
 
             if (error) throw error;
 
@@ -116,10 +110,7 @@ const FormTurnos = ({ branches }) => {
         setActionLoading(shift.id);
         try {
             // Restaurar turno
-            const { error } = await supabase
-                .from('shifts')
-                .update({ is_archived: false, updated_at: new Date().toISOString() })
-                .eq('id', shift.id);
+            const { error } = await updateShiftFlags(shift.id, { is_archived: false, updated_at: new Date().toISOString() });
 
             if (error) throw error;
 

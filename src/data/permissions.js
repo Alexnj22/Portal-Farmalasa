@@ -28,3 +28,15 @@ export function updateRoleMaxPriceLevel(roleId, level) {
 export function updateRoleIsSU(roleId, value) {
     return supabase.from('roles').update({ is_su: value }).eq('id', roleId);
 }
+
+// ── AuthContext.jsx (2 de sus 3 sitios — refreshPermissions) ────────────────
+
+export function fetchRolePermissionsForRole(roleId) {
+    return supabase.from('role_permissions')
+        .select('module_key, can_view, can_edit, can_approve, scope')
+        .eq('role_id', roleId);
+}
+
+export function fetchRolePriceLevelAndSU(roleId) {
+    return supabase.from('roles').select('max_price_level, is_su').eq('id', roleId).single();
+}

@@ -42,6 +42,26 @@ export function fetchStockParamsUpdates(erpSucursalId, sinceIso) {
         .order('updated_at', { ascending: true });
 }
 
+// ── TabSinVenta.jsx (3 sitios — productos descartados de las sugerencias) ────
+
+export function fetchMinMaxIgnored(erpSucursalId) {
+    return supabase.from('minmax_ignored').select('erp_product_id').eq('erp_sucursal_id', erpSucursalId);
+}
+
+export function upsertMinMaxIgnored(erpSucursalId, erpProductId) {
+    return supabase.from('minmax_ignored').upsert(
+        { erp_sucursal_id: erpSucursalId, erp_product_id: erpProductId },
+        { onConflict: 'erp_sucursal_id,erp_product_id' }
+    );
+}
+
+export function deleteMinMaxIgnored(erpSucursalId, erpProductId) {
+    return supabase.from('minmax_ignored')
+        .delete()
+        .eq('erp_sucursal_id', erpSucursalId)
+        .eq('erp_product_id', erpProductId);
+}
+
 // ── Config / empleado / historial ────────────────────────────────────────────
 
 export function fetchStockConfig() {

@@ -4,9 +4,9 @@ import {
     Calendar, Building2, Play, Pause, Lock, Trash2,
     FlaskConical, Gift, AlertCircle,
 } from 'lucide-react';
-import { supabase }      from '../../supabaseClient';
 import { useToastStore } from '../../store/toastStore';
 import PromoModal        from './PromoModal';
+import { fetchPromotionsList, updatePromotionEstado, deletePromotion } from '../../data/promotions';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -255,21 +255,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
 
     const load = useCallback(async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('promotions')
-            .select(`
-                id, nombre, estado, fecha_inicio, fecha_fin, end_condition, notas,
-                promotion_branches(branch_id, branches(name)),
-                promotion_products(
-                    id, product_id, factor_descripcion, factor_denominador,
-                    stock_inicial, bono_vendedor, bono_admin_pool, bono_bodega_pool,
-                    presentacion_id, presentaciones(tipo),
-                    products(nombre, foto_url, laboratorio_id, laboratorios(nombre)),
-                    promotion_sales_cache(units_sold)
-                )
-            `)
-            .in('estado', ALL_STATES)
-            .order('created_at', { ascending: false });
+        const { data, error } = await fetchPromotionsList(ALL_STATES);
 
         if (error) showToast('Error cargando promociones', error.message, 'error');
         setPromos(data || []);
@@ -279,9 +265,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
     useEffect(() => { load(); }, [load]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
     const handleStateChange = async (promo, newEstado) => {
-        const { error } = await supabase.from('promotions')
-            .update({ estado: newEstado })
-            .eq('id', promo.id);
+        const { error } = await updatePromotionEstado(promo.id, newEstado);
         if (error) return showToast('Error', error.message, 'error');
         const labels = { active: 'Activada', paused: 'Pausada', closed: 'Movida a historial', draft: 'Borrador' };
         showToast(labels[newEstado] || 'Actualizada', promo.nombre, 'success');
@@ -290,7 +274,7 @@ export default function TabPromos({ searchTerm, canEdit }) {
 
     const handleDelete = async (promo) => {
         if (!window.confirm(`¿Eliminar el borrador "${promo.nombre}"?`)) return;
-        const { error } = await supabase.from('promotions').delete().eq('id', promo.id);
+        const { error } = await deletePromotion(promo.id);
         if (error) return showToast('Error', error.message, 'error');
         showToast('Eliminado', promo.nombre, 'success');
         load();

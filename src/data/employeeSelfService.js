@@ -78,3 +78,27 @@ export function fetchPendingVacationChangeRequest(employeeId) {
         .eq('status', 'PENDING')
         .maybeSingle();
 }
+
+// ── EmployeeProfileView.jsx ──────────────────────────────────────────────────
+
+export function fetchOwnEventsFull(employeeId) {
+    return supabase.from('employee_events')
+        .select('id, type, date, note, metadata')
+        .eq('employee_id', employeeId)
+        .order('date', { ascending: false });
+}
+
+export function fetchOwnPendingRequestsCount(employeeId) {
+    return supabase.from('approval_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('employee_id', employeeId)
+        .eq('status', 'PENDING');
+}
+
+export function fetchOwnVacationPlansActive(employeeId) {
+    return supabase.from('vacation_plans')
+        .select('id, year, start_date, end_date, days, status')
+        .eq('employee_id', employeeId)
+        .neq('status', 'CANCELLED')
+        .order('start_date', { ascending: false });
+}

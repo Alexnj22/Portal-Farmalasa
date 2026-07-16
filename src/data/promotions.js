@@ -32,3 +32,56 @@ export function insertPromotionBranches(rows) {
 export function insertPromotionProducts(rows) {
     return supabase.from('promotion_products').insert(rows);
 }
+
+// ── TabBonificaciones.jsx (3 sitios) ─────────────────────────────────────────
+
+export function fetchPromotionBonifications() {
+    return supabase.from('promotion_bonifications')
+        .select(`
+            id, role, units_credited, amount_earned, amount_paid, updated_at,
+            employee_id,
+            employees(id, name, photo_url),
+            promotion_products(
+                id, promotion_id, factor_descripcion,
+                products(nombre),
+                promotions(id, nombre, estado)
+            )
+        `)
+        .gt('amount_earned', 0)
+        .order('amount_earned', { ascending: false });
+}
+
+export function insertPromotionPayment(payload) {
+    return supabase.from('promotion_payments').insert(payload);
+}
+
+export function updatePromotionBonificationPaid(id, amountPaid) {
+    return supabase.from('promotion_bonifications').update({ amount_paid: amountPaid }).eq('id', id);
+}
+
+// ── TabPromos.jsx (3 sitios) ──────────────────────────────────────────────────
+
+export function fetchPromotionsList(states) {
+    return supabase.from('promotions')
+        .select(`
+            id, nombre, estado, fecha_inicio, fecha_fin, end_condition, notas,
+            promotion_branches(branch_id, branches(name)),
+            promotion_products(
+                id, product_id, factor_descripcion, factor_denominador,
+                stock_inicial, bono_vendedor, bono_admin_pool, bono_bodega_pool,
+                presentacion_id, presentaciones(tipo),
+                products(nombre, foto_url, laboratorio_id, laboratorios(nombre)),
+                promotion_sales_cache(units_sold)
+            )
+        `)
+        .in('estado', states)
+        .order('created_at', { ascending: false });
+}
+
+export function updatePromotionEstado(promotionId, estado) {
+    return supabase.from('promotions').update({ estado }).eq('id', promotionId);
+}
+
+export function deletePromotion(promotionId) {
+    return supabase.from('promotions').delete().eq('id', promotionId);
+}

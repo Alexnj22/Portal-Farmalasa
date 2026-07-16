@@ -99,6 +99,15 @@ export function updateShiftRow(id, patch) {
     return supabase.from('shifts').update(patch).eq('id', id).select().single();
 }
 
+// FormTurnos.jsx (3 sitios — upsert crea/edita, updateShiftFlags archiva/restaura)
+export function upsertShift(shiftObject) {
+    return supabase.from('shifts').upsert(shiftObject).select();
+}
+
+export function updateShiftFlags(id, patch) {
+    return supabase.from('shifts').update(patch).eq('id', id);
+}
+
 export function setShiftActive(id, isActive) {
     return supabase.from('shifts').update({ is_active: isActive }).eq('id', id);
 }

@@ -5,8 +5,18 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.46';
+export const APP_VERSION = '2.17.47';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.47 — chore(TabCatalogo): elimina AuroraExpandedPanel/
+// AuroraFullscreenModal/AuroraView (534 líneas) — código muerto del tema
+// "Aurora" (Cosmos) que sobrevivió a la eliminación de Aurora/Compat de
+// hace semanas (confirmado: AuroraView nunca se invoca en ningún lado del
+// árbol de render; AuroraFullscreenModal/AuroraExpandedPanel solo se usaban
+// entre sí, anidados dentro del propio bloque muerto). Hallazgo encontrado
+// durante 7B.6, pedido explícito del usuario para limpiarlo del todo — el
+// proyecto solo tiene Liquid Glass. Build+lint+15 tests verdes; verificado
+// en vivo (/productos con 4,357 productos reales, fila expandida OK).
 
 // v2.17.46 — feat(bloque7b.2): tracker de corto vence — resolución
 // automática de proveedor. Decisión del usuario: nueva columna

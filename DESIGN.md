@@ -339,8 +339,6 @@ Content area: `max-w-[1440px] xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto`.
 | `animate-kpi-enter` | 280ms | `cubic-bezier(0.23,1,0.32,1)` | KPI / stat card entrance |
 | `animate-widget-enter` | 250ms | `cubic-bezier(0.23,1,0.32,1)` | Widget cards |
 | `animate-widget-settle` | 550ms | `cubic-bezier(0.34,1.56,0.64,1)` | Spring settle |
-| `animate-cosmos-in` | 450ms | `cubic-bezier(0.23,1,0.32,1)` | Cosmos panel entrance |
-| `animate-cosmos-panel` | 300ms | `cubic-bezier(0.23,1,0.32,1)` | Panel slide-down |
 | `animate-wiggle` | 400ms infinite | ease-in-out | Icon wiggle |
 
 ### CSS keyframes (index.css)
@@ -1021,7 +1019,7 @@ The 44px minimum follows WCAG 2.5.8 (AA, WCAG 2.2). Nav indented items do not me
 `animate-ambient-drift`, `animate-ambient-drift-reverse`, `animate-shimmer`, `glow-danger`, `glow-warning`, `badge-pulse`, `animate-wiggle`, `animate-tab-enter-right/left`, `animate-tab-exit-right/left`, `animate-stagger-child`, `animate-input-reveal`, `animate-route-enter`, `animate-view-enter`. `will-change` also reset to `auto` for disabled classes.
 
 **Reduced to `rm-fade-in` 120ms opacity-only:**
-`animate-kpi-enter`, `animate-widget-enter`, `animate-widget-settle`, `animate-cosmos-in`, `animate-cosmos-panel`, `animate-table-row-enter`.
+`animate-kpi-enter`, `animate-widget-enter`, `animate-widget-settle`, `animate-table-row-enter`.
 
 **Skeleton** — animation stopped; background becomes a solid `rgba(148,163,184,0.15)`.
 

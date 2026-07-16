@@ -491,8 +491,6 @@ a:focus-visible,
   .animate-kpi-enter,
   .animate-widget-enter,
   .animate-widget-settle,
-  .animate-cosmos-in,
-  .animate-cosmos-panel,
   .animate-table-row-enter {
     animation: rm-fade-in 120ms ease both !important;
   }

@@ -5,9 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.47';
+export const APP_VERSION = '2.17.48';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.48 — chore(theme): completa el barrido de Aurora/Cosmos pedido por
+// el usuario más allá de TabCatalogo.jsx. Grep exhaustivo de "aurora",
+// "cosmos", "compat", "data-theme" en todo src/ (y docs/*.md) — confirmado:
+// data-theme="dark/solid/solid-dark" son temas reales y activos (no Aurora),
+// sin relación con el pedido. Único remanente real encontrado: las
+// animaciones `cosmos-in`/`cosmos-panel` en tailwind.config.js (keyframes +
+// utilidades) y sus 2 referencias en el bloque prefers-reduced-motion de
+// index.css — quedaron huérfanas tras borrar AuroraExpandedPanel/
+// AuroraFullscreenModal en v2.17.47 (eran las únicas que las usaban,
+// confirmado por grep: cero matches de "animate-cosmos" en todo src/ antes
+// de este borrado). Eliminadas de tailwind.config.js e index.css; DESIGN.md
+// actualizado (tabla de animaciones + lista de reduced-motion) para no
+// documentar clases que ya no existen. Build+lint+15 tests verdes.
+//
 // v2.17.47 — chore(TabCatalogo): elimina AuroraExpandedPanel/
 // AuroraFullscreenModal/AuroraView (534 líneas) — código muerto del tema
 // "Aurora" (Cosmos) que sobrevivió a la eliminación de Aurora/Compat de

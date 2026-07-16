@@ -21,14 +21,6 @@ export default {
           '0%':   { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'none' },
         },
-        'cosmos-in': {
-          '0%':   { opacity: '0', transform: 'translateY(14px) scale(0.97)' },
-          '100%': { opacity: '1', transform: 'none' },
-        },
-        'cosmos-panel': {
-          '0%':   { opacity: '0', transform: 'translateY(-6px)' },
-          '100%': { opacity: '1', transform: 'none' },
-        },
         'table-row-enter': {
           '0%':   { opacity: '0' },
           '100%': { opacity: '1' },
@@ -39,8 +31,6 @@ export default {
         'widget-settle': 'widget-settle 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards',
         'kpi-enter':     'kpi-enter 280ms cubic-bezier(0.23,1,0.32,1) both',
         'widget-enter':  'widget-enter 250ms cubic-bezier(0.23,1,0.32,1) both',
-        'cosmos-in':     'cosmos-in 0.45s cubic-bezier(0.23,1,0.32,1) both',
-        'cosmos-panel':  'cosmos-panel 0.30s cubic-bezier(0.23,1,0.32,1) both',
         'table-row-enter': 'table-row-enter 0.12s ease both',
       },
       borderRadius: {

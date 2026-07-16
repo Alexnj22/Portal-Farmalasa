@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.34';
+export const APP_VERSION = '2.17.35';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.35 — feat(bloque7A.3): botón "Todo OK" en RecepcionModal — gap
+// confirmado real. handleTodoOk (línea ~428) tenía lógica completa
+// (confirma recibido = enviado para la caja/pedido actualmente abierto,
+// sin revisar línea por línea) pero ningún caller. Investigado a fondo
+// primero: existe una función hermana `handleConfirmarTodo` con caller ya
+// activo ("Confirmar todo OK" en la pantalla de selección de cajas), pero
+// opera a otro nivel — confirma TODAS las cajas accesibles de una vez desde
+// el picker, mientras que handleTodoOk es el atajo para la caja/pedido que
+// ya está abierto en la pantalla de items. No son duplicados. Agregado
+// botón "Todo OK" en el footer de esa pantalla, junto al botón principal
+// "Confirmar Caja X"/"Confirmar recepción", mismo wording/icono (Check)
+// que el patrón ya usado en handleConfirmarTodo. Verificado en vivo: build
+// limpio, sin pedido real en estado "enviado" ahora mismo para abrir el
+// modal (mismo hallazgo que 7A.1), cero errores de React/consola nuevos.
 
 // v2.17.34 — fix(bloque7A.2): auto-copy-weekly-roster — bugs encadenados
 // de status literal. `.eq('status', 'ACTIVE')` (×2: filtro de Talento

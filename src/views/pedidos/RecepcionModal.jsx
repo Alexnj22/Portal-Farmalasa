@@ -421,10 +421,9 @@ export default function RecepcionModal({
     ]);
 
     // ── Confirmar todo sin errores (acción rápida) ──────────────────────────────
-    // Sin caller hoy — gap conocido de producto (plan 7A.3: posible botón
-    // faltante en la UI). No borrar: backend/lógica lista, falta decisión de
-    // dónde va el botón.
-    // eslint-disable-next-line no-unused-vars
+    // 7A.3: botón "Todo OK" en el footer de la pantalla de items — confirma
+    // recibido = enviado sin revisar línea por línea (mismo criterio que
+    // handleConfirmarTodo, pero acotado a la caja/pedido actualmente abierto).
     const handleTodoOk = useCallback(async () => {
         const rowsToSave = (hasCajaMap && selectedCaja !== null) ? selectedCajaRows : sortedRows;
         setSaving(true); setSaveError(null);
@@ -1282,11 +1281,19 @@ export default function RecepcionModal({
                         className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-[13px] transition-colors disabled:opacity-40">
                         {hasCajaMap ? 'Volver' : 'Cancelar'}
                     </button>
-                    <button onClick={handleConfirmarCaja} disabled={saving}
-                        className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 text-[13px] transition-colors disabled:opacity-50">
-                        {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
-                        {hasCajaMap ? `Confirmar Caja ${selectedCaja}` : 'Confirmar recepción'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button onClick={handleTodoOk} disabled={saving}
+                            title="Confirma recibido exactamente como se envió, sin revisar línea por línea"
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 border-emerald-300 bg-emerald-50 text-emerald-700 font-semibold hover:bg-emerald-100 text-[13px] transition-colors disabled:opacity-40 active:scale-[0.97]">
+                            <Check size={14} />
+                            Todo OK
+                        </button>
+                        <button onClick={handleConfirmarCaja} disabled={saving}
+                            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 text-[13px] transition-colors disabled:opacity-50">
+                            {saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
+                            {hasCajaMap ? `Confirmar Caja ${selectedCaja}` : 'Confirmar recepción'}
+                        </button>
+                    </div>
                 </div>
             </PedidoModal.Footer>
         </PedidoModal>

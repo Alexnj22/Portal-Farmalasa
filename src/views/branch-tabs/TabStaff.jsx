@@ -8,8 +8,8 @@ import {
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { calculateMinimumStaff } from '../../utils/staffHelpers';
 
-// 🚨 IMPORTACIÓN CORREGIDA 🚨
 import { supabase } from '../../supabaseClient';
+import { fetchBranchHourlySalesAll } from '../../data/schedules';
 
 // ============================================================================
 // 🎨 MOTOR DE TEMAS LIQUID GLASS
@@ -295,10 +295,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
         if (!liveBranch?.id) return;
         setIsLoadingWfm(true);
         try {
-            const { data, error } = await supabase
-                .from('branch_hourly_sales')
-                .select('sale_date, sale_hour, total_sales')
-                .eq('branch_id', liveBranch.id);
+            const { data, error } = await fetchBranchHourlySalesAll(liveBranch.id);
 
             if (error) throw error;
             setHistoricalSales(data || []);

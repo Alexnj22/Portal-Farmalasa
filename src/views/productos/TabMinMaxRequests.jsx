@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Loader2, Check, X, Clock, Package, ArrowRight, Inbox, CheckCheck, TrendingUp, Building2 } from 'lucide-react';
 import { tokenMatch } from '../../utils/searchUtils';
 import { supabase } from '../../supabaseClient';
+import { fetchAllMinMaxChangeRequests } from '../../data/minmaxRequests';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { notifyEmployees } from '../../utils/notify';
@@ -156,11 +157,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('minmax_change_requests')
-      .select('*')
-      .order('requested_at', { ascending: false })
-      .limit(1000);
+    const { data, error } = await fetchAllMinMaxChangeRequests();
     if (error) setError(error.message);
     setRows(data || []);
     setLoading(false);

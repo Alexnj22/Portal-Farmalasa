@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { Info, Clock, CreditCard, CalendarOff } from 'lucide-react';
 import { calcPayrollEntry } from '../../store/slices/payrollSlice';
-import { supabase } from '../../supabaseClient';
+import { fetchOvertimeBankRows } from '../../data/payroll';
 
 const fmt    = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
 const round2 = (n) => parseFloat((n || 0).toFixed(2));
@@ -45,7 +45,7 @@ const FormEditPayrollEntry = ({ formData = {}, setFormData }) => {
 
     useEffect(() => {
         if (!emp.id) return;
-        supabase.from('overtime_bank').select('hours, type, subtype').eq('employee_id', emp.id)
+        fetchOvertimeBankRows(emp.id)
             .then(({ data }) => {
                 let diurnal = 0, nocturnal = 0;
                 for (const row of data || []) {

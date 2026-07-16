@@ -25,6 +25,15 @@ export function insertMinMaxChangeRequest(payload) {
     return supabase.from('minmax_change_requests').insert(payload);
 }
 
+// ── TabMinMaxRequests.jsx (bandeja de aprobación — todas las solicitudes) ──
+
+export function fetchAllMinMaxChangeRequests() {
+    return supabase.from('minmax_change_requests')
+        .select('*')
+        .order('requested_at', { ascending: false })
+        .limit(1000);
+}
+
 export function fetchActiveProductsCount() {
     return supabase.from('products').select('*', { count: 'exact', head: true }).eq('activo', true);
 }

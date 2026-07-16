@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, Bell, CheckCircle2 } from 'lucide-react';
-import { supabase } from '../../supabaseClient';
+import { fetchInventorySyncLogRecent } from '../../data/inventory';
 import { useNowTick } from '../../hooks/useNowTick';
 
 const WARN_MINS  = 8;
@@ -22,14 +22,7 @@ export default function SyncHealthBanner() {
   );
 
   const fetchLatest = useCallback(async () => {
-    const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    const { data, error } = await supabase
-      .from('inventory_sync_log')
-      .select('erp_sucursal_id, success, synced_at, error_msg, items_count')
-      .gte('synced_at', since)
-      .eq('is_vencidos', false)
-      .order('synced_at', { ascending: false })
-      .limit(60);
+    const { data, error } = await fetchInventorySyncLogRecent();
     if (error) console.error('SyncHealthBanner: fetch inventory_sync_log failed:', error.message);
 
     if (!data) return;

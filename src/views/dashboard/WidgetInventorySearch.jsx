@@ -9,6 +9,7 @@ import {
   searchInventory,
   fetchInventoryByProductIds,
 } from '../../data/inventory';
+import { insertVentaPerdida } from '../../data/ventasPerdidas';
 
 const ERP_BRANCH_MAP = {
   1: 'Salud 1',
@@ -203,7 +204,7 @@ function SrsCompactCard({ product: p, searchQuery, user }) {
     const cantidad = parseInt(qty, 10);
     if (!cantidad || cantidad < 1) return;
     setRState('saving');
-    await supabase.from('ventas_perdidas').insert({
+    await insertVentaPerdida({
       producto_buscado: searchQuery,
       descripcion:      nombre   || null,
       principio_activo: principio ? `${principio}${conc ? ` ${conc}` : ''}` : null,

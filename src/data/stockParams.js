@@ -92,6 +92,12 @@ export function fetchStockConfigFull() {
     return supabase.from('stock_config').select('*').eq('id', 1).maybeSingle();
 }
 
+// ── ConfigPanel.jsx (guardar configuración Min/Max) ─────────────────────────
+
+export function updateStockConfig(payload) {
+    return supabase.from('stock_config').update(payload).eq('id', 1);
+}
+
 export function fetchErpSucursalIdForBranchLocked(branchId) {
     return supabase.from('erp_sucursal_map').select('erp_sucursal_id').eq('branch_id', branchId).maybeSingle();
 }

@@ -5,7 +5,7 @@
 
 import pdfMake from 'pdfmake/build/pdfmake';
 import vfsFonts from 'pdfmake/build/vfs_fonts';
-import { supabase } from '../supabaseClient';
+import { fetchErpSucursalAddressMap } from '../data/pedidos';
 
 pdfMake.addVirtualFileSystem(vfsFonts);
 
@@ -56,9 +56,7 @@ let _addrCache = null;
 async function getAddressMap() {
     if (_addrCache) return _addrCache;
     try {
-        const { data, error } = await supabase
-            .from('erp_sucursal_map')
-            .select('erp_sucursal_id, branches(address)');
+        const { data, error } = await fetchErpSucursalAddressMap();
         if (error) console.error('getAddressMap: fetch erp_sucursal_map failed:', error.message);
         _addrCache = {};
         if (data) {

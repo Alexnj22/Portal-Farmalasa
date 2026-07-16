@@ -27,6 +27,24 @@ export function fetchBranchHourlySales(branchId, sinceDateStr) {
         .gte('sale_date', sinceDateStr);
 }
 
+// FormWfmAnalytics.jsx — mismo filtro base que fetchBranchHourlySales pero
+// con order+limit (10000, la vista analítica pagina distinto que SchedulesView).
+export function fetchBranchHourlySalesOrdered(branchId, sinceDateStr, limit) {
+    return supabase.from('branch_hourly_sales')
+        .select('*')
+        .eq('branch_id', branchId)
+        .gte('sale_date', sinceDateStr)
+        .order('sale_date', { ascending: false })
+        .limit(limit);
+}
+
+// TabStaff.jsx — historial completo (sin filtro de fecha), columnas reducidas.
+export function fetchBranchHourlySalesAll(branchId) {
+    return supabase.from('branch_hourly_sales')
+        .select('sale_date, sale_hour, total_sales')
+        .eq('branch_id', branchId);
+}
+
 export function deleteScheduleCoverage(employeeId, branchId, weekStart) {
     return supabase.from('schedule_coverage')
         .delete()

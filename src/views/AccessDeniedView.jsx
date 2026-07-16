@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, ArrowLeft, MessageCircle } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { fetchRoleName } from '../data/permissions';
 import { useAuth } from '../context/AuthContext';
 
 const SUPPORT_PHONE = '50370153222';
@@ -14,7 +14,7 @@ const AccessDeniedView = () => {
     useEffect(() => {
         const roleId = user?.roleId ?? (Number.isInteger(user?.role) ? user?.role : null);
         if (roleId) {
-            supabase.from('roles').select('name').eq('id', roleId).single()
+            fetchRoleName(roleId)
                 .then(({ data }) => { if (data?.name) setRoleName(data.name); });
         } else if (user?.systemRole) {
             setRoleName(user.systemRole); // eslint-disable-line react-hooks/set-state-in-effect -- fallback síncrono cuando no hay roleId que resolver por fetch

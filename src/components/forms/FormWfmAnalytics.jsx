@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, memo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
-import { supabase } from '../../supabaseClient';
+import { fetchBranchHourlySalesOrdered } from '../../data/schedules';
 import { Loader2, Activity, Users, DollarSign, Calendar as CalendarIcon, MousePointerClick, TrendingUp, Sparkles, Building2 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 
@@ -66,13 +66,7 @@ const FormWfmAnalytics = ({ branches }) => {
                     queryStr = `${yearStart}-${monthStart}-${dayStart}`;
                 }
 
-                const { data, error } = await supabase
-                    .from('branch_hourly_sales')
-                    .select('*')
-                    .eq('branch_id', selectedBranch)
-                    .gte('sale_date', queryStr)
-                    .order('sale_date', { ascending: false })
-                    .limit(10000);
+                const { data, error } = await fetchBranchHourlySalesOrdered(selectedBranch, queryStr, 10000);
 
                 if (error) throw error;
                 setSalesData(data || []);

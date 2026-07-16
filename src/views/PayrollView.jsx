@@ -4,7 +4,7 @@ import {
     Building2, Search, Edit2, RotateCcw, Download, X, ListFilter,
     AlertTriangle, LockKeyhole, ExternalLink,
 } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { fetchUnapprovedTimesheetsCount } from '../data/payroll';
 import { useStaffStore } from '../store/staffStore';
 import { smartFilter } from '../utils/searchUtils';
 import { useToastStore } from '../store/toastStore';
@@ -404,11 +404,7 @@ const PayrollView = ({ openModal }) => {
     useEffect(() => {
         if (!activePeriod?.start_date || !activePeriod?.end_date) { setUnapprovedCount(null); return; } // eslint-disable-line react-hooks/set-state-in-effect -- reset antes de re-fetch al cambiar de periodo
         setUnapprovedCount(null);
-        supabase.from('timesheets')
-            .select('id', { count: 'exact', head: true })
-            .gte('work_date', activePeriod.start_date)
-            .lte('work_date', activePeriod.end_date)
-            .neq('status', 'APPROVED')
+        fetchUnapprovedTimesheetsCount(activePeriod.start_date, activePeriod.end_date)
             .then(({ count }) => setUnapprovedCount(count ?? 0));
     }, [activePeriod?.id, activePeriod?.start_date, activePeriod?.end_date]);
 

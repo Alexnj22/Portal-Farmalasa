@@ -9,6 +9,13 @@ export function upsertInstitucionCatalogEntry(institucion) {
         .upsert([{ category: 'INSTITUCION_EDUCATIVA', value: institucion }], { onConflict: 'category,value', ignoreDuplicates: true });
 }
 
+// ── PracticanteModal.jsx (catálogo de instituciones para el select) ────────
+
+export function fetchInstitucionCatalogValues() {
+    return supabase.from('education_catalog_entries')
+        .select('value').eq('category', 'INSTITUCION_EDUCATIVA').order('value');
+}
+
 export function fetchPracticantes() {
     return supabase.from('practicantes').select(PRACTICANTE_SELECT).order('created_at', { ascending: false });
 }

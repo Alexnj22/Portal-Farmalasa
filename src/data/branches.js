@@ -69,3 +69,14 @@ export function updateBranchExpense(expenseId, patch) {
 export function insertBranchExpense(payload) {
     return supabase.from('branch_expenses').insert([payload]);
 }
+
+// ── TabExpenses.jsx (gráfica de tendencia — últimos pagos) ─────────────────
+
+export function fetchBranchExpensesHistory(branchId) {
+    return supabase.from('branch_expenses')
+        .select('billing_month, amount, expense_type')
+        .eq('branch_id', branchId)
+        .eq('status', 'PAGADO')
+        .order('billing_month', { ascending: true })
+        .limit(100);
+}

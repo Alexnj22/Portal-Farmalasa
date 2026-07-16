@@ -29,6 +29,12 @@ export function fetchBranchIdForSucursal(sucId) {
     return supabase.from('erp_sucursal_map').select('branch_id').eq('erp_sucursal_id', sucId).maybeSingle();
 }
 
+// ── pedidoPrint.js (direcciones para el encabezado del PDF de despacho) ────
+
+export function fetchErpSucursalAddressMap() {
+    return supabase.from('erp_sucursal_map').select('erp_sucursal_id, branches(address)');
+}
+
 export function fetchBranchInfoForSucursal(sucId) {
     return supabase.from('erp_sucursal_map').select('branch_id, nombre').eq('erp_sucursal_id', sucId).maybeSingle();
 }

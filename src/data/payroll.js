@@ -62,8 +62,20 @@ export function fetchVacationPlansOverlapping(periodEndDate, periodStartDate) {
 
 // ── Banco de horas extra ─────────────────────────────────────────────────────
 
+// select incluye subtype (usado por FormEditPayrollEntry.jsx para separar
+// diurno/nocturno) — payrollSlice.js solo lee hours/type, columna extra inerte.
 export function fetchOvertimeBankRows(employeeId) {
-    return supabase.from('overtime_bank').select('hours, type').eq('employee_id', employeeId);
+    return supabase.from('overtime_bank').select('hours, type, subtype').eq('employee_id', employeeId);
+}
+
+// ── PayrollView.jsx (aviso de timesheets sin aprobar en el período activo) ──
+
+export function fetchUnapprovedTimesheetsCount(startDate, endDate) {
+    return supabase.from('timesheets')
+        .select('id', { count: 'exact', head: true })
+        .gte('work_date', startDate)
+        .lte('work_date', endDate)
+        .neq('status', 'APPROVED');
 }
 
 export function deleteEarnedOvertimeBank(periodId) {

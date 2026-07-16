@@ -5,9 +5,45 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.29';
+export const APP_VERSION = '2.17.30';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.30 — refactor(bloque6.A): CIERRE — último bloque de 19 archivos de
+// 1 sitio cada uno, PR final de la migración completa. Archivos: TabExpenses,
+// PayrollView, NoAccessView, AccessDeniedView, pedidoPrint.js,
+// useTimeClockEngine.js, PracticanteModal, AppLayout, FormWfmAnalytics,
+// FormEditPayrollEntry, TabStaff, SyncHealthBanner, SidebarSyncStatus,
+// TabHistorial, ConfigPanel, TabMinMaxRequests, EmployeeDocumentsView,
+// WidgetSrsInventory, WidgetInventorySearch. 12 funciones nuevas +
+// extensión de fetchOvertimeBankRows (agrega subtype, superset-reuse) en
+// data/payroll.js, data/branches.js, data/permissions.js, data/pedidos.js,
+// data/practicantes.js, data/ventasPerdidas.js (×2), data/schedules.js (×2),
+// data/inventory.js (×2), data/promotions.js, data/stockParams.js,
+// data/minmaxRequests.js. Reuso exacto: insertApprovalRequestSilent
+// (useTimeClockEngine, payload en array — mismo shape que
+// WidgetAnnulmentRequest) y fetchOwnApprovalRequests (EmployeeDocumentsView,
+// select superset ya usado por EmployeeRequestsView). fetchRoleName y
+// fetchInventorySyncLogRecent son funciones nuevas compartidas por 2
+// archivos cada una (NoAccessView/AccessDeniedView; SyncHealthBanner/
+// SidebarSyncStatus — mismo query, SyncHealthBanner selecciona superset con
+// items_count). Verificado en vivo con Playwright contra datos reales:
+// /promociones?tab=historial (promoción cerrada real "OMEGA 3 1000MG" con
+// productos/branches/ventas reales vía fetchClosedPromotions), /branches/2
+// → tab Gastos (TabExpenses renderiza sin error, estado vacío correcto — sin
+// pagos PAGADO aún), /minmax → panel de Configuración abre con los 15
+// campos poblados desde fetchStockConfigFull (NO se guardó — escribir
+// stock_config de producción requiere consentimiento explícito del usuario
+// en el momento, no cubierto por esta sesión autónoma), /payroll y
+// /overview cargan sin errores (SidebarSyncStatus + AppLayout badge de
+// ventas perdidas se ejercitan en cada carga de página, sin errores en
+// ninguna de las ~7 páginas visitadas). Ruido de consola pre-existente sin
+// relación (COEP, CORS de ensure_user_by_code, top_productos transitorio)
+// presente igual que antes, cero errores nuevos. Escaneo Python de todo
+// src/ confirma 0 sitios supabase.from() reales restantes fuera de
+// src/data/*.js (quedan los 11 de systemSlice.js/fetchBoot, deliberadamente
+// fuera de alcance — Bloque 6.B). Build + lint + 15 tests unitarios verdes.
+// CIERRA Bloque 6.A: 173 sitios corregidos migrados en 22 PRs.
+//
 // v2.17.29 — refactor(bloque6.A): ExpandedPanel.jsx + ItemSections.jsx +
 // ApoioScanModal.jsx + ProductosView.jsx + MinMaxView.jsx +
 // EmployeeDetailView.jsx + auditSlice.js + usePushSubscription.js +

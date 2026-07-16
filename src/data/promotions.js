@@ -85,3 +85,21 @@ export function updatePromotionEstado(promotionId, estado) {
 export function deletePromotion(promotionId) {
     return supabase.from('promotions').delete().eq('id', promotionId);
 }
+
+// ── TabHistorial.jsx (promociones cerradas) ─────────────────────────────────
+
+export function fetchClosedPromotions() {
+    return supabase.from('promotions')
+        .select(`
+            id, nombre, estado, fecha_inicio, fecha_fin, end_condition, notas,
+            laboratorios(nombre),
+            promotion_branches(branch_id, branches(name)),
+            promotion_products(
+                id, product_id, factor_descripcion, stock_inicial,
+                products(nombre, foto_url),
+                promotion_sales_cache(units_sold)
+            )
+        `)
+        .eq('estado', 'closed')
+        .order('updated_at', { ascending: false });
+}

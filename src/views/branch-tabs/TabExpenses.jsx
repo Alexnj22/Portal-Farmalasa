@@ -2,8 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Landmark, Zap, Droplet, Wifi, Smartphone, Receipt, DollarSign, AlertCircle, UploadCloud, TrendingUp, TrendingDown, BarChart3, Activity } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-// 🚨 IMPORTACIÓN CORRECTA
-import { supabase } from '../../supabaseClient'; 
+import { fetchBranchExpensesHistory } from '../../data/branches';
 
 // ============================================================================
 // MOTOR DE ESTADOS FINANCIEROS
@@ -154,13 +153,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
             setIsLoadingData(true);
             try {
                 // Traemos los gastos pagados de los últimos 6 meses
-                const { data, error } = await supabase
-                    .from('branch_expenses')
-                    .select('billing_month, amount, expense_type')
-                    .eq('branch_id', liveBranch.id)
-                    .eq('status', 'PAGADO')
-                    .order('billing_month', { ascending: true })
-                    .limit(100); 
+                const { data, error } = await fetchBranchExpensesHistory(liveBranch.id);
 
                 if (error) throw error;
 

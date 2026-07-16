@@ -10,6 +10,7 @@ import {
     PackageMinus, ShoppingCart, ClipboardCheck
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import { fetchVentasPerdidasPendingCount } from '../../data/ventasPerdidas';
 import { useAuth } from '../../context/AuthContext';
 import { getHourlyCode, getSuPinSuffix } from '../../utils/helpers';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -122,10 +123,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const [vpPending, setVpPending] = useState(0);
     useEffect(() => {
         const load = async () => {
-            const { count } = await supabase
-                .from('ventas_perdidas')
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'pendiente');
+            const { count } = await fetchVentasPerdidasPendingCount();
             setVpPending(count || 0);
         };
         load();

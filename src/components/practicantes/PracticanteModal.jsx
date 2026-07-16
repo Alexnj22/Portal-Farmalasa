@@ -7,6 +7,7 @@ import PortalInput from '../common/PortalInput';
 import { CatalogSelect, CatalogOtherInput } from '../common/CatalogSelect';
 import { inputHoverClass } from '../../utils/inputStyles';
 import { supabase } from '../../supabaseClient';
+import { fetchInstitucionCatalogValues } from '../../data/practicantes';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { isValidDUIAlgorithm, maskDui } from '../../utils/duiUtils';
@@ -74,7 +75,7 @@ export default function PracticanteModal({ isOpen, onClose, practicante, onSaved
     useEffect(() => {
         if (!isOpen) return;
         let cancelled = false;
-        supabase.from('education_catalog_entries').select('value').eq('category', 'INSTITUCION_EDUCATIVA').order('value').then(({ data }) => {
+        fetchInstitucionCatalogValues().then(({ data }) => {
             if (!cancelled) setInstitucionCatalog((data || []).map((r) => r.value));
         });
         return () => { cancelled = true; };

@@ -23,7 +23,7 @@ import { buildCustomConfig, buildFinalPunchPresentation } from '../utils/timeClo
 import { getHourlyCode, getSuPinSuffix, toLocalISO } from '../utils/helpers';
 import useKioskDevice from './useKioskDevice';
 import { XCircle, ShieldAlert } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { insertApprovalRequestSilent } from '../data/requests';
 
 const SU_ROLES = ['JEFE', 'SUBJEFE'];
 const EMPTY_ARRAY = [];
@@ -419,7 +419,7 @@ export function useTimeClockEngine(props = {}) {
 
         if (declaredStart && declaredEnd) {
             const workDate = (punchTime || new Date()).toLocaleDateString('en-CA', { timeZone: 'America/El_Salvador' });
-            await supabase.from('approval_requests').insert([{
+            await insertApprovalRequestSilent([{
                 employee_id: employee.id,
                 approver_id: null,
                 type:        'SHIFT_EXCEPTION',

@@ -40,3 +40,9 @@ export function fetchRolePermissionsForRole(roleId) {
 export function fetchRolePriceLevelAndSU(roleId) {
     return supabase.from('roles').select('max_price_level, is_su').eq('id', roleId).single();
 }
+
+// ── NoAccessView.jsx / AccessDeniedView.jsx (nombre de cargo a mostrar) ─────
+
+export function fetchRoleName(roleId) {
+    return supabase.from('roles').select('name').eq('id', roleId).single();
+}

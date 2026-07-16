@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Search, Loader2, X, FlaskConical, Building2, Pill, CheckCircle2, Package } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import { fetchInventoryStockFlags } from '../../data/inventory';
 
 async function srsFetch(q, page = 1) {
   const { data: { session } } = await supabase.auth.getSession();
@@ -38,11 +39,7 @@ export default function WidgetSrsInventory() {
   // Cross-reference with inventory by erp_product_id
   const checkInventory = useCallback(async (erpIds) => {
     if (!erpIds.length) return;
-    const { data } = await supabase
-      .from('inventory')
-      .select('erp_product_id')
-      .in('erp_product_id', erpIds)
-      .gt('cantidad', 0);
+    const { data } = await fetchInventoryStockFlags(erpIds);
     setInStock(new Set((data || []).map(r => r.erp_product_id)));
   }, []);
 

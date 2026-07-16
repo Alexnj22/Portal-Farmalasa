@@ -6,7 +6,7 @@ import {
     Download, Eye, AlertCircle, CheckCircle2, Clock, XCircle, Loader2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../supabaseClient';
+import { fetchOwnApprovalRequests } from '../../data/employeeSelfService';
 import { openStoredFile } from '../../utils/storageFiles';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -195,11 +195,7 @@ const EmployeeDocumentsView = () => {
     useEffect(() => {
         if (!user?.id) return;
         setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
-        supabase
-            .from('approval_requests')
-            .select('id, type, status, metadata, created_at, note')
-            .eq('employee_id', user.id)
-            .order('created_at', { ascending: false })
+        fetchOwnApprovalRequests(user.id)
             .then(({ data }) => {
                 const parsed = (data || []).map(r => ({ ...r, meta: parseMeta(r.metadata) }));
                 // Documentos relevantes: constancias + cualquier solicitud con archivo adjunto

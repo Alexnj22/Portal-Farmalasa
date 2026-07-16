@@ -67,3 +67,21 @@ export async function fetchInventoryByProductIds(productIds) {
             .order('fecha_vencimiento', { ascending: true, nullsFirst: false })
     ) || [];
 }
+
+// WidgetSrsInventory.jsx — cruza resultados del SRS contra inventario propio
+// para marcar cuáles ya tenemos en stock.
+export function fetchInventoryStockFlags(erpIds) {
+    return supabase.from('inventory').select('erp_product_id').in('erp_product_id', erpIds).gt('cantidad', 0);
+}
+
+// SyncHealthBanner.jsx / SidebarSyncStatus.jsx — mismo query base (el banner
+// del dashboard además lee items_count; select en superset, filtros idénticos).
+export function fetchInventorySyncLogRecent() {
+    const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    return supabase.from('inventory_sync_log')
+        .select('erp_sucursal_id, success, synced_at, error_msg, items_count')
+        .gte('synced_at', since)
+        .eq('is_vencidos', false)
+        .order('synced_at', { ascending: false })
+        .limit(60);
+}

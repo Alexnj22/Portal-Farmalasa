@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Settings2, X, Loader2, CheckCircle2, Save } from 'lucide-react';
 import { supabase } from '../../../supabaseClient';
+import { updateStockConfig } from '../../../data/stockParams';
 
 export default function ConfigPanel({ config, onSave, onClose }) {
     const [form,   setForm]   = useState({ ...config });
@@ -37,7 +38,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
             updated_by:          user?.email ?? null,
         };
         try {
-            const { error } = await supabase.from('stock_config').update(payload).eq('id', 1);
+            const { error } = await updateStockConfig(payload);
             if (error) throw error;
             onSave({ ...payload });
             setSaved(true);

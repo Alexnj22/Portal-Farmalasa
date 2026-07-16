@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     History, ChevronDown, ChevronRight, FlaskConical, Building2, Package,
 } from 'lucide-react';
-import { supabase }      from '../../supabaseClient';
+import { fetchClosedPromotions } from '../../data/promotions';
 import { useToastStore } from '../../store/toastStore';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 
@@ -30,20 +30,7 @@ export default function TabHistorial({ searchTerm }) {
 
     const load = useCallback(async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('promotions')
-            .select(`
-                id, nombre, estado, fecha_inicio, fecha_fin, end_condition, notas,
-                laboratorios(nombre),
-                promotion_branches(branch_id, branches(name)),
-                promotion_products(
-                    id, product_id, factor_descripcion, stock_inicial,
-                    products(nombre, foto_url),
-                    promotion_sales_cache(units_sold)
-                )
-            `)
-            .eq('estado', 'closed')
-            .order('updated_at', { ascending: false });
+        const { data, error } = await fetchClosedPromotions();
 
         if (error) showToast('Error', error.message, 'error');
         setPromos(data || []);

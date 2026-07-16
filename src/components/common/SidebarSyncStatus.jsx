@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Bell, BellOff, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import { fetchInventorySyncLogRecent } from '../../data/inventory';
 import { usePushSubscription } from '../../hooks/usePushSubscription';
 import { useNowTick } from '../../hooks/useNowTick';
 
@@ -20,14 +21,7 @@ export default function SidebarSyncStatus() {
   const { permission, subscribed, subscribe, isSupported } = usePushSubscription();
 
   const fetchLatest = useCallback(async () => {
-    const since = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    const { data, error } = await supabase
-      .from('inventory_sync_log')
-      .select('erp_sucursal_id, success, synced_at, error_msg')
-      .gte('synced_at', since)
-      .eq('is_vencidos', false)
-      .order('synced_at', { ascending: false })
-      .limit(60);
+    const { data, error } = await fetchInventorySyncLogRecent();
     if (error) console.error('SidebarSyncStatus: fetch inventory_sync_log failed:', error.message);
 
     if (!data) return;

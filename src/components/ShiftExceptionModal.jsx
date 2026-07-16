@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import LiquidModal from './common/LiquidModal';
 import { X, Calendar as CalendarIcon, Clock, Save, ShieldAlert, Utensils, Baby, Info } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
-import { supabase } from '../supabaseClient';
+import { fetchPublishedRosterWithId, updateEmployeeRosterById } from '../data/system';
 
 const ShiftExceptionModal = ({ employee, onClose }) => {
     const { shifts, updateEmployee } = useStaffStore();
@@ -75,13 +75,7 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
             const weekStart  = monDate.toISOString().split('T')[0];
             const dayKey     = String(dow);
 
-            const { data: roster } = await supabase
-                .from('employee_rosters')
-                .select('id, schedule_data')
-                .eq('employee_id', employee.id)
-                .eq('week_start_date', weekStart)
-                .eq('status', 'PUBLISHED')
-                .maybeSingle();
+            const { data: roster } = await fetchPublishedRosterWithId(employee.id, weekStart);
 
             if (roster) {
                 const updatedSchedule = {
@@ -97,10 +91,7 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
                         exceptionDate: todayStr,
                     },
                 };
-                await supabase
-                    .from('employee_rosters')
-                    .update({ schedule_data: updatedSchedule, updated_at: new Date().toISOString() })
-                    .eq('id', roster.id);
+                await updateEmployeeRosterById(roster.id, { schedule_data: updatedSchedule, updated_at: new Date().toISOString() });
             }
         } catch (err) {
             console.error('ShiftExceptionModal: roster patch failed', err);
@@ -128,13 +119,7 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
             const weekStart = monDate.toISOString().split('T')[0];
             const dayKey    = String(dow);
 
-            const { data: roster } = await supabase
-                .from('employee_rosters')
-                .select('id, schedule_data')
-                .eq('employee_id', employee.id)
-                .eq('week_start_date', weekStart)
-                .eq('status', 'PUBLISHED')
-                .maybeSingle();
+            const { data: roster } = await fetchPublishedRosterWithId(employee.id, weekStart);
 
             if (roster?.schedule_data?.[dayKey]) {
                 const day = { ...roster.schedule_data[dayKey] };
@@ -145,13 +130,10 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
                 // Restore isOff based on whether the day originally had a shift
                 if (!day.shiftId || day.shiftId === 'LIBRE') day.isOff = true;
 
-                await supabase
-                    .from('employee_rosters')
-                    .update({
-                        schedule_data: { ...roster.schedule_data, [dayKey]: day },
-                        updated_at: new Date().toISOString(),
-                    })
-                    .eq('id', roster.id);
+                await updateEmployeeRosterById(roster.id, {
+                    schedule_data: { ...roster.schedule_data, [dayKey]: day },
+                    updated_at: new Date().toISOString(),
+                });
             }
         } catch (err) {
             console.error('ShiftExceptionModal: roster restore failed', err);

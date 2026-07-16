@@ -4,10 +4,10 @@ import {
   Truck, Map, CheckCircle2, ChevronDown, ChevronUp,
   Play, Home, Loader2, Radio,
 } from 'lucide-react';
-import { supabase } from '../../supabaseClient';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { notifyBranch } from '../../utils/notify';
 import RutaMapModal from './RutaMapModal';
+import { updateRutaStatus, updateRutaPedidoEntregado, fetchBranchIdForSucursal } from '../../data/pedidos';
 
 const STATUS_BADGE = {
   pendiente:  { label: 'Pendiente',  cls: 'bg-amber-100  text-amber-700  border-amber-200'  },
@@ -42,9 +42,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
   const handleIniciarRuta = async () => {
     setBusyRuta('iniciar');
     try {
-      const { error } = await supabase.from('rutas')
-        .update({ status: 'en_ruta', salida_at: new Date().toISOString() })
-        .eq('id', ruta.id);
+      const { error } = await updateRutaStatus(ruta.id, { status: 'en_ruta', salida_at: new Date().toISOString() });
       if (error) throw error;
       useStaff.getState().appendAuditLog('RUTA_INICIADA', ruta.id, {});
       onRefresh();
@@ -55,14 +53,11 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
   const handleEntregarStop = async (stop) => {
     setBusyStop(stop.id);
     try {
-      const { error } = await supabase.from('ruta_pedidos')
-        .update({ entregado_at: new Date().toISOString(), entregado_por: currentUserId })
-        .eq('id', stop.id);
+      const { error } = await updateRutaPedidoEntregado(stop.id, currentUserId);
       if (error) throw error;
       useStaff.getState().appendAuditLog('RUTA_PARADA_ENTREGADA', stop.id, { sucursal_id: stop.erp_sucursal_id });
 
-      const { data: mapa } = await supabase.from('erp_sucursal_map')
-        .select('branch_id').eq('erp_sucursal_id', stop.erp_sucursal_id).maybeSingle();
+      const { data: mapa } = await fetchBranchIdForSucursal(stop.erp_sucursal_id);
       if (mapa?.branch_id) {
         // Llegada física = accionable → campana + push
         notifyBranch(mapa.branch_id, {
@@ -81,9 +76,7 @@ export default function RutaEnCursoCard({ ruta, currentUserId, canEdit, isBranch
   const handleVueltaBase = async () => {
     setBusyRuta('vuelta');
     try {
-      const { error } = await supabase.from('rutas')
-        .update({ status: 'completada', vuelta_base_at: new Date().toISOString() })
-        .eq('id', ruta.id);
+      const { error } = await updateRutaStatus(ruta.id, { status: 'completada', vuelta_base_at: new Date().toISOString() });
       if (error) throw error;
       useStaff.getState().appendAuditLog('RUTA_COMPLETADA', ruta.id, {});
       onRefresh();

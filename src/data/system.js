@@ -133,6 +133,21 @@ export function publishWeekRostersQuery(weekStartDate, employeeIds) {
     return q;
 }
 
+// ShiftExceptionModal.jsx (2 de sus 4 sitios; reutilizados 2× cada uno —
+// handleSave y handleRemoveException hacen el mismo select/update)
+export function fetchPublishedRosterWithId(employeeId, weekStartDate) {
+    return supabase.from('employee_rosters')
+        .select('id, schedule_data')
+        .eq('employee_id', employeeId)
+        .eq('week_start_date', weekStartDate)
+        .eq('status', 'PUBLISHED')
+        .maybeSingle();
+}
+
+export function updateEmployeeRosterById(rosterId, patch) {
+    return supabase.from('employee_rosters').update(patch).eq('id', rosterId);
+}
+
 // ── Sucursales (fetchKioskBoot — función independiente, no toca bootStatus) ─
 
 export function fetchBranchesBasic() {

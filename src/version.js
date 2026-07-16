@@ -5,8 +5,34 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.26';
+export const APP_VERSION = '2.17.27';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.27 — refactor(bloque6.A): RutaMapModal.jsx + RutaEnCursoCard.jsx +
+// VentasPperdidasView.jsx + ShiftExceptionModal.jsx — 16 supabase.from()
+// migradas (4+4+4+4). RutaMapModal solo necesitó 1 función nueva
+// (fetchRutaLocationSingle en data/pedidos.js) — los otros 3 sitios
+// reutilizan fetchSucursalesConCoords/upsertRutaLocation ya existentes.
+// RutaEnCursoCard resultó ser 100% reuso (0 funciones nuevas): sus 4
+// sitios son literalmente el mismo código que RutaCard en TabRutas.jsx
+// (updateRutaStatus×2, updateRutaPedidoEntregado, fetchBranchIdForSucursal)
+// — y resultó ser código muerto: el changelog v2.2.341 documenta
+// "eliminar RutaEnCursoCard" pero el archivo nunca se borró del repo, solo
+// dejó de importarse (mismo patrón que EmployeeScheduleView.jsx en
+// v2.17.25). data/ventasPerdidas.js nuevo (4 fn). data/system.js +2 fn
+// para ShiftExceptionModal.jsx (fetchPublishedRosterWithId/
+// updateEmployeeRosterById, cada una reutilizada 2× dentro del mismo
+// archivo — handleSave y handleRemoveException comparten el query
+// exacto). ShiftExceptionModal.jsx tampoco es alcanzable en vivo: su
+// botón trigger (setShowExceptionModal(true)) no existe en
+// EmployeeDetailView.jsx — el modal y su estado quedaron pero sin
+// disparador. Verificado en vivo con Playwright: /pedidos?tab=rutas →
+// "Ver mapa" (Ruta #4, conductor real, fallback Leaflet correcto ante
+// RefererNotAllowedMapError de Google Maps en localhost — comportamiento
+// esperado, no regresión), /ventas-perdidas (productos reales buscados
+// por clientes, reportante real). RutaEnCursoCard y ShiftExceptionModal
+// verificados por sustitución 1:1 exacta al no ser alcanzables. Build +
+// lint + 15 tests verdes.
 
 // v2.17.26 — refactor(bloque6.A): ComprasView.jsx + WidgetMinMaxRequest.jsx +
 // ConteoDetailView.jsx + LabsPanel.jsx — 20 supabase.from() migradas

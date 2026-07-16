@@ -74,6 +74,10 @@ export function upsertRutaLocation(rutaId, lat, lng) {
         .upsert({ ruta_id: rutaId, lat, lng, updated_at: new Date().toISOString() }, { onConflict: 'ruta_id' });
 }
 
+export function fetchRutaLocationSingle(rutaId) {
+    return supabase.from('ruta_locations').select('lat, lng, updated_at').eq('ruta_id', rutaId).maybeSingle();
+}
+
 export function updateRutaStatus(rutaId, patch) {
     return supabase.from('rutas').update(patch).eq('id', rutaId);
 }

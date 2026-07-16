@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { PackageMinus, CheckCircle2, TrendingDown, Clock, FlaskConical, Building2, ShoppingCart } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
-import { supabase }   from '../supabaseClient';
 import { signPhotosDeep } from '../utils/storageFiles';
+import {
+    fetchBranchesForVentasPerdidas, fetchEmployeesSafeBasic, fetchVentasPerdidas, updateVentaPerdidaStatus,
+} from '../data/ventasPerdidas';
 
 const TABS = [
     { key: 'pendiente', label: 'Pendiente' },
@@ -27,8 +29,8 @@ export default function VentasPperdidasView() {
     useEffect(() => {
         const loadMaps = async () => {
             const [{ data: bData, error: bErr }, { data: eData, error: eErr }] = await Promise.all([
-                supabase.from('branches').select('id, name'),
-                supabase.from('employees_safe').select('id, name, photo_url'),
+                fetchBranchesForVentasPerdidas(),
+                fetchEmployeesSafeBasic(),
             ]);
             if (bErr) console.error('VentasPperdidasView: fetch branches failed:', bErr.message);
             if (eErr) console.error('VentasPperdidasView: fetch employees_safe failed:', eErr.message);
@@ -49,11 +51,7 @@ export default function VentasPperdidasView() {
         const load = async () => {
             setLoading(true);
             try {
-                const { data, error } = await supabase
-                    .from('ventas_perdidas')
-                    .select('id, producto_buscado, descripcion, principio_activo, laboratorio, cantidad, branch_id, reportado_por, status, created_at')
-                    .eq('status', activeTab)
-                    .order('created_at', { ascending: false });
+                const { data, error } = await fetchVentasPerdidas(activeTab);
                 if (error) console.error('VentasPperdidasView: fetch ventas_perdidas failed:', error.message);
                 if (!cancelled) setRows(data || []);
             } finally {
@@ -66,7 +64,7 @@ export default function VentasPperdidasView() {
 
     const markProcessed = async (id) => {
         setProcessing(id);
-        await supabase.from('ventas_perdidas').update({ status: 'procesado' }).eq('id', id);
+        await updateVentaPerdidaStatus(id, 'procesado');
         setProcessing(null);
         setRows(prev => prev.filter(r => r.id !== id));
     };

@@ -3,6 +3,7 @@ import { X, MapPin, CheckCircle2, Clock, Crosshair, Truck, Radio, RefreshCw } fr
 import { supabase } from '../../supabaseClient';
 import PedidoModal from './PedidoModal';
 import { loadGoogleMaps, loadLeaflet } from '../../utils/routeOptimizer';
+import { fetchSucursalesConCoords, fetchRutaLocationSingle, upsertRutaLocation } from '../../data/pedidos';
 
 // Capacitor geolocation nativa — solo disponible en app nativa (Android/iOS)
 const isNative = !!(window.Capacitor?.isNativePlatform?.());
@@ -100,8 +101,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
   // ── Cargar coordenadas de sucursales ────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
-    supabase.from('erp_sucursal_map')
-      .select('erp_sucursal_id, es_bodega, branch:branches!inner(settings, name)')
+    fetchSucursalesConCoords()
       .then(({ data }) => {
         const cm = {};
         let bodega = null;
@@ -194,8 +194,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
   useEffect(() => {
     if (!open || isConductor) return;
 
-    supabase.from('ruta_locations').select('lat, lng, updated_at')
-      .eq('ruta_id', ruta.id).maybeSingle()
+    fetchRutaLocationSingle(ruta.id)
       .then(({ data }) => {
         if (!data) return;
         setDriverPos({ lat: parseFloat(data.lat), lng: parseFloat(data.lng) });
@@ -224,10 +223,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
     const interval = setInterval(() => {
       const pos = latestGpsPosRef.current;
       if (!pos) return;
-      supabase.from('ruta_locations').upsert(
-        { ruta_id: ruta.id, lat: pos.lat, lng: pos.lng, updated_at: new Date().toISOString() },
-        { onConflict: 'ruta_id' },
-      ).then(() => {}, () => {});
+      upsertRutaLocation(ruta.id, pos.lat, pos.lng).then(() => {}, () => {});
     }, 30_000);
     return () => clearInterval(interval);
   }, [open, isConductor, ruta.id]);
@@ -267,10 +263,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
     // Primera posición: escribir inmediatamente a DB
     if (!firstWriteRef.current) {
       firstWriteRef.current = true;
-      supabase.from('ruta_locations').upsert(
-        { ruta_id: ruta.id, lat: gpsPos.lat, lng: gpsPos.lng, updated_at: new Date().toISOString() },
-        { onConflict: 'ruta_id' },
-      ).then(() => {}, () => {});
+      upsertRutaLocation(ruta.id, gpsPos.lat, gpsPos.lng).then(() => {}, () => {});
     }
 
     if (mapsApiRef.current && mapInstRef.current) {

@@ -343,6 +343,8 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
     const [discardRowConfirm, setDiscardRowConfirm] = useState({ open: false, row: null });
     const [zeroOutConfirm,  setZeroOutConfirm]  = useState({ open: false, row: null, pendingCell: null, pendingPair: null, pendingZeroAll: false });
     const [discardingAll,  setDiscardingAll]  = useState(false);
+    const [hideFilteredConfirm, setHideFilteredConfirm] = useState(false);
+    const [hidingFiltered,      setHidingFiltered]      = useState(false);
     const [analysisConfig, setAnalysisConfig] = useState({ analysis_days: 180, approaching_pct: 20 });
     const analysisConfigRef = useRef({ analysis_days: 180, approaching_pct: 20 });
     useEffect(() => { analysisConfigRef.current = analysisConfig; }, [analysisConfig]);
@@ -1099,32 +1101,38 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         [filtered, hasActiveFilter]
     );
 
-    // Sin caller hoy — feature completa (bulk-hide de todo lo filtrado, con
-    // audit log MINMAX_HIDE_FILTERED) pero sin botón/confirmación en la UI.
-    // No borrar: es una acción masiva real, no dead code — falta decisión de
-    // producto sobre dónde va el botón y si necesita modal de confirmación.
-    // eslint-disable-next-line no-unused-vars
+    // 7A.6: bulk-hide de todo lo filtrado — botón en la toolbar con
+    // ConfirmModal (mismo patrón que "Descartar"), ver hideFilteredConfirm.
     const hideFiltered = useCallback(async () => {
         if (!filtered.length) return;
-        const ids = filtered.map(r => r.erp_product_id);
-        // upsert en vez de update para que dead-stock products (sin fila en product_stock_params) también queden ocultos
-        await upsertStockParamsBulk(
-            ids.map(id => ({
-                erp_product_id: id,
-                erp_sucursal_id: selectedErp,
-                is_hidden: true,
-                draft_min: 0,
-                draft_max: 0,
-                draft_status: 'pending',
-                updated_at: new Date().toISOString(),
-            }))
-        );
-        setHiddenIds(prev => { const n = new Set(prev); ids.forEach(id => n.add(id)); return n; });
-        setData(prev => prev.map(r =>
-            ids.includes(r.erp_product_id) && r._erp_sucursal_id === selectedErp
-                ? { ...r, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r
-        ));
-        useStaff.getState().appendAuditLog('MINMAX_HIDE_FILTERED', 'batch', { count: ids.length, sucursal_id: selectedErp });
+        setHidingFiltered(true);
+        try {
+            const ids = filtered.map(r => r.erp_product_id);
+            // upsert en vez de update para que dead-stock products (sin fila en product_stock_params) también queden ocultos
+            await upsertStockParamsBulk(
+                ids.map(id => ({
+                    erp_product_id: id,
+                    erp_sucursal_id: selectedErp,
+                    is_hidden: true,
+                    draft_min: 0,
+                    draft_max: 0,
+                    draft_status: 'pending',
+                    updated_at: new Date().toISOString(),
+                }))
+            );
+            setHiddenIds(prev => { const n = new Set(prev); ids.forEach(id => n.add(id)); return n; });
+            setData(prev => prev.map(r =>
+                ids.includes(r.erp_product_id) && r._erp_sucursal_id === selectedErp
+                    ? { ...r, is_hidden: true, draft_min: 0, draft_max: 0, draft_status: 'pending' } : r
+            ));
+            useStaff.getState().appendAuditLog('MINMAX_HIDE_FILTERED', 'batch', { count: ids.length, sucursal_id: selectedErp });
+            useToastStore.getState().showToast(ERP_NAMES[selectedErp], `Ocultó ${ids.length} producto${ids.length !== 1 ? 's' : ''}`, 'success');
+        } catch (e) {
+            useToastStore.getState().showToast('Error al ocultar', e.message, 'error');
+        } finally {
+            setHidingFiltered(false);
+            setHideFilteredConfirm(false);
+        }
     }, [filtered, selectedErp]);
     const filterLabel = useMemo(() => {
         if (filterAbc !== 'all' && filterXyz === 'all' && filterAlert === 'all' && !searchTerm) return `Clase ${filterAbc}`;
@@ -1611,6 +1619,19 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         onClick={() => { setFilterChangesOnly(f => !f); setFilterDraft(false); setFilterSparse(false); }}
                                         className={`flex items-center gap-1 px-2.5 py-2 text-[10px] font-semibold transition-[background-color,color] duration-100 whitespace-nowrap ${filterChangesOnly ? 'bg-violet-100/70 text-violet-800 font-bold' : 'text-slate-600 hover:bg-slate-100/60 hover:text-slate-800'}`}>
                                         {filterChangesOnly ? <><X size={8} strokeWidth={2.5} className="shrink-0" /> Ver todos</> : `Cambios (${changesCount})`}
+                                    </motion.button>
+                                </>
+                            )}
+                            {/* Ocultar filtrados (7A.6) */}
+                            {hasActiveFilter && filtered.length > 0 && (
+                                <>
+                                    <div className="h-4 w-px bg-slate-200/70 shrink-0" />
+                                    <motion.button whileTap={{ scale: 0.91, transition: { duration: 0.06 } }}
+                                        onClick={() => setHideFilteredConfirm(true)}
+                                        disabled={hidingFiltered}
+                                        className="flex items-center gap-1 px-2.5 py-2 text-[10px] font-semibold text-rose-400 hover:bg-rose-50/80 hover:text-rose-600 transition-[background-color,color] duration-100 whitespace-nowrap disabled:opacity-50">
+                                        {hidingFiltered ? <Loader2 size={9} className="animate-spin shrink-0" /> : <EyeOff size={9} className="shrink-0" />}
+                                        Ocultar {filterLabel} ({filtered.length})
                                     </motion.button>
                                 </>
                             )}
@@ -2532,6 +2553,19 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                 cancelText="Cancelar"
                 isDestructive={true}
                 isProcessing={discardingAll}
+            />
+
+            {/* ── Confirm hide filtered modal (7A.6) ── */}
+            <ConfirmModal
+                isOpen={hideFilteredConfirm}
+                onClose={() => setHideFilteredConfirm(false)}
+                onConfirm={hideFiltered}
+                title={`¿Ocultar ${filtered.length} producto${filtered.length !== 1 ? 's' : ''}?`}
+                message={`Los productos de "${filterLabel}" en ${ERP_NAMES[selectedErp]} quedarán ocultos con MIN/MAX en borrador 0/0. Podés revertirlo desde el filtro de ocultos.`}
+                confirmText="Ocultar"
+                cancelText="Cancelar"
+                isDestructive={true}
+                isProcessing={hidingFiltered}
             />
         </div>
     );

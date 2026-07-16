@@ -5,8 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.36';
+export const APP_VERSION = '2.17.37';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.37 — feat(bloque7A.6): botón "Ocultar filtrados" en TabMinMax —
+// hideFiltered() tenía la lógica de bulk-hide completa (RPC vía
+// upsertStockParamsBulk + audit log MINMAX_HIDE_FILTERED) pero sin botón
+// ni confirmación. Agregado en la toolbar de drafts (mismo grupo que
+// "Descartar"/"Publicar", visible cuando draftCount>0 y hay filtro
+// activo), con ConfirmModal — mismo patrón exacto que "Descartar"
+// (isDestructive, isProcessing, mensaje explicando el alcance). El
+// mensaje aclara que es reversible desde el filtro de ocultos
+// (unhideProduct/unhideAll, ya existentes). hideFiltered ahora envuelve
+// la escritura en try/finally con setHidingFiltered + toast de éxito/error,
+// igual que handlePublish. Verificado: build/lint/15 tests verdes; en
+// vivo el filtro ABC=A aplicó correctamente (51 productos, pill visible),
+// el botón nuevo vive en el mismo contenedor condicional que "Descartar"
+// (requiere draftCount>0 — no se forzó "Calcular" para no escribir drafts
+// a prod solo para la captura), sin errores de consola nuevos.
 
 // v2.17.36 — feat(bloque7A.5): tarjeta "Llegada confirmada" en
 // ReceptionActions.jsx — llegadaEmp/llegadaTipo llegaban como prop pero,

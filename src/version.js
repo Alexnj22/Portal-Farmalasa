@@ -5,8 +5,14 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.19.3';
+export const APP_VERSION = '2.19.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.19.4 — fix(ventas/vendedores): las cards "Total Ventas" y "Facturas"
+// quedaban fijas en el total de TODO el período al buscar un vendedor —
+// se calculaban sobre `rows` (sin filtrar) en vez de `knownRows` (respeta
+// el buscador), a diferencia de la card "Vendedores" que sí reaccionaba.
+// Ahora ambas cards suman knownRows + unknownByBranch, igual que la tabla.
 
 // v2.19.3 — fix(reglas/promociones): 2 focos más del mismo bug de
 // presentaciones inactivas (post-fix get_stock_analysis v2.19.2).

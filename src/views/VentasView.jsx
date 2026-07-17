@@ -1041,8 +1041,16 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
         return { knownRows: known, unknownByBranch: unknownMap, isVendSearchFuzzy: isVendFuzzy };
     }, [rows, searchTerm, empMap]);
 
-    const totalVentas   = rows.reduce((s, r) => s + r.total, 0);
-    const totalFacturas = rows.reduce((s, r) => s + r.count, 0);
+    // Suma sobre lo que realmente se ve en la tabla (knownRows respeta el filtro de búsqueda;
+    // unknownByBranch siempre se muestra completo) para que las cards no queden fijas en el
+    // total del período completo cuando el usuario busca un vendedor específico.
+    const unknownTotals = useMemo(() => {
+        let total = 0, count = 0;
+        for (const u of unknownByBranch.values()) { total += u.total; count += u.count; }
+        return { total, count };
+    }, [unknownByBranch]);
+    const totalVentas   = knownRows.reduce((s, r) => s + r.total, 0) + unknownTotals.total;
+    const totalFacturas = knownRows.reduce((s, r) => s + r.count, 0) + unknownTotals.count;
 
     const TrendBadge = ({ cod, currentRank }) => {
         const prev = prevRankMap.get(cod);

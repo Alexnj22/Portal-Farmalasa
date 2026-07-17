@@ -657,6 +657,33 @@ feature. Orden: Fase 0 (infra común) → 7B.1 → 7B.4/7B.5 (comodines) → 7B.
 
 ## BLOQUE 8 — Deuda de arquitectura: cargo secundario debe sumar permisos (post-Bloque 7B)
 
+✅ **Aplicado 2026-07-16 (v2.17.51).** Modelo de unión implementado en backend
+y frontend, verificado con datos reales de prod en transacciones ROLLBACK
+(sin escritura permanente): `auth_employee_secondary_role_id()` nueva;
+`auth_has_module_permission()`/`auth_can_edit_any()`/`auth_module_scope()`
+reescritas con OR primario/secundario (empate de scope: gana `'ALL'`).
+Positivo real confirmado: Alexander Melgar e Idalia Serrano (role_id=23+20)
+pasan de `productos_tab_inventario.can_view=false` a `true`. Negativo
+confirmado: `bonificaciones` (ambos roles en false) se mantiene false para
+los mismos 2 empleados. Regresión confirmada: Jonathan Melgar (role_id=30,
+sin cargo secundario) — cero diferencias en ningún módulo de su rol.
+Migración `20260716221756_bloque8_secondary_role_union_permissions.sql`
+aplicada primero en staging (`ewcmerxqjvludtgskuin`), luego en prod, ambas
+con `lock_timeout='5s'`. `ensure_user_by_code` redesplegado (agrega
+`secondary_role_id`/`secondaryRoleId`, hallazgo de esta sesión: ningún path
+de login lo exponía al frontend antes). `AuthContext.jsx`: `loginWithUsername`
+copia `secondaryRoleId`; `refreshPermissions` mergea permisos de ambos
+`role_id` en un solo lugar (`fetchRolePermissionsForRoles` nueva en
+`src/data/permissions.js`) — `hasPermission`/`getScope` sin cambios, ya
+consumen el mapa pre-mergeado; suscripción Realtime amplía el filtro a
+`role_id=in.(primario,secundario)` cuando hay cargo secundario. Lint/build/15
+tests verdes. **Fuera de alcance, documentado sin tocar**: policies de
+announcements por audiencia de rol (usan `auth_employee_role_id()` directo,
+mecanismo distinto), `check-sync-health-alerts` (resuelve "qué empleados
+tienen este rol" para push, no "permiso del usuario actual" — no es el mismo
+mecanismo, no se simplificó), `max_price_level`/`is_su` (solo rol primario,
+fuera de la decisión del usuario).
+
 **Origen (2026-07-16, durante 7B.3):** al construir el dashboard de Salud de Syncs se
 descubrió que `employees.secondary_role_id` ("Cargo Secundario", campo real y usado en
 `EmployeeFormModal.jsx`/`RolesView.jsx`) es **puramente cosmético hoy** — no otorga ningún

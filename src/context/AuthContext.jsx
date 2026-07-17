@@ -3,7 +3,7 @@ import { supabase } from "../supabaseClient";
 import { CACHE_KEYS } from "../store/utils";
 import { useStaffStore } from "../store/staffStore";
 import { getSignedFileUrl } from "../utils/storageFiles";
-import { fetchRolePermissionsForRole, fetchRolePriceLevelAndSU } from "../data/permissions";
+import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU } from "../data/permissions";
 import { fetchEmployeeSafeByUsername } from "../data/auth";
 
 const AuthContext = createContext(null);
@@ -110,8 +110,10 @@ export const AuthProvider = ({ children }) => {
     if (!u) { setRolePerms(null); setPermsLoading(false); setMaxPriceLevel(null); return; }
 
     const roleId = u.roleId ?? (Number.isInteger(u.role) ? u.role : null);
-    const permsQuery = roleId
-      ? fetchRolePermissionsForRole(roleId)
+    const secondaryRoleId = Number.isInteger(u.secondaryRoleId) ? u.secondaryRoleId : null;
+    const roleIds = [roleId, secondaryRoleId].filter(Number.isInteger);
+    const permsQuery = roleIds.length
+      ? fetchRolePermissionsForRoles(roleIds)
       : Promise.resolve({ data: [] });
     const priceLevelQuery = roleId
       ? fetchRolePriceLevelAndSU(roleId)
@@ -121,9 +123,23 @@ export const AuthProvider = ({ children }) => {
       .then(([{ data, error }, { data: roleData }]) => {
         // No sobreescribir en error de red — conservar permisos previos
         if (error || !data) { setPermsLoading(false); return; }
+        // Bloque 8 — modelo de unión: el permiso efectivo por module_key es el OR
+        // entre lo que da el rol primario y lo que da el secundario (si existe);
+        // el secundario rellena lo que le falta al primario, nunca lo reemplaza.
+        // Empate de scope: gana el más permisivo ('ALL').
         const map = {};
         data.forEach(p => {
-          map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve, scope: p.scope || 'ALL' };
+          const prev = map[p.module_key];
+          if (!prev) {
+            map[p.module_key] = { can_view: p.can_view, can_edit: p.can_edit, can_approve: p.can_approve, scope: p.scope || 'ALL' };
+          } else {
+            map[p.module_key] = {
+              can_view: prev.can_view || p.can_view,
+              can_edit: prev.can_edit || p.can_edit,
+              can_approve: prev.can_approve || p.can_approve,
+              scope: (prev.scope === 'ALL' || p.scope === 'ALL') ? 'ALL' : (prev.scope || p.scope || 'ALL'),
+            };
+          }
         });
         const price = roleData?.max_price_level ?? null;
         const isSU  = roleData?.is_su ?? false;
@@ -150,7 +166,7 @@ export const AuthProvider = ({ children }) => {
   // — ambos casos tienen roleId correcto, no queremos doble refresh.
   useEffect(() => {
     refreshPermissions(user);
-  }, [user?.id, user?.roleId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id, user?.roleId, user?.secondaryRoleId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Refresca permisos solo al VOLVER a la pestaña (no al ocultarla)
   useEffect(() => {
@@ -166,15 +182,19 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const roleId = user?.roleId ?? (Number.isInteger(user?.role) ? user?.role : null);
     if (!roleId) return;
+    const secondaryRoleId = Number.isInteger(user?.secondaryRoleId) ? user.secondaryRoleId : null;
+    const filter = secondaryRoleId
+      ? `role_id=in.(${roleId},${secondaryRoleId})`
+      : `role_id=eq.${roleId}`;
     const channel = supabase
-      .channel(`role_perms_${roleId}_${user?.id}`)
+      .channel(`role_perms_${roleId}_${secondaryRoleId ?? 'x'}_${user?.id}`)
       .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'role_permissions', filter: `role_id=eq.${roleId}` },
+        { event: '*', schema: 'public', table: 'role_permissions', filter },
         () => refreshPermissions()
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user?.id, user?.roleId, refreshPermissions]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id, user?.roleId, user?.secondaryRoleId, refreshPermissions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // -------------------------
   // ⏱️ Inactividad
@@ -527,6 +547,7 @@ export const AuthProvider = ({ children }) => {
         photo:      emp.photo_url,
         role:       emp.role_id,
         roleId:     emp.role_id ?? null,
+        secondaryRoleId: emp.secondary_role_id ?? null,
         systemRole: emp.system_role || 'EMPLEADO',
       });
 

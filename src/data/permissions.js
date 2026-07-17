@@ -37,6 +37,15 @@ export function fetchRolePermissionsForRole(roleId) {
         .eq('role_id', roleId);
 }
 
+// Bloque 8 — cargo secundario suma permisos (modelo de unión). Trae las filas
+// de role_permissions de varios role_id a la vez (primario + secundario);
+// el merge por module_key (OR de acciones, scope más permisivo) lo hace el caller.
+export function fetchRolePermissionsForRoles(roleIds) {
+    return supabase.from('role_permissions')
+        .select('role_id, module_key, can_view, can_edit, can_approve, scope')
+        .in('role_id', roleIds);
+}
+
 export function fetchRolePriceLevelAndSU(roleId) {
     return supabase.from('roles').select('max_price_level, is_su').eq('id', roleId).single();
 }

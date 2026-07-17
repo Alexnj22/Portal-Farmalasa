@@ -5,8 +5,34 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.50';
+export const APP_VERSION = '2.17.51';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.51 — feat(bloque8): employees.secondary_role_id (Cargo Secundario)
+// ahora SUMA permisos vía modelo de unión (primario OR secundario), en vez
+// de ser puramente cosmético. Backend: nuevo helper
+// auth_employee_secondary_role_id(); auth_has_module_permission(),
+// auth_can_edit_any() y auth_module_scope() reescritas con OR entre rol
+// primario y secundario (empate de scope: gana 'ALL', el más permisivo).
+// NULL en secondary_role_id es seguro sin caso especial (empleados sin
+// cargo secundario se comportan idéntico a antes). Migración aplicada
+// primero en staging, verificada en transacciones ROLLBACK sobre prod con
+// 2 empleados reales (Alexander Melgar/Idalia Serrano, role_id=23+20):
+// productos_tab_inventario pasa de false→true (positivo real), bonificaciones
+// se mantiene false (ambos roles la niegan), Jonathan Melgar (rol 30, sin
+// cargo secundario) cero diferencias en ningún módulo (regresión limpia).
+// ensure_user_by_code ahora selecciona y devuelve secondary_role_id/
+// secondaryRoleId (ningún path de login lo exponía antes). AuthContext.jsx:
+// loginWithUsername copia secondaryRoleId; refreshPermissions pide permisos
+// de ambos role_id (fetchRolePermissionsForRoles nueva en
+// src/data/permissions.js) y mergea por module_key (OR de acciones, scope
+// más permisivo) en un solo lugar — hasPermission/getScope no cambian, ya
+// consumen el mapa pre-mergeado; suscripción Realtime amplía el filtro a
+// role_id=in.(primario,secundario) cuando hay cargo secundario. Fuera de
+// alcance (documentado): policies de announcements por audiencia de rol,
+// check-sync-health-alerts (mecanismo distinto), max_price_level/is_su
+// (solo rol primario). Verificado: lint limpio, build limpio, 15 tests
+// verdes.
 
 // v2.17.50 — refactor(bloque6.C, continuación, PR2/2): extrae el hook de
 // estado/fetch de TabPedidos.jsx a src/views/pedidos/tabpedidos/usePedidosData.js.

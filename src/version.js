@@ -5,8 +5,17 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.19.1';
+export const APP_VERSION = '2.19.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.19.2 — fix(minmax): get_stock_analysis ya no muestra presentaciones
+// inactivas en el CSV. catalog_pres/catalog_base_pres (fallback cuando el
+// producto no tiene esa presentación en inventario) leían product_precios
+// sin filtrar activo=true, a diferencia de get_pedido_preview que sí lo hace.
+// Caso real: ALCANFOR SOBRE X 6 UNIDADES (id 985) tenía una presentación
+// "1x190" (factor 190) marcada activo=false junto a la real "1x1"
+// (activo=true) — el CSV de Bodega mostraba la 1x190 inactiva como
+// "presentación mayor disponible".
 
 // v2.19.1 — fix(pedidos): Bodega ya no cuenta pedido_items pendientes
 // indefinidamente contra su stock disponible.

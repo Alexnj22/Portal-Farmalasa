@@ -75,9 +75,13 @@ test.describe('Flujos autenticados', () => {
         await page.getByText('Listado', { exact: true }).click();
         await expect(page.locator('table tbody tr').first()).toBeVisible({ timeout: 15_000 });
 
-        await page.locator('table tbody tr').first().locator('button').last().click();
-        await expect(page.getByText(/editar/i).first()).toBeVisible({ timeout: 15_000 });
-        await page.getByText(/editar/i).first().click();
+        // El lápiz "Edición rápida" (StaffManagementView.jsx) abre el modal
+        // directo — NO es el último botón de la fila (ese es "Ver perfil
+        // completo", que navega al dossier de solo lectura). Apuntar por
+        // title en vez de .last() evita el falso negativo si se agregan más
+        // botones de fila en el futuro. Requiere staff_list.can_edit (la
+        // cuenta QA lo tiene; staff_detail.can_edit deliberadamente no).
+        await page.locator('table tbody tr').first().locator('button[title="Edición rápida"]').click();
 
         const duiInput = page.locator('input[name="dui"]');
         await expect(duiInput).toBeVisible({ timeout: 15_000 });

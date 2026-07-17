@@ -5,8 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.51';
+export const APP_VERSION = '2.17.52';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.52 — fix(ci): diagnostica y corrige las 3 fallas preexistentes de
+// e2e-smoke.js (existían desde el 2026-07-15T13:58, sin relación con
+// Bloque 8 ni con ningún refactor — ningún código de la app cambió entre el
+// último run verde y el primero rojo). Causa raíz en los 3 casos: permisos
+// incompletos del rol dedicado a CI (role_id=33, QA/Testing), no bugs de la
+// app. (1) Dashboard: faltaba dash_kpi.can_view → la fila de KPIs (incl.
+// "Empleados activos") nunca renderizaba. (2) Pedidos: faltaba
+// pedidos_tab_historial.can_view → PedidosView.jsx filtra TABS por
+// hasPermission(t.permKey), ningún tab pasaba, el label "Pedidos" nunca
+// aparecía. Ambos se completaron con can_view=true (can_edit sigue false,
+// mismo criterio de mínimo privilegio del rol). (3)
+// "Modal de Editar Empleado...race condition": el test clickeaba
+// button.last() de la fila asumiendo que era el lápiz "Edición rápida" —
+// en StaffManagementView.jsx el último botón es en realidad "Ver perfil
+// completo" (navega a EmployeeDetailView, dossier de solo lectura), cuyo
+// botón Editar gatea con staff_detail.can_edit (deliberadamente false para
+// esta cuenta). Corregido apuntando el selector directo al botón por
+// title="Edición rápida" (staff_list.can_edit=true, que la cuenta ya
+// tenía) — coincide con el diseño original documentado en memoria al crear
+// la cuenta QA. Verificado: lint/build/15 tests verdes localmente.
 
 // v2.17.51 — feat(bloque8): employees.secondary_role_id (Cargo Secundario)
 // ahora SUMA permisos vía modelo de unión (primario OR secundario), en vez

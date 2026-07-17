@@ -5,8 +5,14 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.19.4';
+export const APP_VERSION = '2.19.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.19.5 — feat(facturas-compra): base del módulo de facturas de compra por
+// correo — migración 20260717_purchase_dte_email_sync (tablas
+// email_sync_accounts + purchase_dte_documents, bucket privado purchase-dte)
+// y script scripts/gmail-refresh-token.mjs para autorizar las cuentas Gmail
+// (OAuth una vez por cuenta, token a Vault). Sin cambios de UI todavía.
 
 // v2.19.4 — fix(ventas/vendedores): las cards "Total Ventas" y "Facturas"
 // quedaban fijas en el total de TODO el período al buscar un vendedor —

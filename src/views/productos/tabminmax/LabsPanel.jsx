@@ -5,7 +5,7 @@ import { FlaskConical, X, Search, Loader2 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { smartFilter } from '../../../utils/searchUtils';
 import {
-    fetchLaboratoriosMinMaxVisibility, fetchActiveProductLabIds, updateLaboratorioMinMaxVisibility,
+    fetchLaboratoriosMinMaxVisibility, fetchActiveProductLabCounts, updateLaboratorioMinMaxVisibility,
     fetchProductIdsByLaboratorio, unhideStockParamsForProducts,
 } from '../../../data/minmaxLabs';
 
@@ -21,11 +21,11 @@ export default function LabsPanel({ onClose, onChanged }) {
     useEffect(() => {
         Promise.all([
             fetchLaboratoriosMinMaxVisibility(),
-            fetchActiveProductLabIds(),
-        ]).then(([{ data: labData }, { data: prodData }]) => {
+            fetchActiveProductLabCounts(),
+        ]).then(([{ data: labData }, { data: countData }]) => {
             setLabs(labData || []);
             const cm = {};
-            (prodData || []).forEach(p => { if (p.laboratorio_id) cm[p.laboratorio_id] = (cm[p.laboratorio_id] || 0) + 1; });
+            (countData || []).forEach(r => { cm[r.laboratorio_id] = Number(r.product_count); });
             setCounts(cm);
             setLoading(false);
         });

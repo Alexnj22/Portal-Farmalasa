@@ -24,13 +24,13 @@ export function fetchLaboratoriosMinMaxVisibility() {
     return supabase.from('laboratorios').select('id, nombre, ocultar_en_minmax').order('nombre');
 }
 
-// >1000 productos activos hacía que los conteos por laboratorio en LabsPanel
-// quedaran truncados (M-3).
-export function fetchActiveProductLabIds() {
-    return fetchPaginated(
-        supabase.from('products').select('*', { count: 'exact', head: true }).eq('activo', true),
-        (from, to) => supabase.from('products').select('laboratorio_id').eq('activo', true).range(from, to)
-    );
+// RPC server-side con GROUP BY — antes descargaba laboratorio_id de TODOS
+// los productos activos (miles de filas en varios chunks) solo para
+// reducirlos a un conteo por laboratorio en un .forEach() de JS (deuda de
+// rendimiento documentada en el /code-review post-auditoría, aplicada
+// después a pedido explícito). Devuelve ~20-30 filas en vez de miles.
+export function fetchActiveProductLabCounts() {
+    return supabase.rpc('get_active_product_lab_counts');
 }
 
 export function updateLaboratorioMinMaxVisibility(labId, ocultar) {

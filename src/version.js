@@ -5,9 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.64';
+export const APP_VERSION = '2.17.65';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.65 — perf(minmax): LabsPanel usa get_active_product_lab_counts (RPC
+// con GROUP BY server-side) en vez de descargar laboratorio_id de todos los
+// productos activos al cliente. Antes: ~4,354 filas en varios chunks
+// paralelos solo para reducirlas a un conteo por laboratorio en JS. Ahora:
+// 1 llamada, 323 filas (una por laboratorio, suma verificada idéntica).
+// Última deuda pendiente de la auditoría MinMax 2026-07-17 — cierra el
+// tema por completo. M3 (forecast v2 con safety stock estadístico):
+// rechazada, no se aplica. M4 (lead time auto-aprendido de compras): se
+// mantiene diferida hasta que el sistema de facturación esté completo. M6
+// (excedente de Bodega como %): queda documentada, sin fecha.
 // v2.17.64 — fix(minmax): restaura el badge "SUC. PEND." de Bodega. El
 // trigger de Bodega había perdido el soporte de "sucursal con borrador
 // pendiente → Bodega en pending" desde una migración del 2026-06-19 (un mes

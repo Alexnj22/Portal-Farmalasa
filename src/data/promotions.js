@@ -15,7 +15,8 @@ export function searchActiveProductsByName(term) {
 export function fetchProductPreciosForPromo(productId) {
     return supabase.from('product_precios')
         .select('id_presentacion, descripcion, factor, presentaciones(id, tipo)')
-        .eq('product_id', productId);
+        .eq('product_id', productId)
+        .eq('activo', true);
 }
 
 export function fetchSalesBranches(branchIds) {

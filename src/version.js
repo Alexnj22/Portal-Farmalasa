@@ -5,8 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.19.2';
+export const APP_VERSION = '2.19.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.19.3 — fix(reglas/promociones): 2 focos más del mismo bug de
+// presentaciones inactivas (post-fix get_stock_analysis v2.19.2).
+// fetchProductPresentacionesForDispatch (TabReglas — configurar regla de
+// despacho) y fetchProductPreciosForPromo (PromoModal — agregar producto a
+// promoción) no filtraban activo=true: el staff podía elegir una
+// presentación descontinuada como regla de despacho o precio de promo.
+// Regla de despacho preserva la presentación YA configurada aunque se haya
+// desactivado desde entonces (via keepIdPresentacion + .or()), para no
+// romper la edición de reglas existentes; promociones no tiene ese caso
+// (siempre es alta nueva) así que filtro directo.
 
 // v2.19.2 — fix(minmax): get_stock_analysis ya no muestra presentaciones
 // inactivas en el CSV. catalog_pres/catalog_base_pres (fallback cuando el

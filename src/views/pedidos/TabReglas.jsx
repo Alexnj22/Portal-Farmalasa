@@ -92,7 +92,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
             return;
         }
         setLoadingPres(true);
-        fetchProductPresentacionesForDispatch(product.id)
+        fetchProductPresentacionesForDispatch(product.id, rule?.dispatch_id_presentacion)
             .then(({ data }) => {
                 // Deduplica por id_presentacion — queda la de mayor factor
                 const seen = new Set();

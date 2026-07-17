@@ -5,12 +5,19 @@ import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { likePattern } from '../utils/searchUtils';
 
-export function fetchProductPresentacionesForDispatch(productId) {
-    return supabase
+// keepIdPresentacion: la regla ya configurada puede apuntar a una presentación
+// que desde entonces se marcó activo=false en el catálogo — igual debe listarse
+// para que el editor no la pierda de vista, pero ninguna OTRA inactiva debe
+// ofrecerse como opción nueva (mismo bug que get_stock_analysis con Alcanfor).
+export function fetchProductPresentacionesForDispatch(productId, keepIdPresentacion) {
+    let q = supabase
         .from('product_precios')
-        .select('id, id_presentacion, factor, descripcion, presentaciones!inner(id, tipo)')
-        .eq('product_id', productId)
-        .order('factor', { ascending: false });
+        .select('id, id_presentacion, factor, descripcion, activo, presentaciones!inner(id, tipo)')
+        .eq('product_id', productId);
+    q = keepIdPresentacion
+        ? q.or(`activo.eq.true,id_presentacion.eq.${keepIdPresentacion}`)
+        : q.eq('activo', true);
+    return q.order('factor', { ascending: false });
 }
 
 export function fetchLaboratoriosOcultarMinmax() {

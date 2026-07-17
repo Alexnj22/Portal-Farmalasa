@@ -16,7 +16,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { useAuth } from '../../context/AuthContext';
 import { applyPresRule } from '../../utils/presentacion';
-import { normXyz, sortedPres, smallestPres, formatUnits, formatDominant } from './tabminmax/helpers';
+import { normXyz, sortedPres, smallestPres, formatUnits, formatDominant, hasDispatchRisk } from './tabminmax/helpers';
 import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS, VISIBLE_STAT_KEYS } from './tabminmax/constants';
 import CoverageBar from './tabminmax/CoverageBar';
 import StockBar from './tabminmax/StockBar';
@@ -281,6 +281,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         publishing,
         filterDraft, setFilterDraft,
         filterSparse, setFilterSparse,
+        filterDispatchRisk, setFilterDispatchRisk,
         hidingIds, setHidingIds,
         filterChangesOnly, setFilterChangesOnly,
         filterHidden, setFilterHidden,
@@ -309,7 +310,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
         loadData,
         handleRecalcular,
         handleRecalcularAll,
-        hasPublishedData, draftCount, sparseCount, changesCount, bodegaPendingCount, stats, criticalACount,
+        hasPublishedData, draftCount, sparseCount, changesCount, bodegaPendingCount, dispatchRiskCount, stats, criticalACount,
         zeroOutRow,
         handleZeroAllBranches,
         saveDraftCell,
@@ -673,6 +674,42 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         )}
                         </AnimatePresence>
 
+                        {/* Riesgo de regla de despacho: el MAX configurado no alcanza el 40%
+                            de la unidad de despacho del producto ni en el mejor caso (repunte
+                            completo desde 0) — nunca va a generar un pedido real. Solo aplica
+                            a sucursales de venta (Bodega no despacha "a sí misma"). */}
+                        <AnimatePresence>
+                        {!isBodega && dispatchRiskCount > 0 && !loading && (
+                            <motion.div key="dispatch-risk" initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.2, ease: EASE_OUT_EXPO }} className="flex items-center overflow-hidden shrink-0">
+                                <div className="h-5 w-px bg-slate-200/50 shrink-0" />
+                                <motion.button
+                                    whileTap={{ scale: 0.88, transition: { duration: 0.06 } }}
+                                    onClick={() => { setFilterDispatchRisk(f => !f); setFilterDraft(false); setFilterSparse(false); setFilterChangesOnly(false); setFilterAlert('all'); }}
+                                    title="MAX configurado por debajo del umbral de la regla de despacho — nunca va a generar un pedido real con este valor"
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold select-none whitespace-nowrap backdrop-blur-sm
+                                        transition-[background-color,border-color,color,box-shadow] duration-100
+                                        ${filterDispatchRisk
+                                            ? 'bg-rose-50/90 text-rose-700 font-bold border border-rose-200/70 shadow-[0_2px_10px_rgba(0,0,0,0.09),inset_0_1px_0_rgba(255,255,255,0.88)]'
+                                            : 'text-slate-500 border border-transparent hover:bg-white/55 hover:text-slate-700'}`}>
+                                    <motion.span
+                                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${filterDispatchRisk ? 'bg-rose-400' : 'bg-rose-300'}`}
+                                        animate={filterDispatchRisk ? { scale: [1, 1.5, 1] } : { scale: 1 }}
+                                        transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
+                                    />
+                                    <span className={`tabular-nums font-black text-[11px] ${filterDispatchRisk ? '' : 'text-slate-700'}`}>{dispatchRiskCount}</span>
+                                    <span>Riesgo regla</span>
+                                    <AnimatePresence>
+                                    {filterDispatchRisk && (
+                                        <motion.span key="x" initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.5 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.13 }}>
+                                            <X size={9} className="ml-0.5" />
+                                        </motion.span>
+                                    )}
+                                    </AnimatePresence>
+                                </motion.button>
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
+
                         {/* Limpiar — siempre rojo cuando hay filtro activo */}
                         <AnimatePresence>
                         {hasAnyFilter && (
@@ -930,6 +967,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         const limitedData = hasDraft &&
                             row.draft_data_days != null &&
                             row.draft_data_days < (analysisConfig.analysis_days ?? 180);
+                        const dispatchRisk = !isBodega && hasDispatchRisk(row.effective_max, row.dispatch_pres_factor, row.dispatch_multiplo);
 
                         return (
                             <React.Fragment key={row.erp_product_id}>
@@ -964,6 +1002,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     {row.has_manual && <span className="shrink-0 text-[8px] font-black text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-full">MANUAL</span>}
                                                     {hasDraft && !isBodega && <span className="shrink-0 text-[8px] font-black text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-full">BORRADOR</span>}
                                                     {hasDraft && isBodega && <span className="shrink-0 text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">SUC. PEND.</span>}
+                                                    {dispatchRisk && <span className="shrink-0 text-[8px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full" title="El MAX actual no alcanza el umbral de la regla de despacho — este producto nunca va a generar un pedido real así">RIESGO REGLA</span>}
                                                     {isBodega && (
                                                         (hasDraft && Number(row.draft_min ?? 0) === 0 && Number(row.draft_max ?? 0) === 0) ||
                                                         (!hasDraft && Number(row.pub_min ?? 0) === 0 && Number(row.pub_max ?? 0) === 0 && row.has_manual)

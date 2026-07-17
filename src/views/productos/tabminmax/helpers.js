@@ -4,6 +4,26 @@
 // Normalize legacy demand_variability values → X/Y/Z
 export const normXyz = (v) => ({ stable: 'X', moderate: 'Y', erratic: 'Z' }[v] ?? v ?? 'X');
 
+// Riesgo de regla de despacho: el MAX efectivo (publicado + manual), llevado
+// a la unidad de despacho del producto (factor de presentación de la regla ×
+// múltiplo), redondea a 0 incluso en el mejor caso posible (repunte completo
+// desde stock 0 hasta MAX). Si eso pasa, este producto NUNCA va a generar un
+// pedido real con su MIN/MAX actual — hay que bajarlo a 0/0 o subir el MAX
+// para que supere el umbral. Mismo umbral del 40% que usa get_pedido_preview
+// para decidir si reponer una unidad completa. Solo aplica a productos con
+// regla de despacho explícita (dispatch_pres_factor no nulo) — el resto no
+// se marca. Se calcula al vuelo con datos que ya trae get_stock_analysis,
+// sin tocar la RPC.
+export function hasDispatchRisk(maxValue, dispatchPresFactor, dispatchMultiplo) {
+    if (!dispatchPresFactor || !maxValue || maxValue <= 0) return false;
+    const unitBase = dispatchPresFactor * (dispatchMultiplo || 1);
+    if (!unitBase) return false;
+    const whole = Math.floor(maxValue / unitBase);
+    const remainder = maxValue % unitBase;
+    const rounded = whole + (remainder >= 0.4 * unitBase ? 1 : 0);
+    return rounded === 0;
+}
+
 export function fmtMoney(n) {
     const v = Number(n) || 0;
     if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;

@@ -9,7 +9,7 @@ import { signPhotosDeep } from '../../../utils/storageFiles';
 import { useStaffStore as useStaff } from '../../../store/staffStore';
 import { useToastStore } from '../../../store/toastStore';
 import { smartFilter } from '../../../utils/searchUtils';
-import { normXyz } from './helpers';
+import { normXyz, hasDispatchRisk } from './helpers';
 import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS } from './constants';
 import {
     upsertStockParams, upsertStockParamsBulk, updateStockParams, updateStockParamsBulk,
@@ -82,6 +82,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
     const [publishing,   setPublishing]   = useState(false);
     const [filterDraft,       setFilterDraft]       = useState(false);
     const [filterSparse,      setFilterSparse]      = useState(false);
+    const [filterDispatchRisk, setFilterDispatchRisk] = useState(false);
     const [hidingIds,         setHidingIds]         = useState(new Set());
     const [filterChangesOnly, setFilterChangesOnly] = useState(false);
     const [filterHidden,      setFilterHidden]      = useState(false);
@@ -285,12 +286,12 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
 
     const {
         hasPublishedData, draftCount, sparseCount, changesCount,
-        bodegaPendingCount,
+        bodegaPendingCount, dispatchRiskCount,
         stats,
         criticalACount,
     } = useMemo(() => {
         const statCounts = Object.fromEntries(STAT_CFGS.map(s => [s.key, 0]));
-        let hasPublished = false, drafts = 0, sparse = 0, changes = 0, bPending = 0;
+        let hasPublished = false, drafts = 0, sparse = 0, changes = 0, bPending = 0, dispatchRisk = 0;
         let firstCalc = null, firstDraftCalc = null;
         let critA = 0, critAOut = 0, critABelow = 0;
         for (const r of data) {
@@ -309,6 +310,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             }
             if (r.draft_status === 'sparse_data') sparse++;
             if (r.alert_status in statCounts) statCounts[r.alert_status]++;
+            if (hasDispatchRisk(r.effective_max, r.dispatch_pres_factor, r.dispatch_multiplo)) dispatchRisk++;
             if (!firstCalc && r.calculated_at && !r.is_dead_stock) firstCalc = r.calculated_at;
             if (!firstDraftCalc && r.draft_status === 'pending' && r.draft_calculated_at) firstDraftCalc = r.draft_calculated_at;
             if (r.abc_class === 'A') {
@@ -320,7 +322,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         return {
             hasPublishedData: hasPublished,
             draftCount: drafts, sparseCount: sparse, changesCount: changes,
-            bodegaPendingCount: bPending,
+            bodegaPendingCount: bPending, dispatchRiskCount: dispatchRisk,
             stats: statCounts,
             lastCalcAt: firstCalc, lastDraftCalcAt: firstDraftCalc,
             criticalACount: critA, criticalAOut: critAOut, criticalABelow: critABelow,
@@ -816,10 +818,10 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
 
     // ── Derived ──────────────────────────────────────────────────────────────
     const hasActiveFilter = filterAbc !== 'all' || filterXyz !== 'all' || filterAlert !== 'all' || searchTerm !== '';
-    const hasAnyFilter    = hasActiveFilter || filterDraft || filterSparse || filterChangesOnly;
+    const hasAnyFilter    = hasActiveFilter || filterDraft || filterSparse || filterChangesOnly || filterDispatchRisk;
     const clearAllFilters = useCallback(() => {
         setFilterAbc('all'); setFilterXyz('all'); setFilterAlert('all');
-        setFilterDraft(false); setFilterSparse(false); setFilterChangesOnly(false);
+        setFilterDraft(false); setFilterSparse(false); setFilterChangesOnly(false); setFilterDispatchRisk(false);
     }, []);
     const isBodega      = selectedErp === 6;
     const neverCalc     = data.length > 0 && data.filter(d => !d.is_catalog_only).every(d => d.is_dead_stock || d.alert_status === 'no_data');
@@ -831,13 +833,14 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             if (filterSparse && r.draft_status !== 'sparse_data')                                                            return false;
             if (filterDraft && r.draft_status !== 'pending')                                                                 return false;
             if (filterChangesOnly && !(r.draft_status === 'pending' && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max))) return false;
+            if (filterDispatchRisk && !hasDispatchRisk(r.effective_max, r.dispatch_pres_factor, r.dispatch_multiplo))          return false;
             if (r.is_catalog_only && filterAlert !== 'no_data' && !searchTerm)                                               return false;
             if (filterAbc !== 'all' && (r.draft_abc_class || r.abc_class) !== filterAbc)                                    return false;
             if (filterXyz !== 'all' && normXyz(r.draft_demand_variability || r.demand_variability) !== filterXyz)           return false;
             if (filterAlert !== 'all' && r.alert_status !== filterAlert)                                                     return false;
             return true;
         });
-    }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, filterSparse, filterChangesOnly, hiddenIds, filterHidden]);
+    }, [data, filterAbc, filterXyz, filterAlert, searchTerm, filterDraft, filterSparse, filterChangesOnly, filterDispatchRisk, hiddenIds, filterHidden]);
 
     const { filtered, isSearchFuzzy, searchHiddenByFilter } = useMemo(() => {
         if (!searchTerm) return { filtered: filteredBase, isSearchFuzzy: false, searchHiddenByFilter: false };
@@ -933,7 +936,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
 
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
     const pageRows   = sorted.slice((page - 1) * pageSize, page * pageSize);
-    useEffect(() => { setPage(1); }, [filterAbc, filterXyz, filterAlert, searchTerm, sortBy, sortDir, selectedErp, filterDraft, filterSparse, filterHidden]);
+    useEffect(() => { setPage(1); }, [filterAbc, filterXyz, filterAlert, searchTerm, sortBy, sortDir, selectedErp, filterDraft, filterSparse, filterDispatchRisk, filterHidden]);
 
     const erpOptions = ERP_ORDER.map(id => ({ value: String(id), label: ERP_NAMES[id] }));
 
@@ -1019,6 +1022,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         publishing,
         filterDraft, setFilterDraft,
         filterSparse, setFilterSparse,
+        filterDispatchRisk, setFilterDispatchRisk,
         hidingIds, setHidingIds,
         filterChangesOnly, setFilterChangesOnly,
         filterHidden, setFilterHidden,
@@ -1047,7 +1051,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         loadData,
         handleRecalcular,
         handleRecalcularAll,
-        hasPublishedData, draftCount, sparseCount, changesCount, bodegaPendingCount, stats, criticalACount,
+        hasPublishedData, draftCount, sparseCount, changesCount, bodegaPendingCount, dispatchRiskCount, stats, criticalACount,
         zeroOutRow,
         handleZeroAllBranches,
         saveDraftCell,

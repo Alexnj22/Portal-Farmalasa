@@ -5,9 +5,27 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.65';
+export const APP_VERSION = '2.18.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.18.0 — feat(minmax): nuevo indicador "Riesgo regla" en la pestaña
+// Sucursal. Marca productos cuyo MAX efectivo, llevado a la unidad de
+// despacho del producto (factor de presentación de su regla × múltiplo),
+// no alcanza el umbral del 40% ni en el mejor caso (repunte completo desde
+// stock 0) — mismo umbral que ya usa get_pedido_preview (revision_minmax)
+// para decidir si reponer una unidad completa. Si un producto queda
+// marcado, su MIN/MAX actual NUNCA va a generar un pedido real: hay que
+// bajarlo a 0/0 o subir el MAX para que supere el umbral. Se calcula 100%
+// en el cliente (helpers.js: hasDispatchRisk) con dispatch_pres_factor/
+// dispatch_multiplo que get_stock_analysis ya devuelve por fila — sin
+// tocar esa RPC (evita duplicar el motor completo de reglas de despacho de
+// get_pedido_preview, que es mucho más elaborado: multiplo/blister/
+// solo_cajas/caja_especial). Solo aplica a sucursales de venta, no a
+// Bodega. Nuevo chip de filtro junto a "Revisar" (mismo patrón visual) +
+// badge "RIESGO REGLA" en la fila, junto a MANUAL/BORRADOR. Verificado en
+// vivo con Playwright contra prod: 32 productos marcados en La Popular
+// (ej. TEGADERM MIN 0/MAX 3 vs caja de 8 unidades — 3 no llega al 40% de
+// 8; JERINGA MIN 10/MAX 25 vs caja de 100).
 // v2.17.65 — perf(minmax): LabsPanel usa get_active_product_lab_counts (RPC
 // con GROUP BY server-side) en vez de descargar laboratorio_id de todos los
 // productos activos al cliente. Antes: ~4,354 filas en varios chunks

@@ -5,9 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.18.0';
+export const APP_VERSION = '2.18.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.18.1 — fix(minmax): Bodega ya no se marca "Suc. pendientes" por
+// sucursales ocultas. Reportado por el usuario con un caso real (SIMILAC 2
+// PROSENSITIVE X 800GR): La Popular tenía una fila draft_status='pending'
+// desde el 2026-06-14 (más de un mes), pero is_hidden=true — invisible en
+// toda la UI, pero el trigger de Bodega restaurado ayer (20260717230000) no
+// excluía sucursales ocultas de su cálculo de "¿están todas publicadas?",
+// así que esa fila fantasma seguía contando para siempre. Encontrados 4
+// productos con el mismo patrón latente (92, 566, 1527, 2808). Fix: la suma
+// de Bodega ahora excluye is_hidden=true, igual que ya hacen
+// calculate_stock_params/publish_stock_params en el resto del pipeline.
+// Probado con reproducción exacta del bug + caso de regresión (pendiente
+// real en sucursal visible sigue funcionando) en staging y prod.
 // v2.18.0 — feat(minmax): nuevo indicador "Riesgo regla" en la pestaña
 // Sucursal. Marca productos cuyo MAX efectivo, llevado a la unidad de
 // despacho del producto (factor de presentación de su regla × múltiplo),

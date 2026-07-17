@@ -5,8 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.54';
+export const APP_VERSION = '2.17.55';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.55 — fix(bloque0b.2): auto-calculate-minmax había vuelto a
+// verify_jwt=true (0B.2 la puso en false 2026-07-11; un redeploy de Bloque
+// 7B el 2026-07-16, para agregarle logging, la resetió sin el flag
+// --no-verify-jwt). Su cron mensual manda un secreto propio como Bearer, no
+// un JWT real — con verify_jwt=true el gateway la habría bloqueado con 401
+// en su próxima corrida (día 1, 15:00 UTC), el mismo bug original.
+// Encontrado en una pasada de verificación pedida por el usuario tras
+// cerrar PLAN-EJECUCION-2026-07.md (Bloques 0-8): se releyó el estado real
+// de prod (advisors, policies, RPCs, build/lint/tests, storage, índices)
+// contra lo documentado como "Aplicado" — todo confirmado correcto salvo
+// este único drift. Corregido con el mismo workaround de siempre (mv .env
+// aparte, redeploy con --no-verify-jwt, restaurar .env) — mismo código
+// fuente, solo cambió la config. Verificado con invocación manual real vía
+// net.http_post: 200 OK, resultados reales por sucursal. Sin cambios en
+// src/.
 
 // v2.17.54 — docs: PLAN-BUSCADORES-NORMALIZACION.md actualizado a estado
 // APLICADO (Fase 1 + Fase 2, prod + staging, v2.17.53) — checklist marcado,

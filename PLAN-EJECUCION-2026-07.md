@@ -761,3 +761,45 @@ si conviene simplificar ese código para depender del mecanismo genérico en vez
 
 > Ningún ítem estructural (Bloque 6) arranca antes que Bloque 2 (tests) y Bloque 3
 > (staging). Ningún write a prod sin tu OK en el momento.
+
+---
+
+## Verificación 2026-07-17 (post-cierre, todos los Bloques 0-8)
+
+Pasada de verificación pedida por el usuario tras cerrar todo el plan: releer
+el estado REAL de prod (advisors, `pg_policies`, `pg_get_functiondef`, build/
+lint/tests, storage, índices, realtime, edge functions) y confirmar que nada
+se regresionó desde que cada ítem se marcó `✅ Aplicado`. Resultado: **todo
+confirmado correcto excepto 1 regresión real, corregida en el momento**.
+
+- **Confirmado sin regresión**: 0 policies con `auth_*` sin `(SELECT ...)` en
+  todo el proyecto (no solo `notifications`); los 4 RPCs de riesgo Alto de
+  0B.7 (`crear_ruta`, `anular_pedido`, `confirm_pedido`,
+  `zero_out_product_all_branches`) + `inventory_inversion` siguen con autoría
+  real y gate de permiso; advisors de seguridad/performance sin ningún ERROR
+  nuevo, `multiple_permissive_policies` en 0 (era 7, Bloque 4.6); storage
+  `photos`/`product-photos` con límites + INSERT `authenticated`-only;
+  `mv_product_factor` solo SELECT; índices/realtime de Bloque 4 (4.1/4.3/4.5)
+  intactos; build+lint (0 problemas)+15 tests verdes; patrones de código de
+  Bloque 1.2/5.4/6.A (`<select>` nativo, `supabase.from()` fuera de
+  `src/data/`, error sin chequear) en 0 sitios reales.
+- **Regresión real encontrada y corregida**: `auto-calculate-minmax` había
+  vuelto a `verify_jwt=true` (0B.2 la puso en `false` el 2026-07-11) — un
+  redeploy posterior durante Bloque 7B (2026-07-16, cuando se le agregó
+  logging a `products_sync_log` en la Fase 0 de 7B) restauró el default de
+  Supabase sin el flag `--no-verify-jwt`. Su cron es mensual
+  (`auto-calculate-minmax-monthly`, día 1 a las 15:00 UTC) y manda
+  `admin_invoke_secret` como Bearer, no un JWT real — con `verify_jwt=true`
+  el gateway la habría bloqueado con 401 antes de que corriera el código,
+  el mismo bug original. Corregido con el mismo workaround de siempre
+  (`mv .env .env.bak; supabase functions deploy auto-calculate-minmax
+  --no-verify-jwt; mv .env.bak .env` — ver
+  [[reference-edge-function-deploy-workaround]]), mismo código fuente
+  (`ezbr_sha256` idéntico, solo cambió la config). Verificado con una
+  invocación manual real vía `net.http_post` (mismo método que 0B.2 usó
+  originalmente): `200 OK`, resultados reales por sucursal (Salud 2: 2,419
+  filas/552 auto-aplicadas/1,867 en borrador; Salud 3: 2,660/303/2,357).
+  **Lección**: un redeploy de cualquier función vía CLI sin el flag explícito
+  resetea `verify_jwt` a su default (`true`) aunque el código no cambie —
+  cualquier sesión futura que redeploye una función ya marcada
+  `verify_jwt=false` debe repetir el flag, no asumir que se conserva.

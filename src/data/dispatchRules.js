@@ -3,6 +3,7 @@
 // supabase.from().
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { likePattern } from '../utils/searchUtils';
 
 export function fetchProductPresentacionesForDispatch(productId) {
     return supabase
@@ -45,7 +46,7 @@ export function fetchProductsWithLabPage({ offset, pageSize, hiddenLabs, sortKey
     q = q.order(sortKey, { ascending });
     if (sortKey !== 'nombre') q = q.order('nombre', { ascending: true });
 
-    if (term.length >= 2) q = q.ilike('nombre', `%${term}%`);
+    if (term.length >= 2) q = q.ilike('nombre_norm', likePattern(term));
 
     if (ruleFilter === 'con') {
         q = ruleIds.length > 0 ? q.in('id', ruleIds) : q.in('id', [0]);

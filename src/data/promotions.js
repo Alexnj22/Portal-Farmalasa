@@ -1,12 +1,13 @@
 // Bloque 6.A — capa de datos, entidad "promotions". Extraído de
 // PromoModal.jsx: 6 llamadas supabase.from().
 import { supabase } from '../supabaseClient';
+import { likePattern } from '../utils/searchUtils';
 
 export function searchActiveProductsByName(term) {
     return supabase.from('products')
         .select('id, nombre, foto_url, laboratorios(nombre)')
         .eq('activo', true)
-        .ilike('nombre', `%${term}%`)
+        .ilike('nombre_norm', likePattern(term))
         .order('nombre')
         .limit(50);
 }

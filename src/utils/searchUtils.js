@@ -75,6 +75,17 @@ const FUZZY_MIN_QUERY  = 4;
  * @param {any[]} data
  * @param {(item: any) => string[]} getFields  — función que extrae los campos a buscar
  */
+/**
+ * Patrón LIKE tokenizado para columnas *_norm en el servidor (PostgREST .ilike()).
+ * "alcohol 90" → "%alcohol%90%" (matchea "alcohol90"). Orden-dependiente,
+ * a diferencia del LIKE ALL de los RPCs — aceptable para typeahead de producto.
+ * Uso: .ilike('nombre_norm', likePattern(term))
+ */
+export function likePattern(q = '') {
+    const toks = normSearch(q).split(/\s+/).filter(Boolean);
+    return toks.length ? `%${toks.join('%')}%` : '%';
+}
+
 export function smartFilter(query, data, getFields) {
     if (!query?.trim()) return { results: data, isFuzzy: false };
 

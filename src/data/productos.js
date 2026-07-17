@@ -4,6 +4,7 @@
 // componentes de foto separados; el fetch de detalle expandido en
 // prefetchRow y toggleRow) y quedan en una sola función acá.
 import { supabase } from '../supabaseClient';
+import { likePattern } from '../utils/searchUtils';
 
 // ── Principios activos ──────────────────────────────────────────────────────
 
@@ -108,7 +109,10 @@ export function fetchProductsList({
         .select('id, nombre, principio_activo, tipo_medicamento, es_antibiotico, requiere_receta, activo, foto_url, devolutivo, laboratorios(nombre)', { count: 'exact' })
         .range((page - 1) * pageSize, page * pageSize - 1);
 
-    if (search) qb = qb.or(`nombre.ilike.%${search}%,principio_activo.ilike.%${search}%`);
+    if (search) {
+        const pat = likePattern(search);
+        qb = qb.or(`nombre_norm.ilike.${pat},pactivo_norm.ilike.${pat}`);
+    }
     if (filterActivo === 'activos') qb = qb.eq('activo', true);
     if (laboratorioId) qb = qb.eq('laboratorio_id', laboratorioId);
     if (categoria) qb = qb.eq('tipo_medicamento', categoria);

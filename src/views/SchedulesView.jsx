@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, memo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { tokenMatch } from '../utils/searchUtils';
+import { tokenMatch, normSearch } from '../utils/searchUtils';
 import {
     CalendarDays, ChevronLeft, ArrowRight, Building2, BookOpen,
     X, Save, Loader2,
@@ -672,7 +672,7 @@ const SchedulesView = ({ openModal, setView }) => {
     };
 
     const validBranches = branches.filter(b => {
-        const n = (b.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const n = normSearch(b.name);
         return !n.includes('bodega') && !n.includes('administracion') && !n.includes('externos');
     });
 

@@ -1024,7 +1024,6 @@ export function usePedidosData({ searchTerm = '' }) {
 
     // ── Derived ───────────────────────────────────────────────────────────────
 
-    const searchLower   = useMemo(() => searchTerm.toLowerCase(), [searchTerm]);
     const filterOptions = useMemo(() => ERP_ORDER.map(id => ({ value: id, label: ERP_NAMES[id] ?? `Suc. ${id}` })), []);
 
     const hasObservacion = useCallback((r) =>
@@ -1075,7 +1074,7 @@ export function usePedidosData({ searchTerm = '' }) {
                 return (!desde || d >= desde) && (!hasta || d <= hasta);
             });
         }
-        if (searchLower) rows = rows.filter(r => String(r.numero).includes(searchLower) || tokenMatch(searchLower, r.notes));
+        if (searchTerm.trim()) rows = rows.filter(r => tokenMatch(searchTerm, String(r.numero), r.notes));
         const uid = String(user?.id ?? '');
         return [...rows].sort((a, b) => {
             // 1. Mío primero — lo inicié o lo creé yo
@@ -1092,7 +1091,7 @@ export function usePedidosData({ searchTerm = '' }) {
             // 3. Fecha más reciente
             return sa !== sb ? sa - sb : new Date(b.created_at) - new Date(a.created_at);
         });
-    }, [activeRows, filterSuc, filterStatus, filterDate, searchLower, hasObservacion, user]); // eslint-disable-line
+    }, [activeRows, filterSuc, filterStatus, filterDate, searchTerm, hasObservacion, user]); // eslint-disable-line
 
     const sucursalCounts = useMemo(() => {
         const [desde, hasta] = (filterDate ?? '').split('|');

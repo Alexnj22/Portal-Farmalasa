@@ -2,6 +2,7 @@
 // conteoInventarioSlice.js: 3 llamadas supabase.from() (el resto del
 // slice son RPCs, ya server-side y fuera de alcance de 6.A).
 import { supabase } from '../supabaseClient';
+import { likePattern } from '../utils/searchUtils';
 
 export function fetchConteosInventario() {
     return supabase.from('conteos_inventario').select('*, branches(name)').order('created_at', { ascending: false });
@@ -21,7 +22,7 @@ export function searchActiveProductsForConteo(term) {
     return supabase.from('products')
         .select('id, nombre, laboratorios(nombre)')
         .eq('activo', true)
-        .ilike('nombre', `%${term}%`)
+        .ilike('nombre_norm', likePattern(term))
         .order('nombre')
         .limit(30);
 }

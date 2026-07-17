@@ -5,6 +5,7 @@
 // data/pedidos.js (Bloque 6.A) — mismo query exacto, no se duplica.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { likePattern } from '../utils/searchUtils';
 
 export function fetchProductPreciosOpts(productId) {
     return supabase.from('product_precios')
@@ -30,7 +31,7 @@ export function fetchPedidoApoyoBasic(pedidoId, sucursalId) {
 
 export function searchAvailableProducts(term, excludeIds) {
     let q = supabase.from('products').select('id, nombre')
-        .eq('activo', true).ilike('nombre', `%${term}%`).order('nombre').limit(10);
+        .eq('activo', true).ilike('nombre_norm', likePattern(term)).order('nombre').limit(10);
     if (excludeIds.length > 0) q = q.not('id', 'in', `(${excludeIds.join(',')})`);
     return q;
 }

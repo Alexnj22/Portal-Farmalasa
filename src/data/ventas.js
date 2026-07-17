@@ -22,22 +22,25 @@ export function fetchPuntosLineItems(invoiceIds) {
 // Usado por fetchStats con filtros especiales (anuladas/antibiótico/búsqueda) —
 // fetchAllRows evita el cap silencioso de 1000 filas: sin esto, el monto
 // mostrado podía quedar truncado aunque el conteo (count exact) fuera correcto.
-export function fetchInvoicesForStatsSpecial({ fini, ffin, branchFilter, filterAnuladas, cancelledEstados, filterAntibiotico, abInvoiceIds, isSearching, searchTerm }) {
+export async function fetchInvoicesForStatsSpecial({ fini, ffin, branchFilter, filterAnuladas, cancelledEstados, filterAntibiotico, abInvoiceIds, isSearching, searchTerm }) {
+    let searchIds = null;
+    if (isSearching) {
+        const { data, error } = await supabase.rpc('search_ventas_ids', { p_search: searchTerm.trim(), p_fini: fini, p_ffin: ffin });
+        if (error) throw error;
+        searchIds = (data || []).map((r) => r.id);
+    }
     return fetchAllRows(() => {
         let q = supabase.from('sales_invoices').select('id, total').gte('fecha', fini).lte('fecha', ffin);
         if (branchFilter) q = q.eq('branch_id', branchFilter);
         if (filterAnuladas) q = q.in('estado', cancelledEstados);
         else q = q.not('estado', 'in', `(${cancelledEstados.join(',')})`);
         if (filterAntibiotico) q = q.in('id', abInvoiceIds);
-        if (isSearching) {
-            const s = searchTerm.trim();
-            q = q.or(`erp_invoice_id.ilike.%${s}%,correlativo.ilike.%${s}%,cliente.ilike.%${s}%`);
-        }
+        if (isSearching) q = q.in('id', searchIds.length > 0 ? searchIds : [0]);
         return q;
     });
 }
 
-export function fetchInvoicesList({ fini, ffin, sortCol, asc, filterBranch, filterAnuladas, cancelledEstados, abIdsFilter, isSearching, searchTerm, page, pageSize }) {
+export async function fetchInvoicesList({ fini, ffin, sortCol, asc, filterBranch, filterAnuladas, cancelledEstados, abIdsFilter, isSearching, searchTerm, page, pageSize }) {
     let q = supabase
         .from('sales_invoices')
         .select('id, branch_id, erp_invoice_id, correlativo, tipo_documento, fecha, hora, cliente, cod_vendedor, tipo_pago, subtotal, iva, total, estado, recibido_mh, has_puntos')
@@ -48,8 +51,10 @@ export function fetchInvoicesList({ fini, ffin, sortCol, asc, filterBranch, filt
     if (filterAnuladas) q = q.in('estado', cancelledEstados);
     if (abIdsFilter) q = q.in('id', abIdsFilter);
     if (isSearching) {
-        const s = searchTerm.trim();
-        q = q.or(`erp_invoice_id.ilike.%${s}%,correlativo.ilike.%${s}%,cliente.ilike.%${s}%`).limit(200);
+        const { data, error } = await supabase.rpc('search_ventas_ids', { p_search: searchTerm.trim(), p_fini: fini, p_ffin: ffin });
+        if (error) throw error;
+        const searchIds = (data || []).map((r) => r.id);
+        q = q.in('id', searchIds.length > 0 ? searchIds : [0]).limit(200);
     } else {
         q = q.range((page - 1) * pageSize, page * pageSize - 1);
     }

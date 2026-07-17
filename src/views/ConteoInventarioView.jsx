@@ -6,6 +6,7 @@ import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import NuevoConteoModal from '../components/inventario/NuevoConteoModal';
 import { useStaffStore } from '../store/staffStore';
 import { useAuth } from '../context/AuthContext';
+import { smartFilter } from '../utils/searchUtils';
 
 const ESTADO_CFG = {
     BORRADOR:    { bg: 'bg-slate-100',  text: 'text-slate-600',  border: 'border-slate-200',  icon: Clock,       label: 'Borrador' },
@@ -49,10 +50,9 @@ export default function ConteoInventarioView() {
 
     useEffect(() => { fetchConteosInventario(); }, [fetchConteosInventario]);
 
-    const filtered = useMemo(() => {
-        if (!search.trim()) return conteos;
-        const term = search.trim().toLowerCase();
-        return conteos.filter((c) => (c.branches?.name || '').toLowerCase().includes(term));
+    const { results: filtered, isFuzzy: isSearchFuzzy } = useMemo(() => {
+        if (!search.trim()) return { results: conteos, isFuzzy: false };
+        return smartFilter(search, conteos, (c) => [c.branches?.name]);
     }, [conteos, search]);
 
     const filtersContent = (
@@ -102,6 +102,12 @@ export default function ConteoInventarioView() {
 
     return (
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de Inventario" filtersContent={filtersContent}>
+            {isSearchFuzzy && search && (
+                <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-700 font-semibold">
+                    <Search size={12} strokeWidth={2.5} className="shrink-0" />
+                    Resultados similares para &ldquo;{search}&rdquo; — no se encontraron coincidencias exactas
+                </div>
+            )}
             <DataTable columns={COLS} loading={loading} empty={{ icon: ClipboardCheck, message: 'Sin conteos de inventario registrados' }}>
                 {filtered.map((c, i) => {
                     const es = ESTADO_CFG[c.status] || ESTADO_CFG.BORRADOR;

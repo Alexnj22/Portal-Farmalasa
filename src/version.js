@@ -5,8 +5,37 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.52';
+export const APP_VERSION = '2.17.53';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.53 — feat(buscadores): normalización total client-side (Fase 1) +
+// servidor completo probado en staging (Fase 2, PLAN-BUSCADORES-NORMALIZACION.md).
+// Fase 1 (aplica directo, riesgo cero): ConteoInventarioView.jsx migrado de
+// filtro naive a smartFilter+banner isFuzzy; SchedulesView.jsx reemplaza
+// reimplementación manual de strip de acentos por normSearch(); usePedidosData.js
+// unifica búsqueda de pedidos en un solo tokenMatch(searchTerm, numero, notes).
+// Fase 2 (aplicada y verificada en staging ewcmerxqjvludtgskuin, PROD PENDIENTE
+// de OK explícito): extensión unaccent + norm_search()/f_unaccent() (espejo
+// SQL de normSearch() de searchUtils.js); 9 RPCs con p_search reescritos de
+// ILIKE crudo a match por tokens (norm_search(col) LIKE ALL(pats)) —
+// inventory_grouped (4 paths), inventory_inversion, inventory_proximos_count,
+// get_conteo_items_search/_count, get_conteo_products_page/_count (estos 4 con
+// haystack concatenado multi-columna, paridad real con tokenMatch),
+// get_product_sales_agg/_jsonb; columnas generadas products.nombre_norm/
+// pactivo_norm + índices GIN trigram, vista products_with_lab expone
+// nombre_norm; nuevo helper likePattern() en searchUtils.js + 6 call sites de
+// .ilike() migrados a *_norm (conteoInventario.js, recepcion.js,
+// promotions.js, cotizaciones.js, productos.js, dispatchRules.js — este
+// último cierra el bug real reportado: TabReglas.jsx ya mandaba normSearch()
+// pero el server comparaba contra columna cruda con tildes); 2 RPCs nuevas
+// (search_ventas_ids, search_inventory_descripcion_ids) para sales_invoices e
+// inventory — tablas calientes, sin ALTER TABLE, solo RPC+índice de expresión.
+// Los 5 casos canónicos (ssn→S.S.N, alcohol 90→ALCOHOL-90, acido→ÁCIDO
+// FÓLICO, 500 gravol→GRAVOL 500MG orden invertido, EXPLAIN confirma índice
+// GIN) verificados end-to-end contra datos sintéticos en staging, limpiados
+// al terminar. Fuera de alcance: prod (falta OK explícito), customers (ya
+// tiene search_name generado, no es la fuente de los bugs), Fase 3 fuzzy
+// server-side.
 
 // v2.17.52 — fix(ci): diagnostica y corrige las 3 fallas preexistentes de
 // e2e-smoke.js (existían desde el 2026-07-15T13:58, sin relación con

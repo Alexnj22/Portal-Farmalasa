@@ -8,6 +8,7 @@
 // 1000 filas de PostgREST.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { likePattern } from '../utils/searchUtils';
 
 // nombre (uppercase, trim) → foto_url, para enriquecer resultados de
 // búsqueda con miniatura. Paginado: puede haber >1000 productos con foto.
@@ -29,7 +30,7 @@ export async function fetchProductsByPrincipioActivo(terms) {
     const { data, error } = await supabase
         .from('products')
         .select('id, principio_activo')
-        .or(list.map(t => `principio_activo.ilike.%${t}%`).join(','))
+        .or(list.map(t => `pactivo_norm.ilike.${likePattern(t)}`).join(','))
         .not('principio_activo', 'is', null);
     if (error) { console.error('fetchProductsByPrincipioActivo error:', error.message); return []; }
     return data || [];
@@ -39,6 +40,10 @@ export async function fetchProductsByPrincipioActivo(terms) {
 // lista de product IDs (vía principio_activo). Incluye vencidos — el
 // consumidor los separa. Paginado con fetchAllRows.
 export async function searchInventory({ term, productIds = [] }) {
+    const { data: descRows, error: descError } = await supabase.rpc('search_inventory_descripcion_ids', { p_search: term });
+    if (descError) throw descError;
+    const descIds = (descRows || []).map((r) => r.id);
+
     return await fetchAllRows(() => {
         let q = supabase
             .from('inventory')
@@ -47,8 +52,8 @@ export async function searchInventory({ term, productIds = [] }) {
             .order('descripcion')
             .order('fecha_vencimiento', { ascending: true, nullsFirst: false });
         q = productIds.length > 0
-            ? q.or(`descripcion.ilike.%${term}%,erp_product_id.in.(${productIds.join(',')})`)
-            : q.ilike('descripcion', `%${term}%`);
+            ? q.or(`id.in.(${descIds.length > 0 ? descIds.join(',') : 0}),erp_product_id.in.(${productIds.join(',')})`)
+            : q.in('id', descIds.length > 0 ? descIds : [0]);
         return q;
     }) || [];
 }

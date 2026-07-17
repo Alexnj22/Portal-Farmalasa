@@ -753,6 +753,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 'MINMAX_UPDATED_FROM_PEDIDO',
                 'MINMAX_RESET_CALC', 'MINMAX_RESET_CLEAR', 'MINMAX_DISCARD_DRAFT',
                 'MINMAX_ZERO_OUT', 'MINMAX_LIVE_ZERO', 'MINMAX_ZERO_ALL_BRANCHES',
+                'MINMAX_REQUEST_APPROVED',
             ], row.erp_product_id, row._erp_sucursal_id),
             fetchEmployeesBasic(),
         ]);

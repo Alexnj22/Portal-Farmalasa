@@ -4,6 +4,20 @@ import { Settings2, X, Loader2, CheckCircle2, Save } from 'lucide-react';
 import { supabase } from '../../../supabaseClient';
 import { updateStockConfig } from '../../../data/stockParams';
 
+// Definido a nivel de módulo — dentro del componente, React lo recreaba en cada render
+// y desmontaba/remontaba el <input>, perdiendo el foco tras cada tecla (M-4).
+const Field = ({ form, set, label, k, unit, min = 0, max, step = 1 }) => (
+    <div className="flex items-center justify-between gap-3">
+        <span className="text-[11px] text-slate-600 font-medium flex-1">{label}</span>
+        <div className="flex items-center gap-1.5">
+            <input type="number" min={min} max={max} step={step} value={form[k] ?? 0}
+                onChange={e => set(k, e.target.value)}
+                className="w-16 text-right text-[16px] font-bold text-slate-800 bg-white/80 border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/30 focus:border-[#0052CC]" />
+            {unit && <span className="text-[10px] text-slate-500 shrink-0 w-8">{unit}</span>}
+        </div>
+    </div>
+);
+
 export default function ConfigPanel({ config, onSave, onClose }) {
     const [form,   setForm]   = useState({ ...config });
     const [saving, setSaving] = useState(false);
@@ -47,18 +61,6 @@ export default function ConfigPanel({ config, onSave, onClose }) {
         finally { setSaving(false); }
     };
 
-    const Field = ({ label, k, unit, min = 0, max, step = 1 }) => (
-        <div className="flex items-center justify-between gap-3">
-            <span className="text-[11px] text-slate-600 font-medium flex-1">{label}</span>
-            <div className="flex items-center gap-1.5">
-                <input type="number" min={min} max={max} step={step} value={form[k] ?? 0}
-                    onChange={e => set(k, e.target.value)}
-                    className="w-16 text-right text-[16px] font-bold text-slate-800 bg-white/80 border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#0052CC]/30 focus:border-[#0052CC]" />
-                {unit && <span className="text-[10px] text-slate-500 shrink-0 w-8">{unit}</span>}
-            </div>
-        </div>
-    );
-
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-end p-4 pt-20 pointer-events-none">
             <div className="pointer-events-auto w-80 rounded-2xl border border-white/70 shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden"
@@ -78,8 +80,8 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                     {/* Ciclo */}
                     <section className="flex flex-col gap-2">
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Ciclo de reposición</span>
-                        <Field label="MAX — días de cobertura objetivo" k="cycle_days" unit="días" min={1} />
-                        <Field label="Ventana histórica de ventas"       k="analysis_days" unit="días" min={30} />
+                        <Field form={form} set={set} label="MAX — días de cobertura objetivo" k="cycle_days" unit="días" min={1} />
+                        <Field form={form} set={set} label="Ventana histórica de ventas"       k="analysis_days" unit="días" min={30} />
                     </section>
 
                     <div className="h-px bg-slate-100" />
@@ -87,9 +89,9 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                     {/* Reorden por XYZ */}
                     <section className="flex flex-col gap-2">
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">MIN — días de reorden por clase XYZ</span>
-                        <Field label="Clase X — demanda estable"   k="reorder_x_days" unit="días" min={1} />
-                        <Field label="Clase Y — demanda moderada"  k="reorder_y_days" unit="días" min={1} />
-                        <Field label="Clase Z — demanda errática"  k="reorder_z_days" unit="días" min={1} />
+                        <Field form={form} set={set} label="Clase X — demanda estable"   k="reorder_x_days" unit="días" min={1} />
+                        <Field form={form} set={set} label="Clase Y — demanda moderada"  k="reorder_y_days" unit="días" min={1} />
+                        <Field form={form} set={set} label="Clase Z — demanda errática"  k="reorder_z_days" unit="días" min={1} />
                     </section>
 
                     <div className="h-px bg-slate-100" />
@@ -97,8 +99,8 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                     {/* Umbrales XYZ */}
                     <section className="flex flex-col gap-2">
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Umbrales XYZ (coeficiente de variación)</span>
-                        <Field label="X si CV ≤" k="xyz_x_cv_max" unit="%" min={1} step={1} />
-                        <Field label="Y si CV ≤" k="xyz_y_cv_max" unit="%" min={1} step={1} />
+                        <Field form={form} set={set} label="X si CV ≤" k="xyz_x_cv_max" unit="%" min={1} step={1} />
+                        <Field form={form} set={set} label="Y si CV ≤" k="xyz_y_cv_max" unit="%" min={1} step={1} />
                         <p className="text-[9px] text-slate-500">Z = CV mayor al umbral Y</p>
                     </section>
 
@@ -107,8 +109,8 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                     {/* Umbrales ABC */}
                     <section className="flex flex-col gap-2">
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Umbrales ABC (% revenue acumulado)</span>
-                        <Field label="A = top" k="abc_a_pct" unit="%" min={1} step={1} />
-                        <Field label="B = hasta" k="abc_b_pct" unit="%" min={1} step={1} />
+                        <Field form={form} set={set} label="A = top" k="abc_a_pct" unit="%" min={1} step={1} />
+                        <Field form={form} set={set} label="B = hasta" k="abc_b_pct" unit="%" min={1} step={1} />
                         <p className="text-[9px] text-slate-500">C y D = resto. Recalcula para aplicar.</p>
                     </section>
 
@@ -117,7 +119,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                     {/* Alerta próximo mínimo */}
                     <section className="flex flex-col gap-2">
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Alerta "próximo a mínimo"</span>
-                        <Field label="Umbral (stock &lt; MIN × (1 + X%))" k="approaching_pct" unit="%" min={1} max={100} step={1} />
+                        <Field form={form} set={set} label="Umbral (stock &lt; MIN × (1 + X%))" k="approaching_pct" unit="%" min={1} max={100} step={1} />
                         <p className="text-[9px] text-slate-500">Ej: 25% → alerta si stock &lt; MIN × 1.25</p>
                     </section>
 
@@ -126,9 +128,9 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                     {/* Buffer de seguridad */}
                     <section className="flex flex-col gap-2">
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Buffer de seguridad (días extra al MIN)</span>
-                        <Field label="Clase X — demanda estable"  k="buffer_x_days" unit="días" min={0} />
-                        <Field label="Clase Y — demanda moderada" k="buffer_y_days" unit="días" min={0} />
-                        <Field label="Clase Z — demanda errática" k="buffer_z_days" unit="días" min={0} />
+                        <Field form={form} set={set} label="Clase X — demanda estable"  k="buffer_x_days" unit="días" min={0} />
+                        <Field form={form} set={set} label="Clase Y — demanda moderada" k="buffer_y_days" unit="días" min={0} />
+                        <Field form={form} set={set} label="Clase Z — demanda errática" k="buffer_z_days" unit="días" min={0} />
                         <p className="text-[9px] text-slate-500">MIN = velocidad × (reorden + buffer). Recalcula para aplicar.</p>
                     </section>
 
@@ -137,7 +139,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                     {/* Filtrado de demanda mayorista */}
                     <section className="flex flex-col gap-2">
                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Filtrado de outliers (winsorización)</span>
-                        <Field label="Percentil de corte" k="outlier_percentile" unit="%" min={50} max={100} step={1} />
+                        <Field form={form} set={set} label="Percentil de corte" k="outlier_percentile" unit="%" min={50} max={100} step={1} />
                         <p className="text-[9px] text-slate-500 leading-snug">
                             Capea ventas diarias al percentil indicado antes de calcular velocidad y CV. P95 = estándar industria. P100 = sin filtro. Recalculá para aplicar.
                         </p>

@@ -437,21 +437,23 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
 
                         <div className="h-5 w-px bg-slate-200/60 shrink-0" />
 
-                        {/* Config */}
+                        {/* Config — solo can_edit (guardar hace RLS raw error si no) */}
                         <motion.button onClick={() => setConfigOpen(o => !o)}
-                            title="Configurar parámetros"
+                            disabled={!canManage}
+                            title={canManage ? 'Configurar parámetros' : 'Necesitás permiso de edición en Min/Max'}
                             {...iconAnim}
-                            className={`px-3 py-2.5 rounded-xl transition-colors ${configOpen ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-600'}`}>
+                            className={`px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${configOpen ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-600'}`}>
                             <Settings2 size={13} />
                         </motion.button>
 
                         <div className="h-5 w-px bg-slate-200/60 shrink-0" />
 
-                        {/* Labs visibility */}
+                        {/* Labs visibility — solo can_edit (guardar hace RLS raw error si no) */}
                         <motion.button onClick={() => setLabsOpen(o => !o)}
-                            title="Laboratorios ocultos en MinMax"
+                            disabled={!canManage}
+                            title={canManage ? 'Laboratorios ocultos en MinMax' : 'Necesitás permiso de edición en Min/Max'}
                             {...iconAnim}
-                            className={`px-3 py-2.5 rounded-xl transition-colors ${labsOpen ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-600'}`}>
+                            className={`px-3 py-2.5 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${labsOpen ? 'text-[#0052CC]' : 'text-slate-500 hover:text-slate-600'}`}>
                             <FlaskConical size={13} />
                         </motion.button>
 

@@ -5,10 +5,33 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.58';
+export const APP_VERSION = '2.17.59';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
-// v2.17.58 — fix(minmax): Fase 1 de la auditoría 2026-07-17 — unifica la semántica de
+// v2.17.59 — fix(minmax): Fase 2 de la auditoría 2026-07-17 — 5 hallazgos medios.
+// (M-1) MinMaxView: activeTab inicial usaba 'sucursal' fijo — un usuario sin permiso
+// de esa tab igual la veía renderizada; ahora arranca en TABS[0]?.key. (B-7) Botones
+// Config/Labs en TabMinMax gateados por can_edit (antes cualquiera los veía y el
+// guardado fallaba con RLS crudo). (M-3) minmaxLabs.js: fetchActiveProductLabIds y
+// fetchProductIdsByLaboratorio migran a Patrón B (count + chunks) — con >1000
+// productos activos los conteos por laboratorio quedaban truncados y un laboratorio
+// grande se des-ocultaba solo parcialmente; unhideStockParamsForProducts migra a
+// Patrón A (chunkea el input). (M-4) ConfigPanel: Field extraído a nivel de módulo —
+// se recreaba en cada render y el input perdía el foco tras cada tecla. (M-5)
+// Historial: MINMAX_REQUEST_APPROVED/REJECTED ahora loggean target=producto (antes
+// target=solicitud, invisible en el modal de historial del producto); agregado a la
+// lista de acciones que carga ese modal.
+// (2.2 + mejora M1) trg_bodega_draft_sync reescrito de FOR EACH ROW a FOR EACH
+// STATEMENT con transition tables (INSERT/UPDATE separados porque Postgres no
+// permite transition tables con lista de columnas ni en triggers multi-evento) —
+// un "Publicar todo" de ~4,000 productos pasa de ~4,000 ejecuciones a 1 sola
+// agregada. El filtro de "¿cambió algo relevante?" ahora compara old_rows/new_rows
+// (más preciso que UPDATE OF). De paso corrige M-2: se eliminó el early-return
+// cuando Σ=0, que dejaba a Bodega con MIN/MAX viejos si la última sucursal con stock
+// quedaba en 0 por una edición en vivo. Probado con 6 casos sintéticos en staging
+// (ewcmerxqjvludtgskuin) y re-verificado igual en prod antes de limpiar los datos
+// de prueba (productos ficticios 99001/99002, sin dejar rastro en
+// product_stock_params ni en su historial). — fix(minmax): Fase 1 de la auditoría 2026-07-17 — unifica la semántica de
 // manual_min/manual_max (quedaba dividida en 3 lecturas contradictorias entre MinMax,
 // Pedidos y Solicitudes). approve_minmax_request ahora escribe min_units/max_units
 // directo (antes escribía el valor absoluto solicitado en manual_*, que get_stock_analysis

@@ -193,8 +193,11 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
     const fn = approve ? 'approve_minmax_request' : 'reject_minmax_request';
     const { error } = await supabase.rpc(fn, { p_request_id: r.id, p_decided_by: user?.email ?? null, p_note: note });
     if (error) throw error;
-    await appendAuditLog(approve ? 'MINMAX_REQUEST_APPROVED' : 'MINMAX_REQUEST_REJECTED', String(r.id), {
-      product: r.product_name, sucursal_id: r.erp_sucursal_id,
+    // target_id = producto (no la solicitud) — es lo que el historial MIN/MAX de
+    // Productos usa para buscar cambios de un producto puntual (M-5). request_id
+    // queda en details para seguir pudiendo rastrear la solicitud original.
+    await appendAuditLog(approve ? 'MINMAX_REQUEST_APPROVED' : 'MINMAX_REQUEST_REJECTED', String(r.erp_product_id), {
+      request_id: r.id, product: r.product_name, sucursal_id: r.erp_sucursal_id,
       requested_min: r.requested_min, requested_max: r.requested_max, note,
     });
     await notifyRequester(r, approve, note);

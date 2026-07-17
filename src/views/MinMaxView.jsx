@@ -37,7 +37,7 @@ export default function MinMaxView() {
         ? [...BASE_TABS, { key: 'solicitudes', label: 'Solicitudes' }]
         : BASE_TABS;
 
-    const [activeTab,       setActiveTab]       = useState('sucursal');
+    const [activeTab,       setActiveTab]       = useState(TABS[0]?.key ?? 'sucursal');
     const [rawSearch,       setRawSearch]       = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [config,          setConfig]          = useState(DEFAULT_CONFIG);

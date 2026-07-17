@@ -4,10 +4,9 @@ import { Loader2, Package, X, AlertTriangle, ArrowRight } from 'lucide-react';
 import { tokenMatch } from '../../utils/searchUtils';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
+import { ERP_NAMES as ERP_NAMES_FULL, ERP_ORDER } from './tabminmax/constants';
 
-const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
 const ERP_SHORT = { 1: 'S.1', 2: 'S.2', 3: 'S.3', 4: 'S.4', 5: 'LaP.', 6: 'Bod.', 7: 'S.5' };
-const ERP_NAMES_FULL = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
 
 const ALERT_DOT = {
     out_of_stock: 'bg-red-500',
@@ -274,7 +273,7 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
                 {pageRows.map((row, i) => {
                     const bs     = row.branches || {};
                     const maxSev = Math.max(...Object.values(bs).map(b => SEVERITY[b.alr] ?? 0), 0);
-                    const rowTint = maxSev >= 4 ? 'bg-red-50/40 border-l-4 border-l-red-400' : maxSev >= 3 ? 'bg-orange-50/30 border-l-4 border-l-orange-400' : '';
+                    const rowTint = maxSev >= 4 ? 'bg-red-50/40' : maxSev >= 3 ? 'bg-orange-50/30' : '';
                     return (
                         <DataRow key={row.erp_product_id} index={i} className={rowTint}>
                             <DataCell align="left" className="!py-2">

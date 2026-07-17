@@ -7,9 +7,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { notifyEmployees } from '../../utils/notify';
 import LiquidSelect from '../../components/common/LiquidSelect';
-
-const ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
-const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
+import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
 
 const STATUS_CFG = {
   pending:  { label: 'Pendiente', cls: 'bg-amber-100/80 text-amber-700 border-amber-200' },

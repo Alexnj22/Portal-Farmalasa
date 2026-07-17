@@ -198,11 +198,14 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         const POLL_MS = 5000;
         let cancelled = false;
         let cursor = new Date().toISOString();
+        let cursorProductId = 0; // keyset: (updated_at, erp_product_id) — ver fetchStockParamsUpdates (B-1)
 
         const poll = async () => {
-            const { data: rows, error } = await fetchStockParamsUpdates(6, cursor);
+            const { data: rows, error } = await fetchStockParamsUpdates(6, cursor, cursorProductId);
             if (cancelled || error || !rows?.length) return;
-            cursor = rows[rows.length - 1].updated_at;
+            const last = rows[rows.length - 1];
+            cursor = last.updated_at;
+            cursorProductId = last.erp_product_id;
 
             const apMult = 1 + (analysisConfigRef.current.approaching_pct ?? 20) / 100;
             const byId = new Map(rows.map(u => [u.erp_product_id, u]));

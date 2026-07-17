@@ -9,10 +9,7 @@ import {
     fetchProductPreciosForMinMax, fetchCurrentStockParams, insertMinMaxChangeRequest,
     fetchActiveProductsCount, fetchActiveProductsChunk,
 } from '../../data/minmaxRequests';
-
-// ERP sucursal ids ↔ nombre (igual que TabMinMax). product_stock_params usa erp_sucursal_id.
-const ERP_NAMES = { 1: 'Salud 1', 2: 'Salud 2', 3: 'Salud 3', 4: 'Salud 4', 5: 'La Popular', 6: 'Bodega', 7: 'Salud 5' };
-const ERP_ORDER = [5, 1, 2, 3, 4, 7, 6];
+import { ERP_NAMES } from '../productos/tabminmax/constants';
 
 // Presentación dominante (la "caja" más grande, factor>1) para mostrar equivalentes.
 function dominantPres(pres) {
@@ -233,7 +230,10 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
   const [loading, setLoading] = useState(false);
   const [picked, setPicked]   = useState(null);
   const allProdsRef = useRef([]);
-  const catalogReady = useRef(false);
+  // Estado (no ref) — B-9: si el catálogo terminaba de cargar DESPUÉS de que el
+  // usuario ya había tipeado, el efecto de abajo (dependiente solo de [search])
+  // no se volvía a disparar y los resultados quedaban vacíos hasta la próxima tecla.
+  const [catalogReady, setCatalogReady] = useState(false);
 
   // Preload full product catalog on mount (paginated — products > 1000)
   useEffect(() => {
@@ -250,14 +250,14 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
       allProdsRef.current = chunks
         .flatMap(r => r.data || [])
         .map(p => ({ ...p, laboratorio_nombre: p.laboratorios?.nombre ?? null }));
-      catalogReady.current = true;
+      setCatalogReady(true);
       setLoading(false);
     }
     loadCatalog();
   }, []);
 
   useEffect(() => {
-    if (!catalogReady.current) return;
+    if (!catalogReady) return;
     const q = search.trim();
     if (q.length < 2) { setResults([]); return; } // eslint-disable-line react-hooks/set-state-in-effect -- limpia resultados cuando la búsqueda es muy corta
     const { results: matched } = smartFilter(q, allProdsRef.current, p => [
@@ -266,7 +266,7 @@ export default function WidgetMinMaxRequest({ selectedErp = null }) {
       p.laboratorio_nombre ?? '',
     ]);
     setResults(matched.slice(0, 20));
-  }, [search]);
+  }, [search, catalogReady]);
 
   if (view === 'success') {
     return (

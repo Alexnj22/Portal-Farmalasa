@@ -33,13 +33,21 @@ export function fetchStockParams(erpProductId, erpSucursalId, columns) {
         .eq('erp_product_id', erpProductId).eq('erp_sucursal_id', erpSucursalId).single();
 }
 
-// Polling de bodega (reemplaza postgres_changes — ver comentario en el caller)
-export function fetchStockParamsUpdates(erpSucursalId, sinceIso) {
+// Polling de bodega (reemplaza postgres_changes — ver comentario en el caller).
+// Cursor keyset compuesto (updated_at, erp_product_id) — B-1: una publicación
+// masiva escribe miles de filas con el MISMO timestamp (publish_stock_params usa
+// un solo NOW() para todo el batch); un cursor gt(updated_at) simple avanza al
+// último timestamp visto y se salta el resto de filas con ese mismo timestamp
+// para siempre. El keyset + .limit() explícito hace que el próximo poll (5s)
+// retome exactamente donde quedó, incluso bajo el cap de 1000 filas de PostgREST.
+export function fetchStockParamsUpdates(erpSucursalId, sinceIso, sinceProductId = 0) {
     return supabase.from('product_stock_params')
         .select('erp_product_id, min_units, max_units, manual_min, manual_max, draft_status, draft_min, draft_max, updated_at')
         .eq('erp_sucursal_id', erpSucursalId)
-        .gt('updated_at', sinceIso)
-        .order('updated_at', { ascending: true });
+        .or(`updated_at.gt.${sinceIso},and(updated_at.eq.${sinceIso},erp_product_id.gt.${sinceProductId})`)
+        .order('updated_at', { ascending: true })
+        .order('erp_product_id', { ascending: true })
+        .limit(1000);
 }
 
 // ── TabSinVenta.jsx (3 sitios — productos descartados de las sugerencias) ────

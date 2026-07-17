@@ -5,9 +5,31 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.59';
+export const APP_VERSION = '2.17.60';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.60 — fix(minmax): Fase 3 de la auditoría 2026-07-17 — bajos + limpieza.
+// (3.1) Borrada supabase/functions/sync-erp-minmax/ — escribía a la tabla
+// erp_minmax, eliminada en v2.2.209; sin cron que la invocara. (3.2) DROP
+// get_stock_analysis_count — sin callers en src/ desde v2.9.28 (Patrón C).
+// get_minmax_comparison, el otro huérfano de la auditoría original, ya no
+// existía en la base. (3.3 / B-2) calculate_stock_params migra de
+// regexp_match(presentacion) a ii.factor_unidades (columna pre-calculada,
+// misma que usa get_stock_analysis) — verificado 0 discrepancias en las
+// 559,150 filas de sales_invoice_items antes de aplicar. (3.4 / B-4)
+// get_minmax_approver_ids rutea por role_id=13 fijo en vez de
+// "ILIKE 'supervisor%ventas%'" — mismo id que SALES_SUPERVISOR_ROLE_ID en
+// WidgetAnnulmentRequest.jsx. (3.5 / B-5) TabMinMaxNetwork: quitado el
+// border-l-4 coloreado, queda solo el tint de fondo. (3.6 / B-1) Polling de
+// Bodega (fetchStockParamsUpdates) migra a cursor keyset (updated_at,
+// erp_product_id) + .limit(1000) — una publicación masiva escribe miles de
+// filas con el mismo timestamp; el cursor simple se saltaba el resto para
+// siempre. (3.7 / B-8, B-9) ERP_NAMES/ERP_ORDER consolidados en
+// tabminmax/constants.js (TabMinMaxNetwork, TabMinMaxRequests,
+// WidgetMinMaxRequest ya no los redefinen); fix de race en el widget —
+// catalogReady pasa de ref a state para que la búsqueda se recompute si el
+// catálogo termina de cargar después de que el usuario ya tipeó.
+// Migraciones de BD probadas primero en staging.
 // v2.17.59 — fix(minmax): Fase 2 de la auditoría 2026-07-17 — 5 hallazgos medios.
 // (M-1) MinMaxView: activeTab inicial usaba 'sucursal' fijo — un usuario sin permiso
 // de esa tab igual la veía renderizada; ahora arranca en TABS[0]?.key. (B-7) Botones

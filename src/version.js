@@ -5,9 +5,32 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.60';
+export const APP_VERSION = '2.17.61';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.61 — perf(minmax): Fase 4 de la auditoría 2026-07-17 — M2 (Red Patrón C)
+// + M7 (aprobación masiva atómica). get_network_summary → get_network_summary_json
+// (Patrón C, 1 sola ejecución agregada en vez de ~5 chunks de .range() que
+// re-ejecutaban la función completa cada uno). De paso corrige dos bugs de
+// correctness encontrados al tocar la función (fuera del alcance original de M2,
+// confirmados con datos reales antes de aplicar): manual_min/manual_max usaban
+// COALESCE (reemplazo) en vez de la fórmula aditiva ya vigente en
+// get_stock_analysis/get_pedido_preview desde Fase 1 — verificado que ahora
+// coincide exactamente entre ambas vistas (producto 5044/suc.6: 400, antes 257
+// mal calculado); y el factor de presentación de inventario salía de un regex
+// roto sobre "detalle" en vez de product_precios.factor — corrige un sub-conteo
+// real de stock (producto 322/suc.7: 24 unidades reales, antes 2 por el regex).
+// get_network_summary (vieja, con EXECUTE a anon) queda eliminada.
+// approve_minmax_requests_bulk: RPC atómica para "Aprobar todo" en Solicitudes
+// — antes N llamadas seriadas a approve_minmax_request (si fallaba a mitad
+// quedaba en estado parcial); ahora 1 sola transacción, Bodega se omite del
+// batch en vez de abortarlo (reporta skipped_bodega), solicitudes ya decididas
+// por otra persona se reportan sin romper el resto (skipped_not_found).
+// window.confirm reemplazado por ConfirmModal estándar (B-6). Notificaciones
+// agrupadas por empleado (1 por requester en vez de 1 por solicitud). Ambas
+// RPCs probadas con datos sintéticos en staging y re-verificadas en prod antes
+// de limpiar. Con esto se cierran las 4 fases de la auditoría MinMax
+// 2026-07-17 (quedan diferidas M3/M4/M6, sin fecha).
 // v2.17.60 — fix(minmax): Fase 3 de la auditoría 2026-07-17 — bajos + limpieza.
 // (3.1) Borrada supabase/functions/sync-erp-minmax/ — escribía a la tabla
 // erp_minmax, eliminada en v2.2.209; sin cron que la invocara. (3.2) DROP

@@ -7,6 +7,7 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { useAuth } from '../../context/AuthContext';
 import { notifyEmployees } from '../../utils/notify';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import ConfirmModal from '../../components/common/ConfirmModal';
 import { ERP_NAMES, ERP_ORDER } from './tabminmax/constants';
 
 const STATUS_CFG = {
@@ -151,6 +152,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
   const [sucFilter, setSucFilter] = useState('all');
   const [busyId, setBusyId]   = useState(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [confirmBulkOpen, setConfirmBulkOpen] = useState(false);
   const [error, setError]     = useState(null);
 
   const load = useCallback(async () => {
@@ -236,19 +238,66 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
     [sucCounts]
   );
 
-  const approveAll = useCallback(async () => {
+  // Mejora M7: abre el ConfirmModal estándar en vez de window.confirm (B-6)
+  const approveAll = useCallback(() => {
     const pend = filtered.filter(r => r.status === 'pending');
     if (!pend.length) return;
-    const scopeLabel = sucFilter !== 'all' ? ` de ${ERP_NAMES[Number(sucFilter)]}` : '';
-    if (!window.confirm(`¿Aprobar ${pend.length} solicitud(es)${scopeLabel}? Se aplicarán en vivo.`)) return;
+    setConfirmBulkOpen(true);
+  }, [filtered]);
+
+  // Mejora M7: 1 sola transacción atómica (approve_minmax_requests_bulk) en vez
+  // de N llamadas seriadas a approve_minmax_request — si fallaba a mitad del loop
+  // viejo quedaba en estado parcial (algunas aprobadas, otras no). Audit logs en
+  // paralelo (siguen siendo 1 por producto — el historial MIN/MAX de cada producto
+  // los necesita individualmente, M-5) y notificaciones agrupadas por empleado
+  // (1 por requester en vez de 1 por solicitud).
+  const runBulkApprove = useCallback(async () => {
+    const pend = filtered.filter(r => r.status === 'pending');
+    if (!pend.length) { setConfirmBulkOpen(false); return; }
     setBulkBusy(true); setError(null);
     try {
-      for (const r of pend) await runDecision(r, true, null);
+      const { data, error } = await supabase.rpc('approve_minmax_requests_bulk', {
+        p_request_ids: pend.map(r => r.id), p_decided_by: user?.email ?? null,
+      });
+      if (error) throw error;
+
+      const approved = data?.approved ?? [];
+      const skippedBodega = data?.skipped_bodega ?? [];
+
+      await Promise.all(approved.map(r => appendAuditLog('MINMAX_REQUEST_APPROVED', String(r.erp_product_id), {
+        request_id: r.id, product: r.product_name, sucursal_id: r.erp_sucursal_id,
+        requested_min: r.requested_min, requested_max: r.requested_max, note: 'Aprobación masiva',
+      })));
+
+      const byRequester = new Map();
+      for (const r of approved) {
+        if (!r.requested_by_id) continue;
+        if (!byRequester.has(r.requested_by_id)) byRequester.set(r.requested_by_id, []);
+        byRequester.get(r.requested_by_id).push(r);
+      }
+      await Promise.all([...byRequester.entries()].map(([empId, items]) => {
+        const body = items.length === 1
+          ? `Tu propuesta para ${items[0].product_name} (${ERP_NAMES[items[0].erp_sucursal_id] || items[0].erp_sucursal_id}) fue aplicada: MIN ${items[0].requested_min} · MAX ${items[0].requested_max}.`
+          : `${items.length} propuestas tuyas fueron aprobadas y aplicadas: ${items.map(i => i.product_name).join(', ')}.`;
+        return notifyEmployees([String(empId)], {
+          type: 'MINMAX_DECIDED',
+          title: '✅ Ajuste Min/Max aprobado',
+          body,
+          link: '/minmax',
+          push: true,
+          metadata: { status: 'APPROVED', count: items.length },
+        });
+      }));
+
+      if (skippedBodega.length) {
+        setError(`${skippedBodega.length} solicitud(es) de Bodega se omitieron — Bodega no admite solicitudes directas (deriva su MIN/MAX de las sucursales).`);
+      }
+
       await load();
     } catch (e) {
       setError(e.message || 'Error al aprobar en lote');
-    } finally { setBulkBusy(false); }
-  }, [filtered, sucFilter, runDecision, load]);
+    } finally { setBulkBusy(false); setConfirmBulkOpen(false); }
+  }, [filtered, user, appendAuditLog, load]);
 
   const pendingInView = filtered.filter(r => r.status === 'pending').length;
 
@@ -325,6 +374,18 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmBulkOpen}
+        onClose={() => !bulkBusy && setConfirmBulkOpen(false)}
+        onConfirm={runBulkApprove}
+        isProcessing={bulkBusy}
+        isDestructive={false}
+        title="¿Aprobar solicitudes?"
+        message={`Se aprobarán ${pendingInView} solicitud(es)${sucFilter !== 'all' ? ` de ${ERP_NAMES[Number(sucFilter)]}` : ''} y se aplicarán en vivo.`}
+        confirmText="Aprobar todo"
+        cancelText="Cancelar"
+      />
     </div>
   );
 }

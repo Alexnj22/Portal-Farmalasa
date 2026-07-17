@@ -66,20 +66,12 @@ export default function TabMinMaxNetwork({ searchTerm = '' }) {
         setLoading(true); setError(null);
         (async () => {
             try {
-                const allRows = [];
-                const CHUNK = 1000;
-                let from = 0;
-                let keepFetching = true;
-                while (keepFetching) {
-                    const { data: chunk, error: e } = await supabase
-                        .rpc('get_network_summary')
-                        .range(from, from + CHUNK - 1);
-                    if (e) throw e;
-                    allRows.push(...(chunk || []));
-                    keepFetching = chunk && chunk.length === CHUNK;
-                    from += CHUNK;
-                }
-                if (!cancelled) setData(allRows);
+                // Patrón C (mejora M2): 1 sola llamada agregada a JSON en vez de
+                // ~5 chunks de .range() — PostgREST re-ejecutaba la función COMPLETA
+                // por cada chunk (limit/offset aplica sobre el resultado, no la fuente).
+                const { data, error: e } = await supabase.rpc('get_network_summary_json');
+                if (e) throw e;
+                if (!cancelled) setData(data || []);
             } catch (e) {
                 if (!cancelled) setError(e.message);
             } finally {

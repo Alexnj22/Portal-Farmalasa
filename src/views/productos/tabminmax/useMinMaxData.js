@@ -14,7 +14,7 @@ import { ERP_NAMES, ERP_ORDER, ALERT, STAT_CFGS } from './constants';
 import {
     upsertStockParams, upsertStockParamsBulk, updateStockParams, updateStockParamsBulk,
     fetchStockParams, fetchStockParamsUpdates, fetchStockConfig, fetchEmployeeByEmail,
-    fetchEmployeesBasic, fetchAuditLogsForProduct,
+    fetchEmployeesBasic, fetchAuditLogsForProduct, effectiveMinMax,
 } from '../../../data/stockParams';
 
 const translateDbError = (msg) => {
@@ -214,8 +214,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 if (!u) return row;
                 const pubMin  = u.min_units  ?? 0;
                 const pubMax  = u.max_units  ?? 0;
-                const effMin  = pubMin  + (u.manual_min  ?? 0);
-                const effMax  = pubMax  + (u.manual_max  ?? 0);
+                const effMin  = effectiveMinMax(u.min_units, u.manual_min) ?? 0;
+                const effMax  = effectiveMinMax(u.max_units, u.manual_max) ?? 0;
                 const hasManual = u.manual_min !== null || u.manual_max !== null;
                 const stock = Number(row.current_stock ?? 0);
                 const alertStatus =

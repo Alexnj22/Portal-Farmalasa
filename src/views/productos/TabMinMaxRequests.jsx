@@ -247,10 +247,20 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
 
   // Mejora M7: 1 sola transacción atómica (approve_minmax_requests_bulk) en vez
   // de N llamadas seriadas a approve_minmax_request — si fallaba a mitad del loop
-  // viejo quedaba en estado parcial (algunas aprobadas, otras no). Audit logs en
-  // paralelo (siguen siendo 1 por producto — el historial MIN/MAX de cada producto
-  // los necesita individualmente, M-5) y notificaciones agrupadas por empleado
-  // (1 por requester en vez de 1 por solicitud).
+  // viejo quedaba en estado parcial (algunas aprobadas, otras no). Audit logs y
+  // notificaciones en lotes de BATCH_SIZE (en paralelo dentro de cada lote, pero
+  // los lotes en serie) — evita un burst de decenas/cientos de escrituras
+  // simultáneas a audit_logs/notifications en un solo tick (regla del proyecto:
+  // la tabla quedó marcada sensible a bursts de escritura tras el outage
+  // 2026-07-08). Notificaciones agrupadas por empleado (1 por requester en vez
+  // de 1 por solicitud).
+  const BATCH_SIZE = 20;
+  const runInBatches = async (items, fn) => {
+    for (let i = 0; i < items.length; i += BATCH_SIZE) {
+      await Promise.all(items.slice(i, i + BATCH_SIZE).map(fn));
+    }
+  };
+
   const runBulkApprove = useCallback(async () => {
     const pend = filtered.filter(r => r.status === 'pending');
     if (!pend.length) { setConfirmBulkOpen(false); return; }
@@ -263,11 +273,13 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
 
       const approved = data?.approved ?? [];
       const skippedBodega = data?.skipped_bodega ?? [];
+      const skippedHidden = data?.skipped_hidden ?? [];
+      const skippedNotFound = data?.skipped_not_found ?? [];
 
-      await Promise.all(approved.map(r => appendAuditLog('MINMAX_REQUEST_APPROVED', String(r.erp_product_id), {
+      await runInBatches(approved, r => appendAuditLog('MINMAX_REQUEST_APPROVED', String(r.erp_product_id), {
         request_id: r.id, product: r.product_name, sucursal_id: r.erp_sucursal_id,
         requested_min: r.requested_min, requested_max: r.requested_max, note: 'Aprobación masiva',
-      })));
+      }));
 
       const byRequester = new Map();
       for (const r of approved) {
@@ -275,7 +287,7 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
         if (!byRequester.has(r.requested_by_id)) byRequester.set(r.requested_by_id, []);
         byRequester.get(r.requested_by_id).push(r);
       }
-      await Promise.all([...byRequester.entries()].map(([empId, items]) => {
+      await runInBatches([...byRequester.entries()], ([empId, items]) => {
         const body = items.length === 1
           ? `Tu propuesta para ${items[0].product_name} (${ERP_NAMES[items[0].erp_sucursal_id] || items[0].erp_sucursal_id}) fue aplicada: MIN ${items[0].requested_min} · MAX ${items[0].requested_max}.`
           : `${items.length} propuestas tuyas fueron aprobadas y aplicadas: ${items.map(i => i.product_name).join(', ')}.`;
@@ -287,10 +299,17 @@ export default function TabMinMaxRequests({ searchTerm = '' }) {
           push: true,
           metadata: { status: 'APPROVED', count: items.length },
         });
-      }));
+      });
 
-      if (skippedBodega.length) {
-        setError(`${skippedBodega.length} solicitud(es) de Bodega se omitieron — Bodega no admite solicitudes directas (deriva su MIN/MAX de las sucursales).`);
+      // Superficia los 3 tipos de omisión — antes solo Bodega se mostraba,
+      // "ya decidida por otra persona" y "producto oculto" quedaban en
+      // silencio (hallazgo de /code-review post-auditoría).
+      const skipMsgs = [];
+      if (skippedBodega.length)   skipMsgs.push(`${skippedBodega.length} de Bodega (no admite solicitudes directas)`);
+      if (skippedHidden.length)   skipMsgs.push(`${skippedHidden.length} de producto(s) oculto(s) en Min/Max`);
+      if (skippedNotFound.length) skipMsgs.push(`${skippedNotFound.length} ya decidida(s) por otra persona`);
+      if (skipMsgs.length) {
+        setError(`Se omitieron ${skipMsgs.join(', ')}.`);
       }
 
       await load();

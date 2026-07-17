@@ -5,9 +5,46 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.62';
+export const APP_VERSION = '2.17.63';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.63 — fix(minmax): retry de los 5 ángulos de /code-review que habían
+// quedado cortados por límite de sesión + resolución de los 3 hallazgos de
+// duplicación pedidos explícitamente. BUG REAL encontrado (no cosmético):
+// approve_minmax_request tenía "ON CONFLICT DO UPDATE ... WHERE is_hidden IS
+// NOT TRUE" — si el producto estaba oculto, el UPDATE se saltaba en silencio
+// pero la función igual marcaba la solicitud 'approved', insertaba history y
+// devolvía ok:true (aprobación fantasma). Fix: valida is_hidden ANTES y
+// aborta con excepción clara (PRODUCT_HIDDEN). approve_minmax_requests_bulk
+// ahora DELEGA a approve_minmax_request en loop (savepoint implícito por
+// item vía EXCEPTION) en vez de duplicar la lógica de escritura — hereda el
+// fix del bug automáticamente y cierra el hallazgo de duplicación/altitud.
+// reject_minmax_request (se había salteado del revoke-anon anterior) también
+// corregido. Centralizado minmax_effective(base,manual) como único punto de
+// verdad de la fórmula aditiva, usado ahora por get_stock_analysis,
+// get_pedido_preview y get_network_summary_json (antes cada una la
+// reimplementaba inline). minmaxLabs.js: helper fetchPaginated compartido
+// (ya no se duplica consigo mismo) + unhideStockParamsForProducts ahora
+// filtra por is_hidden=true (dejó de escribir incondicional tras quitarle el
+// cap de 1000 en Fase 2 — regla del proyecto de nunca escribir sin comparar)
+// + su caller en LabsPanel.jsx ahora sí chequea errores de los chunks.
+// TabMinMaxRequests: runBulkApprove ahora reporta los 3 tipos de omisión
+// (bodega/oculto/ya-decidida, antes solo bodega) y procesa audit
+// logs/notificaciones en lotes de 20 en vez de un solo Promise.all sin tope.
+// useMinMaxData.js usa el mismo helper JS effectiveMinMax (era el 3er lugar
+// con la fórmula inline, no detectado en el pase anterior). config.toml:
+// removida la entrada huérfana de sync-erp-minmax (carpeta ya borrada).
+// Hallazgo documentado sin aplicar (deuda de rendimiento, no de bug):
+// fetchActiveProductLabIds descarga miles de filas al cliente solo para
+// contar por laboratorio — requeriría una RPC nueva, fuera de alcance de un
+// fix puntual. Hallazgo importante para decisión del usuario (no corregido
+// unilateralmente): el trigger de Bodega perdió el soporte de "sucursal con
+// borrador pendiente → Bodega en pending" en una migración del 2026-06-19,
+// un mes antes de esta sesión — mi reescritura a statement-level fue fiel al
+// comportamiento real vigente, no lo rompió, pero es una regresión de
+// producto real y silenciosa. Todo probado en staging con casos sintéticos
+// (incluye el caso nuevo de producto oculto) y re-verificado en prod antes
+// de limpiar.
 // v2.17.62 — fix(minmax): /code-review de cierre de la auditoría 2026-07-17 —
 // revoke anon de approve_minmax_requests_bulk (función nueva, se me olvidó el
 // REVOKE/GRANT que sí puse en get_network_summary_json — anon tenía EXECUTE

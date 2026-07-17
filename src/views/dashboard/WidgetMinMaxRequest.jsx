@@ -10,6 +10,7 @@ import {
     fetchActiveProductsCount, fetchActiveProductsChunk,
 } from '../../data/minmaxRequests';
 import { ERP_NAMES } from '../productos/tabminmax/constants';
+import { effectiveMinMax } from '../../data/stockParams';
 
 // Presentación dominante (la "caja" más grande, factor>1) para mostrar equivalentes.
 function dominantPres(pres) {
@@ -58,8 +59,8 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
       .then(({ data }) => {
         if (cancelled) return;
         setCurrent({
-          min: data?.min_units != null ? data.min_units + (data?.manual_min ?? 0) : null,
-          max: data?.max_units != null ? data.max_units + (data?.manual_max ?? 0) : null,
+          min: effectiveMinMax(data?.min_units, data?.manual_min),
+          max: effectiveMinMax(data?.max_units, data?.manual_max),
           sales6m: data?.units_sold_6m ?? null,
         });
         setLoadingCur(false);

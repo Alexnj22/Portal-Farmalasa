@@ -14,6 +14,7 @@ export default function LabsPanel({ onClose, onChanged }) {
     const [counts,    setCounts]    = useState({});  // laboratorio_id → product count
     const [loading,   setLoading]   = useState(true);
     const [saving,    setSaving]    = useState(null);
+    const [err,       setErr]       = useState(null);
     const [search,    setSearch]    = useState('');
     const searchRef = useRef();
 
@@ -34,6 +35,7 @@ export default function LabsPanel({ onClose, onChanged }) {
 
     const toggle = async (lab) => {
         setSaving(lab.id);
+        setErr(null);
         const newVal = !lab.ocultar_en_minmax;
         const { error } = await updateLaboratorioMinMaxVisibility(lab.id, newVal);
         if (!error) {
@@ -42,7 +44,16 @@ export default function LabsPanel({ onClose, onChanged }) {
             if (!newVal) {
                 const { data: prods } = await fetchProductIdsByLaboratorio(lab.id);
                 if (prods?.length) {
-                    await unhideStockParamsForProducts(prods.map(p => p.id));
+                    // unhideStockParamsForProducts devuelve un array de resultados
+                    // (uno por chunk de 1000) — un chunk fallido antes quedaba en
+                    // silencio (hallazgo de /code-review post-auditoría).
+                    const results = await unhideStockParamsForProducts(prods.map(p => p.id));
+                    const failed = results.find(r => r.error);
+                    if (failed) {
+                        setErr(`Algunos productos no se pudieron desocultar: ${failed.error.message}`);
+                        setSaving(null);
+                        return;
+                    }
                 }
             }
             setLabs(prev => prev.map(l => l.id === lab.id ? { ...l, ocultar_en_minmax: newVal } : l));
@@ -50,6 +61,8 @@ export default function LabsPanel({ onClose, onChanged }) {
                 lab: lab.nombre, ocultar: newVal,
             });
             onChanged?.();
+        } else {
+            setErr(error.message);
         }
         setSaving(null);
     };
@@ -118,6 +131,12 @@ export default function LabsPanel({ onClose, onChanged }) {
                 <p className="px-4 pb-1.5 text-[9.5px] text-slate-500 leading-relaxed">
                     Ocultos: no aparecen en MinMax ni en el cálculo. No se cuentan como productos ocultos individualmente.
                 </p>
+
+                {err && (
+                    <p className="mx-3 mb-1.5 px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 text-[10px] text-red-600 font-semibold">
+                        {err}
+                    </p>
+                )}
 
                 {/* List */}
                 <div className="px-3 pb-2 flex flex-col gap-1 overflow-y-auto" style={{ maxHeight: '54vh' }}>

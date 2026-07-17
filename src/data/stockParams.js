@@ -8,6 +8,15 @@ import { supabase } from '../supabaseClient';
 
 const ONCONFLICT = 'erp_product_id,erp_sucursal_id';
 
+// Punto único de verdad para "MIN/MAX efectivo" (publicado + manual, modelo
+// aditivo exclusivo de Bodega desde Fase 1 de la auditoría 2026-07-17). Antes
+// de esa fase, cada consumidor traía su propia fórmula (algunas con COALESCE
+// de reemplazo) — ese fue el bug C-1. Propaga null si no hay base (el caller
+// decide su propio fallback: 0 para inputs editables, '—' para displays).
+export function effectiveMinMax(base, manual) {
+    return base == null ? null : base + (manual ?? 0);
+}
+
 // ── product_stock_params ─────────────────────────────────────────────────────
 
 export function upsertStockParams(payload) {

@@ -389,9 +389,6 @@ verify_jwt = false
 [functions.send-push-notification]
 verify_jwt = false
 
-[functions.sync-erp-minmax]
-verify_jwt = false
-
 [functions.sync-erp-purchases]
 verify_jwt = false
 

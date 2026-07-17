@@ -5,8 +5,20 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.55';
+export const APP_VERSION = '2.17.56';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.56 — fix(minmax): calculate_stock_params(Bodega) reportaba drafted=0
+// siempre, aunque generara borradores reales — el RETURN final sumaba v_count
+// (nunca asignada en la rama de Bodega) en vez de v_count + v_bodega_count.
+// Bug preexistente, encontrado al investigar por qué el recálculo manual de
+// verify_jwt (0B.2) mostró números raros por sucursal. Fix de una línea,
+// staging primero, sin cambio de comportamiento para las 6 sucursales
+// normales (rama mutuamente excluyente). Además: la invocación manual de
+// prueba de 0B.2 disparó un recálculo real en Salud 2/Salud 3 (855 productos
+// auto-aplicados) que el usuario no pidió — revertido por completo usando el
+// snapshot que graba trg_psp_capture_history antes de cada cambio, verificado
+// con muestreo antes/después. Sin cambios en src/.
 
 // v2.17.55 — fix(bloque0b.2): auto-calculate-minmax había vuelto a
 // verify_jwt=true (0B.2 la puso en false 2026-07-11; un redeploy de Bloque

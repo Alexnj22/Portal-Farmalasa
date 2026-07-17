@@ -803,3 +803,25 @@ confirmado correcto excepto 1 regresión real, corregida en el momento**.
   resetea `verify_jwt` a su default (`true`) aunque el código no cambie —
   cualquier sesión futura que redeploye una función ya marcada
   `verify_jwt=false` debe repetir el flag, no asumir que se conserva.
+
+**Efecto colateral de la prueba manual (mismo día, corregido)**: la invocación
+real usada para verificar el fix de `verify_jwt` disparó `calculate_stock_params`
+para las 7 sucursales — la mayoría se saltaron (guarda "branch_has_pending_drafts",
+comportamiento correcto), pero Salud 2 y Salud 3 no tenían borradores pendientes y
+sí recalcularon de verdad (855 productos auto-aplicados a producción + ~4,200 filas
+de borrador nuevas). A pedido del usuario, revertido por completo: los 855 valores
+reales restaurados desde el snapshot que el trigger `trg_psp_capture_history` graba
+automáticamente antes de cada cambio (mismo patrón que hace verificable cualquier
+auto-apply); los borradores nuevos limpiados/eliminados según correspondía. Verificado
+con muestreo antes/después — ambas sucursales quedaron exactamente como estaban.
+
+**Hallazgo adicional descubierto en el camino (bug preexistente, no de esta sesión),
+corregido**: `calculate_stock_params(p_erp_sucursal_id=6)` (Bodega) siempre
+reportaba `drafted=0` en su JSON de retorno aunque generara borradores reales —
+el `RETURN` final solo sumaba `v_count` (variable que nunca se asigna en la rama de
+Bodega) en vez de `v_count + v_bodega_count`. Esto significa que el mensaje de
+notificación push mensual ("X requieren revisión en MinMax") siempre subestimó el
+conteo real de Bodega. Fix de una línea, aplicado primero en staging
+(`ewcmerxqjvludtgskuin`) y luego en prod — sin cambio de comportamiento para las 6
+sucursales normales (`v_bodega_count` es 0 ahí, rama mutuamente excluyente).
+Migración `20260717031659_fix_calculate_stock_params_bodega_drafted_count.sql`.

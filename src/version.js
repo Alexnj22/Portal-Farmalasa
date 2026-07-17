@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.56';
+export const APP_VERSION = '2.17.57';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.57 — fix(minmax): calculate_stock_params(p_erp_sucursal_id=6) (Bodega)
+// se quita por completo — generaba un borrador independiente (demanda agregada
+// + ABC/XYZ propio) que NUNCA podía convertirse en el min_units/max_units real
+// de Bodega, porque publish_stock_params excluye erp_sucursal_id=6 en sus dos
+// bloques. Quedaba como ruido puro acumulado (3,050+ filas sin resolver desde
+// junio). El valor real de Bodega siempre viene de sync_bodega_draft_from_branch
+// (tiempo real, SUM de sucursales) o de publish_stock_params al publicar —
+// nunca de este cálculo. Llamar con p_erp_sucursal_id=6 ahora devuelve
+// {ok:false, skipped:true, reason:'bodega_not_calculated_here'} en vez de
+// calcular en silencio. auto-calculate-minmax ya no incluye 6 en ERP_ORDER
+// (6 sucursales de venta, no 7). Limpiadas las 212 filas residuales de Bodega
+// (150 pending + 62 sparse_data) que habían quedado de antes del fix, con OK
+// explícito del usuario — draft_status='none', draft_min/max=NULL.
+// Migración 20260717034921_remove_bodega_from_calculate_stock_params.sql.
 
 // v2.17.56 — fix(minmax): calculate_stock_params(Bodega) reportaba drafted=0
 // siempre, aunque generara borradores reales — el RETURN final sumaba v_count

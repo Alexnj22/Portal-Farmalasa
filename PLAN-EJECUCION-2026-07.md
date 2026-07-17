@@ -825,3 +825,20 @@ conteo real de Bodega. Fix de una línea, aplicado primero en staging
 (`ewcmerxqjvludtgskuin`) y luego en prod — sin cambio de comportamiento para las 6
 sucursales normales (`v_bodega_count` es 0 ahí, rama mutuamente excluyente).
 Migración `20260717031659_fix_calculate_stock_params_bodega_drafted_count.sql`.
+
+**Cierre real del tema Bodega (mismo día, 2026-07-17)**: el bug de arriba llevó
+a auditar por qué `calculate_stock_params(6)` generaba borradores en primer
+lugar. Hallazgo: nunca podían aplicarse — `publish_stock_params` excluye
+`erp_sucursal_id=6` en sus dos bloques, así que ese cálculo independiente
+(demanda agregada propia para Bodega) era ruido puro acumulándose desde junio
+(3,050+ filas sin resolver). El valor real de Bodega SIEMPRE viene de
+`sync_bodega_draft_from_branch` (trigger, tiempo real, SUM de sucursales) o de
+`publish_stock_params` al publicar. Se quitó el bloque de Bodega por completo
+de `calculate_stock_params` (ahora `p_erp_sucursal_id=6` devuelve `skipped`
+explícito) y se sacó `6` de `ERP_ORDER` en `auto-calculate-minmax` (6
+sucursales de venta, ya no 7). Aplicado en prod (migración
+`20260717034921_remove_bodega_from_calculate_stock_params.sql` + redeploy de
+la edge function, ambos verificados contra el servidor). Limpiadas también las
+212 filas residuales de Bodega (150 `pending` + 62 `sparse_data`) que habían
+quedado del período previo al fix — con OK explícito del usuario, ya que no se
+iban a resolver solas.

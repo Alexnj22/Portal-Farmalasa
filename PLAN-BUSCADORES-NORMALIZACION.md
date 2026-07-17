@@ -1,9 +1,44 @@
 # Plan — Buscadores con normalización total ("superpoderes")
 
-**Estado: DOCUMENTADO, NO APLICADO** · Escrito: 2026-07-12
+**Estado: FASE 1 + FASE 2 APLICADAS Y VERIFICADAS EN PROD** (v2.17.53) ·
+Escrito: 2026-07-12 · Aplicado: 2026-07-17. Fase 3 (fuzzy server-side)
+sigue sin implementar — ver nota al final de esta sección.
 **Objetivo:** que TODOS los buscadores del portal encuentren lo que el usuario
 busca aunque escriba sin tildes, sin puntuación, con las palabras en otro
 orden, o con un typo.
+
+## Resumen de lo aplicado (2026-07-17)
+
+Primero probado end-to-end en staging (`ewcmerxqjvludtgskuin`) con datos
+sintéticos, luego aplicado a prod (`sacecdkdmsdvgqnrsett`) con OK explícito,
+verificado ahí contra datos reales. Migraciones en
+`supabase/migrations/20260717*.sql` (10 archivos).
+
+- **Fase 1**: el alcance real fueron 3 archivos, no 6 — verificación en vivo
+  descartó `TabMinMax.jsx` (ya usaba `smartFilter`) y los "spots naive" de
+  `TabStaff.jsx`/`FormLeadership.jsx` (son clasificación de rol, no cajas de
+  búsqueda). Migrados: `ConteoInventarioView.jsx`, `SchedulesView.jsx`,
+  `usePedidosData.js` (la lógica de `TabPedidos.jsx` vive ahí tras el
+  Bloque 6.C).
+- **Fase 2.1-2.3**: `norm_search()`/`f_unaccent()` + 9 RPCs con `p_search`
+  reescritos con match por tokens (`LIKE ALL`) — la lista real fue
+  `inventory_grouped`, `inventory_inversion`, `inventory_proximos_count`,
+  `get_conteo_items_search`/`_count`, `get_conteo_products_page`/`_count`,
+  `get_product_sales_agg`/`_jsonb` (9, no 8 — `_jsonb` se descubrió en el
+  grep de `pg_proc` que el plan ya pedía hacer).
+- **Fase 2.4-A**: columnas generadas `products.nombre_norm`/`pactivo_norm` +
+  `likePattern()` en `searchUtils.js`. 6 call sites migrados (los mismos que
+  Estrategia A abajo, con rutas actualizadas post-Bloque 6.A:
+  `src/data/{conteoInventario,recepcion,promotions,cotizaciones,productos,
+  dispatchRules}.js`).
+- **Fase 2.4-B**: en vez de una sola RPC `search_ventas`, se crearon 2 —
+  `search_ventas_ids` (sales_invoices) y `search_inventory_descripcion_ids`
+  (inventory, la tabla más caliente del proyecto — tampoco recibe columna
+  generada).
+- **Fuera de alcance, documentado como decisión deliberada**: `customers`
+  (ya tenía `search_name` generado con `translate()`, no era la fuente de
+  los bugs reportados), `ComprasView`/`requestsSlice` (tablas chicas, se
+  dejaron tal cual). **Fase 3 (fuzzy server-side) sigue sin implementar.**
 
 ## Casos canónicos que deben funcionar al terminar
 
@@ -47,7 +82,7 @@ aparezca (igual que `tokenMatch`). Ver patrón en Fase 2.3.
 
 ---
 
-## Fase 1 — Cliente (riesgo cero, sin tocar BD)
+## Fase 1 — Cliente (riesgo cero, sin tocar BD) ✅ APLICADO
 
 Migrar a `smartFilter`/`tokenMatch` los archivos con búsqueda naive:
 
@@ -68,7 +103,7 @@ Al filtrar productos incluir siempre `principio_activo` en los campos.
 
 ---
 
-## Fase 2 — Servidor (la clave; requiere OK humano por cada write a prod)
+## Fase 2 — Servidor (la clave; requiere OK humano por cada write a prod) ✅ APLICADO
 
 ### 2.1 Migración: extensión `unaccent` + `norm_search()`
 
@@ -255,7 +290,7 @@ multi-columna (ej. `sales_invoices`: 548K filas y 3 columnas → RPC
 
 ---
 
-## Fase 3 — Fuzzy server-side (opcional, después)
+## Fase 3 — Fuzzy server-side (opcional, después) ⬜ PENDIENTE
 
 Para el typo `graovl`→`GRAVOL` en búsquedas server-side (client-side ya lo
 cubre `smartFilter`): si el match por tokens da 0 filas, fallback con
@@ -283,10 +318,21 @@ esté estable.
 
 ## Verificación (checklist al aplicar)
 
-- [ ] `norm_search('S.S.N')='ssn'`, `('ALCOHOL-90')='alcohol90'`, `('Ácido')='acido'`
-- [ ] Catálogo: `ssn`, `alcohol 90`, `acido` devuelven los productos correctos
-- [ ] EXPLAIN de cada RPC actualizado usa índice GIN (no seq scan en products/MV)
-- [ ] Latencia de RPCs sin regresión (ojo plan genérico)
-- [ ] Syncs de cron siguen verdes tras columnas generadas (el INSERT del sync
-      no debe mencionar `*_norm`; al ser GENERATED, no puede — verificar igual)
-- [ ] Los 6 archivos de Fase 1 filtran con tildes/puntuación/typos
+- [x] `norm_search('S.S.N')='ssn'`, `('ALCOHOL-90')='alcohol90'`, `('Ácido')='acido'`
+      — verificado en staging Y en prod con datos reales.
+- [x] Catálogo (`inventory_grouped` + `.ilike('nombre_norm', ...)`): `ssn`,
+      `alcohol 90`, `acido`, `500 gravol` (orden invertido) devuelven los
+      productos correctos — verificado con datos sintéticos en staging
+      (insertados y luego borrados) y contra datos reales en prod.
+- [x] EXPLAIN confirma índice GIN en `products.nombre_norm` (Bitmap Index
+      Scan). En `inventory_grouped_mv` con solo 5 filas sintéticas el
+      planner prefiere Seq Scan — comportamiento correcto a esa cardinalidad,
+      no un defecto del índice (que existe y es válido: `idx_igmv_desc_norm_trgm`).
+- [ ] Latencia de RPCs sin regresión bajo carga real — no medido aún con
+      tráfico de producción, solo con queries puntuales.
+- [x] Syncs de cron no tocan `*_norm` (son `GENERATED`, Postgres lo impide
+      a nivel de esquema).
+- [x] Los 3 archivos reales de Fase 1 (no 6, ver "Resumen de lo aplicado")
+      filtran con tildes/puntuación/typos vía `smartFilter`/`normSearch`/`tokenMatch`.
+- [ ] `graovl`→`GRAVOL` (fuzzy) — cubierto solo client-side (`smartFilter`);
+      Fase 3 server-side no implementada.

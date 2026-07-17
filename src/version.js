@@ -5,8 +5,13 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.53';
+export const APP_VERSION = '2.17.54';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.17.54 — docs: PLAN-BUSCADORES-NORMALIZACION.md actualizado a estado
+// APLICADO (Fase 1 + Fase 2, prod + staging, v2.17.53) — checklist marcado,
+// alcance real corregido (3 archivos no 6 en Fase 1, 9 RPCs no 8, 2 RPCs
+// nuevas en 2.4-B), Fase 3 explícitamente pendiente. Sin cambios de código.
 
 // v2.17.53 — feat(buscadores): normalización total client-side (Fase 1) +
 // servidor completo probado en staging (Fase 2, PLAN-BUSCADORES-NORMALIZACION.md).

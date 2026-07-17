@@ -5,9 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.19.0';
+export const APP_VERSION = '2.19.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.19.1 — fix(pedidos): Bodega ya no cuenta pedido_items pendientes
+// indefinidamente contra su stock disponible.
+// get_pedido_generar_dashboard (tab "sin stock en Bodega" de Pedidos)
+// restaba del inventario físico de Bodega todo pedido_items con
+// status='pendiente', sin importar cuánto tiempo llevara así. Ese status
+// solo cambia a 'recibido' cuando la sucursal destino corre "Confirmar
+// recepción" (RecepcionModal) — pero las sucursales aún no tienen acceso
+// al portal, así que ese flujo nunca corre y el backlog crece sin límite
+// (caso real: Micropore 1x5 con 147 unidades "comprometidas" desde hace
+// 19 días contra solo 65 físicas → falso "sin stock"). Nueva columna
+// stock_config.pedido_recepcion_activa (default false) desactiva ese
+// neteo mientras el flujo de recepción no esté en uso real; reactivar
+// con 1 UPDATE cuando todas las sucursales tengan acceso — sin migración
+// nueva. Ver supabase/migrations/20260718000200_pedido_recepcion_activa_flag.sql.
+//
 // v2.19.0 — feat(minmax): cards renombradas + tooltips, y XYZ pasa a
 // percentiles relativos por sucursal.
 // Cards: "Total retenido" → "Inventario" (a pedido); "Inversión proyectada"

@@ -5,9 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.63';
+export const APP_VERSION = '2.17.64';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.64 — fix(minmax): restaura el badge "SUC. PEND." de Bodega. El
+// trigger de Bodega había perdido el soporte de "sucursal con borrador
+// pendiente → Bodega en pending" desde una migración del 2026-06-19 (un mes
+// antes de esta sesión, probablemente un efecto secundario accidental del
+// fix de clamp min/max de ese día) — decisión del usuario tras el
+// /code-review de cierre: restaurarlo. Ahora, si CUALQUIER sucursal tiene un
+// draft pendiente, Bodega pasa a draft_status='pending' con
+// draft_min/draft_max = Σ del mejor valor disponible por sucursal (draft si
+// está pending, publicado si no) — min_units/max_units quedan congelados en
+// el último valor vivo hasta que se resuelva el pendiente, que es lo que
+// dispara el badge en la UI. Cuando todas las sucursales vuelven a estar
+// publicadas, Bodega vuelve a vivo normalmente. Mantiene todas las mejoras
+// de esta sesión sobre el trigger: statement-level (M1), fix de Σ=0 (M-2),
+// filtro de cambio relevante vía old_rows/new_rows, guard de recursión.
+// Probado con 6 casos en staging (incluye la transición completa
+// vivo→pending→vivo) y re-verificado igual en prod antes de limpiar.
 // v2.17.63 — fix(minmax): retry de los 5 ángulos de /code-review que habían
 // quedado cortados por límite de sesión + resolución de los 3 hallazgos de
 // duplicación pedidos explícitamente. BUG REAL encontrado (no cosmético):

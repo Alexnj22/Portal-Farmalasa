@@ -29,7 +29,8 @@ export default function ConfigPanel({ config, onSave, onClose }) {
     const handleSave = async () => {
         if (Number(form.cycle_days) < 1) { setErr('El ciclo debe ser ≥ 1 día'); return; }
         if (Number(form.abc_a_pct) >= Number(form.abc_b_pct)) { setErr('El umbral A debe ser menor que el B'); return; }
-        if (Number(form.xyz_x_cv_max) >= Number(form.xyz_y_cv_max)) { setErr('El CV máximo de X debe ser menor que el de Y'); return; }
+        if (Number(form.xyz_x_percentile) >= Number(form.xyz_y_percentile)) { setErr('El percentil de X debe ser menor que el de Y'); return; }
+        if (Number(form.xyz_y_percentile) > 100) { setErr('El percentil de Y no puede superar 100'); return; }
         if (Number(form.approaching_pct) < 1 || Number(form.approaching_pct) > 100) { setErr('Alerta próximo debe estar entre 1 y 100%'); return; }
         setSaving(true); setErr('');
         const { data: { user } } = await supabase.auth.getUser();
@@ -38,8 +39,8 @@ export default function ConfigPanel({ config, onSave, onClose }) {
             reorder_x_days:      Number(form.reorder_x_days),
             reorder_y_days:      Number(form.reorder_y_days),
             reorder_z_days:      Number(form.reorder_z_days),
-            xyz_x_cv_max:        Number(form.xyz_x_cv_max),
-            xyz_y_cv_max:        Number(form.xyz_y_cv_max),
+            xyz_x_percentile:    Number(form.xyz_x_percentile),
+            xyz_y_percentile:    Number(form.xyz_y_percentile),
             abc_a_pct:           Number(form.abc_a_pct),
             abc_b_pct:           Number(form.abc_b_pct),
             analysis_days:       Number(form.analysis_days),
@@ -98,10 +99,12 @@ export default function ConfigPanel({ config, onSave, onClose }) {
 
                     {/* Umbrales XYZ */}
                     <section className="flex flex-col gap-2">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Umbrales XYZ (coeficiente de variación)</span>
-                        <Field form={form} set={set} label="X si CV ≤" k="xyz_x_cv_max" unit="%" min={1} step={1} />
-                        <Field form={form} set={set} label="Y si CV ≤" k="xyz_y_cv_max" unit="%" min={1} step={1} />
-                        <p className="text-[9px] text-slate-500">Z = CV mayor al umbral Y</p>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">Umbrales XYZ (percentil de CV, relativo a cada sucursal)</span>
+                        <Field form={form} set={set} label="X = percentil ≤" k="xyz_x_percentile" unit="%" min={1} max={99} step={1} />
+                        <Field form={form} set={set} label="Y = percentil ≤" k="xyz_y_percentile" unit="%" min={1} max={100} step={1} />
+                        <p className="text-[9px] text-slate-500 leading-snug">
+                            Z = el resto. Relativo: compara cada producto contra sus propios vecinos DENTRO de la misma sucursal, no contra un % de CV fijo — así sucursales de bajo volumen (todo CV alto) también obtienen diferenciación real.
+                        </p>
                     </section>
 
                     <div className="h-px bg-slate-100" />

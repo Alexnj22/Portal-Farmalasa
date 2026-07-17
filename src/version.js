@@ -5,9 +5,38 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.18.1';
+export const APP_VERSION = '2.19.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.19.0 — feat(minmax): cards renombradas + tooltips, y XYZ pasa a
+// percentiles relativos por sucursal.
+// Cards: "Total retenido" → "Inventario" (a pedido); "Inversión proyectada"
+// → "Catálogo a MIN·MAX" con tooltip aclarando que es el valor teórico del
+// catálogo completo a MIN/MAX (NO resta el stock actual, no es "lo que
+// falta comprar" — decisión explícita del usuario de mantenerlo así, solo
+// clarificar el nombre). Tooltips agregados a las otras 4 cards
+// (Inventario/útil/excedente/sin movimiento) explicando cada fórmula.
+// XYZ relativo: el corte de CV para clasificar X/Y/Z pasa de absoluto/global
+// (X≤150%, Y≤400%) a percentiles calculados DENTRO de cada sucursal — con
+// sucursales de bajo volumen (Salud 5: ~20-40x menos velocidad que las
+// demás) NINGÚN producto bajaba de 400% de CV, la matriz ABC×XYZ caía 100%
+// en Z sin diferenciación. Verificado con simulación contra datos reales:
+// sucursales grandes quedan casi igual (~5%/30%/65%, muy cerca de su
+// distribución actual), Salud 5 pasa de 0/0/100% a 15%/24%/61% real.
+// Nueva config stock_config.xyz_x_percentile/xyz_y_percentile (default 5/35,
+// reemplaza xyz_x_cv_max/xyz_y_cv_max en ConfigPanel — las columnas viejas
+// quedan sin uso). Verificado: reorder_x/y/z_days eran los 3 iguales (25) al
+// momento del cambio, así que este fix NO altera ningún MIN/MAX ya
+// calculado, solo la etiqueta.
+// Efecto colateral corregido a pedido del usuario: calculate_stock_params
+// ahora sincroniza SIEMPRE en vivo la clasificación (abc_class,
+// demand_variability, cv, velocity, etc. — igual que ya hacía con
+// calc_min/calc_max) en vez de marcar 'pending' cuando solo cambia la
+// etiqueta sin cambiar MIN/MAX. La revisión manual queda reservada
+// exclusivamente para cuando el NÚMERO de MIN/MAX cambiaría — evita que la
+// próxima corrida de "Calcular" marque miles de productos como pendientes
+// solo por el relabeling del fix de percentiles. Probado con 2 casos
+// sintéticos (solo-clasificación vs MIN/MAX real) en staging y prod.
 // v2.18.1 — fix(minmax): Bodega ya no se marca "Suc. pendientes" por
 // sucursales ocultas. Reportado por el usuario con un caso real (SIMILAC 2
 // PROSENSITIVE X 800GR): La Popular tenía una fila draft_status='pending'

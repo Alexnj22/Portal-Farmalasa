@@ -526,7 +526,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             </div>
                         </div>
                         <p className="text-[9px] text-slate-500 mt-auto pt-2 leading-snug">
-                            XYZ: X≤{config?.xyz_x_cv_max ?? 30}% CV · Y≤{config?.xyz_y_cv_max ?? 70}% CV · Z&gt;{config?.xyz_y_cv_max ?? 70}%<br />
+                            XYZ: X≤percentil {config?.xyz_x_percentile ?? 5} · Y≤percentil {config?.xyz_y_percentile ?? 35} · Z=resto (relativo a cada sucursal)<br />
                             ABC: A&lt;{config?.abc_a_pct ?? 70}% revenue · B&lt;{config?.abc_b_pct ?? 90}%
                         </p>
                     </div>}

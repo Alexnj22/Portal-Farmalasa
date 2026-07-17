@@ -342,8 +342,8 @@ export default function ItemSections({ allItems, loading }) {
             for (const item of items) {
                 const psp = map[`${item.erp_product_id}_${item.erp_sucursal_id}`];
                 em[item.id] = {
-                    min: String(psp?.manual_min ?? psp?.min_units ?? 0),
-                    max: String(psp?.manual_max ?? psp?.max_units ?? 0),
+                    min: String((psp?.min_units ?? 0) + (psp?.manual_min ?? 0)),
+                    max: String((psp?.max_units ?? 0) + (psp?.manual_max ?? 0)),
                 };
             }
             setPspMap(map);
@@ -392,8 +392,8 @@ export default function ItemSections({ allItems, loading }) {
             // MIN/MAX de Productos usa para buscar cambios de un producto puntual.
             useStaff.getState().appendAuditLog('MINMAX_UPDATED_FROM_PEDIDO', String(row.erp_product_id), {
                 field: 'min+max', product: row.product_name, sucursal_id: row.erp_sucursal_id,
-                old_min: prevPsp?.manual_min ?? prevPsp?.min_units ?? 0,
-                old_max: prevPsp?.manual_max ?? prevPsp?.max_units ?? 0,
+                old_min: (prevPsp?.min_units ?? 0) + (prevPsp?.manual_min ?? 0),
+                old_max: (prevPsp?.max_units ?? 0) + (prevPsp?.manual_max ?? 0),
                 new_min: min, new_max: max,
                 pedido_id: row.pedido_id,
             });

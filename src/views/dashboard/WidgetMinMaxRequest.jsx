@@ -61,8 +61,8 @@ function RequestForm({ product, erp, user, appendAuditLog, onBack, onSuccess }) 
       .then(({ data }) => {
         if (cancelled) return;
         setCurrent({
-          min: data?.manual_min ?? data?.min_units ?? null,
-          max: data?.manual_max ?? data?.max_units ?? null,
+          min: data?.min_units != null ? data.min_units + (data?.manual_min ?? 0) : null,
+          max: data?.max_units != null ? data.max_units + (data?.manual_max ?? 0) : null,
           sales6m: data?.units_sold_6m ?? null,
         });
         setLoadingCur(false);

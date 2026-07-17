@@ -5,9 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.57';
+export const APP_VERSION = '2.17.58';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.58 — fix(minmax): Fase 1 de la auditoría 2026-07-17 — unifica la semántica de
+// manual_min/manual_max (quedaba dividida en 3 lecturas contradictorias entre MinMax,
+// Pedidos y Solicitudes). approve_minmax_request ahora escribe min_units/max_units
+// directo (antes escribía el valor absoluto solicitado en manual_*, que get_stock_analysis
+// interpreta como delta aditivo — aprobar una solicitud inflaba el efectivo mostrado en
+// MinMax) + limpia manual_* + bloquea explícito si el target es Bodega (id 6, que deriva su
+// MIN/MAX de trg_bodega_draft_sync, no de solicitudes). get_pedido_preview, ItemSections.jsx
+// (revisión en Pedidos) y WidgetMinMaxRequest.jsx ("En uso ahora") migran de
+// COALESCE(manual, min_units) a min_units + COALESCE(manual, 0), igual que get_stock_analysis.
+// manual_* queda EXCLUSIVO de Bodega (delta aditivo real). Verificado con prueba end-to-end en
+// prod (producto MICROPORE 1X5 YDAS 3M/CUREBAND, suc. 1) y revertido sin dejar rastro.
+// Además: minmax_ignored tenía una policy RLS abierta (USING(true) para ALL, hallazgo nuevo
+// no visto en la auditoría original) — reemplazada por SELECT abierto + escritura gateada por
+// auth_can_edit_any(['minmax']). Revoke EXECUTE de get_stock_analysis a anon (B-3). Aplicado
+// primero en staging (ewcmerxqjvludtgskuin), luego prod. Detalle completo:
+// AUDITORIA-MINMAX-2026-07-17.md.
 // v2.17.57 — fix(minmax): calculate_stock_params(p_erp_sucursal_id=6) (Bodega)
 // se quita por completo — generaba un borrador independiente (demanda agregada
 // + ABC/XYZ propio) que NUNCA podía convertirse en el min_units/max_units real

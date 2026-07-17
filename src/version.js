@@ -5,9 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.17.61';
+export const APP_VERSION = '2.17.62';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.17.62 — fix(minmax): /code-review de cierre de la auditoría 2026-07-17 —
+// revoke anon de approve_minmax_requests_bulk (función nueva, se me olvidó el
+// REVOKE/GRANT que sí puse en get_network_summary_json — anon tenía EXECUTE
+// por default de Postgres al crear la función). De paso: approve_minmax_request
+// y get_pedido_preview (pre-existentes, solo tocadas con CREATE OR REPLACE en
+// esta sesión, que preserva grants viejos) también tenían anon desde antes —
+// corregido igual. Riesgo práctico bajo (SECURITY INVOKER + RLS solo aplica a
+// authenticated), pero viola la regla explícita del proyecto. Encontrado
+// corriendo /code-review sobre el diff acumulado de las 4 fases (paso del
+// checklist original que había quedado pendiente). Otros 3 hallazgos del
+// review (duplicación de la fórmula aditiva en 5+ lugares, approve_bulk
+// duplica la lógica de approve individual, minmaxLabs.js duplica boilerplate
+// de paginación con minmaxRequests.js) quedan documentados sin aplicar —
+// deuda de mantenimiento real pero bajo riesgo, no ameritan tocar código ya
+// probado extensivamente.
 // v2.17.61 — perf(minmax): Fase 4 de la auditoría 2026-07-17 — M2 (Red Patrón C)
 // + M7 (aprobación masiva atómica). get_network_summary → get_network_summary_json
 // (Patrón C, 1 sola ejecución agregada en vez de ~5 chunks de .range() que

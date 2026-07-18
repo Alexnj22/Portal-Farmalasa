@@ -5,8 +5,27 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.21.2';
+export const APP_VERSION = '2.22.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.22.0 — feat(proveedores): Fase 4 del Maestro de Proveedores — módulo UI
+// completo. ProveedoresView.jsx (módulo nuevo, grupo Inventario): lista con
+// filter pill en el body (categoría/clase/activo, incl. "(sin categoría)" y
+// "(sin match ERP)"), categoría asignable inline (LiquidSelect), match ERP
+// con el mismo patrón de "Emparejar" que FacturasCompraView. Modal detalle
+// (FormProveedorDetail, patrón FormEditContact — self-contained, footer
+// propio, HIDES_FOOTER) con datos fiscales de solo lectura + campos
+// curados a mano (contacto, teléfono 2, nombre para cheques, notas, activo,
+// override de percibe_1) y link "Ver documentos" a Facturas de Compra
+// filtrado por NIT (?q=). FacturasCompraView ahora prioriza el nombre del
+// maestro (proveedor_id) sobre el match ERP (dato secundario). Checklist de
+// módulo nuevo completo: ruta App.jsx, menú AppLayout, PermissionsView,
+// role_permissions (roles 2/3/13, aplicado en Fase 1). appendAuditLog en las
+// 3 acciones (ver detalle, set categoría, set match, update manual).
+// Verificado end-to-end con Playwright + datos reales de prod: lista con 59
+// proveedores, asignación de categoría y campos manuales persistidos y
+// confirmados en BD, auditoría registrada, cross-link a Facturas de Compra
+// filtrando correctamente (datos de prueba revertidos tras verificar).
 
 // v2.21.2 — fix(proveedores): tipo_dte '09' es "Documento Contable de
 // Liquidación" (CAT-002 oficial, src/utils/dteTypes.js), no "Nota de

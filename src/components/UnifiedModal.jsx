@@ -42,11 +42,12 @@ const FormAiSchedulerPreview = React.lazy(() => import('./forms/FormAiSchedulerP
 const FormSetPassword = React.lazy(() => import('./forms/FormSetPassword'));
 const FormChangeOwnPassword = React.lazy(() => import('./forms/FormChangeOwnPassword'));
 const FormEditContact = React.lazy(() => import('./forms/FormEditContact'));
+const FormProveedorDetail = React.lazy(() => import('./forms/FormProveedorDetail'));
 const FormNewPayrollPeriod = React.lazy(() => import('./forms/FormNewPayrollPeriod'));
 const FormEditPayrollEntry = React.lazy(() => import('./forms/FormEditPayrollEntry'));
 
 const HIDES_HEADER = new Set(["viewRoleEmployees", "viewAnnouncementReaders", "viewDocument", "viewPurchaseDte"]);
-const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword", "changeOwnPassword", "editContact", "viewPurchaseDte"]);
+const HIDES_FOOTER = new Set(["viewWfmAnalytics", "aiSchedulerPreview", "viewRoleEmployees", "viewAnnouncementReaders", "viewBranchEmployees", "viewDocument", "viewAuditDetail", "manageKiosks", "setEmployeePassword", "changeOwnPassword", "editContact", "viewPurchaseDte", "editProveedor"]);
 const BRANCH_ACTIONS = new Set(["newBranch", "editBranch", "editBranchHorarios", "editBranchLegal", "editBranchInmueble", "editBranchServicios", "editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 const SHIELD_ICONS = new Set(["editSrsPermit", "editPharmacyRegent", "editPharmacovigilance", "editNursingRegents", "manageService"]);
 
@@ -173,6 +174,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "editContact": return "max-w-sm";
             case "newPayrollPeriod": return "max-w-md";
             case "editPayrollEntry": return "max-w-2xl";
+            case "editProveedor": return "max-w-2xl";
             default: return "max-w-lg";
         }
     };
@@ -211,6 +213,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "editContact": return "Editar Perfil";
             case "newPayrollPeriod": return "Nueva Quincena";
             case "editPayrollEntry": return "Editar Entrada";
+            case "editProveedor": return formData?.nombre || "Detalle de Proveedor";
             default: return "Gestión Administrativa";
         }
     };
@@ -229,6 +232,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         if (type === "editContact") return formData?.name?.toUpperCase() || "TU PERFIL";
         if (type === "newPayrollPeriod") return "PERÍODO DE NÓMINA";
         if (type === "editPayrollEntry") return (formData?._entry?.employee?.name || 'EMPLEADO').toUpperCase();
+        if (type === "editProveedor") return formData?.nit || formData?.dui || 'PROVEEDOR';
         if (BRANCH_SUBTITLES.has(type)) return `SUCURSAL: ${formData?.branch?.name || formData?.name || formData?.branchName || 'NUEVA'}`;
         if (type === "viewDocument") return "Vista Previa de Archivo";
         return "Panel de configuración";
@@ -859,6 +863,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 {type === "vacationRecall" && <FormVacationRecall formData={formData} setFormData={setFormData} />}
                                 {type === "newPayrollPeriod" && <FormNewPayrollPeriod formData={formData} setFormData={setFormData} />}
                                 {type === "editPayrollEntry" && <FormEditPayrollEntry formData={formData} setFormData={setFormData} />}
+                                {type === "editProveedor" && <FormProveedorDetail formData={formData} onClose={onClose} />}
                             </Suspense>
                         </form>
                     </div>

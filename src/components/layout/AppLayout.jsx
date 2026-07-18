@@ -7,7 +7,7 @@ import {
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, LayoutDashboard, Cake,
     TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
-    PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail
+    PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { fetchVentasPerdidasPendingCount } from '../../data/ventasPerdidas';
@@ -64,6 +64,7 @@ const MODULE_MAP = {
     ventas_perdidas:   { path: '/ventas-perdidas',  label: 'Ventas Perdidas',          icon: PackageMinus  },
     compras:           { path: '/compras',           label: 'Compras',                  icon: ShoppingCart  },
     facturas_compra:   { path: '/facturas-compra',    label: 'Facturas de Compra',       icon: Mail          },
+    proveedores:       { path: '/proveedores',        label: 'Proveedores',              icon: Truck         },
     conteo_inventario: { path: '/conteo-inventario',  label: 'Conteo de Inventario',     icon: ClipboardCheck },
 };
 
@@ -82,7 +83,7 @@ const MENU_GROUPS = [
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview', 'ios_test', 'sync_health', 'orphan_objects'] },
     { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones', 'promociones', 'bonificaciones'] },
     { key: 'rrhh',         label: 'RRHH',          icon: Users,         modules: ['entrevistas', 'encuesta_admin'] },
-    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'laboratorios', 'pedidos', 'minmax', 'ventas_perdidas', 'compras', 'facturas_compra', 'conteo_inventario'] },
+    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'laboratorios', 'pedidos', 'minmax', 'ventas_perdidas', 'compras', 'facturas_compra', 'proveedores', 'conteo_inventario'] },
 ];
 
 const SELF_KEYS = ['emp_home', 'emp_requests', 'emp_announcements', 'emp_profile', 'emp_documents'];

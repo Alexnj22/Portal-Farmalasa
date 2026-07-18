@@ -51,6 +51,7 @@ const MinMaxView = lazy(() => import("./views/MinMaxView"));
 const VentasPperdidasView = lazy(() => import("./views/VentasPperdidasView"));
 const ComprasView = lazy(() => import("./views/ComprasView"));
 const FacturasCompraView = lazy(() => import("./views/purchases/FacturasCompraView"));
+const ProveedoresView = lazy(() => import("./views/purchases/ProveedoresView"));
 const ConteoInventarioView = lazy(() => import("./views/ConteoInventarioView"));
 const ConteoDetailView = lazy(() => import("./views/inventario/ConteoDetailView"));
 const PromocionesView = lazy(() => import("./views/PromocionesView"));
@@ -617,6 +618,7 @@ function MainApp() {
                                     <Route path="ventas-perdidas" element={<PermissionGuard moduleKey="ventas_perdidas"><VentasPperdidasView /></PermissionGuard>} />
                                     <Route path="compras" element={<PermissionGuard moduleKey="compras"><ComprasView /></PermissionGuard>} />
                                     <Route path="facturas-compra" element={<PermissionGuard moduleKey="facturas_compra"><FacturasCompraView openModal={openModal} /></PermissionGuard>} />
+                                    <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="conteo-inventario/:id" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoDetailView /></PermissionGuard>} />
                                     <Route path="promociones" element={<PermissionGuard moduleKey="promociones"><PromocionesView /></PermissionGuard>} />

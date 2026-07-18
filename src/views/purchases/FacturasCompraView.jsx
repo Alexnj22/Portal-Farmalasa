@@ -77,6 +77,21 @@ function SupplierMatchCell({ row, suppliers, onMatched, canEdit }) {
     const [saving, setSaving]   = useState(false);
     const [error, setError]     = useState('');
 
+    // Fase 4.4 (PLAN-PROVEEDORES-2026-07.md): el maestro (proveedor_id) es la
+    // fuente primaria — se llena solo desde el DTE, siempre presente para
+    // documentos nuevos. El match ERP (supplier_id) queda como dato
+    // secundario, solo si difiere del nombre del maestro.
+    if (row.proveedor_id) {
+        return (
+            <div className="min-w-0">
+                <span className="text-slate-800 font-medium text-[12px] block truncate">{row.proveedor_nombre}</span>
+                {row.supplier_id && row.supplier_nombre !== row.proveedor_nombre && (
+                    <span className="text-[10px] text-slate-400 truncate block">ERP: {row.supplier_nombre}</span>
+                )}
+            </div>
+        );
+    }
+
     if (row.supplier_id) {
         return <span className="text-slate-800 font-medium text-[12px]">{row.supplier_nombre}</span>;
     }
@@ -235,7 +250,7 @@ function TabDocumentos({
             if (tipoDte && r.tipo_dte !== tipoDte) return false;
             if (supplierId === SIN_PROVEEDOR) { if (r.supplier_id) return false; }
             else if (supplierId) { if (String(r.supplier_id) !== String(supplierId)) return false; }
-            if (searchTerm && !tokenMatch(searchTerm, r.supplier_nombre, r.emisor_nombre, r.numero_control, r.codigo_generacion)) return false;
+            if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion)) return false;
             return true;
         });
     }, [rows, tipoDte, supplierId, searchTerm]);
@@ -247,7 +262,7 @@ function TabDocumentos({
         const val = (r) => {
             switch (sortCol) {
                 case 'fecha':     return r.fecha_emision || '';
-                case 'proveedor': return (r.supplier_nombre || r.emisor_nombre || '').toLowerCase();
+                case 'proveedor': return (r.proveedor_nombre || r.supplier_nombre || r.emisor_nombre || '').toLowerCase();
                 case 'tipo':      return (dteTypeLabel(r.tipo_dte) || '').toLowerCase();
                 case 'monto':     return parseFloat(r.monto_total || 0);
                 default:          return '';
@@ -627,7 +642,8 @@ export default function FacturasCompraView({ openModal }) {
     const activeTab = TABS.some(t => t.key === rawTab) ? rawTab : 'documentos';
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
 
-    const [search, setSearch] = useState('');
+    // ?q= — cross-link desde el detalle de Proveedores ("Ver documentos").
+    const [search, setSearch] = useState(() => searchParams.get('q') || '');
     const [dateRange, setDateRange] = useState(defaultDateRange);
     const [dateStart, dateEnd] = dateRange.split('|');
     const [tipoDte, setTipoDte] = useState('');

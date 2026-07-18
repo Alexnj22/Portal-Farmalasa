@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.19.7';
+export const APP_VERSION = '2.19.8';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.19.8 — feat(facturas-compra): tabla email_sync_log dedicada (patrón bloque7B,
+// NO reusar sync_log genérico — acoplado a semántica de ventas DTE) + extensión de
+// la vista v_sync_health con la rama 'email'. Aplicada en staging y prod, 0 errores
+// de seguridad. Confirmado también que las credenciales Gmail van como secrets de
+// la edge function (Deno.env), no Supabase Vault, pese al nombre de la columna
+// vault_secret_name — comentario SQL agregado para no confundir a futuro.
 
 // v2.19.7 — feat(facturas-compra): Fase 1.3 aplicada (BD) — supplier_id real en
 // purchase_dte_documents (match manual de proveedor), credenciales Gmail por

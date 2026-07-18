@@ -5,8 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.22.0';
+export const APP_VERSION = '2.22.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.22.1 — fix(proveedores): categoría/match ERP mudados a solo el modal
+// (antes editables inline en la tabla también — a pedido directo del
+// usuario) + campo nuevo "Tipo de Proveedor" en el modal (derivado de la
+// `clase` de la categoría — costo/gasto_operativo/gasto_admin/otro — nunca
+// fue un campo propio, PLAN-PROVEEDORES-2026-07.md §2 ya lo definía así,
+// solo faltaba mostrarlo). Fix real de matching ERP: suppliers.nrc trae
+// guión en 73 filas legacy ("9407-2") y el NRC que sale del DTE nunca
+// ("94072") — mismo NRC, el match exacto no encontraba nada (2/92 antes).
+// upsert_proveedor_from_dte ahora compara NRC normalizado (solo dígitos);
+// backfill aplicado a los proveedores ya existentes: 51/92 con match ERP
+// ahora, verificado sin ambigüedad (0 NRC normalizado duplicado en ninguna
+// tabla) y nombres coincidentes en la muestra revisada.
 
 // v2.22.0 — feat(proveedores): Fase 4 del Maestro de Proveedores — módulo UI
 // completo. ProveedoresView.jsx (módulo nuevo, grupo Inventario): lista con

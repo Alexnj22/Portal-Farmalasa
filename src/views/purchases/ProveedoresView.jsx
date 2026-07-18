@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';
 import { fetchSuppliersBasic } from '../../data/compras';
-import { fetchProveedoresMaestro, fetchProveedorCategorias, setProveedorCategoria, setProveedorSupplier } from '../../data/proveedores';
+import { fetchProveedoresMaestro, fetchProveedorCategorias } from '../../data/proveedores';
 
 const SIN_CATEGORIA = '__sin_categoria__';
 const SIN_MATCH_ERP = '__sin_match__';
@@ -32,124 +32,23 @@ const fmtDate = (d) => {
     return `${day}/${m}/${y}`;
 };
 
-// ── CategoriaCell ─────────────────────────────────────────────────────────────
+// ── CategoriaCell / MatchErpCell — solo lectura; editar vive en el modal
+// detalle (FormProveedorDetail), a pedido del usuario 2026-07-18. ───────────
 
-function CategoriaCell({ row, categorias, onChanged, canEdit }) {
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
-
-    if (!canEdit) {
-        return row.categoria_nombre
-            ? <span className="text-slate-700 text-[12px] font-medium">{row.categoria_nombre}</span>
-            : <span className="text-amber-600 text-[11px] font-bold">Sin categoría</span>;
-    }
-
-    return (
-        <div className="w-[180px]" onClick={(e) => e.stopPropagation()}>
-            <LiquidSelect
-                value={row.categoria_id || ''}
-                onChange={async (val) => {
-                    setSaving(true);
-                    setError('');
-                    try {
-                        await setProveedorCategoria(row.id, val || null);
-                        useStaff.getState().appendAuditLog('PROVEEDORES_SET_CATEGORIA', String(row.id), {
-                            nombre: row.nombre, categoria_id: val || null,
-                        });
-                        onChanged();
-                    } catch (e) {
-                        setError(e.message || 'No se pudo guardar');
-                    } finally {
-                        setSaving(false);
-                    }
-                }}
-                options={categorias.map(c => ({ value: c.id, label: c.nombre }))}
-                placeholder={saving ? 'Guardando…' : 'Sin categoría'}
-                compact
-                clearable
-            />
-            {error && <span className="text-[10px] text-red-500">{error}</span>}
-        </div>
-    );
+function CategoriaCell({ row }) {
+    return row.categoria_nombre
+        ? <span className="text-slate-700 text-[12px] font-medium">{row.categoria_nombre}</span>
+        : <span className="text-amber-600 text-[11px] font-bold">Sin categoría</span>;
 }
 
-// ── MatchErpCell ──────────────────────────────────────────────────────────────
-
-function MatchErpCell({ row, suppliers, onChanged, canEdit }) {
-    const [editing, setEditing] = useState(false);
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
-
-    if (row.supplier_id && !editing) {
-        return (
-            <div className="flex items-center gap-1.5">
-                <span className="text-slate-800 font-medium text-[12px]">{row.supplier_nombre}</span>
-                {canEdit && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setError(''); setEditing(true); }}
-                        className="text-[10px] font-bold text-slate-400 hover:text-red-500 underline shrink-0"
-                    >
-                        Cambiar
-                    </button>
-                )}
-            </div>
-        );
+function MatchErpCell({ row }) {
+    if (row.supplier_id) {
+        return <span className="text-slate-800 font-medium text-[12px]">{row.supplier_nombre}</span>;
     }
-
-    if (!editing) {
-        return (
-            <div className="flex items-center gap-1.5">
-                <AlertTriangle size={12} className="text-amber-500 shrink-0" title="Sin match con proveedor del ERP" />
-                <span className="text-slate-500 text-[11px]">Sin match ERP</span>
-                {canEdit && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setError(''); setEditing(true); }}
-                        className="text-[10px] font-bold text-[#0052CC] underline shrink-0"
-                    >
-                        Emparejar
-                    </button>
-                )}
-                {error && <span className="text-[10px] text-red-500">{error}</span>}
-            </div>
-        );
-    }
-
     return (
-        <div className="flex items-center gap-1.5 w-[220px]" onClick={(e) => e.stopPropagation()}>
-            <div className="flex-1 min-w-0">
-                <LiquidSelect
-                    value=""
-                    onChange={async (val) => {
-                        if (!val) { setEditing(false); return; }
-                        setSaving(true);
-                        try {
-                            await setProveedorSupplier(row.id, val);
-                            useStaff.getState().appendAuditLog('PROVEEDORES_SET_MATCH_ERP', String(row.id), {
-                                nombre: row.nombre, supplier_id: val,
-                            });
-                            onChanged();
-                            setEditing(false);
-                        } catch (e) {
-                            setError(e.message || 'No se pudo guardar');
-                            setEditing(false);
-                        } finally {
-                            setSaving(false);
-                        }
-                    }}
-                    options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
-                    placeholder={saving ? 'Guardando…' : 'Buscar proveedor ERP…'}
-                    compact
-                    clearable={false}
-                />
-            </div>
-            <button
-                onClick={() => setEditing(false)}
-                disabled={saving}
-                title="Cancelar"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40 shrink-0"
-            >
-                <X size={14} />
-            </button>
+        <div className="flex items-center gap-1.5">
+            <AlertTriangle size={12} className="text-amber-500 shrink-0" title="Sin match con proveedor del ERP" />
+            <span className="text-slate-500 text-[11px]">Sin match ERP</span>
         </div>
     );
 }
@@ -220,7 +119,7 @@ export default function ProveedoresView({ openModal }) {
     const pageRows = useMemo(() => sorted.slice((page - 1) * pageSize, page * pageSize), [sorted, page, pageSize]);
 
     const openDetail = (row) => {
-        openModal?.('editProveedor', { ...row, categorias, onSaved: load });
+        openModal?.('editProveedor', { ...row, categorias, suppliers, canEdit, onSaved: load });
         useStaff.getState().appendAuditLog('PROVEEDORES_VER_DETALLE', String(row.id), { nombre: row.nombre });
     };
 
@@ -318,10 +217,10 @@ export default function ProveedoresView({ openModal }) {
                                 <span className="text-slate-600 text-[11px] truncate max-w-[220px] block" title={row.desc_actividad}>{row.desc_actividad || '—'}</span>
                             </DataCell>
                             <DataCell>
-                                <CategoriaCell row={row} categorias={categorias} onChanged={load} canEdit={canEdit} />
+                                <CategoriaCell row={row} />
                             </DataCell>
                             <DataCell>
-                                <MatchErpCell row={row} suppliers={suppliers} onChanged={load} canEdit={canEdit} />
+                                <MatchErpCell row={row} />
                             </DataCell>
                             <DataCell align="right" hideBelow="md">
                                 <span className="tabular-nums font-bold text-slate-700">{row.docs_count}</span>

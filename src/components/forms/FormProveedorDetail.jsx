@@ -3,11 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
-import { updateProveedorManual } from '../../data/proveedores';
+import { updateProveedorManual, setProveedorCategoria, setProveedorSupplier } from '../../data/proveedores';
 import { departamentoLabel } from '../../utils/svCatalogs';
 import LiquidSelect from '../common/LiquidSelect';
 
 const SI_NO = [{ value: 'si', label: 'Sí' }, { value: 'no', label: 'No' }];
+
+// Tipo de Proveedor (Costo/Gasto del form del ERP viejo, PLAN-PROVEEDORES-2026-07.md
+// §2): NO es un campo propio — se deriva de la `clase` de la categoría asignada.
+// Sin categoría todavía, no hay tipo que derivar.
+const CLASE_LABELS = {
+    costo: 'Costo (Inventario)',
+    gasto_operativo: 'Gasto Operativo',
+    gasto_admin: 'Gasto Administrativo',
+    otro: 'Otro',
+};
 
 const fmtDate = (d) => {
     if (!d) return '—';
@@ -43,6 +53,54 @@ const FormProveedorDetail = ({ formData, onClose }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // Categoría y match ERP guardan de inmediato al cambiar (mismo patrón que
+    // tenían antes en la tabla de ProveedoresView — ahora viven solo acá,
+    // a pedido del usuario 2026-07-18), independiente del botón Guardar de
+    // los campos manuales de abajo.
+    const [categoriaId, setCategoriaId] = useState(formData?.categoria_id || '');
+    const [savingCategoria, setSavingCategoria] = useState(false);
+    const [supplierId, setSupplierId] = useState(formData?.supplier_id || '');
+    const [savingSupplier, setSavingSupplier] = useState(false);
+    const [clasifError, setClasifError] = useState('');
+
+    const categorias = formData?.categorias || [];
+    const suppliers = formData?.suppliers || [];
+    const claseActual = categorias.find(c => String(c.id) === String(categoriaId))?.clase;
+
+    const onCategoriaChange = async (val) => {
+        setSavingCategoria(true);
+        setClasifError('');
+        try {
+            await setProveedorCategoria(formData.id, val || null);
+            useStaffStore.getState().appendAuditLog('PROVEEDORES_SET_CATEGORIA', String(formData.id), {
+                nombre: formData.nombre, categoria_id: val || null,
+            });
+            setCategoriaId(val || '');
+            formData?.onSaved?.();
+        } catch (e) {
+            setClasifError(e.message || 'No se pudo guardar la categoría');
+        } finally {
+            setSavingCategoria(false);
+        }
+    };
+
+    const onSupplierChange = async (val) => {
+        setSavingSupplier(true);
+        setClasifError('');
+        try {
+            await setProveedorSupplier(formData.id, val || null);
+            useStaffStore.getState().appendAuditLog('PROVEEDORES_SET_MATCH_ERP', String(formData.id), {
+                nombre: formData.nombre, supplier_id: val || null,
+            });
+            setSupplierId(val || '');
+            formData?.onSaved?.();
+        } catch (e) {
+            setClasifError(e.message || 'No se pudo guardar el match ERP');
+        } finally {
+            setSavingSupplier(false);
+        }
+    };
+
     const save = async () => {
         setLoading(true);
         setError('');
@@ -77,7 +135,6 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 <FiscalRow icon={MapPin} label="Dirección" value={formData?.direccion} />
                 <FiscalRow icon={Phone} label="Teléfono" value={formData?.telefono} />
                 <FiscalRow icon={Mail} label="Correo" value={formData?.correo} />
-                <FiscalRow icon={FileText} label="Match ERP" value={formData?.supplier_nombre} />
 
                 <div className="col-span-full flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200/60 text-[10px] text-slate-500">
                     <span>{formData?.docs_count || 0} documento{formData?.docs_count === 1 ? '' : 's'}</span>
@@ -90,6 +147,39 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         Ver documentos <ExternalLink size={11} />
                     </button>
                 </div>
+            </div>
+
+            {/* Clasificación — guarda de inmediato al cambiar, no espera a Guardar Cambios */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Categoría</label>
+                    <LiquidSelect
+                        value={categoriaId}
+                        onChange={onCategoriaChange}
+                        options={categorias.map(c => ({ value: c.id, label: c.nombre }))}
+                        placeholder={savingCategoria ? 'Guardando…' : 'Sin categoría'}
+                        clearable
+                    />
+                </div>
+                <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block" title="Derivado de la categoría (clase costo/gasto) — no se edita directo">
+                        Tipo de Proveedor
+                    </label>
+                    <div className="w-full px-3.5 bg-slate-50 border border-slate-200/60 rounded-[1rem] h-[44px] text-[13px] font-medium text-slate-500 flex items-center">
+                        {claseActual ? CLASE_LABELS[claseActual] || claseActual : '—'}
+                    </div>
+                </div>
+                <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Match ERP</label>
+                    <LiquidSelect
+                        value={supplierId}
+                        onChange={onSupplierChange}
+                        options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
+                        placeholder={savingSupplier ? 'Guardando…' : 'Buscar proveedor ERP…'}
+                        clearable
+                    />
+                </div>
+                {clasifError && <div className="sm:col-span-3 text-[11px] text-red-500 px-1">{clasifError}</div>}
             </div>
 
             {/* Curación manual */}

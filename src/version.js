@@ -5,8 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.21.1';
+export const APP_VERSION = '2.21.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.21.2 — fix(proveedores): tipo_dte '09' es "Documento Contable de
+// Liquidación" (CAT-002 oficial, src/utils/dteTypes.js), no "Nota de
+// Remisión" como se asumió al ver el JSON de muestra de Redserfinsa — misma
+// familia que 08, que el plan ya excluye de auto-crear proveedor (el emisor
+// suele ser un intermediario/cliente reportando, no un proveedor real).
+// Revertido en el shared parser + redeploy de ambas edge functions.
+// Corrección de datos en prod: 115 documentos tipo 09 desvinculados,
+// docs_count/fechas recalculados en los 2 proveedores afectados (Banco
+// Promerica, Servicios Financieros) — ninguno se borró, ambos tienen
+// documentos legítimos de otros tipos.
 
 // v2.21.1 — feat(proveedores): Fases 2 y 3 del Maestro de Proveedores —
 // backfill + auto-registro en vivo. Edge function nueva

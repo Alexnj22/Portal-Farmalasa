@@ -22,15 +22,20 @@ export interface ProveedorDteData {
   fecha_emision: string | null;
 }
 
-// 01 Factura, 03 CCF, 05 NC, 06 ND, 09 Nota de Remisión — comparten el mismo
-// bloque `emisor` (quien nos vendió/entregó). 09 no estaba en la tabla original
-// del plan pero se confirmó con datos reales de producción: mismo shape que
-// 01/03 (emisor.nit/nrc/nombre/...), es el proveedor igual que una factura.
-const TIPOS_EMISOR_PROVEEDOR = new Set(['01', '03', '05', '06', '09']);
+// 01 Factura, 03 CCF, 05 NC, 06 ND — comparten el mismo bloque `emisor`
+// (quien nos vendió). CORRECCIÓN 2026-07-18: se probó incluir 09 acá creyendo
+// que era "Nota de Remisión" (typo del plan original) — es en realidad
+// "Documento Contable de Liquidación" (src/utils/dteTypes.js, catálogo CAT-002
+// oficial), misma familia que 08 (comprobante de liquidación), que el plan ya
+// excluye explícitamente porque el emisor suele ser un intermediario/cliente
+// reportando, no un proveedor real (confirmado con datos: Redserfinsa/
+// tarjetas de crédito). Revertido — ver corrección de datos en
+// 20260718110000_proveedores_maestro_fix_tipo09.sql.
+const TIPOS_EMISOR_PROVEEDOR = new Set(['01', '03', '05', '06']);
 const TIPO_FSE = '14';
 
 // Para filtrar la query del backfill (Fase 2): tipos que SÍ pueden generar
-// proveedor. Evita reescanear para siempre los 07/08/11/15 que nunca van a
+// proveedor. Evita reescanear para siempre los 07/08/09/11/15 que nunca van a
 // tener proveedor_id (no hay marcador de "no aplica" — el filtro de tipo lo
 // reemplaza).
 export const TIPOS_DTE_CON_PROVEEDOR = [...TIPOS_EMISOR_PROVEEDOR, TIPO_FSE];

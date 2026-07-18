@@ -5,8 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.23.0';
+export const APP_VERSION = '2.23.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.23.1 — feat(facturas-compra): badge inverso NC→CCF, a pedido directo
+// del usuario ("así como haces en la venta ver la NC, quiero al revés").
+// get_purchase_dte_documents enriquece `documento_relacionado` (antes solo
+// el código) con los mismos campos que `notas_credito[]` (json_path/
+// pdf_path incluidos) para poder abrir el detalle del CCF sin que esté en
+// el rango de fechas visible. Badge azul "🔗 Ver original" en la fila de la
+// NC/ND — mismo mecanismo que el badge ámbar "NC" del CCF, reusa
+// viewPurchaseDte sin cambios. Fix de paso: la primera versión mostraba
+// "Ver Crédito Fiscal (CCF)" completo y se rompía en 4 líneas dentro de la
+// columna Tipo — texto fijo corto "Ver original" (detalle completo queda en
+// el title/tooltip). Verificado en vivo: abre el CCF correcto ($996.57,
+// mismo documento que tenía el badge NC).
 
 // v2.23.0 — feat(facturas-compra): 4 mejoras a pedido directo del usuario.
 // (1) Quitado el texto "Máx. 300 — acotá fechas" del pill de Descargar.

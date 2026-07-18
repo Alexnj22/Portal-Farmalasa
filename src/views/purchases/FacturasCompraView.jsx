@@ -464,9 +464,20 @@ function TabDocumentos({
                                     <button
                                         onClick={(e) => { e.stopPropagation(); viewDetail(row.notas_credito[0]); }}
                                         title={`Con Nota de Crédito ${row.notas_credito.map(nc => nc.codigo_generacion).join(', ')}`}
-                                        className="flex items-center gap-1 text-[9px] font-black text-amber-700 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-full hover:bg-amber-500/20 transition-colors"
+                                        className="flex items-center gap-1 text-[9px] font-black text-amber-700 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-full hover:bg-amber-500/20 transition-colors whitespace-nowrap"
                                     >
                                         <Link2 size={10} /> NC{row.notas_credito.length > 1 ? ` ×${row.notas_credito.length}` : ''}
+                                    </button>
+                                )}
+                                {/* Inverso del badge NC — desde la NC/ND se puede ver el CCF/Factura
+                                    que corrige (a pedido del usuario, misma mecánica que el badge de arriba). */}
+                                {row.documento_relacionado && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); viewDetail(row.documento_relacionado); }}
+                                        title={`Corrige ${dteTypeLabel(row.documento_relacionado.tipo_dte)} ${row.documento_relacionado.codigo_generacion}`}
+                                        className="flex items-center gap-1 text-[9px] font-black text-blue-700 bg-blue-500/10 border border-blue-500/25 px-2 py-0.5 rounded-full hover:bg-blue-500/20 transition-colors whitespace-nowrap"
+                                    >
+                                        <Link2 size={10} /> Ver original
                                     </button>
                                 )}
                             </div>

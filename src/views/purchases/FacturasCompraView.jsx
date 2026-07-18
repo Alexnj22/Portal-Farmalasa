@@ -28,11 +28,11 @@ const TABS = [
 ];
 
 const DOC_COLS = [
-    { key: 'fecha',     label: 'Fecha',      align: 'left'   },
-    { key: 'proveedor', label: 'Proveedor',  align: 'left'   },
-    { key: 'tipo',      label: 'Tipo',       align: 'left'   },
+    { key: 'fecha',     label: 'Fecha',      align: 'left',  sortable: true },
+    { key: 'proveedor', label: 'Proveedor',  align: 'left',  sortable: true },
+    { key: 'tipo',      label: 'Tipo',       align: 'left',  sortable: true },
     { key: 'numero',    label: 'N° Control', align: 'left',  hideBelow: 'lg' },
-    { key: 'monto',     label: 'Monto',      align: 'right'  },
+    { key: 'monto',     label: 'Monto',      align: 'right', sortable: true },
     { key: 'archivos',  label: '',           align: 'center' },
 ];
 
@@ -215,6 +215,8 @@ function TabDocumentos({
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
+    const [sortCol, setSortCol] = useState('fecha');
+    const [sortDir, setSortDir] = useState('desc');
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -240,8 +242,33 @@ function TabDocumentos({
 
     useEffect(() => { setPage(1); }, [dateStart, dateEnd, tipoDte, supplierId, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect
 
+    const sorted = useMemo(() => {
+        const dir = sortDir === 'asc' ? 1 : -1;
+        const val = (r) => {
+            switch (sortCol) {
+                case 'fecha':     return r.fecha_emision || '';
+                case 'proveedor': return (r.supplier_nombre || r.emisor_nombre || '').toLowerCase();
+                case 'tipo':      return (dteTypeLabel(r.tipo_dte) || '').toLowerCase();
+                case 'monto':     return parseFloat(r.monto_total || 0);
+                default:          return '';
+            }
+        };
+        return [...filtered].sort((a, b) => {
+            const av = val(a), bv = val(b);
+            if (av < bv) return -1 * dir;
+            if (av > bv) return 1 * dir;
+            return 0;
+        });
+    }, [filtered, sortCol, sortDir]);
+
+    const handleSort = (col) => {
+        if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        else { setSortCol(col); setSortDir(col === 'monto' || col === 'fecha' ? 'desc' : 'asc'); }
+        setPage(1);
+    };
+
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-    const pageRows = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+    const pageRows = useMemo(() => sorted.slice((page - 1) * pageSize, page * pageSize), [sorted, page, pageSize]);
 
     const download = (url, label, row) => {
         if (!url) return;
@@ -401,7 +428,7 @@ function TabDocumentos({
 
             {bulkError && <div className="text-[10px] text-red-500 px-1">{bulkError}</div>}
 
-            <DataTable columns={DOC_COLS} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período.' }}>
+            <DataTable columns={DOC_COLS} sortKey={sortCol} sortDir={sortDir} onSort={handleSort} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período.' }}>
                 {pageRows.map((row, i) => (
                     <DataRow key={row.id} index={i} onClick={() => viewDetail(row)}>
                         <DataCell>

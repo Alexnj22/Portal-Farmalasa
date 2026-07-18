@@ -5,9 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.20.11';
+export const APP_VERSION = '2.20.12';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.20.12 — feat(facturas-compra): columnas ordenables en TabDocumentos —
+// Fecha, Proveedor, Tipo y Monto (a pedido directo del usuario; N° Control
+// y Acciones quedan sin ordenar). Mismo contrato de DataTable que
+// VentasView (columnas con `sortable: true` + sortKey/sortDir/onSort);
+// orden client-side sobre `filtered` (ya se carga todo el rango client-side
+// en este tab, Patrón C) — sub-orden aplicado antes de paginar, resetea a
+// página 1 en cada cambio de columna/dirección. Default al hacer clic:
+// Fecha/Monto arrancan en desc (más reciente/mayor primero), Proveedor/Tipo
+// en asc (alfabético) — mismo criterio que otras vistas con sort.
+//
 // v2.20.11 — fix(facturas-compra): botón "Descargar" del pill de
 // TabDocumentos. El usuario preguntó por qué aparecía deshabilitado — la
 // razón (tope de 300 documentos por ZIP, ver v2.20.10) solo se explicaba en

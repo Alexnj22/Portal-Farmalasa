@@ -67,12 +67,14 @@ const FormPurchaseDteViewer = ({ formData }) => {
                     {document?.pdf_path && (
                         <div className="flex rounded-[1rem] bg-slate-100 p-1">
                             <button
+                                type="button"
                                 onClick={() => setTab('detalle')}
                                 className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors ${tab === 'detalle' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500'}`}
                             >
                                 Detalle
                             </button>
                             <button
+                                type="button"
                                 onClick={() => setTab('pdf')}
                                 className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors ${tab === 'pdf' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500'}`}
                             >
@@ -81,6 +83,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                         </div>
                     )}
                     <button
+                        type="button"
                         onClick={() => openStoredFile(document?.json_path)}
                         className="flex items-center gap-2 px-4 py-2.5 bg-[#0052CC] hover:bg-[#003D99] text-white rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
                     >

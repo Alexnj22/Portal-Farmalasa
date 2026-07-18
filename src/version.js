@@ -5,8 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.20.6';
+export const APP_VERSION = '2.20.7';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.20.7 — fix(facturas-compra): CAUSA REAL del modal de PDF cerrándose al
+// tocar la pestaña "PDF" (v2.20.6 mitigó con altura/iframe pero no atacaba
+// la causa raíz — el usuario confirmó que seguía pasando). Los botones
+// "Detalle"/"PDF"/"JSON" de FormPurchaseDteViewer.jsx viven dentro de
+// <form id="unified-modal-form" onSubmit={handleLocalSubmit}> (UnifiedModal.jsx)
+// y NO tenían type="button" — un <button> sin type dentro de un <form> es
+// type="submit" por defecto, así que tocar "PDF" disparaba un submit real.
+// handleLocalSubmit no tiene case para "viewPurchaseDte", cae al fallback
+// genérico `if (handleSubmit) await handleSubmit(e)`, y App.jsx's
+// handleSubmit hace `setModalOpen(false)` INCONDICIONALMENTE justo después
+// del switch (sin default/guard) — cierra el modal sin importar qué type
+// tenía, sin lanzar error ni loggear nada. Fix: type="button" en los 3
+// botones de FormPurchaseDteViewer.jsx. Confirmado con Playwright: el modal
+// ya no se desmonta al tocar PDF (antes: [data-surface="modal"] pasaba de 2
+// a 0; ahora se mantiene en 2).
 
 // v2.20.6 — fix(facturas-compra): 6 hallazgos reportados directamente por el
 // usuario tras probar la vista. (1-2) Header duplicado: ViewTabBar se

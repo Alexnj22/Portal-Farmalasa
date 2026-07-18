@@ -5,8 +5,18 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.19.6';
+export const APP_VERSION = '2.19.7';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.19.7 — feat(facturas-compra): Fase 1.3 aplicada (BD) — supplier_id real en
+// purchase_dte_documents (match manual de proveedor), credenciales Gmail por
+// cuenta (client_id/secret propios de cada cuenta, no compartidos), tabla
+// purchase_dte_unmatched_pdfs (PDFs sin JSON o sin match de nombre de archivo, ya
+// no se descartan en silencio), y seeds: 2 cuentas Gmail conectadas
+// (farmasalud.sv, compraslasalud.sv) + permisos del módulo para Gerente
+// General/Administrador. Migraciones 20260717_purchase_dte_email_sync_v2 y
+// 20260717_purchase_dte_email_seeds aplicadas en staging y prod, 0 errores de
+// seguridad. Aún sin UI ni edge function — próximo: Fase 2 (sync-purchase-emails).
 
 // v2.19.6 — fix(ventas): computePrevRange comparaba SIEMPRE contra 1 mes atrás fijo,
 // sin importar cuántos meses abarcara el rango seleccionado. Con presets multi-mes

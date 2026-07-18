@@ -14,7 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';
 import { dteTypeLabel, DTE_TYPE_OPTIONS } from '../../utils/dteTypes';
-import { openStoredFile } from '../../utils/storageFiles';
+import { openStoredFile, downloadStoredFile } from '../../utils/storageFiles';
 import { fetchSuppliersBasic } from '../../data/compras';
 import {
     fetchPurchaseDteDocuments, fetchPurchaseDteReviewQueue,
@@ -29,9 +29,9 @@ const TABS = [
 
 const DOC_COLS = [
     { key: 'fecha',     label: 'Fecha',      align: 'left'   },
+    { key: 'proveedor', label: 'Proveedor',  align: 'left'   },
     { key: 'tipo',      label: 'Tipo',       align: 'left'   },
     { key: 'numero',    label: 'N° Control', align: 'left',  hideBelow: 'lg' },
-    { key: 'proveedor', label: 'Proveedor',  align: 'left'   },
     { key: 'monto',     label: 'Monto',      align: 'right'  },
     { key: 'archivos',  label: '',           align: 'center' },
 ];
@@ -245,7 +245,7 @@ function TabDocumentos({
 
     const download = (url, label, row) => {
         if (!url) return;
-        openStoredFile(url);
+        downloadStoredFile(url, `${row.codigo_generacion}.${label}`);
         useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA', String(row.id), {
             codigo_generacion: row.codigo_generacion, archivo: label,
         });
@@ -401,15 +401,15 @@ function TabDocumentos({
                             <span className="font-semibold text-slate-700 tabular-nums">{fmtDate(row.fecha_emision)}</span>
                         </DataCell>
                         <DataCell>
+                            <SupplierMatchCell row={row} suppliers={suppliers} onMatched={load} canEdit={canEdit} />
+                        </DataCell>
+                        <DataCell>
                             <span className="text-[10px] font-bold text-slate-700 bg-slate-500/10 border border-slate-500/25 px-2.5 py-0.5 rounded-full">
                                 {dteTypeLabel(row.tipo_dte)}
                             </span>
                         </DataCell>
                         <DataCell hideBelow="lg">
                             <span className="font-mono text-[10px] text-slate-500">{row.numero_control || '—'}</span>
-                        </DataCell>
-                        <DataCell>
-                            <SupplierMatchCell row={row} suppliers={suppliers} onMatched={load} canEdit={canEdit} />
                         </DataCell>
                         <DataCell align="right">
                             <span className="tabular-nums font-bold text-slate-800">{fmt$(row.monto_total)}</span>

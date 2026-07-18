@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Download, ExternalLink, FileText, Loader2, Receipt } from 'lucide-react';
-import { getSignedFileUrl, openStoredFile } from '../../utils/storageFiles';
+import { Archive, Download, ExternalLink, FileText, Loader2, Receipt } from 'lucide-react';
+import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
+import { downloadPurchaseDtePackage } from '../../data/facturasCompra';
 import { dteTypeLabel } from '../../utils/dteTypes';
 
 const fmt$ = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -15,6 +16,20 @@ const FormPurchaseDteViewer = ({ formData }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [pdfUrl, setPdfUrl] = useState(null);
+    const [downloadingAll, setDownloadingAll] = useState(false);
+    const [downloadAllError, setDownloadAllError] = useState('');
+
+    const downloadAll = async () => {
+        setDownloadingAll(true);
+        setDownloadAllError('');
+        try {
+            await downloadPurchaseDtePackage(document);
+        } catch (e) {
+            setDownloadAllError(e.message || 'No se pudo descargar el paquete');
+        } finally {
+            setDownloadingAll(false);
+        }
+    };
 
     useEffect(() => {
         let alive = true;
@@ -49,56 +64,73 @@ const FormPurchaseDteViewer = ({ formData }) => {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col bg-slate-50/50">
-            <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
-                <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-12 h-12 rounded-[1.25rem] bg-blue-50 text-[#0052CC] flex items-center justify-center shadow-inner shrink-0">
-                        <Receipt size={24} strokeWidth={1.5} />
-                    </div>
-                    <div className="min-w-0">
-                        <h3 className="text-lg font-black text-slate-800 truncate">
-                            {document?.supplier_nombre || document?.emisor_nombre || 'Documento'}
-                        </h3>
-                        <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mt-0.5 truncate">
-                            {dteTypeLabel(document?.tipo_dte)} · {document?.numero_control || document?.codigo_generacion}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                    {document?.pdf_path && (
-                        <div className="flex rounded-[1rem] bg-slate-100 p-1">
-                            <button
-                                type="button"
-                                onClick={() => setTab('detalle')}
-                                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors ${tab === 'detalle' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500'}`}
-                            >
-                                Detalle
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setTab('pdf')}
-                                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors ${tab === 'pdf' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500'}`}
-                            >
-                                PDF
-                            </button>
+            <div className="p-6 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 min-w-0">
+                        <div className="w-12 h-12 rounded-[1.25rem] bg-blue-50 text-[#0052CC] flex items-center justify-center shadow-inner shrink-0">
+                            <Receipt size={24} strokeWidth={1.5} />
                         </div>
-                    )}
-                    {document?.pdf_path && (
+                        <div className="min-w-0">
+                            <h3 className="text-lg font-black text-slate-800 truncate">
+                                {document?.supplier_nombre || document?.emisor_nombre || 'Documento'}
+                            </h3>
+                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mt-0.5 truncate">
+                                {dteTypeLabel(document?.tipo_dte)} · {document?.numero_control || document?.codigo_generacion}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        {document?.pdf_path && (
+                            <div className="flex rounded-[1rem] bg-slate-100 p-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setTab('detalle')}
+                                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors ${tab === 'detalle' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500'}`}
+                                >
+                                    Detalle
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTab('pdf')}
+                                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors ${tab === 'pdf' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500'}`}
+                                >
+                                    PDF
+                                </button>
+                            </div>
+                        )}
+                        {document?.pdf_path && (
+                            <button
+                                type="button"
+                                onClick={downloadAll}
+                                disabled={downloadingAll}
+                                title="Descargar PDF + JSON en un ZIP"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97] disabled:opacity-50"
+                            >
+                                <Archive size={14} strokeWidth={2} className={downloadingAll ? 'animate-pulse' : ''} />
+                                {downloadingAll ? 'Armando ZIP…' : 'Todo'}
+                            </button>
+                        )}
+                        {document?.pdf_path && (
+                            <button
+                                type="button"
+                                onClick={() => downloadStoredFile(document.pdf_path, `${document.codigo_generacion}.pdf`)}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
+                            >
+                                <Download size={14} strokeWidth={2} /> PDF
+                            </button>
+                        )}
                         <button
                             type="button"
-                            onClick={() => openStoredFile(document.pdf_path)}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
+                            onClick={() => downloadStoredFile(document?.json_path, `${document?.codigo_generacion}.json`)}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-[#0052CC] hover:bg-[#003D99] text-white rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
                         >
-                            <Download size={14} strokeWidth={2} /> PDF
+                            <Download size={14} strokeWidth={2} /> JSON
                         </button>
-                    )}
-                    <button
-                        type="button"
-                        onClick={() => openStoredFile(document?.json_path)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-[#0052CC] hover:bg-[#003D99] text-white rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
-                    >
-                        <Download size={14} strokeWidth={2} /> JSON
-                    </button>
+                    </div>
                 </div>
+                {downloadAllError && (
+                    <p className="mt-2 text-[10px] font-bold text-red-500">{downloadAllError}</p>
+                )}
             </div>
 
             {/* flex flex-col en vez de h-full puro en los hijos: un h-full/percentage

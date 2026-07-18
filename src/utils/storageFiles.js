@@ -40,6 +40,32 @@ export const openStoredFile = async (storedUrl) => {
     else if (win) win.close();
 };
 
+// Fuerza una descarga real (save-as) en vez de abrir/navegar una pestaña —
+// usar en botones explícitamente etiquetados "Descargar" (openStoredFile
+// abre el archivo en una pestaña, que es lo correcto para botones "Ver" pero
+// no para "Descargar": el navegador solo respeta el atributo `download` de
+// un <a> para blobs del MISMO origen, así que hay que traer el archivo como
+// blob primero — un <a href={signedUrl} download> con una URL cross-origin
+// de Supabase Storage simplemente navega/abre en la mayoría de navegadores).
+export const downloadStoredFile = async (storedUrl, filename) => {
+    const url = await getSignedFileUrl(storedUrl);
+    if (!url) return;
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        const a = Object.assign(document.createElement('a'), {
+            href: URL.createObjectURL(blob),
+            download: filename || 'archivo',
+        });
+        a.click();
+        URL.revokeObjectURL(a.href);
+    } catch (e) {
+        console.error('downloadStoredFile:', e.message);
+        window.open(url, '_blank');
+    }
+};
+
 // Firma EN LOTE: recibe URLs crudas y devuelve Map url→firmada (12h default).
 // Las URLs de buckets públicos o externas se mapean a sí mismas.
 export const signStorageUrls = async (urls, expiresIn = 43200) => {

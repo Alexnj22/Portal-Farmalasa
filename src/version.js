@@ -5,9 +5,28 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.20.9';
+export const APP_VERSION = '2.20.10';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.20.10 — fix(facturas-compra): 3 hallazgos más en el modal de detalle DTE
+// y la tabla. (1) No había forma de descargar PDF+JSON juntos desde el
+// modal — se agregó botón "Todo" (ícono Archive) junto a PDF/JSON, reutiliza
+// downloadPurchaseDtePackage (mismo ZIP de la acción de fila en la tabla),
+// solo cuando el documento tiene PDF asociado. (2) "Descargar JSON"/
+// "Descargar PDF" (modal y acciones de fila en la tabla) en realidad
+// llamaban a openStoredFile — abre una pestaña nueva y navega, correcto para
+// botones "Ver" pero no para botones etiquetados "Descargar" (confirmado:
+// todos los DEMÁS usos de openStoredFile en el proyecto están etiquetados
+// "Ver", solo Facturas de Compra decía "Descargar" con ese comportamiento).
+// Nuevo helper `downloadStoredFile` en storageFiles.js: trae el archivo como
+// blob (un <a download> con URL cross-origin de Storage no fuerza descarga,
+// solo funciona con blobs del mismo origen) y dispara un <a> temporal con
+// atributo download — confirmado con Playwright (`page.waitForEvent
+// ('download')`) que ahora sí dispara descarga real y no abre pestaña, para
+// JSON, PDF, y el ZIP de "Todo". (3) Orden de columnas de la tabla a pedido
+// directo del usuario: Fecha | Proveedor | Tipo | N° Control | Monto |
+// Acciones (antes Fecha | Tipo | N° Control | Proveedor | Monto).
+//
 // v2.20.9 — fix(facturas-compra): 2 ajustes al pill de TabDocumentos tras
 // probar v2.20.8. (1) "Descargar filtrados" → "Descargar" (el "filtrados"
 // se sobreentiende dentro del pill de filtros) y se movió de una fila

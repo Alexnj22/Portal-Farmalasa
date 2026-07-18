@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, checkCronSecret, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { extractProveedorFromDte } from "../_shared/proveedorFromDte.ts";
 
 // Sincroniza facturas de compra (DTE JSON + PDF) desde las bandejas Gmail
 // conectadas → Storage privado (purchase-dte) + purchase_dte_documents.
@@ -359,8 +360,25 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
           .upsert(row, { onConflict: 'codigo_generacion', ignoreDuplicates: true })
           .select('id');
         if (insErr) throw new Error(`insert ${codigoGeneracion}: ${insErr.message}`);
-        if (insData && insData.length > 0) documentsInserted++;
-        else documentsSkipped++; // ya existía (duplicado entre correos/reenvíos)
+        if (insData && insData.length > 0) {
+          documentsInserted++;
+          // Maestro de Proveedores (PLAN-PROVEEDORES-2026-07.md Fase 3.1): un
+          // documento nuevo de verdad → intenta registrar/actualizar el
+          // proveedor. El match ERP por NRC (supplierId ya resuelto arriba)
+          // vive también dentro del RPC — no se duplica esa lógica acá.
+          const dte = extractProveedorFromDte(json);
+          if (dte) {
+            const { data: proveedorId, error: provErr } = await supabase.rpc('upsert_proveedor_from_dte', { p_data: dte });
+            if (provErr) {
+              warnings.push(`DTE ${codigoGeneracion}: upsert_proveedor_from_dte — ${provErr.message}`);
+            } else {
+              const { error: setErr } = await supabase.from('purchase_dte_documents').update({ proveedor_id: proveedorId }).eq('id', insData[0].id);
+              if (setErr) warnings.push(`DTE ${codigoGeneracion}: set proveedor_id — ${setErr.message}`);
+            }
+          }
+        } else {
+          documentsSkipped++; // ya existía (duplicado entre correos/reenvíos)
+        }
       } catch (e: any) {
         warnings.push(`DTE ${codigoGeneracion}: ${e.message}`);
         documentsSkipped++;

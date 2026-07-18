@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.21.0';
+export const APP_VERSION = '2.21.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.21.1 — feat(proveedores): Fases 2 y 3 del Maestro de Proveedores —
+// backfill + auto-registro en vivo. Edge function nueva
+// `backfill-proveedores-dte` (paginado 200/corrida, hasMore) corrida en prod:
+// los 339 DTE ya guardados quedaron vinculados (proveedor_id), 34 proveedores
+// creados, 0 duplicados. Se confirmó con datos reales que el tipo de DTE 09
+// (Nota de Remisión) comparte el mismo bloque `emisor` que 01/03/05/06 — se
+// agregó a la lista de tipos que auto-crean proveedor (no estaba en la tabla
+// original del plan; validado con el caso real "Servicios Financieros" 94
+// docs). Lógica de extracción compartida en
+// `supabase/functions/_shared/proveedorFromDte.ts` (usada por el backfill y
+// por `sync-purchase-emails`, que ahora llama `upsert_proveedor_from_dte`
+// tras cada documento nuevo). Probado con una corrida real de
+// "Sincronizar ahora": 95 documentos nuevos, 25 proveedores nuevos, 100%
+// con proveedor_id, sin errores.
 
 // v2.21.0 — feat(proveedores): Fase 1 del Maestro de Proveedores
 // (PLAN-PROVEEDORES-2026-07.md) — BD solamente, sin UI todavía. Tablas

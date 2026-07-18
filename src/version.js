@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.19.9';
+export const APP_VERSION = '2.19.10';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.19.10 — feat(facturas-compra): cron diario sync-purchase-emails-daily
+// (3:00 AM El Salvador, jobid 183) registrado en prod — INACTIVO a propósito
+// hasta cerrar el módulo (Fase 5/6), decisión del usuario. body:'{}' procesa
+// todas las cuentas activas, incluida compraslasalud.sv (aún sin backfill
+// manual) — el cron va a ir avanzando su historial solo, en lotes, gracias al
+// presupuesto de tiempo + hasMore de la edge function.
 
 // v2.19.9 — feat(facturas-compra): edge function sync-purchase-emails (Fase 2) +
 // tabla purchase_dte_review_queue generalizada (PDFs huérfanos Y JSON

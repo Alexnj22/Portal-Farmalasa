@@ -6,7 +6,9 @@
 > externos del usuario). TODO write a producción (dato, DDL o registro de migración)
 > requiere OK explícito del usuario EN EL MOMENTO — una aprobación previa no lo cubre.
 
-**Fecha del plan:** 2026-07-18 · **Estado:** BORRADOR — pendiente de confirmar Fase 0
+**Fecha del plan:** 2026-07-18 · **Estado:** CERRADO — Fases 0-5 aplicadas en
+prod (v2.21.0-v2.22.0). Pendiente no bloqueante: guard de permisos con rol
+restringido (§4.6/§6) no re-probado en vivo para este módulo específico.
 **Memorias relacionadas:** `project_facturas_compra_email_module.md`,
 `reference_suppliers_vs_proveedores_tables.md`
 
@@ -270,26 +272,37 @@ staging (`ewcmerxqjvludtgskuin`) primero, archivo local mismo nombre misma sesi�
 
 - [x] 5.1 Advisor 0 ERRORES final (verificado tras Fase 1 y tras la corrección
       de tipo 09).
-- [ ] 5.2 Memoria nueva `project_proveedores_maestro_module.md` + actualizar
-      `reference_suppliers_vs_proveedores_tables.md` (ahora son TRES tablas —
-      documentar cuál manda para qué).
-- [ ] 5.3 Cerrar checkboxes de este archivo.
+- [x] 5.2 Memoria nueva `project_proveedores_maestro_module.md` + actualizada
+      `reference_suppliers_vs_proveedores_tables.md` (ahora TRES tablas,
+      documentado cuál manda para qué) + memoria de feedback nueva sobre el
+      error de tipo_dte 09 (`feedback_check_existing_catalogs_before_inferring.md`).
+- [x] 5.3 Checkboxes de este archivo cerrados. Pendiente real: 4.6/§6 guard de
+      permisos con rol restringido (no bloqueante — patrón ya probado en
+      `facturas_compra`).
 
 ---
 
 ## 6. Criterios de aceptación
 
-- [ ] Todo NIT emisor de los DTE ya sincronizados (tipos 01/03/05/06/14) existe
-      UNA vez en el maestro, con giro/dirección/contacto del JSON.
-- [ ] Un DTE nuevo de un proveedor nunca visto lo crea solo (verificado con una
-      corrida real del sync).
-- [ ] Un DTE nuevo de un proveedor existente NO reescribe la fila si nada cambió
-      (verificar: `updated_at` estable — regla anti-churn).
-- [ ] La categoría y el match ERP se asignan desde la vista y sobreviven al
-      siguiente sync (los campos manuales jamás son pisados por el upsert).
-- [ ] `percibe_1` se enciende solo al observar `ivaPerci1>0` en un DTE real.
-- [ ] Roles sin permiso no ven el módulo. Advisor 0 ERRORES. Auditoría en
-      `audit_logs` de cada acción manual.
+- [x] Todo NIT emisor de los DTE ya sincronizados (tipos 01/03/05/06 — 09
+      revertido, 14 sin casos reales aún) existe UNA vez en el maestro, con
+      giro/dirección/contacto del JSON. Verificado: 59 proveedores, 0
+      duplicados, muestra de 5 con datos completos.
+- [x] Un DTE nuevo de un proveedor nunca visto lo crea solo — verificado con
+      una corrida real de "Sincronizar ahora" (95 docs nuevos, 25 proveedores
+      nuevos, 100% con `proveedor_id`).
+- [x] Un DTE nuevo de un proveedor existente NO reescribe la fila si nada
+      cambió — verificado en staging (`updated_at` solo cambia cuando un
+      campo realmente difiere; docs_count/fechas sí avanzan porque cada
+      llamado corresponde a un documento nuevo real, no a un re-scan).
+- [x] La categoría y el match ERP se asignan desde la vista y sobreviven al
+      siguiente sync (el upsert nunca toca esas columnas) — verificado con
+      datos reales de prod (luego revertidos).
+- [x] `percibe_1` se enciende solo al observar `ivaPerci1>0` en un DTE real —
+      verificado en el smoke test de staging.
+- [~] Roles sin permiso no ven el módulo (patrón idéntico a `facturas_compra`,
+      no re-probado en vivo para este módulo). Advisor 0 ERRORES ✓. Auditoría
+      en `audit_logs` de cada acción manual ✓ (3 tipos de evento confirmados).
 
 ## 7. Riesgos y casos borde
 

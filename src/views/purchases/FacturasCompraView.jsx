@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     FileText, Calendar, Tag, Users, RefreshCw, Download, FileJson,
-    CheckCircle2, XCircle, AlertTriangle, Eye, Archive,
+    CheckCircle2, XCircle, AlertTriangle, Eye, Archive, Link2,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -112,6 +112,53 @@ function SupplierMatchCell({ row, suppliers, onMatched }) {
                 }}
                 options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
                 placeholder={saving ? 'Guardando…' : 'Buscar proveedor…'}
+                compact
+                clearable={false}
+            />
+        </div>
+    );
+}
+
+// ── MatchDocumentAction — "Emparejar a documento existente" (solo orphan_pdf) ──
+
+function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
+    const [open, setOpen] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    if (!open) {
+        return (
+            <button
+                onClick={() => { onOpen(); setOpen(true); }}
+                className="flex items-center gap-1 text-[10px] font-bold text-[#0052CC] hover:text-[#003D99] px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+                <Link2 size={12} /> Emparejar a documento
+            </button>
+        );
+    }
+
+    return (
+        <div className="w-[240px]" onClick={(e) => e.stopPropagation()}>
+            <LiquidSelect
+                value=""
+                onChange={async (val) => {
+                    if (!val) { setOpen(false); return; }
+                    setSaving(true);
+                    try {
+                        await resolvePurchaseDteReview(row.id, 'emparejado', val);
+                        useStaff.getState().appendAuditLog('FACTURAS_COMPRA_EMPAREJAR_REVISION', String(row.id), {
+                            matched_document_id: val, filename: row.filename,
+                        });
+                        onMatched();
+                    } finally {
+                        setSaving(false);
+                        setOpen(false);
+                    }
+                }}
+                options={documents.map(d => ({
+                    value: d.id,
+                    label: `${fmtDate(d.fecha_emision)} · ${d.supplier_nombre || d.emisor_nombre || '—'} · ${fmt$(d.monto_total)}`,
+                }))}
+                placeholder={saving ? 'Guardando…' : 'Buscar documento…'}
                 compact
                 clearable={false}
             />
@@ -269,9 +316,19 @@ function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, re
 
 // ── TabRevision ───────────────────────────────────────────────────────────────
 
-function TabRevision({ searchTerm, refreshKey, bumpRefresh }) {
+function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
+
+    // Documentos para el selector de "emparejar" — carga perezosa, solo si
+    // alguien realmente abre el matcher (evita el fetch si nadie lo usa).
+    const [documents, setDocuments] = useState([]);
+    const [documentsLoaded, setDocumentsLoaded] = useState(false);
+    const loadDocuments = useCallback(() => {
+        if (documentsLoaded) return;
+        setDocumentsLoaded(true);
+        fetchPurchaseDteDocuments(dateStart, dateEnd).then(setDocuments);
+    }, [documentsLoaded, dateStart, dateEnd]);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -332,12 +389,22 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh }) {
                             </button>
                         </DataCell>
                         <DataCell align="center">
-                            <button
-                                onClick={() => discard(row)}
-                                className="flex items-center gap-1 text-[10px] font-bold text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
-                            >
-                                <XCircle size={12} /> Descartar
-                            </button>
+                            <div className="flex items-center justify-center gap-1.5">
+                                {row.kind === 'orphan_pdf' && (
+                                    <MatchDocumentAction
+                                        row={row}
+                                        documents={documents}
+                                        onOpen={loadDocuments}
+                                        onMatched={bumpRefresh}
+                                    />
+                                )}
+                                <button
+                                    onClick={() => discard(row)}
+                                    className="flex items-center gap-1 text-[10px] font-bold text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                                >
+                                    <XCircle size={12} /> Descartar
+                                </button>
+                            </div>
                         </DataCell>
                     </DataRow>
                 ))}
@@ -482,7 +549,13 @@ export default function FacturasCompraView({ openModal }) {
                     />
                 )}
                 {activeTab === 'revision' && (
-                    <TabRevision searchTerm={search} refreshKey={refreshKey} bumpRefresh={bumpRefresh} />
+                    <TabRevision
+                        searchTerm={search}
+                        refreshKey={refreshKey}
+                        bumpRefresh={bumpRefresh}
+                        dateStart={dateStart}
+                        dateEnd={dateEnd}
+                    />
                 )}
             </GlassViewLayout>
         </>

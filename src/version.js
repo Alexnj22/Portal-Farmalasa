@@ -5,8 +5,17 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.20.1';
+export const APP_VERSION = '2.20.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.20.2 — feat(facturas-compra): botón "Emparejar a documento" en la cola de
+// revisión (MatchDocumentAction), único gap conocido que quedaba de la Fase 5.
+// Solo para filas orphan_pdf — busca entre los documentos ya sincronizados
+// (carga perezosa, solo si alguien abre el matcher) y llama al RPC
+// resolve_purchase_dte_review('emparejado', ...) que ya existía. Verificado
+// visualmente: 31 pendientes de revisión, el selector abre y lista los 322
+// documentos del rango. Con esto la Fase 5 queda 100% completa — todas las
+// tareas del plan cerradas salvo los diferidos (correo 3, cuenta 2, cron).
 
 // v2.20.1 — feat(facturas-compra): modal de detalle DTE (FormPurchaseDteViewer,
 // parsea el JSON real — emisor/receptor/ítems/totales, tab PDF cuando existe),

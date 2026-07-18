@@ -5,8 +5,39 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.20.5';
+export const APP_VERSION = '2.20.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.20.6 — fix(facturas-compra): 6 hallazgos reportados directamente por el
+// usuario tras probar la vista. (1-2) Header duplicado: ViewTabBar se
+// renderizaba como hermano suelto ANTES de GlassViewLayout (2 filas
+// apiladas) en vez de ser el valor completo de filtersContent — patrón real
+// usado por LaboratoriosView/PedidosView/PromocionesView. "Sincronizar
+// ahora" se movió al body (TabDocumentos), junto al pill de filtros. (3)
+// Los 2 <input type="date"> crudos del pill de filtros pasaron a
+// LiquidDatePicker (regla global del proyecto). (4) TabDocumentos no
+// paginaba — Patrón C carga todo el rango filtrado de una vez client-side;
+// se agregó TablePagination con slice de página sobre el array ya filtrado
+// (mismo patrón que TabSinVenta.jsx). (5) Bug real en el modal de detalle:
+// UnifiedModal.getModalHeightClass() solo daba altura fija (h-[85vh]) al
+// tipo "viewDocument" — "viewPurchaseDte" caía al default
+// max-h-[90vh] h-fit, sin ancestro de altura definida para el h-full que usa
+// FormPurchaseDteViewer. Corregido para que viewPurchaseDte reciba el mismo
+// h-[85vh]. Además, el embed de PDF pasó de <object>+<iframe> anidado a un
+// <iframe> simple con un link "Abrir en pestaña nueva" siempre visible (no
+// solo como fallback interno) — refuerzo defensivo independiente de la causa
+// exacta del cierre. Nota: en local (vite dev/preview) el iframe hacia la
+// signed URL de Storage aborta por el COEP require-corp de
+// vite.config.js:server.headers (confirmado con curl -I, headers reales);
+// vercel.json (prod) NO tiene ese header — la falla observada en local muy
+// probablemente no ocurre en producción real. Ver PLAN-FACTURAS-COMPRA-2026-07.md
+// para el detalle completo de la investigación. (6) SupplierMatchCell y
+// MatchDocumentAction ("Emparejar"/"Emparejar a documento") no tenían forma
+// de cancelar sin elegir una opción — se agregó botón X junto al selector en
+// ambos. Verificado visualmente: header de una sola fila, date picker,
+// paginación (338 docs / 14 páginas) y botón cancelar confirmados con
+// screenshots; PDF y 2do botón cancelar no reproducibles 100% en headless
+// por las razones de COEP arriba.
 
 // v2.20.5 — fix(facturas-compra): auditoría completa contra DESIGN.md.
 // Violación real de §17 (Filter Pills): el pill de fecha/tipo/proveedor

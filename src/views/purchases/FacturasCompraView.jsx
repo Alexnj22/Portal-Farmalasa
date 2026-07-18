@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-    FileText, Calendar, Tag, Users, RefreshCw, Download, FileJson,
-    CheckCircle2, XCircle, AlertTriangle, Eye, Archive, Link2,
+    FileText, Tag, Users, RefreshCw, Download, FileJson,
+    CheckCircle2, XCircle, AlertTriangle, Eye, Archive, Link2, X,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import LiquidDatePicker from '../../components/common/LiquidDatePicker';
+import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';
@@ -97,31 +99,41 @@ function SupplierMatchCell({ row, suppliers, onMatched, canEdit }) {
     }
 
     return (
-        <div className="w-[200px]" onClick={(e) => e.stopPropagation()}>
-            <LiquidSelect
-                value=""
-                onChange={async (val) => {
-                    if (!val) { setEditing(false); return; }
-                    setSaving(true);
-                    try {
-                        await setPurchaseDteSupplier(row.id, val);
-                        useStaff.getState().appendAuditLog('FACTURAS_COMPRA_MATCH_PROVEEDOR', String(row.id), {
-                            codigo_generacion: row.codigo_generacion, supplier_id: val,
-                        });
-                        onMatched();
-                        setEditing(false);
-                    } catch (e) {
-                        setError(e.message || 'No se pudo guardar');
-                        setEditing(false);
-                    } finally {
-                        setSaving(false);
-                    }
-                }}
-                options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
-                placeholder={saving ? 'Guardando…' : 'Buscar proveedor…'}
-                compact
-                clearable={false}
-            />
+        <div className="flex items-center gap-1.5 w-[228px]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex-1 min-w-0">
+                <LiquidSelect
+                    value=""
+                    onChange={async (val) => {
+                        if (!val) { setEditing(false); return; }
+                        setSaving(true);
+                        try {
+                            await setPurchaseDteSupplier(row.id, val);
+                            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_MATCH_PROVEEDOR', String(row.id), {
+                                codigo_generacion: row.codigo_generacion, supplier_id: val,
+                            });
+                            onMatched();
+                            setEditing(false);
+                        } catch (e) {
+                            setError(e.message || 'No se pudo guardar');
+                            setEditing(false);
+                        } finally {
+                            setSaving(false);
+                        }
+                    }}
+                    options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
+                    placeholder={saving ? 'Guardando…' : 'Buscar proveedor…'}
+                    compact
+                    clearable={false}
+                />
+            </div>
+            <button
+                onClick={() => setEditing(false)}
+                disabled={saving}
+                title="Cancelar"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40 shrink-0"
+            >
+                <X size={14} />
+            </button>
         </div>
     );
 }
@@ -148,34 +160,44 @@ function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
     }
 
     return (
-        <div className="w-[240px]" onClick={(e) => e.stopPropagation()}>
-            <LiquidSelect
-                value=""
-                onChange={async (val) => {
-                    if (!val) { setOpen(false); return; }
-                    setSaving(true);
-                    try {
-                        await resolvePurchaseDteReview(row.id, 'emparejado', val);
-                        useStaff.getState().appendAuditLog('FACTURAS_COMPRA_EMPAREJAR_REVISION', String(row.id), {
-                            matched_document_id: val, filename: row.filename,
-                        });
-                        onMatched();
-                        setOpen(false);
-                    } catch (e) {
-                        setError(e.message || 'No se pudo emparejar');
-                        setOpen(false);
-                    } finally {
-                        setSaving(false);
-                    }
-                }}
-                options={documents.map(d => ({
-                    value: d.id,
-                    label: `${fmtDate(d.fecha_emision)} · ${d.supplier_nombre || d.emisor_nombre || '—'} · ${fmt$(d.monto_total)}`,
-                }))}
-                placeholder={saving ? 'Guardando…' : 'Buscar documento…'}
-                compact
-                clearable={false}
-            />
+        <div className="flex items-center gap-1.5 w-[268px]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex-1 min-w-0">
+                <LiquidSelect
+                    value=""
+                    onChange={async (val) => {
+                        if (!val) { setOpen(false); return; }
+                        setSaving(true);
+                        try {
+                            await resolvePurchaseDteReview(row.id, 'emparejado', val);
+                            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_EMPAREJAR_REVISION', String(row.id), {
+                                matched_document_id: val, filename: row.filename,
+                            });
+                            onMatched();
+                            setOpen(false);
+                        } catch (e) {
+                            setError(e.message || 'No se pudo emparejar');
+                            setOpen(false);
+                        } finally {
+                            setSaving(false);
+                        }
+                    }}
+                    options={documents.map(d => ({
+                        value: d.id,
+                        label: `${fmtDate(d.fecha_emision)} · ${d.supplier_nombre || d.emisor_nombre || '—'} · ${fmt$(d.monto_total)}`,
+                    }))}
+                    placeholder={saving ? 'Guardando…' : 'Buscar documento…'}
+                    compact
+                    clearable={false}
+                />
+            </div>
+            <button
+                onClick={() => setOpen(false)}
+                disabled={saving}
+                title="Cancelar"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40 shrink-0"
+            >
+                <X size={14} />
+            </button>
         </div>
     );
 }
@@ -185,9 +207,12 @@ function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
 function TabDocumentos({
     dateStart, setDateStart, dateEnd, setDateEnd, tipoDte, setTipoDte, supplierId, setSupplierId,
     searchTerm, refreshKey, openModal, suppliers, canEdit,
+    syncing, syncMsg, runSyncNow,
 }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(25);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -210,6 +235,11 @@ function TabDocumentos({
             return true;
         });
     }, [rows, tipoDte, supplierId, searchTerm]);
+
+    useEffect(() => { setPage(1); }, [dateStart, dateEnd, tipoDte, supplierId, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const pageRows = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
 
     const download = (url, label, row) => {
         if (!url) return;
@@ -258,18 +288,27 @@ function TabDocumentos({
         <div className="flex flex-col gap-4">
             {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
             <div className="flex items-start gap-3 flex-wrap">
-                <div className="flex-1 min-w-0" />
+                <div className="flex-1 min-w-0 flex flex-col items-start gap-1.5">
+                    {canEdit && (
+                        <button
+                            onClick={runSyncNow}
+                            disabled={syncing}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-600 border border-slate-200 shadow-sm rounded-xl
+                                text-[11px] font-black uppercase tracking-widest
+                                hover:bg-slate-50 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200
+                                disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed"
+                        >
+                            <RefreshCw size={14} strokeWidth={2} className={syncing ? 'animate-spin' : ''} />
+                            {syncing ? 'Sincronizando…' : 'Sincronizar ahora'}
+                        </button>
+                    )}
+                    {syncMsg && <div className="text-[10px] text-slate-500 px-1 max-w-[320px]">{syncMsg}</div>}
+                </div>
                 <div className="flex items-center gap-3 rounded-2xl bg-white/80 border border-slate-200/70 px-4 py-2 flex-wrap shrink-0">
-                    <div className="flex items-center gap-1.5">
-                        <Calendar size={12} className="text-slate-400" />
-                        <input type="date" value={dateStart} onChange={e => setDateStart(e.target.value)}
-                            className="text-[16px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer" />
-                    </div>
-                    <div className="h-5 w-px bg-slate-100" />
-                    <div className="flex items-center gap-1.5">
-                        <Calendar size={12} className="text-slate-400" />
-                        <input type="date" value={dateEnd} onChange={e => setDateEnd(e.target.value)}
-                            className="text-[16px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer" />
+                    <div className="flex items-center gap-1 shrink-0">
+                        <LiquidDatePicker value={dateStart} onChange={setDateStart} placeholder="Inicio" />
+                        <span className="text-slate-400 font-bold mx-0.5">–</span>
+                        <LiquidDatePicker value={dateEnd} onChange={setDateEnd} placeholder="Fin" />
                     </div>
                     <div className="h-5 w-px bg-slate-100" />
                     <div className="flex items-center gap-1.5">
@@ -321,7 +360,7 @@ function TabDocumentos({
             {bulkError && <div className="text-[10px] text-red-500 px-1">{bulkError}</div>}
 
             <DataTable columns={DOC_COLS} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período.' }}>
-                {filtered.map((row, i) => (
+                {pageRows.map((row, i) => (
                     <DataRow key={row.id} index={i} onClick={() => viewDetail(row)}>
                         <DataCell>
                             <span className="font-semibold text-slate-700 tabular-nums">{fmtDate(row.fecha_emision)}</span>
@@ -376,6 +415,17 @@ function TabDocumentos({
                     </DataRow>
                 ))}
             </DataTable>
+            {!loading && filtered.length > 0 && (
+                <TablePagination
+                    pageSize={pageSize}
+                    onPageSizeChange={setPageSize}
+                    page={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    total={filtered.length}
+                    unit="documentos"
+                />
+            )}
         </div>
     );
 }
@@ -548,67 +598,53 @@ export default function FacturasCompraView({ openModal }) {
         }
     };
 
-    // filtersContent es SOLO para acciones primarias del header (búsqueda, tabs,
-    // "Nuevo X"/export) — el pill de fecha/tipo/proveedor vive en el body de cada
-    // tab (regla §17 DESIGN.md, ver TabDocumentos). "Sincronizar ahora" sí
-    // corresponde acá: es una acción, no un filtro.
-    const filtersContent = canEdit ? (
-        <div className="flex flex-col items-end gap-1.5">
-            <button
-                onClick={runSyncNow}
-                disabled={syncing}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-600 border border-slate-200 shadow-sm rounded-xl
-                    text-[11px] font-black uppercase tracking-widest
-                    hover:bg-slate-50 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200
-                    disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed"
-            >
-                <RefreshCw size={14} strokeWidth={2} className={syncing ? 'animate-spin' : ''} />
-                {syncing ? 'Sincronizando…' : 'Sincronizar ahora'}
-            </button>
-            {syncMsg && <div className="text-[10px] text-slate-500 px-1 max-w-[260px] text-right">{syncMsg}</div>}
-        </div>
-    ) : null;
+    // filtersContent es SOLO tabs+búsqueda — una sola fila de header, igual que
+    // LaboratoriosView/PedidosView/PromocionesView. El pill de fecha/tipo/
+    // proveedor y "Sincronizar ahora" viven en el body (regla §17 DESIGN.md,
+    // ver TabDocumentos).
+    const filtersContent = (
+        <ViewTabBar
+            tabs={TABS}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            searchValue={search}
+            onSearchChange={setSearch}
+            showSearch
+        />
+    );
 
     return (
-        <>
-            <ViewTabBar
-                tabs={TABS}
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                searchValue={search}
-                onSearchChange={setSearch}
-                showSearch
-            />
-
-            <GlassViewLayout icon={FileText} title="Facturas de Compra" filtersContent={filtersContent}>
-                {activeTab === 'documentos' && (
-                    <TabDocumentos
-                        dateStart={dateStart}
-                        setDateStart={setDateStart}
-                        dateEnd={dateEnd}
-                        setDateEnd={setDateEnd}
-                        tipoDte={tipoDte}
-                        setTipoDte={setTipoDte}
-                        supplierId={supplierId}
-                        setSupplierId={setSupplierId}
-                        searchTerm={search}
-                        refreshKey={refreshKey}
-                        openModal={openModal}
-                        suppliers={suppliers}
-                        canEdit={canEdit}
-                    />
-                )}
-                {activeTab === 'revision' && (
-                    <TabRevision
-                        searchTerm={search}
-                        refreshKey={refreshKey}
-                        bumpRefresh={bumpRefresh}
-                        dateStart={dateStart}
-                        dateEnd={dateEnd}
-                        canEdit={canEdit}
-                    />
-                )}
-            </GlassViewLayout>
-        </>
+        <GlassViewLayout icon={FileText} title="Facturas de Compra" filtersContent={filtersContent}>
+            {activeTab === 'documentos' && (
+                <TabDocumentos
+                    dateStart={dateStart}
+                    setDateStart={setDateStart}
+                    dateEnd={dateEnd}
+                    setDateEnd={setDateEnd}
+                    tipoDte={tipoDte}
+                    setTipoDte={setTipoDte}
+                    supplierId={supplierId}
+                    setSupplierId={setSupplierId}
+                    searchTerm={search}
+                    refreshKey={refreshKey}
+                    openModal={openModal}
+                    suppliers={suppliers}
+                    canEdit={canEdit}
+                    syncing={syncing}
+                    syncMsg={syncMsg}
+                    runSyncNow={runSyncNow}
+                />
+            )}
+            {activeTab === 'revision' && (
+                <TabRevision
+                    searchTerm={search}
+                    refreshKey={refreshKey}
+                    bumpRefresh={bumpRefresh}
+                    dateStart={dateStart}
+                    dateEnd={dateEnd}
+                    canEdit={canEdit}
+                />
+            )}
+        </GlassViewLayout>
     );
 }

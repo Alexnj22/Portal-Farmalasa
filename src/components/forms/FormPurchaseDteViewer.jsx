@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download, FileText, Loader2, Receipt } from 'lucide-react';
+import { Download, ExternalLink, FileText, Loader2, Receipt } from 'lucide-react';
 import { getSignedFileUrl, openStoredFile } from '../../utils/storageFiles';
 import { dteTypeLabel } from '../../utils/dteTypes';
 
@@ -91,10 +91,20 @@ const FormPurchaseDteViewer = ({ formData }) => {
 
             <div className="flex-1 p-4 md:p-6 overflow-hidden">
                 {tab === 'pdf' && pdfUrl ? (
-                    <div className="w-full h-full rounded-[1.5rem] border border-slate-200 bg-white shadow-sm overflow-hidden">
-                        <object data={pdfUrl} type="application/pdf" className="w-full h-full">
+                    <div className="w-full h-full flex flex-col gap-2">
+                        <div className="flex justify-end shrink-0">
+                            <a
+                                href={pdfUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-1.5 text-[10px] font-bold text-[#0052CC] hover:text-[#003D99] px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+                            >
+                                <ExternalLink size={12} /> Abrir en pestaña nueva
+                            </a>
+                        </div>
+                        <div className="flex-1 min-h-0 rounded-[1.5rem] border border-slate-200 bg-white shadow-sm overflow-hidden">
                             <iframe src={pdfUrl} className="w-full h-full border-none" title="Visor PDF" />
-                        </object>
+                        </div>
                     </div>
                 ) : loading ? (
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm">

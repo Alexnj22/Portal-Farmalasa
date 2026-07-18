@@ -719,7 +719,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         </div>
     );
 
-    const getModalHeightClass = () => type === 'viewDocument' ? 'h-[85vh]' : 'max-h-[90vh] h-fit';
+    const getModalHeightClass = () => (type === 'viewDocument' || type === 'viewPurchaseDte') ? 'h-[85vh]' : 'max-h-[90vh] h-fit';
     const hidesHeader = HIDES_HEADER.has(type);
     const hidesFooter = HIDES_FOOTER.has(type);
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-white/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-white/70 backdrop-blur-md";

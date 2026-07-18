@@ -50,6 +50,7 @@ const PedidosView = lazy(() => import("./views/PedidosView"));
 const MinMaxView = lazy(() => import("./views/MinMaxView"));
 const VentasPperdidasView = lazy(() => import("./views/VentasPperdidasView"));
 const ComprasView = lazy(() => import("./views/ComprasView"));
+const FacturasCompraView = lazy(() => import("./views/purchases/FacturasCompraView"));
 const ConteoInventarioView = lazy(() => import("./views/ConteoInventarioView"));
 const ConteoDetailView = lazy(() => import("./views/inventario/ConteoDetailView"));
 const PromocionesView = lazy(() => import("./views/PromocionesView"));
@@ -615,6 +616,7 @@ function MainApp() {
                                     <Route path="minmax" element={<PermissionGuard moduleKey="minmax"><MinMaxView /></PermissionGuard>} />
                                     <Route path="ventas-perdidas" element={<PermissionGuard moduleKey="ventas_perdidas"><VentasPperdidasView /></PermissionGuard>} />
                                     <Route path="compras" element={<PermissionGuard moduleKey="compras"><ComprasView /></PermissionGuard>} />
+                                    <Route path="facturas-compra" element={<PermissionGuard moduleKey="facturas_compra"><FacturasCompraView /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="conteo-inventario/:id" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoDetailView /></PermissionGuard>} />
                                     <Route path="promociones" element={<PermissionGuard moduleKey="promociones"><PromocionesView /></PermissionGuard>} />
@@ -735,6 +737,7 @@ const ROUTE_TITLES = {
     '/encuesta':          'Encuesta',
     '/encuesta-admin':    'Encuesta',
     '/compras':           'Compras',
+    '/facturas-compra':   'Facturas de Compra',
     '/conteo-inventario': 'Conteo de Inventario',
     '/promociones':       'Promociones',
     '/branches':          'Sucursales',

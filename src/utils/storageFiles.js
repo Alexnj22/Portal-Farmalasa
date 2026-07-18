@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 // Buckets privados (2026-07-02): las URLs "public" guardadas en BD quedaron
 // como identificadores — para mostrarlas hay que convertirlas a URL firmada
 // con expiración. Los buckets públicos y URLs externas se devuelven tal cual.
-const PRIVATE_BUCKETS = ['documents', 'payment-proofs', 'empleados'];
+const PRIVATE_BUCKETS = ['documents', 'payment-proofs', 'empleados', 'purchase-dte'];
 const STORAGE_PATH_RE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+?)(?:\?.*)?$/;
 
 // Extrae {bucket, path} de una URL formato-public de Supabase Storage — para

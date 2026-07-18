@@ -5,8 +5,20 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.19.10';
+export const APP_VERSION = '2.20.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.20.0 — feat(facturas-compra): módulo nuevo completo (Fase 5) —
+// FacturasCompraView.jsx (tabs Documentos/Revisión), registrado en permisos +
+// menú (Inventario) + ruta /facturas-compra. RPCs Patrón C
+// (get_purchase_dte_documents/get_purchase_dte_review_queue), match manual de
+// proveedor (set_purchase_dte_supplier), descartar de la cola de revisión
+// (resolve_purchase_dte_review), botón "Sincronizar ahora". Fix de datos: BD
+// guardaba rutas crudas de Storage en vez de URL formato-public (regla #10 del
+// proyecto) — corregido en la edge function + backfill de las 339+97 filas ya
+// sincronizadas. Verificado visualmente con datos reales: 338 documentos, 97
+// pendientes de revisión (mayoría PDF-sin-JSON de comercios@promerica.com.sv —
+// dato real para la decisión de Fase 3.5).
 
 // v2.19.10 — feat(facturas-compra): cron diario sync-purchase-emails-daily
 // (3:00 AM El Salvador, jobid 183) registrado en prod — INACTIVO a propósito

@@ -46,6 +46,14 @@ function baseName(filename: string): string {
 
 // Storage keys de Supabase no toleran espacios/acentos/símbolos — los nombres de
 // adjunto los pone el proveedor libremente (ej. "FACTURA CRÉDITO FISCAL N°...pdf").
+// BD siempre guarda la URL formato-public como identificador (regla del
+// proyecto, storageFiles.js firma esa forma) — nunca la ruta cruda, aunque el
+// bucket sea privado (mismo patrón que documents/payment-proofs/empleados).
+function publicUrl(path: string): string {
+  const base = (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/$/, '');
+  return `${base}/storage/v1/object/public/${BUCKET}/${path}`;
+}
+
 function sanitizeStorageKey(name: string): string {
   const normalized = name.normalize('NFD').replace(/[̀-ͯ]/g, ''); // quita acentos (á→a, é→e, ...)
   return normalized.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_+/g, '_').slice(0, 180);
@@ -330,8 +338,8 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
           fecha_emision:       fecEmi,
           monto_total:         json.resumen?.totalPagar ?? json.resumen?.montoTotalOperacion ?? null,
           total_iva:            json.resumen?.totalIva ?? null,
-          json_path:           jsonPath,
-          pdf_path:             pdfPath,
+          json_path:           publicUrl(jsonPath),
+          pdf_path:             pdfPath ? publicUrl(pdfPath) : null,
           account_id:          account.id,
           from_email:          fromEmail,
           source_message_id:   id,
@@ -362,7 +370,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
         if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) throw new Error(upErr.message);
         await supabase.from('purchase_dte_review_queue').upsert({
           kind:        'orphan_pdf',
-          file_path:    path,
+          file_path:    publicUrl(path),
           filename:    op.filename,
           account_id:  account.id,
           source_message_id: id,
@@ -385,7 +393,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
         if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) throw new Error(upErr.message);
         await supabase.from('purchase_dte_review_queue').upsert({
           kind:        'invalid_json',
-          file_path:    path,
+          file_path:    publicUrl(path),
           filename:    part.filename,
           reason,
           account_id:  account.id,

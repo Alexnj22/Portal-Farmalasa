@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     FileText, Calendar, Tag, Users, RefreshCw, Download, FileJson,
-    CheckCircle2, XCircle, AlertTriangle,
+    CheckCircle2, XCircle, AlertTriangle, Eye, Archive,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -17,6 +17,7 @@ import { fetchSuppliersBasic } from '../../data/compras';
 import {
     fetchPurchaseDteDocuments, fetchPurchaseDteReviewQueue,
     setPurchaseDteSupplier, resolvePurchaseDteReview, syncPurchaseEmailsNow,
+    downloadPurchaseDtePackage, downloadPurchaseDteZipBulk,
 } from '../../data/facturasCompra';
 
 const TABS = [
@@ -82,7 +83,7 @@ function SupplierMatchCell({ row, suppliers, onMatched }) {
                 <AlertTriangle size={12} className="text-amber-500 shrink-0" title="Sin proveedor emparejado" />
                 <span className="text-slate-600 text-[12px]">{row.emisor_nombre || '—'}</span>
                 <button
-                    onClick={() => setEditing(true)}
+                    onClick={(e) => { e.stopPropagation(); setEditing(true); }}
                     className="text-[10px] font-bold text-[#0052CC] underline shrink-0"
                 >
                     Emparejar
@@ -120,7 +121,7 @@ function SupplierMatchCell({ row, suppliers, onMatched }) {
 
 // ── TabDocumentos ─────────────────────────────────────────────────────────────
 
-function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, refreshKey }) {
+function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, refreshKey, openModal }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
     const [suppliers, setSuppliers] = useState([]);
@@ -157,15 +158,53 @@ function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, re
         });
     };
 
+    const viewDetail = (row) => {
+        openModal?.('viewPurchaseDte', { document: row });
+        useStaff.getState().appendAuditLog('FACTURAS_COMPRA_VER_DETALLE', String(row.id), {
+            codigo_generacion: row.codigo_generacion,
+        });
+    };
+
+    const [bulkDownloading, setBulkDownloading] = useState(false);
+    const [bulkError, setBulkError] = useState('');
+    const downloadBulk = async () => {
+        setBulkDownloading(true);
+        setBulkError('');
+        try {
+            await downloadPurchaseDteZipBulk(filtered.map(r => r.id));
+            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA_MASIVA', null, {
+                cantidad: filtered.length, dateStart, dateEnd,
+            });
+        } catch (e) {
+            setBulkError(e.message);
+        } finally {
+            setBulkDownloading(false);
+        }
+    };
+
     return (
         <div className="flex flex-col gap-4">
-            <div className="text-[11px] text-slate-500 font-medium px-1">
-                {loading ? 'Cargando…' : `${filtered.length.toLocaleString()} documento${filtered.length !== 1 ? 's' : ''}`}
+            <div className="flex items-center justify-between px-1">
+                <div className="text-[11px] text-slate-500 font-medium">
+                    {loading ? 'Cargando…' : `${filtered.length.toLocaleString()} documento${filtered.length !== 1 ? 's' : ''}`}
+                </div>
+                {filtered.length > 0 && (
+                    <button
+                        onClick={downloadBulk}
+                        disabled={bulkDownloading || filtered.length > 300}
+                        title={filtered.length > 300 ? 'Máximo 300 documentos — acotá el rango de fechas' : 'Descargar todos los filtrados en un ZIP'}
+                        className="flex items-center gap-1.5 text-[11px] font-bold text-[#0052CC] hover:bg-blue-50 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-40"
+                    >
+                        <Archive size={12} className={bulkDownloading ? 'animate-pulse' : ''} />
+                        {bulkDownloading ? 'Armando ZIP…' : 'Descargar filtrados'}
+                    </button>
+                )}
             </div>
+            {bulkError && <div className="text-[10px] text-red-500 px-1">{bulkError}</div>}
 
             <DataTable columns={DOC_COLS} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período.' }}>
                 {filtered.map((row, i) => (
-                    <DataRow key={row.id} index={i}>
+                    <DataRow key={row.id} index={i} onClick={() => viewDetail(row)}>
                         <DataCell>
                             <span className="font-semibold text-slate-700 tabular-nums">{fmtDate(row.fecha_emision)}</span>
                         </DataCell>
@@ -184,7 +223,14 @@ function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, re
                             <span className="tabular-nums font-bold text-slate-800">{fmt$(row.monto_total)}</span>
                         </DataCell>
                         <DataCell align="center">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                    onClick={() => viewDetail(row)}
+                                    className="p-1.5 rounded-lg text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 transition-colors"
+                                    title="Ver detalle"
+                                >
+                                    <Eye size={14} />
+                                </button>
                                 <button
                                     onClick={() => download(row.json_path, 'json', row)}
                                     className="p-1.5 rounded-lg text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 transition-colors"
@@ -199,6 +245,18 @@ function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, re
                                     title={row.pdf_path ? 'Descargar PDF' : 'Sin PDF'}
                                 >
                                     <Download size={14} />
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        await downloadPurchaseDtePackage(row);
+                                        useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA_PAQUETE', String(row.id), {
+                                            codigo_generacion: row.codigo_generacion,
+                                        });
+                                    }}
+                                    className="p-1.5 rounded-lg text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 transition-colors"
+                                    title="Descargar paquete (JSON+PDF)"
+                                >
+                                    <Archive size={14} />
                                 </button>
                             </div>
                         </DataCell>
@@ -290,7 +348,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh }) {
 
 // ── FacturasCompraView ────────────────────────────────────────────────────────
 
-export default function FacturasCompraView() {
+export default function FacturasCompraView({ openModal }) {
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('facturas_compra', 'can_edit');
 
@@ -420,6 +478,7 @@ export default function FacturasCompraView() {
                         supplierId={supplierId}
                         searchTerm={search}
                         refreshKey={refreshKey}
+                        openModal={openModal}
                     />
                 )}
                 {activeTab === 'revision' && (

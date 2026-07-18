@@ -24,6 +24,7 @@
     "@zxing/library": "^0.21.3",
     "framer-motion": "^12.40.0",
     "html-to-image": "^1.11.13",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.575.0",
     "pdfmake": "^0.3.11",
     "react": "^19.2.0",

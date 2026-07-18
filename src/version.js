@@ -5,8 +5,20 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.20.0';
+export const APP_VERSION = '2.20.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.20.1 — feat(facturas-compra): modal de detalle DTE (FormPurchaseDteViewer,
+// parsea el JSON real — emisor/receptor/ítems/totales, tab PDF cuando existe),
+// descarga "paquete" por documento (jszip client-side), descarga masiva
+// (edge function export-purchase-dte-zip, tope 300 docs, sin persistir zip
+// temporal). Fix: Content-Type application/zip no lo reconoce supabase-js como
+// blob (cae a .text() y corrompe el binario) — usar application/octet-stream.
+// Verificado visualmente con datos reales (Playwright): modal muestra ítems y
+// totales correctos ($7.00 = $2.65+$3.54, coincide con la lista), ambas
+// descargas disparan el evento download sin errores. Fase 5 (UI) del plan
+// queda completa — quedan solo incrementos condicionales/diferidos (correo 3,
+// cuenta 2, reactivar cron).
 
 // v2.20.0 — feat(facturas-compra): módulo nuevo completo (Fase 5) —
 // FacturasCompraView.jsx (tabs Documentos/Revisión), registrado en permisos +

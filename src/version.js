@@ -5,9 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.20.12';
+export const APP_VERSION = '2.21.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.21.0 — feat(proveedores): Fase 1 del Maestro de Proveedores
+// (PLAN-PROVEEDORES-2026-07.md) — BD solamente, sin UI todavía. Tablas
+// `proveedores_categorias` (seed de 16 categorías contables) y
+// `proveedores_maestro` (identidad fiscal del DTE: NIT/DUI/NRC, giro,
+// dirección, flags percibe_1/retiene_renta observados; curación manual:
+// categoría, match con `suppliers` del ERP, contacto, notas). Columna
+// `proveedor_id` en `purchase_dte_documents`. RPC `upsert_proveedor_from_dte`
+// (service_role, la llamará el sync/backfill) hace upsert condicional por
+// NIT/DUI sin pisar nunca los campos curados a mano. RPCs de lectura
+// (`get_proveedores_maestro`, Patrón C) y escritura manual
+// (`set_proveedor_categoria`, `set_proveedor_supplier`, `update_proveedor_manual`).
+// Permisos del módulo `proveedores` para roles 2/3/13. Aplicado en staging
+// (ewcmerxqjvludtgskuin) primero — verificado upsert idempotente, gating de
+// permisos, caso FSE con DUI sin NIT — y luego en prod, advisor 0 errores en
+// ambos. Próximo: Fase 2 (backfill de los ~339 JSON ya guardados).
+//
 // v2.20.12 — feat(facturas-compra): columnas ordenables en TabDocumentos —
 // Fecha, Proveedor, Tipo y Monto (a pedido directo del usuario; N° Control
 // y Acciones quedan sin ordenar). Mismo contrato de DataTable que

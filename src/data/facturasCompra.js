@@ -4,6 +4,18 @@ import JSZip from 'jszip';
 import { supabase } from '../supabaseClient';
 import { getSignedFileUrl } from '../utils/storageFiles';
 
+// supabase-js lanza FunctionsHttpError con .message genérico
+// ("Edge Function returned a non-2xx status code") — el mensaje real que arma
+// la función (ej. "Máximo 300 documentos...") solo está en error.context
+// (el Response crudo). Sin esto, el usuario nunca ve por qué falló.
+async function extractFunctionErrorMessage(error) {
+    try {
+        const body = await error?.context?.json?.();
+        if (body?.error) return body.error;
+    } catch { /* respuesta no era JSON (ej. el ZIP binario en un 200) */ }
+    return error?.message || 'Error desconocido';
+}
+
 export async function fetchPurchaseDteDocuments(desde, hasta) {
     const { data, error } = await supabase.rpc('get_purchase_dte_documents', { p_desde: desde, p_hasta: hasta });
     if (error) throw error;
@@ -32,7 +44,7 @@ export async function syncPurchaseEmailsNow({ dryRun = false, accountId = null }
     const { data, error } = await supabase.functions.invoke('sync-purchase-emails', {
         body: { dry_run: dryRun, account_id: accountId },
     });
-    if (error) throw error;
+    if (error) throw new Error(await extractFunctionErrorMessage(error));
     return data;
 }
 
@@ -41,19 +53,21 @@ export async function syncPurchaseEmailsNow({ dryRun = false, accountId = null }
 // shadowear el `document` global (document.createElement más abajo).
 export async function downloadPurchaseDtePackage(row) {
     const zip = new JSZip();
+    let included = 0;
 
     const jsonUrl = await getSignedFileUrl(row.json_path);
     if (jsonUrl) {
         const res = await fetch(jsonUrl);
-        if (res.ok) zip.file(`${row.codigo_generacion}.json`, await res.blob());
+        if (res.ok) { zip.file(`${row.codigo_generacion}.json`, await res.blob()); included++; }
     }
     if (row.pdf_path) {
         const pdfUrl = await getSignedFileUrl(row.pdf_path);
         if (pdfUrl) {
             const res = await fetch(pdfUrl);
-            if (res.ok) zip.file(`${row.codigo_generacion}.pdf`, await res.blob());
+            if (res.ok) { zip.file(`${row.codigo_generacion}.pdf`, await res.blob()); included++; }
         }
     }
+    if (included === 0) throw new Error('No se pudo descargar ningún archivo de este documento.');
 
     const blob = await zip.generateAsync({ type: 'blob' });
     const a = Object.assign(window.document.createElement('a'), {
@@ -68,7 +82,7 @@ export async function downloadPurchaseDtePackage(row) {
 // lo entrega directo, sin persistir un archivo temporal en Storage.
 export async function downloadPurchaseDteZipBulk(ids) {
     const { data, error } = await supabase.functions.invoke('export-purchase-dte-zip', { body: { ids } });
-    if (error) throw error;
+    if (error) throw new Error(await extractFunctionErrorMessage(error));
     const blob = data instanceof Blob ? data : new Blob([data]);
     const a = Object.assign(window.document.createElement('a'), {
         href: URL.createObjectURL(blob),

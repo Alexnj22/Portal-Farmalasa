@@ -5,8 +5,39 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.20.2';
+export const APP_VERSION = '2.20.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.20.3 — fix(facturas-compra): code review post-implementación (3 agentes
+// independientes, ángulos correctness/removed-behavior/cross-file). Bugs
+// reales corregidos:
+// - SupplierMatchCell/MatchDocumentAction: try/finally sin catch tragaba
+//   errores del RPC en silencio y cerraba la UI como si hubiera guardado —
+//   ahora muestran el error real.
+// - discard() en cola de revisión no tenía ningún manejo de error.
+// - Botones de edición (Emparejar proveedor, Descartar, Emparejar a
+//   documento) no respetaban canEdit — un rol con solo can_view los veía
+//   igual y fallaban en silencio contra el RPC (FORBIDDEN sin mostrar nada).
+// - syncPurchaseEmailsNow/downloadPurchaseDteZipBulk mostraban el mensaje
+//   genérico de supabase-js ("Edge Function returned a non-2xx status
+//   code") en vez del error real armado por la función — agregado parseo
+//   de error.context.
+// - resolve_purchase_dte_review (RPC): no validaba kind='orphan_pdf' antes
+//   de pisar pdf_path con la ruta de un JSON inválido; y marcaba
+//   'emparejado' aunque el UPDATE no afectara ninguna fila (documento que
+//   ya tenía PDF) — el archivo quedaba huérfano sin aviso. Ambos con guard +
+//   RAISE EXCEPTION ahora.
+// - sync-purchase-emails: un DTE duplicado (ON CONFLICT DO NOTHING) o un
+//   correo con solo adjuntos .zip no dejaban ninguna fila en BD, así que se
+//   re-escaneaban desde Gmail en CADA corrida del cron, para siempre
+//   (confirmado con datos reales: SERFINSA manda un zip diario). Fix: tabla
+//   purchase_dte_processed_messages, marca CADA mensaje como procesado sin
+//   importar el resultado.
+// - fetchSuppliersBasic() se llamaba 2 veces por separado (padre +
+//   TabDocumentos) — unificado en una sola carga en el padre.
+// - Cola de revisión: abrir/descargar el archivo no llamaba a
+//   appendAuditLog (regla del proyecto); selector de "emparejar a
+//   documento" no se refrescaba si cambiaba el rango de fechas.
 
 // v2.20.2 — feat(facturas-compra): botón "Emparejar a documento" en la cola de
 // revisión (MatchDocumentAction), único gap conocido que quedaba de la Fase 5.

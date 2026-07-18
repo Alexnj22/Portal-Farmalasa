@@ -163,16 +163,21 @@ interface AccountResult {
 }
 
 // Paginado explícito — PostgREST trunca a 1000 filas por respuesta.
-async function selectAllMessageIds(supabase: any, table: string, accountId: number): Promise<string[]> {
+// Fuente única de "ya procesado": purchase_dte_processed_messages, marcado al
+// final de CADA mensaje sin importar el resultado (insertado, duplicado vía
+// ON CONFLICT, o ignorado por adjunto no soportado como .zip) — antes se
+// inferían los "hechos" solo por presencia en purchase_dte_documents/
+// purchase_dte_review_queue, lo que dejaba mensajes con DTE duplicado o solo
+// adjuntos .zip re-escaneándose desde Gmail en cada corrida, para siempre.
+async function selectAllMessageIds(supabase: any, accountId: number): Promise<string[]> {
   const CHUNK = 1000;
   const out: string[] = [];
   let from = 0;
   for (;;) {
     const { data } = await supabase
-      .from(table)
+      .from('purchase_dte_processed_messages')
       .select('source_message_id')
       .eq('account_id', accountId)
-      .not('source_message_id', 'is', null)
       .range(from, from + CHUNK - 1);
     for (const r of (data ?? [])) if (r.source_message_id) out.push(r.source_message_id);
     if (!data || data.length < CHUNK) break;
@@ -182,11 +187,12 @@ async function selectAllMessageIds(supabase: any, table: string, accountId: numb
 }
 
 async function getDoneMessageIds(supabase: any, accountId: number): Promise<Set<string>> {
-  const [docIds, reviewIds] = await Promise.all([
-    selectAllMessageIds(supabase, 'purchase_dte_documents', accountId),
-    selectAllMessageIds(supabase, 'purchase_dte_review_queue', accountId),
-  ]);
-  return new Set([...docIds, ...reviewIds]);
+  return new Set(await selectAllMessageIds(supabase, accountId));
+}
+
+async function markMessageProcessed(supabase: any, accountId: number, messageId: string) {
+  await supabase.from('purchase_dte_processed_messages')
+    .upsert({ account_id: accountId, source_message_id: messageId }, { onConflict: 'account_id,source_message_id', ignoreDuplicates: true });
 }
 
 async function processAccount(supabase: any, account: any, dryRun: boolean): Promise<AccountResult> {
@@ -405,6 +411,16 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
       } catch (e: any) {
         warnings.push(`JSON inválido ${part.filename} (msg ${id}): no se pudo encolar para revisión — ${e.message}`);
       }
+    }
+
+    // Marca el mensaje como procesado SIEMPRE, sin importar el resultado —
+    // incluye DTE duplicado (ON CONFLICT DO NOTHING, sin fila propia) y
+    // mensajes con solo adjuntos no soportados (.zip): antes ninguno de esos
+    // casos dejaba rastro y se re-escaneaban desde Gmail en cada corrida.
+    try {
+      await markMessageProcessed(supabase, account.id, id);
+    } catch (e: any) {
+      warnings.push(`mensaje ${id}: no se pudo marcar como procesado — ${e.message}`);
     }
   }
 

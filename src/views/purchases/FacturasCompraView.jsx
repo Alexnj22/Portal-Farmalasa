@@ -69,9 +69,10 @@ function defaultRange() {
 
 // ── SupplierMatchCell ─────────────────────────────────────────────────────────
 
-function SupplierMatchCell({ row, suppliers, onMatched }) {
+function SupplierMatchCell({ row, suppliers, onMatched, canEdit }) {
     const [editing, setEditing] = useState(false);
     const [saving, setSaving]   = useState(false);
+    const [error, setError]     = useState('');
 
     if (row.supplier_id) {
         return <span className="text-slate-800 font-medium text-[12px]">{row.supplier_nombre}</span>;
@@ -82,12 +83,15 @@ function SupplierMatchCell({ row, suppliers, onMatched }) {
             <div className="flex items-center gap-1.5">
                 <AlertTriangle size={12} className="text-amber-500 shrink-0" title="Sin proveedor emparejado" />
                 <span className="text-slate-600 text-[12px]">{row.emisor_nombre || '—'}</span>
-                <button
-                    onClick={(e) => { e.stopPropagation(); setEditing(true); }}
-                    className="text-[10px] font-bold text-[#0052CC] underline shrink-0"
-                >
-                    Emparejar
-                </button>
+                {canEdit && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setError(''); setEditing(true); }}
+                        className="text-[10px] font-bold text-[#0052CC] underline shrink-0"
+                    >
+                        Emparejar
+                    </button>
+                )}
+                {error && <span className="text-[10px] text-red-500">{error}</span>}
             </div>
         );
     }
@@ -105,9 +109,12 @@ function SupplierMatchCell({ row, suppliers, onMatched }) {
                             codigo_generacion: row.codigo_generacion, supplier_id: val,
                         });
                         onMatched();
+                        setEditing(false);
+                    } catch (e) {
+                        setError(e.message || 'No se pudo guardar');
+                        setEditing(false);
                     } finally {
                         setSaving(false);
-                        setEditing(false);
                     }
                 }}
                 options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
@@ -124,15 +131,19 @@ function SupplierMatchCell({ row, suppliers, onMatched }) {
 function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
     const [open, setOpen] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
 
     if (!open) {
         return (
-            <button
-                onClick={() => { onOpen(); setOpen(true); }}
-                className="flex items-center gap-1 text-[10px] font-bold text-[#0052CC] hover:text-[#003D99] px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
-            >
-                <Link2 size={12} /> Emparejar a documento
-            </button>
+            <div className="flex items-center gap-1.5">
+                <button
+                    onClick={() => { onOpen(); setError(''); setOpen(true); }}
+                    className="flex items-center gap-1 text-[10px] font-bold text-[#0052CC] hover:text-[#003D99] px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                    <Link2 size={12} /> Emparejar a documento
+                </button>
+                {error && <span className="text-[10px] text-red-500">{error}</span>}
+            </div>
         );
     }
 
@@ -149,9 +160,12 @@ function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
                             matched_document_id: val, filename: row.filename,
                         });
                         onMatched();
+                        setOpen(false);
+                    } catch (e) {
+                        setError(e.message || 'No se pudo emparejar');
+                        setOpen(false);
                     } finally {
                         setSaving(false);
-                        setOpen(false);
                     }
                 }}
                 options={documents.map(d => ({
@@ -168,12 +182,9 @@ function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
 
 // ── TabDocumentos ─────────────────────────────────────────────────────────────
 
-function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, refreshKey, openModal }) {
+function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, refreshKey, openModal, suppliers, canEdit }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [suppliers, setSuppliers] = useState([]);
-
-    useEffect(() => { fetchSuppliersBasic().then(({ data }) => setSuppliers(data || [])); }, []);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -214,6 +225,17 @@ function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, re
 
     const [bulkDownloading, setBulkDownloading] = useState(false);
     const [bulkError, setBulkError] = useState('');
+    const downloadPackage = async (row) => {
+        setBulkError('');
+        try {
+            await downloadPurchaseDtePackage(row);
+            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA_PAQUETE', String(row.id), {
+                codigo_generacion: row.codigo_generacion,
+            });
+        } catch (e) {
+            setBulkError(e.message);
+        }
+    };
     const downloadBulk = async () => {
         setBulkDownloading(true);
         setBulkError('');
@@ -264,7 +286,7 @@ function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, re
                             <span className="font-mono text-[10px] text-slate-500">{row.numero_control || '—'}</span>
                         </DataCell>
                         <DataCell>
-                            <SupplierMatchCell row={row} suppliers={suppliers} onMatched={load} />
+                            <SupplierMatchCell row={row} suppliers={suppliers} onMatched={load} canEdit={canEdit} />
                         </DataCell>
                         <DataCell align="right">
                             <span className="tabular-nums font-bold text-slate-800">{fmt$(row.monto_total)}</span>
@@ -294,12 +316,7 @@ function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, re
                                     <Download size={14} />
                                 </button>
                                 <button
-                                    onClick={async () => {
-                                        await downloadPurchaseDtePackage(row);
-                                        useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA_PAQUETE', String(row.id), {
-                                            codigo_generacion: row.codigo_generacion,
-                                        });
-                                    }}
+                                    onClick={() => downloadPackage(row)}
                                     className="p-1.5 rounded-lg text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 transition-colors"
                                     title="Descargar paquete (JSON+PDF)"
                                 >
@@ -316,14 +333,17 @@ function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, re
 
 // ── TabRevision ───────────────────────────────────────────────────────────────
 
-function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd }) {
+function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, canEdit }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [rowError, setRowError] = useState('');
 
     // Documentos para el selector de "emparejar" — carga perezosa, solo si
     // alguien realmente abre el matcher (evita el fetch si nadie lo usa).
+    // Se resetea si cambia el rango de fechas para no ofrecer una lista vieja.
     const [documents, setDocuments] = useState([]);
     const [documentsLoaded, setDocumentsLoaded] = useState(false);
+    useEffect(() => { setDocumentsLoaded(false); }, [dateStart, dateEnd]); // eslint-disable-line react-hooks/set-state-in-effect
     const loadDocuments = useCallback(() => {
         if (documentsLoaded) return;
         setDocumentsLoaded(true);
@@ -347,12 +367,24 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd }
         return rows.filter(r => tokenMatch(searchTerm, r.from_email, r.subject, r.filename, r.reason));
     }, [rows, searchTerm]);
 
-    const discard = async (row) => {
-        await resolvePurchaseDteReview(row.id, 'descartado');
-        useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARTAR_REVISION', String(row.id), {
+    const openFile = (row) => {
+        openStoredFile(row.file_path);
+        useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA', String(row.id), {
             kind: row.kind, filename: row.filename,
         });
-        bumpRefresh();
+    };
+
+    const discard = async (row) => {
+        setRowError('');
+        try {
+            await resolvePurchaseDteReview(row.id, 'descartado');
+            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARTAR_REVISION', String(row.id), {
+                kind: row.kind, filename: row.filename,
+            });
+            bumpRefresh();
+        } catch (e) {
+            setRowError(e.message || 'No se pudo descartar');
+        }
     };
 
     return (
@@ -360,6 +392,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd }
             <div className="text-[11px] text-slate-500 font-medium px-1">
                 {loading ? 'Cargando…' : `${filtered.length.toLocaleString()} pendiente${filtered.length !== 1 ? 's' : ''} de revisión`}
             </div>
+            {rowError && <div className="text-[10px] text-red-500 px-1">{rowError}</div>}
 
             <DataTable columns={REVIEW_COLS} loading={loading} empty={{ icon: CheckCircle2, message: 'Nada pendiente de revisión.' }}>
                 {filtered.map((row, i) => (
@@ -381,7 +414,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd }
                         </DataCell>
                         <DataCell>
                             <button
-                                onClick={() => openStoredFile(row.file_path)}
+                                onClick={() => openFile(row)}
                                 className="text-[11px] font-medium text-[#0052CC] hover:underline truncate max-w-[220px] text-left"
                                 title={row.filename}
                             >
@@ -389,22 +422,24 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd }
                             </button>
                         </DataCell>
                         <DataCell align="center">
-                            <div className="flex items-center justify-center gap-1.5">
-                                {row.kind === 'orphan_pdf' && (
-                                    <MatchDocumentAction
-                                        row={row}
-                                        documents={documents}
-                                        onOpen={loadDocuments}
-                                        onMatched={bumpRefresh}
-                                    />
-                                )}
-                                <button
-                                    onClick={() => discard(row)}
-                                    className="flex items-center gap-1 text-[10px] font-bold text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
-                                >
-                                    <XCircle size={12} /> Descartar
-                                </button>
-                            </div>
+                            {canEdit && (
+                                <div className="flex items-center justify-center gap-1.5">
+                                    {row.kind === 'orphan_pdf' && (
+                                        <MatchDocumentAction
+                                            row={row}
+                                            documents={documents}
+                                            onOpen={loadDocuments}
+                                            onMatched={bumpRefresh}
+                                        />
+                                    )}
+                                    <button
+                                        onClick={() => discard(row)}
+                                        className="flex items-center gap-1 text-[10px] font-bold text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
+                                    >
+                                        <XCircle size={12} /> Descartar
+                                    </button>
+                                </div>
+                            )}
                         </DataCell>
                     </DataRow>
                 ))}
@@ -546,6 +581,8 @@ export default function FacturasCompraView({ openModal }) {
                         searchTerm={search}
                         refreshKey={refreshKey}
                         openModal={openModal}
+                        suppliers={suppliers}
+                        canEdit={canEdit}
                     />
                 )}
                 {activeTab === 'revision' && (
@@ -555,6 +592,7 @@ export default function FacturasCompraView({ openModal }) {
                         bumpRefresh={bumpRefresh}
                         dateStart={dateStart}
                         dateEnd={dateEnd}
+                        canEdit={canEdit}
                     />
                 )}
             </GlassViewLayout>

@@ -5,9 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.20.10';
+export const APP_VERSION = '2.20.11';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.20.11 — fix(facturas-compra): botón "Descargar" del pill de
+// TabDocumentos. El usuario preguntó por qué aparecía deshabilitado — la
+// razón (tope de 300 documentos por ZIP, ver v2.20.10) solo se explicaba en
+// un `title` nativo (tooltip al pasar el mouse), fácil de no ver. Se agregó
+// texto visible junto al botón ("⚠ Máx. 300 — acotá fechas") cuando está
+// deshabilitado por esa causa, sin necesidad de hover. Ícono cambiado de
+// Archive (caja) a Download (flecha hacia bandeja) a pedido directo del
+// usuario — Archive se mantiene en la acción de fila "paquete JSON+PDF" y
+// en el botón "Todo" del modal, donde sí tiene sentido como ícono de ZIP.
+//
 // v2.20.10 — fix(facturas-compra): 3 hallazgos más en el modal de detalle DTE
 // y la tabla. (1) No había forma de descargar PDF+JSON juntos desde el
 // modal — se agregó botón "Todo" (ícono Archive) junto a PDF/JSON, reutiliza

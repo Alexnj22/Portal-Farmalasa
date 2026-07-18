@@ -355,14 +355,21 @@ function TabDocumentos({
                     {filtered.length > 0 && (
                         <>
                             <div className="h-5 w-px bg-slate-100 shrink-0" />
-                            <div className="flex items-center px-2">
+                            <div className="flex items-center gap-1.5 px-2">
                                 <button onClick={downloadBulk}
                                     disabled={bulkDownloading || filtered.length > 300}
-                                    title={filtered.length > 300 ? 'Máximo 300 documentos — acotá el rango de fechas' : 'Descargar todos los filtrados en un ZIP'}
+                                    title="Descargar todos los filtrados en un ZIP"
                                     className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border border-transparent text-slate-500 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600 transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 disabled:opacity-40">
-                                    <Archive size={11} strokeWidth={2.5} className={bulkDownloading ? 'animate-pulse' : ''} />
+                                    <Download size={11} strokeWidth={2.5} className={bulkDownloading ? 'animate-pulse' : ''} />
                                     {bulkDownloading ? 'Armando ZIP…' : 'Descargar'}
                                 </button>
+                                {filtered.length > 300 && (
+                                    <span className="flex items-center gap-1 text-[10px] text-amber-600 font-medium max-w-[190px]"
+                                        title="Máximo 300 documentos por ZIP — acotá el rango de fechas">
+                                        <AlertTriangle size={11} className="shrink-0" />
+                                        Máx. 300 — acotá fechas
+                                    </span>
+                                )}
                             </div>
                         </>
                     )}

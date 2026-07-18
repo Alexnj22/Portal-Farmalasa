@@ -5,8 +5,16 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.19.5';
+export const APP_VERSION = '2.19.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.19.6 — fix(ventas): computePrevRange comparaba SIEMPRE contra 1 mes atrás fijo,
+// sin importar cuántos meses abarcara el rango seleccionado. Con presets multi-mes
+// ("Últimos 3 meses", "Este año") el % de la card quedaba comparando un rango grande
+// contra una ventana ~1 mes, muy solapada con la actual → % sin sentido (ej. "Este
+// año" mostraba -~80% en vez de compararse contra el año completo anterior). Fix:
+// el shift ahora es proporcional a los meses que abarca [fini,ffin] (monthsSpan),
+// preservando el caso por defecto (rango de 1 mes → shift de 1 mes, sin cambio).
 
 // v2.19.5 — feat(facturas-compra): base del módulo de facturas de compra por
 // correo — migración 20260717_purchase_dte_email_sync (tablas

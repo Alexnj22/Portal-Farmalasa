@@ -66,15 +66,24 @@ function currentMonthRange() {
     return { fini: `${y}-${pad(m)}-01`, ffin: `${y}-${pad(m)}-${pad(d)}`, label: `${y}-${pad(m)}` };
 }
 
+// Rango de comparación: mismo rango desplazado hacia atrás EL NÚMERO DE MESES QUE
+// ABARCA la selección — no siempre 1 mes fijo (bug reportado 2026-07-17: "Últimos 3
+// meses" / "Este año" se comparaban contra solo 1 mes atrás, un rango casi solapado
+// con el actual en vez de un período previo equivalente y no solapado).
+// Ej: rango de 1 mes (5-9 may) → 5-9 abr (shift de 1 mes, caso común/default).
+//     rango de 3 meses (may-jul) → feb-abr (shift de 3 meses, no solapado).
+//     rango de 12 meses (ene-dic 2026) → ene-dic 2025 (shift de 12 meses).
 function computePrevRange(fini, ffin) {
     const pad = n => String(n).padStart(2, '0');
-    // Mirror: same day numbers shifted back one calendar month.
-    // May 5-9 → Apr 5-9. May 1-31 → Apr 1-30. Mar 31 → Feb 28. Jan 5 → Dec 5.
+    const [sy, sm] = fini.split('-').map(Number);
+    const [ey, em] = ffin.split('-').map(Number);
+    const monthsSpan = Math.max(1, (ey * 12 + em) - (sy * 12 + sm) + 1);
     const shiftBack = (dateStr) => {
         const [y, m, d] = dateStr.split('-').map(Number);
-        const py = m === 1 ? y - 1 : y;
-        const pm = m === 1 ? 12 : m - 1;
-        const lastDay = new Date(py, pm, 0).getDate(); // last day of prev month
+        const idx = y * 12 + (m - 1) - monthsSpan; // índice absoluto de mes (0 = ene año 0)
+        const py = Math.floor(idx / 12);
+        const pm = ((idx % 12) + 12) % 12 + 1;
+        const lastDay = new Date(py, pm, 0).getDate(); // último día del mes resultante
         return `${py}-${pad(pm)}-${pad(Math.min(d, lastDay))}`;
     };
     return { prevFini: shiftBack(fini), prevFfin: shiftBack(ffin) };

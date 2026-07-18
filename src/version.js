@@ -5,8 +5,28 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.23.1';
+export const APP_VERSION = '2.23.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.23.2 — fix(nav): auditoría completa del menú lateral (AppLayout).
+// (1) FIX del "scroll raro": el efecto de scroll dependía de openGroups, así
+// que abrir/cerrar CUALQUIER grupo disparaba un smooth-scroll persiguiendo
+// al ítem activo; ahora solo se revela el ítem activo al navegar, y abrir
+// un grupo ancla el propio grupo (revealOpenedGroup, mínimo movimiento).
+// (2) Acordeón real: un solo grupo abierto (antes el grupo activo quedaba
+// forzado abierto, inflando la lista). (3) Reestructura de MENU_GROUPS:
+// autoservicio → personal → negocio → configuración; `encuesta` (Clima
+// Organizacional) estaba en MODULE_MAP pero en NINGÚN grupo (inalcanzable
+// desde el nav); Horarios absorbe Plan de Vacaciones; Estructura/Sistema al
+// final. (4) Los "Próximamente" ya no crean grupos muertos para empleados
+// sin permisos reales del grupo. (5) focus-visible ring en todos los
+// controles del nav (ítems, grupos, PINs, logo, logout, tabs móviles,
+// flyouts) + aria-current/aria-label/aria-expanded correctos. (6) Colapsado:
+// click en grupo abre el flyout (antes era no-op) y Escape lo cierra.
+// (7) Limpieza: fallback muerto en recomputePill, clase typo "Bone".
+// Nota React Compiler: handlers no pueden capturar refs (rompe la
+// preservación de memoización de recomputePill) — el reveal vive en un
+// useEffect sobre openGroupKey.
 
 // v2.23.1 — feat(facturas-compra): badge inverso NC→CCF, a pedido directo
 // del usuario ("así como haces en la venta ver la NC, quiero al revés").

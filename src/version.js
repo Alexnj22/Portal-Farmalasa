@@ -5,8 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.19.8';
+export const APP_VERSION = '2.19.9';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.19.9 — feat(facturas-compra): edge function sync-purchase-emails (Fase 2) +
+// tabla purchase_dte_review_queue generalizada (PDFs huérfanos Y JSON
+// inválidos/invalidaciones DTE, con estado "descartado"). Probada end-to-end en
+// producción con la cuenta farmasalud.sv@gmail.com: 339 documentos insertados,
+// 93 PDFs sin emparejar, 4 JSON inválidos. Dos bugs reales encontrados y
+// corregidos en el camino: (1) backfills grandes excedían el límite de ejecución
+// de la edge function → ahora procesa en lotes con presupuesto de tiempo
+// (TIME_BUDGET_MS) y salta mensajes ya resueltos entre llamadas (hasMore); (2)
+// Supabase Storage rechaza rutas con espacios/acentos/símbolos en nombres de
+// adjunto libres del proveedor → sanitizeStorageKey normaliza antes de subir.
 
 // v2.19.8 — feat(facturas-compra): tabla email_sync_log dedicada (patrón bloque7B,
 // NO reusar sync_log genérico — acoplado a semántica de ventas DTE) + extensión de

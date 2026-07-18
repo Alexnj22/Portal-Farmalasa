@@ -8,7 +8,7 @@ import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import LiquidSelect from '../../components/common/LiquidSelect';
-import LiquidDatePicker from '../../components/common/LiquidDatePicker';
+import PeriodPicker from '../../components/common/PeriodPicker';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
@@ -61,12 +61,13 @@ const fmtDateTime = (d) => {
     return dt.toLocaleString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
-function defaultRange() {
+// Formato "start|end" — mismo contrato que PeriodPicker/monthRange en VentasView.
+function defaultDateRange() {
     const end = new Date();
     const start = new Date();
     start.setDate(start.getDate() - 60);
     const iso = (d) => d.toISOString().split('T')[0];
-    return { start: iso(start), end: iso(end) };
+    return `${iso(start)}|${iso(end)}`;
 }
 
 // ── SupplierMatchCell ─────────────────────────────────────────────────────────
@@ -205,10 +206,11 @@ function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
 // ── TabDocumentos ─────────────────────────────────────────────────────────────
 
 function TabDocumentos({
-    dateStart, setDateStart, dateEnd, setDateEnd, tipoDte, setTipoDte, supplierId, setSupplierId,
+    dateRange, setDateRange, tipoDte, setTipoDte, supplierId, setSupplierId,
     searchTerm, refreshKey, openModal, suppliers, canEdit,
     syncing, syncMsg, runSyncNow,
 }) {
+    const [dateStart, dateEnd] = dateRange.split('|');
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
@@ -284,60 +286,93 @@ function TabDocumentos({
         }
     };
 
+    const dateDirty = dateRange !== defaultDateRange();
+
+    const selectedTipo = DTE_TYPE_OPTIONS.find(o => String(o.value) === String(tipoDte));
+    const tipoW = selectedTipo ? Math.max(120, Math.min(220, 86 + selectedTipo.label.length * 8)) : 150;
+
+    const supplierLabel = supplierId === SIN_PROVEEDOR
+        ? '(sin proveedor)'
+        : suppliers.find(s => String(s.id) === String(supplierId))?.nombre;
+    const supplierW = supplierLabel ? Math.max(130, Math.min(250, 86 + supplierLabel.length * 8)) : 180;
+
     return (
-        <div className="flex flex-col gap-4">
+        <div className="p-5 md:p-6 space-y-5">
             {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
-            <div className="flex items-start gap-3 flex-wrap">
-                <div className="flex-1 min-w-0 flex flex-col items-start gap-1.5">
-                    {canEdit && (
-                        <button
-                            onClick={runSyncNow}
-                            disabled={syncing}
-                            className="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-600 border border-slate-200 shadow-sm rounded-xl
-                                text-[11px] font-black uppercase tracking-widest
-                                hover:bg-slate-50 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200
-                                disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed"
-                        >
-                            <RefreshCw size={14} strokeWidth={2} className={syncing ? 'animate-spin' : ''} />
-                            {syncing ? 'Sincronizando…' : 'Sincronizar ahora'}
-                        </button>
-                    )}
-                    {syncMsg && <div className="text-[10px] text-slate-500 px-1 max-w-[320px]">{syncMsg}</div>}
-                </div>
-                <div className="flex items-center gap-3 rounded-2xl bg-white/80 border border-slate-200/70 px-4 py-2 flex-wrap shrink-0">
-                    <div className="flex items-center gap-1 shrink-0">
-                        <LiquidDatePicker value={dateStart} onChange={setDateStart} placeholder="Inicio" />
-                        <span className="text-slate-400 font-bold mx-0.5">–</span>
-                        <LiquidDatePicker value={dateEnd} onChange={setDateEnd} placeholder="Fin" />
-                    </div>
-                    <div className="h-5 w-px bg-slate-100" />
-                    <div className="flex items-center gap-1.5">
-                        <Tag size={12} className="text-slate-400" />
-                        <div className="w-[170px]">
-                            <LiquidSelect
-                                value={tipoDte}
-                                onChange={setTipoDte}
-                                options={DTE_TYPE_OPTIONS}
-                                placeholder="Todos los tipos"
-                                compact
-                                bare
-                            />
+            <div className="flex items-start justify-end gap-3 flex-wrap">
+                <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible flex-wrap">
+
+                    {/* Período + clear individual */}
+                    <div className="flex items-center">
+                        <div className="px-2 py-2 overflow-visible">
+                            <PeriodPicker value={dateRange} onChange={setDateRange} placeholder="Período" />
                         </div>
+                        {dateDirty && (
+                            <button onClick={() => setDateRange(defaultDateRange())} title="Quitar fecha"
+                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
+                                <X size={9} strokeWidth={3} />
+                            </button>
+                        )}
                     </div>
-                    <div className="h-5 w-px bg-slate-100" />
-                    <div className="flex items-center gap-1.5">
-                        <Users size={12} className="text-slate-400" />
-                        <div className="w-[190px]">
+
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    {/* Tipo DTE + clear individual */}
+                    <div className="flex items-center">
+                        <div className="px-2 py-2 overflow-visible" style={{ width: tipoW + 'px' }}>
+                            <LiquidSelect value={tipoDte} onChange={setTipoDte}
+                                options={DTE_TYPE_OPTIONS} placeholder="Tipo" icon={Tag} compact bare />
+                        </div>
+                        {tipoDte && (
+                            <button onClick={() => setTipoDte('')} title="Quitar tipo"
+                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
+                                <X size={9} strokeWidth={3} />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="h-5 w-px bg-slate-100 shrink-0" />
+
+                    {/* Proveedor + clear individual */}
+                    <div className="flex items-center">
+                        <div className="px-2 py-2 overflow-visible" style={{ width: supplierW + 'px' }}>
                             <LiquidSelect
                                 value={supplierId}
                                 onChange={setSupplierId}
                                 options={[{ value: SIN_PROVEEDOR, label: '(sin proveedor)' }, ...suppliers.map(s => ({ value: s.id, label: s.nombre }))]}
-                                placeholder="Todos los proveedores"
-                                compact
-                                bare
+                                placeholder="Proveedor" icon={Users} compact bare
                             />
                         </div>
+                        {supplierId && (
+                            <button onClick={() => setSupplierId('')} title="Quitar proveedor"
+                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
+                                <X size={9} strokeWidth={3} />
+                            </button>
+                        )}
                     </div>
+
+                    {/* Sincronizar ahora — incorporado al pill (antes vivía suelto a la izquierda) */}
+                    {canEdit && (
+                        <>
+                            <div className="h-5 w-px bg-slate-100 shrink-0" />
+                            <div className="flex items-center gap-1.5 px-2">
+                                <button onClick={runSyncNow} disabled={syncing}
+                                    className={`flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 ${
+                                        syncing
+                                            ? 'bg-blue-50 border-blue-200 text-blue-600'
+                                            : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
+                                    } disabled:opacity-60`}>
+                                    <RefreshCw size={11} strokeWidth={2.5} className={syncing ? 'animate-spin' : ''} />
+                                    {syncing ? 'Sincronizando' : 'Sincronizar'}
+                                </button>
+                                {syncMsg && (
+                                    <span className="text-[10px] text-slate-500 font-medium max-w-[180px] truncate" title={syncMsg}>
+                                        {syncMsg}
+                                    </span>
+                                )}
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -487,7 +522,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
     };
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="p-5 md:p-6 space-y-5">
             <div className="text-[11px] text-slate-500 font-medium px-1">
                 {loading ? 'Cargando…' : `${filtered.length.toLocaleString()} pendiente${filtered.length !== 1 ? 's' : ''} de revisión`}
             </div>
@@ -559,9 +594,8 @@ export default function FacturasCompraView({ openModal }) {
     const setActiveTab = (tab) => setSearchParams(p => { p.set('tab', tab); return p; });
 
     const [search, setSearch] = useState('');
-    const range = defaultRange();
-    const [dateStart, setDateStart] = useState(range.start);
-    const [dateEnd, setDateEnd] = useState(range.end);
+    const [dateRange, setDateRange] = useState(defaultDateRange);
+    const [dateStart, dateEnd] = dateRange.split('|');
     const [tipoDte, setTipoDte] = useState('');
     const [supplierId, setSupplierId] = useState('');
     const [suppliers, setSuppliers] = useState([]);
@@ -617,10 +651,8 @@ export default function FacturasCompraView({ openModal }) {
         <GlassViewLayout icon={FileText} title="Facturas de Compra" filtersContent={filtersContent}>
             {activeTab === 'documentos' && (
                 <TabDocumentos
-                    dateStart={dateStart}
-                    setDateStart={setDateStart}
-                    dateEnd={dateEnd}
-                    setDateEnd={setDateEnd}
+                    dateRange={dateRange}
+                    setDateRange={setDateRange}
                     tipoDte={tipoDte}
                     setTipoDte={setTipoDte}
                     supplierId={supplierId}

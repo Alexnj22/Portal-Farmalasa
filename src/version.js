@@ -5,8 +5,41 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.20.7';
+export const APP_VERSION = '2.20.8';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.20.8 — fix(facturas-compra): 7 hallazgos visuales reportados por el
+// usuario tras probar la vista en prod. (1) El pill de fecha (2
+// LiquidDatePicker sueltos "Inicio"/"Fin") se reemplazó por PeriodPicker —
+// mismo componente de rango con accesos rápidos que usa VentasView.
+// dateStart/dateEnd locales pasaron a un solo estado dateRange formato
+// "start|end" (mismo contrato que monthRange en VentasView), derivado donde
+// se necesitan las fechas sueltas. (2) Los LiquidSelect de Tipo/Proveedor
+// renderizaban el ícono en un <Tag>/<Users> suelto ANTES del select en vez
+// de usar el prop icon={} de LiquidSelect (que lo dibuja DENTRO del pill,
+// como en VentasView FilterControls) — corregido, con ancho dinámico por
+// longitud de label igual que branchW/labW en VentasView. (3-4) TabDocumentos
+// y TabRevision envolvían su contenido en <div className="flex flex-col
+// gap-4"> sin padding — el pill de filtros y la tabla quedaban pegados a los
+// bordes del card. Cambiado a "p-5 md:p-6 space-y-5" (mismo wrapper que
+// TabVentas en VentasView). (5) "Sincronizar ahora" vivía suelto a la
+// izquierda del pill — se incorporó como último segmento del pill (con
+// divider), siguiendo el patrón de toggles de FilterControls. (6) Modal PDF
+// "cortado": la causa real NO era la altura del modal (h-[85vh] ya estaba
+// bien desde v2.20.6) sino que el contenido interno de
+// FormPurchaseDteViewer/FormDocumentViewer usaba h-full (porcentaje) en
+// cadena a través de un padre dimensionado solo por flex-grow — Chromium no
+// resuelve ese porcentaje como "definite" ahí (confirmado con Playwright:
+// medí el DOM real, el contenido colapsaba a 430px de los 850px
+// disponibles). Fix: toda la cadena (UnifiedModal scrollRef → wrapper →
+// <form> → raíz de Form*Viewer → cada rama del contenido) pasó de
+// h-full/min-h-full a flex-1/min-h-0 encadenado, que no depende de
+// resolución de porcentajes. Aplicado también a FormDocumentViewer
+// (viewDocument) por tener el mismo patrón frágil, aunque no fue reportado.
+// Confirmado con Playwright: el bloque de contenido ahora mide 832px de
+// 850px disponibles (antes 430px). (7) El modal solo tenía botón de
+// descarga "JSON" — se agregó un botón "PDF" (mismo estilo secundario que
+// el toggle Detalle/PDF) cuando document.pdf_path existe.
 
 // v2.20.7 — fix(facturas-compra): CAUSA REAL del modal de PDF cerrándose al
 // tocar la pestaña "PDF" (v2.20.6 mitigó con altura/iframe pero no atacaba

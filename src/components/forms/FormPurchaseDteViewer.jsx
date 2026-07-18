@@ -48,7 +48,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
     const resumen = dte?.resumen || {};
 
     return (
-        <div className="flex flex-col h-full bg-slate-50/50">
+        <div className="flex-1 min-h-0 flex flex-col bg-slate-50/50">
             <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
                 <div className="flex items-center gap-4 min-w-0">
                     <div className="w-12 h-12 rounded-[1.25rem] bg-blue-50 text-[#0052CC] flex items-center justify-center shadow-inner shrink-0">
@@ -82,6 +82,15 @@ const FormPurchaseDteViewer = ({ formData }) => {
                             </button>
                         </div>
                     )}
+                    {document?.pdf_path && (
+                        <button
+                            type="button"
+                            onClick={() => openStoredFile(document.pdf_path)}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97]"
+                        >
+                            <Download size={14} strokeWidth={2} /> PDF
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={() => openStoredFile(document?.json_path)}
@@ -92,9 +101,15 @@ const FormPurchaseDteViewer = ({ formData }) => {
                 </div>
             </div>
 
-            <div className="flex-1 p-4 md:p-6 overflow-hidden">
+            {/* flex flex-col en vez de h-full puro en los hijos: un h-full/percentage
+                dentro de un flex-item sin su propia altura explícita (flex-1 solo)
+                no siempre resuelve como "definite" — se colapsaba al tamaño del
+                contenido (confirmado con Playwright, caja del PDF ~130px en vez de
+                llenar el modal). Encadenar flex-1/min-h-0 en cada nivel es robusto
+                sin depender de esa resolución de porcentajes. */}
+            <div className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden min-h-0">
                 {tab === 'pdf' && pdfUrl ? (
-                    <div className="w-full h-full flex flex-col gap-2">
+                    <div className="flex-1 min-h-0 w-full flex flex-col gap-2">
                         <div className="flex justify-end shrink-0">
                             <a
                                 href={pdfUrl}
@@ -110,17 +125,17 @@ const FormPurchaseDteViewer = ({ formData }) => {
                         </div>
                     </div>
                 ) : loading ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm">
+                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-slate-500 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm">
                         <Loader2 size={32} className="animate-spin mb-3 text-[#0052CC]" />
                         <p className="font-bold text-[11px] uppercase tracking-widest">Cargando detalle…</p>
                     </div>
                 ) : error ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm border-dashed">
+                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-slate-500 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm border-dashed">
                         <FileText size={48} className="mb-4 opacity-30" strokeWidth={1.5} />
                         <p className="font-bold text-sm">No se pudo cargar el detalle ({error}).</p>
                     </div>
                 ) : (
-                    <div className="w-full h-full overflow-y-auto rounded-[1.5rem] border border-slate-200 bg-white shadow-sm p-6">
+                    <div className="flex-1 min-h-0 w-full overflow-y-auto rounded-[1.5rem] border border-slate-200 bg-white shadow-sm p-6">
                         <div className="grid grid-cols-2 gap-x-6 gap-y-2 pb-4 mb-4 border-b border-slate-100 text-[12px]">
                             <div><span className="text-slate-500">Emisor: </span><span className="font-semibold text-slate-800">{dte?.emisor?.nombre || document?.emisor_nombre || '—'}</span></div>
                             <div><span className="text-slate-500">NIT / NRC: </span><span className="font-semibold text-slate-800">{dte?.emisor?.nit || document?.emisor_nit || '—'} / {dte?.emisor?.nrc || document?.emisor_nrc || '—'}</span></div>

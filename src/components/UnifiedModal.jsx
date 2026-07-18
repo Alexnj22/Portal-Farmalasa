@@ -719,7 +719,13 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         </div>
     );
 
-    const getModalHeightClass = () => (type === 'viewDocument' || type === 'viewPurchaseDte') ? 'h-[85vh]' : 'max-h-[90vh] h-fit';
+    // Tipos que necesitan que su contenido llene el modal (visor de PDF/documento con
+    // scroll interno propio) en vez de altura natural por contenido. `min-h-full`/`h-full`
+    // (porcentaje) no resuelve de forma confiable como "definite" a través de este árbol
+    // (scrollRef es overflow-y-auto) — confirmado con Playwright: el contenido colapsaba a
+    // ~430px de los ~850px disponibles. Encadenar flex-1/min-h-0 en cada nivel es robusto.
+    const fillHeight = type === 'viewDocument' || type === 'viewPurchaseDte';
+    const getModalHeightClass = () => fillHeight ? 'h-[85vh]' : 'max-h-[90vh] h-fit';
     const hidesHeader = HIDES_HEADER.has(type);
     const hidesFooter = HIDES_FOOTER.has(type);
     const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-white/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-white/70 backdrop-blur-md";
@@ -799,10 +805,10 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                 <div
                     ref={scrollRef}
-                    className={`flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-10 w-full`}
+                    className={`flex-1 overflow-y-auto overscroll-contain scrollbar-hide relative z-10 w-full ${fillHeight ? 'flex flex-col' : ''}`}
                     style={{ WebkitOverflowScrolling: 'touch', willChange: 'scroll-position' }}
                 >
-                    <div className={`flex flex-col min-h-full w-full ${hidesHeader ? 'p-0' : 'px-6 md:px-10 py-6'}`}>
+                    <div className={`flex flex-col w-full ${fillHeight ? 'flex-1 min-h-0' : 'min-h-full'} ${hidesHeader ? 'p-0' : 'px-6 md:px-10 py-6'}`}>
                         {validationError && (
                             <div className="mb-6 p-4 bg-red-500/10 backdrop-blur-md border border-red-500/20 rounded-[1.25rem] flex items-center gap-3 text-red-600 shadow-sm shrink-0 animate-in fade-in slide-in-from-top-4">
                                 <AlertCircle size={20} strokeWidth={2.5} className="shrink-0" />
@@ -810,7 +816,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             </div>
                         )}
 
-                        <form id="unified-modal-form" onSubmit={handleLocalSubmit} className="flex-1 flex flex-col relative w-full pb-4">
+                        <form id="unified-modal-form" onSubmit={handleLocalSubmit} className={`flex-1 flex flex-col relative w-full pb-4 ${fillHeight ? 'min-h-0' : ''}`}>
                             <Suspense fallback={<FallbackLoader />}>
                                 {type === "viewAuditDetail" && <FormAuditDetail data={formData} />}
                                 {type === "manageKiosks" && <FormDispositivos formData={formData} />}

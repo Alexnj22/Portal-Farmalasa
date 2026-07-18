@@ -21,7 +21,7 @@ const FormDocumentViewer = ({ formData }) => {
     const url = resolving ? null : signed.url;
 
     return (
-        <div className="flex flex-col h-full bg-slate-50/50">
+        <div className="flex-1 min-h-0 flex flex-col bg-slate-50/50">
             <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
                 <div className="flex items-center gap-4 min-w-0">
                     <div className="w-12 h-12 rounded-[1.25rem] bg-blue-50 text-[#0052CC] flex items-center justify-center shadow-inner shrink-0">
@@ -42,15 +42,15 @@ const FormDocumentViewer = ({ formData }) => {
                     <Download size={16} strokeWidth={2} /> Descargar
                 </a>
             </div>
-            <div className="flex-1 p-4 md:p-6 overflow-hidden">
+            <div className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden min-h-0">
                 {resolving ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm">
+                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-slate-500 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm">
                         <Loader2 size={32} className="animate-spin mb-3 text-[#0052CC]" />
                         <p className="font-bold text-[11px] uppercase tracking-widest">Generando acceso seguro...</p>
                     </div>
                 ) : url ? (
-                    <div className="w-full h-full rounded-[1.5rem] border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
-                        {/* Usamos object/embed para mejor compatibilidad con PDFs en navegadores. 
+                    <div className="flex-1 min-h-0 w-full rounded-[1.5rem] border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+                        {/* Usamos object/embed para mejor compatibilidad con PDFs en navegadores.
                             Fallback a iframe si falla.
                         */}
                         <object data={url} type="application/pdf" className="w-full h-full">
@@ -63,7 +63,7 @@ const FormDocumentViewer = ({ formData }) => {
                         </object>
                     </div>
                 ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm border-dashed">
+                    <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-slate-500 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm border-dashed">
                         <FileText size={48} className="mb-4 opacity-30" strokeWidth={1.5}/>
                         <p className="font-bold text-sm">URL no disponible o archivo corrupto.</p>
                     </div>

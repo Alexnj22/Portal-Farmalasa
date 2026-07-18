@@ -351,6 +351,22 @@ function TabDocumentos({
                         )}
                     </div>
 
+                    {/* Descargar (ZIP de filtrados) — incorporado al pill */}
+                    {filtered.length > 0 && (
+                        <>
+                            <div className="h-5 w-px bg-slate-100 shrink-0" />
+                            <div className="flex items-center px-2">
+                                <button onClick={downloadBulk}
+                                    disabled={bulkDownloading || filtered.length > 300}
+                                    title={filtered.length > 300 ? 'Máximo 300 documentos — acotá el rango de fechas' : 'Descargar todos los filtrados en un ZIP'}
+                                    className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border border-transparent text-slate-500 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600 transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 disabled:opacity-40">
+                                    <Archive size={11} strokeWidth={2.5} className={bulkDownloading ? 'animate-pulse' : ''} />
+                                    {bulkDownloading ? 'Armando ZIP…' : 'Descargar'}
+                                </button>
+                            </div>
+                        </>
+                    )}
+
                     {/* Sincronizar ahora — incorporado al pill (antes vivía suelto a la izquierda) */}
                     {canEdit && (
                         <>
@@ -376,22 +392,6 @@ function TabDocumentos({
                 </div>
             </div>
 
-            <div className="flex items-center justify-between px-1">
-                <div className="text-[11px] text-slate-500 font-medium">
-                    {loading ? 'Cargando…' : `${filtered.length.toLocaleString()} documento${filtered.length !== 1 ? 's' : ''}`}
-                </div>
-                {filtered.length > 0 && (
-                    <button
-                        onClick={downloadBulk}
-                        disabled={bulkDownloading || filtered.length > 300}
-                        title={filtered.length > 300 ? 'Máximo 300 documentos — acotá el rango de fechas' : 'Descargar todos los filtrados en un ZIP'}
-                        className="flex items-center gap-1.5 text-[11px] font-bold text-[#0052CC] hover:bg-blue-50 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-40"
-                    >
-                        <Archive size={12} className={bulkDownloading ? 'animate-pulse' : ''} />
-                        {bulkDownloading ? 'Armando ZIP…' : 'Descargar filtrados'}
-                    </button>
-                )}
-            </div>
             {bulkError && <div className="text-[10px] text-red-500 px-1">{bulkError}</div>}
 
             <DataTable columns={DOC_COLS} loading={loading} empty={{ icon: FileText, message: 'Sin facturas de compra en el período.' }}>

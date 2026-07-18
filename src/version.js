@@ -5,9 +5,16 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.20.8';
+export const APP_VERSION = '2.20.9';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.20.9 — fix(facturas-compra): 2 ajustes al pill de TabDocumentos tras
+// probar v2.20.8. (1) "Descargar filtrados" → "Descargar" (el "filtrados"
+// se sobreentiende dentro del pill de filtros) y se movió de una fila
+// suelta debajo del pill a ser un segmento más del pill (mismo patrón que
+// Sincronizar). (2) Se eliminó la fila "N documentos" que vivía junto al
+// botón — redundante con el badge total de TablePagination más abajo.
+//
 // v2.20.8 — fix(facturas-compra): 7 hallazgos visuales reportados por el
 // usuario tras probar la vista en prod. (1) El pill de fecha (2
 // LiquidDatePicker sueltos "Inicio"/"Fin") se reemplazó por PeriodPicker —

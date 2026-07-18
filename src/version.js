@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.20.3';
+export const APP_VERSION = '2.20.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.20.4 — fix(compras/facturas-compra): fetchSuppliersBasic ya no ignora
+// error — el hallazgo de code review que había quedado documentado como "no
+// corregido a propósito" (matching ComprasView.jsx) se corrigió en las 2
+// vistas a la vez para no dejar el portal con 2 estilos distintos para la
+// misma llamada. Ahora ambas loguean el error a consola en vez de mostrar el
+// selector de proveedores vacío en silencio.
 
 // v2.20.3 — fix(facturas-compra): code review post-implementación (3 agentes
 // independientes, ángulos correctness/removed-behavior/cross-file). Bugs

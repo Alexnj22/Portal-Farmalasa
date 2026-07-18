@@ -320,7 +320,10 @@ export default function ComprasView() {
     // Load supplier list + global unlinked count once
     useEffect(() => {
         fetchSuppliersBasic()
-            .then(({ data }) => setSuppliers(data || []));
+            .then(({ data, error }) => {
+                if (error) { console.error('fetchSuppliersBasic:', error.message); return; }
+                setSuppliers(data || []);
+            });
         fetchUnlinkedPurchaseReceiptsCount()
             .then(({ count }) => setUnlinkedCount(count || 0));
     }, []);

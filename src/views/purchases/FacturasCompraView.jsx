@@ -473,7 +473,12 @@ export default function FacturasCompraView({ openModal }) {
     const [syncing, setSyncing] = useState(false);
     const [syncMsg, setSyncMsg] = useState('');
 
-    useEffect(() => { fetchSuppliersBasic().then(({ data }) => setSuppliers(data || [])); }, []);
+    useEffect(() => {
+        fetchSuppliersBasic().then(({ data, error }) => {
+            if (error) { console.error('fetchSuppliersBasic:', error.message); return; }
+            setSuppliers(data || []);
+        });
+    }, []);
 
     const runSyncNow = async () => {
         setSyncing(true);

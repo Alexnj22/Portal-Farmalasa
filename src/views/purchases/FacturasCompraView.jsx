@@ -182,7 +182,10 @@ function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
 
 // ── TabDocumentos ─────────────────────────────────────────────────────────────
 
-function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, refreshKey, openModal, suppliers, canEdit }) {
+function TabDocumentos({
+    dateStart, setDateStart, dateEnd, setDateEnd, tipoDte, setTipoDte, supplierId, setSupplierId,
+    searchTerm, refreshKey, openModal, suppliers, canEdit,
+}) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -253,6 +256,52 @@ function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, re
 
     return (
         <div className="flex flex-col gap-4">
+            {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
+            <div className="flex items-start gap-3 flex-wrap">
+                <div className="flex-1 min-w-0" />
+                <div className="flex items-center gap-3 rounded-2xl bg-white/80 border border-slate-200/70 px-4 py-2 flex-wrap shrink-0">
+                    <div className="flex items-center gap-1.5">
+                        <Calendar size={12} className="text-slate-400" />
+                        <input type="date" value={dateStart} onChange={e => setDateStart(e.target.value)}
+                            className="text-[16px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer" />
+                    </div>
+                    <div className="h-5 w-px bg-slate-100" />
+                    <div className="flex items-center gap-1.5">
+                        <Calendar size={12} className="text-slate-400" />
+                        <input type="date" value={dateEnd} onChange={e => setDateEnd(e.target.value)}
+                            className="text-[16px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer" />
+                    </div>
+                    <div className="h-5 w-px bg-slate-100" />
+                    <div className="flex items-center gap-1.5">
+                        <Tag size={12} className="text-slate-400" />
+                        <div className="w-[170px]">
+                            <LiquidSelect
+                                value={tipoDte}
+                                onChange={setTipoDte}
+                                options={DTE_TYPE_OPTIONS}
+                                placeholder="Todos los tipos"
+                                compact
+                                bare
+                            />
+                        </div>
+                    </div>
+                    <div className="h-5 w-px bg-slate-100" />
+                    <div className="flex items-center gap-1.5">
+                        <Users size={12} className="text-slate-400" />
+                        <div className="w-[190px]">
+                            <LiquidSelect
+                                value={supplierId}
+                                onChange={setSupplierId}
+                                options={[{ value: SIN_PROVEEDOR, label: '(sin proveedor)' }, ...suppliers.map(s => ({ value: s.id, label: s.nombre }))]}
+                                placeholder="Todos los proveedores"
+                                compact
+                                bare
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div className="flex items-center justify-between px-1">
                 <div className="text-[11px] text-slate-500 font-medium">
                     {loading ? 'Cargando…' : `${filtered.length.toLocaleString()} documento${filtered.length !== 1 ? 's' : ''}`}
@@ -278,7 +327,7 @@ function TabDocumentos({ dateStart, dateEnd, tipoDte, supplierId, searchTerm, re
                             <span className="font-semibold text-slate-700 tabular-nums">{fmtDate(row.fecha_emision)}</span>
                         </DataCell>
                         <DataCell>
-                            <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] font-bold text-slate-700 bg-slate-500/10 border border-slate-500/25 px-2.5 py-0.5 rounded-full">
                                 {dteTypeLabel(row.tipo_dte)}
                             </span>
                         </DataCell>
@@ -402,9 +451,9 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                         </DataCell>
                         <DataCell>
                             {row.kind === 'orphan_pdf' ? (
-                                <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full">PDF sin JSON</span>
+                                <span className="text-[10px] font-bold text-blue-700 bg-blue-500/10 border border-blue-500/25 px-2.5 py-0.5 rounded-full">PDF sin JSON</span>
                             ) : (
-                                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full" title={row.reason}>
+                                <span className="text-[10px] font-bold text-amber-700 bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
                                     JSON inválido
                                 </span>
                             )}
@@ -499,71 +548,26 @@ export default function FacturasCompraView({ openModal }) {
         }
     };
 
-    const filtersContent = (
-        <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-3 rounded-2xl bg-white/80 border border-slate-200/70 px-4 py-2 flex-wrap">
-                <div className="flex items-center gap-1.5">
-                    <Calendar size={12} className="text-slate-400" />
-                    <input type="date" value={dateStart} onChange={e => setDateStart(e.target.value)}
-                        className="text-[16px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer" />
-                </div>
-                <div className="h-5 w-px bg-slate-100" />
-                <div className="flex items-center gap-1.5">
-                    <Calendar size={12} className="text-slate-400" />
-                    <input type="date" value={dateEnd} onChange={e => setDateEnd(e.target.value)}
-                        className="text-[16px] font-semibold text-slate-700 bg-transparent border-none outline-none cursor-pointer" />
-                </div>
-
-                {activeTab === 'documentos' && (
-                    <>
-                        <div className="h-5 w-px bg-slate-100" />
-                        <div className="flex items-center gap-1.5">
-                            <Tag size={12} className="text-slate-400" />
-                            <div className="w-[170px]">
-                                <LiquidSelect
-                                    value={tipoDte}
-                                    onChange={setTipoDte}
-                                    options={DTE_TYPE_OPTIONS}
-                                    placeholder="Todos los tipos"
-                                    compact
-                                    bare
-                                />
-                            </div>
-                        </div>
-                        <div className="h-5 w-px bg-slate-100" />
-                        <div className="flex items-center gap-1.5">
-                            <Users size={12} className="text-slate-400" />
-                            <div className="w-[190px]">
-                                <LiquidSelect
-                                    value={supplierId}
-                                    onChange={setSupplierId}
-                                    options={[{ value: SIN_PROVEEDOR, label: '(sin proveedor)' }, ...suppliers.map(s => ({ value: s.id, label: s.nombre }))]}
-                                    placeholder="Todos los proveedores"
-                                    compact
-                                    bare
-                                />
-                            </div>
-                        </div>
-                    </>
-                )}
-
-                {canEdit && (
-                    <>
-                        <div className="h-5 w-px bg-slate-100" />
-                        <button
-                            onClick={runSyncNow}
-                            disabled={syncing}
-                            className="flex items-center gap-1.5 text-[11px] font-bold text-[#0052CC] hover:bg-blue-50 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
-                        >
-                            <RefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
-                            {syncing ? 'Sincronizando…' : 'Sincronizar ahora'}
-                        </button>
-                    </>
-                )}
-            </div>
-            {syncMsg && <div className="text-[10px] text-slate-500 px-1">{syncMsg}</div>}
+    // filtersContent es SOLO para acciones primarias del header (búsqueda, tabs,
+    // "Nuevo X"/export) — el pill de fecha/tipo/proveedor vive en el body de cada
+    // tab (regla §17 DESIGN.md, ver TabDocumentos). "Sincronizar ahora" sí
+    // corresponde acá: es una acción, no un filtro.
+    const filtersContent = canEdit ? (
+        <div className="flex flex-col items-end gap-1.5">
+            <button
+                onClick={runSyncNow}
+                disabled={syncing}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-600 border border-slate-200 shadow-sm rounded-xl
+                    text-[11px] font-black uppercase tracking-widest
+                    hover:bg-slate-50 hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-200
+                    disabled:opacity-55 disabled:shadow-none disabled:cursor-not-allowed"
+            >
+                <RefreshCw size={14} strokeWidth={2} className={syncing ? 'animate-spin' : ''} />
+                {syncing ? 'Sincronizando…' : 'Sincronizar ahora'}
+            </button>
+            {syncMsg && <div className="text-[10px] text-slate-500 px-1 max-w-[260px] text-right">{syncMsg}</div>}
         </div>
-    );
+    ) : null;
 
     return (
         <>
@@ -580,9 +584,13 @@ export default function FacturasCompraView({ openModal }) {
                 {activeTab === 'documentos' && (
                     <TabDocumentos
                         dateStart={dateStart}
+                        setDateStart={setDateStart}
                         dateEnd={dateEnd}
+                        setDateEnd={setDateEnd}
                         tipoDte={tipoDte}
+                        setTipoDte={setTipoDte}
                         supplierId={supplierId}
+                        setSupplierId={setSupplierId}
                         searchTerm={search}
                         refreshKey={refreshKey}
                         openModal={openModal}

@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.20.4';
+export const APP_VERSION = '2.20.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.20.5 — fix(facturas-compra): auditoría completa contra DESIGN.md.
+// Violación real de §17 (Filter Pills): el pill de fecha/tipo/proveedor
+// estaba en filtersContent del header — la regla es explícita: esa slot es
+// SOLO para search/tabs/acciones primarias ("Nuevo X", export), el pill de
+// filtros va en el body, junto a la tabla (patrón VentasView/FilterControls).
+// Movido a TabDocumentos; filtersContent quedó solo con "Sincronizar ahora"
+// (ahora sí con la tipografía real de botón secundario: font-black uppercase
+// tracking-widest, no el estilo de link que tenía). De paso, badges (tipo DTE,
+// PDF-sin-JSON/JSON-inválido) alineados al patrón real de "Semantic status
+// badge" (§16: borde + fondo /10, no bg sólido) — "PDF sin JSON" pasó de sky
+// (no es un color semántico documentado) a blue/info. Nota: ComprasView.jsx
+// (la vista de la que partí como referencia) tiene la MISMA violación de §17
+// — no corregida en esta pasada, es una vista aparte no tocada esta sesión.
+// Verificado visualmente sin regresiones.
 
 // v2.20.4 — fix(compras/facturas-compra): fetchSuppliersBasic ya no ignora
 // error — el hallazgo de code review que había quedado documentado como "no

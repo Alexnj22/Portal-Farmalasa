@@ -62,12 +62,16 @@ const fmtDateTime = (d) => {
 };
 
 // Formato "start|end" — mismo contrato que PeriodPicker/monthRange en VentasView.
+// Mes actual por defecto (mismo criterio que el preset "Este mes" de
+// PeriodPicker: día 1 al último día del mes, no acotado a "hoy").
 function defaultDateRange() {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 60);
-    const iso = (d) => d.toISOString().split('T')[0];
-    return `${iso(start)}|${iso(end)}`;
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const pad = (n) => String(n).padStart(2, '0');
+    const start = `${y}-${pad(m + 1)}-01`;
+    const end = `${y}-${pad(m + 1)}-${pad(new Date(y, m + 1, 0).getDate())}`;
+    return `${start}|${end}`;
 }
 
 // ── SupplierMatchCell ─────────────────────────────────────────────────────────
@@ -301,6 +305,7 @@ function TabDocumentos({
     };
 
     const [bulkDownloading, setBulkDownloading] = useState(false);
+    const [bulkProgress, setBulkProgress] = useState(null); // {batch, total} — solo aparece si hay >1 tanda
     const [bulkError, setBulkError] = useState('');
     const downloadPackage = async (row) => {
         setBulkError('');
@@ -316,8 +321,12 @@ function TabDocumentos({
     const downloadBulk = async () => {
         setBulkDownloading(true);
         setBulkError('');
+        setBulkProgress(null);
         try {
-            await downloadPurchaseDteZipBulk(filtered.map(r => r.id));
+            await downloadPurchaseDteZipBulk(
+                filtered.map(r => r.id),
+                (batch, total) => setBulkProgress(total > 1 ? { batch, total } : null),
+            );
             useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA_MASIVA', null, {
                 cantidad: filtered.length, dateStart, dateEnd,
             });
@@ -325,6 +334,7 @@ function TabDocumentos({
             setBulkError(e.message);
         } finally {
             setBulkDownloading(false);
+            setBulkProgress(null);
         }
     };
 
@@ -399,19 +409,12 @@ function TabDocumentos({
                             <div className="h-5 w-px bg-slate-100 shrink-0" />
                             <div className="flex items-center gap-1.5 px-2">
                                 <button onClick={downloadBulk}
-                                    disabled={bulkDownloading || filtered.length > 300}
+                                    disabled={bulkDownloading}
                                     title="Descargar todos los filtrados en un ZIP"
                                     className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border border-transparent text-slate-500 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600 transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 disabled:opacity-40">
                                     <Download size={11} strokeWidth={2.5} className={bulkDownloading ? 'animate-pulse' : ''} />
-                                    {bulkDownloading ? 'Armando ZIP…' : 'Descargar'}
+                                    {bulkProgress ? `Armando ZIP… (${bulkProgress.batch}/${bulkProgress.total})` : bulkDownloading ? 'Armando ZIP…' : 'Descargar'}
                                 </button>
-                                {filtered.length > 300 && (
-                                    <span className="flex items-center gap-1 text-[10px] text-amber-600 font-medium max-w-[190px]"
-                                        title="Máximo 300 documentos por ZIP — acotá el rango de fechas">
-                                        <AlertTriangle size={11} className="shrink-0" />
-                                        Máx. 300 — acotá fechas
-                                    </span>
-                                )}
                             </div>
                         </>
                     )}
@@ -453,9 +456,20 @@ function TabDocumentos({
                             <SupplierMatchCell row={row} suppliers={suppliers} onMatched={load} canEdit={canEdit} />
                         </DataCell>
                         <DataCell>
-                            <span className="text-[10px] font-bold text-slate-700 bg-slate-500/10 border border-slate-500/25 px-2.5 py-0.5 rounded-full">
-                                {dteTypeLabel(row.tipo_dte)}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] font-bold text-slate-700 bg-slate-500/10 border border-slate-500/25 px-2.5 py-0.5 rounded-full">
+                                    {dteTypeLabel(row.tipo_dte)}
+                                </span>
+                                {row.notas_credito?.length > 0 && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); viewDetail(row.notas_credito[0]); }}
+                                        title={`Con Nota de Crédito ${row.notas_credito.map(nc => nc.codigo_generacion).join(', ')}`}
+                                        className="flex items-center gap-1 text-[9px] font-black text-amber-700 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-full hover:bg-amber-500/20 transition-colors"
+                                    >
+                                        <Link2 size={10} /> NC{row.notas_credito.length > 1 ? ` ×${row.notas_credito.length}` : ''}
+                                    </button>
+                                )}
+                            </div>
                         </DataCell>
                         <DataCell hideBelow="lg">
                             <span className="font-mono text-[10px] text-slate-500">{row.numero_control || '—'}</span>

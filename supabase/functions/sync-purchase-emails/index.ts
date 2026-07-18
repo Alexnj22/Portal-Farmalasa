@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, checkCronSecret, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { extractProveedorFromDte } from "../_shared/proveedorFromDte.ts";
+import { extractRelatedDocRef, resolveRelatedDocId } from "../_shared/dteRelatedDoc.ts";
 
 // Sincroniza facturas de compra (DTE JSON + PDF) desde las bandejas Gmail
 // conectadas → Storage privado (purchase-dte) + purchase_dte_documents.
@@ -374,6 +375,20 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
             } else {
               const { error: setErr } = await supabase.from('purchase_dte_documents').update({ proveedor_id: proveedorId }).eq('id', insData[0].id);
               if (setErr) warnings.push(`DTE ${codigoGeneracion}: set proveedor_id — ${setErr.message}`);
+            }
+          }
+          // Match CCF↔Nota de Crédito/Débito: si esta NC/ND trae
+          // documentoRelacionado y el original ya está guardado, empareja.
+          // Si el original llega DESPUÉS (orden invertido de correos), queda
+          // sin emparejar hasta la próxima corrida de backfill-dte-related-docs.
+          if (tipoDte === '05' || tipoDte === '06') {
+            const ref = extractRelatedDocRef(json);
+            if (ref) {
+              const relatedId = await resolveRelatedDocId(supabase, ref);
+              if (relatedId) {
+                const { error: relErr } = await supabase.from('purchase_dte_documents').update({ documento_relacionado_id: relatedId }).eq('id', insData[0].id);
+                if (relErr) warnings.push(`DTE ${codigoGeneracion}: set documento_relacionado_id — ${relErr.message}`);
+              }
             }
           }
         } else {

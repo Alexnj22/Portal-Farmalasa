@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.22.1';
+export const APP_VERSION = '2.23.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.23.0 — feat(facturas-compra): 4 mejoras a pedido directo del usuario.
+// (1) Quitado el texto "Máx. 300 — acotá fechas" del pill de Descargar.
+// (2) Export ZIP sin límite: downloadPurchaseDteZipBulk ahora chunkea el
+// pedido en tandas de 300 (mismo tope que export-purchase-dte-zip, es un
+// límite de tiempo de ejecución del edge function, no del usuario) y
+// mergea todas las tandas en un solo ZIP final con JSZip en el navegador
+// — verificado con datos reales: el mes actual trae >300 docs, 2 tandas,
+// ambas 200, merge correcto (unit-test de la lógica de merge + verificación
+// en vivo). (3) `defaultDateRange()` pasa de "últimos 60 días" a "Este mes"
+// (mismo criterio día 1→último día que el preset de PeriodPicker).
+// (4) Match CCF↔Nota de Crédito/Débito: columna nueva
+// `documento_relacionado_id` en purchase_dte_documents, poblada leyendo
+// `documentoRelacionado[0].numeroDocumento` del DTE de la NC/ND (confirmado
+// con JSON real — es el codigoGeneracion o numeroControl del documento que
+// corrige). Backfill corrido sobre los 114 NC/ND existentes: 43 emparejados
+// (71 sin match porque su CCF original nunca llegó a este sync). Badge "NC"
+// en el CCF, clickeable → abre el detalle de la Nota de Crédito directo
+// (verificado en vivo con LABORATORIOS VIJOSA). sync-purchase-emails
+// empareja en vivo para documentos nuevos; backfill-dte-related-docs nueva
+// (edge function) cubre el caso de orden invertido (NC llega antes que el
+// CCF que corrige).
 
 // v2.22.1 — fix(proveedores): categoría/match ERP mudados a solo el modal
 // (antes editables inline en la tabla también — a pedido directo del

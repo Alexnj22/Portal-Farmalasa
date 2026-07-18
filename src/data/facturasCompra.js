@@ -78,14 +78,32 @@ export async function downloadPurchaseDtePackage(row) {
     URL.revokeObjectURL(a.href);
 }
 
-// Descarga masiva — arma el ZIP server-side (edge function, tope 300 docs) y
-// lo entrega directo, sin persistir un archivo temporal en Storage.
-export async function downloadPurchaseDteZipBulk(ids) {
-    const { data, error } = await supabase.functions.invoke('export-purchase-dte-zip', { body: { ids } });
-    if (error) throw new Error(await extractFunctionErrorMessage(error));
-    const blob = data instanceof Blob ? data : new Blob([data]);
+// Descarga masiva — el edge function arma cada tanda server-side (tope 300
+// docs por llamada, límite real de tiempo de ejecución, no del usuario) y el
+// navegador las mergea en un solo ZIP final con JSZip. Sin tope para quien
+// descarga — un rango de 1000+ documentos simplemente hace más tandas.
+const ZIP_BATCH_SIZE = 300; // debe coincidir con MAX_ITEMS de export-purchase-dte-zip
+
+export async function downloadPurchaseDteZipBulk(ids, onProgress) {
+    const chunks = [];
+    for (let i = 0; i < ids.length; i += ZIP_BATCH_SIZE) chunks.push(ids.slice(i, i + ZIP_BATCH_SIZE));
+
+    const master = new JSZip();
+    for (let i = 0; i < chunks.length; i++) {
+        onProgress?.(i + 1, chunks.length);
+        const { data, error } = await supabase.functions.invoke('export-purchase-dte-zip', { body: { ids: chunks[i] } });
+        if (error) throw new Error(await extractFunctionErrorMessage(error));
+        const blob = data instanceof Blob ? data : new Blob([data]);
+        const batchZip = await JSZip.loadAsync(blob);
+        for (const [path, file] of Object.entries(batchZip.files)) {
+            if (file.dir) continue;
+            master.file(path, await file.async('uint8array'));
+        }
+    }
+
+    const finalBlob = await master.generateAsync({ type: 'blob' });
     const a = Object.assign(window.document.createElement('a'), {
-        href: URL.createObjectURL(blob),
+        href: URL.createObjectURL(finalBlob),
         download: `facturas-compra-${new Date().toISOString().slice(0, 10)}.zip`,
     });
     a.click();

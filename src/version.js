@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.23.8';
+export const APP_VERSION = '2.23.9';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.23.9 — feat(facturas-compra): descarta acuses/Resp de Hacienda en
+// silencio y conecta invalidaciones al DTE original. Antes, los JSON de
+// "acuse de recibido" del MH (esquema propio: selloRecibido/estado top-level,
+// mismo codigoGeneracion que el DTE real pero sin identificacion/
+// cuerpoDocumento) y las notificaciones de "invalidación" (proveedor anula
+// un DTE ya emitido) caían indistintas en purchase_dte_review_queue junto
+// con JSON genuinamente roto. Ahora: acuses se descartan sin encolar (ruido
+// esperado, no facturas perdidas); invalidaciones marcan
+// purchase_dte_documents.invalidado=true en el documento original (columna
+// nueva, migración 20260719160000) si ya existe, o se encolan con
+// kind='invalidacion_pendiente' (distinto de invalid_json) si el DTE
+// original aún no llegó. Limpieza retroactiva: 20 filas resueltas
+// eliminadas de Revisión, 1 invalidación conectada (CCF 4AE56C62...,
+// Suministros Enmanuel, motivo "CAMBIO DE PRODUCTO").
 
 // v2.23.8 — chore(sync-purchase-emails): agrega parámetro debug_query
 // (diagnóstico) al endpoint — permite pasar un query de Gmail custom y

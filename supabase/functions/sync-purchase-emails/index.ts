@@ -553,7 +553,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
 
     const usedPdfFilenames = new Set<string>();
     const validDtes: { json: any; jsonPart: AttachmentPart; pdfPart: AttachmentPart | null }[] = [];
-    const invalidJsons: { part: AttachmentPart; reason: string }[] = [];
+    const invalidJsons: { part: AttachmentPart; reason: string; kind?: string }[] = [];
 
     for (const jp of jsonParts) {
       let bytes: Uint8Array;
@@ -582,6 +582,41 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         continue;
       }
       parsed = repairMojibakeDeep(unwrapDteEnvelope(parsed));
+
+      // Acuse/Resp de recepción del MH (ej. "*-Resp.json", "Acuse_Electronico*.json"):
+      // NO es el DTE — es la confirmación de que Hacienda ya lo recibió,
+      // mismo codigoGeneracion pero esquema propio (top-level selloRecibido/
+      // estado/descripcionMsg, sin identificacion/cuerpoDocumento). El DTE
+      // real llega en su propio adjunto/link del mismo correo o de otro ya
+      // procesado — esto es ruido esperado, se descarta sin pasar por
+      // Revisión (antes acumulaba ahí como "sin identificacion.codigoGeneracion").
+      if (parsed?.selloRecibido && parsed?.estado && parsed?.codigoGeneracion && !parsed?.identificacion) {
+        documentsSkipped++;
+        continue;
+      }
+
+      // Invalidación: el proveedor anuló un DTE ya emitido (esquema propio:
+      // identificacion/emisor/documento/motivo, sin cuerpoDocumento/resumen).
+      // No es una factura nueva — se conecta al documento original por
+      // documento.codigoGeneracion marcándolo invalidado, en vez de
+      // acumularse en Revisión mezclado con JSON genuinamente roto.
+      if (parsed?.documento?.codigoGeneracion && parsed?.motivo) {
+        const originalCodigo = parsed.documento.codigoGeneracion;
+        const motivo = parsed.motivo.motivoAnulacion ?? null;
+        const { data: updated } = await supabase
+          .from('purchase_dte_documents')
+          .update({ invalidado: true, invalidado_motivo: motivo, invalidado_at: new Date().toISOString() })
+          .eq('codigo_generacion', originalCodigo)
+          .select('id');
+        if (updated && updated.length > 0) {
+          warnings.push(`DTE ${originalCodigo}: marcado invalidado (${motivo ?? 'sin motivo'})`);
+        } else if (looksFacturaRelated) {
+          invalidJsons.push({ part: jp, reason: `invalidación de ${originalCodigo} — DTE original aún no capturado`, kind: 'invalidacion_pendiente' });
+        }
+        documentsSkipped++;
+        continue;
+      }
+
       const check = validateDte(parsed);
       if (!check.valid) {
         warnings.push(`adjunto ${jp.filename} (msg ${id}): ${check.reason}`);
@@ -777,7 +812,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
       }
     }
 
-    for (const { part, reason } of invalidJsons) {
+    for (const { part, reason, kind } of invalidJsons) {
       try {
         const jsonBytes = await resolveAttachmentBytes(accessToken, id, part);
         const path = `review/${id}-${sanitizeStorageKey(part.filename)}`;
@@ -785,7 +820,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           .upload(path, jsonBytes, { contentType: 'application/json', upsert: false });
         if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) throw new Error(upErr.message);
         await supabase.from('purchase_dte_review_queue').upsert({
-          kind:        'invalid_json',
+          kind:        kind ?? 'invalid_json',
           file_path:    publicUrl(path),
           filename:    part.filename,
           reason,

@@ -462,11 +462,12 @@ async function selectAllMessageIds(supabase: any, accountId: number): Promise<st
   const out: string[] = [];
   let from = 0;
   for (;;) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('purchase_dte_processed_messages')
       .select('source_message_id')
       .eq('account_id', accountId)
       .range(from, from + CHUNK - 1);
+    if (error) throw new Error(`selectAllMessageIds: ${error.message}`);
     for (const r of (data ?? [])) if (r.source_message_id) out.push(r.source_message_id);
     if (!data || data.length < CHUNK) break;
     from += CHUNK;
@@ -474,13 +475,18 @@ async function selectAllMessageIds(supabase: any, accountId: number): Promise<st
   return out;
 }
 
+// Si falla, propaga el error en vez de devolver un set vacío en silencio —
+// un doneIds vacío hace que TODO el historial se re-escanee desde Gmail como
+// si nada estuviera procesado (costoso pero no pierde datos, así que el
+// caller decide si reintentar o abortar la corrida de esa cuenta).
 async function getDoneMessageIds(supabase: any, accountId: number): Promise<Set<string>> {
   return new Set(await selectAllMessageIds(supabase, accountId));
 }
 
 async function markMessageProcessed(supabase: any, accountId: number, messageId: string) {
-  await supabase.from('purchase_dte_processed_messages')
+  const { error } = await supabase.from('purchase_dte_processed_messages')
     .upsert({ account_id: accountId, source_message_id: messageId }, { onConflict: 'account_id,source_message_id', ignoreDuplicates: true });
+  if (error) throw new Error(`markMessageProcessed: ${error.message}`);
 }
 
 async function processAccount(supabase: any, account: any, dryRun: boolean, debugQuery?: string | null): Promise<AccountResult> {
@@ -534,6 +540,10 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
   for (const id of pendingIds) {
     if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break; }
     messagesScanned++;
+    // Si algo con pérdida de datos real falla para este mensaje (marcar
+    // invalidado, encolar a revisión), NO se marca como procesado al final —
+    // se reintenta en la próxima corrida en vez de perderse para siempre.
+    let messageHadFailedReviewOp = false;
     let msg: any;
     try {
       msg = await getMessage(accessToken, id);
@@ -619,12 +629,15 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
       if (parsed?.documento?.codigoGeneracion && parsed?.motivo) {
         const originalCodigo = parsed.documento.codigoGeneracion;
         const motivo = parsed.motivo.motivoAnulacion ?? null;
-        const { data: updated } = await supabase
+        const { data: updated, error: invalidadoErr } = await supabase
           .from('purchase_dte_documents')
           .update({ invalidado: true, invalidado_motivo: motivo, invalidado_at: new Date().toISOString() })
           .eq('codigo_generacion', originalCodigo)
           .select('id');
-        if (updated && updated.length > 0) {
+        if (invalidadoErr) {
+          warnings.push(`DTE ${originalCodigo}: no se pudo marcar invalidado — ${invalidadoErr.message}`);
+          messageHadFailedReviewOp = true;
+        } else if (updated && updated.length > 0) {
           warnings.push(`DTE ${originalCodigo}: marcado invalidado (${motivo ?? 'sin motivo'})`);
         } else if (looksFacturaRelated) {
           invalidJsons.push({ part: jp, reason: `invalidación de ${originalCodigo} — DTE original aún no capturado`, kind: 'invalidacion_pendiente' });
@@ -737,7 +750,8 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
 
         let supplierId: number | null = null;
         if (emisorNrc) {
-          const { data: sup } = await supabase.from('suppliers').select('id').eq('nrc', emisorNrc).limit(1).maybeSingle();
+          const { data: sup, error: supErr } = await supabase.from('suppliers').select('id').eq('nrc', emisorNrc).limit(1).maybeSingle();
+          if (supErr) warnings.push(`DTE ${codigoGeneracion}: lookup supplier por nrc ${emisorNrc} — ${supErr.message}`);
           supplierId = sup?.id ?? null;
         }
 
@@ -812,7 +826,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         const { error: upErr } = await supabase.storage.from(BUCKET)
           .upload(path, pdfBytes, { contentType: 'application/pdf', upsert: false });
         if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) throw new Error(upErr.message);
-        await supabase.from('purchase_dte_review_queue').upsert({
+        const { error: rqErr } = await supabase.from('purchase_dte_review_queue').upsert({
           kind:        'orphan_pdf',
           file_path:    publicUrl(path),
           filename:    op.filename,
@@ -822,9 +836,11 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           subject,
           received_at: receivedAt,
         }, { onConflict: 'account_id,source_message_id,filename', ignoreDuplicates: true });
+        if (rqErr) throw new Error(rqErr.message);
         pdfsUnmatched++;
       } catch (e: any) {
         warnings.push(`PDF huérfano ${op.filename} (msg ${id}): ${e.message}`);
+        messageHadFailedReviewOp = true;
       }
     }
 
@@ -835,7 +851,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         const { error: upErr } = await supabase.storage.from(BUCKET)
           .upload(path, jsonBytes, { contentType: 'application/json', upsert: false });
         if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) throw new Error(upErr.message);
-        await supabase.from('purchase_dte_review_queue').upsert({
+        const { error: rqErr } = await supabase.from('purchase_dte_review_queue').upsert({
           kind:        kind ?? 'invalid_json',
           file_path:    publicUrl(path),
           filename:    part.filename,
@@ -846,19 +862,27 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           subject,
           received_at: receivedAt,
         }, { onConflict: 'account_id,source_message_id,filename', ignoreDuplicates: true });
+        if (rqErr) throw new Error(rqErr.message);
       } catch (e: any) {
         warnings.push(`JSON inválido ${part.filename} (msg ${id}): no se pudo encolar para revisión — ${e.message}`);
+        messageHadFailedReviewOp = true;
       }
     }
 
-    // Marca el mensaje como procesado SIEMPRE, sin importar el resultado —
-    // incluye DTE duplicado (ON CONFLICT DO NOTHING, sin fila propia) y
-    // mensajes con solo adjuntos no soportados (.zip): antes ninguno de esos
-    // casos dejaba rastro y se re-escaneaban desde Gmail en cada corrida.
-    try {
-      await markMessageProcessed(supabase, account.id, id);
-    } catch (e: any) {
-      warnings.push(`mensaje ${id}: no se pudo marcar como procesado — ${e.message}`);
+    // Marca el mensaje como procesado, salvo que algo con pérdida de datos
+    // real haya fallado arriba (invalidado, encolar a revisión) — en ese
+    // caso queda pendiente para reintentar en la próxima corrida en vez de
+    // perderse para siempre (exactamente el bug que originó esta regla).
+    // Cubre igualmente el caso normal: DTE duplicado (ON CONFLICT DO
+    // NOTHING) y mensajes con solo adjuntos no soportados (.zip).
+    if (!messageHadFailedReviewOp) {
+      try {
+        await markMessageProcessed(supabase, account.id, id);
+      } catch (e: any) {
+        warnings.push(`mensaje ${id}: no se pudo marcar como procesado — ${e.message}`);
+      }
+    } else {
+      warnings.push(`mensaje ${id}: no se marca como procesado (falló una operación de revisión/invalidado) — se reintentará`);
     }
   }
 

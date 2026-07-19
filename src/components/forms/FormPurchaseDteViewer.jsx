@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Archive, Download, ExternalLink, FileText, Loader2, Receipt, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import { Archive, AlertTriangle, Download, ExternalLink, FileText, Loader2, Receipt, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
 import { downloadPurchaseDtePackage } from '../../data/facturasCompra';
 import { dteTypeLabel } from '../../utils/dteTypes';
@@ -255,6 +255,17 @@ const FormPurchaseDteViewer = ({ formData }) => {
                 </div>
                 {downloadAllError && (
                     <p className="mt-2 text-[10px] font-bold text-red-500">{downloadAllError}</p>
+                )}
+                {document?.invalidado && (
+                    <div className="mt-3 flex items-start gap-2.5 rounded-[1rem] border border-red-500/25 bg-red-500/10 px-4 py-3">
+                        <AlertTriangle size={16} className="text-red-600 shrink-0 mt-0.5" strokeWidth={2} />
+                        <p className="text-[11px] font-bold text-red-700 leading-snug">
+                            Este documento fue invalidado por el proveedor
+                            {document.invalidado_motivo ? `: ${document.invalidado_motivo}` : ''}
+                            {document.invalidado_at ? ` (${document.invalidado_at.slice(0, 10)})` : ''}.
+                            No ampara deducciones ni crédito fiscal (Art. 119-E Código Tributario).
+                        </p>
+                    </div>
                 )}
             </div>
 

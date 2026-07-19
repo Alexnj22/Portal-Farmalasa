@@ -54,17 +54,18 @@ export async function syncPurchaseEmailsNow({ dryRun = false, accountId = null }
 export async function downloadPurchaseDtePackage(row) {
     const zip = new JSZip();
     let included = 0;
+    const baseName = row.codigo_generacion || `doc-${row.id}`;
 
     const jsonUrl = await getSignedFileUrl(row.json_path);
     if (jsonUrl) {
         const res = await fetch(jsonUrl);
-        if (res.ok) { zip.file(`${row.codigo_generacion}.json`, await res.blob()); included++; }
+        if (res.ok) { zip.file(`${baseName}.json`, await res.blob()); included++; }
     }
     if (row.pdf_path) {
         const pdfUrl = await getSignedFileUrl(row.pdf_path);
         if (pdfUrl) {
             const res = await fetch(pdfUrl);
-            if (res.ok) { zip.file(`${row.codigo_generacion}.pdf`, await res.blob()); included++; }
+            if (res.ok) { zip.file(`${baseName}.pdf`, await res.blob()); included++; }
         }
     }
     if (included === 0) throw new Error('No se pudo descargar ningún archivo de este documento.');
@@ -72,7 +73,7 @@ export async function downloadPurchaseDtePackage(row) {
     const blob = await zip.generateAsync({ type: 'blob' });
     const a = Object.assign(window.document.createElement('a'), {
         href: URL.createObjectURL(blob),
-        download: `${row.codigo_generacion}.zip`,
+        download: `${baseName}.zip`,
     });
     a.click();
     URL.revokeObjectURL(a.href);
@@ -89,6 +90,7 @@ export async function downloadPurchaseDteZipBulk(ids, onProgress) {
     for (let i = 0; i < ids.length; i += ZIP_BATCH_SIZE) chunks.push(ids.slice(i, i + ZIP_BATCH_SIZE));
 
     const master = new JSZip();
+    const manifestParts = [];
     for (let i = 0; i < chunks.length; i++) {
         onProgress?.(i + 1, chunks.length);
         const { data, error } = await supabase.functions.invoke('export-purchase-dte-zip', { body: { ids: chunks[i] } });
@@ -97,9 +99,14 @@ export async function downloadPurchaseDteZipBulk(ids, onProgress) {
         const batchZip = await JSZip.loadAsync(blob);
         for (const [path, file] of Object.entries(batchZip.files)) {
             if (file.dir) continue;
+            // manifest-errores.txt viene por tanda — juntarlas en vez de que
+            // master.file() pise el de la tanda anterior (mismo nombre en
+            // cada ZIP intermedio).
+            if (path === 'manifest-errores.txt') { manifestParts.push(await file.async('string')); continue; }
             master.file(path, await file.async('uint8array'));
         }
     }
+    if (manifestParts.length > 0) master.file('manifest-errores.txt', manifestParts.join('\n'));
 
     const finalBlob = await master.generateAsync({ type: 'blob' });
     const a = Object.assign(window.document.createElement('a'), {

@@ -99,9 +99,8 @@ export default function ProveedoresView({ openModal }) {
             if (activoFilter === 'activos' && !r.activo) return false;
             if (activoFilter === 'inactivos' && r.activo) return false;
             if (categoriaId === SIN_CATEGORIA) { if (r.categoria_id) return false; }
-            else if (categoriaId) { if (String(r.categoria_id) !== String(categoriaId)) return false; }
+            else if (categoriaId && categoriaId !== SIN_MATCH_ERP) { if (String(r.categoria_id) !== String(categoriaId)) return false; }
             if (claseFilter) { if (r.categoria_clase !== claseFilter) return false; }
-            if (categoriaId === SIN_MATCH_ERP) { /* manejado abajo */ }
             if (search && !tokenMatch(search, r.nombre, r.nombre_comercial, r.nit, r.dui, r.nrc, r.desc_actividad)) return false;
             return true;
         });

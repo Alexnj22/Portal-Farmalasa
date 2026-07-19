@@ -5,8 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.23.10';
+export const APP_VERSION = '2.23.11';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.23.11 — fix(facturas-compra,proveedores): Fase 1 de la auditoría
+// 2026-07-19 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md). 4 bugs:
+// (1) invalidaciones "pendientes" se perdían en silencio — el CHECK de
+// purchase_dte_review_queue no permitía kind='invalidacion_pendiente' y el
+// upsert no chequeaba error; agregado chequeo de error en TODOS los
+// upserts/updates de sync-purchase-emails (selectAllMessageIds,
+// markMessageProcessed, update invalidado, lookup supplier, upserts a
+// review_queue) — si falla marcar invalidado o encolar a revisión, el
+// mensaje ya NO se marca procesado, se reintenta. Remediación: re-scan con
+// debug_query recuperó 1 invalidación más (CCF 4AE56C62..., Suministros
+// Enmanuel). (2) invalidado era invisible en la UI (riesgo fiscal, Art.
+// 119-E CT) — get_purchase_dte_documents ahora expone invalidado/motivo/at,
+// badge rojo en TabDocumentos + banner en el visor + buscable por
+// "invalidado". (3) filtro "(sin match ERP)" en Proveedores mostraba
+// siempre 0 filas — el branch de categoría lo capturaba antes del manejo
+// dedicado. (4) colisión de nombres en ZIP masivo para docs sin JSON
+// (codigo_generacion NULL → null.json se pisaban entre sí) — fallback
+// doc-${id}, más chequeo de error en .download() con manifest-errores.txt.
+// Verificado con Playwright (login real, badge Invalidado visible y
+// buscable, filtro sin-match-ERP con resultados).
 
 // v2.23.10 — fix(sync-purchase-emails): valida contenido real antes de
 // aceptar un link como candidato JSON. Bug encontrado por el usuario: 3

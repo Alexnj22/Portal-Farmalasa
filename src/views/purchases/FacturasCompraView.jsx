@@ -254,7 +254,7 @@ function TabDocumentos({
             if (tipoDte && r.tipo_dte !== tipoDte) return false;
             if (supplierId === SIN_PROVEEDOR) { if (r.supplier_id) return false; }
             else if (supplierId) { if (String(r.supplier_id) !== String(supplierId)) return false; }
-            if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion)) return false;
+            if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion, r.invalidado ? 'invalidado' : null)) return false;
             return true;
         });
     }, [rows, tipoDte, supplierId, searchTerm]);
@@ -460,6 +460,14 @@ function TabDocumentos({
                                 <span className="text-[10px] font-bold text-slate-700 bg-slate-500/10 border border-slate-500/25 px-2.5 py-0.5 rounded-full">
                                     {dteTypeLabel(row.tipo_dte)}
                                 </span>
+                                {row.invalidado && (
+                                    <span
+                                        title={`Invalidado por el proveedor${row.invalidado_motivo ? `: ${row.invalidado_motivo}` : ''}${row.invalidado_at ? ` (${fmtDate(row.invalidado_at)})` : ''} — no ampara deducciones (Art. 119-E CT)`}
+                                        className="flex items-center gap-1 text-[9px] font-black text-red-700 bg-red-500/10 border border-red-500/25 px-2 py-0.5 rounded-full whitespace-nowrap"
+                                    >
+                                        <XCircle size={10} /> Invalidado
+                                    </span>
+                                )}
                                 {row.notas_credito?.length > 0 && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); viewDetail(row.notas_credito[0]); }}
@@ -638,6 +646,10 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                         <DataCell>
                             {row.kind === 'orphan_pdf' ? (
                                 <span className="text-[10px] font-bold text-blue-700 bg-blue-500/10 border border-blue-500/25 px-2.5 py-0.5 rounded-full">PDF sin JSON</span>
+                            ) : row.kind === 'invalidacion_pendiente' ? (
+                                <span className="text-[10px] font-bold text-orange-700 bg-orange-500/10 border border-orange-500/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
+                                    Invalidación pendiente
+                                </span>
                             ) : (
                                 <span className="text-[10px] font-bold text-amber-700 bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
                                     JSON inválido

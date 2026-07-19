@@ -64,17 +64,25 @@ Deno.serve(async (req) => {
 
     const zip = new JSZip();
     let included = 0;
+    const warnings: string[] = [];
 
     for (const row of rows ?? []) {
+      // codigo_generacion es NULL en docs "confirmados sin JSON" (ver
+      // TabRevision) — sin este fallback, 2+ documentos así en la misma
+      // descarga masiva generaban null.json/null.pdf y JSZip los pisaba
+      // entre sí, perdiendo archivos sin ningún aviso.
+      const baseName = row.codigo_generacion || `doc-${row.id}`;
       const jsonRel = relativePath(row.json_path);
       if (jsonRel) {
-        const { data: jsonBlob } = await admin.storage.from(BUCKET).download(jsonRel);
-        if (jsonBlob) { zip.file(`${row.codigo_generacion}.json`, await jsonBlob.arrayBuffer()); included++; }
+        const { data: jsonBlob, error: jsonErr } = await admin.storage.from(BUCKET).download(jsonRel);
+        if (jsonBlob) { zip.file(`${baseName}.json`, await jsonBlob.arrayBuffer()); included++; }
+        else warnings.push(`${baseName}.json: ${jsonErr?.message ?? 'no se pudo descargar'}`);
       }
       const pdfRel = relativePath(row.pdf_path);
       if (pdfRel) {
-        const { data: pdfBlob } = await admin.storage.from(BUCKET).download(pdfRel);
-        if (pdfBlob) zip.file(`${row.codigo_generacion}.pdf`, await pdfBlob.arrayBuffer());
+        const { data: pdfBlob, error: pdfErr } = await admin.storage.from(BUCKET).download(pdfRel);
+        if (pdfBlob) { zip.file(`${baseName}.pdf`, await pdfBlob.arrayBuffer()); included++; }
+        else warnings.push(`${baseName}.pdf: ${pdfErr?.message ?? 'no se pudo descargar'}`);
       }
     }
 
@@ -82,6 +90,10 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Ningún archivo pudo incluirse" }), {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    if (warnings.length > 0) {
+      zip.file("manifest-errores.txt", `Archivos que no se pudieron incluir en este ZIP:\n\n${warnings.join('\n')}\n`);
     }
 
     const zipBytes = await zip.generateAsync({ type: "uint8array" });

@@ -5,8 +5,27 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.23.5';
+export const APP_VERSION = '2.23.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.23.6 — fix(facturas-compra/sync-purchase-emails): caso real reportado
+// por el usuario — facturaelectronicamovistarsv@movistar.com.sv nunca se
+// descargaba, ni con la búsqueda ya ampliada de v2.23.5. Causa real (2
+// capas): (1) el correo de Movistar no tiene NINGÚN adjunto real (ni
+// siquiera el banner es inline) — has:attachment como único gate ya se
+// había ampliado, pero (2) la razón de fondo era que TODOS los <a href> del
+// correo son wrappers de click-tracking de SendGrid con texto interior
+// vacío (confirmado con debug real: 15 links, los 15 con label ""), y los
+// dos links reales de descarga ("DTE: https://...pdf" / "JSON: https://...
+// json") están escritos como TEXTO PLANO VISIBLE dentro del HTML, sin
+// ningún <a> — Gmail los muestra como si fueran links por su propio
+// auto-linkify al renderizar, pero el HTML fuente no los envuelve. Como
+// extractCandidateLinks() solo corría el regex de "URL suelta" contra los
+// sibling text/plain (no contra el HTML), este patrón era 100% invisible.
+// Fix: el mismo regex corre también contra el HTML crudo. Verificado con
+// los 2 mensajes reales de Movistar — ambos se descargaron y emparejaron
+// bien tras el fix. Un rescan completo de las 2 cuentas confirmó que no hay
+// otros remitentes con este mismo patrón en el rango actual.
 
 // v2.23.5 — feat/fix(facturas-compra): 4 pedidos más del usuario tras
 // probar v2.23.4 en vivo. (1) JSON inválido que no menciona factura/DTE en

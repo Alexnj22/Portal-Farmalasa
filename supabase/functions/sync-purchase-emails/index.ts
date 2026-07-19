@@ -201,8 +201,16 @@ function extractCandidateLinks(htmlBodies: string[], textBodies: string[]): { ur
       out.push({ url, label: m[2].replace(/<[^>]+>/g, ' ').trim() });
     }
   }
+  // Además de <a href>, algunos proveedores (confirmado con Movistar/
+  // facturaelectronicamovistarsv@movistar.com.sv, vía SendGrid) escriben la
+  // URL real de descarga como TEXTO PLANO VISIBLE dentro del HTML, sin
+  // envolverla en un <a> — el único <a> real en el correo es un tracking
+  // pixel vacío (href de SendGrid, sin texto) totalmente separado. Por eso
+  // el regex de "URL suelta" corre también contra el HTML crudo, no solo
+  // contra los sibling text/plain — si solo mirara text/plain, este caso
+  // quedaba invisible por completo (el correo era HTML-only).
   const urlRe = /https?:\/\/[^\s"'<>]+/gi;
-  for (const t of textBodies) {
+  for (const t of [...htmlBodies, ...textBodies]) {
     let m: RegExpExecArray | null;
     while ((m = urlRe.exec(t))) {
       const url = m[0].replace(/[.,;)]+$/, '');
@@ -472,7 +480,16 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
   // mismo adjunto) — un DTE no puede ser "recibido" desde algo que nosotros
   // mandamos. No se usa in:inbox a secas para no perder facturas legítimas
   // que alguien archivó (sacó de la bandeja) después de procesarlas.
-  const query = `has:attachment after:${sinceDate ? gmailDateFormat(sinceDate) : BACKFILL_FROM} -in:sent -in:drafts -in:chats`;
+  //
+  // has:attachment YA NO es el único criterio (caso real: Movistar manda
+  // "Factura Electrónica Movistar" con el PDF Y el JSON como links en el
+  // cuerpo, cero adjuntos reales — Gmail nunca la devolvía con has:attachment
+  // a secas, así que el mensaje era invisible desde el paso 1, sin dejar
+  // ningún rastro en documents/review_queue/warnings). Se amplía a
+  // has:attachment OR una señal de asunto/cuerpo de que es factura/DTE, para
+  // no perder proveedores que solo mandan enlaces.
+  const query = `after:${sinceDate ? gmailDateFormat(sinceDate) : BACKFILL_FROM} -in:sent -in:drafts -in:chats `
+    + `(has:attachment OR subject:(factura OR facturas OR comprobante OR CCF OR DTE) OR "factura electronica" OR "documento tributario")`;
 
   const allMessageIds = await listMessageIds(accessToken, query);
   const doneIds = await getDoneMessageIds(supabase, account.id);

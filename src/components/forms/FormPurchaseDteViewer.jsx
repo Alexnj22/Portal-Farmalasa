@@ -1,10 +1,135 @@
-import React, { useEffect, useState } from 'react';
-import { Archive, Download, ExternalLink, FileText, Loader2, Receipt } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Archive, Download, ExternalLink, FileText, Loader2, Receipt, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
 import { downloadPurchaseDtePackage } from '../../data/facturasCompra';
 import { dteTypeLabel } from '../../utils/dteTypes';
 
 const fmt$ = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const ZOOM_MIN = 1;
+const ZOOM_MAX = 4;
+const ZOOM_STEP = 1.25;
+const clampZoom = (z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+
+// El visor nativo de PDF del navegador (dentro del <iframe>) no expone zoom
+// propio de forma confiable: en el build nativo/PWA instalada, index.html fija
+// user-scalable=no a nivel de página (a propósito, "feel de app nativa") — eso
+// también neutraliza cualquier pinch-zoom dentro del iframe. Por eso el zoom
+// se implementa acá, a mano, independiente del viewport global: botones
+// +/-/reset, Ctrl+rueda en desktop, y gesto de pinch (2 dedos) en móvil vía
+// listeners nativos no-pasivos (para poder preventDefault del scroll nativo
+// durante el pinch). El iframe queda con pointer-events:none — sacrifica
+// clicks/selección de texto dentro del PDF, aceptable para un visor de
+// solo-lectura — así el contenedor recibe los gestos en vez del iframe.
+const PdfZoomViewer = ({ src }) => {
+    const containerRef = useRef(null);
+    const [zoom, setZoom] = useState(1);
+    const zoomRef = useRef(1);
+    const pinchRef = useRef(null);
+
+    useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+
+    const zoomIn = () => setZoom((z) => clampZoom(z * ZOOM_STEP));
+    const zoomOut = () => setZoom((z) => clampZoom(z / ZOOM_STEP));
+    const resetZoom = () => setZoom(1);
+
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+
+        const distance = (touches) => Math.hypot(
+            touches[0].clientX - touches[1].clientX,
+            touches[0].clientY - touches[1].clientY
+        );
+
+        const onTouchStart = (e) => {
+            if (e.touches.length === 2) {
+                pinchRef.current = { startDist: distance(e.touches), startZoom: zoomRef.current };
+            }
+        };
+        const onTouchMove = (e) => {
+            if (e.touches.length === 2 && pinchRef.current) {
+                e.preventDefault();
+                const ratio = distance(e.touches) / pinchRef.current.startDist;
+                setZoom(clampZoom(pinchRef.current.startZoom * ratio));
+            }
+        };
+        const onTouchEnd = (e) => {
+            if (e.touches.length < 2) pinchRef.current = null;
+        };
+        const onWheel = (e) => {
+            if (!e.ctrlKey) return;
+            e.preventDefault();
+            setZoom((z) => clampZoom(e.deltaY < 0 ? z * 1.08 : z / 1.08));
+        };
+
+        el.addEventListener('touchstart', onTouchStart, { passive: true });
+        el.addEventListener('touchmove', onTouchMove, { passive: false });
+        el.addEventListener('touchend', onTouchEnd, { passive: true });
+        el.addEventListener('wheel', onWheel, { passive: false });
+        return () => {
+            el.removeEventListener('touchstart', onTouchStart);
+            el.removeEventListener('touchmove', onTouchMove);
+            el.removeEventListener('touchend', onTouchEnd);
+            el.removeEventListener('wheel', onWheel);
+        };
+    }, []);
+
+    return (
+        <div className="flex-1 min-h-0 w-full flex flex-col gap-2">
+            <div className="flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-0.5 rounded-[1rem] bg-slate-100 p-1">
+                    <button
+                        type="button"
+                        onClick={zoomOut}
+                        disabled={zoom <= ZOOM_MIN}
+                        title="Alejar"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:bg-white disabled:opacity-40 transition-colors"
+                    >
+                        <ZoomOut size={14} strokeWidth={2} />
+                    </button>
+                    <span className="w-11 text-center text-[10px] font-bold text-slate-600 tabular-nums">{Math.round(zoom * 100)}%</span>
+                    <button
+                        type="button"
+                        onClick={zoomIn}
+                        disabled={zoom >= ZOOM_MAX}
+                        title="Acercar"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-600 hover:bg-white disabled:opacity-40 transition-colors"
+                    >
+                        <ZoomIn size={14} strokeWidth={2} />
+                    </button>
+                    {zoom !== 1 && (
+                        <button
+                            type="button"
+                            onClick={resetZoom}
+                            title="Restablecer zoom"
+                            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-white transition-colors"
+                        >
+                            <RotateCcw size={13} strokeWidth={2} />
+                        </button>
+                    )}
+                </div>
+                <a
+                    href={src}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 text-[10px] font-bold text-[#0052CC] hover:text-[#003D99] px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                    <ExternalLink size={12} /> Abrir en pestaña nueva
+                </a>
+            </div>
+            <div
+                ref={containerRef}
+                className="flex-1 min-h-0 rounded-[1.5rem] border border-slate-200 bg-white shadow-sm overflow-auto"
+                style={{ touchAction: zoom > 1 ? 'pan-x pan-y' : 'none' }}
+            >
+                <div style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%`, minWidth: '100%', minHeight: '100%' }}>
+                    <iframe src={src} className="w-full h-full border-none pointer-events-none" title="Visor PDF" />
+                </div>
+            </div>
+        </div>
+    );
+};
 
 // Detalle de un DTE de compra: parsea el JSON crudo (esquema del Ministerio de
 // Hacienda de El Salvador) y lo muestra como factura — encabezado/ítems/totales
@@ -141,21 +266,7 @@ const FormPurchaseDteViewer = ({ formData }) => {
                 sin depender de esa resolución de porcentajes. */}
             <div className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden min-h-0">
                 {tab === 'pdf' && pdfUrl ? (
-                    <div className="flex-1 min-h-0 w-full flex flex-col gap-2">
-                        <div className="flex justify-end shrink-0">
-                            <a
-                                href={pdfUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="flex items-center gap-1.5 text-[10px] font-bold text-[#0052CC] hover:text-[#003D99] px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors"
-                            >
-                                <ExternalLink size={12} /> Abrir en pestaña nueva
-                            </a>
-                        </div>
-                        <div className="flex-1 min-h-0 rounded-[1.5rem] border border-slate-200 bg-white shadow-sm overflow-hidden">
-                            <iframe src={pdfUrl} className="w-full h-full border-none" title="Visor PDF" />
-                        </div>
-                    </div>
+                    <PdfZoomViewer src={pdfUrl} />
                 ) : loading ? (
                     <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-slate-500 bg-white rounded-[1.5rem] border border-slate-200 shadow-sm">
                         <Loader2 size={32} className="animate-spin mb-3 text-[#0052CC]" />

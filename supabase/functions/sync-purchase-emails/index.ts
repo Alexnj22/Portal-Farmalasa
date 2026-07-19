@@ -27,7 +27,16 @@ const DTE_EMAIL_KEYWORD_RE = /(factura|comprobante|\bdte\b|ccf|cr[ée]dito\s*fis
 // del ancla sugiera que es el documento (evita descargar links de
 // unsubscribe, redes sociales, tracking pixels, etc.)
 const LINK_KEYWORD_RE   = /(factura|comprobante|\bdte\b|ccf|cr[ée]dito\s*fiscal|documento\s*tributario|descarg|adjunt|\.pdf|\.json)/i;
-const MAX_LINK_CANDIDATES = 6;
+// Imágenes decorativas de la plantilla (logos, íconos de "descargá tu
+// factura aquí") suelen incluir "factura"/"descarg" en el nombre de archivo
+// y matchean LINK_KEYWORD_RE, pero nunca son el DTE — content-type ya las
+// descarta más abajo, pero AQUÍ importa porque consumían cupo de
+// MAX_LINK_CANDIDATES antes de llegar al link real (caso real: plantilla de
+// Movistar con varias imágenes "factura-digital-fide_XX.png" que en algunos
+// envíos superaban el cupo y tapaban el link real de consultatusdte SIN
+// generar ningún warning — el slice() corta antes del loop que loguea).
+const IMAGE_EXT_RE      = /\.(png|jpe?g|gif|webp|svg|bmp|ico)(?:$|\?)/i;
+const MAX_LINK_CANDIDATES = 10;
 const MAX_REMOTE_BYTES    = 10 * 1024 * 1024; // igual al file_size_limit del bucket purchase-dte — más grande solo generaría un upload fallido
 
 // ── Helpers genéricos ─────────────────────────────────────────────────────────
@@ -269,7 +278,7 @@ function filenameFromContentDisposition(cd: string | null): string | null {
 // descartan en silencio — no todo link con esas palabras es el documento.
 async function collectLinkAttachments(htmlBodies: string[], textBodies: string[], warnings: string[], messageId: string): Promise<AttachmentPart[]> {
   const candidates = extractCandidateLinks(htmlBodies, textBodies)
-    .filter(c => isSafeExternalUrl(c.url) && (LINK_KEYWORD_RE.test(c.url) || LINK_KEYWORD_RE.test(c.label)))
+    .filter(c => isSafeExternalUrl(c.url) && !IMAGE_EXT_RE.test(c.url) && (LINK_KEYWORD_RE.test(c.url) || LINK_KEYWORD_RE.test(c.label)))
     .slice(0, MAX_LINK_CANDIDATES);
 
   const out: AttachmentPart[] = [];

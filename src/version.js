@@ -5,8 +5,28 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.23.6';
+export const APP_VERSION = '2.23.7';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.23.7 — fix(facturas-compra): dos bugs reportados por el usuario.
+// (1) sync-purchase-emails: solo 2 de 5 correos Movistar de jun-jul se
+// procesaban, en silencio (0 warnings). Causa: extractCandidateLinks()
+// capturaba URLs de imágenes decorativas de la plantilla (ej.
+// ".../factura-digital-fide_01.png", matchea LINK_KEYWORD_RE por tener
+// "factura" en el nombre) como candidatos, y el slice(0, MAX_LINK_CANDIDATES)
+// las contaba ANTES del loop que genera warnings — si una plantilla traía
+// más imágenes que otra, el link real de descarga quedaba fuera del cupo sin
+// dejar rastro. Fix: excluir extensiones de imagen de los candidatos
+// (IMAGE_EXT_RE) + subir el cupo 6→10 de margen. Desplegado + reset de
+// last_synced_date/purchase_dte_processed_messages solo para la cuenta
+// compraslasalud.sv@gmail.com (id 2) para forzar re-escaneo desde junio.
+// (2) FormPurchaseDteViewer: el iframe del visor de PDF no tenía zoom propio
+// — en build nativo/PWA instalada, index.html fija user-scalable=no a nivel
+// de página (a propósito), lo que también anulaba cualquier pinch-zoom
+// dentro del iframe, y en desktop el toolbar del visor no aparece embebido.
+// Fix: PdfZoomViewer nuevo — botones +/-/reset, Ctrl+rueda en desktop, y
+// gesto de pinch (2 dedos) vía listeners táctiles nativos no-pasivos,
+// independiente del bloqueo global de zoom del viewport.
 
 // v2.23.6 — fix(facturas-compra/sync-purchase-emails): caso real reportado
 // por el usuario — facturaelectronicamovistarsv@movistar.com.sv nunca se

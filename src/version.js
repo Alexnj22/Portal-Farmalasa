@@ -5,8 +5,27 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.23.3';
+export const APP_VERSION = '2.23.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.23.4 — fix(facturas-compra/sync-purchase-emails): 2 hallazgos más,
+// encontrados auditando datos reales en prod tras v2.23.3. (1) Envelope de
+// DTE no reconocido: farmavalue (reenviado por arquitecto.aleman9@gmail.com)
+// no manda el DTE plano sino { selloRecibido, firmaElectronica, dteJson } —
+// el servicio de recepción de Hacienda envuelve el documento; dteJson ya
+// viene decodificado, firmaElectronica es el mismo DTE como JWS (se decodifica
+// el payload si dteJson no vino). Antes esto se rechazaba siempre como
+// "sin identificacion.codigoGeneracion" pese a que el DTE real sí estaba
+// adentro — 100% de los reenvíos de ese remitente caían en invalid_json.
+// (2) Mojibake en emisor_nombre: confirmado con datos reales de
+// facturaelectronica@facturas.claro.com.sv — su propio sistema re-decodifica
+// UTF-8 como Windows-1252 antes de guardar ("Ñ" llega literal como "Ã‘").
+// Se repara re-codificando el string a bytes cp1252 (tabla completa 0x80–
+// 0x9F, la única franja donde cp1252 difiere de Latin-1) y re-decodificando
+// como UTF-8 estricto; si no da UTF-8 válido se asume que no era mojibake y
+// se deja igual. Ambos fixes solo aplican hacia adelante — los ~1,150
+// documentos ya guardados necesitan reprocesarse (backfill limpio) para
+// beneficiarse.
 
 // v2.23.3 — fix(facturas-compra/sync-purchase-emails): 3 hallazgos reportados
 // por el usuario sobre la descarga de DTE vía Gmail API. (1) Filtro de

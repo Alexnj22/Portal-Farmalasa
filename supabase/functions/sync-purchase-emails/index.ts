@@ -28,7 +28,7 @@ const DTE_EMAIL_KEYWORD_RE = /(factura|comprobante|\bdte\b|ccf|cr[ée]dito\s*fis
 // unsubscribe, redes sociales, tracking pixels, etc.)
 const LINK_KEYWORD_RE   = /(factura|comprobante|\bdte\b|ccf|cr[ée]dito\s*fiscal|documento\s*tributario|descarg|adjunt|\.pdf|\.json)/i;
 const MAX_LINK_CANDIDATES = 6;
-const MAX_REMOTE_BYTES    = 15 * 1024 * 1024; // generoso para un PDF/JSON de un solo DTE
+const MAX_REMOTE_BYTES    = 10 * 1024 * 1024; // igual al file_size_limit del bucket purchase-dte — más grande solo generaría un upload fallido
 
 // ── Helpers genéricos ─────────────────────────────────────────────────────────
 
@@ -44,11 +44,101 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 20
 }
 
 function base64UrlToBytes(data: string): Uint8Array {
-  const b64 = data.replace(/-/g, '+').replace(/_/g, '/');
+  let b64 = data.replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4) b64 += '='; // JWT/base64url vienen sin padding — atob lo exige
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return bytes;
+}
+
+// Algunos proveedores (ej. farmavalue, detectado en correos reenviados por
+// arquitecto.aleman9@gmail.com) no mandan el DTE plano en el adjunto .json,
+// sino el "sobre" que devuelve el servicio de recepción de Hacienda:
+// { selloRecibido, firmaElectronica, dteJson }. `dteJson` ya es el DTE
+// decodificado; `firmaElectronica` es el mismo DTE pero como JWS
+// (header.payload.firma en base64url) — se usa solo si `dteJson` no vino.
+// Sin este unwrap, validateDte() rechazaba estos correos con "sin
+// identificacion.codigoGeneracion" aunque el DTE real sí estuviera adentro.
+function decodeJwtPayload(jwt: string): any | null {
+  try {
+    const parts = jwt.split('.');
+    if (parts.length < 2) return null;
+    return JSON.parse(new TextDecoder().decode(base64UrlToBytes(parts[1])));
+  } catch { return null; }
+}
+
+function unwrapDteEnvelope(parsed: any): any {
+  if (parsed?.identificacion?.codigoGeneracion) return parsed; // ya es el DTE plano
+  if (parsed?.dteJson?.identificacion?.codigoGeneracion) return parsed.dteJson;
+  if (typeof parsed?.firmaElectronica === 'string') {
+    const decoded = decodeJwtPayload(parsed.firmaElectronica);
+    if (decoded?.identificacion?.codigoGeneracion) return decoded;
+  }
+  return parsed;
+}
+
+// Algunos emisores generan el JSON del DTE con un bug de codificación: sus
+// propios sistemas re-decodifican los bytes UTF-8 originales como
+// Windows-1252 antes de guardar/serializar — el texto legítimo llega mal ya
+// desde origen (confirmado con datos reales de facturaelectronica@facturas.
+// claro.com.sv: "Ñ" real es UTF-8 C3 91, pero llega literal como "Ã‘" — el
+// byte 0x91 bajo Windows-1252 es "‘" U+2018, NO el control C1 U+0091 que
+// dará Latin-1 puro, por eso el mapeo cp1252 de abajo es necesario y no basta
+// un simple charCodeAt/Latin-1). Reparar = codificar el string de vuelta a
+// bytes cp1252 y re-decodificar como UTF-8; si algo no es representable en
+// cp1252 o el resultado no es UTF-8 válido, se asume que no era mojibake y
+// se deja el texto igual.
+const MOJIBAKE_HINT_RE = /[ÃÂ]/;
+
+// Windows-1252 difiere de Latin-1/ISO-8859-1 SOLO en el rango de bytes
+// 0x80–0x9F (remapea esos 32 bytes a signos de puntuación/símbolos en vez de
+// los controles C1 que da Latin-1 puro). 0x00–0x7F y 0xA0–0xFF son idénticos
+// en ambas — por eso solo esta tabla parcial hace falta.
+const CP1252_0x80_0x9F: Record<number, number> = {
+  0x80: 0x20AC, 0x82: 0x201A, 0x83: 0x0192, 0x84: 0x201E, 0x85: 0x2026,
+  0x86: 0x2020, 0x87: 0x2021, 0x88: 0x02C6, 0x89: 0x2030, 0x8A: 0x0160,
+  0x8B: 0x2039, 0x8C: 0x0152, 0x8E: 0x017D, 0x91: 0x2018, 0x92: 0x2019,
+  0x93: 0x201C, 0x94: 0x201D, 0x95: 0x2022, 0x96: 0x2013, 0x97: 0x2014,
+  0x98: 0x02DC, 0x99: 0x2122, 0x9A: 0x0161, 0x9B: 0x203A, 0x9C: 0x0153,
+  0x9E: 0x017E, 0x9F: 0x0178,
+};
+const CP1252_CODEPOINT_TO_BYTE: Record<number, number> = Object.fromEntries(
+  Object.entries(CP1252_0x80_0x9F).map(([byte, cp]) => [cp, Number(byte)])
+);
+
+function charToCp1252Byte(codepoint: number): number | null {
+  if (codepoint <= 0x7F) return codepoint; // ASCII
+  if (codepoint >= 0xA0 && codepoint <= 0xFF) return codepoint; // igual que Latin-1 en este rango
+  if (codepoint >= 0x80 && codepoint <= 0x9F) return codepoint; // Latin-1 puro (control C1 literal, menos común)
+  if (codepoint in CP1252_CODEPOINT_TO_BYTE) return CP1252_CODEPOINT_TO_BYTE[codepoint];
+  return null; // no representable en cp1252 — no es este patrón, no tocar
+}
+
+function repairMojibakeText(text: string): string {
+  if (!MOJIBAKE_HINT_RE.test(text)) return text;
+  const bytes: number[] = [];
+  for (const ch of text) {
+    const byte = charToCp1252Byte(ch.codePointAt(0)!);
+    if (byte === null) return text;
+    bytes.push(byte);
+  }
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes));
+  } catch {
+    return text; // el "arreglo" no da UTF-8 válido — no era mojibake, dejar como está
+  }
+}
+
+function repairMojibakeDeep(value: any): any {
+  if (typeof value === 'string') return repairMojibakeText(value);
+  if (Array.isArray(value)) return value.map(repairMojibakeDeep);
+  if (value && typeof value === 'object') {
+    const out: any = {};
+    for (const k of Object.keys(value)) out[k] = repairMojibakeDeep(value[k]);
+    return out;
+  }
+  return value;
 }
 
 function gmailDateFormat(d: Date): string {
@@ -448,6 +538,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
         invalidJsons.push({ part: jp, reason: 'JSON inválido (no parsea)' });
         continue;
       }
+      parsed = repairMojibakeDeep(unwrapDteEnvelope(parsed));
       const check = validateDte(parsed);
       if (!check.valid) {
         warnings.push(`adjunto ${jp.filename} (msg ${id}): ${check.reason}`);

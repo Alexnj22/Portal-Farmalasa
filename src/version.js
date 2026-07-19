@@ -5,8 +5,17 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.23.7';
+export const APP_VERSION = '2.23.8';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.23.8 — chore(sync-purchase-emails): agrega parámetro debug_query
+// (diagnóstico) al endpoint — permite pasar un query de Gmail custom y
+// bypassear purchase_dte_processed_messages sin borrar la tabla. Usado para
+// encontrar que los correos de Movistar reportados por el usuario (23/24 jun)
+// llegaban a farmasalud.sv@gmail.com, no a compraslasalud.sv@gmail.com — el
+// fix de v2.23.7 (imágenes tapando el cupo de links candidatos) sí era
+// correcto, solo estaba mirando la cuenta equivocada. Recuperados 5
+// documentos de Movistar en farmasalud.sv (jun-jul 2026) con el debug_query.
 
 // v2.23.7 — fix(facturas-compra): dos bugs reportados por el usuario.
 // (1) sync-purchase-emails: solo 2 de 5 correos Movistar de jun-jul se

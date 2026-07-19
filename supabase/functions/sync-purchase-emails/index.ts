@@ -467,7 +467,7 @@ async function markMessageProcessed(supabase: any, accountId: number, messageId:
     .upsert({ account_id: accountId, source_message_id: messageId }, { onConflict: 'account_id,source_message_id', ignoreDuplicates: true });
 }
 
-async function processAccount(supabase: any, account: any, dryRun: boolean): Promise<AccountResult> {
+async function processAccount(supabase: any, account: any, dryRun: boolean, debugQuery?: string | null): Promise<AccountResult> {
   const clientId     = Deno.env.get(account.client_id_secret_name ?? '') ?? '';
   const clientSecret  = Deno.env.get(account.client_secret_secret_name ?? '') ?? '';
   const refreshToken  = Deno.env.get(account.vault_secret_name ?? '') ?? '';
@@ -497,11 +497,14 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
   // ningún rastro en documents/review_queue/warnings). Se amplía a
   // has:attachment OR una señal de asunto/cuerpo de que es factura/DTE, para
   // no perder proveedores que solo mandan enlaces.
-  const query = `after:${sinceDate ? gmailDateFormat(sinceDate) : BACKFILL_FROM} -in:sent -in:drafts -in:chats `
-    + `(has:attachment OR subject:(factura OR facturas OR comprobante OR CCF OR DTE) OR "factura electronica" OR "documento tributario")`;
+  const query = debugQuery || (`after:${sinceDate ? gmailDateFormat(sinceDate) : BACKFILL_FROM} -in:sent -in:drafts -in:chats `
+    + `(has:attachment OR subject:(factura OR facturas OR comprobante OR CCF OR DTE) OR "factura electronica" OR "documento tributario")`);
 
   const allMessageIds = await listMessageIds(accessToken, query);
-  const doneIds = await getDoneMessageIds(supabase, account.id);
+  // debugQuery: diagnóstico puntual (ej. una franja de fechas específica) —
+  // ignora processed_messages para poder re-inspeccionar mensajes ya
+  // marcados como procesados sin necesidad de borrar esa tabla.
+  const doneIds = debugQuery ? new Set<string>() : await getDoneMessageIds(supabase, account.id);
   const pendingIds = allMessageIds.filter(id => !doneIds.has(id));
 
   let messagesScanned    = 0;
@@ -850,7 +853,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { dry_run = false, account_id = null, repair_stored_json = false } = body;
+    const { dry_run = false, account_id = null, repair_stored_json = false, debug_query = null } = body;
 
     // Mantenimiento puntual: re-normaliza los archivos .json YA guardados en
     // Storage con unwrapDteEnvelope + repairMojibakeDeep. Necesario porque
@@ -932,7 +935,7 @@ Deno.serve(async (req) => {
     const results: any[] = [];
     for (const account of accounts) {
       try {
-        const r = await processAccount(admin, account, dry_run);
+        const r = await processAccount(admin, account, dry_run, debug_query);
         results.push({ account: account.email, ...r });
         if (!dry_run) {
           await admin.from('email_sync_log').insert({

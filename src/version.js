@@ -5,8 +5,22 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.23.9';
+export const APP_VERSION = '2.23.10';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.23.10 — fix(sync-purchase-emails): valida contenido real antes de
+// aceptar un link como candidato JSON. Bug encontrado por el usuario: 3
+// filas en Revisión mostraban el HTML de un Warning de PHP en vez de un DTE
+// (dteqr_json.php del proveedor farma_salud/clientesdte3 respondía HTTP 200
+// con Content-Type application/json pero el body era
+// "file_put_contents(...): failed to open stream" — el .json no existía en
+// su filesystem). collectLinkAttachments() solo validaba el header
+// Content-Type, nunca el body; ahora looksLikeJson() chequea que el
+// contenido empiece con { o [ antes de aceptarlo, y si no, se omite con un
+// warning que incluye la URL y un snippet del body real (antes el warning
+// solo decía "JSON inválido (no parsea)" sin rastro de la causa). No afectó
+// facturación real (estas filas nunca tocaron purchase_dte_documents), pero
+// mejora el diagnóstico de proveedores con endpoints rotos.
 
 // v2.23.9 — feat(facturas-compra): descarta acuses/Resp de Hacienda en
 // silencio y conecta invalidaciones al DTE original. Antes, los JSON de

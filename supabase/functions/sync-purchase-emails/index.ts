@@ -258,6 +258,16 @@ function inferExtensionFromContentType(ct: string | null): string | null {
   return null;
 }
 
+// Un proveedor puede devolver HTTP 200 con Content-Type "application/json"
+// aunque el body sea en realidad un error HTML (ej. dteqr_json.php de
+// farma_salud emite un Warning de PHP cuando el .json no existe en su
+// filesystem, pero igual responde 200). Se valida el contenido real, no solo
+// el header, antes de aceptarlo como candidato JSON.
+function looksLikeJson(buf: ArrayBuffer): boolean {
+  const head = new TextDecoder().decode(buf.slice(0, 512)).trimStart();
+  return head.startsWith('{') || head.startsWith('[');
+}
+
 function filenameFromUrl(url: string): string {
   try {
     const base = new URL(url).pathname.split('/').filter(Boolean).pop() || 'archivo';
@@ -316,6 +326,12 @@ async function collectLinkAttachments(htmlBodies: string[], textBodies: string[]
       const buf = await res.arrayBuffer();
       if (buf.byteLength > MAX_REMOTE_BYTES) {
         warnings.push(`enlace ${c.url} (msg ${messageId}): excede tamaño máximo, omitido`);
+        continue;
+      }
+
+      if (ext === 'json' && !looksLikeJson(buf)) {
+        const snippet = new TextDecoder().decode(buf.slice(0, 200)).replace(/\s+/g, ' ').trim();
+        warnings.push(`enlace ${c.url} (msg ${messageId}): content-type "${contentType}" dice JSON pero el body no lo es, omitido — body: "${snippet}"`);
         continue;
       }
 

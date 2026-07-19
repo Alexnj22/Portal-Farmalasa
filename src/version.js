@@ -5,8 +5,28 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.23.2';
+export const APP_VERSION = '2.23.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.23.3 — fix(facturas-compra/sync-purchase-emails): 3 hallazgos reportados
+// por el usuario sobre la descarga de DTE vía Gmail API. (1) Filtro de
+// correos que no son factura/DTE: un PDF suelto (sin JSON en el mismo
+// correo) ahora exige que el asunto o el snippet del correo mencione
+// factura/DTE/comprobante/CCF antes de descargarlo y encolarlo para
+// revisión — antes cualquier PDF en cualquier correo con adjunto se
+// guardaba como "huérfano" aunque no tuviera nada que ver con una factura.
+// (2) Enlaces en el cuerpo del correo: algunos proveedores mandan
+// "descargue su factura aquí" en vez de adjuntar el archivo — ahora se
+// extraen los links del HTML/texto del cuerpo, se filtran por keyword
+// (factura/dte/descarga/.pdf/.json) + guard anti-SSRF (bloquea IPs
+// literales/localhost/*.local), se descargan (límite 15MB) y si el
+// content-type resuelve a PDF/JSON/ZIP entran al mismo pipeline que un
+// adjunto normal. (3) Fix del pairing JSON↔PDF que fallaba en
+// cimberton.fe@avdinternacional.com y otros: antes solo emparejaba por
+// nombre de archivo idéntico; ahora 3 fases — nombre idéntico → código de
+// generación/número de control embebido en el nombre del PDF → si queda
+// exactamente 1 JSON válido y 1 PDF sin usar en el correo, se asume que son
+// el par aunque el nombre no se parezca en nada.
 
 // v2.23.2 — fix(nav): auditoría completa del menú lateral (AppLayout).
 // (1) FIX del "scroll raro": el efecto de scroll dependía de openGroups, así

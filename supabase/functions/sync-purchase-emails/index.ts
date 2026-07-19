@@ -14,6 +14,22 @@ const OVERLAP_DAYS    = 3;
 const BUCKET          = "purchase-dte";
 const TIME_BUDGET_MS  = 100_000; // presupuesto por cuenta/corrida — deja margen bajo el límite de la plataforma (backfills grandes requieren varias llamadas sucesivas, ver hasMore en la respuesta)
 
+// Palabras que indican que el correo SÍ es una factura/DTE — se usa solo para
+// descartar PDFs sueltos (sin JSON en el mismo correo) que no son facturas en
+// absoluto (ej. cotizaciones, catálogos, comprobantes de pago de otro tipo).
+// Si el correo trae al menos un JSON válido ya sabemos que es un DTE por
+// estructura (validateDte), así que este filtro NO aplica en ese caso.
+const DTE_EMAIL_KEYWORD_RE = /(factura|comprobante|\bdte\b|ccf|cr[ée]dito\s*fiscal|documento\s*tributario|nota\s*de\s*cr[ée]dito|nota\s*de\s*d[ée]bito|nota\s*de\s*remisi[oó]n|tributari[oa]\s*electr[oó]nic[oa])/i;
+
+// Enlaces en el cuerpo del correo (en vez de adjunto inline) — algunos
+// proveedores mandan "descargue su factura aquí" con un link a su portal en
+// vez de adjuntar el PDF/JSON directo. Solo seguimos links cuyo URL o texto
+// del ancla sugiera que es el documento (evita descargar links de
+// unsubscribe, redes sociales, tracking pixels, etc.)
+const LINK_KEYWORD_RE   = /(factura|comprobante|\bdte\b|ccf|cr[ée]dito\s*fiscal|documento\s*tributario|descarg|adjunt|\.pdf|\.json)/i;
+const MAX_LINK_CANDIDATES = 6;
+const MAX_REMOTE_BYTES    = 15 * 1024 * 1024; // generoso para un PDF/JSON de un solo DTE
+
 // ── Helpers genéricos ─────────────────────────────────────────────────────────
 
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3, baseDelayMs = 2000): Promise<T> {
@@ -64,6 +80,150 @@ function sanitizeStorageKey(name: string): string {
 function headerValue(headers: any[], name: string): string | null {
   const h = (headers ?? []).find((x: any) => x.name?.toLowerCase() === name.toLowerCase());
   return h?.value ?? null;
+}
+
+function looksLikeDteEmail(subject: string | null, snippet: string | null): boolean {
+  return DTE_EMAIL_KEYWORD_RE.test(`${subject ?? ''} ${snippet ?? ''}`);
+}
+
+// ── Enlaces en el cuerpo (en vez de adjunto) ───────────────────────────────────
+
+function collectBodyText(part: any, htmlOut: string[], textOut: string[]) {
+  if (!part) return;
+  if (part.mimeType === 'text/html' && part.body?.data) {
+    htmlOut.push(new TextDecoder().decode(base64UrlToBytes(part.body.data)));
+  } else if (part.mimeType === 'text/plain' && part.body?.data) {
+    textOut.push(new TextDecoder().decode(base64UrlToBytes(part.body.data)));
+  }
+  for (const child of (part.parts ?? [])) collectBodyText(child, htmlOut, textOut);
+}
+
+function extractCandidateLinks(htmlBodies: string[], textBodies: string[]): { url: string; label: string }[] {
+  const out: { url: string; label: string }[] = [];
+  const seen = new Set<string>();
+  for (const h of htmlBodies) {
+    const anchorRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    let m: RegExpExecArray | null;
+    while ((m = anchorRe.exec(h))) {
+      const url = m[1].trim();
+      if (!/^https?:\/\//i.test(url) || seen.has(url)) continue;
+      seen.add(url);
+      out.push({ url, label: m[2].replace(/<[^>]+>/g, ' ').trim() });
+    }
+  }
+  const urlRe = /https?:\/\/[^\s"'<>]+/gi;
+  for (const t of textBodies) {
+    let m: RegExpExecArray | null;
+    while ((m = urlRe.exec(t))) {
+      const url = m[0].replace(/[.,;)]+$/, '');
+      if (seen.has(url)) continue;
+      seen.add(url);
+      out.push({ url, label: '' });
+    }
+  }
+  return out;
+}
+
+// El correo llega de cualquier remitente externo (bandeja de intake de
+// facturas) — antes de que la función haga fetch() a una URL tomada del
+// cuerpo del correo, descarta hosts obviamente no-públicos (IP literal,
+// localhost, *.local/*.internal) para no habilitar SSRF hacia la red interna
+// del runtime vía un correo malicioso.
+function isSafeExternalUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+    const host = u.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '0.0.0.0') return false;
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return false; // IPv4 literal
+    if (host.includes(':')) return false; // IPv6 literal
+    if (host.endsWith('.local') || host.endsWith('.internal') || host.endsWith('.localhost')) return false;
+    return true;
+  } catch { return false; }
+}
+
+function inferExtensionFromContentType(ct: string | null): string | null {
+  if (!ct) return null;
+  const c = ct.toLowerCase();
+  if (c.includes('application/pdf')) return 'pdf';
+  if (c.includes('application/json') || c.includes('text/json')) return 'json';
+  if (c.includes('application/zip') || c.includes('application/x-zip')) return 'zip';
+  return null;
+}
+
+function filenameFromUrl(url: string): string {
+  try {
+    const base = new URL(url).pathname.split('/').filter(Boolean).pop() || 'archivo';
+    return decodeURIComponent(base);
+  } catch { return 'archivo'; }
+}
+
+function filenameFromContentDisposition(cd: string | null): string | null {
+  if (!cd) return null;
+  const m = /filename\*?=(?:UTF-8''|")?([^";]+)"?/i.exec(cd);
+  return m ? decodeURIComponent(m[1].trim().replace(/"$/, '')) : null;
+}
+
+// Descarga los enlaces del cuerpo que parezcan apuntar al DTE (filtrados por
+// LINK_KEYWORD_RE) y los normaliza como AttachmentPart (remoteBytes ya
+// resuelto) para que entren al mismo pipeline de jsonParts/pdfParts de abajo.
+// Links que no resuelven a un PDF/JSON/ZIP real (ej. una página de login) se
+// descartan en silencio — no todo link con esas palabras es el documento.
+async function collectLinkAttachments(htmlBodies: string[], textBodies: string[], warnings: string[], messageId: string): Promise<AttachmentPart[]> {
+  const candidates = extractCandidateLinks(htmlBodies, textBodies)
+    .filter(c => isSafeExternalUrl(c.url) && (LINK_KEYWORD_RE.test(c.url) || LINK_KEYWORD_RE.test(c.label)))
+    .slice(0, MAX_LINK_CANDIDATES);
+
+  const out: AttachmentPart[] = [];
+  for (const c of candidates) {
+    try {
+      const res = await withRetry(() => fetch(c.url, {
+        redirect: 'follow',
+        signal: AbortSignal.timeout(15_000),
+      }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r; }), 2, 1500);
+
+      const contentType   = res.headers.get('content-type');
+      const contentLength = Number(res.headers.get('content-length') ?? '0');
+      if (contentLength > MAX_REMOTE_BYTES) {
+        warnings.push(`enlace ${c.url} (msg ${messageId}): excede tamaño máximo, omitido`);
+        continue;
+      }
+
+      const cdFilename = filenameFromContentDisposition(res.headers.get('content-disposition'));
+      let filename = cdFilename ?? filenameFromUrl(c.url);
+      let ext = inferExtensionFromContentType(contentType);
+      if (!ext) {
+        const m = /\.(pdf|json|zip)(?:$|\?)/i.exec(filename) ?? /\.(pdf|json|zip)(?:$|\?)/i.exec(c.url);
+        ext = m ? m[1].toLowerCase() : null;
+      }
+      if (!ext) {
+        // No es un PDF/JSON/ZIP identificable (probablemente una página web,
+        // ej. un login del portal del proveedor) — se omite. Advertencia con
+        // el content-type real para poder diagnosticar proveedores nuevos.
+        warnings.push(`enlace ${c.url} (msg ${messageId}): content-type "${contentType ?? 'desconocido'}" no es PDF/JSON/ZIP, omitido`);
+        continue;
+      }
+
+      if (!new RegExp(`\\.${ext}$`, 'i').test(filename)) filename = `${filename}.${ext}`;
+
+      const buf = await res.arrayBuffer();
+      if (buf.byteLength > MAX_REMOTE_BYTES) {
+        warnings.push(`enlace ${c.url} (msg ${messageId}): excede tamaño máximo, omitido`);
+        continue;
+      }
+
+      out.push({
+        filename,
+        mimeType: contentType ?? `application/${ext}`,
+        attachmentId: null,
+        inlineData: null,
+        remoteBytes: new Uint8Array(buf),
+      });
+    } catch (e: any) {
+      warnings.push(`enlace ${c.url} (msg ${messageId}): ${e.message}`);
+    }
+  }
+  return out;
 }
 
 // ── Gmail API ──────────────────────────────────────────────────────────────────
@@ -117,6 +277,7 @@ interface AttachmentPart {
   mimeType: string;
   attachmentId: string | null;
   inlineData: string | null; // base64url, cuando Gmail lo devuelve inline sin attachmentId
+  remoteBytes?: Uint8Array | null; // ya descargado desde un enlace en el cuerpo (no vino como adjunto Gmail)
 }
 
 function collectAttachmentParts(part: any, out: AttachmentPart[]) {
@@ -127,12 +288,14 @@ function collectAttachmentParts(part: any, out: AttachmentPart[]) {
       mimeType: part.mimeType,
       attachmentId: part.body?.attachmentId ?? null,
       inlineData: part.body?.data ?? null,
+      remoteBytes: null,
     });
   }
   for (const child of (part.parts ?? [])) collectAttachmentParts(child, out);
 }
 
 async function resolveAttachmentBytes(accessToken: string, messageId: string, part: AttachmentPart): Promise<Uint8Array> {
+  if (part.remoteBytes) return part.remoteBytes;
   if (part.inlineData) return base64UrlToBytes(part.inlineData);
   if (!part.attachmentId) throw new Error(`adjunto ${part.filename} sin attachmentId ni data inline`);
   const res = await withRetry(() => fetch(`${GMAIL_API}/messages/${messageId}/attachments/${part.attachmentId}`, {
@@ -246,6 +409,15 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
     const attachmentParts: AttachmentPart[] = [];
     collectAttachmentParts(msg.payload, attachmentParts);
 
+    // Proveedores que mandan el DTE como enlace a su portal en vez de adjunto
+    // inline (ej. "descargue su factura aquí") — se resuelven como si fueran
+    // adjuntos normales y entran al mismo pipeline de abajo.
+    const htmlBodies: string[] = [];
+    const textBodies: string[] = [];
+    collectBodyText(msg.payload, htmlBodies, textBodies);
+    const linkParts = await collectLinkAttachments(htmlBodies, textBodies, warnings, id);
+    attachmentParts.push(...linkParts);
+
     const jsonParts = attachmentParts.filter(p => p.filename.toLowerCase().endsWith('.json'));
     const pdfParts  = attachmentParts.filter(p => p.filename.toLowerCase().endsWith('.pdf'));
     const zipParts  = attachmentParts.filter(p => p.filename.toLowerCase().endsWith('.zip'));
@@ -283,13 +455,55 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
         invalidJsons.push({ part: jp, reason: check.reason ?? 'inválido' });
         continue;
       }
-      const matchedPdf = pdfParts.find(pp => baseName(pp.filename) === baseName(jp.filename) && !usedPdfFilenames.has(pp.filename)) ?? null;
-      if (matchedPdf) usedPdfFilenames.add(matchedPdf.filename);
-      validDtes.push({ json: parsed, jsonPart: jp, pdfPart: matchedPdf });
+      validDtes.push({ json: parsed, jsonPart: jp, pdfPart: null });
     }
 
-    // PDFs del mensaje que no se pudieron asociar a ningún JSON válido (huérfanos)
-    const orphanPdfs = pdfParts.filter(pp => !usedPdfFilenames.has(pp.filename));
+    // Emparejar JSON↔PDF en 3 fases (algunos proveedores, ej.
+    // cimberton.fe@avdinternacional.com, nombran el PDF sin relación al
+    // nombre del JSON, así que la comparación exacta de fase 1 nunca matchea):
+    //
+    // Fase 1: mismo nombre de archivo (caso normal, la mayoría de proveedores)
+    for (const dte of validDtes) {
+      const match = pdfParts.find(pp => baseName(pp.filename) === baseName(dte.jsonPart.filename) && !usedPdfFilenames.has(pp.filename));
+      if (match) { dte.pdfPart = match; usedPdfFilenames.add(match.filename); }
+    }
+    // Fase 2: código de generación o número de control del DTE aparece dentro
+    // del nombre del PDF (algunos proveedores sí lo embeben aunque el nombre
+    // completo no coincida)
+    for (const dte of validDtes) {
+      if (dte.pdfPart) continue;
+      const codigoGeneracion = String(dte.json?.identificacion?.codigoGeneracion ?? '').toLowerCase();
+      const numeroControl    = String(dte.json?.identificacion?.numeroControl ?? '').toLowerCase();
+      const match = pdfParts.find(pp => {
+        if (usedPdfFilenames.has(pp.filename)) return false;
+        const name = pp.filename.toLowerCase();
+        return (codigoGeneracion.length > 8 && name.includes(codigoGeneracion)) ||
+               (numeroControl.length > 8 && name.includes(numeroControl));
+      });
+      if (match) { dte.pdfPart = match; usedPdfFilenames.add(match.filename); }
+    }
+    // Fase 3: si queda exactamente un DTE sin PDF y exactamente un PDF sin
+    // usar en el mismo correo, se asume que son el par (cubre nombres de PDF
+    // totalmente humanos/arbitrarios sin ninguna referencia al DTE)
+    const stillUnmatchedDtes = validDtes.filter(d => !d.pdfPart);
+    const stillUnusedPdfs    = pdfParts.filter(pp => !usedPdfFilenames.has(pp.filename));
+    if (stillUnmatchedDtes.length === 1 && stillUnusedPdfs.length === 1) {
+      stillUnmatchedDtes[0].pdfPart = stillUnusedPdfs[0];
+      usedPdfFilenames.add(stillUnusedPdfs[0].filename);
+    }
+
+    // PDFs del mensaje que no se pudieron asociar a ningún JSON válido (huérfanos).
+    // Si el correo no trae ningún JSON, no hay evidencia estructural de que sea
+    // un DTE — antes de guardar/encolar el PDF para revisión, exigimos que el
+    // asunto o el preview del correo mencione algo tipo factura/DTE/comprobante,
+    // para no acumular PDFs de correos que no son facturas en absoluto.
+    const orphanPdfsAll = pdfParts.filter(pp => !usedPdfFilenames.has(pp.filename));
+    const emailLooksLikeDte = jsonParts.length > 0 || looksLikeDteEmail(subject, msg.snippet ?? null);
+    const orphanPdfs = emailLooksLikeDte ? orphanPdfsAll : [];
+    if (!emailLooksLikeDte && orphanPdfsAll.length > 0) {
+      documentsSkipped += orphanPdfsAll.length;
+      warnings.push(`mensaje ${id} (${fromEmail}): ${orphanPdfsAll.length} adjunto(s) PDF ignorado(s) — el correo no parece ser factura/DTE (asunto: "${subject ?? ''}")`);
+    }
 
     if (dryRun) {
       documentsInserted += validDtes.length; // conteo estimado, no se escribe nada

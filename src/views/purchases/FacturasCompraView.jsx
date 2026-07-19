@@ -291,7 +291,7 @@ function TabDocumentos({
 
     const download = (url, label, row) => {
         if (!url) return;
-        downloadStoredFile(url, `${row.codigo_generacion}.${label}`);
+        downloadStoredFile(url, `${row.codigo_generacion || `doc-${row.id}`}.${label}`);
         useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA', String(row.id), {
             codigo_generacion: row.codigo_generacion, archivo: label,
         });
@@ -480,6 +480,16 @@ function TabDocumentos({
                                         <Link2 size={10} /> Ver original
                                     </button>
                                 )}
+                                {/* Confirmado desde Revisión sin que su JSON llegara nunca — ver
+                                    TabRevision "Confirmar sin JSON" y resolve_purchase_dte_review. */}
+                                {!row.json_path && (
+                                    <span
+                                        title="Este documento se confirmó manualmente desde Revisión sin JSON asociado"
+                                        className="text-[9px] font-black text-slate-500 bg-slate-500/10 border border-slate-500/25 px-2 py-0.5 rounded-full whitespace-nowrap"
+                                    >
+                                        Sin JSON
+                                    </span>
+                                )}
                             </div>
                         </DataCell>
                         <DataCell hideBelow="lg">
@@ -499,8 +509,9 @@ function TabDocumentos({
                                 </button>
                                 <button
                                     onClick={() => download(row.json_path, 'json', row)}
-                                    className="p-1.5 rounded-lg text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 transition-colors"
-                                    title="Descargar JSON"
+                                    disabled={!row.json_path}
+                                    className="p-1.5 rounded-lg text-slate-500 hover:text-[#0052CC] hover:bg-blue-50 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                                    title={row.json_path ? 'Descargar JSON' : 'Sin JSON'}
                                 >
                                     <FileJson size={14} />
                                 </button>
@@ -595,6 +606,22 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
         }
     };
 
+    // Confirmar un PDF huérfano AUNQUE nunca llegue su JSON — crea el
+    // documento igual, sin codigo_generacion/tipo_dte (badge "Sin JSON" en
+    // Documentos, ver DOC_COLS).
+    const confirmSinJson = async (row) => {
+        setRowError('');
+        try {
+            await resolvePurchaseDteReview(row.id, 'confirmado');
+            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_CONFIRMAR_SIN_JSON', String(row.id), {
+                kind: row.kind, filename: row.filename,
+            });
+            bumpRefresh();
+        } catch (e) {
+            setRowError(e.message || 'No se pudo confirmar');
+        }
+    };
+
     return (
         <div className="p-5 md:p-6 space-y-5">
             <div className="text-[11px] text-slate-500 font-medium px-1">
@@ -633,12 +660,21 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                             {canEdit && (
                                 <div className="flex items-center justify-center gap-1.5">
                                     {row.kind === 'orphan_pdf' && (
-                                        <MatchDocumentAction
-                                            row={row}
-                                            documents={documents}
-                                            onOpen={loadDocuments}
-                                            onMatched={bumpRefresh}
-                                        />
+                                        <>
+                                            <MatchDocumentAction
+                                                row={row}
+                                                documents={documents}
+                                                onOpen={loadDocuments}
+                                                onMatched={bumpRefresh}
+                                            />
+                                            <button
+                                                onClick={() => confirmSinJson(row)}
+                                                title="Guarda este PDF como documento aunque nunca llegue su JSON"
+                                                className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-50 transition-colors"
+                                            >
+                                                <CheckCircle2 size={12} /> Confirmar sin JSON
+                                            </button>
+                                        </>
                                     )}
                                     <button
                                         onClick={() => discard(row)}

@@ -15,6 +15,7 @@ export const DTE_TYPE_LABELS = {
 };
 
 export function dteTypeLabel(tipoDte) {
+    if (!tipoDte) return '—'; // documento confirmado sin JSON — nunca se supo el tipo
     return DTE_TYPE_LABELS[tipoDte] || `Tipo ${tipoDte}`;
 }
 

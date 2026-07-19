@@ -466,7 +466,13 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
   const sinceDate = account.last_synced_date
     ? new Date(new Date(account.last_synced_date).getTime() - OVERLAP_DAYS * 86_400_000)
     : null;
-  const query = `has:attachment after:${sinceDate ? gmailDateFormat(sinceDate) : BACKFILL_FROM}`;
+  // -in:sent -in:drafts -in:chats: sin esto, la búsqueda de Gmail (que por
+  // defecto cubre "Todos los mensajes", no solo bandeja de entrada) también
+  // trae correos que la propia cuenta ENVIÓ (respuestas/reenvíos con el
+  // mismo adjunto) — un DTE no puede ser "recibido" desde algo que nosotros
+  // mandamos. No se usa in:inbox a secas para no perder facturas legítimas
+  // que alguien archivó (sacó de la bandeja) después de procesarlas.
+  const query = `has:attachment after:${sinceDate ? gmailDateFormat(sinceDate) : BACKFILL_FROM} -in:sent -in:drafts -in:chats`;
 
   const allMessageIds = await listMessageIds(accessToken, query);
   const doneIds = await getDoneMessageIds(supabase, account.id);
@@ -529,13 +535,21 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
         documentsSkipped++;
         continue;
       }
+      // JSON inválido/no-DTE sin ninguna señal de que el correo sea una
+      // factura (ni el asunto/snippet ni el propio nombre del adjunto
+      // mencionan factura/DTE/comprobante) → se descarta directo, no se
+      // sube a Storage ni se encola en Revisión. Evita acumular ahí
+      // adjuntos JSON de otro tipo de correo que nada tiene que ver con
+      // facturación.
+      const looksFacturaRelated = looksLikeDteEmail(subject, msg.snippet ?? null) || DTE_EMAIL_KEYWORD_RE.test(jp.filename);
+
       let parsed: any;
       try {
         parsed = JSON.parse(new TextDecoder().decode(bytes));
       } catch {
         warnings.push(`adjunto ${jp.filename} (msg ${id}): JSON inválido`);
         documentsSkipped++;
-        invalidJsons.push({ part: jp, reason: 'JSON inválido (no parsea)' });
+        if (looksFacturaRelated) invalidJsons.push({ part: jp, reason: 'JSON inválido (no parsea)' });
         continue;
       }
       parsed = repairMojibakeDeep(unwrapDteEnvelope(parsed));
@@ -543,7 +557,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
       if (!check.valid) {
         warnings.push(`adjunto ${jp.filename} (msg ${id}): ${check.reason}`);
         documentsSkipped++;
-        invalidJsons.push({ part: jp, reason: check.reason ?? 'inválido' });
+        if (looksFacturaRelated) invalidJsons.push({ part: jp, reason: check.reason ?? 'inválido' });
         continue;
       }
       validDtes.push({ json: parsed, jsonPart: jp, pdfPart: null });
@@ -615,7 +629,13 @@ async function processAccount(supabase: any, account: any, dryRun: boolean): Pro
       const pdfPath  = pdfPart ? `${basePath}.pdf` : null;
 
       try {
-        const jsonBytes = await resolveAttachmentBytes(accessToken, id, jsonPart);
+        // Se sube el objeto `json` YA desenvuelto/reparado (unwrapDteEnvelope +
+        // repairMojibakeDeep), no los bytes crudos del adjunto — si el
+        // proveedor mandó el sobre { selloRecibido, firmaElectronica, dteJson }
+        // (ej. farmavalue), subir el crudo dejaría cuerpoDocumento/items
+        // anidados en dteJson.* y el modal del portal (que espera el DTE
+        // plano) los mostraría como "sin items".
+        const jsonBytes = new TextEncoder().encode(JSON.stringify(json));
         const { error: upErr } = await supabase.storage.from(BUCKET)
           .upload(jsonPath, jsonBytes, { contentType: 'application/json', upsert: false });
         if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) {
@@ -804,7 +824,73 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { dry_run = false, account_id = null } = body;
+    const { dry_run = false, account_id = null, repair_stored_json = false } = body;
+
+    // Mantenimiento puntual: re-normaliza los archivos .json YA guardados en
+    // Storage con unwrapDteEnvelope + repairMojibakeDeep. Necesario porque
+    // esas dos correcciones (v2.23.4) solo se aplicaban al insertar la fila
+    // en purchase_dte_documents — el archivo subido a Storage seguía siendo
+    // los bytes crudos del adjunto (el sobre {selloRecibido,firmaElectronica,
+    // dteJson} sin desenvolver, o el nombre del emisor con mojibake), que es
+    // lo que el modal de detalle del portal lee directo. No necesita Gmail —
+    // solo re-descarga y re-sube el archivo si algo cambió.
+    if (repair_stored_json === true) {
+      const CHUNK = 1000;
+      const startOffset: number = Number(body.repair_offset ?? 0);
+      let offset = startOffset;
+      let checked = 0, repaired = 0, unchanged = 0;
+      const errors: string[] = [];
+      const startTime = Date.now();
+      let cutOff = false;
+
+      outer: for (;;) {
+        const { data: docs, error: docsErr } = await admin
+          .from('purchase_dte_documents')
+          .select('id, json_path')
+          .not('json_path', 'is', null)
+          .order('id', { ascending: true })
+          .range(offset, offset + CHUNK - 1);
+        if (docsErr) throw new Error(`purchase_dte_documents: ${docsErr.message}`);
+        if (!docs || docs.length === 0) break;
+
+        for (let i = 0; i < docs.length; i++) {
+          if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; offset += i; break outer; }
+          const doc = docs[i];
+          checked++;
+          try {
+            const marker = `/storage/v1/object/public/${BUCKET}/`;
+            const idx = (doc.json_path as string).indexOf(marker);
+            if (idx === -1) { errors.push(`doc ${doc.id}: json_path con formato inesperado`); continue; }
+            const path = (doc.json_path as string).slice(idx + marker.length);
+
+            const { data: fileData, error: dlErr } = await admin.storage.from(BUCKET).download(path);
+            if (dlErr) { errors.push(`doc ${doc.id}: download — ${dlErr.message}`); continue; }
+            const rawText = await fileData.text();
+
+            let parsed: any;
+            try { parsed = JSON.parse(rawText); } catch { errors.push(`doc ${doc.id}: JSON crudo inválido en Storage`); continue; }
+            const fixedText = JSON.stringify(repairMojibakeDeep(unwrapDteEnvelope(parsed)));
+            if (fixedText === rawText) { unchanged++; continue; }
+
+            const { error: upErr } = await admin.storage.from(BUCKET)
+              .upload(path, new TextEncoder().encode(fixedText), { contentType: 'application/json', upsert: true });
+            if (upErr) { errors.push(`doc ${doc.id}: upload — ${upErr.message}`); continue; }
+            repaired++;
+          } catch (e: any) {
+            errors.push(`doc ${doc.id}: ${e.message}`);
+          }
+        }
+
+        if (cutOff) break;
+        if (docs.length < CHUNK) break;
+        offset += CHUNK;
+      }
+      return new Response(JSON.stringify({
+        repair_stored_json: true, checked, repaired, unchanged,
+        hasMore: cutOff, nextOffset: cutOff ? offset : null,
+        errors: errors.slice(0, 50),
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     let accountsQuery = admin.from('email_sync_accounts').select('*').eq('active', true);
     if (account_id) accountsQuery = accountsQuery.eq('id', account_id);

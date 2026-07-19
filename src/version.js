@@ -5,8 +5,34 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.23.4';
+export const APP_VERSION = '2.23.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.23.5 — feat/fix(facturas-compra): 4 pedidos más del usuario tras
+// probar v2.23.4 en vivo. (1) JSON inválido que no menciona factura/DTE en
+// ningún lado (ni el nombre del adjunto ni el asunto/snippet del correo) se
+// descarta directo — antes cualquier .json roto entraba a Revisión aunque
+// fuera de otro tipo de correo. (2) Gmail query ahora excluye -in:sent
+// -in:drafts -in:chats: el usuario notó que se estaban descargando correos
+// que la propia cuenta ENVIÓ (Gmail busca "todo el correo" por defecto, no
+// solo bandeja de entrada). (3) Revisión: nuevo botón "Confirmar sin JSON"
+// para PDFs huérfanos que nunca van a tener su JSON — crea el documento
+// igual (codigo_generacion/tipo_dte/json_path NULL, columnas relajadas en
+// migración 20260719_purchase_dte_confirm_sin_json.sql) y la tabla de
+// Documentos muestra un badge "Sin JSON" (también deshabilita el botón de
+// descargar JSON cuando no hay). El status 'confirmado' ya estaba
+// anticipado en el CHECK de purchase_dte_review_queue desde el 17-jul pero
+// nunca se había usado. (4) Bug real encontrado por el usuario: el modal de
+// detalle no mostraba items ("cuerpoDocumento") en documentos con el
+// envelope de Hacienda (dteJson/firmaElectronica) — el fix de v2.23.4
+// desenvolvía el JSON solo para las columnas de la fila insertada, pero el
+// archivo SUBIDO A STORAGE seguía siendo los bytes crudos del adjunto (el
+// sobre sin desenvolver), que es justo lo que el modal lee directo. Ahora
+// se sube el objeto ya normalizado (unwrapDteEnvelope + repairMojibakeDeep)
+// en vez de re-descargar el adjunto crudo. Los ~1,150 documentos ya
+// existentes (reprocesados hoy en el wipe+rerun de v2.23.3/4) se repararon
+// con un pase nuevo y paginado (`repair_stored_json: true` en el body del
+// edge function) que re-normaliza el .json ya guardado sin tocar Gmail.
 
 // v2.23.4 — fix(facturas-compra/sync-purchase-emails): 2 hallazgos más,
 // encontrados auditando datos reales en prod tras v2.23.3. (1) Envelope de

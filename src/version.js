@@ -5,9 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.26.2';
+export const APP_VERSION = '2.26.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.26.3 — feat(permisos): nuevo permiso granular "Cards Contables"
+// (facturas_compra_ver_montos) bajo Facturas de Compra en Permisos de
+// Acceso — mismo patrón que minmax_ver_costos. Backfill (migración
+// 20260722210000) mantiene la visibilidad actual para los 3 roles que ya
+// veían las cards (Gerente General, Supervisor/a de Ventas, Contador
+// Externo); cualquier otro rol arranca en false y se activa manualmente.
+// fix(facturas-compra): valor de las StatCard con `break-words` — montos
+// largos ya no se salían del borde de la card (sin espacios, el navegador
+// no podía wrappear antes).
+//
 // v2.26.2 — fix(facturas-compra): bug real de extracción de IVA, encontrado
 // explicándole al usuario las cards nuevas (2026-07-23). La card "Crédito
 // Fiscal IVA" mostraba $36.82 para julio contra $199K de compras —

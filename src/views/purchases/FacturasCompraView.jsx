@@ -594,7 +594,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
 
 function TabDocumentos({
     dateRange, setDateRange,
-    searchTerm, refreshKey, openModal, proveedores, canEdit,
+    searchTerm, refreshKey, openModal, proveedores, canEdit, showCards,
     syncing, syncMsg, syncProgress, runSyncNow,
 }) {
     const [dateStart, dateEnd] = dateRange.split('|');
@@ -774,7 +774,8 @@ function TabDocumentos({
             {/* Cards contables (izquierda, se reparten el ancho) + pill de
                 fecha/descarga/sync (derecha, ancho fijo) — mismo patrón que
                 VentasView/StaffManagementView. */}
-            <div className="flex items-stretch gap-3 flex-wrap">
+            <div className={`flex items-stretch gap-3 flex-wrap ${showCards ? '' : 'justify-end'}`}>
+                {showCards && (
                 <div className="flex items-stretch gap-3 flex-wrap flex-1 min-w-0">
                     <StatCard
                         icon={FileText} label="Total Compras" value={fmt$(cardStats.totalCompras)}
@@ -813,6 +814,7 @@ function TabDocumentos({
                         loading={loading}
                     />
                 </div>
+                )}
 
             {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
             <div className="flex items-start justify-end gap-3 flex-wrap shrink-0">
@@ -1234,6 +1236,10 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
 export default function FacturasCompraView({ openModal }) {
     const { hasPermission } = useAuth();
     const canEdit = hasPermission('facturas_compra', 'can_edit');
+    // Pedido del usuario 2026-07-22: permiso granular tipo "tab" (mismo
+    // patrón que minmax_ver_costos) — algunos roles con acceso al módulo no
+    // deben ver montos ($) de compras, solo los documentos.
+    const canViewCards = hasPermission('facturas_compra_ver_montos');
 
     const [searchParams, setSearchParams] = useSearchParams();
     const rawTab = searchParams.get('tab');
@@ -1315,6 +1321,7 @@ export default function FacturasCompraView({ openModal }) {
                     openModal={openModal}
                     proveedores={proveedores}
                     canEdit={canEdit}
+                    showCards={canViewCards}
                     syncing={syncing}
                     syncMsg={syncMsg}
                     syncProgress={syncProgress}

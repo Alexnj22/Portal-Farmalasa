@@ -5,8 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.27.3';
+export const APP_VERSION = '2.27.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.27.4 — fix(proveedores): tabla no cabía en el ancho — columna
+// Proveedor sin tope de ancho se estiraba con nombres largos y empujaba
+// todo lo demás. Columna Giro eliminada del todo (sigue siendo buscable,
+// solo ya no se muestra). Proveedor con w-[260px] + max-w+truncate en el
+// nombre; Categoría y Match ERP también truncan en vez de desbordar o
+// envolver en 4 líneas (caso real: "DISTRIBUIDORA ISRAEL ( ANA FRANCISCA
+// CEDILLOS"). Badges (Tipo, "Sin categoría", "Sin match ERP") con
+// whitespace-nowrap — antes partían la palabra a la mitad en columnas
+// angostas. Verificado con Playwright a 1920px y 1440px.
+
 
 // v2.27.3 — fix(proveedores): reestructura el modal de detalle
 // (FormProveedorDetail.jsx) — la fila de 4 columnas (Tipo de Proveedor/

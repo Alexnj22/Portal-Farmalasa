@@ -14,11 +14,15 @@ import { fetchProveedoresMaestro, fetchProveedorCategorias } from '../../data/pr
 const SIN_CATEGORIA = '__sin_categoria__';
 const SIN_MATCH_ERP = '__sin_match__';
 
+// Proveedor con ancho acotado (className hint al <th>) — sin esto, el nombre
+// largo estira la columna a su ancho natural y empuja el resto de la tabla
+// fuera del viewport (a pedido del usuario, ver también max-w+truncate en las
+// celdas de abajo, que es lo que realmente frena el ancho bajo table-layout
+// auto). Giro se quita del todo (no solo hideBelow) — no cabía junto al resto.
 const COLS = [
-    { key: 'proveedor',  label: 'Proveedor',  align: 'left' },
+    { key: 'proveedor',  label: 'Proveedor',  align: 'left', className: 'w-[260px]' },
     { key: 'fiscal',     label: 'NIT / NRC',  align: 'left', hideBelow: 'md' },
     { key: 'tipo',       label: 'Tipo',       align: 'left', hideBelow: 'lg' },
-    { key: 'giro',       label: 'Giro',       align: 'left', hideBelow: 'lg' },
     { key: 'categoria',  label: 'Categoría',  align: 'left' },
     { key: 'match_erp',  label: 'Match ERP',  align: 'left' },
     { key: 'docs',       label: 'Docs',       align: 'right', hideBelow: 'md' },
@@ -36,7 +40,7 @@ function RegimenCell({ row }) {
     return (
         <span
             title={isExcluido ? 'Sin NRC (Art. 119 CT) — no da crédito fiscal; retención de Renta 10% si es persona natural por un servicio (Art. 156 CT)' : 'Tiene NRC — da derecho a crédito fiscal de IVA'}
-            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${isExcluido ? 'text-amber-700 bg-amber-500/10 border-amber-500/25' : 'text-emerald-700 bg-emerald-500/10 border-emerald-500/25'}`}
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${isExcluido ? 'text-amber-700 bg-amber-500/10 border-amber-500/25' : 'text-emerald-700 bg-emerald-500/10 border-emerald-500/25'}`}
         >
             {REGIMEN_LABELS[row.regimen_fiscal]}
         </span>
@@ -56,18 +60,18 @@ const fmtDate = (d) => {
 
 function CategoriaCell({ row }) {
     return row.categoria_nombre
-        ? <span className="text-slate-700 text-[12px] font-medium">{row.categoria_nombre}</span>
-        : <span className="text-amber-600 text-[11px] font-bold">Sin categoría</span>;
+        ? <span className="text-slate-700 text-[12px] font-medium truncate max-w-[160px] block" title={row.categoria_nombre}>{row.categoria_nombre}</span>
+        : <span className="text-amber-600 text-[11px] font-bold whitespace-nowrap">Sin categoría</span>;
 }
 
 function MatchErpCell({ row }) {
     if (row.supplier_id) {
-        return <span className="text-slate-800 font-medium text-[12px]">{row.supplier_nombre}</span>;
+        return <span className="text-slate-800 font-medium text-[12px] truncate max-w-[180px] block" title={row.supplier_nombre}>{row.supplier_nombre}</span>;
     }
     return (
         <div className="flex items-center gap-1.5">
             <AlertTriangle size={12} className="text-amber-500 shrink-0" title="Sin match con proveedor del ERP" />
-            <span className="text-slate-500 text-[11px]">Sin match ERP</span>
+            <span className="text-slate-500 text-[11px] whitespace-nowrap">Sin match ERP</span>
         </div>
     );
 }
@@ -219,8 +223,8 @@ export default function ProveedoresView({ openModal }) {
                                     <div className="w-8 h-8 rounded-xl bg-slate-100/80 border border-slate-200/60 flex items-center justify-center shrink-0">
                                         <Building2 size={14} className="text-slate-500" strokeWidth={1.8} />
                                     </div>
-                                    <div className="min-w-0">
-                                        <p className="text-[12px] font-bold text-slate-700 truncate">{row.nombre}</p>
+                                    <div className="min-w-0 max-w-[200px]">
+                                        <p className="text-[12px] font-bold text-slate-700 truncate" title={row.nombre}>{row.nombre}</p>
                                         {row.alias && (
                                             <p className="text-[10px] text-slate-500 truncate italic">&ldquo;{row.alias}&rdquo;</p>
                                         )}
@@ -236,9 +240,6 @@ export default function ProveedoresView({ openModal }) {
                             </DataCell>
                             <DataCell hideBelow="lg">
                                 <RegimenCell row={row} />
-                            </DataCell>
-                            <DataCell hideBelow="lg">
-                                <span className="text-slate-600 text-[11px] truncate max-w-[220px] block" title={row.desc_actividad}>{row.desc_actividad || '—'}</span>
                             </DataCell>
                             <DataCell>
                                 <CategoriaCell row={row} />

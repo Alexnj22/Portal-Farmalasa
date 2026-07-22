@@ -14,7 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch, normSearch } from '../../utils/searchUtils';
 import { dteTypeLabel, DTE_TYPE_OPTIONS } from '../../utils/dteTypes';
-import { openStoredFile, downloadStoredFile, getSignedFileUrl } from '../../utils/storageFiles';
+import { downloadStoredFile, getSignedFileUrl } from '../../utils/storageFiles';
 import { extractCodigoGeneracionFromPdf } from '../../utils/dtePdfCodigo';
 import { fetchProveedoresMaestro } from '../../data/proveedores';
 import {
@@ -62,6 +62,32 @@ const fmtDateTime = (d) => {
     if (isNaN(dt.getTime())) return '—';
     return dt.toLocaleString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
+
+// ── ActionButton — ícono arriba + subtítulo chico abajo, mismo patrón para
+// todas las acciones de fila en Revisión/Documentos (a pedido del usuario,
+// reemplaza los botones de texto+ícono en línea que quedaban apretados). ──
+
+const ACTION_COLORS = {
+    slate:   'text-slate-500 hover:text-[#0052CC] hover:bg-blue-50',
+    blue:    'text-[#0052CC] hover:text-[#003D99] hover:bg-blue-50',
+    emerald: 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50',
+    red:     'text-red-500 hover:text-red-600 hover:bg-red-50',
+};
+
+function ActionButton({ icon: Icon, label, onClick, title, color = 'slate', disabled = false }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            title={title || label}
+            className={`flex flex-col items-center justify-center gap-0.5 w-14 h-12 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${ACTION_COLORS[color]}`}
+        >
+            <Icon size={15} strokeWidth={2.25} />
+            <span className="text-[8px] font-bold uppercase tracking-wide leading-none text-center">{label}</span>
+        </button>
+    );
+}
 
 // Formato "start|end" — mismo contrato que PeriodPicker/monthRange en VentasView.
 // Mes actual por defecto (mismo criterio que el preset "Este mes" de
@@ -189,7 +215,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
 // con ese código exacto. Genérico: `onFound(matchId)` decide qué hacer con
 // el match (emparejar en Revisión, fusionar en Documentos). ──────────────
 
-function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound }) {
+function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, compact = false }) {
     // Fase 3.2: el sync ya detecta el código server-side (unpdf) para todo
     // PDF huérfano nuevo — si ya viene en ai_suggested, no hace falta que el
     // navegador vuelva a bajar/parsear el PDF, solo busca el match. El botón
@@ -241,48 +267,82 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound }) {
         }
     };
 
-    if (state === 'idle') {
+    if (compact) {
+        // Contexto de badge inline (TabDocumentos, fila "Sin JSON") — texto
+        // chico subrayado, no la caja ícono+subtítulo (esa es para la
+        // columna de acciones dedicada de Revisión).
+        if (state === 'idle') {
+            return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-[9px] font-black text-slate-500 hover:text-[#0052CC] underline whitespace-nowrap">Detectar código</button>;
+        }
+        if (state === 'loading') return <span className="text-[9px] text-slate-400 whitespace-nowrap">Analizando…</span>;
+        if (state === 'no_code') return <button onClick={(e) => { e.stopPropagation(); detect(); }} className="text-[9px] text-slate-400 hover:text-[#0052CC] underline whitespace-nowrap">Sin código, reintentar</button>;
+        if (state === 'error') return <span className="text-[9px] text-red-500 whitespace-nowrap" title={result.error}>Error al detectar</span>;
+        if (state === 'not_found') return <span className="text-[9px] text-slate-400 whitespace-nowrap" title={`Código completo: ${result.code}`}>Código sin sincronizar</span>;
         return (
             <button
-                onClick={(e) => { e.stopPropagation(); detect(); }}
-                className="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-[#0052CC] px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+                onClick={(e) => { e.stopPropagation(); apply(); }}
+                disabled={applying}
+                title={`${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`}
+                className="text-[9px] font-black text-emerald-600 hover:text-emerald-700 underline whitespace-nowrap disabled:opacity-50"
             >
-                <ScanSearch size={12} /> Detectar código
+                {applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'match'}`}
             </button>
         );
     }
+
+    if (state === 'idle') {
+        return (
+            <ActionButton
+                icon={ScanSearch}
+                label="Detectar"
+                title="Buscar el código de generación dentro del PDF"
+                onClick={(e) => { e.stopPropagation(); detect(); }}
+            />
+        );
+    }
     if (state === 'loading') {
-        return <span className="text-[10px] text-slate-400 px-2">Analizando PDF…</span>;
+        return (
+            <div className="flex flex-col items-center justify-center w-14 h-12 text-slate-400">
+                <ScanSearch size={15} className="animate-pulse" />
+                <span className="text-[8px] font-bold uppercase tracking-wide leading-none mt-0.5">Analizando</span>
+            </div>
+        );
     }
     if (state === 'no_code') {
         return (
-            <span className="flex items-center gap-1.5 text-[10px] text-slate-400 px-2">
-                <span title="El PDF no tiene capa de texto legible o no se encontró el patrón de código">Sin código detectable</span>
-                <button onClick={(e) => { e.stopPropagation(); detect(); }} className="underline hover:text-[#0052CC]">
-                    reintentar
-                </button>
-            </span>
+            <ActionButton
+                icon={ScanSearch}
+                label="Reintentar"
+                title="El PDF no tiene capa de texto legible o no se encontró el patrón de código — reintentar"
+                onClick={(e) => { e.stopPropagation(); detect(); }}
+            />
         );
     }
     if (state === 'error') {
-        return <span className="text-[10px] text-red-500 px-2">{result.error}</span>;
+        return (
+            <div className="flex flex-col items-center justify-center w-14 h-12 text-red-500" title={result.error}>
+                <AlertTriangle size={15} />
+                <span className="text-[8px] font-bold uppercase tracking-wide leading-none mt-0.5">Error</span>
+            </div>
+        );
     }
     if (state === 'not_found') {
         return (
-            <span className="text-[10px] text-slate-500 px-2" title={`Código completo: ${result.code}`}>
-                Código {result.code.slice(0, 8)}… sin sincronizar aún
-            </span>
+            <div className="flex flex-col items-center justify-center w-14 h-12 text-slate-400" title={`Código completo: ${result.code} — sin sincronizar aún`}>
+                <ScanSearch size={15} />
+                <span className="text-[8px] font-bold uppercase tracking-wide leading-none mt-0.5">Sin match</span>
+            </div>
         );
     }
     return (
-        <button
-            onClick={(e) => { e.stopPropagation(); apply(); }}
+        <ActionButton
+            icon={CheckCircle2}
+            label={applying ? 'Aplicando' : 'Emparejar'}
+            color="emerald"
             disabled={applying}
-            title={`${fmtDate(result.match.fecha_emision)} · ${result.match.proveedor_nombre || '—'} · ${fmt$(result.match.monto_total)}`}
-            className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-50 transition-colors disabled:opacity-50"
-        >
-            <CheckCircle2 size={12} /> {applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'match'}`}
-        </button>
+            title={`Encontrado: ${result.match.proveedor_nombre || 'match'} — ${fmtDate(result.match.fecha_emision)} · ${fmt$(result.match.monto_total)}`}
+            onClick={(e) => { e.stopPropagation(); apply(); }}
+        />
     );
 }
 
@@ -296,12 +356,13 @@ function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
     if (!open) {
         return (
             <div className="flex items-center gap-1.5">
-                <button
+                <ActionButton
+                    icon={Link2}
+                    label="Emparejar"
+                    title="Emparejar a un documento existente"
+                    color="blue"
                     onClick={() => { onOpen(); setError(''); setOpen(true); }}
-                    className="flex items-center gap-1 text-[10px] font-bold text-[#0052CC] hover:text-[#003D99] px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
-                >
-                    <Link2 size={12} /> Emparejar a documento
-                </button>
+                />
                 {error && <span className="text-[10px] text-red-500">{error}</span>}
             </div>
         );
@@ -747,6 +808,7 @@ function TabDocumentos({
                                                 <DetectCodeAction
                                                     pdfPath={row.pdf_path}
                                                     onFound={(match) => mergePorCodigo(row, match)}
+                                                    compact
                                                 />
                                                 <AttachJsonAction
                                                     row={row}
@@ -819,7 +881,7 @@ function TabDocumentos({
 
 // ── TabRevision ───────────────────────────────────────────────────────────────
 
-function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, canEdit }) {
+function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, canEdit, openModal }) {
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
     const [rowError, setRowError] = useState('');
@@ -853,8 +915,11 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
         return rows.filter(r => tokenMatch(searchTerm, r.from_email, r.subject, r.filename, r.reason));
     }, [rows, searchTerm]);
 
+    // Abre el PDF/JSON en el modal del portal (viewDocument, mismo visor que
+    // Expediente/RRHH) en vez de una pestaña nueva del navegador — pedido
+    // del usuario, coherente con "Ver detalle" de Documentos.
     const openFile = (row) => {
-        openStoredFile(row.file_path);
+        openModal?.('viewDocument', { url: row.file_path, title: row.filename });
         useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA', String(row.id), {
             kind: row.kind, filename: row.filename,
         });
@@ -960,21 +1025,21 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                                                 onOpen={loadDocuments}
                                                 onMatched={bumpRefresh}
                                             />
-                                            <button
-                                                onClick={() => confirmSinJson(row)}
+                                            <ActionButton
+                                                icon={CheckCircle2}
+                                                label="Sin JSON"
+                                                color="emerald"
                                                 title="Guarda este PDF como documento aunque nunca llegue su JSON"
-                                                className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-50 transition-colors"
-                                            >
-                                                <CheckCircle2 size={12} /> Confirmar sin JSON
-                                            </button>
+                                                onClick={() => confirmSinJson(row)}
+                                            />
                                         </>
                                     )}
-                                    <button
+                                    <ActionButton
+                                        icon={XCircle}
+                                        label="Descartar"
+                                        color="red"
                                         onClick={() => discard(row)}
-                                        className="flex items-center gap-1 text-[10px] font-bold text-red-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors"
-                                    >
-                                        <XCircle size={12} /> Descartar
-                                    </button>
+                                    />
                                 </div>
                             )}
                         </DataCell>
@@ -1091,6 +1156,7 @@ export default function FacturasCompraView({ openModal }) {
                     dateStart={dateStart}
                     dateEnd={dateEnd}
                     canEdit={canEdit}
+                    openModal={openModal}
                 />
             )}
         </GlassViewLayout>

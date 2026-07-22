@@ -5,8 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.25.2';
+export const APP_VERSION = '2.25.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.25.3 — fix(facturas-compra): TabRevision — modal + botones (feedback
+// del usuario tras usar el módulo en vivo). (1) Click en el archivo abre el
+// visor en modal (viewDocument/FormDocumentViewer, mismo patrón que "Ver
+// detalle" en Documentos) en vez de una pestaña nueva del navegador. (2)
+// Todos los botones de acción de Revisión (Detectar/Emparejar/Sin JSON/
+// Descartar) rediseñados a ícono arriba + subtítulo chico abajo
+// (ActionButton, componente nuevo reusable) — antes eran texto+ícono en
+// línea, apretados. DetectCodeAction gana un modo `compact` para seguir
+// viéndose bien en el badge inline de TabDocumentos, donde no cabe la caja
+// grande.
 
 // v2.25.2 — perf/fix(facturas-compra): E3 + E8 (PLAN-MEJORAS-DTE-
 // PROVEEDORES-2026-07.md Fase 5, a pedido del usuario). (E3)

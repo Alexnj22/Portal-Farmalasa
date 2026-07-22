@@ -19,7 +19,7 @@ import { fetchProveedoresMaestro } from '../../data/proveedores';
 import {
     fetchPurchaseDteDocuments, fetchPurchaseDteReviewQueue,
     setPurchaseDteProveedor, resolvePurchaseDteReview, syncPurchaseEmailsNow,
-    downloadPurchaseDtePackage, downloadPurchaseDteZipBulk,
+    downloadPurchaseDtePackage, downloadPurchaseDteZipBulk, mergePurchaseDteDocuments,
 } from '../../data/facturasCompra';
 
 const TABS = [
@@ -245,6 +245,73 @@ function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
     );
 }
 
+// ── AttachJsonAction — Fase 3.2: fusionar un doc "Sin JSON" con su duplicado
+// (llegó por correo aparte con el JSON completo). Sin match automático (las
+// filas sin JSON no guardan numero_control/monto/fecha/NIT) — el usuario
+// busca y elige el duplicado a mano. ───────────────────────────────────────
+
+function AttachJsonAction({ row, candidates, onMerged }) {
+    const [open, setOpen] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+
+    if (!open) {
+        return (
+            <div className="flex items-center gap-1.5">
+                <button
+                    onClick={(e) => { e.stopPropagation(); setError(''); setOpen(true); }}
+                    className="text-[9px] font-black text-[#0052CC] hover:text-[#003D99] underline whitespace-nowrap"
+                >
+                    Adjuntar JSON
+                </button>
+                {error && <span className="text-[10px] text-red-500">{error}</span>}
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex items-center gap-1.5 w-[268px]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex-1 min-w-0">
+                <LiquidSelect
+                    value=""
+                    onChange={async (val) => {
+                        if (!val) { setOpen(false); return; }
+                        setSaving(true);
+                        try {
+                            await mergePurchaseDteDocuments(row.id, val);
+                            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_ADJUNTAR_JSON', String(row.id), {
+                                source_document_id: val,
+                            });
+                            onMerged();
+                            setOpen(false);
+                        } catch (e) {
+                            setError(e.message || 'No se pudo fusionar');
+                            setOpen(false);
+                        } finally {
+                            setSaving(false);
+                        }
+                    }}
+                    options={candidates.map(d => ({
+                        value: d.id,
+                        label: `${fmtDate(d.fecha_emision)} · ${d.proveedor_nombre || d.supplier_nombre || d.emisor_nombre || '—'} · ${fmt$(d.monto_total)}`,
+                    }))}
+                    placeholder={saving ? 'Guardando…' : 'Buscar documento duplicado…'}
+                    compact
+                    clearable={false}
+                />
+            </div>
+            <button
+                onClick={() => setOpen(false)}
+                disabled={saving}
+                title="Cancelar"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40 shrink-0"
+            >
+                <X size={14} />
+            </button>
+        </div>
+    );
+}
+
 // ── TabDocumentos ─────────────────────────────────────────────────────────────
 
 function TabDocumentos({
@@ -283,6 +350,10 @@ function TabDocumentos({
     }, [rows, tipoDte, proveedorId, searchTerm]);
 
     useEffect(() => { setPage(1); }, [dateStart, dateEnd, tipoDte, proveedorId, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect
+
+    // Fase 3.2: candidatos para "Adjuntar JSON" — documentos con JSON completo
+    // dentro del mismo rango de fechas ya cargado (no dispara un fetch aparte).
+    const jsonDocs = useMemo(() => rows.filter(r => r.json_path), [rows]);
 
     const sorted = useMemo(() => {
         const dir = sortDir === 'asc' ? 1 : -1;
@@ -524,12 +595,21 @@ function TabDocumentos({
                                 {/* Confirmado desde Revisión sin que su JSON llegara nunca — ver
                                     TabRevision "Confirmar sin JSON" y resolve_purchase_dte_review. */}
                                 {!row.json_path && (
-                                    <span
-                                        title="Este documento se confirmó manualmente desde Revisión sin JSON asociado"
-                                        className="text-[9px] font-black text-slate-500 bg-slate-500/10 border border-slate-500/25 px-2 py-0.5 rounded-full whitespace-nowrap"
-                                    >
-                                        Sin JSON
-                                    </span>
+                                    <>
+                                        <span
+                                            title="Este documento se confirmó manualmente desde Revisión sin JSON asociado — no cumple conservación del DTE (Art. 147 CT)"
+                                            className="text-[9px] font-black text-slate-500 bg-slate-500/10 border border-slate-500/25 px-2 py-0.5 rounded-full whitespace-nowrap"
+                                        >
+                                            Sin JSON
+                                        </span>
+                                        {canEdit && (
+                                            <AttachJsonAction
+                                                row={row}
+                                                candidates={jsonDocs}
+                                                onMerged={load}
+                                            />
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </DataCell>

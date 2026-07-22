@@ -5,8 +5,29 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.24.0';
+export const APP_VERSION = '2.24.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.24.1 — feat(facturas-compra): Fase 3 auditoría DTE+Proveedores
+// (cumplimiento legal, Decreto 487 / Art. 147 CT). (3.1) sync-purchase-
+// emails ahora sube TAMBIÉN los bytes originales del adjunto/link intactos
+// (<codigo>.orig.json, columna orig_json_path) además del JSON normalizado
+// que sigue siendo la fuente de UI/búsqueda — respaldo de integridad ante
+// fiscalización, best-effort (no bloquea la ingesta si falla). Captura
+// sello_recibido cuando el proveedor manda el sobre {selloRecibido,
+// firmaElectronica, dteJson} (antes se descartaba). Gap documentado: no
+// aplica retroactivo — los bytes originales de lo ya sincronizado solo
+// viven en Gmail. (3.2) Acción manual "Adjuntar JSON" en Documentos (junto
+// al badge "Sin JSON"): fusiona un doc confirmado-sin-JSON con su
+// duplicado que sí trajo el JSON completo — RPC nuevo
+// merge_purchase_dte_documents, conserva el PDF ya revisado, adopta datos
+// estructurados+JSON del duplicado, repointea NC/ND relacionadas, borra el
+// duplicado. Sin match automático a propósito: las filas sin JSON no
+// guardan numero_control/monto/fecha/NIT, ningún campo confiable para
+// fusionar sin intervención humana. (3.3) email_sync_log sumado al cron
+// purge-sync-logs-daily (90 días); COMMENT ON TABLE en
+// purchase_dte_processed_messages para que nadie la agregue a una purga
+// futura (es el ledger anti-re-escaneo de Gmail).
 
 // v2.24.0 — feat(facturas-compra): búsqueda por contenido del JSON (Fase 4,
 // PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md, pedido directo del usuario).

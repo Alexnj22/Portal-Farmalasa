@@ -600,7 +600,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
     }
 
     const usedPdfFilenames = new Set<string>();
-    const validDtes: { json: any; jsonPart: AttachmentPart; pdfPart: AttachmentPart | null }[] = [];
+    const validDtes: { json: any; jsonPart: AttachmentPart; pdfPart: AttachmentPart | null; rawBytes: Uint8Array; selloRecibido: string | null }[] = [];
     const invalidJsons: { part: AttachmentPart; reason: string; kind?: string }[] = [];
 
     for (const jp of jsonParts) {
@@ -629,6 +629,10 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         if (looksFacturaRelated) invalidJsons.push({ part: jp, reason: 'JSON inválido (no parsea)' });
         continue;
       }
+      // Fase 3.1: capturar selloRecibido del sobre ANTES de unwrapDteEnvelope
+      // (que reemplaza `parsed` por el dteJson interno y lo perdería) — es
+      // la evidencia de recepción del MH, se guarda como columna aparte.
+      const selloRecibido: string | null = typeof parsed?.selloRecibido === 'string' ? parsed.selloRecibido : null;
       parsed = repairMojibakeDeep(unwrapDteEnvelope(parsed));
 
       // Acuse/Resp de recepción del MH (ej. "*-Resp.json", "Acuse_Electronico*.json"):
@@ -675,7 +679,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         if (looksFacturaRelated) invalidJsons.push({ part: jp, reason: check.reason ?? 'inválido' });
         continue;
       }
-      validDtes.push({ json: parsed, jsonPart: jp, pdfPart: null });
+      validDtes.push({ json: parsed, jsonPart: jp, pdfPart: null, rawBytes: bytes, selloRecibido });
     }
 
     // Emparejar JSON↔PDF en 3 fases (algunos proveedores, ej.
@@ -731,7 +735,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
       continue;
     }
 
-    for (const { json, jsonPart, pdfPart } of validDtes) {
+    for (const { json, jsonPart, pdfPart, rawBytes, selloRecibido } of validDtes) {
       const codigoGeneracion = json.identificacion.codigoGeneracion;
       const tipoDte = String(json.identificacion.tipoDte);
       const fecEmi: string | null = json.identificacion?.fecEmi ?? null;
@@ -741,6 +745,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         : [String(now.getUTCFullYear()), String(now.getUTCMonth() + 1).padStart(2, '0')];
       const basePath = `${yyyy}/${mm}/${codigoGeneracion}`;
       const jsonPath = `${basePath}.json`;
+      const origJsonPath = `${basePath}.orig.json`;
       const pdfPath  = pdfPart ? `${basePath}.pdf` : null;
 
       try {
@@ -755,6 +760,17 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           .upload(jsonPath, jsonBytes, { contentType: 'application/json', upsert: false });
         if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) {
           throw new Error(`upload json ${jsonPath}: ${upErr.message}`);
+        }
+
+        // Fase 3.1: respaldo de integridad (Decreto 487 Art. 3) — los bytes
+        // EXACTOS del adjunto/link, sin ningún procesamiento. Best-effort: si
+        // falla, se loguea pero NO aborta el documento — el normalizado de
+        // arriba es la fuente que necesita el portal para funcionar; este
+        // respaldo es adicional, no debe bloquear la ingesta.
+        const { error: origUpErr } = await supabase.storage.from(BUCKET)
+          .upload(origJsonPath, rawBytes, { contentType: 'application/json', upsert: false });
+        if (origUpErr && !String(origUpErr.message).toLowerCase().includes('already exists')) {
+          warnings.push(`DTE ${codigoGeneracion}: no se pudo subir respaldo .orig.json — ${origUpErr.message}`);
         }
 
         if (pdfPart && pdfPath) {
@@ -781,6 +797,8 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           monto_total:         json.resumen?.totalPagar ?? json.resumen?.montoTotalOperacion ?? null,
           total_iva:            json.resumen?.totalIva ?? null,
           json_path:           publicUrl(jsonPath),
+          orig_json_path:      origUpErr && !String(origUpErr.message).toLowerCase().includes('already exists') ? null : publicUrl(origJsonPath),
+          sello_recibido:      selloRecibido,
           pdf_path:             pdfPath ? publicUrl(pdfPath) : null,
           account_id:          account.id,
           from_email:          fromEmail,

@@ -33,6 +33,17 @@ export async function setPurchaseDteProveedor(documentId, proveedorId) {
     if (error) throw error;
 }
 
+// Fase 3.2: fusiona un doc "confirmado sin JSON" (solo PDF) con el
+// duplicado que sí trae el JSON completo — acción manual del usuario, ver
+// PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md §3.2 (sin match automático: las
+// filas sin JSON no guardan numero_control/monto/fecha/NIT).
+export async function mergePurchaseDteDocuments(targetId, sourceId) {
+    const { error } = await supabase.rpc('merge_purchase_dte_documents', {
+        p_target_id: targetId, p_source_id: sourceId,
+    });
+    if (error) throw error;
+}
+
 export async function resolvePurchaseDteReview(reviewId, action, matchedDocumentId = null) {
     const { error } = await supabase.rpc('resolve_purchase_dte_review', {
         p_review_id: reviewId, p_action: action, p_matched_document_id: matchedDocumentId,

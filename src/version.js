@@ -5,8 +5,22 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.27.6';
+export const APP_VERSION = '2.28.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.28.0 — refactor(menu): reestructura MENU_GROUPS del sidebar (a pedido
+// del usuario). Inventario tenía 9 módulos mezclando 3 dominios sin
+// relación (inventario real, compras/proveedores, logística inter-
+// sucursal); Comercial tenía 6 (ventas mezclado con incentivos). Nómina
+// vivía dentro de "Personal" junto al directorio; Clima Organizacional
+// estaba partido entre su propio grupo (encuesta) y RRHH (encuesta_admin).
+// Grupos nuevos: "Nómina" (solo payroll), "Promociones" (promociones +
+// bonificaciones, separado de Comercial) y "Compras" (compras +
+// facturas_compra + proveedores, separado de Inventario). Clima
+// Organizacional ahora incluye encuesta + encuesta_admin juntos. Ningún
+// grupo queda con más de 6 ítems. Verificado con Playwright: sidebar y
+// accordions abren correctamente, sin grupos huérfanos.
+
 
 // v2.27.6 — fix(proveedores): botón "Guardar Cambios" del modal de detalle
 // no quedaba fijo como en Nuevo Empleado — la causa: editProveedor vive en

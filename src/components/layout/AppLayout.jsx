@@ -71,19 +71,29 @@ const MODULE_MAP = {
 // ── Grupos del menú (define el orden y agrupación) ──────────────────────────
 // Orden: autoservicio del empleado primero, luego gestión de personal,
 // luego negocio (Comercial/Inventario), y configuración al final.
+// Reestructurado 2026-07-22 (a pedido del usuario) — Inventario tenía 9
+// módulos mezclando 3 dominios sin relación (inventario real, compras/
+// proveedores, logística inter-sucursal) y Comercial tenía 6 (ventas
+// mezclado con incentivos). Nómina vivía dentro de "Personal" junto al
+// directorio de empleados; Clima Organizacional estaba partido entre su
+// propio grupo (encuesta) y RRHH (encuesta_admin) sin motivo. Ningún grupo
+// nuevo pasa de 6 ítems.
 const MENU_GROUPS = [
     { key: 'overview',      label: 'Dashboard',     icon: LayoutDashboard, modules: ['overview']                          },
     { key: 'inicio',        label: 'Inicio',        icon: Home,          modules: ['emp_home']                          },
     { key: 'solicitudes',   label: 'Solicitudes',   icon: ClipboardList, modules: ['emp_requests', 'requests']            },
     { key: 'avisos',        label: 'Avisos',         icon: Bell,          modules: ['emp_announcements', 'announcements']  },
     { key: 'documentos',    label: 'Documentos',    icon: FolderOpen,    modules: ['emp_documents']                       },
-    { key: 'clima',         label: 'Clima Organizacional', icon: BarChart2, modules: ['encuesta']                         },
-    { key: 'personal',      label: 'Personal',      icon: User,          modules: ['staff_list', 'payroll']               },
+    { key: 'clima',         label: 'Clima Organizacional', icon: BarChart2, modules: ['encuesta', 'encuesta_admin']       },
+    { key: 'personal',      label: 'Personal',      icon: User,          modules: ['staff_list']                         },
+    { key: 'nomina',        label: 'Nómina',        icon: DollarSign,    modules: ['payroll']                            },
     { key: 'asistencia',    label: 'Asistencia',    icon: Monitor,       modules: ['monitor', 'time_audit']               },
     { key: 'horarios',      label: 'Horarios',      icon: Calendar,      modules: ['schedules', 'vacation_plan']          },
-    { key: 'rrhh',          label: 'RRHH',          icon: Users,         modules: ['encuesta_admin', 'entrevistas'] },
-    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones', 'promociones', 'bonificaciones'] },
-    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'laboratorios', 'pedidos', 'minmax', 'ventas_perdidas', 'compras', 'facturas_compra', 'proveedores', 'conteo_inventario'] },
+    { key: 'rrhh',          label: 'RRHH',          icon: Users,         modules: ['entrevistas']                        },
+    { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones'] },
+    { key: 'promociones',  label: 'Promociones',   icon: Tag,           modules: ['promociones', 'bonificaciones']       },
+    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'laboratorios', 'pedidos', 'minmax', 'ventas_perdidas', 'conteo_inventario'] },
+    { key: 'compras',      label: 'Compras',       icon: ShoppingCart,  modules: ['compras', 'facturas_compra', 'proveedores'] },
     { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview', 'ios_test', 'sync_health', 'orphan_objects'] },
 ];

@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.24.1';
+export const APP_VERSION = '2.24.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.24.2 — fix(facturas-compra): AttachJsonAction (3.2) ordena el listado
+// "Adjuntar JSON" por cercanía de received_at al correo original en vez de
+// filtrar por "sin PDF propio" — un reenvío que trae PDF+JSON juntos crea
+// una fila YA completa (con su propio pdf_path), que ese filtro hubiera
+// excluido del selector sin poder fusionarla. El listado sigue amplio a
+// propósito (cualquier doc con JSON del período), solo reordenado.
 
 // v2.24.1 — feat(facturas-compra): Fase 3 auditoría DTE+Proveedores
 // (cumplimiento legal, Decreto 487 / Art. 147 CT). (3.1) sync-purchase-

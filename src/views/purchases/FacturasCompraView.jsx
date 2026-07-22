@@ -255,6 +255,24 @@ function AttachJsonAction({ row, candidates, onMerged }) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
 
+    // Lista amplia a propósito (cualquier doc con JSON del período, tenga o
+    // no su propio PDF) — un reenvío que trae PDF+JSON juntos crea una fila
+    // YA completa (con su propio pdf_path), y esa fila sigue siendo un
+    // candidato válido de fusión aunque no sea un "JSON huérfano". Filtrar
+    // por "sin PDF propio" excluiría justo ese caso. Para reducir el ruido
+    // sin ese riesgo, se ordena por cercanía de fecha al correo original
+    // (received_at) — el más probable aparece primero, el buscador del
+    // select sigue disponible para el resto.
+    const sortedCandidates = useMemo(() => {
+        const anchor = row.received_at ? new Date(row.received_at).getTime() : null;
+        if (anchor === null) return candidates;
+        return [...candidates].sort((a, b) => {
+            const da = a.received_at ? Math.abs(new Date(a.received_at).getTime() - anchor) : Infinity;
+            const db = b.received_at ? Math.abs(new Date(b.received_at).getTime() - anchor) : Infinity;
+            return da - db;
+        });
+    }, [candidates, row.received_at]);
+
     if (!open) {
         return (
             <div className="flex items-center gap-1.5">
@@ -291,7 +309,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
                             setSaving(false);
                         }
                     }}
-                    options={candidates.map(d => ({
+                    options={sortedCandidates.map(d => ({
                         value: d.id,
                         label: `${fmtDate(d.fecha_emision)} · ${d.proveedor_nombre || d.supplier_nombre || d.emisor_nombre || '—'} · ${fmt$(d.monto_total)}`,
                     }))}

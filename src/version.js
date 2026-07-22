@@ -5,8 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.27.5';
+export const APP_VERSION = '2.27.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.27.6 — fix(proveedores): botón "Guardar Cambios" del modal de detalle
+// no quedaba fijo como en Nuevo Empleado — la causa: editProveedor vive en
+// HIDES_FOOTER de UnifiedModal.jsx (guardado propio, multi-parte: categoría/
+// match ERP se guardan solos al cambiar, aparte del botón), así que nunca
+// tuvo el footer compartido que SÍ vive fuera del área con scroll para
+// newEmployee/editBranch/etc. En vez de mover ese guardado al switch
+// centralizado de App.jsx (handleSubmit por modalType), se fijó el propio
+// botón con `position: sticky; bottom: 0` dentro del mismo contenedor
+// scrolleable — mismo resultado visual, sin tocar el guardado multi-parte
+// existente. Verificado con Playwright (visible sin scrollear, viewport
+// bajo a propósito para forzar el caso).
+
 
 // v2.27.5 — feat(facturas-compra): el buscador de Documentos ahora
 // encuentra por alias del proveedor (proveedores_maestro.alias, v2.27.1)

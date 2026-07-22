@@ -312,12 +312,20 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 </div>
             </div>
 
-            {error && <div className="text-[11px] text-red-500 px-1">{error}</div>}
-
-            <button type="button" onClick={save} disabled={loading}
-                className="w-full h-[48px] bg-[#0052CC] hover:bg-[#003D99] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
-                {loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}
-            </button>
+            {/* Barra de Guardar fija al fondo del modal — este tipo de modal vive en
+                HIDES_FOOTER de UnifiedModal (guardado propio, multi-parte: categoría/
+                match ERP se guardan solos al cambiar, aparte de este botón), así que
+                no hay footer compartido fuera del área con scroll. `sticky bottom-0`
+                lo fija al fondo del viewport visible sin necesitar que el botón viva
+                fuera del contenedor scrolleable (pedido del usuario: que se comporte
+                como el footer fijo de Nuevo Empleado). */}
+            <div className="sticky bottom-0 -mx-1 px-1 pt-4 pb-1 mt-2 bg-white/95 backdrop-blur-sm border-t border-slate-200/70">
+                {error && <div className="text-[11px] text-red-500 px-1 mb-2">{error}</div>}
+                <button type="button" onClick={save} disabled={loading}
+                    className="w-full h-[48px] bg-[#0052CC] hover:bg-[#003D99] disabled:bg-slate-300 text-white rounded-[1.25rem] font-black text-[12px] uppercase tracking-widest shadow-[0_4px_12px_rgba(0,82,204,0.3)] flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:shadow-none">
+                    {loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}
+                </button>
+            </div>
         </div>
     );
 };

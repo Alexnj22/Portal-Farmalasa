@@ -5,8 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.27.0';
+export const APP_VERSION = '2.27.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.27.1 — fix(proveedores): "Tipo de Proveedor" mostraba la clase de
+// gasto/costo de la categoría asignada (renombrado a "Categoría Contable",
+// sigue existiendo, solo estaba mal etiquetado). El tipo real, según el
+// Código Tributario, es el régimen fiscal: Contribuyente de IVA (tiene NRC)
+// vs Sujeto Excluido de IVA (Art. 119 CT, sin NRC — no da crédito fiscal, y
+// si es persona natural por un servicio aplica retención de Renta 10%,
+// Art. 156 CT). Derivado server-side en get_proveedores_maestro a partir de
+// nrc IS NOT NULL — sin columna nueva ni backfill, ya viene NULL para
+// sujetos excluidos desde proveedorFromDte.ts. Badge nuevo en la tabla y en
+// el detalle. feat: columna `alias` (búsqueda alterna, ej. como le dicen de
+// palabra en Bodega) — input en el detalle, tokenMatch en ProveedoresView.
+
 
 // v2.27.0 — feat(facturas-compra/sync): adjuntos .zip en correos de compra ya
 // no se descartan enteros ("no soportado v1") — sync-purchase-emails los abre

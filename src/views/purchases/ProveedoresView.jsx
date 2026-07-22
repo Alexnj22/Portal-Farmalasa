@@ -17,12 +17,31 @@ const SIN_MATCH_ERP = '__sin_match__';
 const COLS = [
     { key: 'proveedor',  label: 'Proveedor',  align: 'left' },
     { key: 'fiscal',     label: 'NIT / NRC',  align: 'left', hideBelow: 'md' },
+    { key: 'tipo',       label: 'Tipo',       align: 'left', hideBelow: 'lg' },
     { key: 'giro',       label: 'Giro',       align: 'left', hideBelow: 'lg' },
     { key: 'categoria',  label: 'Categoría',  align: 'left' },
     { key: 'match_erp',  label: 'Match ERP',  align: 'left' },
     { key: 'docs',       label: 'Docs',       align: 'right', hideBelow: 'md' },
     { key: 'ultima',     label: 'Última compra', align: 'left', hideBelow: 'lg' },
 ];
+
+// Tipo de Proveedor real (régimen fiscal, Código Tributario) — derivado
+// server-side en get_proveedores_maestro (regimen_fiscal), NO es la clase de
+// gasto/costo de la categoría asignada (eso es "Categoría", campo distinto).
+const REGIMEN_LABELS = { contribuyente: 'Contribuyente IVA', sujeto_excluido: 'Sujeto Excluido' };
+
+function RegimenCell({ row }) {
+    if (!row.regimen_fiscal) return <span className="text-slate-400 text-[11px]">—</span>;
+    const isExcluido = row.regimen_fiscal === 'sujeto_excluido';
+    return (
+        <span
+            title={isExcluido ? 'Sin NRC (Art. 119 CT) — no da crédito fiscal; retención de Renta 10% si es persona natural por un servicio (Art. 156 CT)' : 'Tiene NRC — da derecho a crédito fiscal de IVA'}
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${isExcluido ? 'text-amber-700 bg-amber-500/10 border-amber-500/25' : 'text-emerald-700 bg-emerald-500/10 border-emerald-500/25'}`}
+        >
+            {REGIMEN_LABELS[row.regimen_fiscal]}
+        </span>
+    );
+}
 
 const fmtDate = (d) => {
     if (!d) return '—';
@@ -101,7 +120,7 @@ export default function ProveedoresView({ openModal }) {
             if (categoriaId === SIN_CATEGORIA) { if (r.categoria_id) return false; }
             else if (categoriaId && categoriaId !== SIN_MATCH_ERP) { if (String(r.categoria_id) !== String(categoriaId)) return false; }
             if (claseFilter) { if (r.categoria_clase !== claseFilter) return false; }
-            if (search && !tokenMatch(search, r.nombre, r.nombre_comercial, r.nit, r.dui, r.nrc, r.desc_actividad)) return false;
+            if (search && !tokenMatch(search, r.nombre, r.nombre_comercial, r.alias, r.nit, r.dui, r.nrc, r.desc_actividad)) return false;
             return true;
         });
     }, [rows, activoFilter, categoriaId, claseFilter, search]);
@@ -141,7 +160,7 @@ export default function ProveedoresView({ openModal }) {
             onTabChange={() => {}}
             searchValue={search}
             onSearchChange={setSearch}
-            placeholder="Buscar por nombre, NIT, NRC…"
+            placeholder="Buscar por nombre, alias, NIT, NRC…"
             showSearch
         />
     );
@@ -202,7 +221,10 @@ export default function ProveedoresView({ openModal }) {
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-[12px] font-bold text-slate-700 truncate">{row.nombre}</p>
-                                        {row.nombre_comercial && row.nombre_comercial !== row.nombre && (
+                                        {row.alias && (
+                                            <p className="text-[10px] text-slate-500 truncate italic">&ldquo;{row.alias}&rdquo;</p>
+                                        )}
+                                        {!row.alias && row.nombre_comercial && row.nombre_comercial !== row.nombre && (
                                             <p className="text-[10px] text-slate-500 truncate">{row.nombre_comercial}</p>
                                         )}
                                     </div>
@@ -211,6 +233,9 @@ export default function ProveedoresView({ openModal }) {
                             <DataCell hideBelow="md">
                                 <p className="font-mono text-[10px] text-slate-600">{row.nit || row.dui || '—'}</p>
                                 {row.nrc && <p className="font-mono text-[10px] text-slate-400">NRC {row.nrc}</p>}
+                            </DataCell>
+                            <DataCell hideBelow="lg">
+                                <RegimenCell row={row} />
                             </DataCell>
                             <DataCell hideBelow="lg">
                                 <span className="text-slate-600 text-[11px] truncate max-w-[220px] block" title={row.desc_actividad}>{row.desc_actividad || '—'}</span>

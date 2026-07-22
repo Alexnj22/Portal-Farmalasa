@@ -32,6 +32,7 @@ export async function updateProveedorManual(id, fields) {
         p_notas: fields.notas || null,
         p_activo: fields.activo !== false,
         p_percibe_1: !!fields.percibe_1,
+        p_alias: fields.alias || null,
     });
     if (error) throw error;
 }

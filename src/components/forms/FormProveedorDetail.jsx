@@ -9,14 +9,33 @@ import LiquidSelect from '../common/LiquidSelect';
 
 const SI_NO = [{ value: 'si', label: 'Sí' }, { value: 'no', label: 'No' }];
 
-// Tipo de Proveedor (Costo/Gasto del form del ERP viejo, PLAN-PROVEEDORES-2026-07.md
+// Categoría Contable (Costo/Gasto del form del ERP viejo, PLAN-PROVEEDORES-2026-07.md
 // §2): NO es un campo propio — se deriva de la `clase` de la categoría asignada.
-// Sin categoría todavía, no hay tipo que derivar.
+// Sin categoría todavía, no hay clase que derivar. Antes esto vivía mal
+// etiquetado como "Tipo de Proveedor" — es la clasificación del GASTO, no del
+// proveedor (corregido 2026-07-22, ver regimen_fiscal abajo para el tipo real).
 const CLASE_LABELS = {
     costo: 'Costo (Inventario)',
     gasto_operativo: 'Gasto Operativo',
     gasto_admin: 'Gasto Administrativo',
     otro: 'Otro',
+};
+
+// Tipo de Proveedor REAL — régimen fiscal (Código Tributario), derivado
+// server-side en get_proveedores_maestro a partir de si tiene NRC (nunca se
+// edita a mano, es un hecho fiscal observado en sus propios DTE):
+//   - 'contribuyente': tiene NRC, emite CCF/Factura/NC/ND — da derecho a
+//     crédito fiscal de IVA.
+//   - 'sujeto_excluido': sin NRC (Art. 119 CT), emite Factura de Sujeto
+//     Excluido — NO da crédito fiscal, y si es persona natural prestando un
+//     servicio, aplica retención de Renta del 10% (Art. 156 CT).
+const REGIMEN_LABELS = {
+    contribuyente: 'Contribuyente de IVA',
+    sujeto_excluido: 'Sujeto Excluido de IVA',
+};
+const REGIMEN_HINT = {
+    contribuyente: 'Tiene NRC — da derecho a crédito fiscal de IVA (Art. 65 Ley IVA)',
+    sujeto_excluido: 'Sin NRC — no da crédito fiscal (Art. 119 CT); si es persona natural por un servicio, aplica retención de Renta 10% (Art. 156 CT)',
 };
 
 const fmtDate = (d) => {
@@ -46,6 +65,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
         contacto_nombre: formData?.contacto_nombre || '',
         telefono2: formData?.telefono2 || '',
         nombre_cheques: formData?.nombre_cheques || '',
+        alias: formData?.alias || '',
         notas: formData?.notas || '',
         activo: formData?.activo !== false,
         percibe_1: !!formData?.percibe_1,
@@ -150,7 +170,17 @@ const FormProveedorDetail = ({ formData, onClose }) => {
             </div>
 
             {/* Clasificación — guarda de inmediato al cambiar, no espera a Guardar Cambios */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block" title={formData?.regimen_fiscal ? REGIMEN_HINT[formData.regimen_fiscal] : 'Sin documentos suficientes para determinarlo'}>
+                        Tipo de Proveedor
+                    </label>
+                    <div className={`w-full px-3.5 border rounded-[1rem] h-[44px] text-[13px] font-medium flex items-center ${
+                        formData?.regimen_fiscal === 'sujeto_excluido' ? 'bg-amber-50 border-amber-200/70 text-amber-700' : 'bg-slate-50 border-slate-200/60 text-slate-600'
+                    }`}>
+                        {formData?.regimen_fiscal ? REGIMEN_LABELS[formData.regimen_fiscal] : 'Sin determinar'}
+                    </div>
+                </div>
                 <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Categoría</label>
                     <LiquidSelect
@@ -163,7 +193,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 </div>
                 <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block" title="Derivado de la categoría (clase costo/gasto) — no se edita directo">
-                        Tipo de Proveedor
+                        Categoría Contable
                     </label>
                     <div className="w-full px-3.5 bg-slate-50 border border-slate-200/60 rounded-[1rem] h-[44px] text-[13px] font-medium text-slate-500 flex items-center">
                         {claseActual ? CLASE_LABELS[claseActual] || claseActual : '—'}
@@ -179,7 +209,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         clearable
                     />
                 </div>
-                {clasifError && <div className="sm:col-span-3 text-[11px] text-red-500 px-1">{clasifError}</div>}
+                {clasifError && <div className="sm:col-span-2 lg:col-span-4 text-[11px] text-red-500 px-1">{clasifError}</div>}
             </div>
 
             {/* Curación manual */}
@@ -202,7 +232,16 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
                     />
                 </div>
-                <div className="sm:col-span-2">
+                <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block" title="Nombre alterno para buscarlo (ej. como le dicen de palabra en Bodega)">Alias</label>
+                    <input
+                        value={form.alias}
+                        onChange={e => setForm(p => ({ ...p, alias: e.target.value }))}
+                        placeholder="Nombre alterno de búsqueda"
+                        className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
+                    />
+                </div>
+                <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Nombre para Cheques</label>
                     <input
                         value={form.nombre_cheques}

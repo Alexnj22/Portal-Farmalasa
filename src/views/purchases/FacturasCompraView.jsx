@@ -12,7 +12,7 @@ import PeriodPicker from '../../components/common/PeriodPicker';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
-import { tokenMatch } from '../../utils/searchUtils';
+import { tokenMatch, normSearch } from '../../utils/searchUtils';
 import { dteTypeLabel, DTE_TYPE_OPTIONS } from '../../utils/dteTypes';
 import { openStoredFile, downloadStoredFile } from '../../utils/storageFiles';
 import { fetchProveedoresMaestro } from '../../data/proveedores';
@@ -74,9 +74,25 @@ function defaultDateRange() {
     return `${start}|${end}`;
 }
 
+// Fase 4 §5 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): si el término buscado
+// solo matchea dentro de items_text (no en proveedor/número/código — esos
+// campos ya se ven en la fila), devuelve un fragmento corto alrededor del
+// primer token encontrado para explicar por qué apareció el documento.
+function findItemMatchSnippet(searchTerm, itemsText) {
+    if (!searchTerm || !itemsText) return null;
+    const tokens = normSearch(searchTerm).split(/\s+/).filter(Boolean);
+    const normItems = normSearch(itemsText);
+    const hitToken = tokens.find(t => normItems.includes(t));
+    if (!hitToken) return null;
+    const idx = normItems.indexOf(hitToken);
+    const start = Math.max(0, idx - 20);
+    const end = Math.min(itemsText.length, idx + hitToken.length + 25);
+    return itemsText.slice(start, end).trim();
+}
+
 // ── SupplierMatchCell ─────────────────────────────────────────────────────────
 
-function SupplierMatchCell({ row, proveedores, onMatched, canEdit }) {
+function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet }) {
     const [editing, setEditing] = useState(false);
     const [saving, setSaving]   = useState(false);
     const [error, setError]     = useState('');
@@ -93,6 +109,12 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit }) {
                 <span className="text-slate-800 font-medium text-[12px] block truncate">{row.proveedor_nombre}</span>
                 {row.supplier_id && row.supplier_nombre !== row.proveedor_nombre && (
                     <span className="text-[10px] text-slate-400 truncate block">ERP: {row.supplier_nombre}</span>
+                )}
+                {/* Fase 4 §5: cuando el match viene del contenido del ítem
+                    (ej. "claro" no aparece en proveedor/número pero sí en
+                    items_text), mostrar por qué apareció esta fila. */}
+                {matchSnippet && (
+                    <span className="text-[10px] text-blue-500 truncate block" title={matchSnippet}>…{matchSnippet}…</span>
                 )}
             </div>
         );
@@ -255,7 +277,7 @@ function TabDocumentos({
             if (tipoDte && r.tipo_dte !== tipoDte) return false;
             if (proveedorId === SIN_PROVEEDOR) { if (r.proveedor_id) return false; }
             else if (proveedorId) { if (String(r.proveedor_id) !== String(proveedorId)) return false; }
-            if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion, r.invalidado ? 'invalidado' : null)) return false;
+            if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion, r.items_text, r.invalidado ? 'invalidado' : null)) return false;
             return true;
         });
     }, [rows, tipoDte, proveedorId, searchTerm]);
@@ -454,7 +476,17 @@ function TabDocumentos({
                             <span className="font-semibold text-slate-700 tabular-nums">{fmtDate(row.fecha_emision)}</span>
                         </DataCell>
                         <DataCell>
-                            <SupplierMatchCell row={row} proveedores={proveedores} onMatched={load} canEdit={canEdit} />
+                            <SupplierMatchCell
+                                row={row}
+                                proveedores={proveedores}
+                                onMatched={load}
+                                canEdit={canEdit}
+                                matchSnippet={
+                                    searchTerm && !tokenMatch(searchTerm, row.proveedor_nombre, row.supplier_nombre, row.emisor_nombre, row.emisor_nit, row.numero_control, row.codigo_generacion)
+                                        ? findItemMatchSnippet(searchTerm, row.items_text)
+                                        : null
+                                }
+                            />
                         </DataCell>
                         <DataCell>
                             <div className="flex items-center gap-1.5 flex-wrap">

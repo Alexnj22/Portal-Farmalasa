@@ -438,6 +438,28 @@ function validateDte(json: any): { valid: boolean; reason?: string } {
   return { valid: true };
 }
 
+// Fase 4 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): concatena las
+// descripciones (+ código, si existe) de cuerpoDocumento[] para permitir
+// buscar por contenido del ítem (caso real: COFARSAL vende saldo Claro/Tigo
+// en sus CCF). Únicas, unidas con " | ", cap defensivo ~8KB por documento.
+const ITEMS_TEXT_MAX_BYTES = 8 * 1024;
+function extractItemsText(json: any): string | null {
+  const items = json?.cuerpoDocumento;
+  if (!Array.isArray(items) || items.length === 0) return null;
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  for (const it of items) {
+    const desc = String(it?.descripcion ?? '').trim();
+    if (!desc || seen.has(desc)) continue;
+    seen.add(desc);
+    parts.push(it?.codigo ? `${it.codigo} ${desc}` : desc);
+  }
+  if (parts.length === 0) return null;
+  let text = parts.join(' | ');
+  if (text.length > ITEMS_TEXT_MAX_BYTES) text = text.slice(0, ITEMS_TEXT_MAX_BYTES);
+  return text;
+}
+
 // ── Procesar una cuenta ────────────────────────────────────────────────────────
 
 interface AccountResult {
@@ -764,6 +786,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           from_email:          fromEmail,
           source_message_id:   id,
           received_at:         receivedAt,
+          items_text:          extractItemsText(json),
           // supplier_id se llena DESPUÉS del insert, derivado del maestro
           // (ver 2.2 más abajo) — no acá con un lookup propio por nrc exacto,
           // que ignoraba el match normalizado (nrc con/sin guión) que ya
@@ -931,7 +954,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { dry_run = false, account_id = null, repair_stored_json = false, debug_query = null } = body;
+    const { dry_run = false, account_id = null, repair_stored_json = false, debug_query = null, backfill_items_text = false } = body;
 
     // Mantenimiento puntual: re-normaliza los archivos .json YA guardados en
     // Storage con unwrapDteEnvelope + repairMojibakeDeep. Necesario porque
@@ -996,6 +1019,66 @@ Deno.serve(async (req) => {
         repair_stored_json: true, checked, repaired, unchanged,
         hasMore: cutOff, nextOffset: cutOff ? offset : null,
         errors: errors.slice(0, 50),
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Fase 4 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): puebla items_text
+    // para documentos ya sincronizados antes de este cambio — baja el JSON
+    // ya guardado en Storage (no necesita Gmail), extrae cuerpoDocumento y
+    // hace UPDATE. Mismo patrón exacto que repair_stored_json de arriba:
+    // pagina por id con items_text IS NULL, hasMore por presupuesto de
+    // tiempo, idempotente.
+    if (backfill_items_text === true) {
+      const CHUNK = 1000;
+      let checked = 0, updated = 0, skipped = 0;
+      const errors: string[] = [];
+      const startTime = Date.now();
+      let cutOff = false;
+
+      for (;;) {
+        if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break; }
+        const { data: docs, error: docsErr } = await admin
+          .from('purchase_dte_documents')
+          .select('id, json_path')
+          .not('json_path', 'is', null)
+          .is('items_text', null)
+          .order('id', { ascending: true })
+          .limit(CHUNK);
+        if (docsErr) throw new Error(`purchase_dte_documents: ${docsErr.message}`);
+        if (!docs || docs.length === 0) break;
+
+        for (const doc of docs) {
+          if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break; }
+          checked++;
+          try {
+            const marker = `/storage/v1/object/public/${BUCKET}/`;
+            const idx = (doc.json_path as string).indexOf(marker);
+            if (idx === -1) { errors.push(`doc ${doc.id}: json_path con formato inesperado`); continue; }
+            const path = (doc.json_path as string).slice(idx + marker.length);
+
+            const { data: fileData, error: dlErr } = await admin.storage.from(BUCKET).download(path);
+            if (dlErr) { errors.push(`doc ${doc.id}: download — ${dlErr.message}`); continue; }
+            const parsed = JSON.parse(await fileData.text());
+            const itemsText = extractItemsText(parsed);
+            // '' en vez de dejar NULL cuando no hay cuerpoDocumento (ej. FSE
+            // tipo 14) — si no, la fila sigue matcheando items_text IS NULL
+            // y este backfill la re-procesa (re-descarga) en cada corrida,
+            // para siempre, sin converger nunca (mismo riesgo que E6).
+            if (!itemsText) skipped++;
+
+            const { error: upErr } = await admin.from('purchase_dte_documents').update({ items_text: itemsText ?? '' }).eq('id', doc.id);
+            if (upErr) { errors.push(`doc ${doc.id}: update — ${upErr.message}`); continue; }
+            updated++;
+          } catch (e: any) {
+            errors.push(`doc ${doc.id}: ${e.message}`);
+          }
+        }
+        if (cutOff) break;
+        if (docs.length < CHUNK) break;
+      }
+      return new Response(JSON.stringify({
+        backfill_items_text: true, checked, updated, skipped,
+        hasMore: cutOff, errors: errors.slice(0, 50),
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 

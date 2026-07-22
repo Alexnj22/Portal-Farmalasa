@@ -5,8 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.23.12';
+export const APP_VERSION = '2.24.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.24.0 — feat(facturas-compra): búsqueda por contenido del JSON (Fase 4,
+// PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md, pedido directo del usuario).
+// Caso real: COFARSAL vende saldo Claro/Tigo en sus CCF — buscar "claro"
+// antes obligaba a abrir documento por documento porque el buscador solo
+// cubría proveedor/NIT/número/código. Columna items_text (+ items_norm
+// generada, mismo patrón que proveedores_maestro.nombre_norm) con las
+// descripciones únicas de cuerpoDocumento[]; el sync la puebla en cada
+// insert nuevo; backfill (modo backfill_items_text, mismo patrón que
+// repair_stored_json) corrido en prod hasta hasMore:false — 1,169/1,169
+// documentos. Búsqueda cliente (capa 1, alcanza para v1): items_text
+// sumado a tokenMatch de TabDocumentos + get_purchase_dte_documents lo
+// expone. UX: cuando el match viene del contenido (no de proveedor/
+// número), sub-texto azul bajo el nombre mostrando el fragmento del ítem
+// que matcheó. Verificado con Playwright + datos reales: "claro" → 4 CCF
+// de COFARSAL, "tigo" → 3 CCF, ambos con snippet visible.
 
 // v2.23.12 — feat(facturas-compra,proveedores): Fase 2 auditoría DTE+
 // Proveedores (consistencia maestro vs ERP). (2.1) Filtro de Proveedor y

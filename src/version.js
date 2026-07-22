@@ -5,8 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.26.3';
+export const APP_VERSION = '2.27.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.27.0 — feat(facturas-compra/sync): adjuntos .zip en correos de compra ya
+// no se descartan enteros ("no soportado v1") — sync-purchase-emails los abre
+// en memoria (JSZip) y extrae los .json/.pdf al mismo pipeline de matching
+// existente (fases 1-3), sin código de emparejamiento nuevo. Zips corruptos o
+// con contraseña se guardan crudos y se encolan en Revisión (kind nuevo
+// 'orphan_zip', migración 20260722220000 agrega el valor al CHECK) en vez de
+// perderse en silencio. TabRevision muestra badge "ZIP sin abrir" para ese
+// caso. Deploy verificado en prod (v46, cron corrió limpio tras el deploy).
+// StatCard: valor principal ahora achica el font (18px) + truncate en vez de
+// romper línea — pedido explícito tras el fix anterior (break-words).
 
 // v2.26.3 — feat(permisos): nuevo permiso granular "Cards Contables"
 // (facturas_compra_ver_montos) bajo Facturas de Compra en Permisos de

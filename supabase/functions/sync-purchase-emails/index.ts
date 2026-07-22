@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
+import JSZip from "npm:jszip@3.10.1";
 import { getCorsHeaders, checkCronSecret, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { extractProveedorFromDte } from "../_shared/proveedorFromDte.ts";
 import { extractRelatedDocRef, resolveRelatedDocId } from "../_shared/dteRelatedDoc.ts";
@@ -14,6 +15,8 @@ const BACKFILL_FROM   = "2026/06/01";
 const OVERLAP_DAYS    = 3;
 const BUCKET          = "purchase-dte";
 const TIME_BUDGET_MS  = 100_000; // presupuesto por cuenta/corrida — deja margen bajo el límite de la plataforma (backfills grandes requieren varias llamadas sucesivas, ver hasMore en la respuesta)
+const ZIP_MAX_ENTRIES     = 50;               // tope de entradas escaneadas por zip — defensa contra zip bombs (miles de archivos diminutos)
+const ZIP_MAX_ENTRY_BYTES = 10 * 1024 * 1024; // igual a MAX_REMOTE_BYTES/file_size_limit del bucket — más grande solo generaría un upload fallido
 
 // Palabras que indican que el correo SÍ es una factura/DTE — se usa solo para
 // descartar PDFs sueltos (sin JSON en el mismo correo) que no son facturas en
@@ -439,6 +442,58 @@ async function resolveAttachmentBytes(accessToken: string, messageId: string, pa
   return base64UrlToBytes(data.data);
 }
 
+// Algunos proveedores mandan el DTE (JSON+PDF) empaquetado en un .zip en vez
+// de adjuntos sueltos — antes se descartaba el mensaje entero con un warning
+// ("no soportado v1"), perdiendo el documento para siempre. Se abre en
+// memoria y los .json/.pdf que contenga se inyectan como AttachmentPart
+// sintéticos (remoteBytes ya resuelto) al mismo pool que colectAttachmentParts
+// arma para adjuntos/enlaces normales — participan de las mismas 3 fases de
+// emparejamiento sin código de matching nuevo. Zips anidados y cualquier
+// archivo que no sea .json/.pdf se ignoran (no hay evidencia de que sean
+// parte de un DTE). Si el zip no se puede abrir (corrupto o con contraseña),
+// se devuelve en `failed` para que el llamador lo guarde crudo y lo encole
+// en Revisión (kind 'orphan_zip') en vez de perderlo en silencio.
+async function expandZipAttachments(
+  accessToken: string, messageId: string, zipParts: AttachmentPart[], warnings: string[],
+): Promise<{ extracted: AttachmentPart[]; failed: AttachmentPart[] }> {
+  const extracted: AttachmentPart[] = [];
+  const failed: AttachmentPart[] = [];
+  for (const zp of zipParts) {
+    try {
+      const zipBytes = await resolveAttachmentBytes(accessToken, messageId, zp);
+      const zip = await JSZip.loadAsync(zipBytes);
+      const entries = Object.values(zip.files).filter((f: any) => !f.dir).slice(0, ZIP_MAX_ENTRIES);
+      let anyExtracted = false;
+      for (const entry of entries as any[]) {
+        const name = entry.name.toLowerCase();
+        if (name.endsWith('.zip')) {
+          warnings.push(`zip ${zp.filename} (msg ${messageId}): entrada "${entry.name}" es otro zip anidado, ignorada`);
+          continue;
+        }
+        if (!name.endsWith('.json') && !name.endsWith('.pdf')) continue; // ej. logo, léeme — no es evidencia de DTE
+        const bytes: Uint8Array = await entry.async('uint8array');
+        if (bytes.byteLength > ZIP_MAX_ENTRY_BYTES) {
+          warnings.push(`zip ${zp.filename} (msg ${messageId}): entrada "${entry.name}" excede tamaño máximo, omitida`);
+          continue;
+        }
+        extracted.push({
+          filename: entry.name.split('/').pop() || entry.name,
+          mimeType: name.endsWith('.pdf') ? 'application/pdf' : 'application/json',
+          attachmentId: null,
+          inlineData: null,
+          remoteBytes: bytes,
+        });
+        anyExtracted = true;
+      }
+      if (!anyExtracted) warnings.push(`zip ${zp.filename} (msg ${messageId}): no contenía ningún .json/.pdf reconocible`);
+    } catch (e: any) {
+      warnings.push(`zip ${zp.filename} (msg ${messageId}): no se pudo abrir (¿corrupto o con contraseña?) — ${e.message}`);
+      failed.push(zp);
+    }
+  }
+  return { extracted, failed };
+}
+
 // ── Validación DTE ────────────────────────────────────────────────────────────
 
 function validateDte(json: any): { valid: boolean; reason?: string } {
@@ -696,13 +751,16 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
     const linkParts = await collectLinkAttachments(htmlBodies, textBodies, warnings, id);
     attachmentParts.push(...linkParts);
 
+    const zipParts = attachmentParts.filter(p => p.filename.toLowerCase().endsWith('.zip'));
+    const zipFailedParts: AttachmentPart[] = [];
+    if (zipParts.length > 0) {
+      const { extracted, failed } = await expandZipAttachments(accessToken, id, zipParts, warnings);
+      attachmentParts.push(...extracted);
+      zipFailedParts.push(...failed);
+    }
+
     const jsonParts = attachmentParts.filter(p => p.filename.toLowerCase().endsWith('.json'));
     const pdfParts  = attachmentParts.filter(p => p.filename.toLowerCase().endsWith('.pdf'));
-    const zipParts  = attachmentParts.filter(p => p.filename.toLowerCase().endsWith('.zip'));
-
-    if (zipParts.length > 0) {
-      warnings.push(`mensaje ${id} (${fromEmail}): adjunto ZIP no soportado v1 (${zipParts.map(z => z.filename).join(', ')})`);
-    }
 
     const usedPdfFilenames = new Set<string>();
     const validDtes: { json: any; jsonPart: AttachmentPart; pdfPart: AttachmentPart | null; rawBytes: Uint8Array; selloRecibido: string | null }[] = [];
@@ -1111,6 +1169,35 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         }
       } catch (e: any) {
         warnings.push(`PDF huérfano ${op.filename} (msg ${id}): ${e.message}`);
+        messageHadFailedReviewOp = true;
+      }
+    }
+
+    // Zips que expandZipAttachments no pudo abrir (corrupto o con
+    // contraseña) — se guarda el .zip crudo y se encola para revisión
+    // humana en vez de perderlo en silencio (antes ESTE era el destino de
+    // TODO adjunto .zip, sin siquiera intentar abrirlo).
+    for (const zf of zipFailedParts) {
+      try {
+        const zipBytes = await resolveAttachmentBytes(accessToken, id, zf);
+        const path = `review/${id}-${sanitizeStorageKey(zf.filename)}`;
+        const { error: upErr } = await supabase.storage.from(BUCKET)
+          .upload(path, zipBytes, { contentType: 'application/zip', upsert: false });
+        if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) throw new Error(upErr.message);
+        const { error: rqErr } = await supabase.from('purchase_dte_review_queue').upsert({
+          kind:        'orphan_zip',
+          file_path:    publicUrl(path),
+          filename:    zf.filename,
+          reason:      'ZIP no se pudo abrir automáticamente (¿corrupto o con contraseña?)',
+          account_id:  account.id,
+          source_message_id: id,
+          from_email:  fromEmail,
+          subject,
+          received_at: receivedAt,
+        }, { onConflict: 'account_id,source_message_id,filename', ignoreDuplicates: true });
+        if (rqErr) throw new Error(rqErr.message);
+      } catch (e: any) {
+        warnings.push(`zip huérfano ${zf.filename} (msg ${id}): no se pudo encolar para revisión — ${e.message}`);
         messageHadFailedReviewOp = true;
       }
     }

@@ -1146,6 +1146,10 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                                 <span className="text-[10px] font-bold text-orange-700 bg-orange-500/10 border border-orange-500/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
                                     Invalidación pendiente
                                 </span>
+                            ) : row.kind === 'orphan_zip' ? (
+                                <span className="text-[10px] font-bold text-violet-700 bg-violet-500/10 border border-violet-500/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
+                                    ZIP sin abrir
+                                </span>
                             ) : (
                                 <span className="text-[10px] font-bold text-amber-700 bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 rounded-full" title={row.reason}>
                                     JSON inválido

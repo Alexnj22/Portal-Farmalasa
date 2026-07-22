@@ -90,7 +90,7 @@ export default function StatCard({
                 {/* Valor / numero principal */}
                 {loading
                     ? <div className="skeleton h-[22px] w-12 rounded" />
-                    : <span className={`text-[22px] font-black tabular-nums leading-none break-words ${valueCls}`}>
+                    : <span className={`text-[18px] font-black tabular-nums leading-none truncate ${valueCls}`}>
                         {value ?? 0}
                       </span>
                 }

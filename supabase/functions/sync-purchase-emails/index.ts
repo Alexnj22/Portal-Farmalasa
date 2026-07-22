@@ -494,9 +494,20 @@ const UUID_RE = /\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[
 // ya usa el sync para detectar invalidaciones/notas en el JSON (ver
 // DTE_EMAIL_KEYWORD_RE), pero centradas en las que indican "esto NO es la
 // representación gráfica original".
-const DOC_TYPE_NOTICE_RE = /(invalidaci[oó]n|anulaci[oó]n|documento\s+anulado|ha\s+sido\s+anulad[oa]|nota\s+de\s+cr[ée]dito|nota\s+de\s+d[ée]bito|comprobante\s+de\s+retenci[oó]n|comprobante\s+de\s+liquidaci[oó]n)/i;
+// Ampliado 2026-07-22 tras verificación en vivo: el primer patrón exigía
+// frases completas ("documento anulado", "ha sido anulado") y no capturaba
+// el caso más común — un sello/watermark suelto "ANULADO" sobre la misma
+// representación gráfica (caso real: Grupo Jamilu). \b...\b para no
+// necesitar contexto de frase.
+const DOC_TYPE_NOTICE_RE = /(invalidaci[oó]n|anulaci[oó]n|\banulad[oa]\b|nota\s+de\s+cr[ée]dito|nota\s+de\s+d[ée]bito|comprobante\s+de\s+retenci[oó]n|comprobante\s+de\s+liquidaci[oó]n)/i;
 
-async function detectCodigoGeneracionInPdf(pdfBytes: Uint8Array): Promise<{ codigo: string | null; isNoticeOrRelatedDoc: boolean }> {
+// Señal específica de "ANULADO" (vs. el conjunto más amplio de arriba, que
+// también incluye invalidación/ND/NC) — se usa para decidir si conviene
+// marcar automáticamente invalidado=true en el documento ya capturado con
+// el mismo código, además de no descartarlo como duplicado.
+const ANULADO_RE = /\banulad[oa]\b/i;
+
+async function detectCodigoGeneracionInPdf(pdfBytes: Uint8Array): Promise<{ codigo: string | null; isNoticeOrRelatedDoc: boolean; isAnulado: boolean }> {
   try {
     const doc = await getDocumentProxy(pdfBytes);
     const { text } = await extractText(doc, { mergePages: true });
@@ -504,9 +515,10 @@ async function detectCodigoGeneracionInPdf(pdfBytes: Uint8Array): Promise<{ codi
     return {
       codigo: match ? match[0].toUpperCase() : null,
       isNoticeOrRelatedDoc: DOC_TYPE_NOTICE_RE.test(text),
+      isAnulado: ANULADO_RE.test(text),
     };
   } catch {
-    return { codigo: null, isNoticeOrRelatedDoc: false }; // PDF escaneado/sin capa de texto, o corrupto — no bloquea el resto del sync
+    return { codigo: null, isNoticeOrRelatedDoc: false, isAnulado: false }; // PDF escaneado/sin capa de texto, o corrupto — no bloquea el resto del sync
   }
 }
 
@@ -974,7 +986,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           .upload(path, pdfBytes, { contentType: 'application/pdf', upsert: false });
         if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) throw new Error(upErr.message);
 
-        const { codigo: detectedCodigo, isNoticeOrRelatedDoc } = await detectCodigoGeneracionInPdf(pdfBytes);
+        const { codigo: detectedCodigo, isNoticeOrRelatedDoc, isAnulado } = await detectCodigoGeneracionInPdf(pdfBytes);
 
         // Si el código detectado ya tiene un DTE sincronizado SIN su propio
         // PDF, se adjunta directo — sin pasar por Revisión en absoluto.
@@ -993,6 +1005,14 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         // suena a un aviso/nota, nunca se descarta aunque el tamaño
         // coincida.
         let isDuplicateResend = false;
+        // Marca automática de invalidado (a pedido del usuario, 2026-07-22 —
+        // verificado en vivo contra el caso real de Grupo Jamilu antes de
+        // dejarlo sin confirmación manual): si el PDF trae el sello/mención
+        // "ANULADO" Y matchea el código de un documento ya capturado, se
+        // marca invalidado=true directo en ese documento — no se pisa un
+        // invalidado_motivo más detallado que ya viniera del flujo JSON
+        // (`.eq('invalidado', false)` como guard).
+        let autoInvalidated = false;
         if (detectedCodigo) {
           const { data: existing, error: findErr } = await supabase
             .from('purchase_dte_documents')
@@ -1009,6 +1029,21 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
             if (!attachErr && attachData && attachData.length > 0) {
               autoMatched = true;
               warnings.push(`PDF ${op.filename}: código ${detectedCodigo} detectado — emparejado automáticamente con doc ${existing.id}`);
+            }
+          } else if (!findErr && existing && existing.pdf_path && isAnulado) {
+            const { data: invData, error: invErr } = await supabase
+              .from('purchase_dte_documents')
+              .update({ invalidado: true, invalidado_motivo: 'Detectado automáticamente: PDF con sello/mención ANULADO', invalidado_at: new Date().toISOString() })
+              .eq('id', existing.id)
+              .eq('invalidado', false)
+              .select('id');
+            if (invErr) {
+              warnings.push(`PDF ${op.filename}: código ${detectedCodigo} detectado como ANULADO pero no se pudo marcar invalidado en doc ${existing.id} — ${invErr.message}`);
+            } else if (invData && invData.length > 0) {
+              autoInvalidated = true;
+              warnings.push(`PDF ${op.filename}: código ${detectedCodigo} detectado como ANULADO — doc ${existing.id} marcado invalidado automáticamente`);
+            } else {
+              autoInvalidated = true; // ya estaba invalidado (ej. por el flujo JSON) — igual no manda a Revisión
             }
           } else if (!findErr && existing && existing.pdf_path && !isNoticeOrRelatedDoc) {
             const existingRel = relativeStoragePath(existing.pdf_path);
@@ -1027,7 +1062,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           }
         }
 
-        if (!autoMatched && !isDuplicateResend) {
+        if (!autoMatched && !isDuplicateResend && !autoInvalidated) {
           const { error: rqErr } = await supabase.from('purchase_dte_review_queue').upsert({
             kind:        'orphan_pdf',
             file_path:    publicUrl(path),
@@ -1278,7 +1313,7 @@ Deno.serve(async (req) => {
     // detectó nada, para no re-procesar la fila para siempre).
     if (backfill_detect_codes === true) {
       const CHUNK = 200; // más caro que los otros backfills (descarga+parsea PDF completo)
-      let checked = 0, autoMatched = 0, codeDetected = 0, noCode = 0, discardedDuplicate = 0;
+      let checked = 0, autoMatched = 0, codeDetected = 0, noCode = 0, discardedDuplicate = 0, autoInvalidated = 0;
       const errors: string[] = [];
       const startTime = Date.now();
       let cutOff = false;
@@ -1308,7 +1343,7 @@ Deno.serve(async (req) => {
             const { data: fileData, error: dlErr } = await admin.storage.from(BUCKET).download(path);
             if (dlErr) { errors.push(`revisión ${rq.id}: download — ${dlErr.message}`); continue; }
             const pdfBytes = new Uint8Array(await fileData.arrayBuffer());
-            const { codigo: detectedCodigo, isNoticeOrRelatedDoc } = await detectCodigoGeneracionInPdf(pdfBytes);
+            const { codigo: detectedCodigo, isNoticeOrRelatedDoc, isAnulado } = await detectCodigoGeneracionInPdf(pdfBytes);
 
             if (!detectedCodigo) {
               noCode++;
@@ -1341,6 +1376,28 @@ Deno.serve(async (req) => {
                 else autoMatched++;
                 continue;
               }
+            }
+
+            // Marca automática de invalidado (mismo mecanismo que el loop de
+            // orphanPdfs) — verificado en vivo contra el caso real de Grupo
+            // Jamilu antes de dejarlo sin confirmación manual.
+            if (existing && existing.pdf_path && isAnulado) {
+              const { data: invData, error: invErr } = await admin
+                .from('purchase_dte_documents')
+                .update({ invalidado: true, invalidado_motivo: 'Detectado automáticamente: PDF con sello/mención ANULADO', invalidado_at: new Date().toISOString() })
+                .eq('id', existing.id)
+                .eq('invalidado', false)
+                .select('id');
+              if (invErr) {
+                errors.push(`revisión ${rq.id}: no se pudo marcar invalidado en doc ${existing.id} — ${invErr.message}`);
+              } else {
+                autoInvalidated++;
+                const { error: resolveErr } = await admin.from('purchase_dte_review_queue')
+                  .update({ status: 'emparejado', matched_document_id: existing.id, resolved_at: new Date().toISOString(), ai_suggested: { detected_codigo_generacion: detectedCodigo } })
+                  .eq('id', rq.id);
+                if (resolveErr) errors.push(`revisión ${rq.id}: no se pudo cerrar tras marcar invalidado — ${resolveErr.message}`);
+              }
+              continue;
             }
 
             // E8 (endurecido tras falso negativo real, ver comentario en el
@@ -1380,7 +1437,7 @@ Deno.serve(async (req) => {
         if (rows.length < CHUNK) break;
       }
       return new Response(JSON.stringify({
-        backfill_detect_codes: true, checked, codeDetected, autoMatched, discardedDuplicate, noCode,
+        backfill_detect_codes: true, checked, codeDetected, autoMatched, autoInvalidated, discardedDuplicate, noCode,
         hasMore: cutOff, errors: errors.slice(0, 50),
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }

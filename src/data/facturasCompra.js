@@ -33,6 +33,17 @@ export async function setPurchaseDteProveedor(documentId, proveedorId) {
     if (error) throw error;
 }
 
+// Marcar/desmarcar invalidado a mano — para casos donde la detección
+// automática (JSON con esquema de invalidación, o "ANULADO" en el texto
+// del PDF) no aplica, ej. un sello gráfico/watermark que no es texto
+// seleccionable (caso real: Grupo Jamilu, 2026-07-22).
+export async function setPurchaseDteInvalidado(documentId, invalidado, motivo = null) {
+    const { error } = await supabase.rpc('set_purchase_dte_invalidado', {
+        p_document_id: documentId, p_invalidado: invalidado, p_motivo: motivo,
+    });
+    if (error) throw error;
+}
+
 // Fase 3.2: fusiona un doc "confirmado sin JSON" (solo PDF) con el
 // duplicado que sí trae el JSON completo — acción manual del usuario, ver
 // PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md §3.2 (sin match automático: las

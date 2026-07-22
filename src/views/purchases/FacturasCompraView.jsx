@@ -576,7 +576,7 @@ function TabDocumentos({
     };
 
     const viewDetail = (row) => {
-        openModal?.('viewPurchaseDte', { document: row });
+        openModal?.('viewPurchaseDte', { document: row, canEdit, onInvalidadoChanged: load });
         useStaff.getState().appendAuditLog('FACTURAS_COMPRA_VER_DETALLE', String(row.id), {
             codigo_generacion: row.codigo_generacion,
         });

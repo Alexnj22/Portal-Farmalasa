@@ -5,8 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.25.3';
+export const APP_VERSION = '2.25.4';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.25.4 — feat(facturas-compra): marca manual de invalidado + intento de
+// detección automática (caso real Grupo Jamilu, 2026-07-22). Se amplió
+// DOC_TYPE_NOTICE_RE para capturar "ANULADO"/"ANULADA" sueltos (antes solo
+// frases completas) y se agregó detección específica (isAnulado) que
+// marcaría invalidado=true automático en el documento con el mismo código
+// — VERIFICADO EN VIVO contra el caso real antes de decidir si dejarlo
+// automático (a pedido explícito del usuario): el sello "ANULADO" de Grupo
+// Jamilu es un watermark gráfico, no texto seleccionable — unpdf no lo
+// detecta, así que el mecanismo automático queda en el código (inerte para
+// este tipo de caso, podría activarse si algún proveedor sí incrusta la
+// palabra como texto real) pero NO es la vía confiable. En su lugar: nuevo
+// RPC set_purchase_dte_invalidado + botón "Marcar/Quitar invalidado" en
+// FormPurchaseDteViewer (visible solo con canEdit) — antes invalidado era
+// 100% de solo lectura en toda la UI, sin ninguna forma manual de
+// corregirlo. Reversible (toggle), auditado.
 
 // v2.25.3 — fix(facturas-compra): TabRevision — modal + botones (feedback
 // del usuario tras usar el módulo en vivo). (1) Click en el archivo abre el

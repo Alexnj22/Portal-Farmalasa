@@ -440,7 +440,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
 function TabDocumentos({
     dateRange, setDateRange, tipoDte, setTipoDte, proveedorId, setProveedorId,
     searchTerm, refreshKey, openModal, proveedores, canEdit,
-    syncing, syncMsg, runSyncNow,
+    syncing, syncMsg, syncProgress, runSyncNow,
 }) {
     const [dateStart, dateEnd] = dateRange.split('|');
     const [rows, setRows] = useState([]);
@@ -665,7 +665,7 @@ function TabDocumentos({
                                             : 'bg-transparent text-slate-500 border-transparent hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600'
                                     } disabled:opacity-60`}>
                                     <RefreshCw size={11} strokeWidth={2.5} className={syncing ? 'animate-spin' : ''} />
-                                    {syncing ? 'Sincronizando' : 'Sincronizar'}
+                                    {syncing ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sincronizando') : 'Sincronizar'}
                                 </button>
                                 {syncMsg && (
                                     <span className="text-[10px] text-slate-500 font-medium max-w-[180px] truncate" title={syncMsg}>
@@ -1009,27 +1009,41 @@ export default function FacturasCompraView({ openModal }) {
 
     const [syncing, setSyncing] = useState(false);
     const [syncMsg, setSyncMsg] = useState('');
+    const [syncProgress, setSyncProgress] = useState(null); // {batch} — solo aparece si hay >1 tanda
 
     useEffect(() => {
         fetchProveedoresMaestro().then(setProveedores).catch((e) => console.error('fetchProveedoresMaestro:', e.message));
     }, []);
 
+    // Fase 5 E5 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): antes hasMore
+    // obligaba al usuario a re-clickear "Sincronizar" manualmente por cada
+    // tanda. Ahora se re-invoca sola mientras hasMore, con tope de
+    // seguridad de 10 tandas (backfills grandes no deben trabar el botón
+    // para siempre ni exceder el presupuesto de la sesión del usuario).
+    const MAX_SYNC_BATCHES = 10;
     const runSyncNow = async () => {
         setSyncing(true);
         setSyncMsg('');
+        setSyncProgress(null);
+        let totalInserted = 0;
+        let batch = 0;
+        let hasMore = true;
         try {
-            const result = await syncPurchaseEmailsNow({ dryRun: false });
-            const totals = (result.results || []).reduce((acc, r) => ({
-                inserted: acc.inserted + (r.documentsInserted || 0),
-                more: acc.more || r.hasMore,
-            }), { inserted: 0, more: false });
-            setSyncMsg(`${totals.inserted} documento${totals.inserted !== 1 ? 's' : ''} nuevo${totals.inserted !== 1 ? 's' : ''}${totals.more ? ' (quedó más por sincronizar, corré de nuevo)' : ''}`);
-            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_SYNC_MANUAL', null, { inserted: totals.inserted });
+            while (hasMore && batch < MAX_SYNC_BATCHES) {
+                batch++;
+                if (batch > 1) setSyncProgress({ batch });
+                const result = await syncPurchaseEmailsNow({ dryRun: false });
+                totalInserted += (result.results || []).reduce((sum, r) => sum + (r.documentsInserted || 0), 0);
+                hasMore = result.hasMore === true;
+            }
+            setSyncMsg(`${totalInserted} documento${totalInserted !== 1 ? 's' : ''} nuevo${totalInserted !== 1 ? 's' : ''}${hasMore ? ` (tope de ${MAX_SYNC_BATCHES} tandas alcanzado, quedó más — corré de nuevo)` : ''}`);
+            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_SYNC_MANUAL', null, { inserted: totalInserted, batches: batch });
             bumpRefresh();
         } catch (e) {
             setSyncMsg(`Error: ${e.message}`);
         } finally {
             setSyncing(false);
+            setSyncProgress(null);
         }
     };
 
@@ -1065,6 +1079,7 @@ export default function FacturasCompraView({ openModal }) {
                     canEdit={canEdit}
                     syncing={syncing}
                     syncMsg={syncMsg}
+                    syncProgress={syncProgress}
                     runSyncNow={runSyncNow}
                 />
             )}

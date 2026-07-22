@@ -494,43 +494,45 @@ interface AccountResult {
   remaining: number;
 }
 
-// Paginado explícito — PostgREST trunca a 1000 filas por respuesta.
-// Fuente única de "ya procesado": purchase_dte_processed_messages, marcado al
-// final de CADA mensaje sin importar el resultado (insertado, duplicado vía
-// ON CONFLICT, o ignorado por adjunto no soportado como .zip) — antes se
-// inferían los "hechos" solo por presencia en purchase_dte_documents/
-// purchase_dte_review_queue, lo que dejaba mensajes con DTE duplicado o solo
-// adjuntos .zip re-escaneándose desde Gmail en cada corrida, para siempre.
-async function selectAllMessageIds(supabase: any, accountId: number): Promise<string[]> {
-  const CHUNK = 1000;
-  const out: string[] = [];
-  let from = 0;
-  for (;;) {
+// Fase 5 E1 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): antes esto cargaba
+// TODA purchase_dte_processed_messages de la cuenta (crece sin tope, +cada
+// correo para siempre) solo para filtrar un puñado de candidateIds de la
+// corrida actual (la ventana de Gmail del query — normalmente días, no
+// meses). Invertido: consulta SOLO los candidateIds de ESTA corrida, en
+// chunks de 500 (límite de tamaño de URL/IN de PostgREST), en vez de bajar
+// el historial completo. Pasa de O(historial) a O(ventana) por corrida.
+async function selectDoneMessageIds(supabase: any, accountId: number, candidateIds: string[]): Promise<Set<string>> {
+  const CHUNK = 500;
+  const out = new Set<string>();
+  for (let i = 0; i < candidateIds.length; i += CHUNK) {
+    const chunk = candidateIds.slice(i, i + CHUNK);
     const { data, error } = await supabase
       .from('purchase_dte_processed_messages')
       .select('source_message_id')
       .eq('account_id', accountId)
-      .range(from, from + CHUNK - 1);
-    if (error) throw new Error(`selectAllMessageIds: ${error.message}`);
-    for (const r of (data ?? [])) if (r.source_message_id) out.push(r.source_message_id);
-    if (!data || data.length < CHUNK) break;
-    from += CHUNK;
+      .in('source_message_id', chunk);
+    // Si falla, propaga el error en vez de devolver un set vacío en
+    // silencio — un doneIds vacío hace que ESE chunk se re-escanee desde
+    // Gmail como si nada estuviera procesado (costoso pero no pierde
+    // datos), así que el caller decide si reintentar o abortar la corrida.
+    if (error) throw new Error(`selectDoneMessageIds: ${error.message}`);
+    for (const r of (data ?? [])) if (r.source_message_id) out.add(r.source_message_id);
   }
   return out;
 }
 
-// Si falla, propaga el error en vez de devolver un set vacío en silencio —
-// un doneIds vacío hace que TODO el historial se re-escanee desde Gmail como
-// si nada estuviera procesado (costoso pero no pierde datos, así que el
-// caller decide si reintentar o abortar la corrida de esa cuenta).
-async function getDoneMessageIds(supabase: any, accountId: number): Promise<Set<string>> {
-  return new Set(await selectAllMessageIds(supabase, accountId));
-}
-
-async function markMessageProcessed(supabase: any, accountId: number, messageId: string) {
-  const { error } = await supabase.from('purchase_dte_processed_messages')
-    .upsert({ account_id: accountId, source_message_id: messageId }, { onConflict: 'account_id,source_message_id', ignoreDuplicates: true });
-  if (error) throw new Error(`markMessageProcessed: ${error.message}`);
+// Fase 5 E2 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): 1 upsert en lote al
+// final de la corrida en vez de 1 upsert por mensaje — el caller acumula en
+// messagesToMarkProcessed y llama esto una sola vez. Chunks de 500 (mismo
+// límite práctico usado en selectDoneMessageIds).
+async function markMessagesProcessed(supabase: any, accountId: number, messageIds: string[]) {
+  const CHUNK = 500;
+  for (let i = 0; i < messageIds.length; i += CHUNK) {
+    const chunk = messageIds.slice(i, i + CHUNK).map(id => ({ account_id: accountId, source_message_id: id }));
+    const { error } = await supabase.from('purchase_dte_processed_messages')
+      .upsert(chunk, { onConflict: 'account_id,source_message_id', ignoreDuplicates: true });
+    if (error) throw new Error(`markMessagesProcessed: ${error.message}`);
+  }
 }
 
 async function processAccount(supabase: any, account: any, dryRun: boolean, debugQuery?: string | null): Promise<AccountResult> {
@@ -579,7 +581,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
   // debugQuery: diagnóstico puntual (ej. una franja de fechas específica) —
   // ignora processed_messages para poder re-inspeccionar mensajes ya
   // marcados como procesados sin necesidad de borrar esa tabla.
-  const doneIds = debugQuery ? new Set<string>() : await getDoneMessageIds(supabase, account.id);
+  const doneIds = debugQuery ? new Set<string>() : await selectDoneMessageIds(supabase, account.id, allMessageIds);
   const pendingIds = allMessageIds.filter(id => !doneIds.has(id));
 
   let messagesScanned    = 0;
@@ -589,6 +591,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
   const warnings: string[] = [];
   const startTime = Date.now();
   let cutOff = false;
+  const messagesToMarkProcessed: string[] = [];
 
   for (const id of pendingIds) {
     if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break; }
@@ -616,11 +619,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
     // (ver caso real "Comprobantes COF + JSON" arriba).
     if (fromEmail && fromEmail.toLowerCase().includes(account.email.toLowerCase())) {
       warnings.push(`mensaje ${id}: descartado — From coincide con la propia cuenta (${fromEmail})`);
-      try {
-        await markMessageProcessed(supabase, account.id, id);
-      } catch (e: any) {
-        warnings.push(`mensaje ${id}: no se pudo marcar como procesado — ${e.message}`);
-      }
+      messagesToMarkProcessed.push(id);
       continue;
     }
 
@@ -1031,13 +1030,21 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
     // Cubre igualmente el caso normal: DTE duplicado (ON CONFLICT DO
     // NOTHING) y mensajes con solo adjuntos no soportados (.zip).
     if (!messageHadFailedReviewOp) {
-      try {
-        await markMessageProcessed(supabase, account.id, id);
-      } catch (e: any) {
-        warnings.push(`mensaje ${id}: no se pudo marcar como procesado — ${e.message}`);
-      }
+      messagesToMarkProcessed.push(id);
     } else {
       warnings.push(`mensaje ${id}: no se marca como procesado (falló una operación de revisión/invalidado) — se reintentará`);
+    }
+  }
+
+  if (messagesToMarkProcessed.length > 0) {
+    try {
+      await markMessagesProcessed(supabase, account.id, messagesToMarkProcessed);
+    } catch (e: any) {
+      // Best-effort: si el upsert en lote falla, esos mensajes se
+      // re-escanean en la próxima corrida (más caro, pero ON CONFLICT DO
+      // NOTHING en purchase_dte_documents evita duplicados reales) — no
+      // debe abortar el resto de la respuesta de esta cuenta.
+      warnings.push(`no se pudieron marcar ${messagesToMarkProcessed.length} mensajes como procesados — ${e.message}`);
     }
   }
 

@@ -66,6 +66,12 @@ Deno.serve(async (req) => {
     let included = 0;
     const warnings: string[] = [];
 
+    // Fase 5 E4 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): antes cada
+    // .download() esperaba al anterior (serie) — una descarga de 300 docs
+    // (hasta 600 archivos) tardaba minutos. Tandas de 8 en paralelo bajan
+    // eso a segundos, sin saturar la conexión a Storage.
+    type DownloadTask = { baseName: string; rel: string; ext: 'json' | 'pdf' };
+    const tasks: DownloadTask[] = [];
     for (const row of rows ?? []) {
       // codigo_generacion es NULL en docs "confirmados sin JSON" (ver
       // TabRevision) — sin este fallback, 2+ documentos así en la misma
@@ -73,16 +79,21 @@ Deno.serve(async (req) => {
       // entre sí, perdiendo archivos sin ningún aviso.
       const baseName = row.codigo_generacion || `doc-${row.id}`;
       const jsonRel = relativePath(row.json_path);
-      if (jsonRel) {
-        const { data: jsonBlob, error: jsonErr } = await admin.storage.from(BUCKET).download(jsonRel);
-        if (jsonBlob) { zip.file(`${baseName}.json`, await jsonBlob.arrayBuffer()); included++; }
-        else warnings.push(`${baseName}.json: ${jsonErr?.message ?? 'no se pudo descargar'}`);
-      }
+      if (jsonRel) tasks.push({ baseName, rel: jsonRel, ext: 'json' });
       const pdfRel = relativePath(row.pdf_path);
-      if (pdfRel) {
-        const { data: pdfBlob, error: pdfErr } = await admin.storage.from(BUCKET).download(pdfRel);
-        if (pdfBlob) { zip.file(`${baseName}.pdf`, await pdfBlob.arrayBuffer()); included++; }
-        else warnings.push(`${baseName}.pdf: ${pdfErr?.message ?? 'no se pudo descargar'}`);
+      if (pdfRel) tasks.push({ baseName, rel: pdfRel, ext: 'pdf' });
+    }
+
+    const CONCURRENCY = 8;
+    for (let i = 0; i < tasks.length; i += CONCURRENCY) {
+      const batch = tasks.slice(i, i + CONCURRENCY);
+      const results = await Promise.all(batch.map(async (t) => {
+        const { data, error } = await admin.storage.from(BUCKET).download(t.rel);
+        return { t, data, error };
+      }));
+      for (const { t, data, error } of results) {
+        if (data) { zip.file(`${t.baseName}.${t.ext}`, await data.arrayBuffer()); included++; }
+        else warnings.push(`${t.baseName}.${t.ext}: ${error?.message ?? 'no se pudo descargar'}`);
       }
     }
 

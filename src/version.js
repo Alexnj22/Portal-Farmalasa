@@ -5,8 +5,28 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.25.0';
+export const APP_VERSION = '2.25.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.25.1 — perf(facturas-compra): Fase 5 eficiencia (PLAN-MEJORAS-DTE-
+// PROVEEDORES-2026-07.md), E1/E2/E4/E5/E6. (E1) selectDoneMessageIds
+// reemplaza getDoneMessageIds — antes bajaba TODA
+// purchase_dte_processed_messages de la cuenta en cada corrida (crece sin
+// tope); ahora consulta solo los candidateIds de la ventana de Gmail de
+// esta corrida, en chunks de 500. O(historial) → O(ventana). (E2)
+// markMessagesProcessed: 1 upsert en lote al final de la corrida en vez de
+// 1 por mensaje. (E4) export-purchase-dte-zip descarga JSON+PDF en tandas
+// de 8 en paralelo en vez de en serie — una descarga de 300 docs baja de
+// minutos a segundos. (E5) "Sincronizar ahora" se re-invoca sola mientras
+// hasMore (tope de seguridad 10 tandas, contador visible "tanda N") — antes
+// exigía que el usuario re-clickeara por cada tanda. (E6) backfill-
+// proveedores-dte y backfill-dte-related-docs paginan por cursor (after_id/
+// nextAfterId) en vez de re-consultar siempre "las primeras 200" — una fila
+// que falla para siempre quedaba bloqueando la cabeza de la cola,
+// hasMore nunca bajaba. Efecto colateral real del fix: backfill-dte-
+// related-docs corrido en prod emparejó 43 NC/ND que habían quedado sin
+// conectar a su documento original. Verificado en vivo: sync real (0-4
+// mensajes según corrida) sin errores tras cada deploy.
 
 // v2.25.0 — feat(facturas-compra): detección automática de Código de
 // Generación en PDFs huérfanos (a pedido del usuario, extiende 3.2).

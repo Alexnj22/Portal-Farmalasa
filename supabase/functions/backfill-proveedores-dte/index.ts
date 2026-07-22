@@ -47,13 +47,20 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { dry_run = false } = body;
+    const { dry_run = false, after_id = 0 } = body;
 
+    // Fase 5 E6 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): el batch era
+    // siempre "las primeras 200 por id sin proveedor_id" — una fila que
+    // falla para siempre (JSON roto, sin nit/dui extraíble) queda en la
+    // cabeza de la cola y hasMore nunca baja, sin importar cuántas veces se
+    // corra. Cursor explícito (after_id, devuelto como nextAfterId) en vez
+    // de re-consultar siempre desde el principio.
     const { data: rows, error: rowsErr } = await admin
       .from("purchase_dte_documents")
       .select("id, tipo_dte, json_path")
       .is("proveedor_id", null)
       .in("tipo_dte", TIPOS_DTE_CON_PROVEEDOR)
+      .gt("id", after_id)
       .order("id", { ascending: true })
       .limit(BATCH_SIZE);
     if (rowsErr) throw new Error(`purchase_dte_documents: ${rowsErr.message}`);
@@ -61,6 +68,7 @@ Deno.serve(async (req) => {
     let processed = 0;
     let upserted   = 0;
     let skipped    = 0;
+    let lastId     = after_id; // avanza el cursor incluso en filas que se skippean para siempre
     const warnings: string[] = [];
     const startTime = Date.now();
     let cutOff = false;
@@ -68,6 +76,7 @@ Deno.serve(async (req) => {
     for (const row of (rows ?? [])) {
       if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break; }
       processed++;
+      lastId = row.id;
 
       let json: any;
       try {
@@ -111,6 +120,7 @@ Deno.serve(async (req) => {
     const hasMore = cutOff || (rows ?? []).length === BATCH_SIZE;
     return new Response(JSON.stringify({
       success: true, dry_run, hasMore, processed, upserted, skipped,
+      nextAfterId: lastId, // pasar como after_id en la siguiente corrida
       warnings: warnings.slice(0, 50),
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err: any) {

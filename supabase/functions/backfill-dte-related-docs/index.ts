@@ -45,11 +45,19 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const body = await req.json().catch(() => ({}));
+    const { after_id = 0 } = body;
+
+    // Fase 5 E6 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): mismo bug que
+    // backfill-proveedores-dte — una NC/ND cuyo original todavía no llegó
+    // (sinMatch) queda en la cabeza de la cola para siempre, hasMore nunca
+    // baja. Cursor explícito (after_id / nextAfterId).
     const { data: rows, error: rowsErr } = await admin
       .from("purchase_dte_documents")
       .select("id, tipo_dte, json_path")
       .in("tipo_dte", ["05", "06"])
       .is("documento_relacionado_id", null)
+      .gt("id", after_id)
       .order("id", { ascending: true })
       .limit(BATCH_SIZE);
     if (rowsErr) throw new Error(`purchase_dte_documents: ${rowsErr.message}`);
@@ -57,6 +65,7 @@ Deno.serve(async (req) => {
     let processed = 0;
     let matched    = 0;
     let sinMatch    = 0;
+    let lastId      = after_id;
     const warnings: string[] = [];
     const startTime = Date.now();
     let cutOff = false;
@@ -64,6 +73,7 @@ Deno.serve(async (req) => {
     for (const row of (rows ?? [])) {
       if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break; }
       processed++;
+      lastId = row.id;
 
       let json: any;
       try {
@@ -98,6 +108,14 @@ Deno.serve(async (req) => {
     const hasMore = cutOff || (rows ?? []).length === BATCH_SIZE;
     return new Response(JSON.stringify({
       success: true, hasMore, processed, matched, sinMatch,
+      // nextAfterId avanza incluso en sinMatch (original aún no sincronizado)
+      // — a diferencia de backfill-proveedores-dte, esos SÍ podrían resolver
+      // en el futuro cuando el original llegue. El cursor solo evita
+      // re-escanear la MISMA cabeza de cola dentro de una limpieza manual en
+      // curso; para recapturar NC/ND que quedaron sinMatch, volver a correr
+      // con after_id=0 (o sin after_id) periódicamente — no programar el
+      // cursor persistente como si fuera un checkpoint definitivo.
+      nextAfterId: lastId,
       warnings: warnings.slice(0, 50),
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err: any) {

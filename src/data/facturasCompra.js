@@ -16,6 +16,23 @@ async function extractFunctionErrorMessage(error) {
     return error?.message || 'Error desconocido';
 }
 
+// Dispara la descarga de un Blob de forma confiable. Bug real 2026-07-22:
+// a.click() + URL.revokeObjectURL(a.href) espalda-con-espalda (sin agregar
+// el <a> al DOM) puede revocar el blob URL antes de que el navegador
+// empiece a leerlo — la descarga se pierde en silencio, sin error en
+// consola (justo lo reportado). El patrón robusto: agregar al DOM, click,
+// remover, y revocar con demora (no inmediato).
+function triggerDownload(blob, filename) {
+    const a = Object.assign(window.document.createElement('a'), {
+        href: URL.createObjectURL(blob),
+        download: filename,
+    });
+    window.document.body.appendChild(a);
+    a.click();
+    window.document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
 export async function fetchPurchaseDteDocuments(desde, hasta) {
     const { data, error } = await supabase.rpc('get_purchase_dte_documents', { p_desde: desde, p_hasta: hasta });
     if (error) throw error;
@@ -112,12 +129,7 @@ export async function downloadPurchaseDtePackage(row) {
     if (included === 0) throw new Error('No se pudo descargar ningún archivo de este documento.');
 
     const blob = await zip.generateAsync({ type: 'blob' });
-    const a = Object.assign(window.document.createElement('a'), {
-        href: URL.createObjectURL(blob),
-        download: `${baseName}.zip`,
-    });
-    a.click();
-    URL.revokeObjectURL(a.href);
+    triggerDownload(blob, `${baseName}.zip`);
 }
 
 // Descarga masiva — el edge function arma cada tanda server-side (tope 300
@@ -125,24 +137,57 @@ export async function downloadPurchaseDtePackage(row) {
 // navegador las mergea en un solo ZIP final con JSZip. Sin tope para quien
 // descarga — un rango de 1000+ documentos simplemente hace más tandas.
 const ZIP_BATCH_SIZE = 300; // debe coincidir con MAX_ITEMS de export-purchase-dte-zip
-const ZIP_BATCH_TIMEOUT_MS = 120_000; // ver nota de invokeWithTimeout abajo
+const ZIP_BATCH_TIMEOUT_MS = 120_000; // ver nota de invokeWithProgress abajo
 
-// Bug real 2026-07-22: una descarga se quedó en "1/2" sin avanzar ni tirar
-// error — supabase.functions.invoke() no tiene timeout propio, así que un
-// edge function colgado (o una tanda de 300 docs simplemente lenta) deja al
-// usuario esperando indefinidamente sin ningún feedback. AbortController
-// fuerza un error visible a los ZIP_BATCH_TIMEOUT_MS en vez de colgar la UI.
-async function invokeWithTimeout(fnName, body) {
+// Medido en vivo 2026-07-23 (caso real: "Este mes", 518 docs, 2 tandas):
+// el cuello de botella NO es el server (concurrencia de descarga probada
+// en 16/40/80 sin diferencia — no era eso) ni la compresión (DEFLATE
+// reduce <5% sobre PDFs ya comprimidos, y a esa escala directamente
+// rompió el edge function por CPU) — es transferencia de datos real
+// (~1.5-2MB/s sostenido, no mejora con más paralelismo del lado servidor).
+// Con eso claro, dos cambios que sí ayudan sin arriesgar nada:
+// (1) invocar las tandas en PARALELO (antes esperaban una a la otra sin
+// ninguna dependencia real entre ellas — cada una es una llamada
+// independiente al edge function); (2) reportar progreso real en bytes
+// (Content-Length + ReadableStream) en vez de "tanda x/y" estático, para
+// que la espera se sienta activa en vez de trabada — pedido explícito del
+// usuario ("debe sentirse fluido"). Se usa fetch() crudo en vez de
+// supabase.functions.invoke() porque este último no expone el Response
+// crudo (necesario para leer el stream y su Content-Length).
+async function invokeWithProgress(fnName, body, onBytes) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), ZIP_BATCH_TIMEOUT_MS);
     try {
-        const { data, error } = await supabase.functions.invoke(fnName, { body, signal: controller.signal });
-        if (error) throw new Error(await extractFunctionErrorMessage(error));
-        return data;
+        const { data: { session } } = await supabase.auth.getSession();
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${fnName}`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${session?.access_token}`,
+                apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+            signal: controller.signal,
+        });
+        if (!res.ok) {
+            let msg = `HTTP ${res.status}`;
+            try { const j = await res.json(); if (j.error) msg = j.error; } catch { /* respuesta no era JSON */ }
+            throw new Error(msg);
+        }
+        const total = Number(res.headers.get('Content-Length')) || 0;
+        if (!res.body) return await res.blob(); // fallback (navegadores sin streams body en respuestas)
+        const reader = res.body.getReader();
+        const parts = [];
+        let received = 0;
+        for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            parts.push(value);
+            received += value.length;
+            onBytes?.(received, total);
+        }
+        return new Blob(parts);
     } catch (e) {
-        // supabase-js puede envolver el AbortError del fetch subyacente en su
-        // propio tipo de error (FunctionsFetchError) en vez de dejarlo pasar
-        // tal cual — chequear el signal directo es más confiable que e.name.
         if (controller.signal.aborted) throw new Error('Tiempo de espera agotado armando el ZIP — probá con un rango de fechas más chico.');
         throw e;
     } finally {
@@ -155,37 +200,40 @@ async function invokeWithTimeout(fnName, body) {
 // inválido, etc.) en su propia carpeta "Revisar" dentro del ZIP. Se pide
 // solo en la primera tanda para no duplicarlo cuando el rango necesita
 // varias llamadas al edge function.
+//
+// onProgress recibe { received, total } en bytes (agregado de todas las
+// tandas en curso) — el llamador decide cómo mostrarlo (ej. "34/67 MB").
 export async function downloadPurchaseDteZipBulk(ids, onProgress, { includePendingReview = true } = {}) {
     const chunks = [];
     for (let i = 0; i < ids.length; i += ZIP_BATCH_SIZE) chunks.push(ids.slice(i, i + ZIP_BATCH_SIZE));
+    if (chunks.length === 0) chunks.push([]); // ids vacío pero includePendingReview (solo carpeta Revisar)
+
+    const progressByBatch = chunks.map(() => ({ received: 0, total: 0 }));
+    const reportProgress = () => {
+        onProgress?.({
+            received: progressByBatch.reduce((s, p) => s + p.received, 0),
+            total: progressByBatch.reduce((s, p) => s + p.total, 0),
+        });
+    };
+
+    const blobs = await Promise.all(chunks.map((chunk, i) => invokeWithProgress(
+        'export-purchase-dte-zip',
+        { ids: chunk, include_pending_review: includePendingReview && i === 0 },
+        (received, total) => { progressByBatch[i] = { received, total }; reportProgress(); },
+    )));
+
+    const filename = `facturas-compra-${new Date().toISOString().slice(0, 10)}.zip`;
 
     // Camino rápido: con una sola tanda no hace falta desempacar+reempacar
-    // el ZIP que ya arma el edge function (ese doble trabajo de JSZip en el
-    // navegador era el costo más caro y evitable del flujo, pedido explícito
-    // del usuario 2026-07-22) — se descarga tal cual.
-    if (chunks.length <= 1) {
-        onProgress?.(1, 1);
-        const data = await invokeWithTimeout('export-purchase-dte-zip', {
-            ids: chunks[0] || ids, include_pending_review: includePendingReview,
-        });
-        const blob = data instanceof Blob ? data : new Blob([data]);
-        const a = Object.assign(window.document.createElement('a'), {
-            href: URL.createObjectURL(blob),
-            download: `facturas-compra-${new Date().toISOString().slice(0, 10)}.zip`,
-        });
-        a.click();
-        URL.revokeObjectURL(a.href);
+    // el ZIP que ya arma el edge function — se descarga tal cual.
+    if (blobs.length === 1) {
+        triggerDownload(blobs[0], filename);
         return;
     }
 
     const master = new JSZip();
     const manifestParts = [];
-    for (let i = 0; i < chunks.length; i++) {
-        onProgress?.(i + 1, chunks.length);
-        const data = await invokeWithTimeout('export-purchase-dte-zip', {
-            ids: chunks[i], include_pending_review: includePendingReview && i === 0,
-        });
-        const blob = data instanceof Blob ? data : new Blob([data]);
+    for (const blob of blobs) {
         const batchZip = await JSZip.loadAsync(blob);
         for (const [path, file] of Object.entries(batchZip.files)) {
             if (file.dir) continue;
@@ -202,10 +250,5 @@ export async function downloadPurchaseDteZipBulk(ids, onProgress, { includePendi
     // export-purchase-dte-zip) — re-comprimir acá sería costo de CPU del
     // navegador sin beneficio real de tamaño (los PDF ya están comprimidos).
     const finalBlob = await master.generateAsync({ type: 'blob', compression: 'STORE' });
-    const a = Object.assign(window.document.createElement('a'), {
-        href: URL.createObjectURL(finalBlob),
-        download: `facturas-compra-${new Date().toISOString().slice(0, 10)}.zip`,
-    });
-    a.click();
-    URL.revokeObjectURL(a.href);
+    triggerDownload(finalBlob, filename);
 }

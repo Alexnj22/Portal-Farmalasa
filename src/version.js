@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.26.0';
+export const APP_VERSION = '2.26.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.26.1 — fix(facturas-compra): descarga masiva — auditoría real de
+// tiempos + bug de descarga silenciosa (2026-07-23). Medido en vivo (caso
+// real "Este mes", 518 docs, 2 tandas, 109MB): (1) probé concurrencia de
+// descarga del edge function en 16/40/80 — sin diferencia (36-40s los
+// tres); (2) probé DEFLATE nivel 1 en vez de STORE para reducir bytes —
+// ahorra <5% (los PDF ya vienen comprimidos) Y ROMPIÓ el edge function con
+// 50+ docs (500, probable OOM/CPU) — revertido de inmediato, quedó STORE.
+// Conclusión: el cuello de botella es transferencia de datos real
+// (~1.5-2MB/s sostenido, no mejora con más paralelismo del servidor) — no
+// hay atajo de servidor. Lo que SÍ se corrigió: (a) bug real — a.click() +
+// URL.revokeObjectURL() espalda-con-espalda sin agregar el <a> al DOM
+// podía revocar el blob antes de que el navegador empezara a leerlo,
+// perdiendo la descarga en silencio sin error en consola (exactamente lo
+// reportado) — nuevo triggerDownload() con el patrón robusto (DOM
+// append/click/remove + revoke con demora), aplicado en las 3 rutas de
+// descarga del módulo; (b) las tandas ahora se piden en paralelo (antes
+// esperaban una a la otra sin dependencia real entre ellas); (c) progreso
+// real en MB descargados (Content-Length + ReadableStream) en vez de
+// "tanda x/y" estático — la espera ahora se ve activa en vez de trabada.
+// Verificado en vivo: descarga de 109MB completa y válida (unzip -t sin
+// errores, 1044 archivos), progreso fluido 0.4→109.4 MB en pantalla.
 
 // v2.26.0 — feat(facturas-compra): cards contables reemplazan filtros Tipo/
 // Proveedor (pedido del usuario 2026-07-22: "ya en el buscador los

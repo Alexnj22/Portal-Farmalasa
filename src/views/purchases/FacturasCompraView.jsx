@@ -54,6 +54,7 @@ const REVIEW_COLS = [
 ];
 
 const fmt$ = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmtMB = (bytes) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 const fmtDate = (d) => {
     if (!d) return '—';
     const s = String(d).slice(0, 10);
@@ -733,7 +734,7 @@ function TabDocumentos({
     };
 
     const [bulkDownloading, setBulkDownloading] = useState(false);
-    const [bulkProgress, setBulkProgress] = useState(null); // {batch, total} — solo aparece si hay >1 tanda
+    const [bulkProgress, setBulkProgress] = useState(null); // {received, total} en bytes
     const [bulkError, setBulkError] = useState('');
     const downloadPackage = async (row) => {
         setBulkError('');
@@ -753,7 +754,7 @@ function TabDocumentos({
         try {
             await downloadPurchaseDteZipBulk(
                 filtered.map(r => r.id),
-                (batch, total) => setBulkProgress(total > 1 ? { batch, total } : null),
+                ({ received, total }) => setBulkProgress(total > 0 ? { received, total } : null),
             );
             useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA_MASIVA', null, {
                 cantidad: filtered.length, dateStart, dateEnd,
@@ -840,7 +841,9 @@ function TabDocumentos({
                                     title="Descargar todos los filtrados en un ZIP"
                                     className="flex items-center gap-1.5 px-3 h-8 rounded-full text-[10px] font-black uppercase tracking-widest border border-transparent text-slate-500 hover:bg-slate-50 hover:border-slate-200 hover:text-slate-600 transition-[background-color,color,border-color] duration-200 whitespace-nowrap shrink-0 disabled:opacity-40">
                                     <Download size={11} strokeWidth={2.5} className={bulkDownloading ? 'animate-pulse' : ''} />
-                                    {bulkProgress ? `Armando ZIP… (${bulkProgress.batch}/${bulkProgress.total})` : bulkDownloading ? 'Armando ZIP…' : 'Descargar'}
+                                    {bulkProgress?.total > 0
+                                        ? `Descargando… ${fmtMB(bulkProgress.received)} / ${fmtMB(bulkProgress.total)}`
+                                        : bulkDownloading ? 'Armando ZIP…' : 'Descargar'}
                                 </button>
                             </div>
                         </>

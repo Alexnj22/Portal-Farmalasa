@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.27.4';
+export const APP_VERSION = '2.27.5';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.27.5 — feat(facturas-compra): el buscador de Documentos ahora
+// encuentra por alias del proveedor (proveedores_maestro.alias, v2.27.1)
+// — antes solo funcionaba en el módulo Proveedores. get_purchase_dte_documents
+// agrega proveedor_alias al SELECT; tokenMatch lo incluye en TabDocumentos
+// (filtro principal + snippet de "match por contenido del ítem").
+
 
 // v2.27.4 — fix(proveedores): tabla no cabía en el ancho — columna
 // Proveedor sin tope de ancho se estiraba con nombres largos y empujaba

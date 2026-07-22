@@ -663,7 +663,7 @@ function TabDocumentos({
             // conocía el tipo_dte crudo ("05") y la palabra "invalidado",
             // nunca la etiqueta legible ni el sinónimo que usa el resto del
             // módulo (pedido del usuario 2026-07-22).
-            if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion, r.items_text, dteTypeLabel(r.tipo_dte), r.invalidado ? 'invalidado anulado' : null)) return false;
+            if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.proveedor_alias, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion, r.items_text, dteTypeLabel(r.tipo_dte), r.invalidado ? 'invalidado anulado' : null)) return false;
             return true;
         });
     }, [rows, filterInvalidados, filterSinProveedor, searchTerm]);
@@ -889,7 +889,7 @@ function TabDocumentos({
                                 onMatched={load}
                                 canEdit={canEdit}
                                 matchSnippet={
-                                    searchTerm && !tokenMatch(searchTerm, row.proveedor_nombre, row.supplier_nombre, row.emisor_nombre, row.emisor_nit, row.numero_control, row.codigo_generacion, dteTypeLabel(row.tipo_dte), row.invalidado ? 'invalidado anulado' : null)
+                                    searchTerm && !tokenMatch(searchTerm, row.proveedor_nombre, row.proveedor_alias, row.supplier_nombre, row.emisor_nombre, row.emisor_nit, row.numero_control, row.codigo_generacion, dteTypeLabel(row.tipo_dte), row.invalidado ? 'invalidado anulado' : null)
                                         ? findItemMatchSnippet(searchTerm, row.items_text)
                                         : null
                                 }

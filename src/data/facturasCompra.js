@@ -28,8 +28,8 @@ export async function fetchPurchaseDteReviewQueue(status = 'pendiente') {
     return data || [];
 }
 
-export async function setPurchaseDteSupplier(documentId, supplierId) {
-    const { error } = await supabase.rpc('set_purchase_dte_supplier', { p_document_id: documentId, p_supplier_id: supplierId });
+export async function setPurchaseDteProveedor(documentId, proveedorId) {
+    const { error } = await supabase.rpc('set_purchase_dte_proveedor', { p_document_id: documentId, p_proveedor_id: proveedorId });
     if (error) throw error;
 }
 

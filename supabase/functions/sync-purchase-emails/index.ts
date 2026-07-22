@@ -748,13 +748,6 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         const emisorNrc     = json.emisor?.nrc ?? null;
         const emisorNombre  = json.emisor?.nombre ?? null;
 
-        let supplierId: number | null = null;
-        if (emisorNrc) {
-          const { data: sup, error: supErr } = await supabase.from('suppliers').select('id').eq('nrc', emisorNrc).limit(1).maybeSingle();
-          if (supErr) warnings.push(`DTE ${codigoGeneracion}: lookup supplier por nrc ${emisorNrc} — ${supErr.message}`);
-          supplierId = sup?.id ?? null;
-        }
-
         const row = {
           codigo_generacion: codigoGeneracion,
           tipo_dte:           tipoDte,
@@ -771,7 +764,10 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           from_email:          fromEmail,
           source_message_id:   id,
           received_at:         receivedAt,
-          supplier_id:         supplierId,
+          // supplier_id se llena DESPUÉS del insert, derivado del maestro
+          // (ver 2.2 más abajo) — no acá con un lookup propio por nrc exacto,
+          // que ignoraba el match normalizado (nrc con/sin guión) que ya
+          // resuelve upsert_proveedor_from_dte.
         };
 
         // ON CONFLICT (codigo_generacion) DO NOTHING — un DTE emitido nunca cambia.
@@ -784,16 +780,23 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           documentsInserted++;
           // Maestro de Proveedores (PLAN-PROVEEDORES-2026-07.md Fase 3.1): un
           // documento nuevo de verdad → intenta registrar/actualizar el
-          // proveedor. El match ERP por NRC (supplierId ya resuelto arriba)
-          // vive también dentro del RPC — no se duplica esa lógica acá.
+          // proveedor. 2.2 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): el
+          // match ERP (supplier_id) se deriva del maestro después del upsert
+          // — una sola fuente de verdad del match normalizado, en vez de un
+          // lookup propio acá con .eq('nrc', ...) exacto que se desincronizaba
+          // del RPC (nrc con/sin guión).
           const dte = extractProveedorFromDte(json);
           if (dte) {
             const { data: proveedorId, error: provErr } = await supabase.rpc('upsert_proveedor_from_dte', { p_data: dte });
             if (provErr) {
               warnings.push(`DTE ${codigoGeneracion}: upsert_proveedor_from_dte — ${provErr.message}`);
             } else {
-              const { error: setErr } = await supabase.from('purchase_dte_documents').update({ proveedor_id: proveedorId }).eq('id', insData[0].id);
-              if (setErr) warnings.push(`DTE ${codigoGeneracion}: set proveedor_id — ${setErr.message}`);
+              const { data: proveedor, error: provSelErr } = await supabase.from('proveedores_maestro').select('supplier_id').eq('id', proveedorId).maybeSingle();
+              if (provSelErr) warnings.push(`DTE ${codigoGeneracion}: lookup supplier_id del maestro — ${provSelErr.message}`);
+              const { error: setErr } = await supabase.from('purchase_dte_documents')
+                .update({ proveedor_id: proveedorId, supplier_id: proveedor?.supplier_id ?? null })
+                .eq('id', insData[0].id);
+              if (setErr) warnings.push(`DTE ${codigoGeneracion}: set proveedor_id/supplier_id — ${setErr.message}`);
             }
           }
           // Match CCF↔Nota de Crédito/Débito: si esta NC/ND trae

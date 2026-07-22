@@ -4,6 +4,7 @@
 // "Por tipo de DTE, quién es el proveedor".
 
 export interface ProveedorDteData {
+  tipo_dte: string;
   nit: string | null;
   dui: string | null;
   nrc: string | null;
@@ -58,6 +59,7 @@ export function extractProveedorFromDte(json: any): ProveedorDteData | null {
     const e = json?.emisor;
     if (!e?.nit || !e?.nombre) return null;
     return {
+      tipo_dte: tipoDte,
       nit: e.nit, dui: null, nrc: e.nrc ?? null,
       nombre: e.nombre, nombre_comercial: e.nombreComercial ?? null,
       cod_actividad: e.codActividad ?? null, desc_actividad: e.descActividad ?? null,
@@ -80,6 +82,7 @@ export function extractProveedorFromDte(json: any): ProveedorDteData | null {
     // longitud: NIT = 14 dígitos, DUI = 9.
     const esNit = tipoDoc === '36' || (tipoDoc !== '13' && digits.length === 14);
     return {
+      tipo_dte: tipoDte,
       nit: esNit ? s.numDocumento : null,
       dui: esNit ? null : s.numDocumento,
       nrc: null,

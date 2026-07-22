@@ -15,10 +15,10 @@ import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch } from '../../utils/searchUtils';
 import { dteTypeLabel, DTE_TYPE_OPTIONS } from '../../utils/dteTypes';
 import { openStoredFile, downloadStoredFile } from '../../utils/storageFiles';
-import { fetchSuppliersBasic } from '../../data/compras';
+import { fetchProveedoresMaestro } from '../../data/proveedores';
 import {
     fetchPurchaseDteDocuments, fetchPurchaseDteReviewQueue,
-    setPurchaseDteSupplier, resolvePurchaseDteReview, syncPurchaseEmailsNow,
+    setPurchaseDteProveedor, resolvePurchaseDteReview, syncPurchaseEmailsNow,
     downloadPurchaseDtePackage, downloadPurchaseDteZipBulk,
 } from '../../data/facturasCompra';
 
@@ -76,15 +76,17 @@ function defaultDateRange() {
 
 // ── SupplierMatchCell ─────────────────────────────────────────────────────────
 
-function SupplierMatchCell({ row, suppliers, onMatched, canEdit }) {
+function SupplierMatchCell({ row, proveedores, onMatched, canEdit }) {
     const [editing, setEditing] = useState(false);
     const [saving, setSaving]   = useState(false);
     const [error, setError]     = useState('');
 
-    // Fase 4.4 (PLAN-PROVEEDORES-2026-07.md): el maestro (proveedor_id) es la
-    // fuente primaria — se llena solo desde el DTE, siempre presente para
-    // documentos nuevos. El match ERP (supplier_id) queda como dato
-    // secundario, solo si difiere del nombre del maestro.
+    // Fase 4.4 (PLAN-PROVEEDORES-2026-07.md) + 2.1 (PLAN-MEJORAS-DTE-
+    // PROVEEDORES-2026-07.md): el maestro (proveedor_id) es la fuente
+    // primaria Y el único destino del match manual — se llena solo desde el
+    // DTE, siempre presente para documentos nuevos. El match ERP
+    // (supplier_id) queda como dato secundario de solo lectura, solo si
+    // difiere del nombre del maestro.
     if (row.proveedor_id) {
         return (
             <div className="min-w-0">
@@ -96,15 +98,14 @@ function SupplierMatchCell({ row, suppliers, onMatched, canEdit }) {
         );
     }
 
-    if (row.supplier_id) {
-        return <span className="text-slate-800 font-medium text-[12px]">{row.supplier_nombre}</span>;
-    }
-
     if (!editing) {
+        // Sin proveedor_id — puede o no tener supplier_id (match ERP), pero
+        // como el filtro y la fuente primaria ahora son del maestro, en
+        // ambos casos hace falta ofrecer "Emparejar" al maestro.
         return (
             <div className="flex items-center gap-1.5">
-                <AlertTriangle size={12} className="text-amber-500 shrink-0" title="Sin proveedor emparejado" />
-                <span className="text-slate-600 text-[12px]">{row.emisor_nombre || '—'}</span>
+                <AlertTriangle size={12} className="text-amber-500 shrink-0" title="Sin proveedor emparejado en el maestro" />
+                <span className="text-slate-600 text-[12px]">{row.supplier_nombre || row.emisor_nombre || '—'}</span>
                 {canEdit && (
                     <button
                         onClick={(e) => { e.stopPropagation(); setError(''); setEditing(true); }}
@@ -127,9 +128,9 @@ function SupplierMatchCell({ row, suppliers, onMatched, canEdit }) {
                         if (!val) { setEditing(false); return; }
                         setSaving(true);
                         try {
-                            await setPurchaseDteSupplier(row.id, val);
+                            await setPurchaseDteProveedor(row.id, val);
                             useStaff.getState().appendAuditLog('FACTURAS_COMPRA_MATCH_PROVEEDOR', String(row.id), {
-                                codigo_generacion: row.codigo_generacion, supplier_id: val,
+                                codigo_generacion: row.codigo_generacion, proveedor_id: val,
                             });
                             onMatched();
                             setEditing(false);
@@ -140,7 +141,7 @@ function SupplierMatchCell({ row, suppliers, onMatched, canEdit }) {
                             setSaving(false);
                         }
                     }}
-                    options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
+                    options={proveedores.map(p => ({ value: p.id, label: p.nombre }))}
                     placeholder={saving ? 'Guardando…' : 'Buscar proveedor…'}
                     compact
                     clearable={false}
@@ -225,8 +226,8 @@ function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
 // ── TabDocumentos ─────────────────────────────────────────────────────────────
 
 function TabDocumentos({
-    dateRange, setDateRange, tipoDte, setTipoDte, supplierId, setSupplierId,
-    searchTerm, refreshKey, openModal, suppliers, canEdit,
+    dateRange, setDateRange, tipoDte, setTipoDte, proveedorId, setProveedorId,
+    searchTerm, refreshKey, openModal, proveedores, canEdit,
     syncing, syncMsg, runSyncNow,
 }) {
     const [dateStart, dateEnd] = dateRange.split('|');
@@ -252,14 +253,14 @@ function TabDocumentos({
     const filtered = useMemo(() => {
         return rows.filter(r => {
             if (tipoDte && r.tipo_dte !== tipoDte) return false;
-            if (supplierId === SIN_PROVEEDOR) { if (r.supplier_id) return false; }
-            else if (supplierId) { if (String(r.supplier_id) !== String(supplierId)) return false; }
+            if (proveedorId === SIN_PROVEEDOR) { if (r.proveedor_id) return false; }
+            else if (proveedorId) { if (String(r.proveedor_id) !== String(proveedorId)) return false; }
             if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion, r.invalidado ? 'invalidado' : null)) return false;
             return true;
         });
-    }, [rows, tipoDte, supplierId, searchTerm]);
+    }, [rows, tipoDte, proveedorId, searchTerm]);
 
-    useEffect(() => { setPage(1); }, [dateStart, dateEnd, tipoDte, supplierId, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect
+    useEffect(() => { setPage(1); }, [dateStart, dateEnd, tipoDte, proveedorId, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect
 
     const sorted = useMemo(() => {
         const dir = sortDir === 'asc' ? 1 : -1;
@@ -343,10 +344,10 @@ function TabDocumentos({
     const selectedTipo = DTE_TYPE_OPTIONS.find(o => String(o.value) === String(tipoDte));
     const tipoW = selectedTipo ? Math.max(120, Math.min(220, 86 + selectedTipo.label.length * 8)) : 150;
 
-    const supplierLabel = supplierId === SIN_PROVEEDOR
+    const proveedorLabel = proveedorId === SIN_PROVEEDOR
         ? '(sin proveedor)'
-        : suppliers.find(s => String(s.id) === String(supplierId))?.nombre;
-    const supplierW = supplierLabel ? Math.max(130, Math.min(250, 86 + supplierLabel.length * 8)) : 180;
+        : proveedores.find(p => String(p.id) === String(proveedorId))?.nombre;
+    const proveedorW = proveedorLabel ? Math.max(130, Math.min(250, 86 + proveedorLabel.length * 8)) : 180;
 
     return (
         <div className="p-5 md:p-6 space-y-5">
@@ -387,16 +388,16 @@ function TabDocumentos({
 
                     {/* Proveedor + clear individual */}
                     <div className="flex items-center">
-                        <div className="px-2 py-2 overflow-visible" style={{ width: supplierW + 'px' }}>
+                        <div className="px-2 py-2 overflow-visible" style={{ width: proveedorW + 'px' }}>
                             <LiquidSelect
-                                value={supplierId}
-                                onChange={setSupplierId}
-                                options={[{ value: SIN_PROVEEDOR, label: '(sin proveedor)' }, ...suppliers.map(s => ({ value: s.id, label: s.nombre }))]}
+                                value={proveedorId}
+                                onChange={setProveedorId}
+                                options={[{ value: SIN_PROVEEDOR, label: '(sin proveedor)' }, ...proveedores.map(p => ({ value: p.id, label: p.nombre }))]}
                                 placeholder="Proveedor" icon={Users} compact bare
                             />
                         </div>
-                        {supplierId && (
-                            <button onClick={() => setSupplierId('')} title="Quitar proveedor"
+                        {proveedorId && (
+                            <button onClick={() => setProveedorId('')} title="Quitar proveedor"
                                 className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
                                 <X size={9} strokeWidth={3} />
                             </button>
@@ -453,7 +454,7 @@ function TabDocumentos({
                             <span className="font-semibold text-slate-700 tabular-nums">{fmtDate(row.fecha_emision)}</span>
                         </DataCell>
                         <DataCell>
-                            <SupplierMatchCell row={row} suppliers={suppliers} onMatched={load} canEdit={canEdit} />
+                            <SupplierMatchCell row={row} proveedores={proveedores} onMatched={load} canEdit={canEdit} />
                         </DataCell>
                         <DataCell>
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -720,8 +721,8 @@ export default function FacturasCompraView({ openModal }) {
     const [dateRange, setDateRange] = useState(defaultDateRange);
     const [dateStart, dateEnd] = dateRange.split('|');
     const [tipoDte, setTipoDte] = useState('');
-    const [supplierId, setSupplierId] = useState('');
-    const [suppliers, setSuppliers] = useState([]);
+    const [proveedorId, setProveedorId] = useState('');
+    const [proveedores, setProveedores] = useState([]);
 
     const [refreshKey, setRefreshKey] = useState(0);
     const bumpRefresh = () => setRefreshKey(k => k + 1);
@@ -730,10 +731,7 @@ export default function FacturasCompraView({ openModal }) {
     const [syncMsg, setSyncMsg] = useState('');
 
     useEffect(() => {
-        fetchSuppliersBasic().then(({ data, error }) => {
-            if (error) { console.error('fetchSuppliersBasic:', error.message); return; }
-            setSuppliers(data || []);
-        });
+        fetchProveedoresMaestro().then(setProveedores).catch((e) => console.error('fetchProveedoresMaestro:', e.message));
     }, []);
 
     const runSyncNow = async () => {
@@ -778,12 +776,12 @@ export default function FacturasCompraView({ openModal }) {
                     setDateRange={setDateRange}
                     tipoDte={tipoDte}
                     setTipoDte={setTipoDte}
-                    supplierId={supplierId}
-                    setSupplierId={setSupplierId}
+                    proveedorId={proveedorId}
+                    setProveedorId={setProveedorId}
                     searchTerm={search}
                     refreshKey={refreshKey}
                     openModal={openModal}
-                    suppliers={suppliers}
+                    proveedores={proveedores}
                     canEdit={canEdit}
                     syncing={syncing}
                     syncMsg={syncMsg}

@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.23.11';
+export const APP_VERSION = '2.23.12';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.23.12 — feat(facturas-compra,proveedores): Fase 2 auditoría DTE+
+// Proveedores (consistencia maestro vs ERP). (2.1) Filtro de Proveedor y
+// botón "Emparejar" en Facturas de Compra migrados de suppliers (ERP) a
+// proveedores_maestro — set_purchase_dte_proveedor (RPC nuevo) reemplaza
+// set_purchase_dte_supplier; "(sin proveedor)" ahora es !proveedor_id.
+// (2.2) sync-purchase-emails ya no resuelve supplier_id con su propio
+// .eq('nrc', ...) exacto — lo deriva de proveedores_maestro.supplier_id
+// después de upsert_proveedor_from_dte (que sí usa el match normalizado de
+// dígitos). Backfill one-off en prod: 769 documentos actualizados. (2.3
+// P4) NC/ND (05/06) ya no cuentan como "compra" para docs_count/
+// ultima_vez_visto del proveedor. (2.3 P5) Columna percibe_1_override
+// nueva — una corrección manual en el detalle de Proveedor ahora manda de
+// verdad; antes el OR de la detección automática la revertía con el
+// siguiente DTE que trajera IVA percibido.
 
 // v2.23.11 — fix(facturas-compra,proveedores): Fase 1 de la auditoría
 // 2026-07-19 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md). 4 bugs:

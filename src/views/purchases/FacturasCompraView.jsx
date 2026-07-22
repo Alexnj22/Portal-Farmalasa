@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-    FileText, Tag, Users, RefreshCw, Download, FileJson,
+    FileText, Tag, Users, RefreshCw, Download, FileJson, ScanSearch,
     CheckCircle2, XCircle, AlertTriangle, Eye, Archive, Link2, X,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -14,12 +14,14 @@ import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch, normSearch } from '../../utils/searchUtils';
 import { dteTypeLabel, DTE_TYPE_OPTIONS } from '../../utils/dteTypes';
-import { openStoredFile, downloadStoredFile } from '../../utils/storageFiles';
+import { openStoredFile, downloadStoredFile, getSignedFileUrl } from '../../utils/storageFiles';
+import { extractCodigoGeneracionFromPdf } from '../../utils/dtePdfCodigo';
 import { fetchProveedoresMaestro } from '../../data/proveedores';
 import {
     fetchPurchaseDteDocuments, fetchPurchaseDteReviewQueue,
     setPurchaseDteProveedor, resolvePurchaseDteReview, syncPurchaseEmailsNow,
     downloadPurchaseDtePackage, downloadPurchaseDteZipBulk, mergePurchaseDteDocuments,
+    findPurchaseDteDocumentByCodigo,
 } from '../../data/facturasCompra';
 
 const TABS = [
@@ -178,6 +180,109 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
                 <X size={14} />
             </button>
         </div>
+    );
+}
+
+// ── DetectCodeAction — Fase 3.2: extrae el Código de Generación (UUID)
+// impreso en el PDF (dte_guia_tecnica.pdf pág. 7 — obligatorio en toda
+// representación gráfica) y busca si ya existe un documento sincronizado
+// con ese código exacto. Genérico: `onFound(matchId)` decide qué hacer con
+// el match (emparejar en Revisión, fusionar en Documentos). ──────────────
+
+function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound }) {
+    // Fase 3.2: el sync ya detecta el código server-side (unpdf) para todo
+    // PDF huérfano nuevo — si ya viene en ai_suggested, no hace falta que el
+    // navegador vuelva a bajar/parsear el PDF, solo busca el match. El botón
+    // manual (pdfjs-dist client-side) queda como respaldo para filas
+    // viejas (nunca revisadas por el sync) o si el servidor no encontró
+    // código pero el usuario quiere reintentar.
+    const [state, setState] = useState(detectedCodigo ? 'loading' : serverChecked ? 'no_code' : 'idle'); // idle | loading | found | not_found | no_code | error
+    const [result, setResult] = useState(null);
+    const [applying, setApplying] = useState(false);
+
+    useEffect(() => {
+        if (!detectedCodigo) return;
+        let alive = true;
+        (async () => {
+            try {
+                const match = await findPurchaseDteDocumentByCodigo(detectedCodigo);
+                if (!alive) return;
+                setResult({ code: detectedCodigo, match });
+                setState(match ? 'found' : 'not_found');
+            } catch (e) {
+                if (alive) { setResult({ error: e.message || 'No se pudo buscar el código' }); setState('error'); }
+            }
+        })();
+        return () => { alive = false; };
+    }, [detectedCodigo]); // eslint-disable-line react-hooks/set-state-in-effect
+
+    const detect = async () => {
+        setState('loading');
+        try {
+            const signedUrl = await getSignedFileUrl(pdfPath);
+            if (!signedUrl) throw new Error('No se pudo obtener el PDF');
+            const code = await extractCodigoGeneracionFromPdf(signedUrl);
+            if (!code) { setState('no_code'); return; }
+            const match = await findPurchaseDteDocumentByCodigo(code);
+            setResult({ code, match });
+            setState(match ? 'found' : 'not_found');
+        } catch (e) {
+            setResult({ error: e.message || 'No se pudo detectar el código' });
+            setState('error');
+        }
+    };
+
+    const apply = async () => {
+        setApplying(true);
+        try {
+            await onFound(result.match);
+        } finally {
+            setApplying(false);
+        }
+    };
+
+    if (state === 'idle') {
+        return (
+            <button
+                onClick={(e) => { e.stopPropagation(); detect(); }}
+                className="flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-[#0052CC] px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+                <ScanSearch size={12} /> Detectar código
+            </button>
+        );
+    }
+    if (state === 'loading') {
+        return <span className="text-[10px] text-slate-400 px-2">Analizando PDF…</span>;
+    }
+    if (state === 'no_code') {
+        return (
+            <span className="flex items-center gap-1.5 text-[10px] text-slate-400 px-2">
+                <span title="El PDF no tiene capa de texto legible o no se encontró el patrón de código">Sin código detectable</span>
+                <button onClick={(e) => { e.stopPropagation(); detect(); }} className="underline hover:text-[#0052CC]">
+                    reintentar
+                </button>
+            </span>
+        );
+    }
+    if (state === 'error') {
+        return <span className="text-[10px] text-red-500 px-2">{result.error}</span>;
+    }
+    if (state === 'not_found') {
+        return (
+            <span className="text-[10px] text-slate-500 px-2" title={`Código completo: ${result.code}`}>
+                Código {result.code.slice(0, 8)}… sin sincronizar aún
+            </span>
+        );
+    }
+    return (
+        <button
+            onClick={(e) => { e.stopPropagation(); apply(); }}
+            disabled={applying}
+            title={`${fmtDate(result.match.fecha_emision)} · ${result.match.proveedor_nombre || '—'} · ${fmt$(result.match.monto_total)}`}
+            className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:text-emerald-700 px-2 py-1 rounded-lg hover:bg-emerald-50 transition-colors disabled:opacity-50"
+        >
+            <CheckCircle2 size={12} /> {applying ? 'Aplicando…' : `Encontrado: ${result.match.proveedor_nombre || 'match'}`}
+        </button>
     );
 }
 
@@ -416,6 +521,23 @@ function TabDocumentos({
         });
     };
 
+    // Fase 3.2: código detectado en el PDF de un doc "Sin JSON" ya tiene un
+    // documento sincronizado con ese codigo_generacion — fusiona directo.
+    // Reusa bulkError (arriba de la tabla) para el mensaje — no amerita un
+    // slot de error propio para un caso de borde.
+    const mergePorCodigo = async (row, match) => {
+        setBulkError('');
+        try {
+            await mergePurchaseDteDocuments(row.id, match.id);
+            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_ADJUNTAR_JSON', String(row.id), {
+                source_document_id: match.id, via: 'detect_code',
+            });
+            load();
+        } catch (e) {
+            setBulkError(e.message || 'No se pudo fusionar');
+        }
+    };
+
     const [bulkDownloading, setBulkDownloading] = useState(false);
     const [bulkProgress, setBulkProgress] = useState(null); // {batch, total} — solo aparece si hay >1 tanda
     const [bulkError, setBulkError] = useState('');
@@ -621,11 +743,17 @@ function TabDocumentos({
                                             Sin JSON
                                         </span>
                                         {canEdit && (
-                                            <AttachJsonAction
-                                                row={row}
-                                                candidates={jsonDocs}
-                                                onMerged={load}
-                                            />
+                                            <>
+                                                <DetectCodeAction
+                                                    pdfPath={row.pdf_path}
+                                                    onFound={(match) => mergePorCodigo(row, match)}
+                                                />
+                                                <AttachJsonAction
+                                                    row={row}
+                                                    candidates={jsonDocs}
+                                                    onMerged={load}
+                                                />
+                                            </>
                                         )}
                                     </>
                                 )}
@@ -761,6 +889,22 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
         }
     };
 
+    // Fase 3.2: código detectado en el PDF ya tiene un documento
+    // sincronizado con ese codigo_generacion exacto — empareja directo, sin
+    // pasar por "confirmado sin JSON" en absoluto.
+    const emparejarPorCodigo = async (row, match) => {
+        setRowError('');
+        try {
+            await resolvePurchaseDteReview(row.id, 'emparejado', match.id);
+            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_EMPAREJAR_REVISION', String(row.id), {
+                matched_document_id: match.id, filename: row.filename, via: 'detect_code',
+            });
+            bumpRefresh();
+        } catch (e) {
+            setRowError(e.message || 'No se pudo emparejar');
+        }
+    };
+
     return (
         <div className="p-5 md:p-6 space-y-5">
             <div className="text-[11px] text-slate-500 font-medium px-1">
@@ -804,6 +948,12 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                                 <div className="flex items-center justify-center gap-1.5">
                                     {row.kind === 'orphan_pdf' && (
                                         <>
+                                            <DetectCodeAction
+                                                pdfPath={row.file_path}
+                                                detectedCodigo={row.ai_suggested?.detected_codigo_generacion}
+                                                serverChecked={row.ai_suggested !== null && row.ai_suggested !== undefined}
+                                                onFound={(match) => emparejarPorCodigo(row, match)}
+                                            />
                                             <MatchDocumentAction
                                                 row={row}
                                                 documents={documents}

@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
 import { getCorsHeaders, checkCronSecret, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { extractProveedorFromDte } from "../_shared/proveedorFromDte.ts";
 import { extractRelatedDocRef, resolveRelatedDocId } from "../_shared/dteRelatedDoc.ts";
@@ -460,6 +461,27 @@ function extractItemsText(json: any): string | null {
   return text;
 }
 
+// A pedido del usuario (2026-07-22): en vez de depender de un clic manual
+// en el portal, el propio sync detecta el Código de Generación (UUID v4,
+// dte_guia_tecnica.pdf pág. 7 — obligatorio en toda representación gráfica)
+// impreso en un PDF huérfano — así queda guardado desde el momento en que
+// entra a Revisión, listo para reconciliar automáticamente cuando el JSON
+// llegue (o de inmediato, si el JSON ya estaba). unpdf: extracción de texto
+// sin DOM/canvas, compatible con el runtime de Edge Functions (a diferencia
+// de pdfjs-dist "completo", pensado para navegador — ese se usa del lado
+// del cliente para el botón manual de respaldo).
+const UUID_RE = /\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\b/;
+async function detectCodigoGeneracionInPdf(pdfBytes: Uint8Array): Promise<string | null> {
+  try {
+    const doc = await getDocumentProxy(pdfBytes);
+    const { text } = await extractText(doc, { mergePages: true });
+    const match = text.match(UUID_RE);
+    return match ? match[0].toUpperCase() : null;
+  } catch {
+    return null; // PDF escaneado/sin capa de texto, o corrupto — no bloquea el resto del sync
+  }
+}
+
 // ── Procesar una cuenta ────────────────────────────────────────────────────────
 
 interface AccountResult {
@@ -534,6 +556,15 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
   // mandamos. No se usa in:inbox a secas para no perder facturas legítimas
   // que alguien archivó (sacó de la bandeja) después de procesarlas.
   //
+  // -from:{account.email}: -in:sent NO alcanza — caso real encontrado
+  // 2026-07-22: 3 correos "Comprobantes COF + JSON" con PDFs de VENTAS
+  // (no de compra) que la propia cuenta se manda a sí misma (probable
+  // relay/SMTP directo desde un sistema interno, nunca pasan por el
+  // "Enviados" de Gmail así que -in:sent no los agarra) terminaron en
+  // Revisión como huérfanos. Un DTE de compra real NUNCA puede venir del
+  // From de nuestra propia cuenta — se excluye directo por remitente,
+  // señal más confiable que la etiqueta de Gmail.
+  //
   // has:attachment YA NO es el único criterio (caso real: Movistar manda
   // "Factura Electrónica Movistar" con el PDF Y el JSON como links en el
   // cuerpo, cero adjuntos reales — Gmail nunca la devolvía con has:attachment
@@ -541,7 +572,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
   // ningún rastro en documents/review_queue/warnings). Se amplía a
   // has:attachment OR una señal de asunto/cuerpo de que es factura/DTE, para
   // no perder proveedores que solo mandan enlaces.
-  const query = debugQuery || (`after:${sinceDate ? gmailDateFormat(sinceDate) : BACKFILL_FROM} -in:sent -in:drafts -in:chats `
+  const query = debugQuery || (`after:${sinceDate ? gmailDateFormat(sinceDate) : BACKFILL_FROM} -in:sent -in:drafts -in:chats -from:${account.email} `
     + `(has:attachment OR subject:(factura OR facturas OR comprobante OR CCF OR DTE) OR "factura electronica" OR "documento tributario")`);
 
   const allMessageIds = await listMessageIds(accessToken, query);
@@ -578,6 +609,20 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
     const fromEmail  = headerValue(headers, 'From');
     const subject    = headerValue(headers, 'Subject');
     const receivedAt = msg.internalDate ? new Date(Number(msg.internalDate)).toISOString() : null;
+
+    // Respaldo del -from:{account.email} en el query de arriba — un DTE de
+    // COMPRA nunca puede venir del From de nuestra propia cuenta. Chequeo
+    // extra por si el operador de Gmail no cubre algún formato de header
+    // (ver caso real "Comprobantes COF + JSON" arriba).
+    if (fromEmail && fromEmail.toLowerCase().includes(account.email.toLowerCase())) {
+      warnings.push(`mensaje ${id}: descartado — From coincide con la propia cuenta (${fromEmail})`);
+      try {
+        await markMessageProcessed(supabase, account.id, id);
+      } catch (e: any) {
+        warnings.push(`mensaje ${id}: no se pudo marcar como procesado — ${e.message}`);
+      }
+      continue;
+    }
 
     const attachmentParts: AttachmentPart[] = [];
     collectAttachmentParts(msg.payload, attachmentParts);
@@ -840,6 +885,37 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
               if (setErr) warnings.push(`DTE ${codigoGeneracion}: set proveedor_id/supplier_id — ${setErr.message}`);
             }
           }
+          // Fase 3.2 automática: si había un PDF huérfano en Revisión cuyo
+          // código detectado (ai_suggested, ver detectCodigoGeneracionInPdf)
+          // coincide con este DTE recién insertado, se adjunta el PDF
+          // directo — cierra el círculo sin ningún clic manual, aunque el
+          // JSON haya llegado DESPUÉS del PDF (orden invertido de correos).
+          const { data: pendingReview, error: pendingErr } = await supabase
+            .from('purchase_dte_review_queue')
+            .select('id, file_path')
+            .eq('kind', 'orphan_pdf')
+            .eq('status', 'pendiente')
+            .eq('ai_suggested->>detected_codigo_generacion', codigoGeneracion.toUpperCase())
+            .limit(1)
+            .maybeSingle();
+          if (!pendingErr && pendingReview) {
+            const { data: attachData, error: attachErr } = await supabase
+              .from('purchase_dte_documents')
+              .update({ pdf_path: pendingReview.file_path })
+              .eq('id', insData[0].id)
+              .is('pdf_path', null)
+              .select('id');
+            if (attachErr) {
+              warnings.push(`DTE ${codigoGeneracion}: no se pudo adjuntar PDF detectado previamente — ${attachErr.message}`);
+            } else if (attachData && attachData.length > 0) {
+              const { error: resolveErr } = await supabase.from('purchase_dte_review_queue')
+                .update({ status: 'emparejado', matched_document_id: insData[0].id, resolved_at: new Date().toISOString() })
+                .eq('id', pendingReview.id);
+              if (resolveErr) warnings.push(`DTE ${codigoGeneracion}: no se pudo cerrar la fila de revisión ${pendingReview.id} — ${resolveErr.message}`);
+              else warnings.push(`DTE ${codigoGeneracion}: emparejado automáticamente con PDF detectado previamente (revisión ${pendingReview.id})`);
+            }
+          }
+
           // Match CCF↔Nota de Crédito/Débito: si esta NC/ND trae
           // documentoRelacionado y el original ya está guardado, empareja.
           // Si el original llega DESPUÉS (orden invertido de correos), queda
@@ -870,18 +946,53 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         const { error: upErr } = await supabase.storage.from(BUCKET)
           .upload(path, pdfBytes, { contentType: 'application/pdf', upsert: false });
         if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) throw new Error(upErr.message);
-        const { error: rqErr } = await supabase.from('purchase_dte_review_queue').upsert({
-          kind:        'orphan_pdf',
-          file_path:    publicUrl(path),
-          filename:    op.filename,
-          account_id:  account.id,
-          source_message_id: id,
-          from_email:  fromEmail,
-          subject,
-          received_at: receivedAt,
-        }, { onConflict: 'account_id,source_message_id,filename', ignoreDuplicates: true });
-        if (rqErr) throw new Error(rqErr.message);
-        pdfsUnmatched++;
+
+        const detectedCodigo = await detectCodigoGeneracionInPdf(pdfBytes);
+
+        // Si el código detectado ya tiene un DTE sincronizado SIN su propio
+        // PDF, se adjunta directo — sin pasar por Revisión en absoluto. Si
+        // ya tiene PDF (ej. este PDF es en realidad un aviso de
+        // invalidación, no la representación gráfica del documento en sí,
+        // caso real verificado 2026-07-22), NO se pisa — sigue el camino
+        // normal a Revisión, con el código guardado en ai_suggested para
+        // que Revisión pueda emparejar aunque el match automático haya
+        // decidido no tocarlo.
+        let autoMatched = false;
+        if (detectedCodigo) {
+          const { data: existing, error: findErr } = await supabase
+            .from('purchase_dte_documents')
+            .select('id, pdf_path')
+            .eq('codigo_generacion', detectedCodigo)
+            .maybeSingle();
+          if (!findErr && existing && !existing.pdf_path) {
+            const { data: attachData, error: attachErr } = await supabase
+              .from('purchase_dte_documents')
+              .update({ pdf_path: publicUrl(path) })
+              .eq('id', existing.id)
+              .is('pdf_path', null)
+              .select('id');
+            if (!attachErr && attachData && attachData.length > 0) {
+              autoMatched = true;
+              warnings.push(`PDF ${op.filename}: código ${detectedCodigo} detectado — emparejado automáticamente con doc ${existing.id}`);
+            }
+          }
+        }
+
+        if (!autoMatched) {
+          const { error: rqErr } = await supabase.from('purchase_dte_review_queue').upsert({
+            kind:        'orphan_pdf',
+            file_path:    publicUrl(path),
+            filename:    op.filename,
+            account_id:  account.id,
+            source_message_id: id,
+            from_email:  fromEmail,
+            subject,
+            received_at: receivedAt,
+            ai_suggested: detectedCodigo ? { detected_codigo_generacion: detectedCodigo } : null,
+          }, { onConflict: 'account_id,source_message_id,filename', ignoreDuplicates: true });
+          if (rqErr) throw new Error(rqErr.message);
+          pdfsUnmatched++;
+        }
       } catch (e: any) {
         warnings.push(`PDF huérfano ${op.filename} (msg ${id}): ${e.message}`);
         messageHadFailedReviewOp = true;
@@ -972,7 +1083,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { dry_run = false, account_id = null, repair_stored_json = false, debug_query = null, backfill_items_text = false } = body;
+    const { dry_run = false, account_id = null, repair_stored_json = false, debug_query = null, backfill_items_text = false, backfill_detect_codes = false } = body;
 
     // Mantenimiento puntual: re-normaliza los archivos .json YA guardados en
     // Storage con unwrapDteEnvelope + repairMojibakeDeep. Necesario porque
@@ -1096,6 +1207,103 @@ Deno.serve(async (req) => {
       }
       return new Response(JSON.stringify({
         backfill_items_text: true, checked, updated, skipped,
+        hasMore: cutOff, errors: errors.slice(0, 50),
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Fase 3.2 (a pedido del usuario, 2026-07-22): backfill de detección de
+    // código para los PDF huérfanos que ya estaban en Revisión ANTES de
+    // este cambio (nunca pasaron por detectCodigoGeneracionInPdf). Mismo
+    // patrón que repair_stored_json/backfill_items_text — pagina por
+    // ai_suggested IS NULL, descarga el PDF de Storage (no necesita Gmail),
+    // extrae el código y: si hay match sin PDF propio, empareja directo; si
+    // no, guarda el código detectado en ai_suggested (o '{}' si no se
+    // detectó nada, para no re-procesar la fila para siempre).
+    if (backfill_detect_codes === true) {
+      const CHUNK = 200; // más caro que los otros backfills (descarga+parsea PDF completo)
+      let checked = 0, autoMatched = 0, codeDetected = 0, noCode = 0;
+      const errors: string[] = [];
+      const startTime = Date.now();
+      let cutOff = false;
+
+      for (;;) {
+        if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break; }
+        const { data: rows, error: rowsErr } = await admin
+          .from('purchase_dte_review_queue')
+          .select('id, file_path')
+          .eq('kind', 'orphan_pdf')
+          .eq('status', 'pendiente')
+          .is('ai_suggested', null)
+          .order('id', { ascending: true })
+          .limit(CHUNK);
+        if (rowsErr) throw new Error(`purchase_dte_review_queue: ${rowsErr.message}`);
+        if (!rows || rows.length === 0) break;
+
+        for (const rq of rows) {
+          if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break; }
+          checked++;
+          try {
+            const marker = `/storage/v1/object/public/${BUCKET}/`;
+            const idx = (rq.file_path as string).indexOf(marker);
+            if (idx === -1) { errors.push(`revisión ${rq.id}: file_path con formato inesperado`); continue; }
+            const path = (rq.file_path as string).slice(idx + marker.length);
+
+            const { data: fileData, error: dlErr } = await admin.storage.from(BUCKET).download(path);
+            if (dlErr) { errors.push(`revisión ${rq.id}: download — ${dlErr.message}`); continue; }
+            const pdfBytes = new Uint8Array(await fileData.arrayBuffer());
+            const detectedCodigo = await detectCodigoGeneracionInPdf(pdfBytes);
+
+            if (!detectedCodigo) {
+              noCode++;
+              const { error: upErr } = await admin.from('purchase_dte_review_queue').update({ ai_suggested: {} }).eq('id', rq.id);
+              if (upErr) errors.push(`revisión ${rq.id}: update ai_suggested vacío — ${upErr.message}`);
+              continue;
+            }
+            codeDetected++;
+
+            const { data: existing, error: findErr } = await admin
+              .from('purchase_dte_documents')
+              .select('id, pdf_path')
+              .eq('codigo_generacion', detectedCodigo)
+              .maybeSingle();
+            if (findErr) { errors.push(`revisión ${rq.id}: lookup codigo — ${findErr.message}`); continue; }
+
+            if (existing && !existing.pdf_path) {
+              const { data: attachData, error: attachErr } = await admin
+                .from('purchase_dte_documents')
+                .update({ pdf_path: rq.file_path })
+                .eq('id', existing.id)
+                .is('pdf_path', null)
+                .select('id');
+              if (attachErr) { errors.push(`revisión ${rq.id}: attach pdf_path — ${attachErr.message}`); continue; }
+              if (attachData && attachData.length > 0) {
+                const { error: resolveErr } = await admin.from('purchase_dte_review_queue')
+                  .update({ status: 'emparejado', matched_document_id: existing.id, resolved_at: new Date().toISOString(), ai_suggested: { detected_codigo_generacion: detectedCodigo } })
+                  .eq('id', rq.id);
+                if (resolveErr) errors.push(`revisión ${rq.id}: no se pudo cerrar tras emparejar — ${resolveErr.message}`);
+                else autoMatched++;
+                continue;
+              }
+            }
+
+            // Sin match automático (no existe aún, o el doc ya tiene su
+            // propio PDF — ej. este PDF es un aviso de invalidación, no la
+            // representación gráfica del documento) — se guarda el código
+            // para que Revisión pueda emparejar a mano o para que la
+            // reconciliación del próximo sync lo encuentre solo.
+            const { error: upErr } = await admin.from('purchase_dte_review_queue')
+              .update({ ai_suggested: { detected_codigo_generacion: detectedCodigo } })
+              .eq('id', rq.id);
+            if (upErr) errors.push(`revisión ${rq.id}: update ai_suggested — ${upErr.message}`);
+          } catch (e: any) {
+            errors.push(`revisión ${rq.id}: ${e.message}`);
+          }
+        }
+        if (cutOff) break;
+        if (rows.length < CHUNK) break;
+      }
+      return new Response(JSON.stringify({
+        backfill_detect_codes: true, checked, codeDetected, autoMatched, noCode,
         hasMore: cutOff, errors: errors.slice(0, 50),
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }

@@ -44,6 +44,15 @@ export async function mergePurchaseDteDocuments(targetId, sourceId) {
     if (error) throw error;
 }
 
+// Fase 3.2: busca un documento YA sincronizado (con JSON) por su
+// codigo_generacion exacto — usado tras extraer el UUID del PDF vía
+// pdfjs-dist (ver utils/dtePdfCodigo.js). Devuelve null si no hay match.
+export async function findPurchaseDteDocumentByCodigo(codigo) {
+    const { data, error } = await supabase.rpc('find_purchase_dte_document_by_codigo', { p_codigo: codigo });
+    if (error) throw error;
+    return data || null;
+}
+
 export async function resolvePurchaseDteReview(reviewId, action, matchedDocumentId = null) {
     const { error } = await supabase.rpc('resolve_purchase_dte_review', {
         p_review_id: reviewId, p_action: action, p_matched_document_id: matchedDocumentId,

@@ -5,8 +5,34 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.24.2';
+export const APP_VERSION = '2.25.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.25.0 — feat(facturas-compra): detección automática de Código de
+// Generación en PDFs huérfanos (a pedido del usuario, extiende 3.2).
+// sync-purchase-emails ahora extrae el UUID (dte_guia_tecnica.pdf pág. 7)
+// de todo PDF huérfano server-side (unpdf, extracción de texto sin DOM/
+// canvas, compatible con el runtime de Edge Functions) al momento de
+// encolarlo a Revisión — antes dependía de un clic manual del usuario. Si
+// el DTE ya está sincronizado y sin su propio PDF, se adjunta directo, sin
+// pasar por Revisión. Si el JSON llega DESPUÉS del PDF, la reconciliación
+// es igual de automática (se guarda el código detectado en
+// purchase_dte_review_queue.ai_suggested — columna jsonb que existía sin
+// usar — y el próximo insert de un DTE nuevo revisa si hay un huérfano
+// pendiente esperando ese código). Nuevo RPC de solo lectura
+// find_purchase_dte_document_by_codigo + botón "Detectar código" (pdfjs-
+// dist client-side) como respaldo manual en Revisión y en Documentos
+// ("Sin JSON"). Backfill (modo backfill_detect_codes) corrido en prod
+// sobre los 13 PDFs huérfanos pre-existentes: 10 códigos detectados, 3 sin
+// capa de texto legible. Bug real encontrado en el camino: 3 de esos 13
+// eran PDFs de VENTAS que la propia cuenta de sync se mandaba a sí misma
+// ("Comprobantes COF + JSON") — -in:sent no los excluía porque nunca
+// pasaban por "Enviados" de Gmail (relay directo al inbox); agregado
+// -from:{cuenta} al query + chequeo defensivo en el código, y las 3 filas
+// contaminadas descartadas. Verificado en vivo: auto-detección sin clic,
+// RPC find_by_codigo, y el guard existente (pdf_path IS NULL) bloqueando
+// correctamente 2 intentos de emparejar avisos de anulación/duplicados
+// contra documentos que ya tenían su PDF real — cero datos corrompidos.
 
 // v2.24.2 — fix(facturas-compra): AttachJsonAction (3.2) ordena el listado
 // "Adjuntar JSON" por cercanía de received_at al correo original en vez de

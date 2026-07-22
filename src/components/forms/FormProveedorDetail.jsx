@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink } from 'lucide-react';
+import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink, Tag, Building2, CheckCircle2 } from 'lucide-react';
 import { useStaffStore } from '../../store/staffStore';
 import { useToastStore } from '../../store/toastStore';
 import { updateProveedorManual, setProveedorCategoria, setProveedorSupplier } from '../../data/proveedores';
 import { departamentoLabel } from '../../utils/svCatalogs';
 import LiquidSelect from '../common/LiquidSelect';
+
+function SectionHeader({ icon: Icon, children }) {
+    return (
+        <h4 className="text-[11px] font-black uppercase tracking-widest text-[#0052CC] flex items-center gap-2 pt-5 border-t border-slate-200/60">
+            <Icon size={13} strokeWidth={2.5} /> {children}
+        </h4>
+    );
+}
 
 const SI_NO = [{ value: 'si', label: 'Sí' }, { value: 'no', label: 'No' }];
 
@@ -169,116 +177,138 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 </div>
             </div>
 
-            {/* Clasificación — guarda de inmediato al cambiar, no espera a Guardar Cambios */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block" title={formData?.regimen_fiscal ? REGIMEN_HINT[formData.regimen_fiscal] : 'Sin documentos suficientes para determinarlo'}>
-                        Tipo de Proveedor
-                    </label>
-                    <div className={`w-full px-3.5 border rounded-[1rem] h-[44px] text-[13px] font-medium flex items-center ${
-                        formData?.regimen_fiscal === 'sujeto_excluido' ? 'bg-amber-50 border-amber-200/70 text-amber-700' : 'bg-slate-50 border-slate-200/60 text-slate-600'
-                    }`}>
-                        {formData?.regimen_fiscal ? REGIMEN_LABELS[formData.regimen_fiscal] : 'Sin determinar'}
+            {/* Clasificación — fila superior: hechos que el sistema determina solo
+                (no se editan acá). Fila inferior: las 2 decisiones que sí tomás vos.
+                Separar ambos pares evita confundir "esto lo pusiste vos" con "esto
+                lo dedujo el sistema". */}
+            <div className="space-y-3">
+                <SectionHeader icon={Tag}>Clasificación</SectionHeader>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block" title={formData?.regimen_fiscal ? REGIMEN_HINT[formData.regimen_fiscal] : 'Sin documentos suficientes para determinarlo'}>
+                            Tipo de Proveedor
+                        </label>
+                        <div className="h-[44px] flex items-center">
+                            <span className={`text-[12px] font-bold px-3 py-1.5 rounded-full border ${
+                                formData?.regimen_fiscal === 'sujeto_excluido' ? 'text-amber-700 bg-amber-500/10 border-amber-500/25' : 'text-emerald-700 bg-emerald-500/10 border-emerald-500/25'
+                            }`}>
+                                {formData?.regimen_fiscal ? REGIMEN_LABELS[formData.regimen_fiscal] : 'Sin determinar'}
+                            </span>
+                        </div>
                     </div>
-                </div>
-                <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Categoría</label>
-                    <LiquidSelect
-                        value={categoriaId}
-                        onChange={onCategoriaChange}
-                        options={categorias.map(c => ({ value: c.id, label: c.nombre }))}
-                        placeholder={savingCategoria ? 'Guardando…' : 'Sin categoría'}
-                        clearable
-                    />
-                </div>
-                <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block" title="Derivado de la categoría (clase costo/gasto) — no se edita directo">
-                        Categoría Contable
-                    </label>
-                    <div className="w-full px-3.5 bg-slate-50 border border-slate-200/60 rounded-[1rem] h-[44px] text-[13px] font-medium text-slate-500 flex items-center">
-                        {claseActual ? CLASE_LABELS[claseActual] || claseActual : '—'}
+                    <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block" title="Derivado de la categoría (clase costo/gasto) — no se edita directo">
+                            Categoría Contable
+                        </label>
+                        <div className="h-[44px] flex items-center">
+                            <span className="text-[12px] font-bold text-slate-600 bg-slate-500/10 border border-slate-500/20 px-3 py-1.5 rounded-full">
+                                {claseActual ? CLASE_LABELS[claseActual] || claseActual : 'Sin categoría asignada'}
+                            </span>
+                        </div>
                     </div>
+                    <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Categoría</label>
+                        <LiquidSelect
+                            icon={Tag}
+                            value={categoriaId}
+                            onChange={onCategoriaChange}
+                            options={categorias.map(c => ({ value: c.id, label: c.nombre }))}
+                            placeholder={savingCategoria ? 'Guardando…' : 'Sin categoría'}
+                            clearable
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Match ERP</label>
+                        <LiquidSelect
+                            icon={Building2}
+                            value={supplierId}
+                            onChange={onSupplierChange}
+                            options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
+                            placeholder={savingSupplier ? 'Guardando…' : 'Buscar proveedor ERP…'}
+                            clearable
+                        />
+                    </div>
+                    {clasifError && <div className="sm:col-span-2 text-[11px] text-red-500 px-1">{clasifError}</div>}
                 </div>
-                <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Match ERP</label>
-                    <LiquidSelect
-                        value={supplierId}
-                        onChange={onSupplierChange}
-                        options={suppliers.map(s => ({ value: s.id, label: s.nombre }))}
-                        placeholder={savingSupplier ? 'Guardando…' : 'Buscar proveedor ERP…'}
-                        clearable
-                    />
-                </div>
-                {clasifError && <div className="sm:col-span-2 lg:col-span-4 text-[11px] text-red-500 px-1">{clasifError}</div>}
             </div>
 
-            {/* Curación manual */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Contacto</label>
-                    <input
-                        value={form.contacto_nombre}
-                        onChange={e => setForm(p => ({ ...p, contacto_nombre: e.target.value }))}
-                        placeholder="Nombre del contacto"
-                        className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
-                    />
+            {/* Contacto y pago */}
+            <div className="space-y-3">
+                <SectionHeader icon={Phone}>Contacto y Pago</SectionHeader>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Contacto</label>
+                        <input
+                            value={form.contacto_nombre}
+                            onChange={e => setForm(p => ({ ...p, contacto_nombre: e.target.value }))}
+                            placeholder="Nombre del contacto"
+                            className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Teléfono 2</label>
+                        <input
+                            value={form.telefono2}
+                            onChange={e => setForm(p => ({ ...p, telefono2: e.target.value }))}
+                            placeholder="Teléfono adicional"
+                            className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block" title="Nombre alterno para buscarlo (ej. como le dicen de palabra en Bodega)">Alias</label>
+                        <input
+                            value={form.alias}
+                            onChange={e => setForm(p => ({ ...p, alias: e.target.value }))}
+                            placeholder="Nombre alterno de búsqueda"
+                            className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Nombre para Cheques</label>
+                        <input
+                            value={form.nombre_cheques}
+                            onChange={e => setForm(p => ({ ...p, nombre_cheques: e.target.value }))}
+                            placeholder="Si difiere de la razón social"
+                            className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
+                        />
+                    </div>
                 </div>
-                <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Teléfono 2</label>
-                    <input
-                        value={form.telefono2}
-                        onChange={e => setForm(p => ({ ...p, telefono2: e.target.value }))}
-                        placeholder="Teléfono adicional"
-                        className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
-                    />
-                </div>
-                <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block" title="Nombre alterno para buscarlo (ej. como le dicen de palabra en Bodega)">Alias</label>
-                    <input
-                        value={form.alias}
-                        onChange={e => setForm(p => ({ ...p, alias: e.target.value }))}
-                        placeholder="Nombre alterno de búsqueda"
-                        className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
-                    />
-                </div>
-                <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Nombre para Cheques</label>
-                    <input
-                        value={form.nombre_cheques}
-                        onChange={e => setForm(p => ({ ...p, nombre_cheques: e.target.value }))}
-                        placeholder="Si difiere de la razón social"
-                        className="w-full px-3.5 bg-white border border-slate-200/80 rounded-[1rem] h-[44px] text-[13px] font-medium text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50"
-                    />
-                </div>
-                <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Activo</label>
-                    <LiquidSelect
-                        value={form.activo ? 'si' : 'no'}
-                        onChange={(v) => setForm(p => ({ ...p, activo: v === 'si' }))}
-                        options={SI_NO}
-                        clearable={false}
-                    />
-                </div>
-                <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block" title="Art. 163 CT — se enciende solo al observarlo en un DTE, pero se puede corregir a mano">
-                        Percibe 1%
-                    </label>
-                    <LiquidSelect
-                        value={form.percibe_1 ? 'si' : 'no'}
-                        onChange={(v) => setForm(p => ({ ...p, percibe_1: v === 'si' }))}
-                        options={SI_NO}
-                        clearable={false}
-                    />
-                </div>
-                <div className="sm:col-span-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Notas</label>
-                    <textarea
-                        value={form.notas}
-                        onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
-                        rows={3}
-                        placeholder="Notas internas"
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200/80 rounded-[1rem] text-[13px] font-medium text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50 resize-none"
-                    />
+            </div>
+
+            {/* Estado y notas */}
+            <div className="space-y-3">
+                <SectionHeader icon={CheckCircle2}>Estado y Notas</SectionHeader>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Activo</label>
+                        <LiquidSelect
+                            value={form.activo ? 'si' : 'no'}
+                            onChange={(v) => setForm(p => ({ ...p, activo: v === 'si' }))}
+                            options={SI_NO}
+                            clearable={false}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block" title="Art. 163 CT — se enciende solo al observarlo en un DTE, pero se puede corregir a mano">
+                            Percibe 1%
+                        </label>
+                        <LiquidSelect
+                            value={form.percibe_1 ? 'si' : 'no'}
+                            onChange={(v) => setForm(p => ({ ...p, percibe_1: v === 'si' }))}
+                            options={SI_NO}
+                            clearable={false}
+                        />
+                    </div>
+                    <div className="sm:col-span-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 mb-1.5 block">Notas</label>
+                        <textarea
+                            value={form.notas}
+                            onChange={e => setForm(p => ({ ...p, notas: e.target.value }))}
+                            rows={3}
+                            placeholder="Notas internas"
+                            className="w-full px-3.5 py-2.5 bg-white border border-slate-200/80 rounded-[1rem] text-[13px] font-medium text-slate-700 outline-none transition-all hover:border-[#0052CC]/30 focus:ring-4 focus:ring-[#0052CC]/10 focus:border-[#0052CC]/50 resize-none"
+                        />
+                    </div>
                 </div>
             </div>
 

@@ -5,8 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.27.2';
+export const APP_VERSION = '2.27.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.27.3 — fix(proveedores): reestructura el modal de detalle
+// (FormProveedorDetail.jsx) — la fila de 4 columnas (Tipo de Proveedor/
+// Categoría/Categoría Contable/Match ERP) quedaba tan angosta que el texto
+// de los LiquidSelect se encimaba con el ícono/flecha. Ahora son 2
+// secciones con encabezado (Clasificación, Contacto y Pago, Estado y
+// Notas) en grids de 2 columnas — hechos derivados (Tipo de Proveedor,
+// Categoría Contable) como badges de solo lectura, separados de las 2
+// decisiones editables (Categoría, Match ERP). UnifiedModal: ícono
+// genérico (Settings) reemplazado por Truck para editProveedor, ancho
+// max-w-2xl→max-w-3xl, y el título dejó de usar leading-none (se
+// aplastaba en 2 líneas con nombres largos de razón social).
+
 
 // v2.27.2 — fix(facturas-compra): mensaje de "Sincronizar" y de descarga
 // masiva pasan a toast en vez de texto inline pegado al botón (pedido del

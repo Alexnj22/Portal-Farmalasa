@@ -1,7 +1,7 @@
 import React, { Suspense, useState, useEffect, useRef, useMemo } from 'react';
 import {
     X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Loader2, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus,
-    User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Edit2
+    User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Edit2, Truck
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '../store/staffStore';
 import LiquidModal from "./common/LiquidModal";
@@ -174,7 +174,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "editContact": return "max-w-sm";
             case "newPayrollPeriod": return "max-w-md";
             case "editPayrollEntry": return "max-w-2xl";
-            case "editProveedor": return "max-w-2xl";
+            case "editProveedor": return "max-w-3xl";
             default: return "max-w-lg";
         }
     };
@@ -758,12 +758,13 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     if (type === "aiSchedulerPreview") return <div className={`${squircleClass} text-purple-600`}><Sparkles size={22} strokeWidth={2.5} /></div>;
                                     if (type === "newPayrollPeriod") return <div className={`${squircleClass} text-[#0052CC]`}><DollarSign size={22} strokeWidth={2.5} /></div>;
                                     if (type === "editPayrollEntry") return <div className={`${squircleClass} text-amber-500`}><Edit2 size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editProveedor") return <div className={`${squircleClass} text-[#0052CC]`}><Truck size={22} strokeWidth={2.5} /></div>;
 
                                     return <div className={`${squircleClass} text-slate-500`}><Settings size={22} strokeWidth={2.5} /></div>;
                                 })()}
 
                                 <div>
-                                    <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg md:text-xl leading-none mb-1">
+                                    <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg md:text-xl leading-snug mb-1">
                                         {getModalTitle()}
                                     </h3>
                                     {getModalSubtitle() && (

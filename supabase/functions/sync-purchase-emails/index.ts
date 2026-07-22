@@ -453,6 +453,27 @@ function validateDte(json: any): { valid: boolean; reason?: string } {
 // buscar por contenido del ítem (caso real: COFARSAL vende saldo Claro/Tigo
 // en sus CCF). Únicas, unidas con " | ", cap defensivo ~8KB por documento.
 const ITEMS_TEXT_MAX_BYTES = 8 * 1024;
+// Bug real 2026-07-23: total_iva se leía de resumen.totalIva, campo que NO
+// existe en el esquema real del Ministerio de Hacienda — confirmado
+// inspeccionando un CCF real (657B07BB...): resumen no tiene totalIva, el
+// IVA vive dentro de resumen.tributos[] como {codigo: "20", valor: N}
+// (código 20 = IVA en el catálogo de tributos de Hacienda). Resultado: 513
+// de 516 documentos de julio 2026 tenían total_iva en NULL, incluyendo 415
+// CCF con IVA real en su JSON — la card "Crédito Fiscal IVA" del portal
+// mostraba $36.82 en vez del monto real. Se prueba resumen.totalIva primero
+// por si algún proveedor sí lo trae directo (no cuesta nada, y evita
+// re-sumar si ya viene calculado), y se cae a sumar tributos código 20.
+function extractTotalIva(json: any): number | null {
+  const direct = json?.resumen?.totalIva;
+  if (typeof direct === 'number' && direct > 0) return direct;
+  const tributos = json?.resumen?.tributos;
+  if (!Array.isArray(tributos)) return null;
+  const iva = tributos
+    .filter((t: any) => t?.codigo === '20')
+    .reduce((sum: number, t: any) => sum + (Number(t?.valor) || 0), 0);
+  return iva > 0 ? iva : null;
+}
+
 function extractItemsText(json: any): string | null {
   const items = json?.cuerpoDocumento;
   if (!Array.isArray(items) || items.length === 0) return null;
@@ -879,7 +900,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           emisor_nombre:       emisorNombre,
           fecha_emision:       fecEmi,
           monto_total:         json.resumen?.totalPagar ?? json.resumen?.montoTotalOperacion ?? null,
-          total_iva:            json.resumen?.totalIva ?? null,
+          total_iva:            extractTotalIva(json),
           json_path:           publicUrl(jsonPath),
           orig_json_path:      origUpErr && !String(origUpErr.message).toLowerCase().includes('already exists') ? null : publicUrl(origJsonPath),
           sello_recibido:      selloRecibido,
@@ -1186,7 +1207,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { dry_run = false, account_id = null, repair_stored_json = false, debug_query = null, backfill_items_text = false, backfill_detect_codes = false } = body;
+    const { dry_run = false, account_id = null, repair_stored_json = false, debug_query = null, backfill_items_text = false, backfill_detect_codes = false, backfill_total_iva = false } = body;
 
     // Mantenimiento puntual: re-normaliza los archivos .json YA guardados en
     // Storage con unwrapDteEnvelope + repairMojibakeDeep. Necesario porque
@@ -1310,6 +1331,64 @@ Deno.serve(async (req) => {
       }
       return new Response(JSON.stringify({
         backfill_items_text: true, checked, updated, skipped,
+        hasMore: cutOff, errors: errors.slice(0, 50),
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Backfill puntual 2026-07-23: recalcula total_iva para documentos ya
+    // sincronizados ANTES del fix de extractTotalIva (ver comentario ahí —
+    // resumen.totalIva no existe en el esquema real, el IVA vive en
+    // resumen.tributos[]). Re-lee el JSON YA guardado en Storage, no hace
+    // falta Gmail. Escribe 0 (no deja NULL) cuando el documento
+    // efectivamente no tiene tributo código 20 (ej. FSE) — así
+    // `total_iva IS NULL` converge como marcador de "no procesado" en vez
+    // de reprocesar esas filas para siempre (mismo riesgo que E6/items_text).
+    if (backfill_total_iva === true) {
+      const CHUNK = 1000;
+      let checked = 0, updated = 0, foundIva = 0;
+      const errors: string[] = [];
+      const startTime = Date.now();
+      let cutOff = false;
+
+      for (;;) {
+        if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break; }
+        const { data: docs, error: docsErr } = await admin
+          .from('purchase_dte_documents')
+          .select('id, json_path')
+          .not('json_path', 'is', null)
+          .is('total_iva', null)
+          .order('id', { ascending: true })
+          .limit(CHUNK);
+        if (docsErr) throw new Error(`purchase_dte_documents: ${docsErr.message}`);
+        if (!docs || docs.length === 0) break;
+
+        for (const doc of docs) {
+          if (Date.now() - startTime > TIME_BUDGET_MS) { cutOff = true; break; }
+          checked++;
+          try {
+            const marker = `/storage/v1/object/public/${BUCKET}/`;
+            const idx = (doc.json_path as string).indexOf(marker);
+            if (idx === -1) { errors.push(`doc ${doc.id}: json_path con formato inesperado`); continue; }
+            const path = (doc.json_path as string).slice(idx + marker.length);
+
+            const { data: fileData, error: dlErr } = await admin.storage.from(BUCKET).download(path);
+            if (dlErr) { errors.push(`doc ${doc.id}: download — ${dlErr.message}`); continue; }
+            const parsed = JSON.parse(await fileData.text());
+            const iva = extractTotalIva(parsed);
+            if (iva) foundIva++;
+
+            const { error: upErr } = await admin.from('purchase_dte_documents').update({ total_iva: iva ?? 0 }).eq('id', doc.id);
+            if (upErr) { errors.push(`doc ${doc.id}: update — ${upErr.message}`); continue; }
+            updated++;
+          } catch (e: any) {
+            errors.push(`doc ${doc.id}: ${e.message}`);
+          }
+        }
+        if (cutOff) break;
+        if (docs.length < CHUNK) break;
+      }
+      return new Response(JSON.stringify({
+        backfill_total_iva: true, checked, updated, foundIva,
         hasMore: cutOff, errors: errors.slice(0, 50),
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }

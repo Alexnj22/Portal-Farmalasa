@@ -5,8 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.26.1';
+export const APP_VERSION = '2.26.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.26.2 — fix(facturas-compra): bug real de extracción de IVA, encontrado
+// explicándole al usuario las cards nuevas (2026-07-23). La card "Crédito
+// Fiscal IVA" mostraba $36.82 para julio contra $199K de compras —
+// proporción absurda. Causa: sync-purchase-emails leía total_iva de
+// resumen.totalIva, campo que NO EXISTE en el esquema real de Hacienda
+// (confirmado inspeccionando un CCF real) — el IVA vive en
+// resumen.tributos[] como {codigo: "20", valor: N}. 513 de 516 documentos
+// de julio tenían total_iva en NULL, incluyendo 415 CCF con IVA real sin
+// extraer. Fix: extractTotalIva() lee tributos código 20 (con fallback a
+// totalIva directo por si algún proveedor sí lo trae así). Nuevo modo
+// backfill_total_iva (mismo patrón que backfill_items_text, pagina por
+// total_iva IS NULL, re-lee el JSON ya guardado en Storage sin Gmail) —
+// corrido en prod: 1,161 documentos recalculados, 1,038 con IVA real
+// recuperado. Crédito Fiscal de julio pasó de $36.82 a $20,552.71
+// (verificado en vivo). auth_can_edit_any ya cubre este modo (mismo gate
+// que backfill_items_text/backfill_detect_codes).
 
 // v2.26.1 — fix(facturas-compra): descarga masiva — auditoría real de
 // tiempos + bug de descarga silenciosa (2026-07-23). Medido en vivo (caso

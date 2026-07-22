@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.27.1';
+export const APP_VERSION = '2.27.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.27.2 — fix(facturas-compra): mensaje de "Sincronizar" y de descarga
+// masiva pasan a toast en vez de texto inline pegado al botón (pedido del
+// usuario) — quita el `syncMsg` que quedaba truncado/apretado junto al pill
+// de fecha; error de sync también pasa a toast (antes se perdía si el
+// usuario no miraba justo ahí). Descarga masiva ahora confirma con un toast
+// de éxito al terminar (antes no daba ninguna señal de que ya cerró el ZIP).
 
 // v2.27.1 — fix(proveedores): "Tipo de Proveedor" mostraba la clase de
 // gasto/costo de la categoría asignada (renombrado a "Categoría Contable",

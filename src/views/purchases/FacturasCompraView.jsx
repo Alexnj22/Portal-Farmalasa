@@ -14,6 +14,7 @@ import PeriodPicker from '../../components/common/PeriodPicker';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
+import { useToastStore } from '../../store/toastStore';
 import { tokenMatch, normSearch } from '../../utils/searchUtils';
 import { dteTypeLabel } from '../../utils/dteTypes';
 import { downloadStoredFile, getSignedFileUrl } from '../../utils/storageFiles';
@@ -595,7 +596,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
 function TabDocumentos({
     dateRange, setDateRange,
     searchTerm, refreshKey, openModal, proveedores, canEdit, showCards,
-    syncing, syncMsg, syncProgress, runSyncNow,
+    syncing, syncProgress, runSyncNow,
 }) {
     const [dateStart, dateEnd] = dateRange.split('|');
     const [rows, setRows] = useState([]);
@@ -759,6 +760,7 @@ function TabDocumentos({
             useStaff.getState().appendAuditLog('FACTURAS_COMPRA_DESCARGA_MASIVA', null, {
                 cantidad: filtered.length, dateStart, dateEnd,
             });
+            useToastStore.getState().showToast('Descarga completa', `${filtered.length.toLocaleString()} documento${filtered.length !== 1 ? 's' : ''} en el ZIP.`, 'success');
         } catch (e) {
             setBulkError(e.message);
         } finally {
@@ -865,11 +867,6 @@ function TabDocumentos({
                                     <RefreshCw size={11} strokeWidth={2.5} className={syncing ? 'animate-spin' : ''} />
                                     {syncing ? (syncProgress ? `Sincronizando (tanda ${syncProgress.batch})` : 'Sincronizando') : 'Sincronizar'}
                                 </button>
-                                {syncMsg && (
-                                    <span className="text-[10px] text-slate-500 font-medium max-w-[180px] truncate" title={syncMsg}>
-                                        {syncMsg}
-                                    </span>
-                                )}
                             </div>
                         </>
                     )}
@@ -1260,7 +1257,6 @@ export default function FacturasCompraView({ openModal }) {
     const bumpRefresh = () => setRefreshKey(k => k + 1);
 
     const [syncing, setSyncing] = useState(false);
-    const [syncMsg, setSyncMsg] = useState('');
     const [syncProgress, setSyncProgress] = useState(null); // {batch} — solo aparece si hay >1 tanda
 
     useEffect(() => {
@@ -1275,7 +1271,6 @@ export default function FacturasCompraView({ openModal }) {
     const MAX_SYNC_BATCHES = 10;
     const runSyncNow = async () => {
         setSyncing(true);
-        setSyncMsg('');
         setSyncProgress(null);
         let totalInserted = 0;
         let batch = 0;
@@ -1288,11 +1283,15 @@ export default function FacturasCompraView({ openModal }) {
                 totalInserted += (result.results || []).reduce((sum, r) => sum + (r.documentsInserted || 0), 0);
                 hasMore = result.hasMore === true;
             }
-            setSyncMsg(`${totalInserted} documento${totalInserted !== 1 ? 's' : ''} nuevo${totalInserted !== 1 ? 's' : ''}${hasMore ? ` (tope de ${MAX_SYNC_BATCHES} tandas alcanzado, quedó más — corré de nuevo)` : ''}`);
             useStaff.getState().appendAuditLog('FACTURAS_COMPRA_SYNC_MANUAL', null, { inserted: totalInserted, batches: batch });
+            useToastStore.getState().showToast(
+                'Sincronización completa',
+                `${totalInserted} documento${totalInserted !== 1 ? 's' : ''} nuevo${totalInserted !== 1 ? 's' : ''}${hasMore ? ` (tope de ${MAX_SYNC_BATCHES} tandas alcanzado, quedó más — corré de nuevo)` : ''}`,
+                'success',
+            );
             bumpRefresh();
         } catch (e) {
-            setSyncMsg(`Error: ${e.message}`);
+            useToastStore.getState().showToast('Error al sincronizar', e.message, 'error');
         } finally {
             setSyncing(false);
             setSyncProgress(null);
@@ -1327,7 +1326,6 @@ export default function FacturasCompraView({ openModal }) {
                     canEdit={canEdit}
                     showCards={canViewCards}
                     syncing={syncing}
-                    syncMsg={syncMsg}
                     syncProgress={syncProgress}
                     runSyncNow={runSyncNow}
                 />

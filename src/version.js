@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.25.1';
+export const APP_VERSION = '2.25.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.25.2 — perf/fix(facturas-compra): E3 + E8 (PLAN-MEJORAS-DTE-
+// PROVEEDORES-2026-07.md Fase 5, a pedido del usuario). (E3)
+// upsert_proveedor_from_dte devuelve {id, supplier_id} en un solo json —
+// sync-purchase-emails y backfill-proveedores-dte ya no hacen un SELECT
+// aparte a proveedores_maestro solo para leer el supplier_id que el RPC ya
+// calculó internamente (backfill-proveedores-dte ahora también setea
+// supplier_id, algo que antes dejaba sin tocar). (E8) PDFs huérfanos cuyo
+// código de generación coincide con un documento que YA tiene su propio
+// PDF (dos documentos nunca deberían compartir codigoGeneracion — el
+// segundo es o un reenvío del mismo archivo, o un aviso/nota distinta que
+// solo lo menciona) se descartan automáticamente en vez de ensuciar
+// Revisión — SOLO si dos señales coinciden: código Y tamaño casi idéntico
+// (±2%) al PDF ya guardado. Bug real encontrado y corregido durante la
+// verificación: la primera versión (solo por palabras clave del texto)
+// descartó por error un aviso legítimo de "Comprobante Anulado" (Grupo
+// Jamilu) que no usaba ninguna de las frases contempladas — false
+// negative real en datos de producción, endurecido a exigir ambas señales
+// antes de decidir solo. Verificado en prod: 5 de 6 PDFs re-evaluados
+// bajo el criterio estricto siguen siendo duplicados reales (Súper
+// Selectos ×3, Diszasa ×2); el de Grupo Jamilu correctamente vuelve a
+// quedar pendiente de revisión humana.
 
 // v2.25.1 — perf(facturas-compra): Fase 5 eficiencia (PLAN-MEJORAS-DTE-
 // PROVEEDORES-2026-07.md), E1/E2/E4/E5/E6. (E1) selectDoneMessageIds

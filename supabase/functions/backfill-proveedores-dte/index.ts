@@ -99,16 +99,25 @@ Deno.serve(async (req) => {
 
       if (dry_run) { upserted++; continue; }
 
-      const { data: proveedorId, error: rpcErr } = await admin.rpc("upsert_proveedor_from_dte", { p_data: dte });
+      // E3 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md Fase 5): el RPC devuelve
+      // {id, supplier_id} — se aprovecha para setear también supplier_id acá
+      // (antes este backfill dejaba ese campo sin tocar). Solo se incluye en
+      // el UPDATE si el maestro sí tiene un match — no pisar con NULL un
+      // supplier_id que ya viniera seteado por otra vía (ej. match ERP
+      // manual anterior a la Fase 2.1).
+      const { data: proveedorResult, error: rpcErr } = await admin.rpc("upsert_proveedor_from_dte", { p_data: dte });
       if (rpcErr) {
         warnings.push(`doc ${row.id}: upsert_proveedor_from_dte — ${rpcErr.message}`);
         skipped++;
         continue;
       }
 
+      const updatePayload: Record<string, unknown> = { proveedor_id: proveedorResult?.id ?? null };
+      if (proveedorResult?.supplier_id) updatePayload.supplier_id = proveedorResult.supplier_id;
+
       const { error: updErr } = await admin
         .from("purchase_dte_documents")
-        .update({ proveedor_id: proveedorId })
+        .update(updatePayload)
         .eq("id", row.id);
       if (updErr) {
         warnings.push(`doc ${row.id}: set proveedor_id — ${updErr.message}`);

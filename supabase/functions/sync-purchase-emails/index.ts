@@ -172,6 +172,15 @@ function publicUrl(path: string): string {
   return `${base}/storage/v1/object/public/${BUCKET}/${path}`;
 }
 
+// Inversa de publicUrl — extrae el path relativo dentro del bucket desde la
+// URL formato-public guardada en BD (mismo patrón usado en repair_stored_json/
+// backfill_items_text/backfill_detect_codes, factorizado para E8).
+function relativeStoragePath(storedUrl: string): string | null {
+  const marker = `/storage/v1/object/public/${BUCKET}/`;
+  const idx = storedUrl.indexOf(marker);
+  return idx === -1 ? null : storedUrl.slice(idx + marker.length);
+}
+
 function sanitizeStorageKey(name: string): string {
   const normalized = name.normalize('NFD').replace(/[̀-ͯ]/g, ''); // quita acentos (á→a, é→e, ...)
   return normalized.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_+/g, '_').slice(0, 180);
@@ -471,14 +480,33 @@ function extractItemsText(json: any): string | null {
 // de pdfjs-dist "completo", pensado para navegador — ese se usa del lado
 // del cliente para el botón manual de respaldo).
 const UUID_RE = /\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\b/;
-async function detectCodigoGeneracionInPdf(pdfBytes: Uint8Array): Promise<string | null> {
+// A pedido del usuario (2026-07-22, E8): dos documentos NUNCA deberían
+// compartir codigoGeneracion (es un UUID v4 propio de cada DTE) — si un PDF
+// huérfano detecta el mismo código que un documento YA sincronizado con su
+// propio PDF, hay dos explicaciones: (a) es un reenvío del MISMO archivo
+// (duplicado real, seguro descartar en silencio), o (b) es un documento
+// DISTINTO que solo referencia ese código en su texto — el caso real
+// encontrado 2026-07-22 fue justo este: un aviso de invalidación de Easyfact
+// menciona el código del CCF que anula, pero es un PDF propio, no una
+// reimpresión del CCF. Distinguirlos por tamaño de bytes es débil (dos PDFs
+// del mismo generador pueden variar por metadata/compresión); mejor señal:
+// el propio texto del PDF dice qué tipo de documento es. Mismas palabras que
+// ya usa el sync para detectar invalidaciones/notas en el JSON (ver
+// DTE_EMAIL_KEYWORD_RE), pero centradas en las que indican "esto NO es la
+// representación gráfica original".
+const DOC_TYPE_NOTICE_RE = /(invalidaci[oó]n|anulaci[oó]n|documento\s+anulado|ha\s+sido\s+anulad[oa]|nota\s+de\s+cr[ée]dito|nota\s+de\s+d[ée]bito|comprobante\s+de\s+retenci[oó]n|comprobante\s+de\s+liquidaci[oó]n)/i;
+
+async function detectCodigoGeneracionInPdf(pdfBytes: Uint8Array): Promise<{ codigo: string | null; isNoticeOrRelatedDoc: boolean }> {
   try {
     const doc = await getDocumentProxy(pdfBytes);
     const { text } = await extractText(doc, { mergePages: true });
     const match = text.match(UUID_RE);
-    return match ? match[0].toUpperCase() : null;
+    return {
+      codigo: match ? match[0].toUpperCase() : null,
+      isNoticeOrRelatedDoc: DOC_TYPE_NOTICE_RE.test(text),
+    };
   } catch {
-    return null; // PDF escaneado/sin capa de texto, o corrupto — no bloquea el resto del sync
+    return { codigo: null, isNoticeOrRelatedDoc: false }; // PDF escaneado/sin capa de texto, o corrupto — no bloquea el resto del sync
   }
 }
 
@@ -869,17 +897,17 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           // match ERP (supplier_id) se deriva del maestro después del upsert
           // — una sola fuente de verdad del match normalizado, en vez de un
           // lookup propio acá con .eq('nrc', ...) exacto que se desincronizaba
-          // del RPC (nrc con/sin guión).
+          // del RPC (nrc con/sin guión). E3 (Fase 5): el RPC ya devuelve
+          // {id, supplier_id} en la misma llamada — sin el SELECT extra a
+          // proveedores_maestro que hacía antes solo para leer ese dato.
           const dte = extractProveedorFromDte(json);
           if (dte) {
-            const { data: proveedorId, error: provErr } = await supabase.rpc('upsert_proveedor_from_dte', { p_data: dte });
+            const { data: proveedorResult, error: provErr } = await supabase.rpc('upsert_proveedor_from_dte', { p_data: dte });
             if (provErr) {
               warnings.push(`DTE ${codigoGeneracion}: upsert_proveedor_from_dte — ${provErr.message}`);
             } else {
-              const { data: proveedor, error: provSelErr } = await supabase.from('proveedores_maestro').select('supplier_id').eq('id', proveedorId).maybeSingle();
-              if (provSelErr) warnings.push(`DTE ${codigoGeneracion}: lookup supplier_id del maestro — ${provSelErr.message}`);
               const { error: setErr } = await supabase.from('purchase_dte_documents')
-                .update({ proveedor_id: proveedorId, supplier_id: proveedor?.supplier_id ?? null })
+                .update({ proveedor_id: proveedorResult?.id ?? null, supplier_id: proveedorResult?.supplier_id ?? null })
                 .eq('id', insData[0].id);
               if (setErr) warnings.push(`DTE ${codigoGeneracion}: set proveedor_id/supplier_id — ${setErr.message}`);
             }
@@ -946,17 +974,25 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
           .upload(path, pdfBytes, { contentType: 'application/pdf', upsert: false });
         if (upErr && !String(upErr.message).toLowerCase().includes('already exists')) throw new Error(upErr.message);
 
-        const detectedCodigo = await detectCodigoGeneracionInPdf(pdfBytes);
+        const { codigo: detectedCodigo, isNoticeOrRelatedDoc } = await detectCodigoGeneracionInPdf(pdfBytes);
 
         // Si el código detectado ya tiene un DTE sincronizado SIN su propio
-        // PDF, se adjunta directo — sin pasar por Revisión en absoluto. Si
-        // ya tiene PDF (ej. este PDF es en realidad un aviso de
-        // invalidación, no la representación gráfica del documento en sí,
-        // caso real verificado 2026-07-22), NO se pisa — sigue el camino
-        // normal a Revisión, con el código guardado en ai_suggested para
-        // que Revisión pueda emparejar aunque el match automático haya
-        // decidido no tocarlo.
+        // PDF, se adjunta directo — sin pasar por Revisión en absoluto.
         let autoMatched = false;
+        // E8 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md, a pedido del usuario,
+        // endurecido 2026-07-22 tras un falso negativo real: el filtro de
+        // palabras clave solo no bastó — descartó por error el aviso de
+        // "Comprobante Anulado" de Grupo Jamilu porque su texto no usaba
+        // ninguna de las frases contempladas). Ahora exige DOS señales de
+        // acuerdo antes de descartar en silencio: (1) mismo codigoGeneracion
+        // Y (2) tamaño casi idéntico al PDF YA guardado para ese documento
+        // (±2%) — un reenvío del MISMO archivo pesa prácticamente igual; un
+        // documento distinto que solo comparte el código (aviso de
+        // invalidación, nota relacionada) casi nunca coincide en tamaño. El
+        // filtro de palabras clave queda como veto adicional: si el texto SÍ
+        // suena a un aviso/nota, nunca se descarta aunque el tamaño
+        // coincida.
+        let isDuplicateResend = false;
         if (detectedCodigo) {
           const { data: existing, error: findErr } = await supabase
             .from('purchase_dte_documents')
@@ -974,10 +1010,24 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
               autoMatched = true;
               warnings.push(`PDF ${op.filename}: código ${detectedCodigo} detectado — emparejado automáticamente con doc ${existing.id}`);
             }
+          } else if (!findErr && existing && existing.pdf_path && !isNoticeOrRelatedDoc) {
+            const existingRel = relativeStoragePath(existing.pdf_path);
+            if (existingRel) {
+              const { data: existingBlob } = await supabase.storage.from(BUCKET).download(existingRel);
+              if (existingBlob) {
+                const existingSize = existingBlob.size;
+                const newSize = pdfBytes.byteLength;
+                const sizesMatch = existingSize > 0 && Math.abs(newSize - existingSize) / existingSize <= 0.02;
+                if (sizesMatch) {
+                  isDuplicateResend = true;
+                  warnings.push(`PDF ${op.filename}: mismo código ${detectedCodigo} y tamaño casi idéntico (${newSize}B vs ${existingSize}B) al doc ${existing.id} — descartado como reenvío duplicado, no se manda a Revisión`);
+                }
+              }
+            }
           }
         }
 
-        if (!autoMatched) {
+        if (!autoMatched && !isDuplicateResend) {
           const { error: rqErr } = await supabase.from('purchase_dte_review_queue').upsert({
             kind:        'orphan_pdf',
             file_path:    publicUrl(path),
@@ -1228,7 +1278,7 @@ Deno.serve(async (req) => {
     // detectó nada, para no re-procesar la fila para siempre).
     if (backfill_detect_codes === true) {
       const CHUNK = 200; // más caro que los otros backfills (descarga+parsea PDF completo)
-      let checked = 0, autoMatched = 0, codeDetected = 0, noCode = 0;
+      let checked = 0, autoMatched = 0, codeDetected = 0, noCode = 0, discardedDuplicate = 0;
       const errors: string[] = [];
       const startTime = Date.now();
       let cutOff = false;
@@ -1258,7 +1308,7 @@ Deno.serve(async (req) => {
             const { data: fileData, error: dlErr } = await admin.storage.from(BUCKET).download(path);
             if (dlErr) { errors.push(`revisión ${rq.id}: download — ${dlErr.message}`); continue; }
             const pdfBytes = new Uint8Array(await fileData.arrayBuffer());
-            const detectedCodigo = await detectCodigoGeneracionInPdf(pdfBytes);
+            const { codigo: detectedCodigo, isNoticeOrRelatedDoc } = await detectCodigoGeneracionInPdf(pdfBytes);
 
             if (!detectedCodigo) {
               noCode++;
@@ -1293,11 +1343,31 @@ Deno.serve(async (req) => {
               }
             }
 
+            // E8 (endurecido tras falso negativo real, ver comentario en el
+            // loop de orphanPdfs): exige código + tamaño casi idéntico al
+            // PDF ya guardado, no solo la ausencia de palabras clave.
+            if (existing && existing.pdf_path && !isNoticeOrRelatedDoc) {
+              const existingRel = relativeStoragePath(existing.pdf_path);
+              if (existingRel) {
+                const { data: existingBlob } = await admin.storage.from(BUCKET).download(existingRel);
+                const existingSize = existingBlob?.size ?? 0;
+                const sizesMatch = existingSize > 0 && Math.abs(pdfBytes.byteLength - existingSize) / existingSize <= 0.02;
+                if (sizesMatch) {
+                  discardedDuplicate++;
+                  const { error: discErr } = await admin.from('purchase_dte_review_queue')
+                    .update({ status: 'descartado', resolved_at: new Date().toISOString(), ai_suggested: { detected_codigo_generacion: detectedCodigo } })
+                    .eq('id', rq.id);
+                  if (discErr) errors.push(`revisión ${rq.id}: no se pudo descartar como duplicado — ${discErr.message}`);
+                  continue;
+                }
+              }
+            }
+
             // Sin match automático (no existe aún, o el doc ya tiene su
-            // propio PDF — ej. este PDF es un aviso de invalidación, no la
-            // representación gráfica del documento) — se guarda el código
-            // para que Revisión pueda emparejar a mano o para que la
-            // reconciliación del próximo sync lo encuentre solo.
+            // propio PDF pero ESTE PDF sí suena a un aviso/nota distinta,
+            // ej. invalidación) — se guarda el código para que Revisión
+            // pueda emparejar a mano o para que la reconciliación del
+            // próximo sync lo encuentre solo.
             const { error: upErr } = await admin.from('purchase_dte_review_queue')
               .update({ ai_suggested: { detected_codigo_generacion: detectedCodigo } })
               .eq('id', rq.id);
@@ -1310,7 +1380,7 @@ Deno.serve(async (req) => {
         if (rows.length < CHUNK) break;
       }
       return new Response(JSON.stringify({
-        backfill_detect_codes: true, checked, codeDetected, autoMatched, noCode,
+        backfill_detect_codes: true, checked, codeDetected, autoMatched, discardedDuplicate, noCode,
         hasMore: cutOff, errors: errors.slice(0, 50),
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }

@@ -621,7 +621,11 @@ function TabDocumentos({
             if (tipoDte && r.tipo_dte !== tipoDte) return false;
             if (proveedorId === SIN_PROVEEDOR) { if (r.proveedor_id) return false; }
             else if (proveedorId) { if (String(r.proveedor_id) !== String(proveedorId)) return false; }
-            if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion, r.items_text, r.invalidado ? 'invalidado' : null)) return false;
+            // "nota de credito"/"anulado" no matcheaban — el buscador solo
+            // conocía el tipo_dte crudo ("05") y la palabra "invalidado",
+            // nunca la etiqueta legible ni el sinónimo que usa el resto del
+            // módulo (pedido del usuario 2026-07-22).
+            if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion, r.items_text, dteTypeLabel(r.tipo_dte), r.invalidado ? 'invalidado anulado' : null)) return false;
             return true;
         });
     }, [rows, tipoDte, proveedorId, searchTerm]);
@@ -847,7 +851,7 @@ function TabDocumentos({
                                 onMatched={load}
                                 canEdit={canEdit}
                                 matchSnippet={
-                                    searchTerm && !tokenMatch(searchTerm, row.proveedor_nombre, row.supplier_nombre, row.emisor_nombre, row.emisor_nit, row.numero_control, row.codigo_generacion)
+                                    searchTerm && !tokenMatch(searchTerm, row.proveedor_nombre, row.supplier_nombre, row.emisor_nombre, row.emisor_nit, row.numero_control, row.codigo_generacion, dteTypeLabel(row.tipo_dte), row.invalidado ? 'invalidado anulado' : null)
                                         ? findItemMatchSnippet(searchTerm, row.items_text)
                                         : null
                                 }
@@ -865,6 +869,19 @@ function TabDocumentos({
                                     >
                                         <XCircle size={10} /> Invalidado
                                     </span>
+                                )}
+                                {/* Mismo patrón que "Ver original" (NC/ND) — a pedido del usuario,
+                                    caso Jamilu: poder ver el PDF que justificó la anulación sin
+                                    tener que abrir el detalle primero (invalidacion_source viene de
+                                    classify_purchase_dte_review vía review_queue.matched_document_id). */}
+                                {row.invalidado && row.invalidacion_source?.file_path && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); openModal?.('viewDocument', { url: row.invalidacion_source.file_path, title: row.invalidacion_source.filename }); }}
+                                        title="Ver el PDF que justificó la anulación"
+                                        className="flex items-center gap-1 text-[9px] font-black text-red-700 bg-red-500/10 border border-red-500/25 px-2 py-0.5 rounded-full hover:bg-red-500/20 transition-colors whitespace-nowrap"
+                                    >
+                                        <Link2 size={10} /> Ver documento
+                                    </button>
                                 )}
                                 {row.notas_credito?.length > 0 && (
                                     <button

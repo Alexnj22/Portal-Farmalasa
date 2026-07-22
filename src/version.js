@@ -5,8 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.25.6';
+export const APP_VERSION = '2.25.7';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.25.7 — fix(facturas-compra): 3 hallazgos reales tras probar el caso
+// Jamilu/Suministros Enmanuel en vivo (2026-07-22). (1) Badge "Ver
+// documento" en la fila de Documentos para todo doc invalidado con un PDF
+// de anulación vinculado (mismo patrón que "Ver original" de NC/ND) —
+// nuevo campo invalidacion_source en get_purchase_dte_documents (subquery
+// sobre review_queue.matched_document_id). (2) Bug real: el documento 1281
+// (SUMINISTROS ENMANUEL) ya estaba invalidado desde el 2026-07-19 vía el
+// flujo JSON oficial de Hacienda, pero su fila de Revisión (267, aviso de
+// Easyfact) se quedó pendiente para siempre — el detector automático solo
+// reconocía la palabra "anulado" y el PDF decía "invalidación". Fix: si el
+// documento YA está invalidado por cualquier vía, la fila se auto-resuelve
+// sin pasar por Revisión (aplicado en sync-purchase-emails y en
+// backfill_detect_codes); se limpió la fila 267 existente. (3) El buscador
+// de Documentos no encontraba nada con "anulado" o "nota de credito" — solo
+// conocía tipo_dte crudo ("05") y la palabra "invalidado"; ahora incluye la
+// etiqueta legible del tipo (dteTypeLabel) y el sinónimo "anulado".
 
 // v2.25.6 — feat(facturas-compra): 4 pedidos tras probar el flujo de
 // Clasificar en vivo (2026-07-22). (1) ZIP masivo ahora organiza por carpeta

@@ -1016,7 +1016,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
         if (detectedCodigo) {
           const { data: existing, error: findErr } = await supabase
             .from('purchase_dte_documents')
-            .select('id, pdf_path')
+            .select('id, pdf_path, invalidado')
             .eq('codigo_generacion', detectedCodigo)
             .maybeSingle();
           if (!findErr && existing && !existing.pdf_path) {
@@ -1030,6 +1030,17 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
               autoMatched = true;
               warnings.push(`PDF ${op.filename}: código ${detectedCodigo} detectado — emparejado automáticamente con doc ${existing.id}`);
             }
+          } else if (!findErr && existing && existing.pdf_path && existing.invalidado) {
+            // Bug real 2026-07-22 (doc 1281, aviso de Easyfact): el documento
+            // ya estaba invalidado por OTRA vía (ej. el flujo JSON oficial
+            // de Hacienda) antes de que este PDF llegara — mandarlo a
+            // Revisión le pide a un humano confirmar algo que ya está
+            // aplicado, y se queda pendiente para siempre porque isAnulado
+            // (que exige la palabra "anulado/a" literal en el PDF) no
+            // matchea avisos que dicen "invalidación". Si el documento YA
+            // está invalidado, no hace falta que el PDF lo confirme.
+            autoInvalidated = true;
+            warnings.push(`PDF ${op.filename}: código ${detectedCodigo} — doc ${existing.id} ya estaba invalidado, no se manda a Revisión`);
           } else if (!findErr && existing && existing.pdf_path && isAnulado) {
             const { data: invData, error: invErr } = await supabase
               .from('purchase_dte_documents')
@@ -1043,7 +1054,7 @@ async function processAccount(supabase: any, account: any, dryRun: boolean, debu
               autoInvalidated = true;
               warnings.push(`PDF ${op.filename}: código ${detectedCodigo} detectado como ANULADO — doc ${existing.id} marcado invalidado automáticamente`);
             } else {
-              autoInvalidated = true; // ya estaba invalidado (ej. por el flujo JSON) — igual no manda a Revisión
+              autoInvalidated = true; // ya estaba invalidado (carrera con el chequeo de arriba)
             }
           } else if (!findErr && existing && existing.pdf_path && !isNoticeOrRelatedDoc) {
             const existingRel = relativeStoragePath(existing.pdf_path);
@@ -1355,7 +1366,7 @@ Deno.serve(async (req) => {
 
             const { data: existing, error: findErr } = await admin
               .from('purchase_dte_documents')
-              .select('id, pdf_path')
+              .select('id, pdf_path, invalidado')
               .eq('codigo_generacion', detectedCodigo)
               .maybeSingle();
             if (findErr) { errors.push(`revisión ${rq.id}: lookup codigo — ${findErr.message}`); continue; }
@@ -1376,6 +1387,19 @@ Deno.serve(async (req) => {
                 else autoMatched++;
                 continue;
               }
+            }
+
+            // Bug real 2026-07-22 (doc 1281): ya invalidado por otra vía
+            // (flujo JSON oficial) antes de que este PDF llegara — no hace
+            // falta que un humano lo confirme en Revisión. Mismo fix que el
+            // loop de orphanPdfs, ver ese comentario para el porqué.
+            if (existing && existing.pdf_path && existing.invalidado) {
+              autoInvalidated++;
+              const { error: resolveErr } = await admin.from('purchase_dte_review_queue')
+                .update({ status: 'emparejado', matched_document_id: existing.id, resolved_at: new Date().toISOString(), ai_suggested: { detected_codigo_generacion: detectedCodigo } })
+                .eq('id', rq.id);
+              if (resolveErr) errors.push(`revisión ${rq.id}: no se pudo cerrar (ya invalidado) — ${resolveErr.message}`);
+              continue;
             }
 
             // Marca automática de invalidado (mismo mecanismo que el loop de

@@ -1,19 +1,21 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-    FileText, Tag, Users, RefreshCw, Download, FileJson, ScanSearch,
+    FileText, Tag, RefreshCw, Download, FileJson, ScanSearch,
     CheckCircle2, XCircle, AlertTriangle, Eye, Archive, Link2, X,
+    TrendingUp, Receipt, UserX,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
+import StatCard from '../../components/common/StatCard';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import PeriodPicker from '../../components/common/PeriodPicker';
 import TablePagination from '../../components/common/TablePagination';
 import { useAuth } from '../../context/AuthContext';
 import { useStaffStore as useStaff } from '../../store/staffStore';
 import { tokenMatch, normSearch } from '../../utils/searchUtils';
-import { dteTypeLabel, DTE_TYPE_OPTIONS } from '../../utils/dteTypes';
+import { dteTypeLabel } from '../../utils/dteTypes';
 import { downloadStoredFile, getSignedFileUrl } from '../../utils/storageFiles';
 import { extractCodigoGeneracionFromPdf } from '../../utils/dtePdfCodigo';
 import { fetchProveedoresMaestro } from '../../data/proveedores';
@@ -50,8 +52,6 @@ const REVIEW_COLS = [
     { key: 'archivo',  label: 'Archivo',    align: 'left' },
     { key: 'acciones', label: '',           align: 'center' },
 ];
-
-const SIN_PROVEEDOR = '__sin_proveedor__';
 
 const fmt$ = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtDate = (d) => {
@@ -592,7 +592,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
 // ── TabDocumentos ─────────────────────────────────────────────────────────────
 
 function TabDocumentos({
-    dateRange, setDateRange, tipoDte, setTipoDte, proveedorId, setProveedorId,
+    dateRange, setDateRange,
     searchTerm, refreshKey, openModal, proveedores, canEdit,
     syncing, syncMsg, syncProgress, runSyncNow,
 }) {
@@ -603,6 +603,15 @@ function TabDocumentos({
     const [pageSize, setPageSize] = useState(25);
     const [sortCol, setSortCol] = useState('fecha');
     const [sortDir, setSortDir] = useState('desc');
+    // Reemplazan los selects de Tipo/Proveedor (pedido del usuario
+    // 2026-07-22: "ya en el buscador los filtra" — Tipo vía dteTypeLabel,
+    // Proveedor vía proveedor_nombre/supplier_nombre, ambos ya en
+    // tokenMatch abajo). Sin embargo "sin proveedor" (documentos que
+    // necesitan emparejarse a mano, ver SupplierMatchCell) no tiene
+    // equivalente de texto libre — se conserva como quick-filter clickeable
+    // en la card de abajo en vez de un select dedicado.
+    const [filterInvalidados, setFilterInvalidados] = useState(false);
+    const [filterSinProveedor, setFilterSinProveedor] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -616,11 +625,38 @@ function TabDocumentos({
 
     useEffect(() => { load(); }, [load, refreshKey]); // eslint-disable-line react-hooks/set-state-in-effect
 
+    // Cards contables — ver StatCard más abajo. Se calculan sobre TODO el
+    // período (rows), no sobre `filtered`, para que no cambien solo porque
+    // el usuario tipeó algo en el buscador (mismo criterio que VentasView).
+    // Los invalidados se EXCLUYEN de los totales monetarios (Art. 119-E CT:
+    // no amparan crédito fiscal) y se muestran aparte, no restados en
+    // silencio. Las Notas de Crédito (tipo 05) entran en negativo — es la
+    // única corrección con signo que trae el propio documento; Notas de
+    // Débito y el resto de tipos sí suman en positivo.
+    const cardStats = useMemo(() => {
+        let totalCompras = 0, creditoFiscal = 0, comprasNetas = 0;
+        let invalidadosCount = 0, invalidadosMonto = 0, sinProveedorCount = 0;
+        for (const r of rows) {
+            const monto = parseFloat(r.monto_total) || 0;
+            const iva = parseFloat(r.total_iva) || 0;
+            if (r.invalidado) {
+                invalidadosCount++;
+                invalidadosMonto += monto;
+            } else {
+                const sign = r.tipo_dte === '05' ? -1 : 1;
+                totalCompras += monto;
+                creditoFiscal += sign * iva;
+                comprasNetas += sign * monto;
+            }
+            if (!r.proveedor_id) sinProveedorCount++;
+        }
+        return { totalCompras, creditoFiscal, comprasNetas, invalidadosCount, invalidadosMonto, sinProveedorCount };
+    }, [rows]);
+
     const filtered = useMemo(() => {
         return rows.filter(r => {
-            if (tipoDte && r.tipo_dte !== tipoDte) return false;
-            if (proveedorId === SIN_PROVEEDOR) { if (r.proveedor_id) return false; }
-            else if (proveedorId) { if (String(r.proveedor_id) !== String(proveedorId)) return false; }
+            if (filterInvalidados && !r.invalidado) return false;
+            if (filterSinProveedor && r.proveedor_id) return false;
             // "nota de credito"/"anulado" no matcheaban — el buscador solo
             // conocía el tipo_dte crudo ("05") y la palabra "invalidado",
             // nunca la etiqueta legible ni el sinónimo que usa el resto del
@@ -628,9 +664,9 @@ function TabDocumentos({
             if (searchTerm && !tokenMatch(searchTerm, r.proveedor_nombre, r.supplier_nombre, r.emisor_nombre, r.emisor_nit, r.numero_control, r.codigo_generacion, r.items_text, dteTypeLabel(r.tipo_dte), r.invalidado ? 'invalidado anulado' : null)) return false;
             return true;
         });
-    }, [rows, tipoDte, proveedorId, searchTerm]);
+    }, [rows, filterInvalidados, filterSinProveedor, searchTerm]);
 
-    useEffect(() => { setPage(1); }, [dateStart, dateEnd, tipoDte, proveedorId, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect
+    useEffect(() => { setPage(1); }, [dateStart, dateEnd, filterInvalidados, filterSinProveedor, searchTerm]); // eslint-disable-line react-hooks/set-state-in-effect
 
     // Fase 3.2: candidatos para "Adjuntar JSON" — documentos con JSON completo
     // dentro del mismo rango de fechas ya cargado (no dispara un fetch aparte).
@@ -732,18 +768,53 @@ function TabDocumentos({
 
     const dateDirty = dateRange !== defaultDateRange();
 
-    const selectedTipo = DTE_TYPE_OPTIONS.find(o => String(o.value) === String(tipoDte));
-    const tipoW = selectedTipo ? Math.max(120, Math.min(220, 86 + selectedTipo.label.length * 8)) : 150;
-
-    const proveedorLabel = proveedorId === SIN_PROVEEDOR
-        ? '(sin proveedor)'
-        : proveedores.find(p => String(p.id) === String(proveedorId))?.nombre;
-    const proveedorW = proveedorLabel ? Math.max(130, Math.min(250, 86 + proveedorLabel.length * 8)) : 180;
-
     return (
         <div className="p-5 md:p-6 space-y-5">
+            {/* Cards contables (izquierda, se reparten el ancho) + pill de
+                fecha/descarga/sync (derecha, ancho fijo) — mismo patrón que
+                VentasView/StaffManagementView. */}
+            <div className="flex items-stretch gap-3 flex-wrap">
+                <div className="flex items-stretch gap-3 flex-wrap flex-1 min-w-0">
+                    <StatCard
+                        icon={FileText} label="Total Compras" value={fmt$(cardStats.totalCompras)}
+                        sub={`${rows.length.toLocaleString()} documento${rows.length !== 1 ? 's' : ''}`}
+                        iconBg="bg-blue-50" iconCls="text-blue-500" valueCls="text-blue-700"
+                        loading={loading}
+                    />
+                    <StatCard
+                        icon={Receipt} label="Crédito Fiscal IVA" value={fmt$(cardStats.creditoFiscal)}
+                        sub="excluye invalidados"
+                        iconBg="bg-emerald-50" iconCls="text-emerald-500" valueCls="text-emerald-700"
+                        loading={loading}
+                    />
+                    <StatCard
+                        icon={TrendingUp} label="Compras Netas" value={fmt$(cardStats.comprasNetas)}
+                        sub="tras Notas de Crédito"
+                        iconBg="bg-slate-100" iconCls="text-slate-500" valueCls="text-slate-700"
+                        loading={loading}
+                    />
+                    <StatCard
+                        icon={XCircle} label="Invalidados" value={cardStats.invalidadosCount}
+                        sub={cardStats.invalidadosCount > 0 ? fmt$(cardStats.invalidadosMonto) : 'sin invalidados'}
+                        iconBg="bg-red-50" iconCls="text-red-500" valueCls="text-red-600"
+                        activeBg="bg-red-500/10 border-red-300 shadow-md"
+                        onClick={cardStats.invalidadosCount > 0 ? () => setFilterInvalidados(v => !v) : undefined}
+                        active={filterInvalidados}
+                        loading={loading}
+                    />
+                    <StatCard
+                        icon={UserX} label="Sin Proveedor" value={cardStats.sinProveedorCount}
+                        sub="pendiente de emparejar"
+                        iconBg="bg-amber-50" iconCls="text-amber-500" valueCls="text-amber-700"
+                        activeBg="bg-amber-500/10 border-amber-300 shadow-md"
+                        onClick={cardStats.sinProveedorCount > 0 ? () => setFilterSinProveedor(v => !v) : undefined}
+                        active={filterSinProveedor}
+                        loading={loading}
+                    />
+                </div>
+
             {/* Filter pill — vive en el body, no en el header (regla §17 DESIGN.md) */}
-            <div className="flex items-start justify-end gap-3 flex-wrap">
+            <div className="flex items-start justify-end gap-3 flex-wrap shrink-0">
                 <div className="group flex items-center gap-0 rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm shadow-[0_2px_10px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.9)] transition-all duration-300 hover:shadow-[0_8px_28px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.95)] hover:-translate-y-0.5 hover:border-slate-200 shrink-0 overflow-visible flex-wrap">
 
                     {/* Período + clear individual */}
@@ -753,42 +824,6 @@ function TabDocumentos({
                         </div>
                         {dateDirty && (
                             <button onClick={() => setDateRange(defaultDateRange())} title="Quitar fecha"
-                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
-                                <X size={9} strokeWidth={3} />
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
-
-                    {/* Tipo DTE + clear individual */}
-                    <div className="flex items-center">
-                        <div className="px-2 py-2 overflow-visible" style={{ width: tipoW + 'px' }}>
-                            <LiquidSelect value={tipoDte} onChange={setTipoDte}
-                                options={DTE_TYPE_OPTIONS} placeholder="Tipo" icon={Tag} compact bare />
-                        </div>
-                        {tipoDte && (
-                            <button onClick={() => setTipoDte('')} title="Quitar tipo"
-                                className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
-                                <X size={9} strokeWidth={3} />
-                            </button>
-                        )}
-                    </div>
-
-                    <div className="h-5 w-px bg-slate-100 shrink-0" />
-
-                    {/* Proveedor + clear individual */}
-                    <div className="flex items-center">
-                        <div className="px-2 py-2 overflow-visible" style={{ width: proveedorW + 'px' }}>
-                            <LiquidSelect
-                                value={proveedorId}
-                                onChange={setProveedorId}
-                                options={[{ value: SIN_PROVEEDOR, label: '(sin proveedor)' }, ...proveedores.map(p => ({ value: p.id, label: p.nombre }))]}
-                                placeholder="Proveedor" icon={Users} compact bare
-                            />
-                        </div>
-                        {proveedorId && (
-                            <button onClick={() => setProveedorId('')} title="Quitar proveedor"
                                 className="mr-1.5 w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-50 hover:bg-red-500 text-red-400 hover:text-white transition-colors shrink-0">
                                 <X size={9} strokeWidth={3} />
                             </button>
@@ -834,6 +869,7 @@ function TabDocumentos({
                         </>
                     )}
                 </div>
+            </div>
             </div>
 
             {bulkError && <div className="text-[10px] text-red-500 px-1">{bulkError}</div>}
@@ -1205,8 +1241,6 @@ export default function FacturasCompraView({ openModal }) {
     const [search, setSearch] = useState(() => searchParams.get('q') || '');
     const [dateRange, setDateRange] = useState(defaultDateRange);
     const [dateStart, dateEnd] = dateRange.split('|');
-    const [tipoDte, setTipoDte] = useState('');
-    const [proveedorId, setProveedorId] = useState('');
     const [proveedores, setProveedores] = useState([]);
 
     const [refreshKey, setRefreshKey] = useState(0);
@@ -1273,10 +1307,6 @@ export default function FacturasCompraView({ openModal }) {
                 <TabDocumentos
                     dateRange={dateRange}
                     setDateRange={setDateRange}
-                    tipoDte={tipoDte}
-                    setTipoDte={setTipoDte}
-                    proveedorId={proveedorId}
-                    setProveedorId={setProveedorId}
                     searchTerm={search}
                     refreshKey={refreshKey}
                     openModal={openModal}

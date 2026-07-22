@@ -5,8 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.25.7';
+export const APP_VERSION = '2.26.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.26.0 — feat(facturas-compra): cards contables reemplazan filtros Tipo/
+// Proveedor (pedido del usuario 2026-07-22: "ya en el buscador los
+// filtra" — cierto desde el fix del buscador en v2.25.7). En su lugar, 5
+// StatCard (componente compartido) con lectura contable real: Total
+// Compras (bruto, excluye invalidados), Crédito Fiscal IVA (suma total_iva
+// con signo — Notas de Crédito en negativo — excluye invalidados: Art.
+// 119-E CT), Compras Netas (mismo signo aplicado a monto_total, ya neto de
+// NC), Invalidados (count + monto excluido, clickable → filtra la tabla),
+// Sin Proveedor (count de documentos sin proveedor_id — reemplaza el
+// filtro "(sin proveedor)" del select eliminado, clickable → filtra).
+// Cards calculadas sobre TODO el período (rows), no sobre la tabla ya
+// filtrada por texto — mismo criterio que VentasView, para que no
+// fluctúen solo por tipear en el buscador. Verificado en vivo: caso real
+// de julio 2026 mostró 41 documentos sin proveedor (todos "Doc. Contable
+// de Liquidación" de bancos/financieras — no son compras reales, dato
+// nuevo que antes no era visible sin abrir el select uno por uno).
 
 // v2.25.7 — fix(facturas-compra): 3 hallazgos reales tras probar el caso
 // Jamilu/Suministros Enmanuel en vivo (2026-07-22). (1) Badge "Ver

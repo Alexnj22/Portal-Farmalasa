@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Archive, AlertTriangle, Download, ExternalLink, FileText, Loader2, Receipt, RotateCcw, ShieldOff, ShieldCheck, ZoomIn, ZoomOut } from 'lucide-react';
+import { Archive, AlertTriangle, Download, ExternalLink, FileText, Loader2, Receipt, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import { getSignedFileUrl, downloadStoredFile } from '../../utils/storageFiles';
-import { downloadPurchaseDtePackage, setPurchaseDteInvalidado } from '../../data/facturasCompra';
+import { downloadPurchaseDtePackage, fetchPurchaseDteReviewSource } from '../../data/facturasCompra';
 import { dteTypeLabel } from '../../utils/dteTypes';
-import { useStaffStore as useStaff } from '../../store/staffStore';
 
 const fmt$ = (n) => `$${parseFloat(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -136,7 +135,7 @@ const PdfZoomViewer = ({ src }) => {
 // Hacienda de El Salvador) y lo muestra como factura — encabezado/ítems/totales
 // — en vez del texto crudo. Tab a "PDF" cuando el documento tiene uno asociado.
 const FormPurchaseDteViewer = ({ formData }) => {
-    const { document, canEdit, onInvalidadoChanged } = formData || {};
+    const { document } = formData || {};
     const [tab, setTab] = useState('detalle');
     const [dte, setDte] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -144,42 +143,17 @@ const FormPurchaseDteViewer = ({ formData }) => {
     const [pdfUrl, setPdfUrl] = useState(null);
     const [downloadingAll, setDownloadingAll] = useState(false);
     const [downloadAllError, setDownloadAllError] = useState('');
+    const [invalidacionSource, setInvalidacionSource] = useState(null);
+    const [openingInvalidacionPdf, setOpeningInvalidacionPdf] = useState(false);
 
-    // Estado local: el `document` del prop es una foto tomada al abrir el
-    // modal — sin esto, marcar/desmarcar invalidado no se reflejaría acá
-    // hasta cerrar y reabrir (aunque la lista de atrás sí se refresca vía
-    // onInvalidadoChanged).
-    const [invalidadoState, setInvalidadoState] = useState({
-        invalidado: document?.invalidado ?? false,
-        invalidado_motivo: document?.invalidado_motivo ?? null,
-        invalidado_at: document?.invalidado_at ?? null,
-    });
-    const [togglingInvalidado, setTogglingInvalidado] = useState(false);
-    const [invalidadoError, setInvalidadoError] = useState('');
-
-    const toggleInvalidado = async () => {
-        if (!document?.id) return;
-        const next = !invalidadoState.invalidado;
-        // No se pisa un motivo/fecha real que ya viniera del detector
-        // automático (JSON) al desmarcar por error y volver a marcar — solo
-        // se ofrece "Marcado manualmente" cuando no había nada antes.
-        setInvalidadoError('');
-        setTogglingInvalidado(true);
+    const openInvalidacionPdf = async () => {
+        if (!invalidacionSource?.file_path) return;
+        setOpeningInvalidacionPdf(true);
         try {
-            await setPurchaseDteInvalidado(document.id, next);
-            setInvalidadoState({
-                invalidado: next,
-                invalidado_motivo: next ? (invalidadoState.invalidado_motivo || 'Marcado manualmente') : null,
-                invalidado_at: next ? new Date().toISOString() : null,
-            });
-            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_MARCAR_INVALIDADO', String(document.id), {
-                codigo_generacion: document.codigo_generacion, invalidado: next,
-            });
-            onInvalidadoChanged?.();
-        } catch (e) {
-            setInvalidadoError(e.message || 'No se pudo actualizar');
+            const url = await getSignedFileUrl(invalidacionSource.file_path);
+            if (url) window.open(url, '_blank', 'noopener');
         } finally {
-            setTogglingInvalidado(false);
+            setOpeningInvalidacionPdf(false);
         }
     };
 
@@ -222,6 +196,17 @@ const FormPurchaseDteViewer = ({ formData }) => {
         getSignedFileUrl(document.pdf_path).then((u) => { if (alive) setPdfUrl(u); });
         return () => { alive = false; };
     }, [document?.pdf_path]);
+
+    // El PDF huérfano de Revisión que justificó marcar invalidado (ver
+    // classify_purchase_dte_review) — sin esto, el aviso de anulación queda
+    // sin rastro visible una vez que sale de Revisión (pedido del usuario
+    // tras probar el caso real de Grupo Jamilu, 2026-07-22).
+    useEffect(() => {
+        if (!document?.invalidado || !document?.id) { setInvalidacionSource(null); return; }
+        let alive = true;
+        fetchPurchaseDteReviewSource(document.id).then((row) => { if (alive) setInvalidacionSource(row); }).catch(() => {});
+        return () => { alive = false; };
+    }, [document?.invalidado, document?.id]);
 
     const items = dte?.cuerpoDocumento || dte?.detalle || [];
     const resumen = dte?.resumen || {};
@@ -290,39 +275,33 @@ const FormPurchaseDteViewer = ({ formData }) => {
                         >
                             <Download size={14} strokeWidth={2} /> JSON
                         </button>
-                        {canEdit && (
-                            <button
-                                type="button"
-                                onClick={toggleInvalidado}
-                                disabled={togglingInvalidado}
-                                title={invalidadoState.invalidado ? 'Quitar la marca de invalidado' : 'Marcar este documento como invalidado (ej. sello ANULADO gráfico que la detección automática no pudo leer)'}
-                                className={`flex items-center gap-2 px-4 py-2.5 border rounded-[1rem] font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-[0.97] disabled:opacity-50 ${
-                                    invalidadoState.invalidado
-                                        ? 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600'
-                                        : 'bg-white border-red-200 hover:bg-red-50 text-red-600'
-                                }`}
-                            >
-                                {invalidadoState.invalidado ? <ShieldCheck size={14} strokeWidth={2} /> : <ShieldOff size={14} strokeWidth={2} />}
-                                {togglingInvalidado ? 'Guardando…' : invalidadoState.invalidado ? 'Quitar invalidado' : 'Marcar invalidado'}
-                            </button>
-                        )}
                     </div>
                 </div>
                 {downloadAllError && (
                     <p className="mt-2 text-[10px] font-bold text-red-500">{downloadAllError}</p>
                 )}
-                {invalidadoError && (
-                    <p className="mt-2 text-[10px] font-bold text-red-500">{invalidadoError}</p>
-                )}
-                {invalidadoState.invalidado && (
+                {document?.invalidado && (
                     <div className="mt-3 flex items-start gap-2.5 rounded-[1rem] border border-red-500/25 bg-red-500/10 px-4 py-3">
                         <AlertTriangle size={16} className="text-red-600 shrink-0 mt-0.5" strokeWidth={2} />
-                        <p className="text-[11px] font-bold text-red-700 leading-snug">
-                            Este documento está invalidado
-                            {invalidadoState.invalidado_motivo ? `: ${invalidadoState.invalidado_motivo}` : ''}
-                            {invalidadoState.invalidado_at ? ` (${invalidadoState.invalidado_at.slice(0, 10)})` : ''}.
-                            No ampara deducciones ni crédito fiscal (Art. 119-E Código Tributario).
-                        </p>
+                        <div className="min-w-0">
+                            <p className="text-[11px] font-bold text-red-700 leading-snug">
+                                Este documento está invalidado
+                                {document.invalidado_motivo ? `: ${document.invalidado_motivo}` : ''}
+                                {document.invalidado_at ? ` (${document.invalidado_at.slice(0, 10)})` : ''}.
+                                No ampara deducciones ni crédito fiscal (Art. 119-E Código Tributario).
+                            </p>
+                            {invalidacionSource?.file_path && (
+                                <button
+                                    type="button"
+                                    onClick={openInvalidacionPdf}
+                                    disabled={openingInvalidacionPdf}
+                                    className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] font-black text-red-700 hover:text-red-800 underline disabled:opacity-50"
+                                >
+                                    <ExternalLink size={11} strokeWidth={2} />
+                                    {openingInvalidacionPdf ? 'Abriendo…' : 'Ver PDF de anulación'}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

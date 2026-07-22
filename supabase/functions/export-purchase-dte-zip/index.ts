@@ -8,6 +8,27 @@ import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.t
 const BUCKET = "purchase-dte";
 const MAX_ITEMS = 300; // tope de seguridad — evita timeouts en selecciones enormes
 
+// Catálogo oficial DTE (Ministerio de Hacienda El Salvador) — duplicado del
+// mapping de src/utils/dteTypes.js porque las edge functions (Deno) no
+// pueden importar módulos de src/ (resolución de módulos distinta). Mismo
+// texto, mantener sincronizados si el catálogo cambia.
+const DTE_TYPE_FOLDERS: Record<string, string> = {
+  "01": "Factura",
+  "03": "Credito Fiscal (CCF)",
+  "04": "Nota de Remision",
+  "05": "Nota de Credito",
+  "06": "Nota de Debito",
+  "07": "Comprobante de Retencion",
+  "08": "Comprobante de Liquidacion",
+  "09": "Doc. Contable de Liquidacion",
+  "11": "Factura de Exportacion",
+  "14": "Factura Sujeto Excluido",
+};
+function folderForTipo(tipoDte: string | null): string {
+  if (!tipoDte) return "Sin clasificar";
+  return DTE_TYPE_FOLDERS[tipoDte] || `Tipo ${tipoDte}`;
+}
+
 function relativePath(publicUrl: string | null): string | null {
   if (!publicUrl) return null;
   const marker = `/object/public/${BUCKET}/`;
@@ -45,7 +66,13 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const ids: number[] = Array.isArray(body.ids) ? body.ids.map(Number).filter(Boolean) : [];
-    if (ids.length === 0) {
+    // Pedido del usuario 2026-07-22: la descarga masiva también debe traer
+    // lo que sigue pendiente en Revisión (PDFs huérfanos, JSON inválido,
+    // etc.), en su propia carpeta "Revisar" — el cliente lo pide solo en la
+    // primera tanda (downloadPurchaseDteZipBulk) para no duplicarlo cuando
+    // el rango de fechas necesita varias llamadas.
+    const includePendingReview = body.include_pending_review === true;
+    if (ids.length === 0 && !includePendingReview) {
       return new Response(JSON.stringify({ error: "ids vacío" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -56,35 +83,57 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: rows, error: selErr } = await admin
-      .from("purchase_dte_documents")
-      .select("id, codigo_generacion, json_path, pdf_path")
-      .in("id", ids);
-    if (selErr) throw new Error(selErr.message);
-
     const zip = new JSZip();
     let included = 0;
     const warnings: string[] = [];
 
     // Fase 5 E4 (PLAN-MEJORAS-DTE-PROVEEDORES-2026-07.md): antes cada
     // .download() esperaba al anterior (serie) — una descarga de 300 docs
-    // (hasta 600 archivos) tardaba minutos. Tandas de 8 en paralelo bajan
-    // eso a segundos, sin saturar la conexión a Storage.
-    type DownloadTask = { baseName: string; rel: string; ext: 'json' | 'pdf' };
+    // (hasta 600 archivos) tardaba minutos. Tandas en paralelo bajan eso a
+    // segundos, sin saturar la conexión a Storage. Carpetas por tipo_dte
+    // (pedido del usuario 2026-07-22) — más fácil de auditar/contar por
+    // tipo de documento sin abrir cada archivo.
+    type DownloadTask = { entryName: string; rel: string };
     const tasks: DownloadTask[] = [];
-    for (const row of rows ?? []) {
-      // codigo_generacion es NULL en docs "confirmados sin JSON" (ver
-      // TabRevision) — sin este fallback, 2+ documentos así en la misma
-      // descarga masiva generaban null.json/null.pdf y JSZip los pisaba
-      // entre sí, perdiendo archivos sin ningún aviso.
-      const baseName = row.codigo_generacion || `doc-${row.id}`;
-      const jsonRel = relativePath(row.json_path);
-      if (jsonRel) tasks.push({ baseName, rel: jsonRel, ext: 'json' });
-      const pdfRel = relativePath(row.pdf_path);
-      if (pdfRel) tasks.push({ baseName, rel: pdfRel, ext: 'pdf' });
+
+    if (ids.length > 0) {
+      const { data: rows, error: selErr } = await admin
+        .from("purchase_dte_documents")
+        .select("id, codigo_generacion, tipo_dte, json_path, pdf_path")
+        .in("id", ids);
+      if (selErr) throw new Error(selErr.message);
+
+      for (const row of rows ?? []) {
+        // codigo_generacion es NULL en docs "confirmados sin JSON" (ver
+        // TabRevision) — sin este fallback, 2+ documentos así en la misma
+        // descarga masiva generaban null.json/null.pdf y JSZip los pisaba
+        // entre sí, perdiendo archivos sin ningún aviso.
+        const baseName = row.codigo_generacion || `doc-${row.id}`;
+        const folder = folderForTipo(row.tipo_dte);
+        const jsonRel = relativePath(row.json_path);
+        if (jsonRel) tasks.push({ entryName: `${folder}/${baseName}.json`, rel: jsonRel });
+        const pdfRel = relativePath(row.pdf_path);
+        if (pdfRel) tasks.push({ entryName: `${folder}/${baseName}.pdf`, rel: pdfRel });
+      }
     }
 
-    const CONCURRENCY = 8;
+    if (includePendingReview) {
+      const { data: pending, error: pendErr } = await admin
+        .from("purchase_dte_review_queue")
+        .select("id, file_path, filename")
+        .eq("status", "pendiente");
+      if (pendErr) throw new Error(pendErr.message);
+      for (const row of pending ?? []) {
+        const rel = relativePath(row.file_path);
+        if (!rel) continue;
+        // Prefijo con el id de la fila — dos correos distintos pueden
+        // llegar con el mismo nombre de archivo (ej. "Comprobante.pdf" de
+        // proveedores distintos) y JSZip pisaría uno con otro sin avisar.
+        tasks.push({ entryName: `Revisar/${row.id}_${row.filename || `archivo-${row.id}`}`, rel });
+      }
+    }
+
+    const CONCURRENCY = 16;
     for (let i = 0; i < tasks.length; i += CONCURRENCY) {
       const batch = tasks.slice(i, i + CONCURRENCY);
       const results = await Promise.all(batch.map(async (t) => {
@@ -92,8 +141,8 @@ Deno.serve(async (req) => {
         return { t, data, error };
       }));
       for (const { t, data, error } of results) {
-        if (data) { zip.file(`${t.baseName}.${t.ext}`, await data.arrayBuffer()); included++; }
-        else warnings.push(`${t.baseName}.${t.ext}: ${error?.message ?? 'no se pudo descargar'}`);
+        if (data) { zip.file(t.entryName, await data.arrayBuffer()); included++; }
+        else warnings.push(`${t.entryName}: ${error?.message ?? 'no se pudo descargar'}`);
       }
     }
 
@@ -107,7 +156,12 @@ Deno.serve(async (req) => {
       zip.file("manifest-errores.txt", `Archivos que no se pudieron incluir en este ZIP:\n\n${warnings.join('\n')}\n`);
     }
 
-    const zipBytes = await zip.generateAsync({ type: "uint8array" });
+    // STORE (sin compresión): PDFs ya vienen comprimidos internamente y el
+    // cliente vuelve a empaquetar este ZIP en un ZIP maestro cuando hay más
+    // de una tanda (downloadPurchaseDteZipBulk) — deflate acá sería CPU
+    // gastado dos veces por poco beneficio de tamaño. Empaquetado más rápido
+    // era pedido explícito del usuario (2026-07-22).
+    const zipBytes = await zip.generateAsync({ type: "uint8array", compression: "STORE" });
     const filename = `facturas-compra-${new Date().toISOString().slice(0, 10)}.zip`;
 
     // Content-Type application/octet-stream (no application/zip): el cliente

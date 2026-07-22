@@ -21,8 +21,13 @@ import {
     fetchPurchaseDteDocuments, fetchPurchaseDteReviewQueue,
     setPurchaseDteProveedor, resolvePurchaseDteReview, syncPurchaseEmailsNow,
     downloadPurchaseDtePackage, downloadPurchaseDteZipBulk, mergePurchaseDteDocuments,
-    findPurchaseDteDocumentByCodigo,
+    findPurchaseDteDocumentByCodigo, classifyPurchaseDteReview,
 } from '../../data/facturasCompra';
+
+const CLASIFICAR_TIPO_OPTIONS = [
+    { value: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' },
+    { value: 'otro', label: 'Otro documento relacionado — solo vincula' },
+];
 
 const TABS = [
     { key: 'documentos', label: 'Documentos' },
@@ -348,8 +353,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
 
 // ── MatchDocumentAction — "Emparejar a documento existente" (solo orphan_pdf) ──
 
-function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
-    const [open, setOpen] = useState(false);
+function MatchDocumentAction({ row, documents, open, onOpen, onClose, onMatched }) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
 
@@ -361,7 +365,7 @@ function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
                     label="Emparejar"
                     title="Emparejar a un documento existente"
                     color="blue"
-                    onClick={() => { onOpen(); setError(''); setOpen(true); }}
+                    onClick={() => { onOpen(); setError(''); }}
                 />
                 {error && <span className="text-[10px] text-red-500">{error}</span>}
             </div>
@@ -374,7 +378,7 @@ function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
                 <LiquidSelect
                     value=""
                     onChange={async (val) => {
-                        if (!val) { setOpen(false); return; }
+                        if (!val) { onClose(); return; }
                         setSaving(true);
                         try {
                             await resolvePurchaseDteReview(row.id, 'emparejado', val);
@@ -382,10 +386,9 @@ function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
                                 matched_document_id: val, filename: row.filename,
                             });
                             onMatched();
-                            setOpen(false);
                         } catch (e) {
                             setError(e.message || 'No se pudo emparejar');
-                            setOpen(false);
+                            onClose();
                         } finally {
                             setSaving(false);
                         }
@@ -400,7 +403,97 @@ function MatchDocumentAction({ row, documents, onOpen, onMatched }) {
                 />
             </div>
             <button
-                onClick={() => setOpen(false)}
+                onClick={onClose}
+                disabled={saving}
+                title="Cancelar"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40 shrink-0"
+            >
+                <X size={14} />
+            </button>
+        </div>
+    );
+}
+
+// ── ClassifyReviewAction — "Clasificar" (solo orphan_pdf): el usuario elige
+// el tipo del PDF (aviso de anulación vs. otro documento relacionado) y el
+// DTE al que se enlaza. Reemplaza el botón suelto "Marcar invalidado" que
+// vivía en el detalle del documento — sin contexto de qué PDF lo justificaba.
+// El efecto (invalidar) es consecuencia de la clasificación, resuelto por
+// classify_purchase_dte_review (ver migración 20260722170000). ────────────
+
+function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassified }) {
+    const [tipo, setTipo] = useState('anulacion');
+    const [documentId, setDocumentId] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+
+    if (!open) {
+        return (
+            <div className="flex items-center gap-1.5">
+                <ActionButton
+                    icon={Tag}
+                    label="Clasificar"
+                    title="Clasificar este PDF (ej. aviso de anulación) y vincularlo al DTE que afecta"
+                    color="slate"
+                    onClick={() => { onOpen(); setError(''); setTipo('anulacion'); setDocumentId(''); }}
+                />
+                {error && <span className="text-[10px] text-red-500">{error}</span>}
+            </div>
+        );
+    }
+
+    const confirm = async () => {
+        if (!documentId) return;
+        setSaving(true);
+        setError('');
+        try {
+            await classifyPurchaseDteReview(row.id, documentId, tipo);
+            useStaff.getState().appendAuditLog('FACTURAS_COMPRA_CLASIFICAR_REVISION', String(row.id), {
+                matched_document_id: documentId, tipo, filename: row.filename,
+            });
+            onClassified();
+        } catch (e) {
+            setError(e.message || 'No se pudo clasificar');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="flex items-center gap-1.5 w-[360px]" onClick={(e) => e.stopPropagation()}>
+            <div className="w-[168px] shrink-0">
+                <LiquidSelect
+                    value={tipo}
+                    onChange={setTipo}
+                    options={CLASIFICAR_TIPO_OPTIONS}
+                    compact
+                    clearable={false}
+                />
+            </div>
+            <div className="flex-1 min-w-0">
+                <LiquidSelect
+                    value={documentId}
+                    onChange={setDocumentId}
+                    options={documents.map(d => ({
+                        value: d.id,
+                        label: `${fmtDate(d.fecha_emision)} · ${d.supplier_nombre || d.emisor_nombre || '—'} · ${fmt$(d.monto_total)}`,
+                    }))}
+                    placeholder="Documento DTE…"
+                    compact
+                    clearable={false}
+                />
+            </div>
+            {error && <span className="text-[10px] text-red-500 shrink-0">{error}</span>}
+            <button
+                onClick={confirm}
+                disabled={saving || !documentId}
+                title="Confirmar clasificación"
+                className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-40 shrink-0"
+            >
+                <CheckCircle2 size={16} />
+            </button>
+            <button
+                onClick={onClose}
                 disabled={saving}
                 title="Cancelar"
                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-40 shrink-0"
@@ -576,7 +669,7 @@ function TabDocumentos({
     };
 
     const viewDetail = (row) => {
-        openModal?.('viewPurchaseDte', { document: row, canEdit, onInvalidadoChanged: load });
+        openModal?.('viewPurchaseDte', { document: row });
         useStaff.getState().appendAuditLog('FACTURAS_COMPRA_VER_DETALLE', String(row.id), {
             codigo_generacion: row.codigo_generacion,
         });
@@ -892,6 +985,11 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
     const [documents, setDocuments] = useState([]);
     const [documentsLoaded, setDocumentsLoaded] = useState(false);
     useEffect(() => { setDocumentsLoaded(false); }, [dateStart, dateEnd]); // eslint-disable-line react-hooks/set-state-in-effect
+
+    // Solo una acción expandida (Emparejar o Clasificar) a la vez por fila —
+    // ambos formularios inline necesitan más ancho del que cabe junto al
+    // resto de botones de la columna; al expandir una se ocultan las demás.
+    const [expandedAction, setExpandedAction] = useState(null); // { rowId, kind: 'match' | 'classify' }
     const loadDocuments = useCallback(() => {
         if (documentsLoaded) return;
         setDocumentsLoaded(true);
@@ -979,7 +1077,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
 
             <DataTable columns={REVIEW_COLS} loading={loading} empty={{ icon: CheckCircle2, message: 'Nada pendiente de revisión.' }}>
                 {filtered.map((row, i) => (
-                    <DataRow key={row.id} index={i}>
+                    <DataRow key={row.id} index={i} onClick={() => openFile(row)}>
                         <DataCell>
                             <span className="font-semibold text-slate-700 tabular-nums text-[11px]">{fmtDateTime(row.received_at)}</span>
                         </DataCell>
@@ -1009,39 +1107,64 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
                             </button>
                         </DataCell>
                         <DataCell align="center">
-                            {canEdit && (
-                                <div className="flex items-center justify-center gap-1.5">
-                                    {row.kind === 'orphan_pdf' && (
-                                        <>
-                                            <DetectCodeAction
-                                                pdfPath={row.file_path}
-                                                detectedCodigo={row.ai_suggested?.detected_codigo_generacion}
-                                                serverChecked={row.ai_suggested !== null && row.ai_suggested !== undefined}
-                                                onFound={(match) => emparejarPorCodigo(row, match)}
-                                            />
-                                            <MatchDocumentAction
-                                                row={row}
-                                                documents={documents}
-                                                onOpen={loadDocuments}
-                                                onMatched={bumpRefresh}
-                                            />
+                            {canEdit && (() => {
+                                const isMatchOpen = expandedAction?.rowId === row.id && expandedAction.kind === 'match';
+                                const isClassifyOpen = expandedAction?.rowId === row.id && expandedAction.kind === 'classify';
+                                const anyOpen = isMatchOpen || isClassifyOpen;
+                                return (
+                                    <div className="flex items-center justify-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                        {row.kind === 'orphan_pdf' && (
+                                            <>
+                                                {!anyOpen && (
+                                                    <DetectCodeAction
+                                                        pdfPath={row.file_path}
+                                                        detectedCodigo={row.ai_suggested?.detected_codigo_generacion}
+                                                        serverChecked={row.ai_suggested !== null && row.ai_suggested !== undefined}
+                                                        onFound={(match) => emparejarPorCodigo(row, match)}
+                                                    />
+                                                )}
+                                                {!isClassifyOpen && (
+                                                    <MatchDocumentAction
+                                                        row={row}
+                                                        documents={documents}
+                                                        open={isMatchOpen}
+                                                        onOpen={() => { loadDocuments(); setExpandedAction({ rowId: row.id, kind: 'match' }); }}
+                                                        onClose={() => setExpandedAction(null)}
+                                                        onMatched={() => { bumpRefresh(); setExpandedAction(null); }}
+                                                    />
+                                                )}
+                                                {!isMatchOpen && (
+                                                    <ClassifyReviewAction
+                                                        row={row}
+                                                        documents={documents}
+                                                        open={isClassifyOpen}
+                                                        onOpen={() => { loadDocuments(); setExpandedAction({ rowId: row.id, kind: 'classify' }); }}
+                                                        onClose={() => setExpandedAction(null)}
+                                                        onClassified={() => { bumpRefresh(); setExpandedAction(null); }}
+                                                    />
+                                                )}
+                                                {!anyOpen && (
+                                                    <ActionButton
+                                                        icon={CheckCircle2}
+                                                        label="Sin JSON"
+                                                        color="emerald"
+                                                        title="Guarda este PDF como documento aunque nunca llegue su JSON"
+                                                        onClick={() => confirmSinJson(row)}
+                                                    />
+                                                )}
+                                            </>
+                                        )}
+                                        {!anyOpen && (
                                             <ActionButton
-                                                icon={CheckCircle2}
-                                                label="Sin JSON"
-                                                color="emerald"
-                                                title="Guarda este PDF como documento aunque nunca llegue su JSON"
-                                                onClick={() => confirmSinJson(row)}
+                                                icon={XCircle}
+                                                label="Descartar"
+                                                color="red"
+                                                onClick={() => discard(row)}
                                             />
-                                        </>
-                                    )}
-                                    <ActionButton
-                                        icon={XCircle}
-                                        label="Descartar"
-                                        color="red"
-                                        onClick={() => discard(row)}
-                                    />
-                                </div>
-                            )}
+                                        )}
+                                    </div>
+                                );
+                            })()}
                         </DataCell>
                     </DataRow>
                 ))}

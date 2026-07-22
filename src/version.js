@@ -5,8 +5,47 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.25.4';
+export const APP_VERSION = '2.25.6';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.25.6 — feat(facturas-compra): 4 pedidos tras probar el flujo de
+// Clasificar en vivo (2026-07-22). (1) ZIP masivo ahora organiza por carpeta
+// de tipo_dte (Credito Fiscal, Nota de Crédito, etc. — catálogo MH
+// duplicado en el edge function, Deno no puede importar src/) y agrega una
+// carpeta "Revisar" con lo que sigue pendiente en Revisión (PDFs huérfanos,
+// JSON inválido). (2) Empaquetado más rápido: compression STORE en vez de
+// DEFLATE (los PDF ya vienen comprimidos, doble compresión era CPU
+// desperdiciada — medido con un ZIP real de 1043 archivos/114MB, completa
+// en ~154s en 2 tandas) + concurrencia de descarga 8→16 + camino rápido en
+// el cliente que evita desempacar/reempacar cuando hay una sola tanda.
+// (3) Bug real reportado — una descarga se quedó en "1/2" sin avanzar ni
+// tirar error: supabase.functions.invoke() no tenía timeout propio, así que
+// un edge function lento dejaba la UI colgada en silencio. Diagnosticado en
+// vivo: NO era el edge function (probado con curl, 300 docs completan en
+// 54s) sino que mi propio harness de QA usaba un puerto (4321) fuera del
+// CORS allowlist del edge function (localhost:4173 es el válido) — "Failed
+// to fetch" instantáneo, no un colgado real. Aun así se agregó
+// AbortController con timeout de 120s por tanda para que un colgado
+// genuino (red, function fría) muestre error en vez de esperar para
+// siempre. (4) El PDF de anulación que justificó marcar un documento
+// invalidado (ver classify_purchase_dte_review, v2.25.5) no tenía forma de
+// verse desde el detalle una vez que la fila salía de Revisión — nuevo RPC
+// get_purchase_dte_review_source(p_document_id) + link "Ver PDF de
+// anulación" en el banner de invalidado (FormPurchaseDteViewer). Verificado
+// en vivo contra el caso real de Grupo Jamilu (documento 1827).
+
+// v2.25.5 — refactor(facturas-compra): rediseño del flujo de invalidado a
+// pedido del usuario — el botón suelto "Marcar/Quitar invalidado" en
+// FormPurchaseDteViewer (v2.25.4) no tenía contexto de QUÉ PDF lo
+// justificaba. Se revirtió por completo (botón, estado, RPC
+// set_purchase_dte_invalidado dropeado) y se reemplazó por "Clasificar" en
+// TabRevision: junto a cada PDF huérfano, el usuario elige el tipo (aviso de
+// anulación vs. otro documento relacionado) y el documento DTE al que se
+// enlaza; el efecto (invalidar) es consecuencia de esa clasificación, con
+// trazabilidad real vía review_queue.matched_document_id. Nuevo RPC
+// classify_purchase_dte_review (SECURITY DEFINER, auth_can_edit_any).
+// También: limpieza de viewDetail (ya no pasa canEdit/onInvalidadoChanged al
+// modal, innecesario ahora que el flujo vive en Revisión).
 
 // v2.25.4 — feat(facturas-compra): marca manual de invalidado + intento de
 // detección automática (caso real Grupo Jamilu, 2026-07-22). Se amplió

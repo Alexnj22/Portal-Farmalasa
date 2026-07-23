@@ -950,7 +950,6 @@ const SchedulesView = ({ openModal, setView }) => {
                 cancelText="Cancelar"
                 isDestructive={publishState.isDestructive}
                 isProcessing={isPublishing}
-                theme="light"
             />
         </GlassViewLayout>
     );

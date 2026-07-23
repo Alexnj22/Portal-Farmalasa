@@ -106,12 +106,12 @@ const KioskConfigModal = ({
                 <label className="text-white/50 text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest ml-2">
                   Sucursal Física
                 </label>
-                {/* data-theme="dark" fuerza los tokens correctos para este LiquidSelect:
-                    la tarjeta del modal es un panel oscuro fijo, independiente del tema
-                    real del portal (liquid/dark/solid/solid-dark) — igual que el kiosco
-                    de login. Reemplaza el viejo prop theme="dark" (lógica isDark manual,
-                    ya eliminada de LiquidSelect en la migración a tokens de T3). */}
-                <div data-theme="dark" className={isProcessing ? 'opacity-50 pointer-events-none' : ''}>
+                {/* Este modal solo se monta dentro de TimeClockView, que fuerza
+                    data-theme="dark" en <html> mientras esa vista vive (ver su
+                    useEffect) — LiquidSelect ya hereda los tokens correctos sin
+                    necesitar su viejo prop theme="dark" (lógica isDark manual,
+                    eliminada de LiquidSelect en la migración a tokens de T3). */}
+                <div className={isProcessing ? 'opacity-50 pointer-events-none' : ''}>
                   <LiquidSelect
                     options={branchOptions}
                     value={selectedBranchId}

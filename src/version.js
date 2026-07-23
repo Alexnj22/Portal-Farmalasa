@@ -5,8 +5,42 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.38.0';
+export const APP_VERSION = '2.39.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.39.0 — refactor(theme): familia de modales — ModalShell/LiquidModal/
+// ConfirmModal/AlertModal (T3, apalancamiento #7). Mismo bug de fondo que
+// LiquidSelect: ConfirmModal y AlertModal tenían su propio prop
+// theme='light'|'dark' con ternarios isDark manuales, ajeno al ThemeContext
+// real; LiquidModal ya usaba data-surface="modal" pero en un div CUBIERTO
+// por su propia tarjeta interna con fondo/borde/sombra hardcodeados (mismo
+// patrón de "el token está puesto pero en el elemento equivocado" que
+// LiquidSelect). Cambios:
+//   - ModalShell.jsx: scrim bg-slate-900/40 → bg-scrim (token, 1 línea).
+//   - LiquidModal.jsx: data-surface="modal" se queda en la tarjeta visible
+//     (se eliminan sus clases muertas rounded-[2.5rem]/border/shadow);
+//     Header/Footer bg-white/40..50 → border-divider/bg-surface-card-hover.
+//     Bug real encontrado: la "glass layer" decorativa (bg-white/50 fijo)
+//     quedaba invisible antes porque la tarjeta también era clara siempre —
+//     al migrar la tarjeta a --surface-modal quedó expuesto un velo blanco
+//     lavando el tema dark a lavanda. Fix: color por tema vía
+//     .modal-glass-layer en index.css (sutil en dark, apagada en
+//     solid/solid-dark igual que los blobs de T2).
+//   - ConfirmModal.jsx / AlertModal.jsx: se elimina el prop theme y los
+//     ternarios isDark; data-surface="modal" al elemento correcto; texto/
+//     bordes/botones a text-content/text-content-3/border-divider/
+//     bg-surface-card-hover/bg-brand/bg-danger/bg-success (AlertModal).
+//   - Los 2 usos legítimos de un panel siempre oscuro e independiente del
+//     tema real (TimeClockView — kiosco de asistencia, que ya forzaba el
+//     LiquidSelect a dark) ahora fuerzan data-theme="dark" en <html> una
+//     sola vez a nivel de vista (useEffect, mismo patrón que ya usaba para
+//     el meta theme-color de iOS) — necesario porque ConfirmModal y el
+//     dropdown de LiquidSelect se renderizan vía portal a document.body,
+//     así que un wrapper local no habría alcanzado ese contenido.
+// Build + tests verdes; verificado con ruta de prueba temporal (creada y
+// eliminada en esta sesión) en liquid/solid/dark: bg/radius de
+// ConfirmModal/AlertModal/LiquidModal coinciden exacto con
+// --surface-modal/--card-radius de cada tema.
 
 // v2.38.0 — refactor(theme): LiquidSelect.jsx (T3, apalancamiento #6 — el
 // componente compartido más usado del proyecto, "siempre usar LiquidSelect

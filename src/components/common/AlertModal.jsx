@@ -2,37 +2,35 @@ import React from 'react';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import ModalShell from './ModalShell';
 
-const AlertModal = ({ 
-    isOpen, 
-    onClose, 
-    title, 
+const AlertModal = ({
+    isOpen,
+    onClose,
+    title,
     message,
     type = 'success', // 'success' | 'error' | 'info'
     buttonText = 'Entendido',
-    theme = 'light' // 🚨 NUEVA PROPIEDAD: 'light' | 'dark'
 }) => {
 
-    const isDark = theme === 'dark';
-    
-    // Configuración dinámica de estilos según el tipo de alerta
+    // Configuración dinámica de estilos según el tipo de alerta — colores
+    // semánticos del tema (--success/--danger/--brand), reactivos por tema.
     const config = {
         success: {
             icon: CheckCircle2,
-            glow: 'bg-emerald-500/15',
-            iconColor: 'text-emerald-500',
-            btn: 'bg-emerald-500 hover:bg-emerald-600 shadow-[0_4px_15px_rgba(16,185,129,0.3)]'
+            glow: 'bg-success/15',
+            iconColor: 'text-success',
+            btn: 'bg-success hover:bg-success-hover shadow-[0_4px_15px_rgba(18,183,106,0.3)]'
         },
         error: {
             icon: AlertCircle,
-            glow: 'bg-red-500/15',
-            iconColor: 'text-red-500 animate-pulse',
-            btn: 'bg-red-500 hover:bg-red-600 shadow-[0_4px_15px_rgba(239,68,68,0.3)]'
+            glow: 'bg-danger/15',
+            iconColor: 'text-danger animate-pulse',
+            btn: 'bg-danger hover:bg-danger-hover shadow-[0_4px_15px_rgba(240,68,56,0.3)]'
         },
         info: {
             icon: Info,
-            glow: 'bg-[#0052CC]/15',
-            iconColor: 'text-[#0052CC]',
-            btn: 'bg-[#0052CC] hover:bg-[#003D99] shadow-[0_4px_15px_rgba(0,82,204,0.3)]'
+            glow: 'bg-brand/15',
+            iconColor: 'text-brand',
+            btn: 'bg-brand hover:bg-brand-hover shadow-[0_4px_15px_rgba(0,82,204,0.3)]'
         }
     };
 
@@ -41,37 +39,27 @@ const AlertModal = ({
 
     return (
         <ModalShell open={isOpen} onClose={onClose} maxWidthClass="max-w-sm" zClass="z-[9999]" ariaLabel={title}>
-            <div className={`backdrop-blur-3xl backdrop-saturate-150 border rounded-[2.5rem] overflow-hidden relative transition-colors duration-300 ${
-                isDark 
-                    ? 'bg-[#0A0F1C]/90 border-white/10 shadow-[0_40px_80px_rgba(0,0,0,0.5),inset_0_2px_15px_rgba(255,255,255,0.05)]' 
-                    : 'bg-white/90 border-white/80 shadow-[0_40px_80px_rgba(0,0,0,0.15),inset_0_2px_15px_rgba(255,255,255,0.8)]'
-            }`}>
-                
+            <div data-surface="modal" className="overflow-hidden relative">
+
                 {/* 🚨 Glow de fondo dinámico que tiñe el cristal superior */}
                 <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 blur-[40px] rounded-full pointer-events-none ${currentConfig.glow}`}></div>
 
                 <div className="p-8 text-center flex flex-col items-center relative z-10">
                     {/* ÍCONO SQUIRCLE */}
-                    <div className={`w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-6 backdrop-blur-md transition-transform duration-500 hover:scale-105 border ${
-                        isDark
-                            ? 'bg-white/5 border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.3),inset_0_2px_10px_rgba(255,255,255,0.05)]'
-                            : 'bg-white/50 border-white/80 shadow-[0_8px_30px_rgba(0,0,0,0.06),inset_0_2px_10px_rgba(255,255,255,0.9)]'
-                    } ${currentConfig.iconColor}`}>
+                    <div className={`w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-6 transition-transform duration-500 hover:scale-105 border border-border-card bg-surface-card-hover shadow-sm ${currentConfig.iconColor}`}>
                         <Icon size={36} strokeWidth={2.5} />
                     </div>
-                    
-                    <h3 className={`text-[20px] font-black uppercase tracking-tight mb-2 leading-none drop-shadow-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
+
+                    <h3 className="text-[20px] font-black uppercase tracking-tight mb-2 leading-none drop-shadow-sm text-content">
                         {title}
                     </h3>
-                    <p className={`text-[13px] font-medium leading-relaxed px-2 mb-2 ${isDark ? 'text-white/60' : 'text-slate-500'}`}>
+                    <p className="text-[13px] font-medium leading-relaxed px-2 mb-2 text-content-3">
                         {message}
                     </p>
                 </div>
 
                 {/* FOOTER */}
-                <div className={`p-5 backdrop-blur-md border-t flex relative z-10 ${
-                    isDark ? 'bg-black/20 border-white/10' : 'bg-white/40 border-white/60'
-                }`}>
+                <div className="p-5 border-t border-divider flex relative z-10 bg-surface-card-hover">
                     <button 
                         onClick={onClose}
                         className={`flex-1 py-3.5 px-4 rounded-2xl font-black text-[11px] uppercase tracking-widest text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.97] transform-gpu border-none ${currentConfig.btn}`}

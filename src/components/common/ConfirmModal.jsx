@@ -12,11 +12,8 @@ const ConfirmModal = ({
     cancelText = "Cancelar",
     isDestructive = true,
     isProcessing = false,
-    theme = 'light' 
 }) => {
-    
-    const isDark = theme === 'dark';
-    
+
     // Estado interno para manejar la animación de salida suave
     const [render, setRender] = useState(false);
 
@@ -43,35 +40,27 @@ const ConfirmModal = ({
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6">
             
             {/* FONDO BLUR */}
-            <div 
-                className={`absolute inset-0 transition-opacity duration-300 ease-out ${overlayClass} ${
-                    isDark 
-                        ? 'bg-[#0A0F1C]/80 backdrop-blur-md' 
-                        : 'bg-slate-900/40 backdrop-blur-sm'
-                }`}
+            <div
+                className={`absolute inset-0 transition-opacity duration-300 ease-out bg-scrim backdrop-blur-sm ${overlayClass}`}
                 onClick={!isProcessing ? onClose : undefined}
             />
 
             {/* CONTENEDOR DEL MODAL */}
-            <div className={`relative w-full max-w-sm backdrop-blur-2xl border rounded-[2rem] overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${modalClass}
-                ${isDark 
-                    ? 'bg-[#0A0F1C]/90 border-white/10 shadow-[0_30px_80px_rgba(0,0,0,0.8)]' 
-                    : 'bg-white/95 border-white/80 shadow-[0_30px_80px_rgba(0,0,0,0.2)]'
-                }`}
+            <div
+                data-surface="modal"
+                className={`relative w-full max-w-sm overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${modalClass}`}
             >
-                
+
                 {/* Glow de fondo */}
                 <div className={`absolute top-0 left-1/2 -translate-x-1/2 blur-[50px] rounded-full pointer-events-none w-40 h-40 opacity-20 ${
-                    isDestructive ? 'bg-red-500' : 'bg-[#0052CC]'
+                    isDestructive ? 'bg-danger' : 'bg-brand'
                 }`}></div>
 
                 <div className="p-6 sm:p-8 text-center flex flex-col items-center relative z-10">
-                    
+
                     {/* ÍCONO OPTIMIZADO */}
-                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-[1.2rem] flex items-center justify-center mb-5 border backdrop-blur-md transition-all duration-300 ${
-                        isDark ? 'bg-white/5 border-white/10' : 'bg-white/60 border-white/80 shadow-sm'
-                    } ${
-                        isDestructive ? 'text-red-500' : 'text-[#0052CC]'
+                    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-[1.2rem] flex items-center justify-center mb-5 border border-border-card bg-surface-card-hover shadow-sm transition-all duration-300 ${
+                        isDestructive ? 'text-danger' : 'text-brand'
                     }`}>
                         {isProcessing ? (
                             <Loader2 size={28} strokeWidth={2.5} className="animate-spin" />
@@ -81,43 +70,40 @@ const ConfirmModal = ({
                             <Info size={28} strokeWidth={2.5} />
                         )}
                     </div>
-                    
+
                     {/* TÍTULO */}
-                    <h3 className={`text-[18px] sm:text-[20px] font-black uppercase tracking-tight mb-3 leading-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                    <h3 className="text-[18px] sm:text-[20px] font-black uppercase tracking-tight mb-3 leading-tight text-content">
                         {isProcessing ? "Procesando..." : title}
                     </h3>
-                    
+
                     {/* MENSAJE */}
-                    <div className={`text-[13px] font-medium leading-relaxed w-full transition-opacity duration-300 ${isProcessing ? 'opacity-60' : 'opacity-100'} ${isDark ? 'text-white/70' : 'text-slate-500'}`}>
+                    <div className={`text-[13px] font-medium leading-relaxed w-full transition-opacity duration-300 text-content-3 ${isProcessing ? 'opacity-60' : 'opacity-100'}`}>
                         {isProcessing ? "Por favor, no cierres esta ventana." : message}
                     </div>
                 </div>
 
                 {/* FOOTER RESPONSIVO */}
-                <div className={`p-4 sm:p-5 backdrop-blur-md border-t flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 relative z-10 ${isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50/50 border-slate-100'}`}>
-                    
-                    <button 
+                <div className="p-4 sm:p-5 border-t border-divider flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 relative z-10 bg-surface-card-hover">
+
+                    <button
                         onClick={onClose}
                         disabled={isProcessing}
-                        className={`py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest border transition-all duration-300 flex-1 flex items-center justify-center ${
-                            isProcessing 
-                                ? 'hidden' 
-                                : isDark 
-                                    ? 'text-white/70 bg-white/5 border-white/10 hover:bg-white/10 hover:text-white' 
-                                    : 'text-slate-600 bg-white border-slate-200 hover:bg-slate-50 hover:-translate-y-0.5 shadow-sm'
+                        className={`py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest border border-border-card transition-all duration-300 flex-1 flex items-center justify-center ${
+                            isProcessing
+                                ? 'hidden'
+                                : 'text-content-2 bg-surface-card hover:bg-surface-card-hover hover:-translate-y-0.5 shadow-sm'
                         }`}
                     >
                         {cancelText}
                     </button>
-                    
-                    <button 
+
+                    <button
                         onClick={onConfirm}
                         disabled={isProcessing}
-                        // 🚨 FIX: flex-wrap por si el texto es muy largo, y sintaxis arreglada en bg-[#0052CC]
                         className={`py-3 px-4 rounded-xl font-black text-[11px] uppercase tracking-widest text-white transition-all duration-300 flex-1 flex flex-wrap items-center justify-center gap-2 border-transparent shadow-sm ${
-                            isProcessing 
-                                ? 'cursor-not-allowed opacity-90 ' + (isDestructive ? 'bg-red-500' : 'bg-[#0052CC]')
-                                : 'hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] ' + (isDestructive ? 'bg-red-500 hover:bg-red-600' : 'bg-[#0052CC] hover:bg-[#003D99]')
+                            isProcessing
+                                ? 'cursor-not-allowed opacity-90 ' + (isDestructive ? 'bg-danger' : 'bg-brand')
+                                : 'hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] ' + (isDestructive ? 'bg-danger hover:bg-danger-hover' : 'bg-brand hover:bg-brand-hover')
                         }`}
                     >
                         {isProcessing ? (

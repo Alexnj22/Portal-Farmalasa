@@ -366,6 +366,20 @@
   display: none;
 }
 
+/* .modal-glass-layer (LiquidModal.jsx) — capa extra de escarcha detrás del
+   contenido, pensada para intensificar el look glass. Antes era un
+   bg-white/50 fijo: invisible mientras la tarjeta también era hardcodeada
+   clara, pero al migrar la tarjeta a --surface-modal (T3) quedó expuesto un
+   bug real — en tema dark (liquid oscuro) ese blanco al 50% lavaba la
+   tarjeta oscura a un lavanda claro. Se reduce a un realce sutil en dark;
+   en solid/solid-dark se apaga entero (cero backdrop-filter, T2). */
+.modal-glass-layer { background: rgba(255,255,255,0.5); }
+[data-theme="dark"] .modal-glass-layer { background: rgba(255,255,255,0.06); }
+[data-theme="solid"] .modal-glass-layer,
+[data-theme="solid-dark"] .modal-glass-layer {
+  display: none;
+}
+
 
 /* ═══════════════════════════════════════════════════════════════
    TAILWIND v4 BRIDGE — @theme inline

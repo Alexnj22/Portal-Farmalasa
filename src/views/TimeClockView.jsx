@@ -90,6 +90,24 @@ const TimeClockView = ({ setView }) => {
     return () => { if (meta && prev) meta.content = prev; };
   }, []);
 
+  // Este kiosco es una pantalla siempre-oscura, independiente del tema real
+  // del portal (igual que LoginView) — pero a diferencia de LoginView, SÍ
+  // vive dentro del árbol de ThemeProvider (usa LiquidSelect/ConfirmModal,
+  // que leen tokens vía [data-theme] en <html>). Forzamos data-theme="dark"
+  // en <html> mientras esta vista está montada para que esos componentes —
+  // incluido lo que renderizan vía portal a document.body, como el dropdown
+  // de LiquidSelect — hereden los tokens oscuros correctos sin importar el
+  // tema elegido por el usuario, restaurando el valor real al desmontar.
+  useEffect(() => {
+    const root = document.documentElement;
+    const prevTheme = root.getAttribute('data-theme');
+    root.setAttribute('data-theme', 'dark');
+    return () => {
+      if (prevTheme) root.setAttribute('data-theme', prevTheme);
+      else root.removeAttribute('data-theme');
+    };
+  }, []);
+
   useEffect(() => {
     const handleEscKey = (e) => {
       if (e.key === 'Escape') {
@@ -150,7 +168,6 @@ const TimeClockView = ({ setView }) => {
           title="¿Desvincular Dispositivo?"
           message="Este dispositivo dejará de funcionar para marcar asistencia inmediatamente."
           confirmText="Sí, desvincular"
-          theme="dark"
         />
       )}
 

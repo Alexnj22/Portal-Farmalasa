@@ -68,19 +68,19 @@ function EarlyExitForm({
   <label className="text-white/50 text-[8px] sm:text-[9px] font-semibold uppercase tracking-widest ml-2">
     Motivo autorizado
   </label>
-  {/* data-theme="dark" fuerza los tokens correctos: este panel es un kiosco
-      oscuro fijo, independiente del tema real del portal — reemplaza el viejo
-      prop theme="dark" (lógica isDark manual, eliminada de LiquidSelect en T3). */}
-  <div data-theme="dark">
-    <LiquidSelect
-      value={exitReason}
-      onChange={val => onChangeReason?.(val)}
-      options={EARLY_EXIT_OPTIONS.map(option => ({ value: option, label: option }))}
-      placeholder="Seleccione un motivo..."
-      disabled={isProcessing}
-      clearable={false}
-    />
-  </div>
+  {/* Este formulario solo se monta dentro de TimeClockView, que fuerza
+      data-theme="dark" en <html> mientras esa vista vive — LiquidSelect
+      ya hereda los tokens correctos sin necesitar su viejo prop theme="dark"
+      (lógica isDark manual, eliminada de LiquidSelect en la migración a
+      tokens de T3). */}
+  <LiquidSelect
+    value={exitReason}
+    onChange={val => onChangeReason?.(val)}
+    options={EARLY_EXIT_OPTIONS.map(option => ({ value: option, label: option }))}
+    placeholder="Seleccione un motivo..."
+    disabled={isProcessing}
+    clearable={false}
+  />
 
   {/* 🚨 NUEVO: Feedback visual preventivo */}
   {exitReason === 'Omisión de Almuerzo' && (

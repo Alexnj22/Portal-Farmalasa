@@ -384,6 +384,16 @@ material: de vidrio flotante a superficie sólida precisa.
 - Stack de sistema (ya en uso). Una sola familia.
 - Escala fija rem, ratio 1.125–1.2. Datos/tablas: 13–14px en densidad compacta;
   prosa 15–16px; inputs ≥16px en móvil (evita zoom iOS).
+- **Botones y badges: normal-case, nunca mayúsculas con tracking** (decisión
+  2026-07-23, comparada lado a lado en la lámina de T2.3 — ver capturas en
+  `docs/audits/tema-2026-07/`). El proyecto usa hoy mayúsculas+tracking+peso
+  black en CTAs y pills (DESIGN.md §15/§16); puesto junto a una versión
+  normal-case con el mismo peso/color/sombra, la versión en mayúsculas se leyó
+  como "dashboard corporativo 2016", la normal-case como producto actual. La
+  jerarquía primary/secondary se resuelve con color/relleno, no con
+  mayúsculas. Aplica a `Button` y `Badge` (§8.2/§9.1, ambos nuevos en T3) desde
+  su primera versión — no es un cambio a un componente existente, es la spec
+  con la que nacen.
 
 ### 7.4 Densidad adaptativa (el corazón del soporte low-res)
 

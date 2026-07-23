@@ -181,10 +181,20 @@ dataviz. Un solo pase de infraestructura; nada visual cambia todavía.
    contradicción con DESIGN.md §32.
 2. Prototipar en el tema nuevo el AppLayout + 2-3 vistas reales (/overview, /ventas,
    /pedidos) — sin migrar el resto todavía.
-3. Capturar la comparativa: {liquid actual vs Solid Modern} × {1440×900,
-   1366×768 con zoom 125%, **1024×768**} con `audit-shots.mjs`.
-4. **Gate**: aprobación del usuario sobre las capturas. Aquí se decide (a) ajustes
-   al estilo y (b) si Liquid Glass sobrevive como tema opcional o se elimina.
+3. **Lámina de componentes (mockup — regla cero-nativo §9.0)**: una página
+   prototipo con la propuesta visual de CADA primitiva canónica en el estilo
+   nuevo, claro y oscuro: `Button` (todas las variantes), `Badge`, `Spinner`/
+   `Skeleton`, `EmptyState`, `LiquidSelect`, pickers de fecha/hora, `PortalInput`,
+   toast, y la jerarquía de modales. Lo que hoy NO existe (§9.1) se diseña aquí
+   como mockup; el usuario lo confirma y **queda definido como canónico** antes
+   de que T3 escriba una línea de componente real.
+4. Capturar la comparativa: {liquid actual vs Solid Modern} × {1440×900,
+   1366×768 con zoom 125%, **1024×768**} con `audit-shots.mjs` + la lámina de
+   componentes del punto 3.
+5. **Gate**: aprobación del usuario sobre las capturas. Aquí se decide (a) ajustes
+   al estilo, (b) si Liquid Glass sobrevive como tema opcional o se elimina, y
+   (c) la confirmación de la lámina de componentes (punto 3) — con eso los
+   canónicos quedan cerrados y T3/T4 son ejecución, no diseño.
 
 ### Fase T3 — Migrar los componentes compartidos (el 80% del efecto)
 
@@ -574,6 +584,25 @@ inferior). Decisión adoptada para **todo el proyecto de aquí en adelante**:
 > dónde se consolida. Regla general: T3 crea/decide el canónico, T4 migra los
 > divergentes vista por vista, T7 lo verifica con gate mecánico (§9.3).
 
+### 9.0 Regla CERO-NATIVO + flujo de canonización (decisión del usuario 2026-07-23)
+
+**Nada nativo del navegador en la UI visible.** Todo elemento respeta el estilo
+creado del proyecto y reacciona al tema: prohibidos `alert()`, `window.confirm`,
+`prompt()`, `<select>` nativo, `<input type="date"|"time">` crudo, y cualquier
+control/diálogo/spinner/badge improvisado donde exista (o deba existir) un
+canónico. El flujo, **vigente desde ya para todo código nuevo** (no espera a T3):
+
+1. **¿Existe el componente canónico?** → se usa SIEMPRE, sin excepción por
+   vista. Los gates de §9.3 lo verifican mecánicamente.
+2. **¿No existe?** → NO se improvisa en la vista: se diseña **mockup según el
+   estilo** (en la lámina de componentes de T2.3, o como mockup puntual si
+   surge después), se muestra al usuario, él confirma, y **queda definido como
+   canónico** — se agrega a la lista cerrada de T3 y a DESIGN.md.
+3. **Backfill obligatorio**: cada canónico nuevo se retro-aplica a TODO lo ya
+   construido — los checklists enumerables de §9.3 (overlays, tablas, pickers
+   nativos, alert/confirm) y las 110 vistas de T4 son ese backfill. **T7 no
+   cierra con usos nativos o hand-rolled sin excepción anotada.**
+
 ### 9.1 El mapa (medido)
 
 | Trabajo | Canónico | Divergencias encontradas | Consolida en |
@@ -602,8 +631,11 @@ inferior). Decisión adoptada para **todo el proyecto de aquí en adelante**:
    bloquean el thread).
 2. **Jerarquía de modales** (la decide T3): qué componente para formulario,
    para confirmación, para visor de documento; cuándo drawer vs modal.
-3. **Tooltip**: `title=` nativo aceptable en iconos/acciones secundarias;
-   `LiquidTooltip` donde el contenido tenga formato o deba verse en móvil.
+3. **Tooltip** (ajustado a la regla §9.0): contenido informativo visible
+   siempre vía `LiquidTooltip`. `title=` nativo queda SOLO como refuerzo de
+   accesibilidad cuando el mismo texto ya es visible en la UI — nunca como
+   única vía de información. Los 294 `title=` actuales se triagean en el pase
+   T4 (eliminar redundantes / migrar los informativos a LiquidTooltip).
 4. **Texto de loading/empty**: "Cargando…" (con elipsis U+2026) y catálogo
    corto de textos de vacío (con el componente `EmptyState` la divergencia
    muere sola).
@@ -613,11 +645,15 @@ inferior). Decisión adoptada para **todo el proyecto de aquí en adelante**:
 Al gate de colores existente (§T7) se agregan, con el mismo criterio pass/fail:
 
 ```
-grep -rn "[^a-zA-Z.]alert(\|window.confirm" src --include="*.jsx"   → 0 (hoy: 12)
-grep -rln "<select" src --include="*.jsx"                            → 0 reales (hoy: 0 ✅)
-grep -rln "<table" src/views src/components --include="*.jsx"        → solo lista de excepciones anotadas (hoy: 15 sin anotar)
+grep -rn "[^a-zA-Z.]alert(\|window.confirm\|[^a-zA-Z.]prompt(" src --include="*.jsx"  → 0 (hoy: 12)
+grep -rln "<select" src --include="*.jsx"                             → 0 reales (hoy: 0 ✅)
+grep -rn 'type="date"\|type="time"' src --include="*.jsx"             → 0 fuera de los pickers canónicos (hoy: 15)
+grep -rln "<table" src/views src/components --include="*.jsx"         → solo lista de excepciones anotadas (hoy: 15 sin anotar)
 ```
 
 Y checklists enumerables (mismo modelo que las 110 vistas de T4): los 24
 overlays `fixed inset-0`, los 15 `<table>`, los 6+9 date/time nativos —
-cada uno migrado o anotado con razón, nunca omitido en silencio.
+cada uno migrado o anotado con razón, nunca omitido en silencio. **Estos
+checklists SON el backfill que exige §9.0.3**: cuando un canónico nuevo nace
+(en T2.3 o después), su lista de usos divergentes existentes se agrega aquí y
+se vacía antes de cerrar T7.

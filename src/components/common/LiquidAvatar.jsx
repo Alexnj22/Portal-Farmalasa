@@ -8,21 +8,21 @@ const LiquidAvatar = ({ src, alt, fallbackText, className = "" }) => {
     // Si no hay URL o hubo un error, mostramos las iniciales o el icono por defecto
     if (!src || hasError) {
         return (
-            <div className={`relative flex items-center justify-center bg-slate-100 overflow-hidden ${className}`}>
+            <div className={`relative flex items-center justify-center bg-surface-card-hover overflow-hidden ${className}`}>
                 {fallbackText ? (
-                    <span className="font-black uppercase text-[#0052CC] tracking-tight">{fallbackText.charAt(0)}</span>
+                    <span className="font-black uppercase text-brand tracking-tight">{fallbackText.charAt(0)}</span>
                 ) : (
-                    <User size={className.includes('w-20') || className.includes('w-24') ? 36 : 18} className="text-slate-300" strokeWidth={2} />
+                    <User size={className.includes('w-20') || className.includes('w-24') ? 36 : 18} className="text-content-3" strokeWidth={2} />
                 )}
             </div>
         );
     }
 
     return (
-        <div className={`relative overflow-hidden bg-slate-100 ${className}`}>
+        <div className={`relative overflow-hidden bg-surface-card-hover ${className}`}>
             {/* 🚨 SKELETON PRELOADER: Brillo animado mientras carga */}
             {isLoading && (
-                <div className="absolute inset-0 z-0 bg-slate-100">
+                <div className="absolute inset-0 z-0 bg-surface-card-hover">
                     <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-[shimmer_1.5s_infinite]"></div>
                 </div>
             )}

@@ -30,23 +30,27 @@ import { Loader2, X } from 'lucide-react';
  */
 export default function StatCard({
     icon: Icon,
-    iconBg     = 'bg-slate-100',
-    iconCls    = 'text-slate-500',
+    iconBg     = 'bg-surface-card-hover',
+    iconCls    = 'text-content-3',
     label,
     value,
-    valueCls   = 'text-slate-700',
+    valueCls   = 'text-content',
     sub,
     active     = false,
     onClick,
-    activeBg   = 'bg-[#0052CC]/5 border-[#0052CC]/30 shadow-md',
-    /* TODO: reemplazar por [data-surface="card-flat"] en pase de dark mode */
-    inactiveBg = 'bg-white border-slate-200',
+    activeBg   = 'bg-brand/5 border-brand/30 shadow-md',
+    // Sin override: data-surface="card" (reactivo por tema). Con override
+    // (4 call sites con tinte de hover propio, ej. TabReglas.jsx), se
+    // respeta la clase pasada tal cual — data-surface no se añade porque
+    // ganaría por cascade layers y taparía ese tinte custom.
+    inactiveBg,
     loading    = false,
 }) {
     const isClickable = !!onClick;
     const Tag = isClickable ? 'button' : 'div';
+    const hasCustomInactiveBg = inactiveBg !== undefined;
 
-    const colorCls = active ? `${activeBg} -translate-y-px` : inactiveBg;
+    const colorCls = active ? `${activeBg} -translate-y-px` : (inactiveBg ?? '');
 
     // Hover solo en clickable. Nota: el scope @media (hover:hover) es
     // trabajo transversal pendiente (B2); las clases hover: de Tailwind
@@ -58,6 +62,7 @@ export default function StatCard({
             type={isClickable ? 'button' : undefined}
             onClick={onClick}
             disabled={isClickable && loading ? true : undefined}
+            {...(!active && !hasCustomInactiveBg ? { 'data-surface': 'card' } : {})}
             className={`
                 flex-1 basis-0 min-w-[150px] h-full
                 flex items-center gap-3 pl-3 pr-4 py-3 rounded-2xl border
@@ -71,7 +76,7 @@ export default function StatCard({
             {/* Squircle de icono */}
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
                 {loading
-                    ? <Loader2 size={14} strokeWidth={2} className="animate-spin text-slate-300" />
+                    ? <Loader2 size={14} strokeWidth={2} className="animate-spin text-content-3" />
                     : <Icon size={15} strokeWidth={1.5} className={iconCls} />
                 }
             </div>
@@ -82,7 +87,7 @@ export default function StatCard({
                 {/* Label -- arriba del numero */}
                 {loading
                     ? <div className="skeleton h-[9px] w-14 mb-1.5 rounded" />
-                    : <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 leading-none mb-1 truncate">
+                    : <span className="text-[10px] font-bold uppercase tracking-wider text-content-3 leading-none mb-1 truncate">
                         {label}
                       </span>
                 }
@@ -101,14 +106,14 @@ export default function StatCard({
                     renderiza ningun caracter de relleno. Cards con y sin
                     `sub` tienen exactamente la misma altura total.
                 */}
-                <span className="block text-[9px] text-slate-500 font-medium leading-none mt-0.5 min-h-[13px] truncate">
+                <span className="block text-[9px] text-content-3 font-medium leading-none mt-0.5 min-h-[13px] truncate">
                     {!loading ? sub : ''}
                 </span>
             </div>
 
             {/* X al activar -- solo en clickable */}
             {active && isClickable && (
-                <X size={11} className="text-slate-400 ml-auto shrink-0" />
+                <X size={11} className="text-content-3 ml-auto shrink-0" />
             )}
         </Tag>
     );

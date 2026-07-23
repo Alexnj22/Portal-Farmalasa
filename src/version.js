@@ -5,8 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.44.0';
+export const APP_VERSION = '2.45.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.45.0 — refactor(theme): StatCard/LiquidAvatar/EmployeeDocumentsList a
+// tokens + elimina UserHeader.jsx (T3, cierra la lista extendida §9 antes
+// de T4). StatCard.jsx tenía un TODO explícito en el propio código ("TODO:
+// reemplazar por [data-surface=\"card-flat\"] en pase de dark mode") — se
+// resuelve así: data-surface="card" se aplica SOLO cuando el caller no pasa
+// un `inactiveBg` custom (4 call sites, ej. TabReglas.jsx, usan su propio
+// tinte de hover por-categoría — aplicar data-surface ahí lo taparía por
+// cascade layers). LiquidAvatar/EmployeeDocumentsList migran sus fondos/
+// textos hardcodeados a tokens.
+// UserHeader.jsx (components/layout/) resultó ser código muerto — cero
+// imports en todo el repo, confirmado con grep — se elimina en vez de
+// migrarse (build sigue verde, confirma que no lo usaba nadie).
+// Verificado con Playwright: StatCard en FacturasCompraView (liquid/solid/
+// dark) — bg/radius coinciden exacto con --surface-card de cada tema, los
+// iconBg/iconCls custom por instancia siguen funcionando sin conflicto.
+// Build + tests verdes.
 
 // v2.44.0 — refactor(theme): PortalInput/CatalogSelect a tokens (T3, lista
 // extendida §9) + fix de raíz en inputStyles.js. inputHoverClass (compartida

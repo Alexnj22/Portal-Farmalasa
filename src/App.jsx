@@ -758,7 +758,11 @@ const AppWithToast = () => {
 };
 
 const GlobalBackground = () => (
-    <div className="fixed inset-0 w-full z-0 pointer-events-none overflow-hidden">
+    // h-[100vh] fallback + 100lvh inline: en Safari iOS el fondo se extiende por
+    // DEBAJO de la barra inferior del navegador (translúcida) para que esa zona
+    // se vea como continuación del app y no un recuadro blanco cortado. En
+    // standalone/desktop 100lvh == viewport, sin cambio.
+    <div className="fixed top-0 left-0 right-0 w-full h-[100vh] z-0 pointer-events-none overflow-hidden" style={{ height: '100lvh' }}>
         <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-[#0052CC]/25 rounded-full filter blur-[100px] animate-ambient-drift" />
         <div className="absolute top-[10%] right-[-10%] w-[55vw] h-[55vw] bg-[#6929C4]/25 rounded-full filter blur-[100px] animate-ambient-drift-reverse" />
         <div

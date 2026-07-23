@@ -64,8 +64,10 @@
     <title>Portal - FarmaSalud</title>
 
     <style>
-      /* body/html: unchanged — these styles persist after React mounts */
-      body, html { background-color: #ddd8ff; margin: 0; padding: 0; }
+      /* body/html: persisten tras montar React. El color DEBE coincidir con el
+         bg del shell autenticado (#E6F0FF, App.jsx): es lo que Safari iOS deja
+         traslucir detrás de su barra inferior y lo que asoma en overscroll. */
+      body, html { background-color: #E6F0FF; margin: 0; padding: 0; }
 
       /* ─── Everything below is scoped to #app-loader which React removes on mount ─── */
 

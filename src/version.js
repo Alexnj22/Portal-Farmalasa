@@ -5,8 +5,20 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.31.1';
+export const APP_VERSION = '2.31.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.31.2 — fix(mobile): el fondo se extiende bajo la barra inferior de
+// Safari iOS. En Safari (pestaña normal) la barra de URL flotante nunca se
+// minimiza con una app-shell de scroll interno (solo el scroll de documento
+// la colapsa — igual le pasa a claude.ai), y detrás de su franja translúcida
+// se veía el bg crudo del body: el "recuadro blanco" abajo que reportó el
+// usuario. No se puede quitar la barra, pero sí integrarla: GlobalBackground
+// ahora mide 100lvh (viewport máximo, fallback h-[100vh] — en iOS 100vh ya
+// es el viewport grande) para pintarse por debajo de la barra, y el body
+// pasa de #ddd8ff a #E6F0FF (el mismo bg del shell autenticado) para que la
+// franja traslucida sea continuación del app. En standalone/desktop
+// 100lvh == viewport: cero cambio visual.
 
 // v2.31.1 — fix(pwa): recarga automática al reanudar la app standalone.
 // Descubrimiento clave (capturas del usuario, 2026-07-23 7:34am): la PWA

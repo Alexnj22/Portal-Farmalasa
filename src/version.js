@@ -5,9 +5,40 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.30.3';
+export const APP_VERSION = '2.31.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.31.0 — fix(mobile): reestructura el shell móvil al patrón app-shell
+// estándar — el fix estructural del header invisible en PWA standalone.
+// Descartado el bug de iOS 26.1 (usuario en versión nueva, otros sitios
+// PWA funcionan): el problema es la combinación exótica del shell propio.
+// Cambios:
+// 1. El wrapper autenticado, GlobalBackground y la raíz de AppLayout ya NO
+//    llevan altura medida (`--app-100dvh` eliminado, script incluido):
+//    `fixed inset-0` define la caja por definición del viewport — no puede
+//    medir mal en ningún contexto (Safari tab / standalone / Capacitor).
+// 2. Header móvil: de `position:fixed z-40` (anidado en main relative z-20
+//    dentro del wrapper fixed — el fixed-en-contextos-anidados que el
+//    compositor de WebKit standalone no pintaba, franja gris de la
+//    auditoría) a flex-item normal del shell, con
+//    `padding-top: env(safe-area-inset-top)` pintando su propio fondo bajo
+//    el status bar (patrón claude.ai). Spacer compensatorio eliminado.
+// 3. Bottom-tabs: de `fixed bottom-0` a flex-item final con safe-area;
+//    padding compensatorio de #main-scroll eliminado (pb normal + safe
+//    area bottom para el caso sin tabs). Strip de vidrio del safe-area
+//    bottom eliminado (redundante con 2 y 3).
+// 4. Cero `backdrop-filter` en el chrome móvil (header, bottom-tabs,
+//    backdrop del drawer, cara del sidebar en <lg): fondos casi opacos en
+//    su lugar. blur+fixed en standalone iOS tiene historial de bugs de
+//    compositor; además alinea con la dirección Solid Modern
+//    (AUDITORIA-TEMA-2026-07 §7.2). Desktop (lg:) queda pixel-igual.
+// 5. Drawer móvil (aside): altura por `top-0 bottom-0` + márgenes en vez
+//    de calc() medido — antes en standalone el alto calculado desbordaba
+//    el viewport (margen safe-area-top 62px + alto viewport-16).
+// A diferencia de v2.30.0 (flex-items que fallaron), aquí el alto del
+// shell no depende de 100dvh ni de JS: inset-0 es el viewport exacto, así
+// que los flex-items no pueden quedar fuera de pantalla.
+//
 // v2.30.3 — fix(mobile): GlobalBackground seguía en 100dvh crudo, no
 // migrado en v2.30.2. Auditoría completa de todo `h-[100dvh]` en el shell
 // autenticado: la capa de fondo ambiental (blur orbs, primer hijo dentro

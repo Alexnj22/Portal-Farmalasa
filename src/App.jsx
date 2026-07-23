@@ -545,7 +545,7 @@ function MainApp() {
 
             <Route path="/*" element={
                 isAuthenticated ? (
-                    <div className="fixed inset-0 w-full bg-[#E6F0FF] overflow-hidden flex flex-col" style={{ height: 'var(--app-100dvh, 100dvh)' }}>
+                    <div className="fixed inset-0 w-full bg-[#E6F0FF] overflow-hidden flex flex-col">
                         <GlobalBackground />
                         <AuthSyncHelper />
 
@@ -758,7 +758,7 @@ const AppWithToast = () => {
 };
 
 const GlobalBackground = () => (
-    <div className="fixed inset-0 w-full z-0 pointer-events-none overflow-hidden" style={{ height: 'var(--app-100dvh, 100dvh)' }}>
+    <div className="fixed inset-0 w-full z-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-[#0052CC]/25 rounded-full filter blur-[100px] animate-ambient-drift" />
         <div className="absolute top-[10%] right-[-10%] w-[55vw] h-[55vw] bg-[#6929C4]/25 rounded-full filter blur-[100px] animate-ambient-drift-reverse" />
         <div

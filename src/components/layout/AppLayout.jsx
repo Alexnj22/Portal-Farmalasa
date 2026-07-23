@@ -693,7 +693,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     return (
         <LayoutGroup>
-            <div className="flex w-full font-sans relative overflow-hidden" style={{ height: 'var(--app-100dvh, 100dvh)' }}>
+            <div className="flex w-full h-full font-sans relative overflow-hidden">
 
                 {/* ── Global ambient orbs ── */}
                 <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
@@ -707,7 +707,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 {/* Mobile backdrop */}
                 {isMobile && isSidebarOpen && (
                     <div
-                        className="fixed inset-0 bg-[#030B1C]/40 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
+                        className="fixed inset-0 bg-[#030B1C]/50 z-40 lg:hidden animate-in fade-in duration-300"
                         onClick={() => setIsSidebarOpen(false)}
                     />
                 )}
@@ -715,11 +715,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                 {/* ── Sidebar ── */}
                 <aside
                     ref={asideRef}
-                    style={{ height: isMobile ? 'calc(var(--app-100dvh, 100dvh) - 16px)' : undefined }}
                     className={`fixed lg:relative z-50 lg:z-[60] lg:h-auto flex flex-col shrink-0
                         my-[max(env(safe-area-inset-top,8px),8px)] mb-[max(env(safe-area-inset-bottom,8px),8px)]
                         ${isMobile
-                            ? `w-[85%] max-w-[280px] left-2 transition-transform duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[calc(100%_+_16px)]'}`
+                            ? `top-0 bottom-0 w-[85%] max-w-[280px] left-2 transition-transform duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-[calc(100%_+_16px)]'}`
                             : `${isSidebarOpen ? 'w-[15rem] xl:w-[16.5rem] 2xl:w-[18rem]' : 'w-[4.5rem] xl:w-[5rem]'} ml-[max(env(safe-area-inset-left,8px),8px)] transition-[width] duration-[220ms] ease-[cubic-bezier(0.4,0,0.2,1)]`}
                         ${blurClasses}`}
                 >
@@ -731,7 +730,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                     {/* ── Glass container ── */}
                     <div data-surface="sidebar" className="absolute inset-y-0 left-0 w-full z-10 rounded-[2.5rem] overflow-hidden flex flex-col
-                        bg-[#07031a]/80 backdrop-blur-2xl
+                        bg-[#07031a]/95 lg:bg-[#07031a]/80 lg:backdrop-blur-2xl
                         border border-white/[0.10]
                         shadow-[inset_1px_0_0_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.15),0_0_0_1px_rgba(0,0,0,0.5),0_32px_64px_rgba(0,0,0,0.40)]">
 
@@ -985,13 +984,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     detrás de Bloque 5.1 ("no puedo seleccionar Salud 1/3/5" en /pedidos,
                     "/productos pierde columnas" — ninguno de los dos era sobre hideBelow). */}
                 <main className={`flex-1 flex flex-col relative z-20 lg:overflow-hidden min-w-0 ${blurClasses}`}>
+                    {/* Header móvil: flex-item normal del shell (NO position:fixed) y SIN
+                        backdrop-filter. En PWA standalone iOS, un fixed anidado en contextos
+                        de apilamiento (main relative z-20 dentro del wrapper fixed) con
+                        backdrop-filter dejaba de pintarse (franja gris — auditoría
+                        standalone 2026-07). Pinta su propio fondo bajo el status bar vía
+                        padding-top: safe-area. */}
                     <div
-                        className="lg:hidden fixed left-0 right-0 z-40 border-b border-white/25"
+                        className="lg:hidden shrink-0 w-full relative z-30 border-b border-white/25"
                         style={{
-                            top: 'env(safe-area-inset-top, 0px)',
-                            background: 'rgba(221,216,255,0.88)',
-                            backdropFilter: 'blur(40px) saturate(180%)',
-                            WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+                            paddingTop: 'env(safe-area-inset-top, 0px)',
+                            background: 'rgba(226,222,252,0.97)',
                             boxShadow: '0 4px 20px rgba(110,70,220,0.10)',
                         }}
                     >
@@ -1029,13 +1032,8 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         </div>
                     </div>
 
-                    <div
-                        className="lg:hidden shrink-0 w-full"
-                        style={{ height: 'calc(env(safe-area-inset-top, 0px) + 64px)' }}
-                    />
-
                     {/* Content */}
-                    <div id="main-scroll" className={`flex-1 min-h-0 overflow-y-auto overscroll-y-contain lg:overflow-hidden relative bg-transparent lg:pt-2 pb-4 lg:pr-2 px-2 lg:px-0 ${hasSelfOnly && isMobile ? 'pb-[calc(5rem+env(safe-area-inset-bottom,0px))]' : ''}`} style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <div id="main-scroll" className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain lg:overflow-hidden relative bg-transparent lg:pt-2 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] lg:pb-4 lg:pr-2 px-2 lg:px-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                         {!isMobile && (
                             <div className="absolute top-4 right-5 z-[200] hidden lg:block">
                                 <NotificationBell variant="desktop" />
@@ -1048,9 +1046,9 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                     {/* ── Bottom tabs ── */}
                     {hasSelfOnly && (
-                        <nav className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
+                        <nav className={`lg:hidden shrink-0 relative z-30 px-4 pt-2 pb-[max(env(safe-area-inset-bottom,16px),16px)] transition-all duration-500 ${blurClasses}`}>
                             <div className="flex items-center justify-around rounded-[1.75rem] px-2 py-2 border
-                                bg-white/80 backdrop-blur-2xl border-white/60 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]">
+                                bg-white/95 border-white/60 shadow-[0_-4px_30px_rgba(0,0,0,0.06)]">
                                 {selfItems.map(({ key, path, label, icon: Icon }) => {
                                     const pathSeg = path.replace(/^\//, '').split('/')[0];
                                     const isActive = activeId === pathSeg;
@@ -1208,16 +1206,6 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                     </div>
                 )}
                 
-                {/* Bottom safe-area glass strip */}
-                <div
-                    className="lg:hidden fixed bottom-0 left-0 right-0 z-10 pointer-events-none"
-                    style={{
-                        height: 'env(safe-area-inset-bottom, 0px)',
-                        background: 'rgba(221,216,255,0.72)',
-                        backdropFilter: 'blur(20px)',
-                        WebkitBackdropFilter: 'blur(20px)',
-                    }}
-                />
             </div>
 
             <PushPromptBanner />

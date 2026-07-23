@@ -108,7 +108,19 @@ lo que hacen las apps que el PRODUCT.md pone de referencia (apps nativas de Appl
 
 ## 4. Fases
 
-### Fase 1 — Restaurar el scroll móvil (el fix estructural) 🎯
+### Fase 1 — Restaurar el scroll móvil (el fix estructural) ✅ APLICADA (v2.30.0, 2026-07-22)
+
+**Hallazgo real vs. hipótesis original**: el punto 1 de abajo asumía que el problema
+"terminaba en `#main-scroll`", pero el causante real estaba un nivel más arriba: el
+`<div>` raíz de `AppLayout` solo fijaba `h-[100dvh]`/`overflow-hidden` bajo `lg:` — en
+móvil no tenía altura acotada, así que ningún hijo (tampoco `#main-scroll` con el fix
+del punto 2) podía calcular `flex-1/min-h-0` contra algo real. Se corrigió quitando el
+prefijo `lg:` de esa clase (aplica siempre). Verificado con Playwright/WebKit iPhone 13
+contra dev server: `#main-scroll` pasó de `scrollHeight === clientHeight` (0% de scroll
+posible) a `clientHeight` acotado al viewport con `scrollTop` sostenible tras swipe.
+Puntos 3-6 aplicados tal cual estaban planeados. Ver commit `c2440f7`.
+
+### Fase 1 (original) — Restaurar el scroll móvil (el fix estructural) 🎯
 
 1. `src/App.jsx:550`: mantener el wrapper pero garantizar que la cadena interna
    transmita altura: el hijo `div.relative.z-10.w-full.h-full.flex.flex-col` está OK;
@@ -135,7 +147,36 @@ lo que hacen las apps que el PRODUCT.md pone de referencia (apps nativas de Appl
    (el scroll es interno ahora — la métrica pasa a ser `#main-scroll.scrollHeight >
    clientHeight` y `scrollTop` móvil tras swipe > 0).
 
-### Fase 2 — Crash del Dashboard
+### Fase 2 — Crash del Dashboard ✅ CERRADA (2026-07-22) — no era un bug de producción
+
+Reproducido post-Fase 1 (persistía igual, 4/5 corridas — Fase 1 NO lo eliminó, contra
+la hipótesis original). `componentStack` completo capturado con un listener de consola
+que extrae `jsonValue()` en vez de solo el texto plano: el culpable es el widget
+"Tendencia de Asistencia" (`ResponsiveContainer`/`AreaChart` de `recharts@3.8.0`,
+`DashboardView.jsx` ~1191). Confirmado por aislamiento: 0/5 crashes con el widget
+deshabilitado, 4/5 con él presente — independiente del fix de scroll.
+
+Se probaron los dos mitigantes estándar de la comunidad recharts (quitar `<Tooltip>`,
+`width="99%"` + `debounce={50}`) — **ninguno lo resolvió**, así que no es el bug
+"clásico" de redondeo sub-píxel de ResizeObserver.
+
+**Causa real: artefacto de React StrictMode en dev, NO un bug de producción.**
+`src/main.jsx:46` envuelve la app en `<React.StrictMode>`, que en DEV invoca los
+efectos dos veces (mount→cleanup→mount) — recharts v3 inicializa su estado interno
+(`RechartsStoreProvider`) vía un efecto que no tolera esa doble invocación en
+combinación con su `ResizeObserver`, entrando en loop. **En build de producción
+(`vite build` + `vite preview`, sin doble-invocación de StrictMode) el mismo flujo
+corrió 8/8 veces sin crashear.** Como Vercel sirve el build de producción, los
+usuarios reales nunca ven este error — el `ErrorBoundary` que lo atrapaba en dev
+nunca dispara en el portal desplegado.
+
+**Sin acción de código.** No se toca `ResponsiveContainer` ni se agrega
+`debounce`/`width="99%"` (no resolvían nada y son complejidad sin beneficio real).
+Si en el futuro se ve este mismo `Maximum update depth` en logs de producción real
+(no en `npm run dev`), tratarlo como un bug distinto — este diagnóstico específico
+solo cubre el dev-only false positive.
+
+### Fase 2 (protocolo original, para referencia)
 
 1. Reproducir en WebKit iPhone post-Fase 1 (5+ corridas de login → /overview).
 2. Si persiste: capturar `componentStack` completo del `Maximum update depth`

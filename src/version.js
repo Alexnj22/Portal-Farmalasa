@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.34.0';
+export const APP_VERSION = '2.34.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.34.1 — feat(theme): tokens de identidad decorativa desde el logo real.
+// --logo-green (#8ec30f) y --logo-magenta (#981d97) muestreados por pixel de
+// public/Logo512.png (arco superior verde, cruz + arco inferior magenta) +
+// variantes suaves para texto/íconos sobre fondo oscuro. Agregados a
+// index.css :root y al bridge @theme inline (utilidades text-logo-green,
+// bg-logo-magenta, etc.). Decisión: reemplazan el violeta/índigo genérico
+// (--brand-purple, blobs de AppLayout.jsx) como acento DECORATIVO/de
+// identidad en todo el proyecto de aquí en adelante — --brand (#0052CC)
+// sigue siendo el azul funcional, sin cambios. Aplicado hasta ahora solo al
+// prototipo interactivo del sidebar (fuera de la secuencia T1-T7, a pedido
+// del usuario); pendiente extender a los blobs ambientales globales cuando
+// el sidebar/header pasen de prototipo a código real. Documentado en
+// DESIGN.md §6 (v1.4) y AUDITORIA-TEMA-2026-07.md §7.7. Cero componentes
+// reales tocados — solo tokens nuevos, build+tests verificados.
 
 // v2.34.0 — feat(theme): Fase T2 del rediseño de tema — prototipo "Solid
 // Modern" + GATE de aprobación. Refina solid/solid-dark (bg-page con tinte

@@ -46,7 +46,7 @@ export default function ViewTabBar({
   return (
     <div data-surface="tab-track" className={`relative flex items-center transition-all duration-700 ${spring}
       hover:-translate-y-[2px] transform-gpu
-      h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max max-w-full
+      h-12 md:h-[3.25rem] p-0.5 md:p-1 w-max max-w-full
       shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)]`}>
 
       {/* Search mode */}

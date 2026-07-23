@@ -263,11 +263,35 @@ Card hover (desktop only, `@media (hover: hover)`):
 ### Brand
 | Name | Value | Usage |
 |---|---|---|
-| Primary blue | `#0052CC` | CTA buttons, active states, brand accents |
+| Primary blue | `#0052CC` | CTA buttons, active states, brand accents — **funcional**, no cambia |
 | Dark blue | `#003D99` | Button hover |
-| Violet-indigo gradient | `from-[#0052CC] to-[#6929C4]` | Icon squircles, accent elements |
-| Active nav glow | `from-violet-500/22 via-indigo-400/14 to-blue-500/8` | Sidebar active pill |
-| Sidebar accent bar | `from-violet-300 via-indigo-400 to-blue-400` | Active nav item accent |
+| Violet-indigo gradient | `from-[#0052CC] to-[#6929C4]` | Icon squircles, accent elements — legado, no derivado del logo real |
+| Active nav glow (legado) | `from-violet-500/22 via-indigo-400/14 to-blue-500/8` | Pre-2026-07-23; ver reemplazo abajo |
+| Sidebar accent bar (legado) | `from-violet-300 via-indigo-400 to-blue-400` | Pre-2026-07-23; ver reemplazo abajo |
+
+### Colores reales del logo — identidad decorativa (2026-07-23)
+
+`--logo-green: #8ec30f` y `--logo-magenta: #981d97` (+ variantes suaves
+`--logo-green-soft`/`--logo-magenta-soft`), muestreados por pixel de
+`public/Logo512.png` (arco superior verde, cruz + arco inferior magenta) —
+**no inventados, ni el violeta/índigo genérico de arriba**. Decisión: estos
+son los acentos DECORATIVOS/de identidad del proyecto de aquí en adelante —
+glows ambientales, estado activo de navegación, hover de personalización.
+`--brand` (#0052CC) sigue siendo el azul FUNCIONAL (botones/CTAs/enlaces/
+focus) y no se toca. Aplicado primero al sidebar (prototipo de esta sesión,
+ver `AUDITORIA-TEMA-2026-07.md` §7.7); pendiente extender a los blobs
+ambientales de `AppLayout.jsx` (hoy violeta/azul genérico) y cualquier otro
+glow decorativo nuevo.
+
+| Token | Valor | Uso previsto |
+|---|---|---|
+| `--logo-green` | `#8ec30f` | Glow ambiental superior, acentos secundarios |
+| `--logo-magenta` | `#981d97` | Glow ambiental inferior, estado activo dominante |
+| `--logo-green-soft` | `#b9e05a` | Íconos/texto sobre fondo oscuro (variante clara) |
+| `--logo-magenta-soft` | `#e2a3e0` | Íconos/texto sobre fondo oscuro (variante clara) |
+
+Utilidades Tailwind ya disponibles vía `@theme inline`: `text-logo-green`,
+`bg-logo-magenta`, `text-logo-green-soft`, `bg-logo-magenta-soft`, etc.
 
 ### Semantic (applied as text / icon colors — never as card/row backgrounds)
 | Role | Colors | Usage |
@@ -282,9 +306,10 @@ Card hover (desktop only, `@media (hover: hover)`):
 - Background: `bg-[#07031a]/80`
 - Nav text inactive: `text-white/60`
 - Nav text active: `text-white`
-- Group icon active: `text-violet-200 scale-110`
-- Group icon inactive: `text-white/42`
-- Accent bar gradient: `from-violet-300 via-indigo-400 to-blue-400`
+- Group icon active: `text-white/42` inactive → **`text-logo-magenta-soft` cuando activo** (antes `text-violet-200` — reemplazado 2026-07-23, ver arriba)
+- Accent bar gradient: **`linear-gradient(180deg, var(--logo-green), var(--logo-magenta))`** (antes `from-violet-300 via-indigo-400 to-blue-400`)
+- Ambient glow del sidebar: verde arriba / magenta abajo (eco de la composición real del logo — antes violeta genérico sin relación con la marca)
+- Logo del header del sidebar: la imagen real (`Logo192.png`) sobre un contenedor `bg-white/10` con borde `border-[#981d97]/22` (antes `border-violet-300/20`)
 
 ---
 
@@ -1378,6 +1403,7 @@ Creating a parallel component that duplicates functionality is prohibited. Exten
 |---|---|---|
 | v1.0 | 2026-06-24 | Initial audit — Phases A, B, C complete. 4-theme architecture, full component inventory, accessibility/performance/cross-browser audit. |
 | v1.1 | 2026-07-10 | Fase 4 design/UX audit (`AUDITORIA-2026-07.md`). Added §32 Mobile & Responsive Standard (did not exist before). Fixed project-wide: `active:scale-90/95` → `active:scale-[0.97]` (§31 compliance, ~300 sites), input font-size floor 16px (~170 inputs, iOS zoom fix), touch targets in `ViewTabBar`/`AppLayout` header to 44px, 9 native `<select>` → `LiquidSelect` swaps. Found but NOT fixed (documented only, too large/risky for a mechanical pass): ~1,288 `text-slate-300/400`-on-light-surface contrast violations across 127 files. |
+| v1.4 | 2026-07-23 | Colores reales del logo (`--logo-green: #8ec30f`, `--logo-magenta: #981d97` + variantes suaves), muestreados por pixel de `public/Logo512.png` — a pedido del usuario, se adoptan como los acentos DECORATIVOS/de identidad del proyecto de aquí en adelante (glows ambientales, estado activo de nav, hover de personalización), reemplazando el violeta/índigo genérico (`--brand-purple`, blobs de `AppLayout.jsx`) que no tenía relación real con la marca. `--brand` (#0052CC) sigue siendo el azul funcional, sin cambios. Tokens agregados a `index.css` + bridge `@theme inline`. Aplicado primero al prototipo interactivo del sidebar (ver §7.7 de `AUDITORIA-TEMA-2026-07.md`); pendiente extender a los blobs ambientales globales y cualquier glow decorativo nuevo. |
 | v1.3 | 2026-07-23 | Fase T2 de `AUDITORIA-TEMA-2026-07.md` — refinamiento "Solid Modern" (`solid`/`solid-dark`: `--bg-page` tinte frío, radios 12px/16px) + contrato de tema ampliado: ramps de estado (hover/pressed por semántica, derivadas de valores ya usados en el código), escala de elevación 0-3, densidad adaptativa (3 niveles, tokens `--space-card-padding`/`--control-h`/`--row-h`/`--header-h`, sidebar auto-colapsa a rail en nivel "ultra" vía `isUltraDensity` en `AppLayout.jsx`), blobs ambient apagados en solid/solid-dark. Script de contraste AA nuevo (`contrast-check.mjs`, sin dependencias) encontró y corrigió un fallo real: `--text-tertiary` en solid/solid-dark no cumplía AA (2.56:1/2.76:1) contra `surface-card` opaco — corregido a 4.76:1/4.92:1. `ViewTabBar.jsx` migrado de verdad a tokens (primer componente con la plantilla de doc §8.5) — cierra el blindspot de dark mode de §22 vía el token net-new `--surface-tab-active`; su duplicado hand-rolled en `VentasView.jsx` (ya documentado en §32/§23) recibió la misma migración. `GlassViewLayout.jsx` limpiado de clases muertas (confirmado con Playwright que `data-surface="card"`/`"page-header"` ya ganaban la cascada sobre las clases Tailwind hardcodeadas coexistentes — CSS Cascade Layers: lo no-layered de `index.css` siempre gana sobre `@layer utilities` de Tailwind, sin importar orden ni especificidad). §32 resuelve la contradicción de breakpoints (`md:768` vs `lg:1024` real). Corrección de §5 (tokens de `dropdown`/`input`/`tab-track` documentados vs reales). Capturas del gate en `docs/audits/tema-2026-07/shots-t2-gate/` — pendiente aprobación del usuario antes de T3. |
 | v1.2 | 2026-07-23 | Fase T1 de `AUDITORIA-TEMA-2026-07.md` — puente Tailwind v4 (`@theme inline` en `index.css`): tokens de color/radio/sombra existentes ahora son utilidades reales (`bg-surface-card`, `text-content-2`, `rounded-card`, `shadow-modal`, `bg-brand`…). Renombrados los primitivos crudos de radio/sombra (`--radius-card`→`--card-radius` etc.) para evitar autorreferencia circular con el namespace de Tailwind. Tokens net-new: focus-ring, scrim, divisor, paleta dataviz categórica (6), semáforo de riesgo de stock (7 estados reales de `tabminmax/constants.js`, corrige la mención errónea de "MUERTA/NORMAL/PICO/CRÍTICA" — ese es en realidad un semáforo *distinto*, de volumen de transacciones/hora en `DashboardView.jsx`, también tokenizado ahora). Z-index canónico (16 clases) vía `@utility` (Tailwind v4 no tiene namespace `@theme` para z-index). Corregidos de paso: `tailwind.config.js` estaba muerto (el proyecto usa `@tailwindcss/postcss` sin `@config` — confirmado porque Tailwind escaneaba el repo completo, no solo `src/`, incluyendo strings de archivos `.md`); sus 3 animaciones realmente usadas (`wiggle`, `kpi-enter`, `widget-settle`) no generaban NINGÚN CSS en producción (bug silencioso pre-existente en `NotificationBell`/`DashboardView`) — migradas a `@keyframes` nativos en `index.css`, archivo eliminado. `App.jsx:529/545` (`bg-[#E6F0FF]` hardcodeado, rompía dark/solid) → `bg-surface-page`; `AppLayout.jsx:710` scrim hardcodeado → `bg-scrim` (ambos same-value, cero cambio visual, corregidos de inmediato en vez de diferirse a T3 — ver `feedback_fix_violations_immediately` en memoria). §5, §9, §11 corregidos para reflejar el CSS real (tokens de `dropdown`/`input`/`tab-track` que no existían, keyframes fantasma). Cero componentes/vistas migrados a las nuevas utilidades — eso es T3/T4. |
 

@@ -60,21 +60,21 @@ const GlassViewLayout = ({
                     por especificidad SIEMPRE hubiera ganado sobre el token si el tema
                     cambiaba el blur) se retiraron en Fase T2; solo quedan layout/spacing. */}
                 <div data-surface="page-header"
-                    className="hidden lg:block lg:sticky lg:top-6 xl:top-7 z-40
-                        mt-6 xl:mt-7 mx-6 xl:mx-8 mb-0
+                    className="hidden lg:block lg:sticky lg:top-4 xl:top-5 z-40
+                        mt-4 xl:mt-5 mx-4 xl:mx-6 mb-0
                         group/header
-                        py-6 px-10 xl:py-7 xl:px-12 relative"
+                        py-3 px-5 xl:py-3.5 xl:px-6 relative"
                     style={{ willChange: 'backdrop-filter' }}>
 
                         <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
 
                         <div className="relative z-10 flex flex-row items-center justify-between gap-4">
-                            <div className="flex items-center gap-3 min-w-0 shrink-0">
+                            <div className="flex items-center gap-2.5 min-w-0 shrink-0">
                                 {headerLeft ? headerLeft : (
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2.5">
                                         {Icon && (
-                                            <div className="bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-2xl shadow-[0_4px_12px_rgba(0,82,204,0.25)] p-2.5 relative flex items-center justify-center hover:scale-110 hover:-rotate-3 transition-transform cursor-pointer">
-                                                <Icon className="text-white" size={20} strokeWidth={1.5} />
+                                            <div className="bg-gradient-to-tr from-[#0052CC] to-[#6929C4] rounded-xl shadow-[0_4px_12px_rgba(0,82,204,0.25)] p-2 relative flex items-center justify-center hover:scale-110 hover:-rotate-3 transition-transform cursor-pointer">
+                                                <Icon className="text-white" size={17} strokeWidth={1.5} />
                                                 {liveIndicator && (
                                                     <span className="absolute -top-1 -right-1 flex h-3 w-3">
                                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
@@ -83,7 +83,7 @@ const GlassViewLayout = ({
                                                 )}
                                             </div>
                                         )}
-                                        <h2 className="font-semibold text-[24px] xl:text-[26px] 2xl:text-[28px] tracking-tight text-slate-900">
+                                        <h2 className="font-bold text-[16px] xl:text-[17px] tracking-tight text-slate-900">
                                             {title}
                                         </h2>
                                     </div>

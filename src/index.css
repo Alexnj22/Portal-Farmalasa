@@ -13,6 +13,19 @@
   --brand-dark:   #003D99;
   --brand-purple: #6929C4;
 
+  /* Colores reales del logo (public/Logo512.png, muestreados por pixel
+     2026-07-23, no inventados): verde del arco superior, magenta de la cruz
+     y el arco inferior. Decisión de esta sesión: estos son los acentos
+     DECORATIVOS/de identidad del proyecto (glows ambientales, estado activo
+     de nav, hover) — reemplazan el violeta/índigo genérico (--brand-purple,
+     los blobs violeta/azul de AppLayout.jsx) en todo trabajo de diseño
+     nuevo. --brand (#0052CC) sigue siendo el azul FUNCIONAL (botones,
+     enlaces, CTAs, focus) — no cambia. Ver AUDITORIA-TEMA-2026-07.md §7.7. */
+  --logo-green:        #8ec30f;
+  --logo-magenta:      #981d97;
+  --logo-green-soft:   #b9e05a;
+  --logo-magenta-soft: #e2a3e0;
+
   /* Semantic */
   --success: #12B76A;
   --warning: #F79009;
@@ -376,6 +389,10 @@
   --color-brand:        var(--brand);
   --color-brand-dark:   var(--brand-dark);
   --color-brand-purple: var(--brand-purple);
+  --color-logo-green:        var(--logo-green);
+  --color-logo-magenta:      var(--logo-magenta);
+  --color-logo-green-soft:   var(--logo-green-soft);
+  --color-logo-magenta-soft: var(--logo-magenta-soft);
   --color-success:      var(--success);
   --color-warning:      var(--warning);
   --color-danger:       var(--danger);

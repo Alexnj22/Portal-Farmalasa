@@ -7,7 +7,7 @@ import {
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, LayoutDashboard, Cake,
     TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
-    PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck
+    PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { fetchVentasPerdidasPendingCount } from '../../data/ventasPerdidas';
@@ -79,8 +79,6 @@ const MODULE_MAP = {
 // propio grupo (encuesta) y RRHH (encuesta_admin) sin motivo. Ningún grupo
 // nuevo pasa de 6 ítems.
 const MENU_GROUPS = [
-    { key: 'overview',      label: 'Dashboard',     icon: LayoutDashboard, modules: ['overview']                          },
-    { key: 'inicio',        label: 'Inicio',        icon: Home,          modules: ['emp_home']                          },
     { key: 'solicitudes',   label: 'Solicitudes',   icon: ClipboardList, modules: ['emp_requests', 'requests']            },
     { key: 'avisos',        label: 'Avisos',         icon: Bell,          modules: ['emp_announcements', 'announcements']  },
     { key: 'documentos',    label: 'Documentos',    icon: FolderOpen,    modules: ['emp_documents']                       },
@@ -92,7 +90,9 @@ const MENU_GROUPS = [
     { key: 'rrhh',          label: 'RRHH',          icon: Users,         modules: ['entrevistas']                        },
     { key: 'comercial',    label: 'Comercial',     icon: TrendingUp,    modules: ['ventas', 'metas', 'facturacion', 'cotizaciones'] },
     { key: 'promociones',  label: 'Promociones',   icon: Tag,           modules: ['promociones', 'bonificaciones']       },
-    { key: 'inventario',   label: 'Inventario',    icon: Package,       modules: ['productos', 'laboratorios', 'pedidos', 'minmax', 'ventas_perdidas', 'conteo_inventario'] },
+    { key: 'producto',     label: 'Producto',      icon: Package,       modules: ['productos', 'laboratorios'] },
+    { key: 'pedidos_sucursales', label: 'Pedidos a Sucursales', icon: ClipboardList, modules: ['pedidos'] },
+    { key: 'inventario',   label: 'Inventario',    icon: Boxes,         modules: ['minmax', 'ventas_perdidas', 'conteo_inventario'] },
     { key: 'compras',      label: 'Compras',       icon: ShoppingCart,  modules: ['compras', 'facturas_compra', 'proveedores'] },
     { key: 'estructura',    label: 'Estructura',    icon: Building2,     modules: ['branches', 'roles']                   },
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview', 'ios_test', 'sync_health', 'orphan_objects'] },

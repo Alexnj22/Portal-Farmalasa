@@ -5,9 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.28.0';
+export const APP_VERSION = '2.28.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.28.1 — refactor(menu): separa "Inventario" (9→3 módulos) en tres grupos
+// del sidebar (a pedido del usuario). Nuevo grupo "Producto" (Productos +
+// Laboratorios, el catálogo). Nuevo grupo "Pedidos a Sucursales" (solo
+// pedidos, ítem individual — antes mezclado con catálogo y control de
+// stock). "Inventario" ahora solo control de stock: Min/Max, Ventas
+// Perdidas, Conteo de Inventario (icono Boxes en vez de Package, que pasó
+// a "Producto"). Elimina del sidebar los grupos "Dashboard" (overview) e
+// "Inicio" (emp_home) — rutas/permisos intactos, se van a rediseñar en el
+// futuro dashboard unificado; por ahora sin entrada de menú.
+//
 // v2.28.0 — refactor(menu): reestructura MENU_GROUPS del sidebar (a pedido
 // del usuario). Inventario tenía 9 módulos mezclando 3 dominios sin
 // relación (inventario real, compras/proveedores, logística inter-

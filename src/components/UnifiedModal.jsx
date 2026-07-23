@@ -292,7 +292,6 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                             "Empleado Creado — Contraseña Temporal",
                             `Usuario: ${created.username} · Contraseña: ${created.tempPassword} (copiada al portapapeles). Deberá cambiarla en su primer ingreso.`,
                             "success",
-                            'light',
                             20000
                         );
                     } else if (showToast) {

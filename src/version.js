@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.39.1';
+export const APP_VERSION = '2.40.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.40.0 — refactor(theme): LiquidToast/LiquidTooltip/BranchChips/
+// SearchInput a tokens (T3, cierra el lote de "componentes flotantes
+// chicos"). Mismo patrón que LiquidSelect/ConfirmModal: LiquidToast leía
+// un `theme` del toastStore (isDark manual) en vez del ThemeContext real.
+// Se elimina el campo `theme` de toastStore.showToast(...) por completo
+// (duration pasa de 5º a 4º parámetro posicional — único call site que lo
+// usaba, en UnifiedModal.jsx, actualizado) y los 8 call sites de
+// useTimeClockEngine.js que forzaban 'dark' — redundante, ya que
+// TimeClockView fuerza data-theme="dark" en <html> a nivel de vista desde
+// v2.39.0. Los 4 componentes migran a data-surface="dropdown"/"input"
+// (reusa los tokens existentes en vez de crear una categoría nueva —
+// mismo criterio arquitectónico ya aplicado a LiquidTooltip/LiquidToast).
+// SearchInput usa focus:outline en vez de focus:border/ring — con
+// data-surface="input" en el mismo elemento, cualquier border/box-shadow
+// vía Tailwind (incluida su variante :focus) pierde contra la regla sin
+// layer por cascade layers; outline es una propiedad CSS distinta, no
+// compite (mismo fix ya aplicado al anillo de "abierto" de LiquidSelect).
+// BranchChips migra de .glass-surface (clase estática, nunca reactiva) a
+// data-surface="tab-track" — mismo rol que ViewTabBar (fila de pills).
+// Verificado con Playwright: bg/radius de los 4 coinciden exacto con sus
+// tokens en liquid/solid/dark. Build + tests verdes.
 
 // v2.39.1 — refactor(theme): UnifiedModal.jsx (T3 — el modal genérico que
 // enruta ~30 tipos de formulario administrativo). Archivo grande (945

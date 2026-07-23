@@ -34,26 +34,26 @@ export default function SearchInput({
             <Search
                 size={s.icon}
                 strokeWidth={2.5}
-                className={`absolute ${s.iconLeft} top-1/2 -translate-y-1/2 text-[#0052CC] pointer-events-none shrink-0`}
+                className={`absolute ${s.iconLeft} top-1/2 -translate-y-1/2 text-brand pointer-events-none shrink-0`}
             />
             <input
                 ref={inputRef}
                 type="text"
+                data-surface="input"
                 value={value}
                 onChange={e => onChange?.(e.target.value)}
                 placeholder={placeholder}
                 autoFocus={autoFocus}
                 className={`w-full ${s.px} ${s.text} font-semibold
-                    rounded-2xl border border-slate-200/70 bg-white/80 backdrop-blur-sm
-                    text-slate-700 placeholder:text-slate-400
+                    text-content placeholder:text-content-3
                     outline-none transition-all duration-200
-                    focus:border-[#0052CC] focus:ring-2 focus:ring-[#0052CC]/10 focus:bg-white`}
+                    focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-brand/30`}
             />
             {value && (
                 <button
                     onClick={() => { onChange?.(''); inputRef.current?.focus(); }}
                     className={`absolute ${s.clearRight} top-1/2 -translate-y-1/2
-                        p-0.5 text-slate-500 hover:text-red-500 transition-colors`}
+                        p-0.5 text-content-3 hover:text-danger transition-colors`}
                 >
                     <X size={s.icon - 1} strokeWidth={2.5} />
                 </button>

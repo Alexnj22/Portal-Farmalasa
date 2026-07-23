@@ -139,12 +139,13 @@ const BranchChips = ({
     <div className={`w-full ${className}`}>
       <div
         ref={containerRef}
+        data-surface="tab-track"
         // FIX: Eliminado 'overflow-hidden' para que el menú pueda salir
-        className="glass-surface p-2 rounded-[1.5rem] border border-white/70 shadow-sm relative"
+        className="p-2 relative"
       >
         {/* Slider activo */}
         <div
-          className={`absolute top-2 bottom-2 bg-white rounded-[1.25rem]
+          className={`absolute top-2 bottom-2 bg-surface-tab-active rounded-[1.25rem]
             shadow-[0_10px_22px_rgba(0,0,0,0.10),0_2px_6px_rgba(0,0,0,0.06)]
             transform-gpu transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]
             pointer-events-none
@@ -183,15 +184,15 @@ const BranchChips = ({
                     "flex items-center justify-center gap-2 min-w-0",
                     "transition-all duration-250 transform-gpu relative z-10",
                     active
-                      ? "text-slate-900"
-                      : "text-slate-500 hover:text-slate-700 hover:bg-white/35 hover:-translate-y-[1px] hover:shadow-[0_14px_30px_rgba(0,0,0,0.10)] active:translate-y-0",
+                      ? "text-content"
+                      : "text-content-3 hover:text-content hover:bg-surface-card-hover hover:-translate-y-[1px] hover:shadow-[0_14px_30px_rgba(0,0,0,0.10)] active:translate-y-0",
                   ].join(" ")}
                   title={it.label}
                 >
                   <span className="truncate">{it.label}</span>
 
                   {counts && (
-                    <span className="bg-black/5 px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0">
+                    <span className="bg-surface-card-hover px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0">
                       {count}
                     </span>
                   )}
@@ -211,9 +212,9 @@ const BranchChips = ({
                   "flex items-center justify-center gap-2",
                   "transition-all duration-250 transform-gpu relative z-10",
                   moreOpen
-                    ? "text-slate-900 bg-white/55 shadow-[0_14px_30px_rgba(0,0,0,0.10)]"
-                    : "text-slate-500 hover:text-slate-700 hover:bg-white/35 hover:-translate-y-[1px] hover:shadow-[0_14px_30px_rgba(0,0,0,0.10)] active:translate-y-0",
-                  isHiddenSelected ? "ring-2 ring-[#0052CC]/20" : "",
+                    ? "text-content bg-surface-card-hover shadow-[0_14px_30px_rgba(0,0,0,0.10)]"
+                    : "text-content-3 hover:text-content hover:bg-surface-card-hover hover:-translate-y-[1px] hover:shadow-[0_14px_30px_rgba(0,0,0,0.10)] active:translate-y-0",
+                  isHiddenSelected ? "ring-2 ring-brand/20" : "",
                 ].join(" ")}
               >
                 <span className="truncate">Ver más</span>
@@ -224,7 +225,7 @@ const BranchChips = ({
               </button>
 
               {moreOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white/95 backdrop-blur-2xl border border-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div data-surface="dropdown" className="absolute right-0 mt-2 w-72 p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
                   <div className="max-h-72 overflow-y-auto scrollbar-hide space-y-1">
                     {hiddenItems.map((it) => {
                       const active = it.key === selectedKey;
@@ -238,9 +239,9 @@ const BranchChips = ({
                           className={[
                             "w-full px-4 py-3 rounded-[1rem] text-left flex items-center justify-between",
                             "transition-all duration-200 transform-gpu",
-                            active 
-                                ? "bg-[#0052CC]/10 text-[#0052CC]" 
-                                : "hover:bg-slate-50 hover:translate-x-1 text-slate-600",
+                            active
+                                ? "bg-brand/10 text-brand"
+                                : "hover:bg-surface-card-hover hover:translate-x-1 text-content-2",
                           ].join(" ")}
                         >
                           <div className="flex items-center gap-3 min-w-0">
@@ -248,14 +249,14 @@ const BranchChips = ({
                               {it.label}
                             </span>
                             {counts && (
-                              <span className="bg-black/5 px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 text-slate-500">
+                              <span className="bg-surface-card-hover px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 text-content-3">
                                 {count}
                               </span>
                             )}
                           </div>
 
                           {active && (
-                            <Check size={16} className="text-[#0052CC] flex-shrink-0" strokeWidth={2.5} />
+                            <Check size={16} className="text-brand flex-shrink-0" strokeWidth={2.5} />
                           )}
                         </button>
                       );

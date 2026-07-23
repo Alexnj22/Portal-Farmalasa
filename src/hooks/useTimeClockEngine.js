@@ -504,25 +504,25 @@ export function useTimeClockEngine(props = {}) {
             setIsConfiguring(false);
             setIsRevokeModalOpen(false);
             
-            showToast('Desvinculado', 'Dispositivo desvinculado exitosamente.', 'success', 'dark');
+            showToast('Desvinculado', 'Dispositivo desvinculado exitosamente.', 'success');
             
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
 
         } catch {
-            showToast('Error', 'Error al contactar al servidor.', 'error' , 'dark');
+            showToast('Error', 'Error al contactar al servidor.', 'error');
             setIsProcessing(false);
         }
     }, [kiosk, revokeKioskDevice, showToast]);
 
     const handleSaveConfig = useCallback(async () => {
         if (!selectedBranchId) {
-            showToast('Faltan Datos', 'Seleccione una sucursal para continuar.', 'error', 'dark');
+            showToast('Faltan Datos', 'Seleccione una sucursal para continuar.', 'error');
             return;
         }
         if (!deviceNameInput.trim()) {
-            showToast('Faltan Datos', 'Debe asignar un nombre al equipo.', 'error', 'dark');
+            showToast('Faltan Datos', 'Debe asignar un nombre al equipo.', 'error');
             return;
         }
 
@@ -547,17 +547,17 @@ export function useTimeClockEngine(props = {}) {
                     setSelectedBranchId('');
                     setDeviceNameInput('');
                     
-                    showToast('Kiosco Vinculado', `Kiosco "${deviceNameInput}" autorizado correctamente.`, 'success', 'dark');
+                    showToast('Kiosco Vinculado', `Kiosco "${deviceNameInput}" autorizado correctamente.`, 'success');
 
                     setTimeout(() => {
                         window.location.reload();
                     }, 2000);
                 }
             } else {
-                showToast('Error', 'No se recibieron credenciales del servidor.', 'error', 'dark');
+                showToast('Error', 'No se recibieron credenciales del servidor.', 'error');
             }
         } catch (error) {
-            showToast('Error de Conexión', error.message || 'Ocurrió un error de conexión.', 'error', 'dark');
+            showToast('Error de Conexión', error.message || 'Ocurrió un error de conexión.', 'error');
         } finally {
             setIsProcessing(false);
         }
@@ -581,7 +581,7 @@ export function useTimeClockEngine(props = {}) {
 const submitEarlyExit = useCallback((e) => {
     e.preventDefault();
     if (!exitReason || !earlyExitData) {
-        showToast('Falta Motivo', 'Por favor seleccione un motivo de salida.', 'error', 'dark');
+        showToast('Falta Motivo', 'Por favor seleccione un motivo de salida.', 'error');
         return;
     }
 
@@ -593,11 +593,9 @@ const submitEarlyExit = useCallback((e) => {
         if (diffMins > 60) {
             // 🚨 CAMBIO: De alert a showToast
             showToast(
-                'Acceso Denegado', 
-                'La Omisión de Almuerzo solo es válida en la última hora de su turno.', 
-                'error', 
-                'dark'
-            );
+                'Acceso Denegado',
+                'La Omisión de Almuerzo solo es válida en la última hora de su turno.',
+                'error');
             return;
         }
     }

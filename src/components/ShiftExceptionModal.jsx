@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import LiquidModal from './common/LiquidModal';
+import ConfirmModal from './common/ConfirmModal';
 import { X, Calendar as CalendarIcon, Clock, Save, ShieldAlert, Utensils, Baby, Info } from 'lucide-react';
 import { useStaffStore } from '../store/staffStore';
 import { fetchPublishedRosterWithId, updateEmployeeRosterById } from '../data/system';
@@ -7,6 +8,7 @@ import { fetchPublishedRosterWithId, updateEmployeeRosterById } from '../data/sy
 const ShiftExceptionModal = ({ employee, onClose }) => {
     const { shifts, updateEmployee } = useStaffStore();
     const [isSaving, setIsSaving] = useState(false);
+    const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
     
     // Fijamos la fecha a HOY
     const todayObj = new Date();
@@ -103,7 +105,7 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
     };
 
     const handleRemoveException = async () => {
-        if (!window.confirm("¿Deseas eliminar la excepción y regresar a su horario normal de hoy?")) return;
+        setConfirmRemoveOpen(false);
 
         // 1. Clear from employee.exceptions[]
         const filteredExceptions = (employee.exceptions || []).filter(ex => ex.date !== todayStr);
@@ -143,62 +145,64 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
     };
 
     return (
+        <>
         <LiquidModal open onClose={onClose} maxWidth="max-w-3xl" zClass="z-50" ariaLabel={`Excepción para hoy — ${employee.name}`}>
-                
-                {/* HEADER */}
+
+                {/* HEADER — franja siempre oscura a propósito (acento de estado urgente,
+                    no reactiva al tema), pero con contraste correcto para el subtítulo */}
                 <div className="bg-slate-900 p-6 flex items-center justify-between text-white">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center font-black text-xl">
+                        <div className="w-12 h-12 bg-brand rounded-full flex items-center justify-center font-black text-xl">
                             {employee.name.charAt(0)}
                         </div>
                         <div>
                             <h2 className="text-xl font-black uppercase tracking-tighter flex items-center gap-2">
                                 Excepción para HOY <ShieldAlert size={18} className="text-orange-400"/>
                             </h2>
-                            <p className="text-slate-600 text-xs font-bold uppercase tracking-widest">{employee.name}</p>
+                            <p className="text-white/60 text-xs font-bold uppercase tracking-widest">{employee.name}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 bg-white/10 hover:bg-red-500 rounded-full transition-colors">
+                    <button onClick={onClose} className="p-2 bg-white/10 hover:bg-danger rounded-full transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-5 bg-slate-50">
-                    
+                <div className="grid grid-cols-1 md:grid-cols-5 bg-transparent">
+
                     {/* COLUMNA IZQUIERDA: RESUMEN ORIGINAL (Ocupa 2/5 del ancho) */}
-                    <div className="p-6 md:p-8 border-b md:border-b-0 md:border-r border-slate-200 bg-white">
-                        <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-6 flex items-center gap-2">
-                            <CalendarIcon size={14} className="text-slate-500"/> Turno Original (Hoy)
+                    <div className="p-6 md:p-8 border-b md:border-b-0 md:border-r border-divider bg-surface-card">
+                        <h3 className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-6 flex items-center gap-2">
+                            <CalendarIcon size={14} className="text-content-3"/> Turno Original (Hoy)
                         </h3>
-                        
+
                         <div className="space-y-4">
                             <div>
-                                <p className="text-sm font-black text-slate-800 uppercase">{originalShift?.name || 'Día Libre'}</p>
-                                <p className="text-xs font-bold text-slate-500 mt-1">
+                                <p className="text-sm font-black text-content uppercase">{originalShift?.name || 'Día Libre'}</p>
+                                <p className="text-xs font-bold text-content-3 mt-1">
                                     {originalShift ? `${formatTime12h(originalShift.start)} - ${formatTime12h(originalShift.end)}` : 'Sin horario asignado'}
                                 </p>
                             </div>
 
-                            <div className="pt-4 border-t border-slate-100 space-y-3">
+                            <div className="pt-4 border-t border-divider space-y-3">
                                 <div className="flex justify-between items-center text-xs font-bold">
-                                    <span className="flex items-center gap-1.5 text-slate-500"><Utensils size={12}/> Almuerzo</span>
-                                    <span className="text-slate-600">{originalDayConfig?.lunchTime ? formatTime12h(originalDayConfig.lunchTime) : 'N/A'}</span>
+                                    <span className="flex items-center gap-1.5 text-content-3"><Utensils size={12}/> Almuerzo</span>
+                                    <span className="text-content-2">{originalDayConfig?.lunchTime ? formatTime12h(originalDayConfig.lunchTime) : 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-xs font-bold">
-                                    <span className="flex items-center gap-1.5 text-slate-500"><Baby size={12}/> Lactancia</span>
-                                    <span className="text-slate-600">{originalDayConfig?.lactationTime ? formatTime12h(originalDayConfig.lactationTime) : 'N/A'}</span>
+                                    <span className="flex items-center gap-1.5 text-content-3"><Baby size={12}/> Lactancia</span>
+                                    <span className="text-content-2">{originalDayConfig?.lactationTime ? formatTime12h(originalDayConfig.lactationTime) : 'N/A'}</span>
                                 </div>
                             </div>
 
                             {existingException && (
-                                <div className="mt-8 p-4 bg-orange-50 border border-orange-200 rounded-xl">
-                                    <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-2 flex items-center gap-1">
+                                <div className="mt-8 p-4 bg-warning/10 border border-warning/30 rounded-xl">
+                                    <p className="text-[10px] font-black text-warning uppercase tracking-widest mb-2 flex items-center gap-1">
                                         <Info size={12}/> Excepción Activa
                                     </p>
-                                    <p className="text-xs text-orange-800 font-medium">Este empleado ya tiene un horario modificado para el día de hoy.</p>
-                                    <button 
-                                        onClick={handleRemoveException}
-                                        className="mt-3 w-full bg-white text-red-600 border border-red-200 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-50"
+                                    <p className="text-xs text-warning font-medium">Este empleado ya tiene un horario modificado para el día de hoy.</p>
+                                    <button
+                                        onClick={() => setConfirmRemoveOpen(true)}
+                                        className="mt-3 w-full bg-surface-card text-danger border border-danger/30 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-danger/10"
                                     >
                                         Revertir al Original
                                     </button>
@@ -209,28 +213,30 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
 
                     {/* COLUMNA DERECHA: FORMULARIO DE EXCEPCIÓN (Ocupa 3/5 del ancho) */}
                     <div className="p-6 md:p-8 col-span-3">
-                        <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-6 flex items-center gap-2">
-                            <Clock size={14} className="text-blue-600"/> Definir Nuevo Horario Especial
+                        <h3 className="text-[10px] font-black text-brand uppercase tracking-widest mb-6 flex items-center gap-2">
+                            <Clock size={14} className="text-brand"/> Definir Nuevo Horario Especial
                         </h3>
-                        
+
                         <form onSubmit={handleSave} className="space-y-5">
                             {/* ENTRADA Y SALIDA */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Hora Entrada</label>
-                                    <input 
-                                        type="time" 
+                                    <label className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1.5 block">Hora Entrada</label>
+                                    <input
+                                        type="time"
                                         required
-                                        className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold text-blue-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                                        data-surface="input"
+                                        className="w-full p-3 text-sm font-bold text-brand outline-none focus:outline focus:outline-2 focus:outline-brand/30 transition-all"
                                         value={customStart} onChange={(e) => setCustomStart(e.target.value)}
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5 block">Hora Salida</label>
-                                    <input 
-                                        type="time" 
+                                    <label className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1.5 block">Hora Salida</label>
+                                    <input
+                                        type="time"
                                         required
-                                        className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-bold text-blue-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                                        data-surface="input"
+                                        className="w-full p-3 text-sm font-bold text-brand outline-none focus:outline focus:outline-2 focus:outline-brand/30 transition-all"
                                         value={customEnd} onChange={(e) => setCustomEnd(e.target.value)}
                                     />
                                 </div>
@@ -238,38 +244,40 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
 
                             {/* ALMUERZO Y LACTANCIA */}
                             <div className="grid grid-cols-2 gap-4 pt-2">
-                                <div className={`p-4 rounded-xl border-2 transition-all ${hasLunch ? 'border-orange-400 bg-orange-50/30' : 'border-slate-100 bg-white'}`}>
+                                <div className={`p-4 rounded-xl border-2 transition-all ${hasLunch ? 'border-warning bg-warning/10' : 'border-divider bg-surface-card'}`}>
                                     <label className="flex items-center gap-2 cursor-pointer mb-3">
-                                        <input 
-                                            type="checkbox" 
-                                            checked={hasLunch} 
+                                        <input
+                                            type="checkbox"
+                                            checked={hasLunch}
                                             onChange={(e) => setHasLunch(e.target.checked)}
-                                            className="w-4 h-4 accent-orange-500"
+                                            className="w-4 h-4 accent-warning"
                                         />
-                                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-1.5"><Utensils size={12}/> Almuerzo</span>
+                                        <span className="text-[10px] font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5"><Utensils size={12}/> Almuerzo</span>
                                     </label>
-                                    <input 
-                                        type="time" 
+                                    <input
+                                        type="time"
                                         disabled={!hasLunch}
-                                        className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm font-bold text-orange-700 outline-none focus:border-orange-500 disabled:opacity-50 disabled:bg-slate-50 transition-all"
+                                        data-surface="input"
+                                        className="w-full p-2 text-sm font-bold text-warning outline-none focus:outline focus:outline-2 focus:outline-warning/30 disabled:opacity-50 transition-all"
                                         value={lunchTime} onChange={(e) => setLunchTime(e.target.value)}
                                     />
                                 </div>
 
-                                <div className={`p-4 rounded-xl border-2 transition-all ${hasLactation ? 'border-pink-400 bg-pink-50/30' : 'border-slate-100 bg-white'}`}>
+                                <div className={`p-4 rounded-xl border-2 transition-all ${hasLactation ? 'border-pink-400 bg-pink-50/30' : 'border-divider bg-surface-card'}`}>
                                     <label className="flex items-center gap-2 cursor-pointer mb-3">
-                                        <input 
-                                            type="checkbox" 
-                                            checked={hasLactation} 
+                                        <input
+                                            type="checkbox"
+                                            checked={hasLactation}
                                             onChange={(e) => setHasLactation(e.target.checked)}
                                             className="w-4 h-4 accent-pink-500"
                                         />
-                                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-1.5"><Baby size={12}/> Lactancia</span>
+                                        <span className="text-[10px] font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5"><Baby size={12}/> Lactancia</span>
                                     </label>
-                                    <input 
-                                        type="time" 
+                                    <input
+                                        type="time"
                                         disabled={!hasLactation}
-                                        className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm font-bold text-pink-700 outline-none focus:border-pink-500 disabled:opacity-50 disabled:bg-slate-50 transition-all"
+                                        data-surface="input"
+                                        className="w-full p-2 text-sm font-bold text-pink-600 outline-none focus:outline focus:outline-2 focus:outline-pink-300 disabled:opacity-50 transition-all"
                                         value={lactationTime} onChange={(e) => setLactationTime(e.target.value)}
                                     />
                                 </div>
@@ -277,16 +285,17 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
 
                             {/* NOTA */}
                             <div className="pt-2">
-                                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1 block">Motivo (Opcional)</label>
-                                <input 
-                                    type="text" 
+                                <label className="text-[10px] font-black text-content-2 uppercase tracking-widest mb-1 block">Motivo (Opcional)</label>
+                                <input
+                                    type="text"
                                     placeholder="Ej: Cubriendo vacante sucursal norte..."
-                                    className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm font-medium text-slate-700 outline-none focus:border-blue-500 transition-all"
+                                    data-surface="input"
+                                    className="w-full p-3 text-sm font-medium text-content outline-none focus:outline focus:outline-2 focus:outline-brand/30 transition-all"
                                     value={note} onChange={(e) => setNote(e.target.value)}
                                 />
                             </div>
-                            
-                            <button type="submit" disabled={isSaving} className="w-full mt-2 bg-blue-600 text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-[0.97] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+
+                            <button type="submit" disabled={isSaving} className="w-full mt-2 bg-brand text-white font-black text-xs uppercase tracking-widest py-4 rounded-xl hover:bg-brand-hover transition-all shadow-lg shadow-brand/20 active:scale-[0.97] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
                                 <Save size={16} /> {isSaving ? 'Guardando…' : 'Aplicar Excepción a HOY'}
                             </button>
                         </form>
@@ -294,6 +303,17 @@ const ShiftExceptionModal = ({ employee, onClose }) => {
 
                 </div>
         </LiquidModal>
+
+        <ConfirmModal
+            isOpen={confirmRemoveOpen}
+            onClose={() => setConfirmRemoveOpen(false)}
+            onConfirm={handleRemoveException}
+            title="¿Revertir al horario original?"
+            message="Se eliminará la excepción y el empleado regresará a su horario normal de hoy."
+            confirmText="Sí, revertir"
+            isDestructive
+        />
+        </>
     );
 };
 

@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.41.0';
+export const APP_VERSION = '2.42.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.42.0 — refactor(theme): MenuSearchModal/ShiftExceptionModal/
+// PhotoEditorModal a tokens (T3, lista extendida §9). Los 3 eran 100%
+// hardcoded (bg-white, texto slate-*), sin ternario isDark siquiera —
+// blindspot puro. MenuSearchModal (⌘K) migra a data-surface="dropdown" +
+// bg-scrim en el overlay. PhotoEditorModal migra el chrome (header/footer/
+// controles) pero deja intactos los colores funcionales del área de canvas
+// (CHECKER de transparencia, fondo #111 del cropper, cursor del pincel,
+// acentos oscuros fijos de "Borrar"/forma de pincel) — son convenciones de
+// herramienta de edición de fotos, no chrome de tema.
+//
+// ShiftExceptionModal además corrige un window.confirm() real (backfill
+// §9.0.3 — el modal de confirmación nativo bloquea el hilo y rompe el
+// zero-native-rule) por el ConfirmModal ya migrado en v2.39.0: nuevo estado
+// confirmRemoveOpen, botón "Revertir al Original" abre el modal en vez de
+// confirmar inline. Su franja de header (bg-slate-900) se deja siempre
+// oscura a propósito (acento de urgencia, no reactiva) pero se corrige un
+// bug de contraste real: el subtítulo usaba text-slate-600 sobre ese fondo
+// casi negro (gris oscuro sobre gris oscuro) — ahora text-white/60.
+//
+// Build + tests verdes; verificado con Playwright (⌘K) en liquid/solid/
+// dark: bg/radius coinciden exacto con --surface-dropdown de cada tema.
 
 // v2.41.0 — refactor(theme): banners + NotificationBell (T3, lista
 // extendida §9 del usuario). OfflineBanner/PushPromptBanner migran de

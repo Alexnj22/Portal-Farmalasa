@@ -65,30 +65,31 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
     const modalContent = (
         <div className="fixed inset-0 z-[99999] flex items-start justify-center pt-[10vh] px-4">
             <div
-                className={`absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-200 ease-out ${overlayClass}`}
+                className={`absolute inset-0 bg-scrim backdrop-blur-sm transition-opacity duration-200 ease-out ${overlayClass}`}
                 onClick={onClose}
             />
 
             <div
-                className={`relative w-full max-w-xl backdrop-blur-2xl bg-white/95 border border-white/80 rounded-[1.75rem] shadow-[0_30px_80px_rgba(0,0,0,0.25)] overflow-hidden transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${modalClass}`}
+                data-surface="dropdown"
+                className={`relative w-full max-w-xl overflow-hidden transition-all duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] transform-gpu ${modalClass}`}
                 onKeyDown={handleKeyDown}
             >
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[60px] rounded-full pointer-events-none w-56 h-24 opacity-[0.15] bg-[#0052CC]" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 blur-[60px] rounded-full pointer-events-none w-56 h-24 opacity-[0.15] bg-brand" />
 
                 {/* Input */}
-                <div className="relative z-10 flex items-center gap-3 px-5 py-4 border-b border-slate-100/80">
-                    <Search size={18} strokeWidth={2.5} className="text-[#0052CC] shrink-0" />
+                <div className="relative z-10 flex items-center gap-3 px-5 py-4 border-b border-divider">
+                    <Search size={18} strokeWidth={2.5} className="text-brand shrink-0" />
                     <input
                         ref={inputRef}
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Buscar en el portal… (ej. venta de productos, fichas de empleados)"
-                        className="flex-1 bg-transparent outline-none text-[14px] font-semibold text-slate-700 placeholder:text-slate-400 placeholder:font-medium"
+                        className="flex-1 bg-transparent outline-none text-[14px] font-semibold text-content placeholder:text-content-3 placeholder:font-medium"
                     />
                     <button
                         onClick={onClose}
-                        className="shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                        className="shrink-0 p-1 rounded-lg text-content-3 hover:text-content hover:bg-surface-card-hover transition-colors"
                     >
                         <X size={16} strokeWidth={2.5} />
                     </button>
@@ -98,8 +99,8 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                 <div ref={listRef} className="relative z-10 max-h-[50vh] overflow-y-auto py-2">
                     {results.length === 0 ? (
                         <div className="px-5 py-10 text-center">
-                            <div className="text-[13px] font-semibold text-slate-500">Sin resultados para “{query}”</div>
-                            <div className="text-[11px] text-slate-400 mt-1">Probá con otra palabra, ej. el nombre de lo que buscás hacer.</div>
+                            <div className="text-[13px] font-semibold text-content-3">Sin resultados para “{query}”</div>
+                            <div className="text-[11px] text-content-3 mt-1">Probá con otra palabra, ej. el nombre de lo que buscás hacer.</div>
                         </div>
                     ) : (
                         results.map((item, idx) => {
@@ -113,19 +114,19 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                                     onMouseEnter={() => setSelected(idx)}
                                     onClick={() => navigate(item)}
                                     className={`w-full flex items-center gap-3 px-5 py-2.5 text-left transition-colors ${
-                                        isSelected ? 'bg-[#0052CC]/8' : 'hover:bg-slate-50'
+                                        isSelected ? 'bg-brand/[0.08]' : 'hover:bg-surface-card-hover'
                                     }`}
                                 >
                                     <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
-                                        isSelected ? 'bg-[#0052CC]/10 border-[#0052CC]/20 text-[#0052CC]' : 'bg-slate-50 border-slate-200/70 text-slate-500'
+                                        isSelected ? 'bg-brand/10 border-brand/20 text-brand' : 'bg-surface-card-hover border-border-card text-content-3'
                                     }`}>
                                         {Icon && <Icon size={16} strokeWidth={2.25} />}
                                     </span>
                                     <span className="flex-1 min-w-0">
-                                        <span className={`block text-[13px] font-semibold truncate ${isSelected ? 'text-slate-800' : 'text-slate-700'}`}>
+                                        <span className={`block text-[13px] font-semibold truncate ${isSelected ? 'text-content' : 'text-content-2'}`}>
                                             {item.label}
                                         </span>
-                                        <span className="block text-[11px] text-slate-400 truncate">{item.groupLabel}</span>
+                                        <span className="block text-[11px] text-content-3 truncate">{item.groupLabel}</span>
                                     </span>
                                 </button>
                             );
@@ -134,7 +135,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                 </div>
 
                 {/* Footer hint */}
-                <div className="relative z-10 hidden sm:flex items-center gap-4 px-5 py-2.5 border-t border-slate-100/80 bg-slate-50/50 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                <div className="relative z-10 hidden sm:flex items-center gap-4 px-5 py-2.5 border-t border-divider bg-surface-card-hover text-[10px] font-bold uppercase tracking-wide text-content-3">
                     <span className="flex items-center gap-1"><ArrowUp size={11} /><ArrowDown size={11} /> Navegar</span>
                     <span className="flex items-center gap-1"><CornerDownLeft size={11} /> Abrir</span>
                     <span className="ml-auto">Esc para cerrar</span>

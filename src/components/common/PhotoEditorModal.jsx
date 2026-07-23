@@ -336,16 +336,16 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
     const cH = canvasDims.h ? Math.round(canvasDims.h * baseScale * brushZoom) : undefined;
 
     return createPortal(
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-scrim backdrop-blur-sm p-4">
+            <div data-surface="modal" className="w-full max-w-md flex flex-col overflow-hidden">
 
                 {/* ── Header ── */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-divider shrink-0">
                     <div>
-                        <p className="text-[14px] font-black text-slate-800">
+                        <p className="text-[14px] font-black text-content">
                             {brushMode ? 'Retocar fondo' : 'Editar foto'}
                         </p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
+                        <p className="text-[11px] text-content-3 mt-0.5">
                             {brushMode
                                 ? 'Pinta para borrar o restaurar áreas · usa zoom para precisión'
                                 : 'Ajusta el encuadre y aplica ediciones'}
@@ -353,7 +353,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                     </div>
                     <button
                         onClick={brushMode ? exitBrushMode : onCancel}
-                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-600 transition-colors">
+                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-card-hover text-content-3 hover:text-content transition-colors">
                         {brushMode ? <ChevronLeft size={16} strokeWidth={2.5} /> : <X size={16} strokeWidth={2.5} />}
                     </button>
                 </div>
@@ -434,25 +434,25 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                         <>
                             {/* Row 1: Erase / Restore + Listo */}
                             <div className="flex items-center gap-2">
-                                <div className="flex rounded-2xl border border-slate-200 p-0.5 gap-0.5">
+                                <div className="flex rounded-2xl border border-divider p-0.5 gap-0.5">
                                     <button
                                         onClick={() => setBrushType('erase')}
                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
-                                            brushType === 'erase' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-700'
+                                            brushType === 'erase' ? 'bg-slate-800 text-white' : 'text-content-3 hover:text-content-2'
                                         }`}>
                                         <Eraser size={11} strokeWidth={2} /> Borrar
                                     </button>
                                     <button
                                         onClick={() => setBrushType('restore')}
                                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
-                                            brushType === 'restore' ? 'bg-[#0052CC] text-white' : 'text-slate-500 hover:text-slate-700'
+                                            brushType === 'restore' ? 'bg-brand text-white' : 'text-content-3 hover:text-content-2'
                                         }`}>
                                         <Paintbrush size={11} strokeWidth={2} /> Restaurar
                                     </button>
                                 </div>
                                 <button
                                     onClick={exitBrushMode}
-                                    className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold hover:bg-emerald-100 transition-colors">
+                                    className="ml-auto flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-success/10 text-success border border-success/30 text-[11px] font-bold hover:bg-success/20 transition-colors">
                                     <Check size={11} strokeWidth={2.5} /> Listo
                                 </button>
                             </div>
@@ -461,14 +461,14 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                             <div className="flex items-center gap-3">
 
                                 {/* Shape selector */}
-                                <span className="text-[10px] font-bold text-slate-500 shrink-0">Forma</span>
-                                <div className="flex rounded-xl border border-slate-200 p-0.5 gap-0.5">
+                                <span className="text-[10px] font-bold text-content-3 shrink-0">Forma</span>
+                                <div className="flex rounded-xl border border-divider p-0.5 gap-0.5">
                                     {/* Round */}
                                     <button
                                         onClick={() => setBrushShape('round')}
                                         title="Redonda"
                                         className={`w-8 h-7 flex items-center justify-center rounded-lg transition-all ${
-                                            brushShape === 'round' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-700'
+                                            brushShape === 'round' ? 'bg-slate-700 text-white' : 'text-content-3 hover:text-content-2'
                                         }`}>
                                         <span style={{
                                             display: 'inline-block', width: 9, height: 9,
@@ -480,7 +480,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                         onClick={() => setBrushShape('h')}
                                         title="Recta horizontal"
                                         className={`w-8 h-7 flex items-center justify-center rounded-lg transition-all ${
-                                            brushShape === 'h' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-700'
+                                            brushShape === 'h' ? 'bg-slate-700 text-white' : 'text-content-3 hover:text-content-2'
                                         }`}>
                                         <span style={{
                                             display: 'inline-block', width: 16, height: 3,
@@ -492,7 +492,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                         onClick={() => setBrushShape('v')}
                                         title="Recta vertical"
                                         className={`w-8 h-7 flex items-center justify-center rounded-lg transition-all ${
-                                            brushShape === 'v' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-700'
+                                            brushShape === 'v' ? 'bg-slate-700 text-white' : 'text-content-3 hover:text-content-2'
                                         }`}>
                                         <span style={{
                                             display: 'inline-block', width: 3, height: 16,
@@ -503,20 +503,20 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
 
                                 {/* Zoom */}
                                 <div className="ml-auto flex items-center gap-1">
-                                    <span className="text-[10px] font-bold text-slate-500 shrink-0 mr-1">Zoom</span>
+                                    <span className="text-[10px] font-bold text-content-3 shrink-0 mr-1">Zoom</span>
                                     <button
                                         onClick={handleZoomOut}
                                         disabled={brushZoom === ZOOM_LEVELS[0]}
-                                        className="w-6 h-6 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
+                                        className="w-6 h-6 flex items-center justify-center rounded-lg border border-divider text-content-3 hover:bg-surface-card-hover disabled:opacity-30 transition-all">
                                         <Minus size={10} strokeWidth={2.5} />
                                     </button>
-                                    <span className="text-[11px] font-black text-slate-700 w-8 text-center tabular-nums">
+                                    <span className="text-[11px] font-black text-content-2 w-8 text-center tabular-nums">
                                         {brushZoom}×
                                     </span>
                                     <button
                                         onClick={handleZoomIn}
                                         disabled={brushZoom === ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
-                                        className="w-6 h-6 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 disabled:opacity-30 transition-all">
+                                        className="w-6 h-6 flex items-center justify-center rounded-lg border border-divider text-content-3 hover:bg-surface-card-hover disabled:opacity-30 transition-all">
                                         <Plus size={10} strokeWidth={2.5} />
                                     </button>
                                 </div>
@@ -524,15 +524,15 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
 
                             {/* Row 3: Brush size slider */}
                             <div className="flex items-center gap-3">
-                                <span className="shrink-0 rounded-full bg-slate-300 block" style={{ width: 6, height: 6 }} />
+                                <span className="shrink-0 rounded-full bg-content-3 block" style={{ width: 6, height: 6 }} />
                                 <input
                                     type="range" min={6} max={60} step={1}
                                     value={brushSize}
                                     onChange={e => setBrushSize(Number(e.target.value))}
-                                    className="flex-1 accent-[#0052CC] cursor-pointer"
+                                    className="flex-1 accent-brand cursor-pointer"
                                 />
                                 <span
-                                    className="shrink-0 rounded-full bg-slate-300 block"
+                                    className="shrink-0 rounded-full bg-content-3 block"
                                     style={{ width: Math.max(8, brushSize * 0.5), height: Math.max(8, brushSize * 0.5) }}
                                 />
                             </div>
@@ -541,29 +541,29 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                         <>
                             {/* Zoom slider */}
                             <div className="flex items-center gap-2.5">
-                                <ZoomOut size={13} className="text-slate-500 shrink-0" />
+                                <ZoomOut size={13} className="text-content-3 shrink-0" />
                                 <input
                                     type="range" min={1} max={3} step={0.01}
                                     value={zoom}
                                     onChange={e => setZoom(Number(e.target.value))}
-                                    className="flex-1 accent-[#0052CC] cursor-pointer"
+                                    className="flex-1 accent-brand cursor-pointer"
                                 />
-                                <ZoomIn size={13} className="text-slate-500 shrink-0" />
+                                <ZoomIn size={13} className="text-content-3 shrink-0" />
                             </div>
 
                             {/* Rotation */}
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-slate-500 shrink-0">Rotar</span>
+                                <span className="text-[10px] font-bold text-content-3 shrink-0">Rotar</span>
                                 <button onClick={rotateLeft}
-                                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-divider text-[11px] font-bold text-content-2 hover:bg-surface-card-hover transition-colors">
                                     <RotateCcw size={11} strokeWidth={2.5} /> 90° izq
                                 </button>
                                 <button onClick={rotateRight}
-                                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-divider text-[11px] font-bold text-content-2 hover:bg-surface-card-hover transition-colors">
                                     <RotateCw size={11} strokeWidth={2.5} /> 90° der
                                 </button>
                                 {rotation !== 0 && (
-                                    <span className="ml-auto text-[10px] font-bold text-[#0052CC]">{rotation}°</span>
+                                    <span className="ml-auto text-[10px] font-bold text-brand">{rotation}°</span>
                                 )}
                             </div>
 
@@ -574,12 +574,12 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                     disabled={bgRemoving || bgRemoved}
                                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl text-[12px] font-bold transition-all border ${
                                         bgRemoved
-                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200 cursor-default'
+                                            ? 'bg-success/10 text-success border-success/30 cursor-default'
                                             : bgRemoving
-                                                ? 'bg-slate-50 text-slate-500 border-slate-200 cursor-wait'
+                                                ? 'bg-surface-card-hover text-content-3 border-divider cursor-wait'
                                                 : bgError
-                                                    ? 'bg-red-50 text-red-500 border-red-200 hover:bg-red-100'
-                                                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-violet-50 hover:text-violet-600 hover:border-violet-200'
+                                                    ? 'bg-danger/10 text-danger border-danger/30 hover:bg-danger/20'
+                                                    : 'bg-surface-card-hover text-content-2 border-divider hover:bg-violet-50 hover:text-violet-600 hover:border-violet-200'
                                     }`}>
                                     {bgRemoving
                                         ? <><Loader2 size={13} className="animate-spin" /> Procesando…</>
@@ -603,14 +603,14 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
                                     <button
                                         onClick={handleReset}
                                         title="Restaurar imagen original"
-                                        className="w-10 flex items-center justify-center rounded-2xl border border-slate-200 text-slate-500 hover:text-slate-600 hover:bg-slate-50 transition-all">
+                                        className="w-10 flex items-center justify-center rounded-2xl border border-divider text-content-3 hover:text-content-2 hover:bg-surface-card-hover transition-all">
                                         <RotateCcw size={13} strokeWidth={2.5} />
                                     </button>
                                 )}
                             </div>
 
                             {bgRemoving && (
-                                <p className="text-[10px] text-slate-500 text-center -mt-1">
+                                <p className="text-[10px] text-content-3 text-center -mt-1">
                                     La primera vez descarga el modelo — puede tardar unos segundos.
                                 </p>
                             )}
@@ -620,15 +620,15 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel }) {
 
                 {/* ── Footer — only in crop mode ── */}
                 {!brushMode && (
-                    <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-slate-100 shrink-0">
+                    <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-divider shrink-0">
                         <button onClick={onCancel}
-                            className="px-4 py-2 rounded-full text-[12px] font-bold text-slate-500 hover:bg-slate-100 transition-colors">
+                            className="px-4 py-2 rounded-full text-[12px] font-bold text-content-3 hover:bg-surface-card-hover transition-colors">
                             Cancelar
                         </button>
                         <button
                             onClick={handleConfirm}
                             disabled={confirming || !cropPx}
-                            className="px-5 py-2 rounded-full text-[12px] font-bold text-white bg-[#0052CC] hover:bg-[#003D99] transition-colors disabled:opacity-50 flex items-center gap-2">
+                            className="px-5 py-2 rounded-full text-[12px] font-bold text-white bg-brand hover:bg-brand-hover transition-colors disabled:opacity-50 flex items-center gap-2">
                             {confirming
                                 ? <><Loader2 size={12} className="animate-spin" /> Guardando…</>
                                 : 'Guardar foto'}

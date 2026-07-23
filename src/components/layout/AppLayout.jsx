@@ -5,7 +5,7 @@ import {
     Monitor, Calendar, Building2, ShieldCheck, LogOut, Menu, User,
     Megaphone, AlertTriangle, Activity, Copy, CheckCircle2,
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
-    Home, Bell, FolderOpen, LayoutDashboard, Cake,
+    Home, Bell, FolderOpen, Cake,
     TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
     PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes
 } from 'lucide-react';
@@ -26,8 +26,7 @@ import OfflineBanner from '../common/OfflineBanner';
 
 // ── Módulos individuales (key → path + label + icon) ────────────────────────
 const MODULE_MAP = {
-    overview:          { path: '/overview',        label: 'Dashboard',                icon: LayoutDashboard },
-    emp_home:          { path: '/home',            label: 'Inicio',                   icon: Home          },
+    overview:          { path: '/overview',        label: 'Inicio',                   icon: Home          },
     emp_requests:      { path: '/my-requests',    label: 'Mis Solicitudes',          icon: ClipboardList },
     emp_announcements: { path: '/my-announcements',label: 'Mis Avisos',               icon: Bell          },
     emp_profile:       { path: '/profile',         label: 'Mi Perfil',                icon: User          },
@@ -79,6 +78,7 @@ const MODULE_MAP = {
 // propio grupo (encuesta) y RRHH (encuesta_admin) sin motivo. Ningún grupo
 // nuevo pasa de 6 ítems.
 const MENU_GROUPS = [
+    { key: 'overview',      label: 'Inicio',        icon: Home,          modules: ['overview']                          },
     { key: 'solicitudes',   label: 'Solicitudes',   icon: ClipboardList, modules: ['emp_requests', 'requests']            },
     { key: 'avisos',        label: 'Avisos',         icon: Bell,          modules: ['emp_announcements', 'announcements']  },
     { key: 'documentos',    label: 'Documentos',    icon: FolderOpen,    modules: ['emp_documents']                       },
@@ -98,7 +98,7 @@ const MENU_GROUPS = [
     { key: 'sistema',       label: 'Sistema',       icon: Lock,          modules: ['permissions', 'auditview', 'ios_test', 'sync_health', 'orphan_objects'] },
 ];
 
-const SELF_KEYS = ['emp_home', 'emp_requests', 'emp_announcements', 'emp_profile', 'emp_documents'];
+const SELF_KEYS = ['emp_requests', 'emp_announcements', 'emp_profile', 'emp_documents'];
 
 // Ancla el grupo recién abierto dentro del viewport del nav: scrollea lo
 // mínimo para que header + hijos queden visibles. Nunca persigue al ítem

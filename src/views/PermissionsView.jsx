@@ -4,7 +4,7 @@ import {
     Palmtree, Activity, AlertTriangle, User, Eye, Pencil, CheckCircle2,
     Lock, Unlock, Save, RotateCcw, ChevronRight, Loader2, Check, X,
     ShieldAlert, Info, Home, Bell, FolderOpen, Zap, Copy, Search, MousePointerClick,
-    LayoutDashboard, TrendingUp, Briefcase, CalendarDays, PieChart,
+    TrendingUp, Briefcase, CalendarDays, PieChart,
     BarChart2, UserX, Clock, Gift, DollarSign, FileText, Package, Receipt, Target, FlaskConical, Smartphone,
     Sparkles, Layers, Globe2, BadgeAlert, PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Truck
 } from 'lucide-react';
@@ -24,7 +24,6 @@ const MODULE_GROUPS = [
         group: 'Autogestión',
         color: 'text-green-600',
         modules: [
-            { key: 'emp_home',          label: 'Inicio',              desc: 'Pantalla de bienvenida con resumen personal y horario',      icon: Home,          hasApprove: false },
             { key: 'emp_requests',      label: 'Mis Solicitudes',     desc: 'Crear y seguir solicitudes propias (permiso, vacación, etc.)', icon: ClipboardList, hasApprove: false },
             { key: 'emp_announcements', label: 'Mis Avisos',          desc: 'Recibir y leer comunicados internos dirigidos al empleado',  icon: Bell,          hasApprove: false },
             { key: 'emp_profile',       label: 'Mi Perfil',           desc: 'Ver y actualizar datos personales propios',                  icon: User,          hasApprove: false },
@@ -148,7 +147,7 @@ const MODULE_GROUPS = [
         group: 'Dashboard',
         color: 'text-violet-600',
         modules: [
-            { key: 'overview',          label: 'Dashboard',                  desc: 'Acceso a la vista general del portal con widgets configurables',           icon: LayoutDashboard, hasApprove: false, hasScope: true },
+            { key: 'overview',          label: 'Inicio',                     desc: 'Acceso a la vista general del portal con widgets configurables',           icon: Home, hasApprove: false, hasScope: true },
             { key: 'dash_kpi',          label: 'Widget: Estadísticas clave', desc: 'Ver métricas generales: empleados, asistencia, solicitudes y sucursales',  icon: TrendingUp,      hasApprove: false, hasScope: true },
             { key: 'dash_trend',        label: 'Widget: Tendencia asistencia',desc: 'Gráfica de asistencia de los últimos 7 días por día',                      icon: Activity,        hasApprove: false, hasScope: true },
             { key: 'dash_requests',     label: 'Widget: Solicitudes',         desc: 'Solicitudes pendientes de aprobación en el dashboard',                     icon: ClipboardList,   hasApprove: false, hasScope: true },

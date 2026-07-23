@@ -5,9 +5,37 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.28.1';
+export const APP_VERSION = '2.28.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.28.2 — refactor(inicio): a pedido del usuario, corrige el alcance de
+// v2.28.1 — solo pidió eliminar "Inicio" (emp_home/EmployeeHomeView), no
+// "Dashboard". Dashboard (overview) PASA A SER Inicio: relabel 'Dashboard'
+// → 'Inicio' en MODULE_MAP (AppLayout), PermissionsView y el título de
+// GlassViewLayout dentro de DashboardView.jsx; icono LayoutDashboard →
+// Home en ambos lugares (LayoutDashboard queda sin uso ahí, se quita el
+// import). El viejo /home se elimina por completo: ruta en App.jsx,
+// import lazy de EmployeeHomeView, fallback en defaultRedirect,
+// '/home' de ROUTE_TITLES, entrada 'emp_home' de MODULE_MAP/SELF_KEYS/
+// MENU_GROUPS/PermissionsView, y los archivos
+// src/views/employee/EmployeeHomeView.jsx + src/data/employeeHome.js
+// (sin otros consumidores, confirmado por grep antes de borrar).
+//
+// Write a prod (confirmado explícitamente por el usuario): antes de
+// borrar el fallback de emp_home en defaultRedirect, se detectó vía
+// SQL que 3 roles (Regente de Enfermeria=7 empleados, Tecnico de
+// Mantenimiento y Servicios Generales=2, Supervisor/a de Ventas=1)
+// dependían de emp_home=true para aterrizar en algún lado al iniciar
+// sesión — no tienen ningún otro permiso de la lista de fallback
+// (emp_requests, etc.), solo permisos de negocio (productos, ventas_*)
+// que ese redirect no revisa. Sin este fix habrían caído en /no-access.
+// Se les otorgó can_view=true en 'overview' (mismo perfil que tenían en
+// emp_home, ahora unificado bajo Inicio). Verificado con Playwright
+// (vite preview): sidebar muestra "Inicio" activo y resaltado, header
+// de la vista dice "Inicio", visitar /home directo redirige a /overview
+// en vez de página muerta, build de producción limpio (sin chunk de
+// EmployeeHomeView).
+//
 // v2.28.1 — refactor(menu): separa "Inventario" (9→3 módulos) en tres grupos
 // del sidebar (a pedido del usuario). Nuevo grupo "Producto" (Productos +
 // Laboratorios, el catálogo). Nuevo grupo "Pedidos a Sucursales" (solo

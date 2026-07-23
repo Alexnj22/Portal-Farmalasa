@@ -17,7 +17,6 @@ import LiquidToast from './components/common/LiquidToast';
 
 // Vistas — code-split por ruta (React.lazy). Antes 51 imports estáticos
 // empaquetaban las 40+ vistas en un solo chunk eager de 5.24MB/1.74MB gzip.
-const EmployeeHomeView = lazy(() => import("./views/employee/EmployeeHomeView"));
 const EmployeeAnnouncementsView = lazy(() => import("./views/employee/EmployeeAnnouncementsView"));
 const EmployeeRequestsView = lazy(() => import("./views/employee/EmployeeRequestsView"));
 const EmployeeProfileView = lazy(() => import("./views/employee/EmployeeProfileView"));
@@ -239,7 +238,6 @@ function MainApp() {
         if (hasPermission('schedules',         'can_view')) return '/schedules';
         if (hasPermission('announcements',     'can_view')) return '/announcements';
         if (hasPermission('branches',          'can_view')) return '/branches';
-        if (hasPermission('emp_home',          'can_view')) return '/home';
         if (hasPermission('emp_requests',      'can_view')) return '/my-requests';
         if (hasPermission('emp_announcements', 'can_view')) return '/my-announcements';
         if (hasPermission('emp_documents',     'can_view')) return '/my-documents';
@@ -560,7 +558,6 @@ function MainApp() {
                                 <Suspense fallback={<ContentLoadingFallback />}>
                                 <Routes>
                                     {/* ── Self-service ── */}
-                                    <Route path="home" element={<PermissionGuard moduleKey="emp_home"><EmployeeHomeView /></PermissionGuard>} />
                                     <Route path="my-requests" element={<PermissionGuard moduleKey="emp_requests"><EmployeeRequestsView /></PermissionGuard>} />
                                     <Route path="my-announcements" element={<PermissionGuard moduleKey="emp_announcements"><EmployeeAnnouncementsView /></PermissionGuard>} />
                                     <Route path="my-documents" element={<PermissionGuard moduleKey="emp_documents"><EmployeeDocumentsView /></PermissionGuard>} />
@@ -721,7 +718,7 @@ const MobileConstructionScreen = () => (
 );
 
 const ROUTE_TITLES = {
-    '/overview':          'Resumen',
+    '/overview':          'Inicio',
     '/dashboard':         'Dashboard',
     '/monitor':           'Asistencia',
     '/audit':             'Auditoría de Tiempo',
@@ -746,7 +743,6 @@ const ROUTE_TITLES = {
     '/roles':             'Roles',
     '/permissions':       'Permisos',
     '/auditview':         'Auditoría',
-    '/home':              'Mi Portal',
     '/my-requests':       'Mis Solicitudes',
     '/my-announcements':  'Mis Avisos',
     '/my-documents':      'Mis Documentos',

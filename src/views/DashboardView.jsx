@@ -1984,7 +1984,7 @@ const DashboardView = ({ openModal }) => {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <GlassViewLayout icon={LayoutDashboard} title="Dashboard" filtersContent={filtersContent} transparentBody={true}>
+    <GlassViewLayout icon={LayoutDashboard} title="Inicio" filtersContent={filtersContent} transparentBody={true}>
       <div className="pb-0 px-2">
 
         {/* Config panel */}

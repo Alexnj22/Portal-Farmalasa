@@ -68,7 +68,7 @@ const TimePicker12 = ({ value, onChange, className = '', disabled, defaultMeridi
     };
 
     return (
-        <div className={`flex items-center justify-center p-1.5 rounded-[1rem] bg-white/50 backdrop-blur-xl border border-white/80 shadow-[0_4px_12px_rgba(0,82,204,0.06),inset_0_2px_6px_rgba(255,255,255,0.9)] transition-all ${disabled ? 'opacity-50 pointer-events-none grayscale-[0.5]' : 'hover:shadow-[0_6px_16px_rgba(0,82,204,0.12)] hover:bg-white/70'} ${className}`}>
+        <div data-surface="input" className={`flex items-center justify-center p-1.5 transition-all ${disabled ? 'opacity-50 pointer-events-none grayscale-[0.5]' : ''} ${className}`}>
 
             <div className="w-11">
                 <LiquidSelect
@@ -83,7 +83,7 @@ const TimePicker12 = ({ value, onChange, className = '', disabled, defaultMeridi
                 />
             </div>
 
-            <span className="text-slate-500 font-black px-0.5 animate-pulse">:</span>
+            <span className="text-content-3 font-black px-0.5 animate-pulse">:</span>
 
             <div className="w-11">
                 <LiquidSelect
@@ -98,7 +98,7 @@ const TimePicker12 = ({ value, onChange, className = '', disabled, defaultMeridi
                 />
             </div>
 
-            <div className="w-[2px] h-5 bg-black/[0.04] mx-1 rounded-full"></div>
+            <div className="w-[2px] h-5 bg-divider mx-1 rounded-full"></div>
 
             <div className="w-[3.25rem]">
                 <LiquidSelect

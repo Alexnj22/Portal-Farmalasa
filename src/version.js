@@ -5,8 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.42.0';
+export const APP_VERSION = '2.43.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.43.0 — refactor(theme): pickers de fecha/hora a tokens (T3, lista
+// extendida §9) — TimePicker12, LiquidWeekPicker, LiquidDatePicker,
+// RangeDatePicker, PeriodPicker (~1700 líneas combinadas). Los 5 eran 100%
+// hardcoded, sin ternario isDark. Popovers/paneles a data-surface="dropdown"
+// (o "input" para chips/triggers pequeños); texto/bordes a tokens; acentos
+// de calendario (día seleccionado, rango, hoy) a bg-brand/text-brand;
+// asuetos y errores a danger; rangos confirmados (multiRange) a success.
+// De paso, LiquidDatePicker corrige un azul duplicado real: el tinte de
+// rango usaba rgba(0,122,255,…) (#007AFF, azul iOS) en vez del brand real
+// del proyecto (#0052CC) — mismo color por accidente de duplicación, ahora
+// una sola fuente de verdad.
+// TimePicker12 ya estaba compuesto 100% de LiquidSelect (bare+nano) — solo
+// necesitaba su propio contenedor a data-surface="input".
+// Verificado con Playwright: PeriodPicker (usado en VentasView) en liquid/
+// dark — bg/radius del popover coinciden exacto con --surface-dropdown de
+// cada tema, texto y presets legibles. Build + tests verdes.
 
 // v2.42.0 — refactor(theme): MenuSearchModal/ShiftExceptionModal/
 // PhotoEditorModal a tokens (T3, lista extendida §9). Los 3 eran 100%

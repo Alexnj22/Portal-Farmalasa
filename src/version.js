@@ -5,8 +5,27 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.39.0';
+export const APP_VERSION = '2.39.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.39.1 — refactor(theme): UnifiedModal.jsx (T3 — el modal genérico que
+// enruta ~30 tipos de formulario administrativo). Archivo grande (945
+// líneas) pero el 90% es lógica de negocio (handleLocalSubmit por tipo,
+// getModalTitle/Size/Subtitle) que no necesitaba tocarse — el trabajo real
+// es solo su propio "chrome": header (squircle de ícono + título/subtítulo +
+// botón cerrar), stepper de pasos (Nuevo/Editar Empleado), banner de error
+// de validación, y footer (Cancelar/Guardar, variante con Anterior/
+// Siguiente). border-white/40 → border-divider; text-slate-800/500/600 →
+// text-content/text-content-3/text-content-2; squircle bg-white/70 →
+// bg-surface-card-hover; iconos por tipo #0052CC/emerald-600/amber-500 →
+// text-brand/text-success/text-warning (purple-600 de aiSchedulerPreview
+// se deja literal, sin token semántico equivalente); banner de error
+// red-500/10 → danger/10; botones bg-[#0052CC]/emerald-500/slate-300 →
+// bg-brand/bg-success/bg-surface-card-hover (estado disabled). Verificado
+// con Playwright abriendo "Nuevo Empleado" en liquid/solid/dark: bg/radius
+// del modal coinciden exacto con --surface-modal/--card-radius; el área de
+// campos del formulario (EmployeeFormModal.jsx) queda clara a propósito —
+// es un Form*, explícitamente diferido a T4, no un olvido de este commit.
 
 // v2.39.0 — refactor(theme): familia de modales — ModalShell/LiquidModal/
 // ConfirmModal/AlertModal (T3, apalancamiento #7). Mismo bug de fondo que

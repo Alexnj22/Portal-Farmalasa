@@ -717,8 +717,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     if (!isOpen) return null;
 
     const FallbackLoader = () => (
-        <div className="w-full h-64 flex flex-col items-center justify-center text-slate-500 gap-3">
-            <div className="w-8 h-8 border-4 border-[#0052CC] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-full h-64 flex flex-col items-center justify-center text-content-3 gap-3">
+            <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin"></div>
             <p className="font-bold text-[10px] uppercase tracking-widest animate-pulse">Cargando Módulo...</p>
         </div>
     );
@@ -732,47 +732,47 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const getModalHeightClass = () => fillHeight ? 'h-[85vh]' : 'max-h-[90vh] h-fit';
     const hidesHeader = HIDES_HEADER.has(type);
     const hidesFooter = HIDES_FOOTER.has(type);
-    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-white/80 shadow-[0_4px_12px_rgba(0,0,0,0.05)] bg-white/70 backdrop-blur-md";
+    const squircleClass = "w-12 h-12 flex items-center justify-center rounded-[1.25rem] shrink-0 border border-border-card shadow-sm bg-surface-card-hover";
 
     return (
         <LiquidModal open={isOpen} onClose={onClose} maxWidth={getModalSize()} zClass="z-[100]" className={getModalHeightClass()} ariaLabel={getModalTitle()}>
 
                 {!hidesHeader && (
-                    <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-white/40 flex flex-col gap-4 relative z-10 shrink-0">
+                    <div className="flex-none bg-transparent px-6 md:px-10 py-6 border-b border-divider flex flex-col gap-4 relative z-10 shrink-0">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-4">
 
                                 {(() => {
-                                    if (type === 'planSchedule') return <div className={`${squircleClass} text-[#0052CC]`}><ClipboardList size={22} strokeWidth={2.5} /></div>;
-                                    if (type === 'manageShifts') return <div className={`${squircleClass} text-[#0052CC]`}><BookOpen size={22} strokeWidth={2.5} /></div>;
-                                    if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-emerald-600`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-[#0052CC]`}><Building2 size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "newEmployee" || type === "editEmployee") return <div className={`${squircleClass} text-[#0052CC]`}><UserPlus size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "rehireEmployee") return <div className={`${squircleClass} text-emerald-600`}><RefreshCw size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "vacationRecall") return <div className={`${squircleClass} text-amber-500`}><Palmtree size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editBranchLegal") return <div className={`${squircleClass} text-emerald-600`}><Scale size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editBranchServicios") return <div className={`${squircleClass} text-amber-500`}><Zap size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editBranchHorarios") return <div className={`${squircleClass} text-[#0052CC]`}><Clock size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editBranchLeadership") return <div className={`${squircleClass} text-amber-500`}><Star size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-[#0052CC]`}><FilePlus size={22} strokeWidth={2.5} /></div>;
+                                    if (type === 'planSchedule') return <div className={`${squircleClass} text-brand`}><ClipboardList size={22} strokeWidth={2.5} /></div>;
+                                    if (type === 'manageShifts') return <div className={`${squircleClass} text-brand`}><BookOpen size={22} strokeWidth={2.5} /></div>;
+                                    if (SHIELD_ICONS.has(type)) return <div className={`${squircleClass} text-success`}><ShieldCheck size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "newBranch" || type === "editBranch" || type === "editBranchInmueble" || type === "viewBranchEmployees") return <div className={`${squircleClass} text-brand`}><Building2 size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "newEmployee" || type === "editEmployee") return <div className={`${squircleClass} text-brand`}><UserPlus size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "rehireEmployee") return <div className={`${squircleClass} text-success`}><RefreshCw size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "vacationRecall") return <div className={`${squircleClass} text-warning`}><Palmtree size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editBranchLegal") return <div className={`${squircleClass} text-success`}><Scale size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editBranchServicios") return <div className={`${squircleClass} text-warning`}><Zap size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editBranchHorarios") return <div className={`${squircleClass} text-brand`}><Clock size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editBranchLeadership") return <div className={`${squircleClass} text-warning`}><Star size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "addCustomDocument" || type === "editCustomDocument") return <div className={`${squircleClass} text-brand`}><FilePlus size={22} strokeWidth={2.5} /></div>;
                                     if (type === "aiSchedulerPreview") return <div className={`${squircleClass} text-purple-600`}><Sparkles size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "newPayrollPeriod") return <div className={`${squircleClass} text-[#0052CC]`}><DollarSign size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editPayrollEntry") return <div className={`${squircleClass} text-amber-500`}><Edit2 size={22} strokeWidth={2.5} /></div>;
-                                    if (type === "editProveedor") return <div className={`${squircleClass} text-[#0052CC]`}><Truck size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "newPayrollPeriod") return <div className={`${squircleClass} text-brand`}><DollarSign size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editPayrollEntry") return <div className={`${squircleClass} text-warning`}><Edit2 size={22} strokeWidth={2.5} /></div>;
+                                    if (type === "editProveedor") return <div className={`${squircleClass} text-brand`}><Truck size={22} strokeWidth={2.5} /></div>;
 
-                                    return <div className={`${squircleClass} text-slate-500`}><Settings size={22} strokeWidth={2.5} /></div>;
+                                    return <div className={`${squircleClass} text-content-3`}><Settings size={22} strokeWidth={2.5} /></div>;
                                 })()}
 
                                 <div>
-                                    <h3 className="font-black text-slate-800 uppercase tracking-tighter text-lg md:text-xl leading-snug mb-1">
+                                    <h3 className="font-black text-content uppercase tracking-tighter text-lg md:text-xl leading-snug mb-1">
                                         {getModalTitle()}
                                     </h3>
                                     {getModalSubtitle() && (
-                                        <p className="text-[10px] md:text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">{getModalSubtitle()}</p>
+                                        <p className="text-[10px] md:text-[11px] font-bold text-content-3 uppercase tracking-[0.2em]">{getModalSubtitle()}</p>
                                     )}
                                 </div>
                             </div>
-                            <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/60 border border-white/90 text-slate-500 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm active:scale-[0.97] shrink-0 hover:scale-105">
+                            <button type="button" onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-card-hover border border-border-card text-content-3 hover:text-danger hover:bg-danger/10 transition-all shadow-sm active:scale-[0.97] shrink-0 hover:scale-105">
                                 <X size={18} strokeWidth={2.5} />
                             </button>
                         </div>
@@ -786,17 +786,17 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                     return (
                                         <React.Fragment key={step.key}>
                                             {idx > 0 && (
-                                                <div className={`h-[2px] w-10 md:w-16 mx-1 rounded-full transition-all duration-500 ${empStepCompletion[EMP_STEPS[idx - 1].key] ? 'bg-emerald-400' : 'bg-slate-200'}`} />
+                                                <div className={`h-[2px] w-10 md:w-16 mx-1 rounded-full transition-all duration-500 ${empStepCompletion[EMP_STEPS[idx - 1].key] ? 'bg-success' : 'bg-divider'}`} />
                                             )}
                                             <button
                                                 type="button"
                                                 onClick={() => setEmpActiveTab(step.key)}
                                                 className="flex flex-col items-center gap-1.5 group"
                                             >
-                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-emerald-500 border-emerald-400 text-white shadow-emerald-200' : isActive ? 'bg-[#0052CC] border-[#0052CC] text-white scale-110 shadow-[0_4px_14px_rgba(0,82,204,0.35)]' : 'bg-white border-slate-200 text-slate-500 group-hover:border-[#0052CC]/40 group-hover:text-[#0052CC]'}`}>
+                                                <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-sm ${isComplete ? 'bg-success border-transparent text-white' : isActive ? 'bg-brand border-transparent text-white scale-110 shadow-[0_4px_14px_rgba(0,82,204,0.35)]' : 'bg-surface-card border-border-card text-content-3 group-hover:border-brand/40 group-hover:text-brand'}`}>
                                                     {isComplete ? <CheckCircle2 size={18} strokeWidth={2.5} /> : <StepIcon size={15} strokeWidth={2} />}
                                                 </div>
-                                                <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-[#0052CC]' : isComplete ? 'text-emerald-600' : 'text-slate-600 group-hover:text-slate-600'}`}>
+                                                <span className={`text-[9px] font-black uppercase tracking-widest transition-colors whitespace-nowrap ${isActive ? 'text-brand' : isComplete ? 'text-success' : 'text-content-2'}`}>
                                                     {step.label}
                                                 </span>
                                             </button>
@@ -815,7 +815,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 >
                     <div className={`flex flex-col w-full ${fillHeight ? 'flex-1 min-h-0' : 'min-h-full'} ${hidesHeader ? 'p-0' : 'px-6 md:px-10 py-6'}`}>
                         {validationError && (
-                            <div className="mb-6 p-4 bg-red-500/10 backdrop-blur-md border border-red-500/20 rounded-[1.25rem] flex items-center gap-3 text-red-600 shadow-sm shrink-0 animate-in fade-in slide-in-from-top-4">
+                            <div className="mb-6 p-4 bg-danger/10 border border-danger/20 rounded-[1.25rem] flex items-center gap-3 text-danger shadow-sm shrink-0 animate-in fade-in slide-in-from-top-4">
                                 <AlertCircle size={20} strokeWidth={2.5} className="shrink-0" />
                                 <p className="text-[11px] font-bold uppercase tracking-wide leading-tight">{validationError}</p>
                             </div>
@@ -886,11 +886,11 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     const empSaveTitle = empError || (!isFormValid ? 'Completa los campos marcados como "Requerido" en cualquier pestaña antes de guardar.' : undefined);
                     if (isEmpForm) {
                         return (
-                            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-white/40 flex justify-between items-center relative z-10 shrink-0">
+                            <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-divider flex justify-between items-center relative z-10 shrink-0">
                                 {/* LEFT: Anterior */}
                                 {prevStep ? (
                                     <button type="button" onClick={() => setEmpActiveTab(prevStep)} disabled={isSaving}
-                                        className="flex items-center gap-2 px-5 h-11 rounded-full bg-white/50 border border-white/80 text-slate-500 font-bold text-[11px] uppercase tracking-widest hover:bg-white hover:text-slate-800 transition-all disabled:opacity-50 active:scale-[0.97]">
+                                        className="flex items-center gap-2 px-5 h-11 rounded-full bg-surface-card-hover border border-border-card text-content-2 font-bold text-[11px] uppercase tracking-widest hover:bg-surface-card hover:text-content transition-all disabled:opacity-50 active:scale-[0.97]">
                                         <ChevronLeft size={15} strokeWidth={2.5} />
                                         {EMP_STEP_LABELS[prevStep]}
                                     </button>
@@ -898,7 +898,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                                 {/* CENTER: Cancelar */}
                                 <button type="button" onClick={onClose} disabled={isSaving}
-                                    className="px-5 h-11 rounded-full bg-white/50 border border-white/80 text-slate-600 font-bold text-[11px] uppercase tracking-widest hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all disabled:opacity-50 active:scale-[0.97]">
+                                    className="px-5 h-11 rounded-full bg-surface-card-hover border border-border-card text-content-2 font-bold text-[11px] uppercase tracking-widest hover:bg-danger/10 hover:text-danger hover:border-danger/30 transition-all disabled:opacity-50 active:scale-[0.97]">
                                     Cancelar
                                 </button>
 
@@ -907,14 +907,14 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                                 <div className="flex items-center gap-2">
                                     {nextStep && (
                                         <button type="button" onClick={() => setEmpActiveTab(nextStep)} disabled={isSaving}
-                                            className="flex items-center gap-2 px-6 h-11 rounded-full bg-[#0052CC] text-white font-black text-[11px] uppercase tracking-widest shadow-[0_6px_18px_rgba(0,82,204,0.3)] hover:bg-[#003D99] hover:shadow-[0_8px_22px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-[0.97]">
+                                            className="flex items-center gap-2 px-6 h-11 rounded-full bg-brand text-white font-black text-[11px] uppercase tracking-widest shadow-[0_6px_18px_rgba(0,82,204,0.3)] hover:bg-brand-hover hover:shadow-[0_8px_22px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 transition-all disabled:opacity-50 active:scale-[0.97]">
                                             {EMP_STEP_LABELS[nextStep]}
                                             <ChevronRight size={15} strokeWidth={2.5} />
                                         </button>
                                     )}
                                     {(isEditingEmp || !nextStep) && (
                                         <button type="submit" form="unified-modal-form" disabled={empSaveDisabled} title={empSaveTitle}
-                                            className={`flex items-center gap-2 px-6 h-11 font-black text-[11px] uppercase tracking-[0.2em] rounded-full transition-all duration-300 ${empSaveDisabled && !isSaving ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-emerald-500 text-white shadow-[0_6px_18px_rgba(16,185,129,0.35)] hover:bg-emerald-600 hover:shadow-[0_8px_22px_rgba(16,185,129,0.45)] hover:-translate-y-0.5 active:scale-[0.97]'}`}>
+                                            className={`flex items-center gap-2 px-6 h-11 font-black text-[11px] uppercase tracking-[0.2em] rounded-full transition-all duration-300 ${empSaveDisabled && !isSaving ? 'bg-surface-card-hover text-content-3 cursor-not-allowed' : 'bg-success text-white shadow-[0_6px_18px_rgba(18,183,106,0.35)] hover:bg-success-hover hover:shadow-[0_8px_22px_rgba(18,183,106,0.45)] hover:-translate-y-0.5 active:scale-[0.97]'}`}>
                                             {isSaving ? <><Loader2 size={15} className="animate-spin" /> Guardando</> : <><Save size={15} strokeWidth={3} /> Guardar</>}
                                         </button>
                                     )}
@@ -924,15 +924,15 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     }
 
                     return (
-                        <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-white/40 flex justify-between items-center relative z-10 shrink-0">
-                            <button type="button" onClick={onClose} disabled={isSaving} className="px-6 py-3 h-12 rounded-full bg-white/50 border border-white/80 text-slate-500 font-bold text-[11px] uppercase tracking-widest hover:bg-white hover:text-slate-800 transition-colors disabled:opacity-50">
+                        <div className="flex-none px-6 md:px-10 py-5 bg-transparent border-t border-divider flex justify-between items-center relative z-10 shrink-0">
+                            <button type="button" onClick={onClose} disabled={isSaving} className="px-6 py-3 h-12 rounded-full bg-surface-card-hover border border-border-card text-content-2 font-bold text-[11px] uppercase tracking-widest hover:bg-surface-card hover:text-content transition-colors disabled:opacity-50">
                                 Cancelar
                             </button>
                             <button
                                 type="submit"
                                 form="unified-modal-form"
                                 disabled={isSaving || !isFormValid}
-                                className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-slate-300 text-white shadow-none cursor-not-allowed' : 'bg-[#0052CC] text-white shadow-[0_8px_20px_rgba(0,82,204,0.3)] hover:bg-[#003D99] hover:shadow-[0_12px_25px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
+                                className={`px-8 py-3 h-12 font-black text-[11px] uppercase tracking-[0.2em] rounded-full flex items-center gap-2 transition-all duration-300 ${!isFormValid ? 'bg-surface-card-hover text-content-3 shadow-none cursor-not-allowed' : 'bg-brand text-white shadow-[0_8px_20px_rgba(0,82,204,0.3)] hover:bg-brand-hover hover:shadow-[0_12px_25px_rgba(0,82,204,0.4)] hover:-translate-y-0.5 active:scale-[0.97]'}`}
                             >
                                 {isSaving ? <><Loader2 size={16} className="animate-spin" /> Procesando</> : <><Save size={16} strokeWidth={3} /> Guardar Cambios</>}
                             </button>

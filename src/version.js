@@ -5,8 +5,24 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.43.0';
+export const APP_VERSION = '2.44.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.44.0 — refactor(theme): PortalInput/CatalogSelect a tokens (T3, lista
+// extendida §9) + fix de raíz en inputStyles.js. inputHoverClass (compartida
+// por 9 archivos, incluidos varios Form* diferidos a T4) usaba
+// hover:border/focus-within:ring — con data-surface="input" en el mismo
+// elemento esas reglas pierden siempre por cascade layers, igual que ya se
+// resolvió en SearchInput/LiquidSelect. Cambiada a focus-within:outline: no
+// compite con data-surface, y no rompe nada en los Form* que aún no tienen
+// data-surface (ahí simplemente se suma sin conflicto). PortalInput —el
+// input estándar del proyecto, "todo formulario nuevo debe reusarlo"— pasa
+// su contenedor a data-surface="input"; estado de error ahora vía outline
+// en vez de !border-red-400 (que hubiera quedado muerto). CatalogSelect
+// limpia un wrapper que envolvía a LiquidSelect con su propio bg/border —
+// ya estaba muerto desde antes (LiquidSelect siempre pintó su propia
+// superficie encima), no es una regresión de este commit.
+// Build + tests verdes.
 
 // v2.43.0 — refactor(theme): pickers de fecha/hora a tokens (T3, lista
 // extendida §9) — TimePicker12, LiquidWeekPicker, LiquidDatePicker,

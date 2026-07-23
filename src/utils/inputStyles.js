@@ -1,9 +1,12 @@
 import { maskDui } from './duiUtils';
 
-// Glow azul de marca (#0052CC) al hover/focus — compartido entre PortalInput
-// y cualquier wrapper de LiquidSelect/LiquidDatePicker que necesite el mismo
-// look (ver EmployeeFormModal.jsx y PracticanteModal.jsx).
-export const inputHoverClass = "transition-all duration-300 hover:shadow-md hover:border-[#0052CC]/40 focus-within:ring-4 focus-within:ring-[#0052CC]/10 focus-within:border-[#0052CC]/50";
+// Glow azul de marca al hover/focus — compartido entre PortalInput y
+// cualquier wrapper de LiquidSelect/LiquidDatePicker que necesite el mismo
+// look (ver EmployeeFormModal.jsx y PracticanteModal.jsx). Usa outline en vez
+// de border/ring: en elementos con data-surface="input" (T3), Tailwind
+// border/box-shadow pierde siempre contra la regla sin @layer de data-surface
+// por cascade layers — outline es una propiedad CSS distinta, no compite.
+export const inputHoverClass = "transition-all duration-300 hover:shadow-md hover:border-brand/40 focus-within:outline focus-within:outline-2 focus-within:outline-offset-0 focus-within:outline-brand/30";
 
 // Máscaras de campos numéricos comunes (DUI/teléfono/ISSS/AFP/cuenta bancaria)
 // — DUI delega en maskDui (utils/duiUtils.js); el resto vive aquí porque no es

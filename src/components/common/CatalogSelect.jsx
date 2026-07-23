@@ -6,11 +6,11 @@ import { OTRA_ESPECIALIDAD, isCatalogOther } from '../../utils/educationCatalogs
 // se renderiza aparte, en el caller, para poder ubicarlo a ancho completo).
 // Usado por cualquier campo respaldado por education_catalog_entries
 // (especialidad, profesión, institución educativa, etc.).
-export const CatalogSelect = ({ value, onChange, options, portalSelectProps, inputHoverClass, hasError, placeholder = 'Seleccionar...', clearable = false }) => {
+export const CatalogSelect = ({ value, onChange, options, portalSelectProps, hasError, placeholder = 'Seleccionar...', clearable = false }) => {
     const isOther = isCatalogOther(value, options);
     const selectValue = isOther ? OTRA_ESPECIALIDAD : value;
     return (
-        <div className={`rounded-[1rem] h-[40px] ${inputHoverClass} ${hasError && !isOther ? '!border-red-400 !bg-red-50/50' : ''}`}>
+        <div className={`h-[40px] ${hasError && !isOther ? 'outline outline-2 outline-danger/50 rounded-input' : ''}`}>
             <LiquidSelect
                 value={selectValue}
                 onChange={(val) => onChange(val)}
@@ -28,9 +28,10 @@ export const CatalogSelect = ({ value, onChange, options, portalSelectProps, inp
 export const CatalogOtherInput = ({ value, onChange, inputHoverClass, hasError, placeholder }) => (
     <input
         type="text"
+        data-surface="input"
         value={value === OTRA_ESPECIALIDAD ? '' : (value || '')}
         onChange={(e) => onChange(e.target.value.toUpperCase())}
         placeholder={placeholder}
-        className={`w-full h-[40px] px-4 bg-white border rounded-[1rem] text-[16px] font-bold text-slate-700 outline-none shadow-sm ${inputHoverClass} ${hasError ? '!border-red-400 !bg-red-50/50' : 'border-slate-200/80'}`}
+        className={`w-full h-[40px] px-4 text-[16px] font-bold text-content outline-none ${inputHoverClass} ${hasError ? 'outline outline-2 outline-danger/50' : ''}`}
     />
 );

@@ -5,8 +5,38 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.37.1';
+export const APP_VERSION = '2.38.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.38.0 — refactor(theme): LiquidSelect.jsx (T3, apalancamiento #6 — el
+// componente compartido más usado del proyecto, "siempre usar LiquidSelect
+// en vez de <select> nativo"). Tenía un segundo sistema de temas propio y
+// obsoleto: un prop theme='light'|'dark' con ~30 ternarios isDark manuales,
+// completamente ajeno al ThemeContext real (liquid/dark/solid/solid-dark).
+// Por default ('light') SIEMPRE renderizaba estilos claros sin importar el
+// tema activo real — un blindspot no detectado hasta ahora porque
+// data-surface="input"/"dropdown" ya estaban puestos en el trigger/dropdown
+// desde antes, pero en un DIV DISTINTO al que realmente pintaba el fondo
+// visible (el pill interno con sus propias clases bg-white/50 etc.),
+// así que la cascada de capas no aplicaba (elementos distintos) y el token
+// nunca ganaba en pantalla. Fix: data-surface="input" se mueve al MISMO
+// elemento que antes tenía el fondo hardcodeado (mismo patrón que
+// DataTable/TablePagination); texto/hover/estados migrados a
+// text-content/text-content-2/text-content-3/bg-brand/text-danger/
+// text-success — se elimina el prop theme y los ~30 ternarios por completo.
+// El anillo de foco en estado abierto usa outline (no box-shadow/border)
+// para no competir con el box-shadow que data-surface ya fija por cascade
+// layers. Los 2 usos legítimos de un panel SIEMPRE oscuro e independiente
+// del tema real (KioskConfigModal, EarlyExitForm — kiosco de asistencia)
+// se resuelven envolviendo el LiquidSelect en <div data-theme="dark">,
+// dejando que la cascada de custom properties haga el trabajo en vez de
+// lógica JS ad-hoc. Los 2 usos con theme="light" en DashboardView (ya
+// vivían en el árbol de tema real) solo perdieron el prop, sin wrapper.
+// Build + tests verdes; verificado con Playwright abriendo el dropdown en
+// liquid/solid/dark: bg y radius del trigger y del dropdown calculados
+// coinciden exacto con --surface-input/--surface-dropdown/--card-radius de
+// cada tema, texto de opciones legible en los 3 (dark: rgba(255,255,255,.62)
+// sobre rgba(15,22,55,.88), AA-consistente con el resto del proyecto).
 
 // v2.37.1 — refactor(theme): TablePagination.jsx (T3, apalancamiento #5 —
 // va siempre pegado a DataTable como footer). 100% hardcoded (slate-*,

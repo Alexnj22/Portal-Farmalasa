@@ -13,7 +13,6 @@ const LiquidSelect = ({
     icon: Icon,
     disabled = false,
     clearable = true,
-    theme = 'light',
     compact = false,
     // Nano: variante ultra-angosta para steppers/celdas de grilla densa
     // (ej. TimePicker12, FormAiSchedulerPreview) — sin ícono izquierdo,
@@ -61,7 +60,6 @@ const LiquidSelect = ({
         isFlipped: false // Indica si se abrió hacia arriba
     });
 
-    const isDark = theme === 'dark';
     const lastCoordsRef = useRef(null);
 
     // --- VARIABLES DINÁMICAS SEGÚN MODO COMPACTO/NANO ---
@@ -270,12 +268,8 @@ const LiquidSelect = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: coords.isFlipped ? 6 : -6 }}
             transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
-            className={`fixed z-[99999] ${coords.transformOrigin} rounded-[1.5rem] overflow-y-auto p-3
-            transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]
-            ${isDark
-                    ? 'bg-[#0A0F1C]/90 backdrop-blur-[40px] backdrop-saturate-[150%] border border-white/10 shadow-[0_24px_50px_rgba(0,0,0,0.5),inset_0_2px_15px_rgba(255,255,255,0.05)]'
-                    : 'bg-white/60 hover:bg-white/70 backdrop-blur-[20px] backdrop-saturate-[150%] border border-white/90 shadow-[0_30px_80px_rgba(0,0,0,0.15),0_15px_30px_rgba(0,0,0,0.1),inset_0_2px_15px_rgba(255,255,255,0.8)] hover:shadow-[0_40px_100px_rgba(0,0,0,0.2),inset_0_2px_15px_rgba(255,255,255,0.9)] hover:-translate-y-0.5'
-                }`}
+            className={`fixed z-[99999] ${coords.transformOrigin} overflow-y-auto p-3
+            transform-gpu scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}
         >
             {/* Si se abre hacia arriba, mostramos los resultados en el mismo orden, pero invertimos la posición del botón "Limpiar/Placeholder" si es necesario. Por UX, es mejor dejarlo arriba */}
             <div className="flex flex-col gap-1 w-full">
@@ -283,23 +277,19 @@ const LiquidSelect = ({
                     <button
                         type="button"
                         onClick={() => handleSelect('')}
-                        className={`w-full text-left px-4 py-3 text-[12px] font-bold rounded-[1.25rem] transition-colors duration-200 border ${
-                            isDark
-                                ? 'bg-transparent text-white/50 border-transparent hover:bg-white/10 hover:text-white'
-                                : 'bg-transparent text-slate-500 border-transparent hover:bg-white/80 hover:text-slate-700'
-                        }`}
+                        className="w-full text-left px-4 py-3 text-[12px] font-bold rounded-[1.25rem] transition-colors duration-200 text-content-3 hover:bg-surface-card-hover hover:text-content"
                     >
                         {clearLabel}
                     </button>
                 )}
                 {isLoading ? (
-                    <div className={`px-4 py-6 text-[12px] font-bold text-center flex items-center justify-center gap-2.5 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
+                    <div className="px-4 py-6 text-[12px] font-bold text-center flex items-center justify-center gap-2.5 text-content-3">
                         <Loader2 size={15} strokeWidth={2.5} className="animate-spin" />
                         Buscando...
                     </div>
                 ) : isLargeList && !searchTerm ? (
-                    <div className={`px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm ${isDark ? 'bg-white/5 text-white/40' : 'bg-white/60'}`}>
+                    <div className="px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 text-content-3">
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-sm bg-surface-card-hover">
                             <Search size={20} strokeWidth={2} />
                         </div>
                         Escribe para buscar
@@ -311,7 +301,7 @@ const LiquidSelect = ({
                         return opt.isSeparator ? (
                             <div
                                 key={opt.value}
-                                className={`px-4 pt-3 pb-1 text-[9px] font-black uppercase tracking-[0.15em] mt-1 border-t first:border-t-0 first:pt-1 ${isDark ? 'text-white/30 border-white/10' : 'text-slate-500 border-slate-100'}`}
+                                className="px-4 pt-3 pb-1 text-[9px] font-black uppercase tracking-[0.15em] mt-1 border-t border-divider first:border-t-0 first:pt-1 text-content-3"
                             >
                                 {opt.label}
                             </div>
@@ -324,22 +314,18 @@ const LiquidSelect = ({
                                 role="option"
                                 aria-selected={String(value) === String(opt.value)}
                                 onClick={() => !opt.disabled && handleSelect(opt.value)}
-                                className={`w-full text-left px-3 py-2.5 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-all duration-200 border flex items-center gap-2.5 ${
+                                className={`w-full text-left px-3 py-2.5 ${textStyle} whitespace-normal break-words leading-tight rounded-[1.25rem] transition-all duration-200 border border-transparent flex items-center gap-2.5 ${
                                     opt.disabled
-                                        ? 'opacity-40 cursor-not-allowed ' + (isDark ? 'bg-transparent text-white/40 border-transparent' : 'bg-transparent text-slate-500 border-transparent')
+                                        ? 'opacity-40 cursor-not-allowed bg-transparent text-content-3'
                                         : String(value) === String(opt.value)
-                                            ? 'bg-[#0052CC] text-white shadow-[0_4px_12px_rgba(0,82,204,0.3)] border-transparent'
+                                            ? 'bg-brand text-white shadow-[0_4px_12px_rgba(0,82,204,0.3)]'
                                             : isHighlighted
-                                                ? isDark
-                                                    ? 'bg-white/10 text-white border-white/20'
-                                                    : 'bg-[#0052CC]/8 text-slate-900 border-[#0052CC]/20'
-                                                : isDark
-                                                    ? 'bg-transparent text-white/80 border-transparent hover:bg-white/10 hover:text-white'
-                                                    : 'bg-transparent text-slate-700 border-transparent hover:bg-white/80 hover:text-slate-900'
+                                                ? 'bg-brand/[0.08] text-content border-brand/20'
+                                                : 'bg-transparent text-content-2 hover:bg-surface-card-hover hover:text-content'
                                 }`}
                             >
                                 {opt.avatar !== undefined && (
-                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-200 border border-white/80 shrink-0 flex items-center justify-center text-[9px] font-black text-slate-500">
+                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-surface-card-hover border border-border-card shrink-0 flex items-center justify-center text-[9px] font-black text-content-3">
                                         {opt.avatar
                                             ? <img src={opt.avatar} alt={opt.label} className="w-full h-full object-cover" />
                                             : (opt.label || '?').charAt(0).toUpperCase()
@@ -350,7 +336,7 @@ const LiquidSelect = ({
                                     <span className="block leading-tight">{opt.label}</span>
                                     {opt.sublabel && (
                                         <span className={`block text-[10px] font-medium leading-tight mt-0.5 ${
-                                            String(value) === String(opt.value) && !opt.disabled ? 'text-white/70' : 'text-slate-500'
+                                            String(value) === String(opt.value) && !opt.disabled ? 'text-white/70' : 'text-content-3'
                                         }`}>
                                             {opt.sublabel}
                                         </span>
@@ -360,15 +346,15 @@ const LiquidSelect = ({
                         );
                     })
                 ) : (
-                    <div className={`px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 ${isDark ? 'text-white/40' : 'text-slate-500'}`}>
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm ${isDark ? 'bg-white/5 text-white/40' : 'bg-white/60'}`}>
+                    <div className="px-4 py-8 text-[12px] font-bold text-center flex flex-col items-center justify-center gap-3 opacity-80 text-content-3">
+                        <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-sm bg-surface-card-hover">
                             <Search size={20} strokeWidth={2} />
                         </div>
                         Sin resultados
                     </div>
                 )}
                 {serverSearch && !searchTerm && !isLoading && (
-                    <div className={`px-4 pt-1 pb-2 text-[10px] font-bold text-center ${isDark ? 'text-white/20' : 'text-slate-500'}`}>
+                    <div className="px-4 pt-1 pb-2 text-[10px] font-bold text-center text-content-3">
                         Escribe para buscar
                     </div>
                 )}
@@ -381,11 +367,7 @@ const LiquidSelect = ({
                             setIsOpen(false);
                             setSearchTerm('');
                         }}
-                        className={`w-full text-left px-3 py-2.5 text-[12px] font-bold rounded-[1.25rem] transition-all border border-transparent flex items-center gap-2 mt-1 ${
-                            isDark
-                                ? 'text-emerald-400 hover:bg-emerald-500/10'
-                                : 'text-emerald-600 hover:bg-emerald-50'
-                        }`}
+                        className="w-full text-left px-3 py-2.5 text-[12px] font-bold rounded-[1.25rem] transition-all flex items-center gap-2 mt-1 text-success hover:bg-success/10"
                     >
                         <Plus size={12} strokeWidth={3} className="shrink-0" />
                         Agregar: <span className="font-black ml-0.5">{searchTerm.trim()}</span>
@@ -395,35 +377,29 @@ const LiquidSelect = ({
         </motion.div>
     );
 
-    const pillBaseClasses = bare
-        ? `w-full rounded-2xl transition-all duration-300 outline-none ${minHeightClass} flex items-center ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} bg-transparent border-transparent shadow-none text-slate-700`
-        : `w-full rounded-2xl transition-all duration-300 outline-none ${minHeightClass} flex items-center ${
-            disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-        } ${
-            isDark
-                ? isOpen
-                    ? 'bg-black/50 border border-[#0052CC] shadow-[0_0_0_4px_rgba(0,82,204,0.15)] text-white'
-                    : 'bg-black/30 backdrop-blur-xl border border-white/10 text-white group-hover:bg-black/40 group-hover:border-white/20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.5)]'
-                : isOpen
-                    ? 'bg-white border border-[#0052CC] shadow-[0_0_0_4px_rgba(0,82,204,0.12)] text-slate-700'
-                    : 'bg-white/50 border border-white/60 shadow-[0_1px_3px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.6)] group-hover:bg-white/70 group-hover:border-white/80 group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-slate-700'
-        }`;
+    // data-surface="input" (mismo token que dropdown/DataTable) va en este
+    // mismo div SOLO si no es bare — bare existe para fundirse en la barra
+    // del padre sin fondo propio, y data-surface siempre pinta su bg/border/
+    // shadow por cascade layers sin importar las clases Tailwind del mismo
+    // elemento, así que no puede convivir con "bg-transparent".
+    const pillBaseClasses = `w-full transition-all duration-300 outline-none ${minHeightClass} flex items-center text-content ${
+        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+    } ${bare ? 'bg-transparent' : ''} ${
+        !bare && isOpen ? 'outline outline-2 outline-offset-0 outline-brand/30' : ''
+    }`;
 
     return (
         <div
-            data-surface="input"
             className={`relative group w-full transition-all duration-300 transform-gpu ${(!isOpen && !disabled && !bare) ? 'hover:-translate-y-0.5' : ''}`}
             ref={selectRef}
         >
             {/* ICONO IZQUIERDO — omitido en nano (steppers/grillas densas sin espacio) */}
             {!nano && (
                 <div className={`absolute ${leftIconPos} top-1/2 -translate-y-1/2 rounded-[0.8rem] flex items-center justify-center transition-colors duration-300 z-10 pointer-events-none ${isOpen
-                        ? 'text-white bg-[#0052CC] shadow-sm'
+                        ? 'text-white bg-brand shadow-sm'
                         : bare
-                            ? 'bg-transparent text-[#0052CC]'
-                            : isDark
-                                ? 'bg-black/40 text-[#0052CC] border border-white/10 shadow-sm shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]'
-                                : 'bg-white/70 text-[#0052CC] border border-white/60 shadow-sm'
+                            ? 'bg-transparent text-brand'
+                            : 'bg-surface-card-hover text-brand border border-border-card shadow-sm'
                     }`}>
                     {isOpen ? <Search size={iconSize} strokeWidth={2.5} /> : (Icon ? <Icon size={iconSize} strokeWidth={2.5} /> : <Search size={iconSize} strokeWidth={2.5} />)}
                 </div>
@@ -434,6 +410,7 @@ const LiquidSelect = ({
                 When open, it stays invisible so the container width doesn't change.
                 The search input is layered on top via absolute positioning.           */}
             <div
+                {...(!bare ? { 'data-surface': 'input' } : {})}
                 className={`${pillBaseClasses} relative`}
                 onClick={handleOpen}
                 role="combobox"
@@ -445,11 +422,11 @@ const LiquidSelect = ({
                 {/* Always-rendered display content — keeps container width stable */}
                 <div className={`w-full ${nano ? 'text-center justify-center' : 'text-left'} ${textStyle} ${paddingStyle} whitespace-nowrap leading-tight flex items-center gap-2
                     ${isOpen ? 'invisible pointer-events-none select-none' : ''}
-                    ${!selectedOption && !isOpen ? (isDark ? 'text-white/40' : 'text-slate-500') : ''}`}>
+                    ${!selectedOption && !isOpen ? 'text-content-3' : ''}`}>
                     {selectedOption ? (
                         <>
                             {selectedOption.avatar !== undefined && (
-                                <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-200 border border-white/80 shrink-0 flex items-center justify-center text-[9px] font-black text-slate-500">
+                                <div className="w-6 h-6 rounded-full overflow-hidden bg-surface-card-hover border border-border-card shrink-0 flex items-center justify-center text-[9px] font-black text-content-3">
                                     {selectedOption.avatar
                                         ? <img src={selectedOption.avatar} alt={selectedOption.label} className="w-full h-full object-cover" />
                                         : (selectedOption.label || '?').charAt(0).toUpperCase()
@@ -459,7 +436,7 @@ const LiquidSelect = ({
                             <span className="flex-1 min-w-0">
                                 <span className="block leading-tight truncate" title={selectedOption.label}>{selectedOption.label}</span>
                                 {selectedOption.sublabel && (
-                                    <span className={`block text-[10px] font-medium leading-tight mt-0.5 truncate ${isDark ? 'opacity-50' : 'text-slate-500'}`}>
+                                    <span className="block text-[10px] font-medium leading-tight mt-0.5 truncate text-content-3">
                                         {selectedOption.sublabel}
                                     </span>
                                 )}
@@ -473,7 +450,7 @@ const LiquidSelect = ({
                     <input
                         ref={inputRef}
                         type="text"
-                        className={`absolute inset-0 w-full bg-transparent border-none outline-none ${nano ? 'text-center' : ''} ${textStyle} ${paddingStyle} ${isDark ? 'text-white placeholder-white/40' : 'text-slate-700 placeholder-slate-400'}`}
+                        className={`absolute inset-0 w-full bg-transparent border-none outline-none ${nano ? 'text-center' : ''} ${textStyle} ${paddingStyle} text-content placeholder:text-content-3`}
                         onChange={(e) => {
                             const val = e.target.value;
                             setSearchTerm(val);
@@ -516,10 +493,7 @@ const LiquidSelect = ({
                     className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-10 outline-none p-1 cursor-pointer flex items-center justify-center`}
                     title="Quitar selección"
                 >
-                    <div className={`w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 group-hover:shadow-sm ${isDark
-                            ? 'bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white'
-                            : 'bg-red-50 hover:bg-red-500 text-red-400 hover:text-white'
-                        }`}>
+                    <div className="w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 group-hover:shadow-sm bg-danger/10 hover:bg-danger text-danger hover:text-white">
                         <X size={12} strokeWidth={3} className="transition-transform duration-300 hover:rotate-90" />
                     </div>
                 </button>
@@ -530,12 +504,12 @@ const LiquidSelect = ({
                     className={`absolute ${rightIconPos} top-1/2 -translate-y-1/2 z-10 outline-none p-0.5 cursor-pointer flex items-center justify-center`}
                 >
                     <div className={`w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 ${isOpen
-                            ? isDark ? 'bg-blue-500/20' : 'bg-blue-50'
-                            : isDark ? 'bg-transparent group-hover:bg-white/10 hover:bg-white/20' : 'bg-transparent group-hover:bg-slate-100 hover:bg-slate-200'
+                            ? 'bg-brand/[0.12]'
+                            : 'bg-transparent group-hover:bg-surface-card-hover hover:bg-surface-card-hover'
                         }`}>
                         <ChevronDown size={iconSize} strokeWidth={3} className={`transition-transform duration-300 ${isOpen
-                                ? 'rotate-180 text-[#0052CC]'
-                                : isDark ? 'text-white/40' : 'text-slate-500'
+                                ? 'rotate-180 text-brand'
+                                : 'text-content-3'
                             }`} />
                     </div>
                 </button>

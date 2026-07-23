@@ -296,6 +296,22 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* Móvil (<1024px): el DOCUMENTO scrollea (body scroll). El contenido debe
+   fluir por debajo del status bar/isla dinámica y de la barra de URL de
+   Safari (que además se colapsa al scrollear) y rebotar nativo — un shell
+   fijo con scroll interno deja la app "enjaulada" entre las barras
+   (reporte del usuario 2026-07-23). Desktop (lg+) mantiene el app-shell
+   fijo con scroll interno de siempre. Es CSS estático: nada de JS
+   revirtiendo estilos (lección P1-3 del plan móvil). */
+@media (max-width: 1023.98px) {
+  html, body, #root {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
+    overscroll-behavior-y: auto;
+  }
+}
+
 html, body {
   scrollbar-width: none;
   -ms-overflow-style: none;

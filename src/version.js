@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.31.2';
+export const APP_VERSION = '2.32.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.32.0 — feat(mobile): body scroll — el documento fluye, adiós al
+// "recuadro". El usuario describió el síntoma exacto del app-shell con
+// scroll interno en Safari iOS: la app enjaulada entre la isla dinámica y
+// la barra de URL, sin fluir por debajo de las barras y sin colapsarlas al
+// scrollear. Cambio de modelo en móvil (<1024px):
+// - index.css: html/body/#root con overflow visible y altura auto bajo
+//   media query (CSS estático, sin hacks JS) — el DOCUMENTO es el scroll.
+// - App.jsx: wrapper autenticado relative/min-h-[100dvh] en móvil (fixed
+//   inset-0 + overflow-hidden solo lg:). ScrollToTop resetea window y
+//   #main-scroll incondicionalmente.
+// - AppLayout: header móvil pasa a sticky top-0 (pegado arriba mientras el
+//   documento scrollea, sigue sin backdrop-filter y sin position:fixed);
+//   #main-scroll deja de ser scroll container en móvil (overflow y
+//   overscroll solo lg:); bottom-tabs vuelven a fixed pero como hermano
+//   directo del root — SIN ancestros con z-index/overflow (el fixed
+//   ANIDADO en contextos de apilamiento era lo que standalone no pintaba)
+//   — con padding compensatorio en #main-scroll para hasSelfOnly.
+// Resultado en Safari: contenido pasa por debajo del status bar y de la
+// barra de URL (translúcidas), la barra se colapsa al scrollear, rebote
+// nativo. En standalone: pantalla completa real. Desktop lg+: intacto
+// (shell fijo + scroll interno de siempre).
 
 // v2.31.2 — fix(mobile): el fondo se extiende bajo la barra inferior de
 // Safari iOS. En Safari (pestaña normal) la barra de URL flotante nunca se

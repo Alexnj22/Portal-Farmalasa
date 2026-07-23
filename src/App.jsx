@@ -182,11 +182,8 @@ function ScrollToTop() {
     const { pathname } = useLocation();
     useEffect(() => {
         const el = document.getElementById('main-scroll');
-        if (el && el.scrollHeight > el.clientHeight) {
-            el.scrollTop = 0;
-        } else {
-            window.scrollTo(0, 0);
-        }
+        if (el) el.scrollTop = 0;
+        window.scrollTo(0, 0);
     }, [pathname]);
     return null;
 }
@@ -545,11 +542,11 @@ function MainApp() {
 
             <Route path="/*" element={
                 isAuthenticated ? (
-                    <div className="fixed inset-0 w-full bg-[#E6F0FF] overflow-hidden flex flex-col">
+                    <div className="relative min-h-[100dvh] lg:min-h-0 lg:fixed lg:inset-0 w-full bg-[#E6F0FF] lg:overflow-hidden flex flex-col">
                         <GlobalBackground />
                         <AuthSyncHelper />
 
-                        <div className="relative z-10 w-full h-full flex flex-col">
+                        <div className="relative z-10 w-full flex-1 flex flex-col">
                             <AppLayout
                                 isOverlayActive={modalOpen || isAuditOverlayActive}
                                 handleLogout={handleLogout}

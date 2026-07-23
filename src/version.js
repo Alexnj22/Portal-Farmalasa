@@ -5,8 +5,19 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.29.1';
+export const APP_VERSION = '2.29.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.29.2 — fix(menu): badge del buscador mostraba ⌘K fijo, símbolo de
+// teclado Mac que no existe en Windows/Linux — el usuario lo notó
+// probando en Windows. El atajo en sí siempre funcionó en ambos
+// (window keydown ya escuchaba metaKey || ctrlKey), pero el hint
+// visual/tooltip estaba hardcodeado. Ahora SHORTCUT_LABEL detecta la
+// plataforma vía navigator.userAgent (Mac/iPhone/iPad/iPod → '⌘K',
+// cualquier otro → 'Ctrl K') y se usa tanto en el badge visible como
+// en el title. Verificado con Playwright spoofeando userAgent de
+// Windows y de Mac por separado: Windows muestra "Ctrl K", Mac sigue
+// mostrando "⌘K".
 
 // v2.29.1 — fix(menu): trigger del buscador menos invasivo, a pedido
 // directo del usuario tras ver v2.29.0 en vivo ("puede ser un ícono, o

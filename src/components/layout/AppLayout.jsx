@@ -119,6 +119,11 @@ function revealOpenedGroup(navEl, headerEl, contentEl) {
     if (target != null) navEl.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
 }
 
+// ⌘ solo existe en teclados Mac — en Windows/Linux el atajo real es Ctrl+K,
+// mostrar el símbolo de Mac ahí sería un ícono incorrecto/confuso.
+const isMacPlatform = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+const SHORTCUT_LABEL = isMacPlatform ? '⌘K' : 'Ctrl K';
+
 const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     const { user, hasPermission, isSU } = useAuth();
     const branches = useStaff((state) => state.branches || []);
@@ -811,12 +816,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                         {/* ── Nav ── */}
                         <nav ref={navRef} aria-label="Navegación principal" className="relative z-10 flex-1 min-h-0 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
-                            {/* Buscador (⌘K) — mismo look que un ítem de nav normal, no un bloque aparte */}
+                            {/* Buscador (atajo de teclado en SHORTCUT_LABEL, Mac vs Windows/Linux) — mismo look que un ítem de nav normal, no un bloque aparte */}
                             <button
                                 type="button"
                                 onClick={() => setSearchOpen(true)}
                                 aria-label="Buscar en el menú"
-                                title="Buscar en el menú (⌘K)"
+                                title={`Buscar en el menú (${SHORTCUT_LABEL})`}
                                 className={`w-full flex items-center gap-2.5 rounded-[1rem] transition-all duration-200 group relative text-left overflow-hidden mb-1
                                     px-3 py-3 xl:px-4 xl:py-3.5
                                     text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]
@@ -827,7 +832,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 {isExpanded && (
                                     <>
                                         <span className="text-[12px] xl:text-[13px] font-medium flex-1 whitespace-nowrap">Buscar</span>
-                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white/[0.08] border border-white/[0.1] text-white/40">⌘K</span>
+                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white/[0.08] border border-white/[0.1] text-white/40 whitespace-nowrap">{SHORTCUT_LABEL}</span>
                                     </>
                                 )}
                             </button>

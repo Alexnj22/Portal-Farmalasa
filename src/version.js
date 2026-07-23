@@ -5,9 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.28.2';
+export const APP_VERSION = '2.29.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.29.0 — feat(menu): buscador global del menú (Cmd/Ctrl+K), a pedido del
+// usuario tras la reestructuración del sidebar (v2.28.x) — con más grupos
+// separados, la queja real era "no sé en cuál grupo metimos X". Nuevo
+// MenuSearchModal.jsx: indexa los módulos ya visibles (filtrados por
+// permiso en AppLayout, igual que el sidebar) contra su label + el label
+// de su grupo + una lista de sinónimos por módulo
+// (constants/menuSearchKeywords.js) usando smartFilter/tokenMatch/
+// fuzzyScore (searchUtils.js, mismo motor que el buscador de Permisos) —
+// así "venta de productos" encuentra Ventas y "fichas de empleados"
+// encuentra Listado (Personal), sin que el usuario sepa el nombre exacto
+// del módulo. Trigger: botón "Buscar" fijo bajo el logo en el sidebar
+// (ícono solo si está colapsado) + ícono en la barra superior móvil +
+// atajo global ⌘K/Ctrl+K. Modal glass centrado (mismo lenguaje visual que
+// ConfirmModal): input con autofoco, resultados con ícono+label+
+// breadcrumb de grupo, navegación por teclado (↑↓ + Enter, con wraparound)
+// y footer de hints. Verificado con Playwright contra vite preview: abre
+// por botón y por ⌘K, "venta de productos"→Ventas, "fichas de
+// empleados"→Listado, query sin match muestra el empty state, Enter sobre
+// "pedidos" navega a /pedidos y cierra el modal. Build de producción
+// limpio.
+//
 // v2.28.2 — refactor(inicio): a pedido del usuario, corrige el alcance de
 // v2.28.1 — solo pidió eliminar "Inicio" (emp_home/EmployeeHomeView), no
 // "Dashboard". Dashboard (overview) PASA A SER Inicio: relabel 'Dashboard'

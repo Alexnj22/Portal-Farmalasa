@@ -7,7 +7,7 @@ import {
     ChevronLeft, ChevronRight, ChevronDown, X, ClipboardList, Palmtree, Lock,
     Home, Bell, FolderOpen, Cake,
     TrendingUp, Tag, Gift, Users, Package, DollarSign, FileText, BarChart2, PenLine, Receipt, Target, FlaskConical, Smartphone,
-    PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes
+    PackageMinus, ShoppingCart, ClipboardCheck, RadioTower, Ghost, Mail, Truck, Boxes, Search
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { fetchVentasPerdidasPendingCount } from '../../data/ventasPerdidas';
@@ -20,6 +20,8 @@ import { useSyncMonitor } from '../../hooks/useSyncMonitor';
 import { useNotificationsChannel } from '../../hooks/useNotificationsChannel';
 import NotificationBell from '../common/NotificationBell';
 import SidebarSyncStatus from '../common/SidebarSyncStatus';
+import MenuSearchModal from './MenuSearchModal';
+import { MODULE_SEARCH_KEYWORDS } from '../../constants/menuSearchKeywords';
 import { APP_VERSION } from '../../version';
 import PushPromptBanner from '../common/PushPromptBanner';
 import OfflineBanner from '../common/OfflineBanner';
@@ -266,6 +268,30 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
             return { ...g, visibleModules };
         }).filter(g => g.visibleModules.length > 0);
     }, [hasPermission]);
+
+    // Índice del buscador de menú (Cmd/Ctrl+K) — mismos módulos ya filtrados
+    // por permiso arriba, con el label del grupo como breadcrumb y sinónimos
+    // de menuSearchKeywords.js para encontrar por lo que el usuario quiere
+    // hacer, no solo por el nombre exacto del módulo.
+    const searchableItems = useMemo(() => {
+        return visibleGroups.flatMap(g =>
+            g.visibleModules
+                .filter(m => !m.comingSoon)
+                .map(m => ({ ...m, groupLabel: g.label, keywords: MODULE_SEARCH_KEYWORDS[m.key] }))
+        );
+    }, [visibleGroups]);
+
+    const [searchOpen, setSearchOpen] = useState(false);
+    useEffect(() => {
+        const onKeyDown = (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                setSearchOpen(true);
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, []);
 
     useEffect(() => {
         const next = {};
@@ -783,6 +809,25 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             )}
                         </div>
 
+                        {/* ── Buscador del menú (Cmd/Ctrl+K) ── */}
+                        <div className={`relative z-10 border-b border-white/[0.06] ${isExpanded ? 'px-3 py-2.5' : 'px-2 py-2.5 flex justify-center'}`}>
+                            <button
+                                type="button"
+                                onClick={() => setSearchOpen(true)}
+                                aria-label="Buscar en el menú"
+                                className={`flex items-center gap-2.5 rounded-xl transition-all duration-200 text-white/50 hover:text-white/85 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] hover:border-white/[0.15] active:scale-[0.98] ${focusRing}
+                                    ${isExpanded ? 'w-full px-3 py-2' : 'w-10 h-10 justify-center'}`}
+                            >
+                                <Search size={16} strokeWidth={2.25} className="shrink-0" />
+                                {isExpanded && (
+                                    <>
+                                        <span className="text-[12px] font-medium flex-1 text-left">Buscar</span>
+                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white/[0.08] border border-white/[0.1] text-white/40">⌘K</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+
                         {/* ── Nav ── */}
                         <nav ref={navRef} aria-label="Navegación principal" className="relative z-10 flex-1 min-h-0 px-2 py-3 space-y-0.5 overflow-y-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
                             <div
@@ -978,6 +1023,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
+                                <button onClick={() => setSearchOpen(true)} type="button" aria-label="Buscar en el menú"
+                                    className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-[#0052CC] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0052CC]/50">
+                                    <Search size={19} strokeWidth={2.5} />
+                                </button>
                                 <NotificationBell variant="mobile" />
                                 <div className="relative w-11 h-11">
                                     <button onClick={() => navigate('/profile')} type="button" aria-label="Mi Perfil"
@@ -1188,6 +1237,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
             <PushPromptBanner />
             <OfflineBanner />
+
+            <MenuSearchModal
+                isOpen={searchOpen}
+                onClose={() => setSearchOpen(false)}
+                items={searchableItems}
+                onNavigate={(path) => { navigate(path); if (isMobile) setIsSidebarOpen(false); }}
+            />
 
         </LayoutGroup>
     );

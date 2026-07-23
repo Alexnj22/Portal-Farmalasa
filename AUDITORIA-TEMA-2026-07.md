@@ -191,7 +191,30 @@ dataviz. Un solo pase de infraestructura; nada visual cambia todavía.
 Orden por apalancamiento: `GlassViewLayout` → `ViewTabBar` → `DataTable` +
 `TablePagination` → `LiquidSelect` → modales (`ModalShell`, `LiquidModal`,
 `UnifiedModal`, `ConfirmModal`, `AlertModal`) → botones/badges/pills → `LiquidToast`,
-`LiquidTooltip`, `BranchChips`, `SearchInput`. Además:
+`LiquidTooltip`, `BranchChips`, `SearchInput`.
+
+**Lista CERRADA de componentes compartidos (agregada 2026-07-23 — mismo criterio
+que el checklist de 110 vistas de T4: "T3 completo" = todos migrados o anotados
+con razón de exclusión, nunca omitidos en silencio).** Además de los del orden
+de arriba, T3 incluye:
+
+- **Overlays/feedback**: `NotificationBell` (campana — 14 usos de glass, de los
+  componentes más cargados), `MenuSearchModal` (⌘K), `PhotoEditorModal`,
+  `ShiftExceptionModal`, banners (`OfflineBanner`, `PushPromptBanner`,
+  `SyncHealthBanner`, `SidebarSyncStatus`).
+- **Pickers de fecha/hora** (la spec de estados la define §8.2 "inputs
+  incompletos"; la migración a tokens ocurre aquí): `LiquidDatePicker`,
+  `LiquidWeekPicker`, `RangeDatePicker`, `PeriodPicker`, `TimePicker12`.
+- **Inputs/selección**: `PortalInput`, `CatalogSelect` (variante de
+  LiquidSelect — migra con él).
+- **Display**: `StatCard`, `LiquidAvatar`, `UserHeader`, `EmployeeDocumentsList`.
+- **Shell**: `AppLayout` (blobs ambient por tema + `bg-page`), `ThemeToggle`
+  (se restyla aquí, se monta en T6).
+- Los `Form*` de `src/components/forms/` (36 archivos) son formularios de
+  dominio, no primitivas: se migran en T4 con su vista dueña, y heredan gratis
+  lo que T3 haga en `UnifiedModal`/`PortalInput`/`LiquidSelect`.
+
+Además:
 
 - `App.jsx:532/548`: `bg-[#E6F0FF]` → `bg-page` (token). Blobs ambient: por tema
   (en dark bajan opacidad; en solid se apagan — ya hay `--backdrop-*: none`, faltan

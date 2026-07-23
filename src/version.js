@@ -5,8 +5,30 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.33.0';
+export const APP_VERSION = '2.34.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.34.0 — feat(theme): Fase T2 del rediseño de tema — prototipo "Solid
+// Modern" + GATE de aprobación. Refina solid/solid-dark (bg-page con tinte
+// frío, radios 12px/16px), agrega ramps de estado (hover/pressed por
+// semántica, derivadas de valores ya usados), escala de elevación 0-3,
+// densidad adaptativa (3 niveles, sidebar auto-colapsa a rail a 1024×768
+// vía isUltraDensity en AppLayout.jsx), blobs ambient apagados en
+// solid/solid-dark. Script de contraste AA nuevo (contrast-check.mjs, sin
+// dependencias) encontró y corrigió un fallo real: --text-tertiary en
+// solid/solid-dark no cumplía AA (2.56:1/2.76:1) — corregido a 4.76:1/4.92:1.
+// ViewTabBar.jsx migrado de verdad a tokens (data-surface="tab-track" +
+// --surface-tab-active, cierra el blindspot de dark mode ya documentado);
+// su duplicado hand-rolled en VentasView.jsx recibió la misma migración.
+// GlassViewLayout.jsx limpiado de clases muertas (confirmado con Playwright
+// que data-surface="card"/"page-header" ya ganaban la cascada sobre las
+// clases Tailwind hardcodeadas — CSS Cascade Layers, unlayered > @layer
+// utilities, sin importar orden ni especificidad). DESIGN.md → v1.3
+// (breakpoints lg:1024 vs md:768 resueltos, densidad documentada, ViewTabBar
+// primer componente con plantilla §8.5). Capturas del gate en
+// docs/audits/tema-2026-07/shots-t2-gate/ — pendiente aprobación del
+// usuario antes de T3. Nota: LoginView.jsx no forma parte de este alcance,
+// no reacciona al tema todavía (gap conocido, no un olvido).
 
 // v2.33.0 — feat(theme): Fase T1 del rediseño de tema — puente Tailwind v4.
 // Bloque de @theme inline en index.css que alía los ~40 tokens de color/

@@ -43,13 +43,19 @@
   --surface-modal:      rgba(240,248,255,0.85);
   --surface-input:      rgba(230,245,255,0.40);
   --surface-dropdown:   rgba(240,248,255,0.72);
-  --surface-tab-track:  rgba(210,235,255,0.35);
+  /* Corregido a los valores REALES de ViewTabBar.jsx (Fase T2) — el token
+     nunca se había consumido antes de T2, y el valor original (rgba(210,
+     235,255,0.35), un azulado) no coincidía con el pill real (bg-white/10).
+     Confirmado por grep: ningún otro archivo depende del valor viejo. */
+  --surface-tab-track:  rgba(255,255,255,0.10);
+  --tab-track-radius:   2.5rem;
+  --tab-track-backdrop: blur(40px) saturate(180%);
 
   --border-card:   rgba(255,255,255,0.72);
   --border-header: rgba(255,255,255,0.75);
   --border-modal:  rgba(255,255,255,0.90);
   --border-input:  rgba(255,255,255,0.78);
-  --border-tab:    rgba(255,255,255,0.70);
+  --border-tab:    rgba(255,255,255,0.90); /* corregido, ver nota arriba (era border-white/90 real, no /70) */
   --border-muted:  rgba(0,82,204,0.06);
 
   --card-shadow:        inset 0 1px 0 rgba(255,255,255,0.85), 0 8px 32px rgba(0,0,0,0.07);
@@ -78,6 +84,11 @@
 
   /* Divisor (el valor slate-200/50 ya es el más repetido en los ~13 usos hardcodeados) */
   --divider: rgba(203,213,225,0.5);
+
+  /* Tab activo en ViewTabBar (net-new, Fase T2) — no es --surface-card:
+     hoy es bg-white opaco liso, regardless of theme (bug de dark mode
+     documentado en DESIGN.md §22, corregido de paso al migrar el componente). */
+  --surface-tab-active: #ffffff;
 
   /* Paleta dataviz categórica (6) — ya son los colores más usados hoy en ese rol (MetasView.jsx) */
   --chart-1: #3b82f6;
@@ -131,6 +142,8 @@
   --border-tab:    rgba(255,255,255,0.08);
   --border-muted:  rgba(120,160,255,0.10);
 
+  --surface-tab-active: rgba(255,255,255,0.14); /* fix blindspot §22: ya no pill blanco puro sobre glass oscuro */
+
   --card-shadow:        inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.50);
   --card-shadow-hover:  inset 0 1px 0 rgba(255,255,255,0.10), 0 16px 40px rgba(0,0,0,0.65);
   --header-shadow:      0 24px 50px -12px rgba(0,0,0,0.60);
@@ -140,15 +153,15 @@
   /* backdrop-* sin cambios: mismo blur, el fondo oscuro se cuela a través del glass */
 }
 
-/* ─── Solid Light ─── */
+/* ─── Solid Light ("Solid Modern", Fase T2) ─── */
 [data-theme="solid"] {
   color-scheme: light;
 
-  --bg-page: #f1f5f9;
+  --bg-page: #f4f6fb;
 
   --text-primary:   #0f172a;
   --text-secondary: #475569;
-  --text-tertiary:  #94a3b8;
+  --text-tertiary:  #64748b; /* corregido Fase T2: #94a3b8 daba 2.56:1 sobre surface-card, FAIL AA (mín 3:1); slate-500 da 4.76:1 */
 
   --surface-card:       rgba(255,255,255,1.00);
   --surface-card-hover: rgba(248,250,252,1.00);
@@ -157,6 +170,7 @@
   --surface-input:      rgba(255,255,255,1.00);
   --surface-dropdown:   rgba(255,255,255,1.00);
   --surface-tab-track:  rgba(241,245,249,1.00);
+  --surface-tab-active: #ffffff;
 
   --border-card:   rgba(148,163,184,0.28);
   --border-header: rgba(148,163,184,0.20);
@@ -172,18 +186,19 @@
   --btn-brand-shadow:   0 4px 14px rgba(0,82,204,0.28);
   --btn-brand-shadow-hover: 0 8px 20px rgba(0,82,204,0.40);
 
-  --card-radius:   0.875rem;
-  --modal-radius:  1.25rem;
+  --card-radius:   0.75rem;  /* 12px, spec §7.2 */
+  --modal-radius:  1rem;     /* 16px, spec §7.2 */
   --header-radius: 0.875rem;
-  --btn-radius:    0.5rem;
+  --btn-radius:    0.5rem;   /* 8px, ya coincidía */
   --input-radius:  0.5rem;
 
   --backdrop-card:   none;
   --backdrop-header: none;
   --backdrop-modal:  none;
+  --tab-track-backdrop: none;
 }
 
-/* ─── Solid Dark ─── */
+/* ─── Solid Dark ("Solid Modern" oscuro, Fase T2) ─── */
 [data-theme="solid-dark"] {
   color-scheme: dark;
 
@@ -191,7 +206,7 @@
 
   --text-primary:   rgba(248,250,252,0.95);
   --text-secondary: rgba(148,163,184,0.90);
-  --text-tertiary:  rgba(100,116,139,0.90);
+  --text-tertiary:  rgba(148,163,184,0.90); /* corregido Fase T2: rgba(100,116,139,.9) daba 2.76:1, FAIL AA; slate-400 da 4.92:1 */
 
   --surface-card:       rgba(30,41,59,1.00);
   --surface-card-hover: rgba(51,65,85,1.00);
@@ -200,6 +215,7 @@
   --surface-input:      rgba(15,23,42,1.00);
   --surface-dropdown:   rgba(30,41,59,1.00);
   --surface-tab-track:  rgba(15,23,42,1.00);
+  --surface-tab-active: rgba(255,255,255,0.10);
 
   --border-card:   rgba(148,163,184,0.12);
   --border-header: rgba(148,163,184,0.08);
@@ -215,8 +231,8 @@
   --btn-brand-shadow:   0 4px 14px rgba(0,82,204,0.45);
   --btn-brand-shadow-hover: 0 8px 20px rgba(0,82,204,0.60);
 
-  --card-radius:   0.875rem;
-  --modal-radius:  1.25rem;
+  --card-radius:   0.75rem;  /* 12px, spec §7.2 */
+  --modal-radius:  1rem;     /* 16px, spec §7.2 */
   --header-radius: 0.875rem;
   --btn-radius:    0.5rem;
   --input-radius:  0.5rem;
@@ -224,6 +240,117 @@
   --backdrop-card:   none;
   --backdrop-header: none;
   --backdrop-modal:  none;
+  --tab-track-backdrop: none;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   DENSIDAD ADAPTATIVA (Fase T2, §7.4) — 3 niveles según ancho Y alto
+   del viewport (la altura es la restricción dura a 1024×768, donde el
+   viewport útil real es ~1024×620). Independiente del tema de color:
+   aplica igual en liquid/dark/solid/solid-dark.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Cómoda (default): ≥1440 ancho Y ≥820 alto */
+  --space-card-padding: 24px;
+  --control-h: 40px;
+  --row-h:     44px;
+  --header-h:  72px;
+  --font-data: 14px;
+}
+@media (max-width: 1439.98px), (max-height: 819.98px) {
+  :root {
+    /* Compacta: <1440 ancho O <820 alto */
+    --space-card-padding: 16px;
+    --control-h: 36px;
+    --row-h:     38px;
+    --header-h:  56px;
+    --font-data: 14px;
+  }
+}
+@media (max-width: 1151.98px), (max-height: 699.98px) {
+  :root {
+    /* Ultra: <1152 ancho O <700 alto (incluye el mínimo soportado, 1024×768) */
+    --space-card-padding: 12px;
+    --control-h: 32px;
+    --row-h:     32px;
+    --header-h:  44px;
+    --font-data: 13px;
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   ESTADOS DE INTERACCIÓN — ramps semánticas (Fase T2, §8.4)
+   Derivados de valores YA usados hoy en el código, no inventados:
+   brand-hover ya es el hover real de los botones CTA (--brand-dark);
+   success/warning/danger usan el siguiente escalón Tailwind (600/700),
+   ya presente en STAT_CFGS y en el patrón bg-red-500 hover:bg-red-600
+   de DESIGN.md §15. Theme-invariantes: el color de marca/semántico no
+   cambia entre temas, solo las superficies/texto a su alrededor.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --brand-hover:   var(--brand-dark); /* #003D99, ya es el hover real hoy */
+  --brand-pressed: #00265c;           /* mismo delta de oscurecimiento aplicado 2 veces */
+
+  --success-hover:   #059669; /* emerald-600 */
+  --success-pressed: #047857; /* emerald-700, ya usado como texto en STAT_CFGS */
+  --warning-hover:   #b45309; /* amber-700 */
+  --warning-pressed: #92400e; /* amber-800 */
+  --danger-hover:    #dc2626; /* red-600, ya usado en bg-red-500 hover:bg-red-600 */
+  --danger-pressed:  #b91c1c; /* red-700 */
+
+  /* Disabled: modificador de opacidad único sobre el color base — ya es la
+     convención existente (disabled:opacity-55 en botones CTA, DESIGN.md §15),
+     no un color nuevo por semántica. */
+  --state-disabled-opacity: 0.55;
+
+  /* Selected: wash genérico de marca — NO varía por semántica (la selección
+     de una fila/tab no cambia de color según contexto). Decisión de diseño
+     NUEVA (no derivada de código existente) — revisar en el gate de T2. */
+  --state-selected-overlay: rgba(0,82,204,0.08);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   ESCALA DE ELEVACIÓN (0-3) — Fase T2, §8.1
+   Nombra lo que ya existe (0-2) y agrega el nivel 3 para flyouts/
+   popovers sobre modales. Al usar var() sobre tokens que sí cambian
+   por tema (--card-shadow, --modal-shadow), --elevation-1/2 reaccionan
+   automáticamente sin declaración por tema.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --elevation-0: none;
+  --elevation-1: var(--card-shadow);
+  --elevation-2: var(--modal-shadow);
+  --elevation-3: 0 48px 120px rgba(0,0,0,0.22), inset 0 2px 0 rgba(255,255,255,0.95);
+}
+[data-theme="dark"] {
+  --elevation-3: 0 48px 120px rgba(0,0,0,0.75), inset 0 2px 0 rgba(255,255,255,0.08);
+}
+[data-theme="solid"] {
+  --elevation-3: 0 24px 64px rgba(0,0,0,0.18), 0 8px 20px rgba(0,0,0,0.10);
+}
+[data-theme="solid-dark"] {
+  --elevation-3: 0 24px 64px rgba(0,0,0,0.55), 0 8px 20px rgba(0,0,0,0.35);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   AMBIENT BLOBS — apagados en Solid Modern (Fase T2, §7.2)
+   Los blobs (AppLayout.jsx) son la fuente #1 de composición GPU
+   constante; Solid Modern promete cero backdrop-filter Y sin blobs.
+   Liquid/dark los conservan sin cambios.
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="solid"] .animate-ambient-drift,
+[data-theme="solid"] .animate-ambient-drift-reverse,
+[data-theme="solid-dark"] .animate-ambient-drift,
+[data-theme="solid-dark"] .animate-ambient-drift-reverse {
+  display: none;
 }
 
 
@@ -267,6 +394,7 @@
   --color-surface-input:      var(--surface-input);
   --color-surface-dropdown:   var(--surface-dropdown);
   --color-surface-tab-track:  var(--surface-tab-track);
+  --color-surface-tab-active: var(--surface-tab-active);
 
   /* Bordes */
   --color-border-card:   var(--border-card);
@@ -319,6 +447,23 @@
   --color-txvol-normal:  var(--txvol-normal);
   --color-txvol-pico:    var(--txvol-pico);
   --color-txvol-critica: var(--txvol-critica);
+
+  /* Estados de interacción (ramps) */
+  --color-brand-hover:     var(--brand-hover);
+  --color-brand-pressed:   var(--brand-pressed);
+  --color-success-hover:   var(--success-hover);
+  --color-success-pressed: var(--success-pressed);
+  --color-warning-hover:   var(--warning-hover);
+  --color-warning-pressed: var(--warning-pressed);
+  --color-danger-hover:    var(--danger-hover);
+  --color-danger-pressed:  var(--danger-pressed);
+  --color-state-selected:  var(--state-selected-overlay);
+
+  /* Elevación (0-3) */
+  --shadow-elevation-0: var(--elevation-0);
+  --shadow-elevation-1: var(--elevation-1);
+  --shadow-elevation-2: var(--elevation-2);
+  --shadow-elevation-3: var(--elevation-3);
 }
 
 
@@ -418,9 +563,9 @@
 [data-surface="tab-track"] {
   background: var(--surface-tab-track);
   border: 1px solid var(--border-tab);
-  border-radius: 1.25rem;
-  backdrop-filter: var(--backdrop-card);
-  -webkit-backdrop-filter: var(--backdrop-card);
+  border-radius: var(--tab-track-radius);
+  backdrop-filter: var(--tab-track-backdrop);
+  -webkit-backdrop-filter: var(--tab-track-backdrop);
 }
 
 

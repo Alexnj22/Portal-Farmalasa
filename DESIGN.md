@@ -192,6 +192,28 @@ Todos los tokens de arriba se alían a namespaces de Tailwind v4 en un bloque `@
 
 Ningún componente consume estas utilidades todavía (Fase T1 es solo infraestructura); la migración vista-por-vista es T3/T4 del plan de `AUDITORIA-TEMA-2026-07.md`.
 
+### 3.2 Fase T2 — refinamiento "Solid Modern" + contrato de tema ampliado
+
+- **`solid`/`solid-dark` refinados** por spec §7: `--bg-page` con tinte frío
+  hacia el brand (`#f4f6fb` en light), radios `--card-radius`/`--modal-radius`
+  ajustados a 12px/16px (antes 14px/20px).
+- **Ramps de estado** (`--brand-hover/-pressed`, `--success/-warning/-danger-
+  hover/-pressed`, `--state-selected-overlay`, `--state-disabled-opacity`):
+  derivadas de valores ya usados en el código (brand-hover = brand-dark ya
+  era el hover real; success/warning/danger toman el siguiente escalón
+  Tailwind 600/700). `--state-selected-overlay` es la única decisión
+  genuinamente nueva (no derivada) — revisar en el gate.
+- **Escala de elevación** `--elevation-0..3`: nombra `--card-shadow`/`--modal-
+  shadow` existentes como niveles 1/2, agrega nivel 3 (flyouts sobre modales).
+- **Script de contraste AA** (`docs/audits/tema-2026-07/contrast-check.mjs`,
+  JS puro sin dependencias): corrigió un fallo real encontrado en Fase T2 —
+  `--text-tertiary` en `solid` (`#94a3b8`, 2.56:1) y `solid-dark`
+  (`rgba(100,116,139,.9)`, 2.76:1) no cumplían AA contra `surface-card`
+  opaco; corregidos a `#64748b`/`rgba(148,163,184,.9)` (4.76:1/4.92:1).
+- **Blobs ambient apagados** en `solid`/`solid-dark` (`display:none` sobre
+  `.animate-ambient-drift*`) — cero composición GPU constante, cumple §7.2.
+- **Densidad adaptativa** — ver tabla completa en §32.
+
 ---
 
 ## 4. Ambient Background
@@ -564,11 +586,43 @@ File: `src/components/common/ViewTabBar.jsx`
 
 Floating header for views with tabs and/or search. Always rendered above the view body.
 
-**Pill surface:** `bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%]` — **hardcoded, dark mode blindspot.**
+**Migrado a tokens en Fase T2 (2026-07-23)** — primer componente documentado
+con la plantilla de anatomía/variantes/estados (§8.5). Ya no es el blindspot
+de dark mode que describía §22 (pill blanco puro sobre glass oscuro,
+corregido con el token net-new `--surface-tab-active`).
 
-**Tab states:** Active: `bg-white text-slate-800`. Inactive: `bg-transparent text-slate-500`.
+**Anatomía:**
+- Contenedor: `data-surface="tab-track"` (nuevo primitivo — `background:
+  var(--surface-tab-track)`, `border: var(--border-tab)`, `border-radius:
+  var(--tab-track-radius)` = 2.5rem, `backdrop-filter: var(--tab-track-backdrop)`).
+  Su sombra flotante (`shadow-[inset_0_2px_10px_...]`) queda como clase
+  bespoke — no forma parte del sistema `data-surface` (es un efecto
+  "pill flotante", no un nivel de elevación del contrato §8.1).
+- Botón de tab: pill `rounded-full`, `h-9 md:h-10` (ViewTabBar) / `h-11
+  min-w-[44px]` (variante con touch target ampliado usada en algunas vistas).
+- Divisor (`dividerCls`, `bg-white/40`) y botón de búsqueda (`bg-brand`)
+  quedan como clases bespoke (no forman parte del contrato de superficies).
 
-**Search pattern:** Search button (hardcoded `bg-[#0052CC]`) expands an input via `isSearchMode` state. Close via `ChevronRight`. Never add local search inputs inside tab components — search lives here only.
+**Variantes/tamaños:** `showSearch={false}` para tab-only bars.
+
+**Matriz de estados:**
+| Estado | Clases |
+|---|---|
+| Tab activo | `bg-surface-tab-active text-content border-surface-tab-active shadow-md scale-[1.02]` |
+| Tab inactivo | `bg-transparent text-content-3 border-transparent` |
+| Tab inactivo, hover | `hover:bg-surface-tab-active hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-surface-tab-active` |
+| Botón buscar | `bg-brand text-white`, hover implícito vía `--brand-hover` (T2) |
+| Input de búsqueda | `text-content-2 placeholder:text-content-3` |
+| Botón limpiar (×) | `text-content-3 hover:text-danger` |
+| Botón cerrar búsqueda | `text-content-3 hover:bg-surface-tab-active hover:text-brand` |
+
+**Duplicado conocido:** `VentasView.jsx` tenía su propia copia hand-rolled de
+este mismo pill (el "structural finding" ya documentado en §32/§23) —
+migrada a los mismos tokens en la misma pasada de T2, pero sigue siendo una
+copia separada del componente; la consolidación real (usar `ViewTabBar` en
+vez de duplicarlo) sigue pendiente para T3/T4.
+
+**Search pattern:** Search button (`bg-brand`) expands an input via `isSearchMode` state. Close via `ChevronRight`. Never add local search inputs inside tab components — search lives here only.
 
 **Usage:**
 ```jsx
@@ -1324,6 +1378,7 @@ Creating a parallel component that duplicates functionality is prohibited. Exten
 |---|---|---|
 | v1.0 | 2026-06-24 | Initial audit — Phases A, B, C complete. 4-theme architecture, full component inventory, accessibility/performance/cross-browser audit. |
 | v1.1 | 2026-07-10 | Fase 4 design/UX audit (`AUDITORIA-2026-07.md`). Added §32 Mobile & Responsive Standard (did not exist before). Fixed project-wide: `active:scale-90/95` → `active:scale-[0.97]` (§31 compliance, ~300 sites), input font-size floor 16px (~170 inputs, iOS zoom fix), touch targets in `ViewTabBar`/`AppLayout` header to 44px, 9 native `<select>` → `LiquidSelect` swaps. Found but NOT fixed (documented only, too large/risky for a mechanical pass): ~1,288 `text-slate-300/400`-on-light-surface contrast violations across 127 files. |
+| v1.3 | 2026-07-23 | Fase T2 de `AUDITORIA-TEMA-2026-07.md` — refinamiento "Solid Modern" (`solid`/`solid-dark`: `--bg-page` tinte frío, radios 12px/16px) + contrato de tema ampliado: ramps de estado (hover/pressed por semántica, derivadas de valores ya usados en el código), escala de elevación 0-3, densidad adaptativa (3 niveles, tokens `--space-card-padding`/`--control-h`/`--row-h`/`--header-h`, sidebar auto-colapsa a rail en nivel "ultra" vía `isUltraDensity` en `AppLayout.jsx`), blobs ambient apagados en solid/solid-dark. Script de contraste AA nuevo (`contrast-check.mjs`, sin dependencias) encontró y corrigió un fallo real: `--text-tertiary` en solid/solid-dark no cumplía AA (2.56:1/2.76:1) contra `surface-card` opaco — corregido a 4.76:1/4.92:1. `ViewTabBar.jsx` migrado de verdad a tokens (primer componente con la plantilla de doc §8.5) — cierra el blindspot de dark mode de §22 vía el token net-new `--surface-tab-active`; su duplicado hand-rolled en `VentasView.jsx` (ya documentado en §32/§23) recibió la misma migración. `GlassViewLayout.jsx` limpiado de clases muertas (confirmado con Playwright que `data-surface="card"`/`"page-header"` ya ganaban la cascada sobre las clases Tailwind hardcodeadas coexistentes — CSS Cascade Layers: lo no-layered de `index.css` siempre gana sobre `@layer utilities` de Tailwind, sin importar orden ni especificidad). §32 resuelve la contradicción de breakpoints (`md:768` vs `lg:1024` real). Corrección de §5 (tokens de `dropdown`/`input`/`tab-track` documentados vs reales). Capturas del gate en `docs/audits/tema-2026-07/shots-t2-gate/` — pendiente aprobación del usuario antes de T3. |
 | v1.2 | 2026-07-23 | Fase T1 de `AUDITORIA-TEMA-2026-07.md` — puente Tailwind v4 (`@theme inline` en `index.css`): tokens de color/radio/sombra existentes ahora son utilidades reales (`bg-surface-card`, `text-content-2`, `rounded-card`, `shadow-modal`, `bg-brand`…). Renombrados los primitivos crudos de radio/sombra (`--radius-card`→`--card-radius` etc.) para evitar autorreferencia circular con el namespace de Tailwind. Tokens net-new: focus-ring, scrim, divisor, paleta dataviz categórica (6), semáforo de riesgo de stock (7 estados reales de `tabminmax/constants.js`, corrige la mención errónea de "MUERTA/NORMAL/PICO/CRÍTICA" — ese es en realidad un semáforo *distinto*, de volumen de transacciones/hora en `DashboardView.jsx`, también tokenizado ahora). Z-index canónico (16 clases) vía `@utility` (Tailwind v4 no tiene namespace `@theme` para z-index). Corregidos de paso: `tailwind.config.js` estaba muerto (el proyecto usa `@tailwindcss/postcss` sin `@config` — confirmado porque Tailwind escaneaba el repo completo, no solo `src/`, incluyendo strings de archivos `.md`); sus 3 animaciones realmente usadas (`wiggle`, `kpi-enter`, `widget-settle`) no generaban NINGÚN CSS en producción (bug silencioso pre-existente en `NotificationBell`/`DashboardView`) — migradas a `@keyframes` nativos en `index.css`, archivo eliminado. `App.jsx:529/545` (`bg-[#E6F0FF]` hardcodeado, rompía dark/solid) → `bg-surface-page`; `AppLayout.jsx:710` scrim hardcodeado → `bg-scrim` (ambos same-value, cero cambio visual, corregidos de inmediato en vez de diferirse a T3 — ver `feedback_fix_violations_immediately` en memoria). §5, §9, §11 corregidos para reflejar el CSS real (tokens de `dropdown`/`input`/`tab-track` que no existían, keyframes fantasma). Cero componentes/vistas migrados a las nuevas utilidades — eso es T3/T4. |
 
 ---
@@ -1352,7 +1407,40 @@ Creating a parallel component that duplicates functionality is prohibited. Exten
 
 ### Breakpoints
 
-Single breakpoint: Tailwind `md:` (768px). Below it = phone layout; at/above it = tablet/desktop. There is no separate `sm:`/`lg:` tier for layout decisions — `sm:` is used only for minor spacing/type-size nudges, never for structural layout switches. Audited viewports: **390×844** (phone) and **768×1024** (tablet).
+**Corregido en Fase T2 (2026-07-23)** — esta sección decía "un solo breakpoint
+`md:768`", pero el shell real (`AppLayout.jsx`) usa `lg:1024` como frontera
+móvil/desktop desde el rediseño del shell móvil (v2.30–v2.32.x). Tabla
+canónica única, sin contradicción:
+
+| Breakpoint | Rol |
+|---|---|
+| `lg:` (1024px) | **Frontera de shell**: por debajo, layout móvil (sidebar overlay, body scroll); en/por encima, app-shell fijo de escritorio. Ésta es la decisión estructural, no `md:`. |
+| `md:` (768px) | Ajustes de **layout interno** dentro de una vista ya en modo desktop o ya en modo móvil (columnas de formulario, tamaño de controles) — nunca decide el modo shell. |
+| `sm:` | Solo nudges menores de spacing/tamaño de tipografía, nunca cambios estructurales. |
+| `1152px` / `1440px` + media queries de **alto** (`<820h`/`<700h`) | **Niveles de densidad** (Fase T2, ver "Densidad Adaptativa" abajo) — cómoda/compacta/ultra, ortogonal al breakpoint de shell. 1024×768 (mínimo soportado) cae en el nivel "ultra". |
+
+Audited viewports (Fase 4, 2026-07-10): **390×844** (phone) y **768×1024** (tablet). Verificados en Fase T2: **1024×768** (ultra), **1366×768 zoom 125%** (~1093×614), **1440×900** (cómoda).
+
+### Densidad Adaptativa (Fase T2, §7.4 `AUDITORIA-TEMA-2026-07.md`)
+
+Tokens en `:root` de `index.css`, reactivos a `@media` de ancho Y alto —
+independientes del tema de color (aplican igual en los 4 temas):
+
+| Token | Cómoda (≥1440w y ≥820h) | Compacta (<1440w o <820h) | Ultra (<1152w o <700h) |
+|---|---|---|---|
+| `--space-card-padding` | 24px | 16px | 12px |
+| `--control-h` | 40px | 36px | 32px |
+| `--row-h` | 44px | 38px | 32px |
+| `--header-h` | 72px | 56px | 44px |
+| `--font-data` | 14px | 14px | 13px |
+
+Se consumen vía sintaxis arbitraria (`p-[var(--space-card-padding)]`,
+`h-[var(--control-h)]`) — no necesitan bridge `@theme` (no son colores/
+radios/sombras, y Tailwind soporta `var()` en valores arbitrarios de forma
+nativa). El sidebar en nivel "ultra" colapsa automáticamente a rail (72-80px,
+`AppLayout.jsx` — `isUltraDensity` fuerza `isSidebarOpen=false` igual que
+`isMobile`, reutilizando el ancho colapsado `w-[4.5rem] xl:w-[5rem]` que ya
+existía como toggle manual).
 
 ### Touch targets — 44×44px minimum (WCAG 2.5.8)
 

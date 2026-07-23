@@ -180,6 +180,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
     const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
     const [isWide, setIsWide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1280);
+    // Densidad "ultra" (§7.4 AUDITORIA-TEMA-2026-07.md): <1152 ancho O <700 alto —
+    // incluye el mínimo soportado 1024×768. Colapsa el sidebar a rail (ya existe
+    // el width w-[4.5rem]/w-[5rem] vía isSidebarOpen=false, solo falta activarlo aquí).
+    const [isUltraDensity, setIsUltraDensity] = useState(() => typeof window !== 'undefined' && (window.innerWidth < 1152 || window.innerHeight < 700));
     const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
     const [openGroups, setOpenGroups] = useState({});
 
@@ -213,6 +217,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         const check = () => {
             setIsMobile(window.innerWidth < 1024);
             setIsWide(window.innerWidth >= 1280);
+            setIsUltraDensity(window.innerWidth < 1152 || window.innerHeight < 700);
         };
         check();
         window.addEventListener('resize', check);
@@ -220,9 +225,11 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
     }, []);
 
     useEffect(() => {
-        if (isMobile) setIsSidebarOpen(false); // eslint-disable-line react-hooks/set-state-in-effect -- abre/cierra el sidebar según breakpoint
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- abre/cierra/colapsa el sidebar según breakpoint
+        if (isMobile) setIsSidebarOpen(false);
+        else if (isUltraDensity) setIsSidebarOpen(false); // rail a densidad ultra (§7.4)
         else setIsSidebarOpen(true);
-    }, [isMobile, isWide]);
+    }, [isMobile, isWide, isUltraDensity]);
 
     useEffect(() => {
         const handler = (e) => setIsSidebarOpen(e.detail);

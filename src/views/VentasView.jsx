@@ -2386,22 +2386,25 @@ export default function VentasView() {
                                      'Buscar producto...';
 
     const filtersContent = (
-        <div className="relative flex items-center bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] rounded-[2.5rem] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
+        // Duplicado histórico del pill de ViewTabBar (DESIGN.md §32/§23 ya lo
+        // documentaba) — migrado a data-surface="tab-track" en la misma pasada
+        // que ViewTabBar.jsx (Fase T2), mismos valores, pixel-igual en liquid.
+        <div data-surface="tab-track" className="relative flex items-center shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)] h-[4rem] md:h-[4.5rem] p-2 md:p-3 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-[2px] transform-gpu w-max max-w-full overflow-hidden">
 
             {/* Search mode */}
             <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] origin-left
                 ${isSearchMode ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3' : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
-                <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
+                <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
                 <input ref={(el) => { if (el && isSearchMode) setTimeout(() => el.focus(), 100) }} type="text" placeholder={searchPlaceholder}
-                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-slate-700 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-slate-400 focus:ring-0"
+                    className="flex-1 bg-transparent border-none outline-none text-[16px] md:text-[16px] font-bold text-content-2 w-[180px] sm:w-[280px] md:w-[380px] placeholder:text-content-3 focus:ring-0"
                     value={rawSearch} onChange={e => setRawSearch(e.target.value)} />
                 {rawSearch && (
-                    <button onClick={() => setRawSearch('')} className="p-1 text-slate-500 hover:text-red-500 transition-colors shrink-0">
+                    <button onClick={() => setRawSearch('')} className="p-1 text-content-3 hover:text-danger transition-colors shrink-0">
                         <X size={16} strokeWidth={2.5} />
                     </button>
                 )}
                 <button onClick={closeSearch}
-                    className="w-11 h-11 rounded-full hover:bg-white text-slate-500 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-[#0052CC] hover:-translate-y-0.5 ml-2">
+                    className="w-11 h-11 rounded-full hover:bg-surface-tab-active text-content-3 flex items-center justify-center shrink-0 transition-all hover:shadow-md hover:text-brand hover:-translate-y-0.5 ml-2">
                     <ChevronRight size={18} strokeWidth={2.5} />
                 </button>
             </div>
@@ -2416,8 +2419,8 @@ export default function VentasView() {
                         <button key={tab.key} onClick={() => { setActiveTab(tab.key); closeSearch(); }}
                             className={`px-3 md:px-4 h-9 md:h-10 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap border shrink-0 flex items-center gap-1.5 ${
                                 activeTab === tab.key
-                                    ? 'bg-white text-slate-800 border-white shadow-md scale-[1.02]'
-                                    : 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90'
+                                    ? 'bg-surface-tab-active text-content border-surface-tab-active shadow-md scale-[1.02]'
+                                    : 'bg-transparent text-content-3 border-transparent hover:bg-surface-tab-active hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-surface-tab-active'
                             }`}>
                             <Icon size={12} strokeWidth={2.5} />
                             <span className="hidden sm:inline">{tab.label}</span>

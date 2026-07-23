@@ -36,18 +36,18 @@ export default function ViewTabBar({
     onSearchChange?.('');
   };
 
-  const pillCls      = 'bg-white/10 backdrop-blur-2xl backdrop-saturate-[180%] border-white/90 shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)]';
-  const activeTabCls = 'bg-white text-slate-800 border-white shadow-md scale-[1.02]';
-  const inactiveTabCls = 'bg-transparent text-slate-500 border-transparent hover:bg-white hover:text-slate-800 hover:-translate-y-0.5 hover:shadow-md hover:border-white/90';
+  const activeTabCls = 'bg-surface-tab-active text-content border-surface-tab-active shadow-md scale-[1.02]';
+  const inactiveTabCls = 'bg-transparent text-content-3 border-transparent hover:bg-surface-tab-active hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-surface-tab-active';
   const dividerCls   = 'bg-white/40';
-  const inputCls     = 'text-slate-700 placeholder:text-slate-400';
-  const closeBtnCls  = 'text-slate-500 hover:bg-white hover:text-[#0052CC] hover:shadow-md';
-  const clearBtnCls  = 'text-slate-500 hover:text-red-500';
+  const inputCls     = 'text-content-2 placeholder:text-content-3';
+  const closeBtnCls  = 'text-content-3 hover:bg-surface-tab-active hover:text-brand hover:shadow-md';
+  const clearBtnCls  = 'text-content-3 hover:text-danger';
 
   return (
-    <div className={`relative flex items-center border transition-all duration-700 ${spring}
-      hover:-translate-y-[2px] transform-gpu rounded-[2.5rem]
-      h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max max-w-full ${pillCls}`}>
+    <div data-surface="tab-track" className={`relative flex items-center transition-all duration-700 ${spring}
+      hover:-translate-y-[2px] transform-gpu
+      h-[4rem] md:h-[4.5rem] p-2 md:p-3 w-max max-w-full
+      shadow-[inset_0_2px_10px_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.05)] hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.4),0_8px_24px_rgba(0,0,0,0.08)]`}>
 
       {/* Search mode */}
       <div className={`flex items-center h-full shrink-0 transform-gpu overflow-hidden

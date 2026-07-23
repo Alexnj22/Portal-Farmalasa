@@ -28,9 +28,11 @@ const GlassViewLayout = ({
         scrollContainerRef.current?.scrollTo({ top: pos, behavior: 'smooth' });
     }, []);
 
-    const bodyCardCls = transparentBody
-        ? 'bg-transparent'
-        : 'bg-white/[0.12] backdrop-blur-[44px] backdrop-saturate-[200%] border border-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.80),0_14px_40px_rgba(0,0,0,0.05)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.08)] hover:-translate-y-[2px] rounded-[1.5rem] lg:rounded-[2.5rem] transition-[transform,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]';
+    // bg-transparent para transparentBody (no lleva data-surface); el resto del
+    // material (fondo/borde/sombra/radio/transición/hover) ya lo aplica
+    // data-surface="card" en index.css — verificado que gana la cascada
+    // sobre cualquier clase Tailwind equivalente aquí (Fase T2).
+    const bodyCardCls = transparentBody ? 'bg-transparent' : '';
 
     const floatBtn = 'w-10 h-10 rounded-2xl flex items-center justify-center';
     const floatStyle = {
@@ -52,18 +54,17 @@ const GlassViewLayout = ({
                 }`}
                 onScroll={handleInternalScroll}
             >
-                {/* Desktop sticky header — single element (sticky + backdrop-filter fused) to
-                    avoid the double compositor-layer boundary that breaks blur in Chrome.       */}
+                {/* Material (fondo/borde/sombra/radio/backdrop/transición/hover) lo aplica
+                    data-surface="page-header" en index.css — las clases que antes
+                    duplicaban esos valores (y el style inline de backdrop-filter, que
+                    por especificidad SIEMPRE hubiera ganado sobre el token si el tema
+                    cambiaba el blur) se retiraron en Fase T2; solo quedan layout/spacing. */}
                 <div data-surface="page-header"
                     className="hidden lg:block lg:sticky lg:top-6 xl:top-7 z-40
                         mt-6 xl:mt-7 mx-6 xl:mx-8 mb-0
-                        group/header border rounded-[2.5rem]
-                        bg-white/[0.14] border-white/80
-                        shadow-[0_24px_50px_-12px_rgba(0,0,0,0.18)] hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.22)]
-                        hover:-translate-y-[1px]
-                        py-6 px-10 xl:py-7 xl:px-12 relative
-                        transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
-                    style={{ backdropFilter: 'blur(32px) saturate(280%)', WebkitBackdropFilter: 'blur(32px) saturate(280%)', willChange: 'backdrop-filter' }}>
+                        group/header
+                        py-6 px-10 xl:py-7 xl:px-12 relative"
+                    style={{ willChange: 'backdrop-filter' }}>
 
                         <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-b from-white/60 to-transparent pointer-events-none" />
 

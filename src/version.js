@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.35.0';
+export const APP_VERSION = '2.36.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.36.0 — feat(components): Button y Badge compartidos — inicio de Fase T3.
+// No existían como componentes (DESIGN.md §15, AUDITORIA-TEMA-2026-07.md
+// §9.1: 214 badges inline hoy). Diseño aprobado en la lámina de componentes
+// T2.3 tras 3 rondas de mockup: normal-case en vez de mayúsculas con
+// tracking (comparado lado a lado — las mayúsculas leían "dashboard 2016"),
+// sombras en capas para profundidad real, colores de badge verificados AA
+// contra su propio tinte (success 4.79:1, warning 5.80:1, danger 6.03:1,
+// info 5.59:1). 100% tokens (rounded-btn/rounded-badge, brand-hover,
+// success/warning/danger) — verificado con Playwright que reaccionan
+// correctamente al cambiar de tema liquid→solid (radio pill→8px, fondo
+// glass→opaco) sin tocar el componente. Button: variant
+// (primary/secondary/ghost/destructive) × size (sm/md), icon, iconOnly,
+// loading, disabled. Badge: variant (success/warning/danger/info/neutral) +
+// dot. Cero vistas migradas todavía — eso es el resto de T3/T4.
 
 // v2.35.0 — feat(nav): identidad decorativa del logo aplicada al sidebar real
 // + dropdown de tabs en móvil. AppLayout.jsx: los 3 blobs ambientales del

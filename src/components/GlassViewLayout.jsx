@@ -83,7 +83,7 @@ const GlassViewLayout = ({
                                                 )}
                                             </div>
                                         )}
-                                        <h2 className="font-bold text-[16px] xl:text-[17px] tracking-tight text-slate-900">
+                                        <h2 className="font-bold text-[16px] xl:text-[17px] tracking-tight text-content">
                                             {title}
                                         </h2>
                                     </div>
@@ -115,7 +115,7 @@ const GlassViewLayout = ({
                                         )}
                                     </div>
                                 )}
-                                <h2 className="font-bold text-[16px] tracking-tight truncate text-slate-800">
+                                <h2 className="font-bold text-[16px] tracking-tight truncate text-content">
                                     {title}
                                 </h2>
                             </>

@@ -5,8 +5,15 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.36.0';
+export const APP_VERSION = '2.36.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.36.1 — fix(theme): GlassViewLayout.jsx último hardcodeo de color en el
+// título (T3, apalancamiento #1 del orden de migración). text-slate-900
+// (desktop) / text-slate-800 (móvil) → text-content en ambos — unifica un
+// par que ya estaba inconsistente entre sí (900 vs 800) a un solo valor
+// reactivo al tema (--text-primary). El resto del componente (fondo/borde/
+// sombra/radio del header y del body) ya reaccionaba a tokens desde T2.
 
 // v2.36.0 — feat(components): Button y Badge compartidos — inicio de Fase T3.
 // No existían como componentes (DESIGN.md §15, AUDITORIA-TEMA-2026-07.md

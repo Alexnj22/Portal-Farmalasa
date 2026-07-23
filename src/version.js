@@ -5,8 +5,31 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.45.0';
+export const APP_VERSION = '2.45.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.45.1 — refactor(theme): AppLayout.jsx, limpieza final de T3 (header/nav
+// móvil). El resto del archivo (sidebar, flyouts) ya estaba correctamente
+// migrado en sesiones previas — confirmado que su paleta bg-[#07031a]/
+// blanco-opacidad es intencional (rail siempre oscuro por diseño, 2026-07-23)
+// y NO debía tocarse. El gap real: el header móvil sticky y el bottom-nav
+// tienen fondo fijo NO reactivo a propósito (comentario ya existente en el
+// código: "SIN backdrop-filter" — bug de compositor en standalone iOS ya
+// resuelto y verificado en dispositivo real, ver v2.32.1). Botones/título/
+// íconos dentro SÍ estaban hardcodeados sin razón y se migraron a
+// text-brand/bg-brand (seguro: --brand es constante entre los 4 temas, se
+// declara una sola vez en la raíz, igual que danger/success/warning).
+// ERROR ATRAPADO EN VERIFICACIÓN: el primer intento migró también
+// texto/superficie con tokens que SÍ varían por tema (text-content,
+// bg-divider, bg-surface-card) — con Playwright en dark theme, "Portal"
+// salía blanco sobre el fondo claro fijo, ilegible. Revertido a los colores
+// literales originales (texto siempre oscuro, ya que el fondo siempre es
+// claro) — exactamente el mismo criterio que ThemeToggle.jsx/
+// SidebarSyncStatus.jsx (superficie fija → NUNCA usar tokens que varían).
+// ThemeToggle.jsx no se tocó: ya usa colores fijos correctos para su
+// contexto (rail oscuro), y no está montado en ningún lado todavía (T6).
+// Build + tests verdes; verificado con Playwright en viewport iPhone 13,
+// liquid y dark — texto legible en ambos.
 
 // v2.45.0 — refactor(theme): StatCard/LiquidAvatar/EmployeeDocumentsList a
 // tokens + elimina UserHeader.jsx (T3, cierra la lista extendida §9 antes

@@ -1007,28 +1007,36 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                             boxShadow: '0 4px 20px rgba(110,70,220,0.10)',
                         }}
                     >
+                        {/* Nota: el fondo de esta barra es fijo (no reactivo al tema, ver
+                            comentario arriba — sin backdrop-filter por bug de compositor
+                            standalone iOS). Los colores de texto/ícono de ESTE bloque se
+                            dejan literales a propósito, no tokens de texto/superficie que
+                            varían por tema: si reaccionaran al tema quedarían ilegibles
+                            sobre este fondo claro fijo en dark/solid-dark. Solo brand/
+                            danger/success/warning son seguros aquí porque son constantes
+                            entre los 4 temas (declarados una sola vez en la raíz). */}
                         <div className="flex items-center justify-between px-4 py-2.5">
                             <div className="flex items-center gap-4">
                                 <button onClick={() => setIsSidebarOpen(true)} type="button" aria-label="Abrir menú"
-                                    className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-[#0052CC] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0052CC]/50">
+                                    className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
                                     <Menu size={22} strokeWidth={2.5} />
                                 </button>
                                 <div className="w-px h-6 rounded-full bg-slate-300/50" />
                                 <div className="flex flex-col justify-center">
                                     <h1 className="text-[14px] font-black leading-none tracking-tight text-slate-800">Portal</h1>
-                                    <p className="text-[8px] font-bold uppercase tracking-[0.2em] mt-0.5 text-[#0052CC]">La Salud</p>
+                                    <p className="text-[8px] font-bold uppercase tracking-[0.2em] mt-0.5 text-brand">La Salud</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <button onClick={() => setSearchOpen(true)} type="button" aria-label="Buscar en el menú"
-                                    className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-[#0052CC] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0052CC]/50">
+                                    className="p-3 -m-3 rounded-xl active:scale-[0.97] transition-[color,transform] text-[#030B1C] hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
                                     <Search size={19} strokeWidth={2.5} />
                                 </button>
                                 <NotificationBell variant="mobile" />
                                 <div className="relative w-11 h-11">
                                     <button onClick={() => navigate('/profile')} type="button" aria-label="Mi Perfil"
-                                        className="w-11 h-11 rounded-[1.4rem] shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-white border-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0052CC]/50">
-                                        <div className="absolute inset-0 bg-[#0052CC]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        className="w-11 h-11 rounded-[1.4rem] shadow-md overflow-hidden active:scale-[0.97] transition-all flex items-center justify-center relative group hover:shadow-lg border bg-white border-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50">
+                                        <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                                         {user?.photo ? <img src={user.photo} className="w-full h-full object-cover" alt="" /> : <User size={18} className="text-slate-400" />}
                                     </button>
                                     {myBirthday && (
@@ -1068,16 +1076,17 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                                     const badge = getBadge(key);
                                     return (
                                         <button key={key} onClick={() => navigate(path)} type="button" aria-current={isActive ? 'page' : undefined}
-                                            className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-[1.25rem] transition-all duration-200 flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0052CC]/50 ${isActive ? 'bg-[#0052CC]/10' : 'hover:bg-slate-100/60'}`}>
+                                            className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-[1.25rem] transition-all duration-200 flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${isActive ? 'bg-brand/10' : 'hover:bg-slate-100/60'}`}>
                                             <div className="relative">
-                                                <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-[#0052CC]' : 'text-slate-500'} />
+                                                {/* fondo de esta barra fijo/no-reactivo — texto/ícono inactivo literal a propósito, ver nota en el header móvil de arriba */}
+                                                <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className={isActive ? 'text-brand' : 'text-slate-500'} />
                                                 {badge > 0 && (
-                                                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                                                    <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-danger text-white text-[9px] font-black rounded-full flex items-center justify-center">
                                                         {badge > 9 ? '9+' : badge}
                                                     </span>
                                                 )}
                                             </div>
-                                            <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isActive ? 'text-[#0052CC]' : 'text-slate-600'}`}>{label}</span>
+                                            <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isActive ? 'text-brand' : 'text-slate-600'}`}>{label}</span>
                                         </button>
                                     );
                                 })}

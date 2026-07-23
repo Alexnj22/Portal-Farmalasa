@@ -5,9 +5,25 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.30.2';
+export const APP_VERSION = '2.30.3';
 export const APP_AUTHOR  = 'Edwin Nunez';
 
+// v2.30.3 — fix(mobile): GlobalBackground seguía en 100dvh crudo, no
+// migrado en v2.30.2. Auditoría completa de todo `h-[100dvh]` en el shell
+// autenticado: la capa de fondo ambiental (blur orbs, primer hijo dentro
+// del wrapper ya migrado) seguía sin usar `--app-100dvh`. Corregido por
+// consistencia — pero medido en vivo con Playwright ANTES de este cambio
+// ya mostraba el wrapper, #main-scroll y el contenido correctamente
+// dimensionados (664px exactos, sin holgura), así que esta inconsistencia
+// específica no explica el bug reportado por el usuario (persiste tras
+// 3 intentos — v2.30.0/1/2 — en su dispositivo real, nunca reproducido en
+// dev, build de producción, ni la URL real vía Playwright/WebKit). Este
+// entorno no tiene Xcode.app (solo Command Line Tools, sin simulador) ni
+// Android SDK/emulador — sin acceso a un dispositivo real o simulador,
+// diagnosticar más a ciegas no es productivo; el siguiente paso requiere
+// datos en vivo del dispositivo real del usuario (Safari Remote Web
+// Inspector o info de modelo/versión de iOS).
+//
 // v2.30.2 — fix(mobile): 100dvh medido por JS en vez de confiar en el CSS
 // nativo. El usuario confirmó que v2.30.1 (revert de header/tabs a fixed)
 // NO resolvió nada — mismos síntomas exactos: ☰ ausente en modo standalone

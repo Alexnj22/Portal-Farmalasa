@@ -2455,7 +2455,7 @@ export default function VentasView() {
                     {privacyMode ? <EyeOff size={16} strokeWidth={2.5} /> : <Eye size={16} strokeWidth={2.5} />}
                 </button>
                 <button onClick={openSearch}
-                    className="w-11 h-11 bg-[#0052CC] text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:bg-[#003D99] hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
+                    className="w-11 h-11 bg-brand text-white rounded-full flex items-center justify-center shrink-0 shadow-[0_3px_8px_rgba(0,82,204,0.4)] transition-all duration-300 hover:bg-brand-hover hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative">
                     <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
                     {rawSearch && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />}
                 </button>

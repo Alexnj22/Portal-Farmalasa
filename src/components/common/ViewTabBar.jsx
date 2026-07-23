@@ -60,7 +60,7 @@ export default function ViewTabBar({
           ? 'max-w-[600px] opacity-100 px-4 md:px-5 gap-3'
           : 'max-w-0 opacity-0 pointer-events-none px-0 gap-0 m-0'}`}>
 
-        <Search size={18} className="text-[#0052CC] shrink-0" strokeWidth={2.5} />
+        <Search size={18} className="text-brand shrink-0" strokeWidth={2.5} />
         <input
           ref={inputRef}
           type="text"
@@ -134,7 +134,7 @@ export default function ViewTabBar({
           <button onClick={openSearch}
             className="w-11 h-11 rounded-full flex items-center justify-center shrink-0
               transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97] transform-gpu relative
-              bg-[#0052CC] text-white shadow-[0_3px_8px_rgba(0,82,204,0.4)] hover:bg-[#003D99]">
+              bg-brand text-white shadow-[0_3px_8px_rgba(0,82,204,0.4)] hover:bg-brand-hover">
             <Search size={16} strokeWidth={3} className="md:w-[18px] md:h-[18px]" />
             {searchValue && (
               <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-red-500 border-2 border-white rounded-full" />

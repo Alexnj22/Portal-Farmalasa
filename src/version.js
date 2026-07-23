@@ -5,8 +5,14 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.36.1';
+export const APP_VERSION = '2.36.2';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.36.2 — fix(theme): ViewTabBar.jsx y su duplicado en VentasView.jsx
+// (T3) — el ícono y el botón de búsqueda usaban #0052CC/#003D99 crudos,
+// valores exactos de --brand/--brand-hover ya bridged desde T1/T2. Ahora
+// text-brand / bg-brand hover:bg-brand-hover. Mismo valor, cero cambio
+// visual (verificado con Playwright) — pura consolidación de hex duplicado.
 
 // v2.36.1 — fix(theme): GlassViewLayout.jsx último hardcodeo de color en el
 // título (T3, apalancamiento #1 del orden de migración). text-slate-900

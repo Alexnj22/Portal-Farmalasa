@@ -438,16 +438,25 @@ inferior). Decisión adoptada para **todo el proyecto de aquí en adelante**:
   `--logo-green`, `--logo-magenta`, `--logo-green-soft`, `--logo-magenta-soft`
   → utilidades `text-logo-green`, `bg-logo-magenta`, etc. Documentado en
   DESIGN.md §6 (v1.4).
-- **Aplicado hasta ahora**: solo el prototipo interactivo del sidebar
-  (glow ambiental verde arriba/magenta abajo eco de la composición real del
-  logo, barra de acento del ítem activo, ícono activo, logo real embebido
-  en vez de placeholder).
-- **Pendiente** (cuando el sidebar/header pasen de prototipo a código real
-  en T3, o antes si se decide adelantarlo): extender a los 5 blobs
-  ambientales globales de `AppLayout.jsx` (hoy `rgba(110,70,230,…)` violeta,
-  `rgba(60,100,240,…)` azul, etc. — sin relación con el logo), y a cualquier
-  glow/acento decorativo nuevo que se diseñe de aquí en adelante. No aplica
-  a elementos funcionales (botones, links, focus) — esos siguen en `--brand`.
+- **Aplicado en código real (v2.35.0, 2026-07-23)**, tras 3 rondas de mockup +
+  un prototipo interactivo con aprobación explícita: `AppLayout.jsx` — los 3
+  blobs ambientales del sidebar (verde arriba/magenta abajo, eco de la
+  composición real del logo), el shimmer superior e inferior del header del
+  sidebar, el glow/borde del botón de logo, el ícono de nav activo
+  (`text-logo-magenta-soft`), la barra de acento (`from-logo-green to-logo-magenta`)
+  y el fondo/borde de la pill activa. Verificado con Playwright en desktop y
+  móvil (iPhone 13, drawer incluido) — cero errores de consola.
+- **De paso, también en código real**: `ViewTabBar.jsx` y el duplicado de
+  `VentasView.jsx` — la fila de tabs solo se muestra en desktop (`lg:`); en
+  móvil se reemplaza por un `LiquidSelect` compacto con el tab activo
+  (ícono + label), resolviendo el caso de Pedidos a Sucursales (5 tabs,
+  labels largos) sin truncar ni competir por ancho horizontal.
+- **Pendiente**: extender la paleta a los 5 blobs ambientales GLOBALES de
+  `AppLayout.jsx` (el fondo detrás de `<main>`, hoy `rgba(110,70,230,…)`
+  violeta, `rgba(60,100,240,…)` azul, etc. — sin relación con el logo, fuera
+  del alcance de esta sesión que se limitó al sidebar), y a cualquier glow/
+  acento decorativo nuevo que se diseñe de aquí en adelante. No aplica a
+  elementos funcionales (botones, links, focus) — esos siguen en `--brand`.
 
 ## 8. Contrato de completitud del design system (auditoría 2026-07-23)
 

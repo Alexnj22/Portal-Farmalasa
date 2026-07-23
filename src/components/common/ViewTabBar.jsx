@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Search, X, ChevronRight } from 'lucide-react';
+import LiquidSelect from './LiquidSelect';
 
 const spring = 'ease-[cubic-bezier(0.23,1,0.32,1)]';
 
@@ -35,6 +36,9 @@ export default function ViewTabBar({
     setIsSearchMode(false);
     onSearchChange?.('');
   };
+
+  const activeTabObj = tabs.find(t => t.key === activeTab);
+  const ActiveTabIcon = activeTabObj?.icon || activeTabObj?.Icon;
 
   const activeTabCls = 'bg-surface-tab-active text-content border-surface-tab-active shadow-md scale-[1.02]';
   const inactiveTabCls = 'bg-transparent text-content-3 border-transparent hover:bg-surface-tab-active hover:text-content hover:-translate-y-0.5 hover:shadow-md hover:border-surface-tab-active';
@@ -87,21 +91,42 @@ export default function ViewTabBar({
           ? 'max-w-0 opacity-0 pointer-events-none pl-0 pr-0 gap-0 m-0'
           : 'max-w-[900px] opacity-100 pl-2 pr-1 md:pr-2 gap-1 md:gap-1.5'}`}>
 
-        {tabs.map(tab => {
-          const TabIcon = tab.icon || tab.Icon;
-          const isActive = tab.key === activeTab;
-          return (
-            <button key={tab.key}
-              onClick={() => { onTabChange?.(tab.key); setIsSearchMode(false); }}
-              className={`px-3 md:px-4 h-11 min-w-[44px] justify-center rounded-full text-[9px] md:text-[10px] font-black
-                uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap
-                border shrink-0 flex items-center gap-1.5
-                ${isActive ? activeTabCls : inactiveTabCls}`}>
-              {TabIcon && <TabIcon size={12} strokeWidth={2.5} />}
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          );
-        })}
+        {/* Desktop (lg+): fila de botones, una por tab. */}
+        <div className="hidden lg:flex items-center gap-1 md:gap-1.5">
+          {tabs.map(tab => {
+            const TabIcon = tab.icon || tab.Icon;
+            const isActive = tab.key === activeTab;
+            return (
+              <button key={tab.key}
+                onClick={() => { onTabChange?.(tab.key); setIsSearchMode(false); }}
+                className={`px-3 md:px-4 h-11 min-w-[44px] justify-center rounded-full text-[9px] md:text-[10px] font-black
+                  uppercase tracking-widest transition-all duration-300 transform-gpu whitespace-nowrap
+                  border shrink-0 flex items-center gap-1.5
+                  ${isActive ? activeTabCls : inactiveTabCls}`}>
+                {TabIcon && <TabIcon size={12} strokeWidth={2.5} />}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Móvil (<lg): dropdown con el tab activo en vez de la fila de botones —
+            con 4-5 tabs (o labels largos como "Reglas de despacho" en Pedidos)
+            la fila competía por ancho o se truncaba. Reusa LiquidSelect (regla
+            del proyecto: nunca un <select> nativo ni un dropdown nuevo). */}
+        {tabs.length > 0 && (
+          <div className="flex lg:hidden w-[150px] sm:w-[190px]">
+            <LiquidSelect
+              value={activeTab}
+              onChange={(key) => { onTabChange?.(key); setIsSearchMode(false); }}
+              options={tabs.map(t => ({ value: t.key, label: t.label }))}
+              icon={ActiveTabIcon}
+              clearable={false}
+              compact
+              bare
+            />
+          </div>
+        )}
 
         {showSearch && tabs.length > 0 && <div className={`h-6 w-px mx-1 shrink-0 ${dividerCls}`} />}
 

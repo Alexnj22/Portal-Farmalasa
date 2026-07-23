@@ -5,8 +5,21 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.34.1';
+export const APP_VERSION = '2.35.0';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.35.0 — feat(nav): identidad decorativa del logo aplicada al sidebar real
+// + dropdown de tabs en móvil. AppLayout.jsx: los 3 blobs ambientales del
+// sidebar, el shimmer superior, el glow/borde del logo, el ícono activo y la
+// barra de acento de nav ahora usan --logo-green/--logo-magenta (antes
+// violeta/índigo genérico sin relación con la marca) — verificado visualmente
+// en desktop y móvil (iPhone 13), drawer incluido. ViewTabBar.jsx y el
+// duplicado de VentasView.jsx: la fila de tabs solo se muestra en desktop
+// (lg+); en móvil se reemplaza por un LiquidSelect compacto con el tab activo
+// (ícono + label), resuelve el caso de Pedidos a Sucursales (5 tabs, labels
+// largos como "Reglas de despacho") sin truncar ni competir por ancho.
+// Ambos cambios ya habían pasado por 3 rondas de mockup + un prototipo
+// interactivo con aprobación explícita antes de tocar el código real.
 
 // v2.34.1 — feat(theme): tokens de identidad decorativa desde el logo real.
 // --logo-green (#8ec30f) y --logo-magenta (#981d97) muestreados por pixel de

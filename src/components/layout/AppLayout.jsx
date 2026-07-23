@@ -495,10 +495,10 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
         } : undefined;
 
         const navItemInactive   = 'text-white/60 hover:text-white/95 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.08)]';
-        const iconActiveColor   = 'text-violet-200';
+        const iconActiveColor   = 'text-logo-magenta-soft';
         const iconInactiveColor = 'text-white/42 group-hover:text-white/80';
         const accentBarInactive = 'bg-white/20';
-        const accentBarActive   = 'bg-gradient-to-b from-violet-300 via-indigo-400 to-blue-400 shadow-[0_0_10px_rgba(139,92,246,0.7)]';
+        const accentBarActive   = 'bg-gradient-to-b from-logo-green to-logo-magenta shadow-[0_0_10px_rgba(152,29,151,0.6)]';
 
         if (comingSoon) {
             return (
@@ -655,7 +655,7 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         size={20}
                         strokeWidth={hasActiveChild ? 2 : 1.5}
                         className={`flex-shrink-0 transition-all duration-300 ${hasActiveChild
-                            ? 'text-violet-200 scale-110'
+                            ? 'text-logo-magenta-soft scale-110'
                             : 'text-white/42 group-hover:text-white/80 group-hover:scale-110'}`}
                     />
                     {isExpanded && (
@@ -741,10 +741,12 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         border border-white/[0.10]
                         shadow-[inset_1px_0_0_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.15),0_0_0_1px_rgba(0,0,0,0.5),0_32px_64px_rgba(0,0,0,0.40)]">
 
+                        {/* Eco del logo real (public/Logo512.png): verde arriba, magenta abajo —
+                            reemplaza el violeta/azul genérico sin relación con la marca (2026-07-23) */}
                         <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[2.5rem]" style={{ zIndex: 0 }}>
-                            <div className="animate-ambient-drift absolute rounded-full" style={{ width:'220px', height:'220px', top:'-10%', left:'-30%', background:'radial-gradient(circle, rgba(139,92,246,0.28) 0%, transparent 70%)', filter:'blur(20px)', animationDuration:'14s' }} />
-                            <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'170px', height:'170px', bottom:'8%', right:'-25%', background:'radial-gradient(circle, rgba(59,130,246,0.22) 0%, transparent 70%)', filter:'blur(16px)', animationDuration:'18s', animationDelay:'5s' }} />
-                            <div className="animate-ambient-drift absolute rounded-full" style={{ width:'130px', height:'130px', top:'42%', right:'-15%', background:'radial-gradient(circle, rgba(168,85,247,0.18) 0%, transparent 70%)', filter:'blur(14px)', animationDuration:'11s', animationDelay:'2s' }} />
+                            <div className="animate-ambient-drift absolute rounded-full" style={{ width:'220px', height:'220px', top:'-10%', left:'-30%', background:'radial-gradient(circle, rgba(142,195,15,0.26) 0%, transparent 70%)', filter:'blur(20px)', animationDuration:'14s' }} />
+                            <div className="animate-ambient-drift-reverse absolute rounded-full" style={{ width:'170px', height:'170px', bottom:'8%', right:'-25%', background:'radial-gradient(circle, rgba(152,29,151,0.24) 0%, transparent 70%)', filter:'blur(16px)', animationDuration:'18s', animationDelay:'5s' }} />
+                            <div className="animate-ambient-drift absolute rounded-full" style={{ width:'130px', height:'130px', top:'42%', right:'-15%', background:'radial-gradient(circle, rgba(152,29,151,0.16) 0%, transparent 70%)', filter:'blur(14px)', animationDuration:'11s', animationDelay:'2s' }} />
                         </div>
 
                         <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-white/[0.06] to-transparent pointer-events-none z-[1]" />
@@ -753,25 +755,25 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
                         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/30 to-transparent pointer-events-none z-[1]" />
 
                         <div className="absolute top-0 inset-x-0 h-[1px] overflow-hidden z-[2] pointer-events-none">
-                            <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-violet-300/80 to-transparent animate-shimmer" style={{ animationDuration: '4s', animationTimingFunction: 'ease-in-out' }} />
+                            <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-logo-green/70 to-transparent animate-shimmer" style={{ animationDuration: '4s', animationTimingFunction: 'ease-in-out' }} />
                         </div>
 
                         {/* ── Logo header ── */}
                         <div className={`relative z-10 flex items-center border-b border-white/[0.06]
                             ${isExpanded ? 'px-4 py-3.5 justify-between' : 'px-2 py-3.5 justify-center'}`}>
-                            <div className="absolute inset-0 bg-gradient-to-b from-violet-500/[0.06] to-transparent pointer-events-none" />
+                            <div className="absolute inset-0 bg-gradient-to-b from-logo-magenta/[0.06] to-transparent pointer-events-none" />
                             <div className="absolute bottom-0 inset-x-0 h-[1px] overflow-hidden pointer-events-none">
-                                <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-indigo-300/50 to-transparent animate-shimmer" style={{ animationDuration: '5s', animationDelay: '1.5s', animationTimingFunction: 'ease-in-out' }} />
+                                <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-logo-green/45 to-transparent animate-shimmer" style={{ animationDuration: '5s', animationDelay: '1.5s', animationTimingFunction: 'ease-in-out' }} />
                             </div>
 
                             <div className="flex items-center gap-3 relative z-10">
                                 <button type="button" aria-label="Ir al inicio" className={`relative group/logo flex-shrink-0 cursor-pointer rounded-[1.25rem] ${focusRing}`} onClick={() => navigate('/')}>
-                                    <div className="absolute -inset-2 rounded-[1.75rem] blur-xl opacity-30 group-hover/logo:opacity-70 transition-all duration-500 bg-gradient-to-tr from-violet-500/50 to-blue-500/40" />
+                                    <div className="absolute -inset-2 rounded-[1.75rem] blur-xl opacity-30 group-hover/logo:opacity-70 transition-all duration-500 bg-gradient-to-tr from-logo-green/45 to-logo-magenta/45" />
                                     <div className={`relative flex items-center justify-center rounded-[1.25rem] overflow-hidden
                                         transition-all duration-300 group-hover/logo:scale-105
-                                        bg-white/12 border border-violet-300/20
+                                        bg-white/12 border border-logo-magenta/20
                                         shadow-[0_4px_16px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(0,0,0,0.2)]
-                                        group-hover/logo:border-violet-300/35 group-hover/logo:bg-white/18
+                                        group-hover/logo:border-logo-magenta/35 group-hover/logo:bg-white/18
                                         ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
                                         <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-[1.25rem]" />
                                         <img src="/Logo192.png" alt="FLS"
@@ -823,13 +825,13 @@ const AppLayout = ({ children, isOverlayActive = false, handleLogout }) => {
 
                             <div
                                 className={`absolute left-2 right-2 rounded-[0.875rem] transform-gpu transition-opacity duration-200 pointer-events-none
-                                    bg-gradient-to-r from-violet-500/[0.22] via-indigo-400/[0.14] to-blue-500/[0.08]
-                                    border border-violet-300/[0.20]
-                                    shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_0_28px_rgba(139,92,246,0.22),0_4px_16px_rgba(0,0,0,0.30)]
+                                    bg-gradient-to-r from-logo-magenta/[0.22] via-logo-magenta/[0.10] to-logo-green/[0.06]
+                                    border border-logo-magenta/[0.20]
+                                    shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_0_28px_rgba(152,29,151,0.22),0_4px_16px_rgba(0,0,0,0.30)]
                                     ${pill.show ? 'opacity-100' : 'opacity-0'}`}
                                 style={{ top: pill.top, height: pill.height }}
                             >
-                                <div className="absolute left-0 inset-y-[15%] w-[2px] rounded-full bg-gradient-to-b from-violet-300 via-indigo-400 to-blue-400 shadow-[0_0_10px_rgba(139,92,246,0.8),0_0_20px_rgba(139,92,246,0.4)]" />
+                                <div className="absolute left-0 inset-y-[15%] w-[2px] rounded-full bg-gradient-to-b from-logo-green to-logo-magenta shadow-[0_0_10px_rgba(152,29,151,0.7),0_0_20px_rgba(142,195,15,0.35)]" />
                             </div>
 
                             {visibleGroups.map(g => renderGroup(g))}

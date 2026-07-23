@@ -5,8 +5,23 @@
 // - MINOR: new features / modules
 // - PATCH: fixes, tweaks, visual adjustments
 
-export const APP_VERSION = '2.32.0';
+export const APP_VERSION = '2.32.1';
 export const APP_AUTHOR  = 'Edwin Nunez';
+
+// v2.32.1 — fix(pwa): status bar reservado — la hamburguesa tapada en
+// standalone. Tras v2.32.0 el usuario confirmó Safari OK, pero en la PWA
+// el header quedaba debajo del status bar/isla dinámica: iOS 26 tiene
+// regresiones conocidas donde env(safe-area-inset-top) devuelve 0 en
+// standalone (la instancia zombie de ayer sí medía 62px — el iOS del
+// usuario se actualizó entre medio). Fix robusto en vez de perseguir el
+// env(): apple-mobile-web-app-status-bar-style pasa de black-translucent
+// a "default" — iOS RESERVA la franja del status bar y el contenido nunca
+// queda debajo; el padding env() del header se conserva como respaldo
+// (colapsa a 0 si iOS reserva; empuja si algún iOS extiende el contenido)
+// — funciona con env() roto o sano. theme-color pasa a #e2defc (el color
+// exacto del header móvil) para que la franja del sistema se funda con el
+// header. OJO: iOS captura estos meta al crear el web clip — hay que
+// borrar el ícono y re-agregar para que aplique.
 
 // v2.32.0 — feat(mobile): body scroll — el documento fluye, adiós al
 // "recuadro". El usuario describió el síntoma exacto del app-shell con

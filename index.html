@@ -32,8 +32,18 @@
 
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#ddd8ff" />
+    <!-- "default" (NO black-translucent): iOS RESERVA la franja del status
+         bar y el contenido standalone nunca queda debajo de la isla dinámica.
+         Con black-translucent el contenido se extiende bajo el status bar y
+         depende de env(safe-area-inset-top) para despejarlo — pero iOS 26
+         devuelve 0 a ratos en standalone (regresión conocida, reportada por
+         el usuario 2026-07-23: la hamburguesa quedaba tapada). El padding
+         env() del header móvil se queda como respaldo: si iOS sí extiende el
+         contenido, empuja; si no, colapsa a 0. Funciona en ambos mundos. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- Coincide con el fondo del header móvil (rgba(226,222,252)) para que
+         la franja del status bar se funda con él en standalone y Safari. -->
+    <meta name="theme-color" content="#e2defc" />
 
     <script>
       // PWA standalone iOS: al reabrir la app "agregada a inicio", iOS
